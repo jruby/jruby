@@ -1,14 +1,17 @@
-project 'JRuby Dist' do
+require 'rexml/document'
+require 'rexml/xpath'
 
-  version = '1.7.14-SNAPSHOT' #File.read( File.join( basedir, '..', '..', 'VERSION' ) )
+doc = REXML::Document.new File.new(File.join(File.dirname(__FILE__),'..', '..', 'pom.xml'))
+version = REXML::XPath.first(doc, "//project/version").text
+
+project 'JRuby Dist' do
 
   model_version '4.0.0'
   id "org.jruby:jruby-dist:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'tesla.dump.pom' => 'pom-generated.xml',
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 

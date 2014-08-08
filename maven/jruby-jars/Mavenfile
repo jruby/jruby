@@ -1,13 +1,16 @@
 #-*- mode: ruby -*-
-# WARNING this file it broken in the moment - not sure if it ever gets fixed again on jruby-1_7 branch
 gemspec
 
-inherit "org.jruby:jruby-artifacts:#{model.version}"
+inherit "org.jruby:jruby-artifacts:#{model.version.sub( /.dev$/, '-SNAPSHOT' )}"
 
 name "JRuby Jars Gem"
 
 jar 'org.jruby:jruby-core-complete', '${project.parent.version}'
 jar 'org.jruby:jruby-stdlib-complete', '${project.parent.version}'
+
+build do
+  final_name "${project.artifactId}#{model.version}.gem"
+end
 
 plugin( :clean, '2.5' ) do
   execute_goals( :clean,
@@ -18,8 +21,7 @@ plugin( :clean, '2.5' ) do
                  :failOnError => false )
 end
 
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'tesla.dump.readonly' => true,
+properties( 'tesla.dump.pom' => 'pom-generated.xml',
             'jruby.home' => '${basedir}/../../' )
 
 jruby_plugin!( :gem,

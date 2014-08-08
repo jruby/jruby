@@ -8,12 +8,12 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core-complete</artifactId>
-      <version>@project.version@</version>
+      <version>@project.parent.version@</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib-complete</artifactId>
-      <version>@project.version@</version>
+      <version>@project.parent.version@</version>
     </dependency>
   </dependencies>
 
