@@ -143,6 +143,7 @@ project 'JRuby Lib Setup' do
     require 'rubygems/package'
 
     puts 'install gems unless already installed'
+    bin_dir = File.join( File.dirname( __FILE__ ), '..', 'bin' )
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems'
     end.each do |a|
@@ -151,6 +152,7 @@ project 'JRuby Lib Setup' do
         puts a.file.to_pathname
         installer = Gem::Installer.new( a.file.to_pathname,
                                         :ignore_dependencies => true,
+                                        :bin_dir => bin_dir,
                                         :install_dir => ghome )
         installer.install
       end

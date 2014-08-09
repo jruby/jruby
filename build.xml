@@ -463,7 +463,8 @@
     </target>
 
     <target name="jruby-jars" description="Create the jruby-jars GEM">
-        <exec executable="mvn" failonerror="true">
+        <exec executable="mvn" failonerror="true"/>
+        <exec executable="bin/rmvn" failonerror="true">
           <arg line="-Pjruby-jars"/>
           <arg line="-Dinvoker.skip=false"/>
           <arg line="install"/>
@@ -471,7 +472,8 @@
     </target>
 
     <target name="complete" description="Create the jruby-complete.jar">
-        <exec executable="mvn" failonerror="true">
+        <exec executable="mvn" failonerror="true"/>
+        <exec executable="bin/rmvn" failonerror="true">
           <arg line="-Pcomplete"/>
           <arg line="-Dinvoker.skip=false"/>
           <arg line="install"/>
@@ -479,7 +481,8 @@
     </target>
 
     <target name="main" description="Create the jruby maven artifacts">
-        <exec executable="mvn" failonerror="true">
+        <exec executable="mvn" failonerror="true"/>
+        <exec executable="bin/rmvn" failonerror="true">
           <arg line="-Pmain"/>
           <arg line="-Dinvoker.skip=false"/>
           <arg line="install"/>
