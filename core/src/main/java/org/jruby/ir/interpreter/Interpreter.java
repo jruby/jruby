@@ -4,6 +4,8 @@ import org.jruby.*;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
@@ -591,6 +593,17 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
             } catch (Throwable t) {
+                if (!(t instanceof Unrescuable)) {
+                    if (!instr.canRaiseException()) {
+                        System.err.println("ERROR: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
+                    }
+                    if ((t instanceof RaiseException) && context.runtime.getGlobalVariables().get("$!") != IRRuntimeHelpers.unwrapRubyException(t)) {
+                        System.err.println("ERROR: $! and exception are not matching up.");
+                        System.err.println("$!: " + context.runtime.getGlobalVariables().get("$!"));
+                        System.err.println("t : " + t);
+                    }
+                }
+
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = rescueMap.get(instr.getIPC());
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
