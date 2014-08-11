@@ -54,7 +54,7 @@ public class DefineOrGetClassNode extends RubyNode {
         RubyClass definingClass;
 
         if (constant == null) {
-            final RubyClass superClassObject = (RubyClass) superClass.execute(frame);
+            RubyClass superClassObject = getRubySuperClass(frame, context);
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
                 definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
@@ -75,5 +75,18 @@ public class DefineOrGetClassNode extends RubyNode {
         }
 
         return definingClass;
+    }
+
+    private RubyClass getRubySuperClass(VirtualFrame frame, RubyContext context) {
+        final Object superClassObj = superClass.execute(frame);
+
+        if (superClassObj instanceof RubyClass){
+            if (((RubyClass) superClassObj).isSingleton()){
+                throw new RaiseException(context.getCoreLibrary().typeError(("can't make subclass of virtual class"), this));
+            }
+
+            return (RubyClass) superClassObj;
+        }
+        throw new RaiseException(context.getCoreLibrary().typeError(("superclass must be a Class"), this));
     }
 }
