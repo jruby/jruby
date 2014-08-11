@@ -24,6 +24,8 @@ import org.jruby.truffle.runtime.objectstorage.*;
  */
 public class RubyClass extends RubyModule {
 
+    private boolean isSingleton;
+
     /**
      * The class from which we create the object that is {@code Class}. A subclass of
      * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
@@ -60,6 +62,7 @@ public class RubyClass extends RubyModule {
     public RubyClass(Node currentNode, RubyModule parentModule, RubyClass rubySuperclass, String name, boolean isSingleton) {
         this(currentNode, rubySuperclass.getContext(), rubySuperclass.getContext().getCoreLibrary().getClassClass(), parentModule, rubySuperclass, name);
 
+        this.isSingleton = isSingleton;
         // TODO(CS): Why am I doing this? Why does it break if I don't?
 
         if (!isSingleton) {
@@ -144,6 +147,10 @@ public class RubyClass extends RubyModule {
         }
 
         return superclass.assignableTo(otherClass);
+    }
+
+    public boolean isSingleton() {
+        return isSingleton;
     }
 
     /**

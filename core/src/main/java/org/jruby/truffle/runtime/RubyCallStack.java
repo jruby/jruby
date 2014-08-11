@@ -49,7 +49,7 @@ public abstract class RubyCallStack {
             return method;
         }
 
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     private static RubyMethod getMethod(FrameInstance frame) {

@@ -127,4 +127,20 @@ public abstract class ClassNodes {
         }
     }
 
+    @CoreMethod(names = "superclass", maxArgs = 0)
+    public abstract static class SuperClassNode extends CoreMethodNode {
+
+        public SuperClassNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SuperClassNode(SuperClassNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyClass getSuperClass(RubyClass rubyClass) {
+            return rubyClass.getSuperclass();
+        }
+    }
 }
