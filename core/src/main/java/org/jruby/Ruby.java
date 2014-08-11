@@ -2848,7 +2848,12 @@ public final class Ruby {
         }
 
         PrintStream errorStream = getErrorStream();
-        errorStream.print(config.getTraceType().printBacktrace(excp, errorStream == System.err && getPosix().isatty(FileDescriptor.err)));
+        String backtrace = config.getTraceType().printBacktrace(excp, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
+        try {
+            errorStream.print(backtrace);
+        } catch (Exception e) {
+            System.err.print(backtrace);
+        }
     }
     
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
