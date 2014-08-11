@@ -1375,9 +1375,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return path;
     }
     
-    private static final ByteList FILE_URL_START = ByteList.create("file:");
-
-
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
      * account the runtime's current directory.
