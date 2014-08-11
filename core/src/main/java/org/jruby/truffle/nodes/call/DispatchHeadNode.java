@@ -52,10 +52,6 @@ public class DispatchHeadNode extends DispatchNode {
         newDispatch = new NewUnresolvedDispatchNode(context, name, missingBehavior);
     }
 
-<<<<<<< HEAD
-    public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
-        this(context, false, name, isSplatted, missingBehavior);
-=======
     public Object newDispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         return newDispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
     }
@@ -68,7 +64,6 @@ public class DispatchHeadNode extends DispatchNode {
 
     public NewDispatchNode getNewDispatch() {
         return newDispatch;
->>>>>>> c8289f39289b32c281a1b89262e1cbb17b2fdd55
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
