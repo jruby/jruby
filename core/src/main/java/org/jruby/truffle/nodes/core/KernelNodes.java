@@ -821,6 +821,11 @@ public abstract class
 
         @Specialization
         public double sleep(double duration) {
+            return doSleep(duration);
+        }
+
+        @SlowPath
+        private double doSleep(double duration) {
             notDesignedForCompilation();
 
             final RubyContext context = getContext();
