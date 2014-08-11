@@ -44,6 +44,9 @@ public class DispatchHeadNode extends DispatchNode {
         dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
     }
 
+    public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
+        this(context, false, name, isSplatted, missingBehavior);
+    }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);

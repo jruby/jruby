@@ -10,11 +10,11 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.SourceSection;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.call.BooleanDispatchHeadNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -176,6 +176,81 @@ public abstract class ObjectNodes {
 
     }
 
+    @CoreMethod(names = {"<=>"}, minArgs = 1, maxArgs = 1)
+    public abstract static class CompareNode extends CoreMethodNode {
+
+        @Child protected BooleanDispatchHeadNode equalNode;
+
+        public CompareNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            equalNode = new BooleanDispatchHeadNode(context, sourceSection, new DispatchHeadNode(context, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING));
+        }
+
+        public CompareNode(CompareNode prev) {
+            super(prev);
+            equalNode = prev.equalNode;
+        }
+
+        @Specialization
+        public Object compare(VirtualFrame frame, RubyObject self, RubyObject other) {
+            notDesignedForCompilation();
+
+            if ((self == other) || equalNode.executeBoolean(frame, self, null, other)) {
+                return 0;
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    @CoreMethod(names = "eql?", minArgs = 1, maxArgs = 1)
+    public abstract static class EqlNode extends CoreMethodNode {
+
+        public EqlNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqlNode(EqlNode prev) {
+            super(prev);
+        }
+
+        @Specialization(order = 1)
+        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+            return true;
+        }
+
+        @Specialization(order = 2)
+        public boolean equal(boolean a, boolean b) {
+            return a == b;
+        }
+
+        @Specialization(order = 3)
+        public boolean equal(int a, int b) {
+            return a == b;
+        }
+
+        @Specialization(order = 4)
+        public boolean equal(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization(order = 5)
+        public boolean equal(double a, double b) {
+            return a == b;
+        }
+
+        @Specialization(order = 6)
+        public boolean equal(BigInteger a, BigInteger b) {
+            return a.compareTo(b) == 0;
+        }
+
+        @Specialization(order = 7)
+        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
+        }
+    }
+
     @CoreMethod(names = "class", maxArgs = 0)
     public abstract static class ClassNode extends CoreMethodNode {
 
@@ -322,6 +397,26 @@ public abstract class ObjectNodes {
 
     }
 
+    @CoreMethod(names = "hash", maxArgs = 0)
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int isFrozen(RubyObject self) {
+            notDesignedForCompilation();
+
+            return self.hashCode();
+        }
+
+    }
+
     @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, minArgs = 1, maxArgs = 1)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
 
@@ -349,7 +444,7 @@ public abstract class ObjectNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context, false, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {

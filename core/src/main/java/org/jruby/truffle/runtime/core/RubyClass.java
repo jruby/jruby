@@ -81,8 +81,17 @@ public class RubyClass extends RubyModule {
         }
     }
 
+    @Override
+    public void initCopy(RubyModule other) {
+        super.initCopy(other);
+        assert other instanceof RubyClass;
+        final RubyClass otherClass = (RubyClass) other;
+        this.objectLayoutForInstances = otherClass.objectLayoutForInstances;
+        this.superclass = otherClass.superclass;
+    }
+
     public RubyClass getSuperclass() {
-        assert superclass != null;
+        //assert superclass != null;
         return superclass;
     }
 
