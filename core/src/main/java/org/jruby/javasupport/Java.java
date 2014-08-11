@@ -560,7 +560,7 @@ public class Java implements Library {
         proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass(superClass.getMetaClass());
 
-        if (javaClass.javaClass().isAssignableFrom(Map.class)) {
+        if (Map.class.isAssignableFrom(javaClass.javaClass())) {
             proxyClass.setAllocator(runtime.getJavaSupport().getMapJavaProxyClass().getAllocator());
             proxyClass.defineAnnotatedMethods(MapJavaProxy.class);
             proxyClass.includeModule(runtime.getEnumerable());
