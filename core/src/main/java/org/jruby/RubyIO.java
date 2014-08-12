@@ -3977,6 +3977,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             return size;
         }
 
+        io2 = io2.GetWriteIO();
+
         if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
         if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
 
