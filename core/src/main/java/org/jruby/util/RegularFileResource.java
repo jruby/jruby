@@ -74,10 +74,11 @@ class RegularFileResource implements FileResource {
 
     @Override
     public boolean isSymLink() {
-        FileStat stat = symlinkPosix.allocateStat();
-        int ret = symlinkPosix.lstat(file.getAbsolutePath(), stat);
-
-        return ret < 0 ? false : stat.isSymlink();
+        try {
+            return symlinkPosix.lstat(file.getAbsolutePath()).isSymlink();
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     @Override
