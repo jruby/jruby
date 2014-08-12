@@ -186,7 +186,7 @@ public class OpenFile implements Finalizable {
     }
 
     public void setChannel(Channel fd) {
-        this.fd = new ChannelFD(fd, runtime.getPosix());
+        this.fd = new ChannelFD(fd, runtime.getPosix(), runtime.getFilenoUtil());
     }
 
     public int getMode() {
@@ -710,10 +710,6 @@ public class OpenFile implements Finalizable {
 
     public boolean isSync() {
         return (mode & (SYNC | TTY)) != 0;
-    }
-
-    public boolean areBothEOF() throws IOException, BadDescriptorException {
-        return mainStream.feof() && (pipeStream != null ? pipeStream.feof() : true);
     }
 
     public void setMode(int modes) {
@@ -2243,54 +2239,6 @@ public class OpenFile implements Finalizable {
     }
 
     @Deprecated
-    public Stream getMainStream() {
-        return mainStream;
-    }
-
-    @Deprecated
-    public Stream getMainStreamSafe() throws BadDescriptorException {
-        Thread.dumpStack();
-        Stream stream = mainStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
-    }
-
-    @Deprecated
-    public void setMainStream(Stream mainStream) {
-        this.mainStream = mainStream;
-        setChannel(mainStream.getChannel());
-    }
-
-    @Deprecated
-    public Stream getPipeStream() {
-        return pipeStream;
-    }
-
-    @Deprecated
-    public Stream getPipeStreamSafe() throws BadDescriptorException {
-        Stream stream = pipeStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
-    }
-
-    @Deprecated
-    public void setPipeStream(Stream pipeStream) {
-        this.pipeStream = pipeStream;
-    }
-
-    @Deprecated
-    public Stream getWriteStream() {
-        return pipeStream == null ? mainStream : pipeStream;
-    }
-
-    @Deprecated
-    public Stream getWriteStreamSafe() throws BadDescriptorException {
-        Stream stream = pipeStream == null ? mainStream : pipeStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
-    }
-
-    @Deprecated
     public static int getFModeFromString(String modesString) throws InvalidValueException {
         int fmode = 0;
         int length = modesString.length();
@@ -2496,9 +2444,4 @@ public class OpenFile implements Finalizable {
         // TODO
         return null;
     }
-
-    @Deprecated
-    private Stream mainStream;
-    @Deprecated
-    private Stream pipeStream;
 }
