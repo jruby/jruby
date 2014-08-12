@@ -115,7 +115,7 @@ public class RubyDir extends RubyObject {
             lastModified = dir.lastModified();
             List<String> snapshotList = new ArrayList<String>();
             snapshotList.addAll(getContents(dir));
-            snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
+            snapshot = snapshotList.toArray(new String[snapshotList.size()]);
         }
     }
 
@@ -141,8 +141,7 @@ public class RubyDir extends RubyObject {
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
 
         dir = JRubyFile.createResource(context, adjustedPath);
-        List<String> snapshotList = RubyDir.getEntries(context, adjustedPath);
-        snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
+        snapshot = getEntries(context, dir, adjustedPath);
 
         return this;
     }
@@ -279,19 +278,19 @@ public class RubyDir extends RubyObject {
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path, null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
-        Object[] files = getEntries(context, adjustedPath).toArray();
+        FileResource directory = JRubyFile.createResource(context, path);
+        Object[] files = getEntries(context, directory, adjustedPath);
+
         return runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, files));
     }
 
-    private static List<String> getEntries(ThreadContext context, String path) {
-        if (!RubyFileTest.directory_p(context.runtime, RubyString.newString(context.runtime, path)).isTrue()) {
-            throw context.runtime.newErrnoENOENTError("No such directory: " + path);
-        }
+    private static final String[] NO_FILES = new String[] {};
+    private static String[] getEntries(ThreadContext context, FileResource dir, String path) {
+        if (!dir.isDirectory()) throw context.runtime.newErrnoENOENTError("No such directory: " + path);
 
-        FileResource directory = JRubyFile.createResource(context, path);
+        String[] list = dir.list();
 
-        List<String> fileList = getContents(directory);
-        return fileList;
+        return list == null ? NO_FILES : list;
     }
 
     // MRI behavior: just plain '//' or '\\\\' are considered illegal on Windows.
