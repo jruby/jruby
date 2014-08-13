@@ -200,7 +200,7 @@ class LibrarySearcher {
     static class ResourceLibrary implements Library {
         private final String searchName;
         private final String scriptName;
-        private final InputStream is;
+        private final FileResource resource;
         private final String location;
 
         public ResourceLibrary(String searchName, String scriptName, FileResource resource) {
@@ -208,32 +208,38 @@ class LibrarySearcher {
             this.scriptName = scriptName;
             this.location = resource.absolutePath();
 
-            // getInputStream may return a null to denote that it cannot really read the resource.
-            // We should raise LoadError in the end, but probably only once we actually try to load
-            // the library
-            this.is = resource.getInputStream();
+            this.resource = resource;
         }
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
+            InputStream is = resource.openInputStream();
             if (is == null) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             }
 
-            if (location.endsWith(".jar")) {
-                loadJar(runtime, wrap);
-            } else if (location.endsWith(".class")) {
-                loadClass(runtime, wrap);
-            } else {
-                loadScript(runtime, wrap);
+            try {
+                if (location.endsWith(".jar")) {
+                    loadJar(runtime, wrap);
+                } else if (location.endsWith(".class")) {
+                    loadClass(runtime, is, wrap);
+                } else {
+                    loadScript(runtime, is, wrap);
+                }
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException ioE) {
+                    // At least we tried....
+                }
             }
         }
 
-        private void loadScript(Ruby runtime, boolean wrap) {
+        private void loadScript(Ruby runtime, InputStream is, boolean wrap) {
             runtime.loadFile(scriptName, is, wrap);
         }
 
-        private void loadClass(Ruby runtime, boolean wrap) {
+        private void loadClass(Ruby runtime, InputStream is, boolean wrap) {
             Script script = CompiledScriptLoader.loadScriptFromFile(runtime, is, searchName);
             if (script == null) {
                 // we're depending on the side effect of the load, which loads the class but does not turn it into a script
