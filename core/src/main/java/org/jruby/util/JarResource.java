@@ -3,7 +3,6 @@ package org.jruby.util;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.jar.JarEntry;
@@ -60,8 +59,7 @@ abstract class JarResource implements FileResource {
 
         JarEntry jarEntry = index.getJarEntry(entryPath);
         if (jarEntry != null) {
-            InputStream jarEntryStream = index.getInputStream(jarEntry);
-            return new JarFileResource(jarPath, rootSlashPrefix, jarEntry, jarEntryStream);
+            return new JarFileResource(jarPath, rootSlashPrefix, index, jarEntry);
         }
 
         return null;

@@ -127,7 +127,7 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream openInputStream() {
         try {
             return new java.io.BufferedInputStream(new FileInputStream(file), 32768);
         } catch (FileNotFoundException fnfe) {
