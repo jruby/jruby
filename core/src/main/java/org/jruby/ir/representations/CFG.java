@@ -616,10 +616,10 @@ public class CFG {
         BasicBlock             root    = getEntryBB();
         LinkedList<BasicBlock> list    = new LinkedList<BasicBlock>();
         Stack<BasicBlock>      stack   = new Stack<BasicBlock>();
-        BitSet                 visited = new BitSet(1 + getMaxNodeID());
+        boolean[]              visited = new boolean[1 + getMaxNodeID()];
 
         stack.push(root);
-        visited.set(root.getID());
+        visited[root.getID()] = true;
 
         // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)
         while (!stack.empty()) {
@@ -628,7 +628,7 @@ public class CFG {
             boolean allChildrenVisited = true;
             for (BasicBlock dst: getOutgoingDestinations(b)) {
                 int dstID = dst.getID();
-                if (!visited.get(dstID)) {
+                if (!visited[dstID]) {
                     allChildrenVisited = false;
                     // This ensures that no matter what order we visit children, we process exit nodes before anything.
                     // else.  Alternatively, getOutgoingDestinations(..) would have to return nodes in a specific order
@@ -638,7 +638,7 @@ public class CFG {
                     } else {
                         stack.push(dst);
                     }
-                    visited.set(dstID);
+                    visited[dstID] = true;
                 }
             }
 
@@ -651,7 +651,7 @@ public class CFG {
 
         // Sanity check!
         for (BasicBlock b : getBasicBlocks()) {
-            if (!visited.get(b.getID())) {
+            if (!visited[b.getID()]) {
                 printError("BB " + b.getID() + " missing from po list!");
                 break;
             }
