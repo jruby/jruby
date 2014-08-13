@@ -665,34 +665,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod irMethod,
-        IRubyObject self, String name, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
-        Ruby       runtime   = context.runtime;
-        IRScope    scope     = irMethod.getIRMethod();
-        RubyModule implClass = irMethod.getImplementationClass();
-        Visibility viz       = irMethod.getVisibility();
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod method,
+        IRubyObject self, String name, IRubyObject[] args, Block block) {
+        IRScope    scope     = method.getIRMethod();
         boolean syntheticMethod = name == null || name.equals("");
 
         try {
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, scope, viz, implClass, name, args, block, blockType);
+
+            return interpret(context, self, scope, method.getVisibility(), method.getImplementationClass(), name, args, block, null);
         } finally {
-            if (isTraceable) {
-                try {methodPostTrace(runtime, context, name, implClass);}
-                finally { if (!syntheticMethod) ThreadContext.popBacktrace(context);}
-            } else {
-                if (!syntheticMethod) ThreadContext.popBacktrace(context);
-            }
+            if (!syntheticMethod) ThreadContext.popBacktrace(context);
         }
-    }
-
-    private static void methodPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks()) context.trace(RubyEvent.CALL, name, implClass);
-    }
-
-    private static void methodPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks()) context.trace(RubyEvent.RETURN, name, implClass);
     }
 
     /**
