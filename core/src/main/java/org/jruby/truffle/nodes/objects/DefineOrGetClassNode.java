@@ -52,9 +52,9 @@ public class DefineOrGetClassNode extends RubyNode {
         final RubyModule.RubyConstant constant = parentModuleObject.lookupConstant(name);
 
         RubyClass definingClass;
+        RubyClass superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            RubyClass superClassObject = getRubySuperClass(frame, context);
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
                 definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
@@ -69,6 +69,9 @@ public class DefineOrGetClassNode extends RubyNode {
         } else {
             if (constant.value instanceof RubyClass) {
                 definingClass = (RubyClass) constant.value;
+                if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperclass().getObjectID() != superClassObject.getObjectID()){
+                    throw new RaiseException(context.getCoreLibrary().typeError(("superclass mismatch for class " + definingClass.getName()), this));
+                }
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class", this));
             }
@@ -82,11 +85,15 @@ public class DefineOrGetClassNode extends RubyNode {
 
         if (superClassObj instanceof RubyClass){
             if (((RubyClass) superClassObj).isSingleton()){
-                throw new RaiseException(context.getCoreLibrary().typeError(("can't make subclass of virtual class"), this));
+                throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
             return (RubyClass) superClassObj;
         }
-        throw new RaiseException(context.getCoreLibrary().typeError(("superclass must be a Class"), this));
+        throw new RaiseException(context.getCoreLibrary().typeError("superclass must be a Class", this));
+    }
+
+    private boolean isBlankOrRootClass(RubyClass rubyClass){
+        return rubyClass.getName() == "BasicObject" || rubyClass.getName() == "Object";
     }
 }
