@@ -8,7 +8,6 @@ import java.nio.channels.Channel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
-import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
 public class ClasspathResource implements FileResource {
@@ -150,14 +149,6 @@ public class ClasspathResource implements FileResource {
     public InputStream getInputStream()
     {
         return is;
-    }
-
-    @Override
-    public ChannelDescriptor openDescriptor( ModeFlags flags, POSIX posix,
-                                             int perm )
-            throws ResourceException
-    {
-        return null;
     }
 
     @Override

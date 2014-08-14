@@ -51,21 +51,21 @@ public class FilenoUtil {
         return new FileDescriptor();
     }
 
-    public static ChannelFD getWrapperFromFileno(int fileno) {
+    public ChannelFD getWrapperFromFileno(int fileno) {
         return filenoMap.get(fileno);
     }
 
-    public static void registerWrapper(int fileno, ChannelFD wrapper) {
+    public void registerWrapper(int fileno, ChannelFD wrapper) {
         if (fileno == -1) return;
         filenoMap.put(fileno, wrapper);
     }
 
-    public static void unregisterWrapper(int fileno) {
+    public void unregisterWrapper(int fileno) {
         if (fileno == -1) return;
         filenoMap.remove(fileno);
     }
 
-    public static int getNewFileno() {
+    public int getNewFileno() {
         return internalFilenoIndex.getAndIncrement();
     }
 
@@ -140,27 +140,10 @@ public class FilenoUtil {
         FILE_DESCRIPTOR_FD = ffd;
     }
 
-    @Deprecated
-    public static ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return filenoDescriptorMap.get(aFileno);
-    }
-
-    @Deprecated
-    public static void registerDescriptor(ChannelDescriptor descriptor) {
-        filenoDescriptorMap.put(descriptor.getFileno(), descriptor);
-    }
-
-    @Deprecated
-    public static void unregisterDescriptor(int aFileno) {
-        filenoDescriptorMap.remove(aFileno);
-    }
-
     // FIXME shouldn't use static; may interfere with other runtimes in the same JVM
-    public static int FIRST_FAKE_FD = 100000;
-    protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
-    @Deprecated
-    private static final Map<Integer, ChannelDescriptor> filenoDescriptorMap = new ConcurrentHashMap<Integer, ChannelDescriptor>();
-    private static final Map<Integer, ChannelFD> filenoMap = new ConcurrentHashMap<Integer, ChannelFD>();
+    public static final int FIRST_FAKE_FD = 100000;
+    protected final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
+    private final Map<Integer, ChannelFD> filenoMap = new ConcurrentHashMap<Integer, ChannelFD>();
 
     private static final Class SEL_CH_IMPL;
     private static final Method SEL_CH_IMPL_GET_FD;

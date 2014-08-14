@@ -38,7 +38,6 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Sockaddr;
@@ -245,29 +244,6 @@ public class RubyServerSocket extends RubySocket {
 
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(runtime, iae.getMessage());
-
-        }
-    }
-
-    @Deprecated
-    protected ChannelDescriptor initChannel(Ruby runtime) {
-        Channel channel;
-
-        try {
-            if(soType == Sock.SOCK_STREAM) {
-                channel = ServerSocketChannel.open();
-
-            } else {
-                throw runtime.newArgumentError("unsupported server socket type `" + soType + "'");
-
-            }
-
-            ModeFlags modeFlags = newModeFlags(runtime, ModeFlags.RDWR);
-
-            return new ChannelDescriptor(channel, modeFlags);
-
-        } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
 
         }
     }

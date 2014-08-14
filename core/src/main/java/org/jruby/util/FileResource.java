@@ -2,7 +2,6 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 import java.io.InputStream;
 
@@ -41,7 +40,4 @@ public interface FileResource {
 
     InputStream getInputStream();
     Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException;
-
-    @Deprecated
-    ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException;
 }

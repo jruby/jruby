@@ -68,29 +68,23 @@ public class JRubyFile extends JavaSecuredFile {
 
     public static FileResource createResource(String cwd, String pathname) {
         FileResource emptyResource = EmptyFileResource.create(pathname);
-        if (emptyResource != null) {
-            return emptyResource;
-        }
+        if (emptyResource != null) return emptyResource;
 
+        // This will work against anything potentially containing a '!' in it and does not require a scheme.
+        // (see test/test_java_on_load_path.rb: $LOAD_PATH << "test/test_jruby_1332.jar!"; require 'test_jruby_1332.rb'
         FileResource jarResource = JarResource.create(pathname);
-        if (jarResource != null) {
-            return jarResource;
-        }
+        if (jarResource != null) return jarResource;
 
-        // HACK turn the pathname into something meaningful in case of being an URI
-        FileResource cpResource = ClasspathResource.create(pathname.replace(cwd == null ? "" : cwd, "" ));
-        if (cpResource != null) {
-            return cpResource;
-        }
+        if (pathname.contains(":")) { // scheme-oriented resources
+            // HACK turn the pathname into something meaningful in case of being an URI
+            FileResource cpResource = ClasspathResource.create(pathname.replace(cwd == null ? "" : cwd, ""));
+            if (cpResource != null) return cpResource;
 
-        // HACK this codes get triggers by LoadService via findOnClasspath, so remove the prefix to get the uri
-        FileResource urlResource = URLResource.create(pathname.replace("classpath:/", ""));
-        if (urlResource != null) {
-            return urlResource;
-        }
+            // HACK this codes get triggers by LoadService via findOnClasspath, so remove the prefix to get the uri
+            FileResource urlResource = URLResource.create(pathname.replace("classpath:/", ""));
+            if (urlResource != null) return urlResource;
 
-        if (pathname.startsWith("file:")) {
-            pathname = pathname.substring(5);
+            if (pathname.startsWith("file:")) pathname = pathname.substring(5);
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.

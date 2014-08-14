@@ -1,8 +1,6 @@
 package org.jruby.util;
 
 import jnr.posix.POSIX;
-import org.jruby.Ruby;
-import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
 import java.io.InputStream;
@@ -68,11 +66,5 @@ class JarFileResource extends JarResource {
   @Override
   public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
     return Channels.newChannel(entryStream);
-  }
-
-  @Override
-  @Deprecated
-  public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
-    return new ChannelDescriptor(openChannel(flags, posix, perm), flags);
   }
 }

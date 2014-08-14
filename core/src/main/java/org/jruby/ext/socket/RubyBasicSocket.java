@@ -99,7 +99,7 @@ public class RubyBasicSocket extends RubyIO {
         int fileno = (int)_fileno.convertToInteger().getLongValue();
         RubyClass klass = (RubyClass)_klass;
 
-        ChannelFD fd = FilenoUtil.getWrapperFromFileno(fileno);
+        ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
         RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
         basicSocket.initSocket(fd);
@@ -606,7 +606,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
-        ChannelFD fd = new ChannelFD(channel, runtime.getPosix());
+        ChannelFD fd = new ChannelFD(channel, runtime.getPosix(), runtime.getFilenoUtil());
 
         if (runtime.getPosix().isNative() && fd.realFileno >= 0) {
             runtime.getPosix().fcntlInt(fd.realFileno, Fcntl.F_SETFD, FcntlLibrary.FD_CLOEXEC);

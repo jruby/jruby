@@ -1046,6 +1046,11 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
+    public int getIntValue() {
+        return value.intValue();
+    }
+
+    @Override
     public BigInteger getBigIntegerValue() {
         return value.toBigInteger();
     }

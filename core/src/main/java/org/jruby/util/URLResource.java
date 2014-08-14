@@ -8,7 +8,6 @@ import java.nio.channels.Channel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
-import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
 class URLResource implements FileResource {
@@ -112,13 +111,6 @@ class URLResource implements FileResource {
         {
             return null;
         }
-    }
-
-    @Override
-    public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm)
-            throws ResourceException
-    {
-        return null;
     }
 
     @Override

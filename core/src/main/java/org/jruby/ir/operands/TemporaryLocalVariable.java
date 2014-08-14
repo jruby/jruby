@@ -12,12 +12,17 @@ import org.jruby.runtime.builtin.IRubyObject;
  * visible to Ruby itself.
  */
 public class TemporaryLocalVariable extends TemporaryVariable {
+    public static final String PREFIX = "%v_";
     public final int offset;
 
-    public TemporaryLocalVariable(int offset) {
-        super();
+    public TemporaryLocalVariable(String name, int offset) {
+        super(name);
 
         this.offset = offset;
+    }
+
+    public TemporaryLocalVariable(int offset) {
+        this(PREFIX + offset, offset);
     }
 
     public int getOffset() {
@@ -27,11 +32,6 @@ public class TemporaryLocalVariable extends TemporaryVariable {
     @Override
     public TemporaryVariableType getType() {
         return TemporaryVariableType.LOCAL;
-    }
-
-    @Override
-    public String getName() {
-        return getPrefix() + offset;
     }
 
     @Override

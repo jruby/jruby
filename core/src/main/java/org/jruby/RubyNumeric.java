@@ -124,12 +124,20 @@ public class RubyNumeric extends RubyObject {
         return 0;
     }
 
+    /**
+     * Return the value of this numeric as a 64-bit long. If the value does not
+     * fit in 64 bits, it will be truncated.
+     */
     public long getLongValue() {
         return 0;
     }
 
+    /**
+     * Return the value of this numeric as a 32-bit long. If the value does not
+     * fit in 32 bits, it will be truncated.
+     */
     public int getIntValue() {
-        return (int)0;
+        return 0;
     }
 
     public BigInteger getBigIntegerValue() {

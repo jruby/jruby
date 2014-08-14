@@ -32,6 +32,7 @@ import com.jcraft.jzlib.Inflater;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.FrameField;
@@ -47,7 +48,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.Stream;
+import org.jruby.util.io.PosixShim;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -188,7 +189,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         // should invoke seek on realIo...
         realIo.callMethod(context, "seek",
-                new IRubyObject[]{runtime.newFixnum(-internalPosition()), runtime.newFixnum(Stream.SEEK_CUR)});
+                new IRubyObject[]{runtime.newFixnum(-internalPosition()), runtime.newFixnum(PosixShim.SEEK_CUR)});
 
         // ... and then reinitialize
         initialize(context, realIo);
@@ -262,7 +263,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     private IRubyObject internalSepGets(ByteList sep, int limit) throws IOException {
         ByteList result = newReadByteList();
 
-        if (sep.getRealSize() == 0) sep = Stream.PARAGRAPH_SEPARATOR;
+        if (sep.getRealSize() == 0) sep = RubyIO.PARAGRAPH_SEPARATOR;
 
         int ce = -1;
         
