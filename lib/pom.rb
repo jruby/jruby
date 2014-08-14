@@ -71,13 +71,14 @@ project 'JRuby Lib Setup' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'tesla.version' => '0.0.9',
+              'tesla.version' => '0.1.1',
+              'jruby.plugins.version' => '1.0.4',
               'jruby.home' => '${basedir}/..' )
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}"
 
-  repository( 'http://rubygems-proxy.torquebox.org/releases',
+  repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'rubygems-releases' )
 
   plugin( :clean,
@@ -96,22 +97,7 @@ project 'JRuby Lib Setup' do
   # this is not an artifact for maven central
   plugin :deploy, :skip => true
 
-  phase :package do
-    plugin :dependency do
-      items = default_gems.collect do |g|
-        { 'groupId' =>  g.group_id,
-          'artifactId' =>  g.name,
-          'version' =>  g.version,
-          'type' =>  'gem',
-          'overWrite' =>  'false',
-          'outputDirectory' =>  '${project.build.directory}' }
-      end
-      execute_goals( 'copy',
-                     :id => 'copy gems',
-                     :useBaseVersion => true,
-                     'artifactItems' => items )
-    end
-  end
+  gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
 
   execute :install_gems, :package do |ctx|
     require 'fileutils'
@@ -123,6 +109,7 @@ project 'JRuby Lib Setup' do
     gems = File.join( gem_home, 'gems' )
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
+    jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
     default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
                                'specifications', 'default' )
     bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
@@ -149,17 +136,27 @@ project 'JRuby Lib Setup' do
     require 'rubygems/installer'
     require 'rubygems/package'
 
+    puts 'install gems unless already installed'
+    ctx.project.artifacts.select do |a|
+      a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
+    end.each do |a|
+      ghome = a.scope == 'compile' ? gem_home : jruby_gems
+      if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
+        puts a.file.to_pathname
+        # do not set bin_dir since its create absolute symbolic links
+        installer = Gem::Installer.new( a.file.to_pathname,
+                                        :ignore_dependencies => true,
+                                        :install_dir => ghome )
+        installer.install
+      end
+    end
+
     default_gems.each do |g|
       pom_version = ctx.project.properties.get( g.pom_version_key ) || g.pom_version_key
       version = pom_version.sub( /-SNAPSHOT/, '' )
 
       # install the gem unless already installed
-      if Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
-        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_pathname,
-                                                   "#{g.name}-#{pom_version}.gem" ),
-                                        :ignore_dependencies => true,
-                                        :install_dir => gem_home )
-        installer.install
+      if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
 
         puts
         puts "--- gem #{g.name}-#{version} ---"
@@ -202,7 +199,7 @@ project 'JRuby Lib Setup' do
 
     # PATCH krypt
     if KRYPT_VERSION == '0.0.2'
-      file = 'lib/ruby/shared/krypt/provider.rb'
+      file = ctx.basedir.to_pathname + '/ruby/shared/krypt/provider.rb'
       content = File.read( file )
       content.sub! /begin(.|[\n])*/, <<EOS
 unless java?

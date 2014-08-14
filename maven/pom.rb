@@ -7,7 +7,7 @@ project 'JRuby Artifacts' do
   inherit "org.jruby:jruby-parent:#{version}"
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
+  properties( 'tesla.dump.pom' => 'pom-generated.xml',
               'tesla.dump.readonly' => true )
 
   plugin_management do

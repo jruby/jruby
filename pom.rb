@@ -206,7 +206,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     modules all_modules
 
-    snapshot_repository 'http://ci.jruby.org/snapshots/maven', :id => 'jruby-snapshots'
+    #snapshot_repository 'http://ci.jruby.org/snapshots/maven', :id => 'jruby-snapshots'
 
     build do
       default_goal 'install'

@@ -8,6 +8,7 @@ name "JRuby Jars Gem"
 version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
 # overwrite the version from gemspec
+ruby_version = model.version
 model.version = version
 inherit "org.jruby:jruby-artifacts:#{model.version}"
 
@@ -16,7 +17,7 @@ jar 'org.jruby:jruby-stdlib', '${project.version}'
 
 # TODO this clean should be part of upstream when generating 
 # the pom for the gemspec 
-plugin( :clean ) do
+plugin( :clean, '2.5' ) do
   execute_goals( :clean,
                  :phase => :clean, 
                  :id => 'clean-lib',
@@ -25,9 +26,8 @@ plugin( :clean ) do
                  :failOnError => false )
 end
 
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'tesla.dump.readonly' => true,
-            'tesla.version' => '0.0.9',
+properties( 'tesla.dump.pom' => 'pom-generated.xml',
+            'tesla.version' => '0.1.1',
             # we share the already installed gems
             'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
             'jruby.home' => '${basedir}/../../' )
@@ -51,21 +51,22 @@ jruby_plugin!( :gem,
   execute_goals :id => 'default-push', :skip => true
 end
 
-execute 'rename gem file', :package do |ctx|
-  gem = File.join( ctx.project.build.directory,
-                   ctx.project.build.final_name + ".gem" )
-  source = gem.sub( /-SNAPSHOT/, '.SNAPSHOT' )
-  if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
-    FileUtils.mv( source, gem )
-  end
-end
+#execute 'rename gem file', :package do |ctx|
+#  gem = File.join( ctx.project.build.directory,
+#                   ctx.project.build.final_name + ".gem" )
+#  source = gem.sub( /-SNAPSHOT/, '.SNAPSHOT' )
+#  if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
+#    FileUtils.mv( source, gem )
+#  end
+#end
 
 plugin( :invoker )
 
 build do
-  final_name "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}"
+  final_name "#{model.artifact_id}-#{ruby_version}"
 end
 
+# this is used on ci.jruby.org to cleanup snapshots artifacts
 profile :snapshots do
 
   # this needs to be on a "leaf" of the maven module directory structure
