@@ -101,7 +101,7 @@ class URLResource implements FileResource {
     }
 
     @Override
-    public InputStream getInputStream()
+    public InputStream openInputStream()
     {
         try
         {

@@ -616,6 +616,8 @@ public class JavaClass extends JavaObject {
                 int modifiers = field.getModifiers();
                 if (Modifier.isStatic(modifiers)) addField(state.staticCallbacks, state.staticNames, field, Modifier.isFinal(modifiers), true);
             }
+
+            setupInterfaceMethods(javaClass, state);
             
             // Add in any Scala singleton methods
             handleScalaSingletons(javaClass, state);
@@ -1003,45 +1005,9 @@ public class JavaClass extends JavaObject {
             String name = method.getName();
 
             if (Modifier.isStatic(method.getModifiers())) {
-                AssignedName assignedName = state.staticNames.get(name);
-
-                // For JRUBY-4505, restore __method methods for reserved names
-                if (STATIC_RESERVED_NAMES.containsKey(method.getName())) {
-                    installStaticMethods(state.staticCallbacks, javaClass, method, name + METHOD_MANGLE);
-                    continue;
-                }
-
-                if (assignedName == null) {
-                    state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                } else {
-                    if (Priority.METHOD.lessImportantThan(assignedName)) continue;
-                    if (!Priority.METHOD.asImportantAs(assignedName)) {
-                        state.staticCallbacks.remove(name);
-                        state.staticCallbacks.remove(name + '=');
-                        state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                    }
-                }
-                installStaticMethods(state.staticCallbacks, javaClass, method, name);
+                prepareStaticMethod(javaClass, state, method, name);
             } else {
-                AssignedName assignedName = state.instanceNames.get(name);
-
-                // For JRUBY-4505, restore __method methods for reserved names
-                if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-                    installInstanceMethods(state.instanceCallbacks, javaClass, method, name + METHOD_MANGLE);
-                    continue;
-                }
-
-                if (assignedName == null) {
-                    state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-                } else {
-                    if (Priority.METHOD.lessImportantThan(assignedName)) continue;
-                    if (!Priority.METHOD.asImportantAs(assignedName)) {
-                        state.instanceCallbacks.remove(name);
-                        state.instanceCallbacks.remove(name + '=');
-                        state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-                    }
-                }
-                installInstanceMethods(state.instanceCallbacks, javaClass, method, name);
+                prepareInstanceMethod(javaClass, state, method, name);
             }
         }
 
@@ -1049,14 +1015,33 @@ public class JavaClass extends JavaObject {
         handleScalaSingletons(javaClass, state);
 
         // now iterate over all installers and make sure they also have appropriate aliases
-        for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
-            // no aliases for __method methods
-            if (entry.getKey().endsWith("__method")) continue;
+        assignStaticAliases(state);
+        assignInstanceAliases(state);
+    }
 
-            if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                assignAliases((MethodInstaller) entry.getValue(), state.staticNames);
+    private void prepareInstanceMethod(Class<?> javaClass, InitializerState state, Method method, String name) {
+        AssignedName assignedName = state.instanceNames.get(name);
+
+        // For JRUBY-4505, restore __method methods for reserved names
+        if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
+            installInstanceMethods(state.instanceCallbacks, javaClass, method, name + METHOD_MANGLE);
+            return;
+        }
+
+        if (assignedName == null) {
+            state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
+        } else {
+            if (Priority.METHOD.lessImportantThan(assignedName)) return;
+            if (!Priority.METHOD.asImportantAs(assignedName)) {
+                state.instanceCallbacks.remove(name);
+                state.instanceCallbacks.remove(name + '=');
+                state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
             }
         }
+        installInstanceMethods(state.instanceCallbacks, javaClass, method, name);
+    }
+
+    private void assignInstanceAliases(InitializerState state) {
         for (Map.Entry<String, NamedInstaller> entry : state.instanceCallbacks.entrySet()) {
             if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
                 MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
@@ -1077,6 +1062,57 @@ public class JavaClass extends JavaObject {
                 }
             }
         }
+    }
+
+    private void setupInterfaceMethods(Class<?> javaClass, InitializerState state) {
+        // TODO: protected methods.  this is going to require a rework of some of the mechanism.
+        Method[] methods = getMethods(javaClass);
+
+        for (int i = methods.length; --i >= 0;) {
+            // Java 8 introduced static methods on interfaces, so we just look for those
+            Method method = methods[i];
+            String name = method.getName();
+
+            if (!Modifier.isStatic(method.getModifiers())) continue;
+
+            prepareStaticMethod(javaClass, state, method, name);
+        }
+
+        // now iterate over all installers and make sure they also have appropriate aliases
+        assignStaticAliases(state);
+    }
+
+    private void assignStaticAliases(InitializerState state) {
+        for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
+            // no aliases for __method methods
+            if (entry.getKey().endsWith("__method")) continue;
+
+            if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
+                assignAliases((MethodInstaller) entry.getValue(), state.staticNames);
+            }
+        }
+    }
+
+    private void prepareStaticMethod(Class<?> javaClass, InitializerState state, Method method, String name) {
+        AssignedName assignedName = state.staticNames.get(name);
+
+        // For JRUBY-4505, restore __method methods for reserved names
+        if (STATIC_RESERVED_NAMES.containsKey(method.getName())) {
+            installStaticMethods(state.staticCallbacks, javaClass, method, name + METHOD_MANGLE);
+            return;
+        }
+
+        if (assignedName == null) {
+            state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+        } else {
+            if (Priority.METHOD.lessImportantThan(assignedName)) return;
+            if (!Priority.METHOD.asImportantAs(assignedName)) {
+                state.staticCallbacks.remove(name);
+                state.staticCallbacks.remove(name + '=');
+                state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+            }
+        }
+        installStaticMethods(state.staticCallbacks, javaClass, method, name);
     }
 
     private void installInstanceMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {

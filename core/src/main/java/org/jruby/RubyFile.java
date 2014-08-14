@@ -1375,9 +1375,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return path;
     }
     
-    private static final ByteList FILE_URL_START = ByteList.create("file:");
-
-
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
      * account the runtime's current directory.
@@ -1391,17 +1388,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
         } else {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
-            ByteList pathByteList = pathStr.getByteList();
-
-            if ((pathByteList.bytes().length > FILE_URL_START.bytes().length) && pathByteList.startsWith(FILE_URL_START)) {
-                String path = pathStr.asJavaString();
-                String[] pathParts = splitURI(path);
-                if (pathParts != null && pathParts[0].equals("file:")) {
-                    path = pathParts[1];
-                }
-
-                return JRubyFile.createResource(runtime, path);
-            }
 
             return JRubyFile.createResource(runtime, pathStr.toString());
         }

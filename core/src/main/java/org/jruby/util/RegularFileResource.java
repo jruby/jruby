@@ -74,11 +74,10 @@ class RegularFileResource implements FileResource {
 
     @Override
     public boolean isSymLink() {
-        try {
-            return symlinkPosix.lstat(file.getAbsolutePath()).isSymlink();
-        } catch (Throwable t) {
-            return false;
-        }
+        FileStat stat = symlinkPosix.allocateStat();
+
+        return symlinkPosix.lstat(file.getAbsolutePath(), stat) < 0 ?
+                false : stat.isSymlink();
     }
 
     @Override
@@ -128,7 +127,7 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream openInputStream() {
         try {
             return new java.io.BufferedInputStream(new FileInputStream(file), 32768);
         } catch (FileNotFoundException fnfe) {
