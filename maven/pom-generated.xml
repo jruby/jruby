@@ -12,7 +12,7 @@
   <name>JRuby Artifacts</name>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
   </properties>
   <build>
     <pluginManagement>

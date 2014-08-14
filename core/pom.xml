@@ -72,7 +72,6 @@
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
       <version>3.0.2-SNAPSHOT</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -123,7 +122,7 @@
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>options</artifactId>
-      <version>1.2</version>
+      <version>1.1</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>

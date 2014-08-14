@@ -5,48 +5,29 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.14.dev-SNAPSHOT</version>
+    <version>1.7.14-SNAPSHOT</version>
   </parent>
-  <artifactId>jruby-stdlib-complete</artifactId>
-  <name>JRuby Stdlib Complete</name>
+  <artifactId>jruby-core-complete</artifactId>
+  <name>JRuby Core Complete</name>
   <properties>
     <jruby.basedir>${basedir}/../../</jruby.basedir>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
   </properties>
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib</artifactId>
+      <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcpkix-jdk15on</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcprov-jdk15on</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
   <build>
-    <resources>
-      <resource>
-        <directory>${jruby.basedir}/lib</directory>
-        <targetPath>${jruby.complete.home}/lib</targetPath>
-        <includes>
-          <include>lib/**/bc*.jar</include>
-        </includes>
-      </resource>
-    </resources> 
     <plugins>
       <plugin>
-	<artifactId>maven-deploy-plugin</artifactId>
-	<configuration>
-	  <skip>true</skip>
-	</configuration>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
@@ -58,6 +39,14 @@
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
           </execution>
         </executions>
       </plugin>

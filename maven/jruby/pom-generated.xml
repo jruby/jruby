@@ -11,9 +11,8 @@
   <name>JRuby Main Maven Artifact</name>
   <properties>
     <jruby.home>${basedir}/../..</jruby.home>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
   </properties>
   <dependencies>
     <dependency>

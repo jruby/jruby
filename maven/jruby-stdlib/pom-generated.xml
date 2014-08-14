@@ -11,11 +11,10 @@
   <name>JRuby Stdlib</name>
   <properties>
     <jruby.home>${basedir}/../..</jruby.home>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <tesla.version>0.0.9</tesla.version>
   </properties>
