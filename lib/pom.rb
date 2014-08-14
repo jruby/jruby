@@ -143,16 +143,15 @@ project 'JRuby Lib Setup' do
     require 'rubygems/package'
 
     puts 'install gems unless already installed'
-    bin_dir = File.join( File.dirname( __FILE__ ), '..', 'bin' )
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems'
     end.each do |a|
       ghome = a.scope == 'compile' ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         puts a.file.to_pathname
+        # do not set bin_dir since its create absolute symbolic links
         installer = Gem::Installer.new( a.file.to_pathname,
                                         :ignore_dependencies => true,
-                                        :bin_dir => bin_dir,
                                         :install_dir => ghome )
         installer.install
       end

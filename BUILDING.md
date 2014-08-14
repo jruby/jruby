@@ -145,7 +145,7 @@ Clean Build
 To clean the build it is important to use the same profile for the clean as what you want to build. the best way to clean build something is, i.e. jruby-jars
 
 ```
-mvn clean install -Pjruby-jars
+jruby -S rmvn clean install -Pjruby-jars
 ```
 
 this first cleans everything and then starts the new build in one go !
@@ -162,7 +162,7 @@ Distribution Packages
 ###the tar.gz and zip distribution packages###
 
 ```
-mvn -Pdist
+jruby -S rmvn -Pdist
 ```
 
 the files will be found in ./maven/jruby-dist/target
@@ -170,7 +170,7 @@ the files will be found in ./maven/jruby-dist/target
 ###jruby-complete.jar###
 
 ```
-mvn -Pcomplete
+jruby -S rmvn -Pcomplete
 ```
 
 the file will be in ./maven/jruby-complete/target
@@ -186,23 +186,16 @@ and those files will be installed in you maven local-repository ready to use wit
 ###jruby jars gem###
 
 ```
-mvn -Pjruby-jars
+jruby -S rmvn -Pjruby-jars
 ```
 
 the gem will be in ./maven/jruby-jars/target
 
-### gems - excluding jruby jars gem###
-
-```
-mvn -Pgems
-```
-
-the gem will be in ./maven/gems/*/pkg
 
 ### building ALL packages ###
 
 ```
-mvn -Pall
+jruby -S rmvn -Pall
 ```
 
 ## release ##
