@@ -105,7 +105,9 @@ public abstract class RubyCallStack {
     public static Backtrace getBacktrace(Node currentNode) {
         final ArrayList<Activation> activations = new ArrayList<>();
 
-        activations.add(new Activation(getCurrentMethod(), currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
+        if (Truffle.getRuntime().getCurrentFrame() != null) {
+            activations.add(new Activation(getCurrentMethod(), currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
+        }
 
         for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
             activations.add(new Activation(getMethod(frame), frame.getCallNode(), frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
