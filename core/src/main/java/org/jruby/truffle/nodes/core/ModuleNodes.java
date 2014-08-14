@@ -236,7 +236,7 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -244,7 +244,7 @@ public abstract class ModuleNodes {
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -252,7 +252,7 @@ public abstract class ModuleNodes {
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -260,7 +260,7 @@ public abstract class ModuleNodes {
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public Object classEval(RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
@@ -327,14 +327,14 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
             return module.lookupConstant(name.toString()) != null;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, boolean inherit) {
             notDesignedForCompilation();
 
@@ -345,7 +345,7 @@ public abstract class ModuleNodes {
             }
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
@@ -365,14 +365,14 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -381,14 +381,14 @@ public abstract class ModuleNodes {
             return symbol;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -487,12 +487,12 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             return module.lookupMethod(name.toString()) != null;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, boolean inherit) {
             notDesignedForCompilation();
 
@@ -503,7 +503,7 @@ public abstract class ModuleNodes {
             }
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 

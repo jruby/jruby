@@ -688,21 +688,21 @@ public abstract class
             initialize = prev.initialize;
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyString message, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, exceptionClass, getContext().makeString(""));
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
             notDesignedForCompilation();
 

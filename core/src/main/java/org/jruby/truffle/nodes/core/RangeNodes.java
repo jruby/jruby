@@ -35,28 +35,28 @@ public abstract class RangeNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.IntegerFixnumRange b) {
             notDesignedForCompilation();
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.LongFixnumRange b) {
             notDesignedForCompilation();
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(RubyRange.LongFixnumRange a, RubyRange.LongFixnumRange b) {
             notDesignedForCompilation();
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(RubyRange.LongFixnumRange a, RubyRange.IntegerFixnumRange b) {
             notDesignedForCompilation();
 

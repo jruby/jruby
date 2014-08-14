@@ -43,37 +43,37 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a == b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
@@ -91,37 +91,37 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a == b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
@@ -139,37 +139,37 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a != b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a != b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a != b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a != b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) != 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a != b;
         }
@@ -236,20 +236,20 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public Object dup(VirtualFrame frame, RubyObject self) {
+        public Object dup(VirtualFrame frame, RubyModule self) {
             notDesignedForCompilation();
 
-            final RubyObject newObject = new RubyObject(self.getRubyClass());
+            final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.dispatch(frame, newObject, null, self);
             return newObject;
         }
 
         @Specialization
-        public Object dup(VirtualFrame frame, RubyModule self) {
+        public Object dup(VirtualFrame frame, RubyObject self) {
             notDesignedForCompilation();
 
-            final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
+            final RubyObject newObject = new RubyObject(self.getRubyClass());
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.dispatch(frame, newObject, null, self);
             return newObject;
@@ -546,7 +546,7 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubyArray methods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
@@ -557,7 +557,7 @@ public abstract class ObjectNodes {
             return methods(self, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
@@ -626,7 +626,7 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubyArray methods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
@@ -637,7 +637,7 @@ public abstract class ObjectNodes {
             return methods(self, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
@@ -673,23 +673,23 @@ public abstract class ObjectNodes {
             dispatch = prev.dispatch;
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
             return dispatch.doesRespondTo(frame, object, name);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
             return dispatch.doesRespondTo(frame, object, name);
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
             return dispatch.doesRespondTo(frame, object, name);
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
             return dispatch.doesRespondTo(frame, object, name);
@@ -751,7 +751,7 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
@@ -762,7 +762,7 @@ public abstract class ObjectNodes {
             return singletonMethods(self, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 

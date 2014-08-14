@@ -247,17 +247,17 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public Object mod(BigInteger a, int b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public Object mod(BigInteger a, long b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public Object mod(BigInteger a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, b));
         }

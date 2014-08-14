@@ -36,12 +36,12 @@ public abstract class ArrayIndexNode extends RubyNode {
         index = prev.index;
     }
 
-    @Specialization(guards = "isNull", order = 1)
+    @Specialization(guards = "isNull")
     public NilPlaceholder getNull(RubyArray array) {
         return NilPlaceholder.INSTANCE;
     }
 
-    @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class, order = 2)
+    @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class)
     public int getIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
         int normalisedIndex = array.normaliseIndex(index);
 
@@ -52,7 +52,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isIntegerFixnum", order = 3)
+    @Specialization(guards = "isIntegerFixnum")
     public Object getIntegerFixnum(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
@@ -63,7 +63,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class, order = 4)
+    @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class)
     public long getLongFixnumInBounds(RubyArray array) throws UnexpectedResultException {
         int normalisedIndex = array.normaliseIndex(index);
 
@@ -74,7 +74,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum", order = 5)
+    @Specialization(guards = "isLongFixnum")
     public Object getLongFixnum(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
@@ -85,7 +85,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat", rewriteOn=UnexpectedResultException.class, order = 6)
+    @Specialization(guards = "isFloat", rewriteOn=UnexpectedResultException.class)
     public double getFloatInBounds(RubyArray array) throws UnexpectedResultException {
         int normalisedIndex = array.normaliseIndex(index);
 
@@ -96,7 +96,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat", order = 7)
+    @Specialization(guards = "isFloat")
     public Object getFloat(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
@@ -107,7 +107,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObject", order = 8)
+    @Specialization(guards = "isObject")
     public Object getObject(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
