@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -44,7 +45,7 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     }
 
     @Specialization
-    public Object dispatch(VirtualFrame frame, Object boxedCallingSelf, RubySymbol receiverObject, Object blockObject, Object argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object blockObject, Object argumentsObjects) {
         return doDispatch(frame, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
@@ -71,8 +72,8 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
-        return next.executeDispatch(frame, callingSelf, receiverObject, blockObject, argumentsObjects);
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
+        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects);
     }
 
 }

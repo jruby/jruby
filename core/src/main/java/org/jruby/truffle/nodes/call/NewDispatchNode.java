@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-@NodeChildren({@NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class)})
+@NodeChildren({@NodeChild(value="methodReceiverObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class)})
 public abstract class NewDispatchNode extends RubyNode {
 
 
@@ -55,7 +55,7 @@ public abstract class NewDispatchNode extends RubyNode {
         throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
-    public abstract Object executeDispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects);
+    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects);
 
 
     protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {

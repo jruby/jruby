@@ -49,7 +49,7 @@ public class RubyNilClass extends RubyObject {
     public static boolean isNil(Object block) {
         RubyNode.notDesignedForCompilation();
 
-        return block instanceof NilPlaceholder || block instanceof RubyNilClass;
+        return block == NilPlaceholder.INSTANCE || block instanceof RubyNilClass;
     }
 
     @Override

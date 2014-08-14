@@ -19,6 +19,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.CatchReturnNode;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
@@ -39,6 +41,112 @@ import java.util.List;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
+
+    @CoreMethod(names = "<=", minArgs = 1, maxArgs = 1)
+    public abstract static class IsSubclassOfNode extends CoreMethodNode {
+
+        public IsSubclassOfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IsSubclassOfNode(IsSubclassOfNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object isSubclassOf(VirtualFrame frame, RubyClass self, RubyClass other) {
+            notDesignedForCompilation();
+
+            if (self == other || self.getLookupNode().chainContains(other)) {
+                return true;
+            }
+
+            for (RubyClass c = self.getSuperclass(); c != null; c = c.getSuperclass()) {
+                if (c == other) {
+                    return true;
+                }
+            }
+
+            if (other.getLookupNode().chainContains(self)) {
+                return false;
+            }
+
+            for (RubyClass c = other.getSuperclass(); c != null; c = c.getSuperclass()) {
+                if (c == self) {
+                    return false;
+                }
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+        @Specialization
+        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
+            notDesignedForCompilation();
+
+            if (self == other || self.getLookupNode().chainContains(other)) {
+                return true;
+            }
+
+            if (other.getLookupNode().chainContains(self)) {
+                return false;
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+        @Specialization
+        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
+            notDesignedForCompilation();
+
+            throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
+        }
+
+    }
+
+    @CoreMethod(names = "<=>", minArgs = 1, maxArgs = 1)
+    public abstract static class CompareNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode subclassNode;
+        @Child protected BooleanCastNode booleanCastNode;
+
+        public CompareNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            subclassNode = new DispatchHeadNode(context, "<=", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            booleanCastNode = BooleanCastNodeFactory.create(context, sourceSection, null);
+        }
+
+        public CompareNode(CompareNode prev) {
+            super(prev);
+            subclassNode = prev.subclassNode;
+        }
+
+        @Specialization
+        public Object compare(VirtualFrame frame, RubyModule self, RubyModule other) {
+            notDesignedForCompilation();
+
+            if (self == other) {
+                return 0;
+            }
+
+            final Object isSubclass = subclassNode.dispatch(frame, self, null, other);
+
+            if (RubyNilClass.isNil(isSubclass)) {
+                return NilPlaceholder.INSTANCE;
+            } else if (booleanCastNode.executeBoolean(frame, isSubclass)) {
+                return -1;
+            }
+            return 1;
+        }
+
+        @Specialization
+        public Object compare(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
+            notDesignedForCompilation();
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
 
     @CoreMethod(names = "alias_method", minArgs = 2, maxArgs = 2)
     public abstract static class AliasMethodNode extends CoreMethodNode {

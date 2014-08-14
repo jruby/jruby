@@ -593,16 +593,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
             } catch (Throwable t) {
-                if (!(t instanceof Unrescuable)) {
-                    if (!instr.canRaiseException()) {
-                        System.err.println("ERROR: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
-                    }
-                    if ((t instanceof RaiseException) && context.runtime.getGlobalVariables().get("$!") != IRRuntimeHelpers.unwrapRubyException(t)) {
-                        System.err.println("ERROR: $! and exception are not matching up.");
-                        System.err.println("$!: " + context.runtime.getGlobalVariables().get("$!"));
-                        System.err.println("t : " + t);
-                    }
-                }
+                extractToMethodToAvoidC2Crash(context, instr, t);
 
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = rescueMap.get(instr.getIPC());
@@ -619,6 +610,24 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // Control should never get here!
         // SSS FIXME: But looks like BEGIN/END blocks get here -- needs fixing
         return null;
+    }
+
+    /*
+     * If you put this code into the method above it will hard crash some production builds of C2 in Java 8. We aren't
+     * sure exactly which builds, but it seems to appear more often in Linux builds than Mac. - Chris Seaton
+     */
+
+    private static void extractToMethodToAvoidC2Crash(ThreadContext context, Instr instr, Throwable t) {
+        if (!(t instanceof Unrescuable)) {
+            if (!instr.canRaiseException()) {
+                System.err.println("ERROR: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
+            }
+            if ((t instanceof RaiseException) && context.runtime.getGlobalVariables().get("$!") != IRRuntimeHelpers.unwrapRubyException(t)) {
+                System.err.println("ERROR: $! and exception are not matching up.");
+                System.err.println("$!: " + context.runtime.getGlobalVariables().get("$!"));
+                System.err.println("t : " + t);
+            }
+        }
     }
 
     public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,

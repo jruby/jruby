@@ -336,6 +336,12 @@ public class RubyModule extends RubyObject implements LookupNode {
         return lookupParent.lookupMethod(methodName);
     }
 
+    @Override
+    public boolean chainContains(LookupNode node) {
+        // TODO: (JH) we assume that the the LookupNode chain is cycle free, is this always the case?
+        return this == node || lookupParent.chainContains(node);
+    }
+
     public void appendFeatures(RubyNode currentNode, RubyModule other) {
         RubyNode.notDesignedForCompilation();
 

@@ -51,11 +51,11 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
     }
 
     @Specialization(order=1)
-    public Object dispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object blockObject, Object argumentsObjects) {
-        return doDispatch(frame, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object blockObject, Object argumentsObjects) {
+        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
-    private Object doDispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
 
         if (entry == null) {
@@ -106,8 +106,8 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
 
 
     @Specialization(order=2)
-    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
-        return dispatch(frame, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
+        return dispatch(frame, methodReceiverObject, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
 
