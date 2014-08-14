@@ -69,9 +69,8 @@ public class DefineOrGetClassNode extends RubyNode {
         } else {
             if (constant.value instanceof RubyClass) {
                 definingClass = (RubyClass) constant.value;
-                if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperclass().getObjectID() != superClassObject.getObjectID()){
-                    throw new RaiseException(context.getCoreLibrary().typeError(("superclass mismatch for class " + definingClass.getName()), this));
-                }
+                checkSuperClassCompatibility(context, superClassObject, definingClass);
+
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class", this));
             }
@@ -95,5 +94,11 @@ public class DefineOrGetClassNode extends RubyNode {
 
     private boolean isBlankOrRootClass(RubyClass rubyClass){
         return rubyClass.getName() == "BasicObject" || rubyClass.getName() == "Object";
+    }
+
+    private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass){
+        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperclass().getObjectID() != superClassObject.getObjectID()){
+            throw new RaiseException(context.getCoreLibrary().typeError(("superclass mismatch for class " + definingClass.getName()), this));
+        }
     }
 }
