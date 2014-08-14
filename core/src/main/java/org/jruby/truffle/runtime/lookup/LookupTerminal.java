@@ -54,4 +54,9 @@ public class LookupTerminal implements LookupNode {
 
     public void getMethods(Map<String, RubyMethod> methods) { }
 
+    @Override
+    public boolean chainContains(LookupNode node) {
+        // checking if a LookupNode chain contains a LookupTerminal makes no sense, so we omit "return node == INSTANCE"
+        return false;
+    }
 }
