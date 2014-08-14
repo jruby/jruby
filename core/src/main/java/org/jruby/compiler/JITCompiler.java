@@ -125,9 +125,9 @@ public class JITCompiler implements JITCompilerMBean {
         this.config = runtime.getInstanceConfig();
 
         this.executor = new ThreadPoolExecutor(
-                2, // always two threads
-                2,
-                0, // never stop
+                0, // don't start threads until needed
+                2, // two max
+                60, // stop then if no jitting for 60 seconds
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new DaemonThreadFactory("Ruby-" + runtime.getRuntimeNumber() + "-JIT", Thread.MIN_PRIORITY));
