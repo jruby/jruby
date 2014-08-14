@@ -36,4 +36,5 @@ public interface LookupNode {
 
     void getMethods(Map<String, RubyMethod> methods);
 
+    boolean chainContains(LookupNode node);
 }

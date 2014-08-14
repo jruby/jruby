@@ -30,7 +30,7 @@ KRYPT_VERSION = '0.0.2'
 # the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.5.dev-SNAPSHOT', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.6.dev-SNAPSHOT', true ),
    ImportedGem.new( 'jruby-readline', '1.0.dev-SNAPSHOT', false ),
    ImportedGem.new( 'jruby-ripper', '2.1.0.dev-SNAPSHOT', false, '2.1' ),
    ImportedGem.new( 'rake', 'rake.version', true ),
@@ -181,7 +181,6 @@ project 'JRuby Lib Setup' do
         end
 
         if g.default_gem
-p File.join( specs, "#{g.name}-#{version}*.gemspec" ) 
           specname = File.basename( Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first )
           puts "copy to specifications/default: #{specname}"
 

@@ -27,10 +27,14 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
             final ArrayList<String> lines = new ArrayList<>();
 
-            lines.add(formatInLine(activations, exception));
+            if (activations.isEmpty()) {
+                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
+            } else {
+                lines.add(formatInLine(activations, exception));
 
-            for (int n = 1; n < activations.size(); n++) {
-                lines.add(formatFromLine(activations, n));
+                for (int n = 1; n < activations.size(); n++) {
+                    lines.add(formatFromLine(activations, n));
+                }
             }
 
             return lines.toArray(new String[lines.size()]);
@@ -75,7 +79,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     private static String formatFromLine(List<Activation> activations, int n) {
         final StringBuilder builder = new StringBuilder();
 
-        builder.append("from ");
+        builder.append("\tfrom ");
 
         final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;

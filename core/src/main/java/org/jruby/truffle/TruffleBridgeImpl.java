@@ -10,6 +10,7 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.TruffleBridge;
@@ -90,7 +91,18 @@ public class TruffleBridgeImpl implements TruffleBridge {
     @Override
     public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
-            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, null);
+            final String inputFile = rootNode.getPosition().getFile();
+
+            final Source source;
+
+            if (inputFile.equals("-e")) {
+                // TODO(CS): what if a file is legitimately called -e?
+                source = truffleContext.getSourceManager().get("-e", runtime.getInstanceConfig().getInlineScript().toString());
+            } else {
+                source = truffleContext.getSourceManager().get(inputFile);
+            }
+
+            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
             return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (RaiseException e) {

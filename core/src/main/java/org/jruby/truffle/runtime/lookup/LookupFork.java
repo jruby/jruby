@@ -95,4 +95,8 @@ public class LookupFork implements LookupNode {
         first.getMethods(methods);
     }
 
+    @Override
+    public boolean chainContains(LookupNode node) {
+        return first.chainContains(node) || second.chainContains(node);
+    }
 }
