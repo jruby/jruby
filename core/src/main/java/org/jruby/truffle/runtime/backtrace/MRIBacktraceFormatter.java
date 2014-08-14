@@ -79,7 +79,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     private static String formatFromLine(List<Activation> activations, int n) {
         final StringBuilder builder = new StringBuilder();
 
-        builder.append("from ");
+        builder.append("\tfrom ");
 
         final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
