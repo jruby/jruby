@@ -14,7 +14,8 @@ project 'JRuby Complete' do
   plugin_repository( :id => 'rubygems-releases',
                      :url => 'http://rubygems-proxy.torquebox.org/releases' )
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readOnly' => true,
               'jruby.basedir' => '${basedir}/../../',
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
