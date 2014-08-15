@@ -1064,15 +1064,17 @@ public abstract class ModuleNodes {
         @Specialization
         public Object getClassVariable(RubyModule module, RubyString name) {
             notDesignedForCompilation();
-
-            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name.toString(), this));
+            return getClassVariable(module, name.toString());
         }
 
         @Specialization
         public Object getClassVariable(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
+            return getClassVariable(module, name.toString());
+        }
 
-            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name.toString(), this));
+        public Object getClassVariable(RubyModule module, String name){
+            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name, this));
         }
 
     }
