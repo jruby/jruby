@@ -7,7 +7,8 @@ project 'JRuby Complete' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'bundle'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readOnly' => true,
               'jruby.basedir' => '${basedir}/../../',
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )

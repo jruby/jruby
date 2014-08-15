@@ -120,6 +120,6 @@ rescue LoadError
 end
 
 begin
-  require 'rubygems/defaults/jruby_jar_dependencies'
+  require 'jar_install_post_install_hook'
 rescue LoadError
 end
