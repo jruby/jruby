@@ -1049,4 +1049,31 @@ public abstract class ModuleNodes {
         }
 
     }
+
+    @CoreMethod(names = "class_variable_get", minArgs = 1, maxArgs = 1)
+    public abstract static class ClassVariableGetNode extends CoreMethodNode {
+
+        public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClassVariableGetNode(ClassVariableGetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubyString name) {
+            notDesignedForCompilation();
+
+            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name.toString(), this));
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+
+            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name.toString(), this));
+        }
+
+    }
 }
