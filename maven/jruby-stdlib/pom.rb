@@ -8,7 +8,6 @@ project 'JRuby Stdlib' do
   packaging 'jar'
 
   properties( 'tesla.dump.pom' => 'pom-generated.xml',
-              'tesla.version' => '0.0.9',
               'jruby.home' => '${basedir}/../..',
               'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
               'main.basedir' => '${project.parent.parent.basedir}',
