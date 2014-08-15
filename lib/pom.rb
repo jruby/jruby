@@ -45,7 +45,7 @@ default_gems =
    ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
    ImportedGem.new( 'ffi', '1.9.3', true ),
-   ImportedGem.new( 'jar-dependencies', '0.0.5', true )
+   ImportedGem.new( 'jar-dependencies', '0.0.7', true )
   ]
 
 project 'JRuby Lib Setup' do
@@ -78,7 +78,7 @@ project 'JRuby Lib Setup' do
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
               'tesla.version' => '0.1.1',
-              'jruby.plugins.version' => '1.0.4',
+              'jruby.plugins.version' => '1.0.5',
               'jruby.home' => '${basedir}/..' )
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
