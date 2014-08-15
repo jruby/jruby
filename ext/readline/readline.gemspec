@@ -11,7 +11,6 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/jruby/jruby'
   s.description = "readline extension for JRuby"
   s.files = Dir['[A-Z]*'] + Dir['lib/**/*']
-  s.platform = 'java'
 
   s.requirements << "jar jline:jline, #{Readline::Version::JLINE_VERSION}"
 end

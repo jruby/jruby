@@ -24,19 +24,19 @@
       <version>9000.dev-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>rubygems</groupId>
+      <groupId>org.jruby.gems</groupId>
       <artifactId>jruby-openssl</artifactId>
       <version>0.9.6.dev-SNAPSHOT</version>
       <type>gem</type>
     </dependency>
     <dependency>
-      <groupId>rubygems</groupId>
+      <groupId>org.jruby.gems</groupId>
       <artifactId>jruby-readline</artifactId>
       <version>1.0.dev-SNAPSHOT</version>
       <type>gem</type>
     </dependency>
     <dependency>
-      <groupId>rubygems</groupId>
+      <groupId>org.jruby.gems</groupId>
       <artifactId>jruby-ripper</artifactId>
       <version>2.1.0.dev-SNAPSHOT</version>
       <type>gem</type>

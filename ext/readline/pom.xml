@@ -2,14 +2,9 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.jruby</groupId>
-    <artifactId>jruby-ext</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
-  </parent>
-  <groupId>rubygems</groupId>
+  <groupId>org.jruby.gems</groupId>
   <artifactId>jruby-readline</artifactId>
-  <version>1.0.dev-SNAPSHOT</version>
+  <version>1.0.dev</version>
   <packaging>gem</packaging>
   <name>JRuby Readline</name>
   <description>readline extension for JRuby</description>
@@ -27,8 +22,8 @@
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.path>${gem.home}</gem.path>
-    <gem.home>${basedir}/../target/rubygems</gem.home>
-    <jruby.plugins.version>1.0.5</jruby.plugins.version>
+    <gem.home>../target/rubygems</gem.home>
+    <jruby.plugins.version>1.0.3</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>

@@ -14,7 +14,6 @@ build.eclipse
 build.properties
 target
 dist
-ext/*/pom-*.gemspec.xml
 lib/jruby*.jar
 lib/native
 lib/jni
@@ -67,7 +66,7 @@ lib/ruby/shared/bcpkix-jdk15on-*.jar
 lib/ruby/shared/bcprov-jdk15on-*.jar
 lib/ruby/shared/*jopenssl*.jar
 lib/ruby/shared/readline/*readline*.jar
-lib/ruby/shared/jline
+lib/ruby/shared/readline/jline*.jar
 lib/ruby/shared/ripper.jar
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml

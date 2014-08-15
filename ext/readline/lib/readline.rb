@@ -1,14 +1,6 @@
+# load jline and our readline into classpath
 require 'readline/version'
-
-# load jline and our readline into classloader
-begin
-  # if we have jar-dependencies we let it track the jars
-  require 'jar-dependencies'
-  require_jar( 'jline', 'jline', Readline::Version::JLINE_VERSION )
-rescue LoadError
-  require "jline/jline/jline-#{Readline::Version::JLINE_VERSION}.jar"
-end
-
+require "jline-#{Readline::Version::JLINE_VERSION}.jar"
 require "readline.jar"
 
 # boot extension
