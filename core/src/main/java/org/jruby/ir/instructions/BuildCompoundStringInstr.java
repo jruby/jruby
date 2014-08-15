@@ -1,9 +1,13 @@
-package org.jruby.ir.operands;
+package org.jruby.ir.instructions;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -11,24 +15,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
 //     - "Hi #{name}"
-//
-// NOTE: This operand is only used in the initial stages of optimization.
-// Further down the line, this string operand could get converted to calls
-// that appends the components of the compound string into a single string object
-public class CompoundString extends Operand {
-    final private List<Operand> pieces;
+public class BuildCompoundStringInstr extends Instr implements ResultInstr {
+    Variable result;
+    private List<Operand> pieces;
     final private Encoding encoding;
 
-    public CompoundString(List<Operand> pieces, Encoding encoding) {
-        super(OperandType.COMPOUND_STRING);
+    public BuildCompoundStringInstr(Variable result, List<Operand> pieces, Encoding encoding) {
+        super(Operation.BUILD_COMPOUND_STRING);
         this.pieces = pieces;
         this.encoding = encoding;
+        this.result = result;
     }
 
     public List<Operand> getPieces() {
@@ -40,44 +43,38 @@ public class CompoundString extends Operand {
     }
 
     @Override
-    public boolean hasKnownValue() {
-        if (pieces != null) {
-            for (Operand o : pieces) {
-                if (!o.hasKnownValue()) return false;
-            }
-        }
-
-        return true;
+    public Variable getResult() {
+        return result;
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        List<Operand> newPieces = new java.util.ArrayList<Operand>();
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return pieces.toArray(new Operand[pieces.size()]);
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        List<Operand> newPieces = new ArrayList<Operand>();
         for (Operand p : pieces) {
             newPieces.add(p.getSimplifiedOperand(valueMap, force));
         }
 
-        return new CompoundString(newPieces, encoding);
-    }
-
-    /** Append the list of variables used in this operand to the input list */
-    @Override
-    public void addUsedVariables(List<Variable> l) {
-        for (Operand o : pieces) {
-            o.addUsedVariables(l);
-        }
+       pieces = newPieces;
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
-        if (hasKnownValue()) return this;
-
-        List<Operand> newPieces = new java.util.ArrayList<Operand>();
+    public Instr cloneForInlining(InlinerInfo ii) {
+        List<Operand> newPieces = new ArrayList<Operand>();
         for (Operand p : pieces) {
             newPieces.add(p.cloneForInlining(ii));
         }
 
-        return new CompoundString(newPieces, encoding);
+        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), newPieces, encoding);
     }
 
     // SSS FIXME: Buggy?
@@ -105,7 +102,7 @@ public class CompoundString extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // SSS FIXME: Doesn't work in all cases.  See example below
         //
         //    s = "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
@@ -130,11 +127,11 @@ public class CompoundString extends Operand {
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.CompoundString(this);
+        visitor.BuildCompoundStringInstr(this);
     }
 
     @Override
     public String toString() {
-        return "CompoundString:" + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
+        return super.toString() + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
     }
 }

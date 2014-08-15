@@ -53,6 +53,10 @@ class InstrDecoderMap implements IRPersistenceValues {
             case CHECK_ARITY: return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
             case CONST_MISSING: return decodeConstMissingInstr();
+            // SSS FIXME: Might need fixing
+            // case BUILD_COMPOUND_INSTR: return decodeBuildCompoundStringInstr();
+            // SSS FIXME: TODO
+            // case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
             case COPY: return decodeCopy();
             case DEF_CLASS: return new DefineClassInstr((d.decodeVariable()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
             case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
@@ -203,6 +207,17 @@ class InstrDecoderMap implements IRPersistenceValues {
     private Instr decodeCopy() {
         return new CopyInstr(d.decodeVariable(), d.decodeOperand());
     }
+
+/**
+    private Instr decodeBuildCompoundStringInstr() {
+        String encodingString = d.decodeString();
+
+        if (encodingString.equals("")) return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandList(), ASCIIEncoding.INSTANCE);
+
+        // FIXME: yuck
+        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandList(), NonIRObjectFactory.createEncoding(encodingString));
+    }
+**/
 
     private Instr decodeLineNumber() {
         return new LineNumberInstr(d.decodeScope(), d.decodeInt());

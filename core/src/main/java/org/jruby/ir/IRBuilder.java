@@ -2041,7 +2041,9 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(n, s));
         }
 
-        return copyAndReturnValue(s, new Regexp(new CompoundString(strPieces, dregexpNode.getEncoding()), dregexpNode.getOptions()));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildDynRegExpInstr(res, strPieces, dregexpNode.getOptions()));
+        return res;
     }
 
     public Operand buildDStr(DStrNode dstrNode, IRScope s) {
@@ -2050,7 +2052,9 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(n, s));
         }
 
-        return copyAndReturnValue(s, new CompoundString(strPieces, dstrNode.getEncoding()));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildCompoundStringInstr(res, strPieces, dstrNode.getEncoding()));
+        return copyAndReturnValue(s, res);
     }
 
     public Operand buildDSymbol(DSymbolNode node, IRScope s) {
@@ -2059,7 +2063,9 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(n, s));
         }
 
-        return copyAndReturnValue(s, new DynamicSymbol(new CompoundString(strPieces, node.getEncoding())));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildCompoundStringInstr(res, strPieces, node.getEncoding()));
+        return copyAndReturnValue(s, new DynamicSymbol(res));
     }
 
     public Operand buildDVar(DVarNode node, IRScope s) {
@@ -2942,6 +2948,8 @@ public class IRBuilder {
     }
 
     public Operand buildRegexp(RegexpNode reNode, IRScope s) {
+        // SSS FIXME: Rather than throw syntax error at runtime, we should detect
+        // regexp syntax errors at build time and add an exception-throwing instruction instead
         return copyAndReturnValue(s, new Regexp(new StringLiteral(reNode.getValue()), reNode.getOptions()));
     }
 
