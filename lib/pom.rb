@@ -8,14 +8,6 @@ class ImportedGem
     @ruby_version = ruby_version
   end
 
-  def group_id
-    if name.match( /^jruby-/ ) && pom_version_key.match( /-SNAPSHOT$/ )
-      'org.jruby.gems'
-    else
-      'rubygems'
-    end
-  end
-
   def version
     if pom_version_key =~ /.version/
       "${#{pom_version_key}}"
@@ -87,11 +79,7 @@ project 'JRuby Lib Setup' do
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
-    if g.group_id != 'rubygems'
-      dependency g.group_id, g.name, g.pom_version_key, :type => :gem
-    else
-      gem g.name, g.version
-    end
+    gem g.name, g.version
   end
 
   # this is not an artifact for maven central
