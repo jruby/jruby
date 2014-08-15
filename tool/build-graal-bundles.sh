@@ -10,12 +10,10 @@
 #    * jruby-dist-9000+graal-macosx-x86_64.dev-bin.tar.gz
 # which are the artifacts to be published.
 
-# Run in the root directory. Cleans and builds from scratch.
+# Run in the root directory. Run -Pdist first.
 
-rm -rf jruby-dist-9000+graal-linux-x86_64.dev-bin.tar.gz jruby-dist-9000+graal-macosx-x86_64.dev-bin.tar.gz graalvm-jdk1.8.0 jruby-9000.dev jruby-9000.dev-SNAPSHOT
-mvn clean -Pbootstrap package install -Ptruffle -Pdist || exit $?
 tar -zxf maven/jruby-dist/target/jruby-dist-9000.dev-bin.tar.gz || exit $?
-mv jruby-9000.dev-SNAPSHOT jruby-9000.dev
+mv jruby-9000.dev-SNAPSHOT jruby-9000.dev || exit $?
 
 # Remove files we aren't going to patch so people don't use them by mistake
 
@@ -36,7 +34,7 @@ fi
 
 rm jruby-9000.dev/bin/jruby.backup
 
-chmod +x jruby-9000.dev/bin/jruby
+chmod +x jruby-9000.dev/bin/jruby || exit $?
 
 function pack {
     # $1 ... platform (linux, ...)
