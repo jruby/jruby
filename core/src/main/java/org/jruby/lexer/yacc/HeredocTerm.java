@@ -93,6 +93,7 @@ public class HeredocTerm extends StrTerm {
                 position = lexer.getPosition();
             } while (!src.matchMarker(marker, indent, true));
         } else {
+            lexer.newtok();
             int c = src.read();
             if (c == '#') {
                 switch (c = src.read()) {

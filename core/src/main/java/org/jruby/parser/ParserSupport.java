@@ -50,7 +50,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException;
-import org.jruby.lexer.yacc.Token;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
@@ -140,96 +139,24 @@ public class ParserSupport {
         getterIdentifierError(node.getPosition(), ((INameNode) node).getName());
         return null;
     }
-    
-    /**
-     * Create AST node representing variable type it represents.
-     * 
-     * @param token to check its variable type
-     * @return an AST node representing this new variable
-     */
-    public Node gettable(Token token) {
-        switch (token.getType()) {
-        case Tokens.kSELF:
-            return new SelfNode(token.getPosition());
-        case Tokens.kNIL:
-            return new NilNode(token.getPosition());
-        case Tokens.kTRUE:
-            return new TrueNode(token.getPosition());
-        case Tokens.kFALSE:
-            return new FalseNode(token.getPosition());
-        case Tokens.k__FILE__:
-            return new FileNode(token.getPosition(), new ByteList(token.getPosition().getFile().getBytes(),
-                    getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
-        case Tokens.k__LINE__:
-            return new FixnumNode(token.getPosition(), token.getPosition().getStartLine()+1);
-        case Tokens.k__ENCODING__:
-            return new EncodingNode(token.getPosition(), lexer.getEncoding());
-        case Tokens.tIDENTIFIER:
-            return currentScope.declare(token.getPosition(), (String) token.getValue());
-        case Tokens.tCONSTANT:
-            return new ConstNode(token.getPosition(), (String) token.getValue());
-        case Tokens.tIVAR:
-            return new InstVarNode(token.getPosition(), (String) token.getValue());
-        case Tokens.tCVAR:
-            return new ClassVarNode(token.getPosition(), (String) token.getValue());
-        case Tokens.tGVAR:
-            return new GlobalVarNode(token.getPosition(), (String) token.getValue());
-        }
 
-        getterIdentifierError(token.getPosition(), (String) token.getValue());
-        return null;
+    public Node declareIdentifier(String name) {
+        return currentScope.declare(lexer.getPosition(), name);
+    }
+
+    // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
+    public AssignableNode assignableLabelOrIdentifier(String name, Node value) {
+        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+    }
+
+    // Only calls via f_kw so we know it has to be tLABEL
+    public AssignableNode assignableLabel(String name, Node value) {
+        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
     
     protected void getterIdentifierError(ISourcePosition position, String identifier) {
         throw new SyntaxException(PID.BAD_IDENTIFIER, position, "identifier " +
                 identifier + " is not valid to get", identifier);
-    }
-    
-    public AssignableNode assignable(Token lhs, Node value) {
-        checkExpression(value);
-
-        switch (lhs.getType()) {
-            case Tokens.kSELF:
-                throw new SyntaxException(PID.CANNOT_CHANGE_SELF, lhs.getPosition(),
-                        lexer.getCurrentLine(), "Can't change the value of self");
-            case Tokens.kNIL:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
-                        lexer.getCurrentLine(), "Can't assign to nil", "nil");
-            case Tokens.kTRUE:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
-                        lexer.getCurrentLine(), "Can't assign to true", "true");
-            case Tokens.kFALSE:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
-                        lexer.getCurrentLine(), "Can't assign to false", "false");
-            case Tokens.k__FILE__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
-                        lexer.getCurrentLine(), "Can't assign to __FILE__", "__FILE__");
-            case Tokens.k__LINE__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
-                        lexer.getCurrentLine(), "Can't assign to __LINE__", "__LINE__");
-            case Tokens.k__ENCODING__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
-                        lexer.getCurrentLine(), "Can't assign to __ENCODING__", "__ENCODING__");
-            case Tokens.tLABEL: // keyword args (only 2.0 grammar can ever call assignable with this token)
-            case Tokens.tIDENTIFIER: // normal locals
-                // ENEBO: 1.9 has CURR nodes for local/block variables.  We don't.  I believe we follow proper logic
-                return currentScope.assign(lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
-            case Tokens.tCONSTANT:
-                if (isInDef() || isInSingle()) {
-                    throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(),
-                            lexer.getCurrentLine(), "dynamic constant assignment");
-                }
-                return new ConstDeclNode(lhs.getPosition(), (String) lhs.getValue(), null, value);
-            case Tokens.tIVAR:
-                return new InstAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
-            case Tokens.tCVAR:
-                return new ClassVarAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
-            case Tokens.tGVAR:
-                return new GlobalAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
-        }
-
-        throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), lexer.getCurrentLine(),
-                "identifier " + (String) lhs.getValue() + " is not valid to set", lhs.getValue());
     }
 
     /**
@@ -808,22 +735,34 @@ public class ParserSupport {
 
         return new WhenNode(position, expressionNodes, bodyNode, nextCase);
     }
-    
-    public Node new_opElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
+
+    // FIXME: Currently this is passing in position of receiver
+    public Node new_opElementAsgnNode(Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
+        ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
+        Node newNode = null;
+
         if (argsNode instanceof ArrayNode) {
             ArrayNode array = (ArrayNode) argsNode;
-            
+
             if (array.size() == 1) {
                 if (operatorName.equals("||")) {
-                    return new OpElementOneArgOrAsgnNode(position, receiverNode, operatorName, array, valueNode);
+                    newNode = new OpElementOneArgOrAsgnNode(position, receiverNode, operatorName, array, valueNode);
                 } else if (operatorName.equals("&&")) {
-                    return new OpElementOneArgAndAsgnNode(position, receiverNode, operatorName, array, valueNode);                    
+
+                    newNode = new OpElementOneArgAndAsgnNode(position, receiverNode, operatorName, array, valueNode);
                 } else {
-                    return new OpElementOneArgAsgnNode(position, receiverNode, operatorName, array, valueNode);
+                    newNode = new OpElementOneArgAsgnNode(position, receiverNode, operatorName, array, valueNode);
                 }
             }
         }
-        return new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
+
+        if (newNode == null) {
+            newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
+        }
+
+        fixpos(newNode, receiverNode);
+
+        return newNode;
     }
     
     public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args) {
@@ -862,7 +801,7 @@ public class ParserSupport {
         return false;
     }
 
-    public Node new_call(Node receiver, Token name, Node argsNode, Node iter) {
+    public Node new_call(Node receiver, String name, Node argsNode, Node iter) {
         if (argsNode instanceof BlockPassNode) {
             if (iter != null) {
                 throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
@@ -870,10 +809,10 @@ public class ParserSupport {
             }
 
             BlockPassNode blockPass = (BlockPassNode) argsNode;
-            return new CallNode(position(receiver, argsNode), receiver, (String) name.getValue(), blockPass.getArgsNode(), blockPass);
+            return new CallNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass);
         }
 
-        return new CallNode(position(receiver, argsNode), receiver, (String) name.getValue(), argsNode, iter);
+        return new CallNode(position(receiver, argsNode), receiver, name, argsNode, iter);
     }
 
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
@@ -885,8 +824,8 @@ public class ParserSupport {
     public Colon3Node new_colon3(ISourcePosition position, String name) {
         return new Colon3Node(position, name);
     }
-    
-    public Node new_fcall(Token operation, Node args, Node iter) {
+
+    public void frobnicate_fcall_args(FCallNode fcall, Node args, Node iter) {
         if (args instanceof BlockPassNode) {
             if (iter != null) {
                 throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
@@ -894,17 +833,29 @@ public class ParserSupport {
             }
 
             BlockPassNode blockPass = (BlockPassNode) args;
-            return new FCallNode(position(operation, args), (String) operation.getValue(), blockPass.getArgsNode(), blockPass);
+            args = blockPass.getArgsNode();
+            iter = blockPass;
         }
 
-        return new FCallNode(position(operation, args), (String) operation.getValue(), args, iter);
+        fcall.setArgsNode(args);
+        fcall.setIterNode(iter);
     }
 
-    public Node new_super(Node args, Token operation) {
+    public void fixpos(Node node, Node orig) {
+        if (node == null || orig == null) return;
+
+        node.setPosition(orig.getPosition());
+    }
+
+    public Node new_fcall(String operation) {
+        return new FCallNode(lexer.tokline, operation);
+    }
+
+    public Node new_super(Node args, String operation) {
         if (args != null && args instanceof BlockPassNode) {
-            return new SuperNode(position(operation, args), ((BlockPassNode) args).getArgsNode(), args);
+            return new SuperNode(getPosition(args), ((BlockPassNode) args).getArgsNode(), args);
         }
-        return new SuperNode(operation.getPosition(), args);
+        return new SuperNode(getPosition(args), args);
     }
 
     /**
@@ -1125,10 +1076,10 @@ public class ParserSupport {
     }
     
     public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 
-            Token keywordRestArgName, BlockArgNode blockArg) {
+            String keywordRestArgName, BlockArgNode blockArg) {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
         
-        String restKwargsName = (String) keywordRestArgName.getValue();
+        String restKwargsName = keywordRestArgName;
 
         int slot = currentScope.exists(restKwargsName);
         if (slot == -1) slot = currentScope.addVariable(restKwargsName);
@@ -1184,9 +1135,7 @@ public class ParserSupport {
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
-    public boolean is_local_id(Token identifier) {
-        String name = (String) identifier.getValue();
-
+    public boolean is_local_id(String name) {
         return lexer.isIdentifierChar(name.charAt(0));
     }
 
@@ -1199,9 +1148,9 @@ public class ParserSupport {
     }
 
     // 1.9
-    public Node new_bv(Token identifier) {
+    public Node new_bv(String identifier) {
         if (!is_local_id(identifier)) {
-            getterIdentifierError(identifier.getPosition(), (String) identifier.getValue());
+            getterIdentifierError(lexer.getPosition(), identifier);
         }
         shadowing_lvar(identifier);
         
@@ -1209,8 +1158,7 @@ public class ParserSupport {
     }
 
     // 1.9
-    public ArgumentNode arg_var(Token identifier) {
-        String name = (String) identifier.getValue();
+    public ArgumentNode arg_var(String name) {
         StaticScope current = getCurrentScope();
 
         // Multiple _ arguments are allowed.  To not screw with tons of arity
@@ -1224,34 +1172,32 @@ public class ParserSupport {
             }
         }
         
-        return new ArgumentNode(identifier.getPosition(), name, current.addVariableThisScope(name));
+        return new ArgumentNode(lexer.getPosition(), name, current.addVariableThisScope(name));
     }
 
-    public Token formal_argument(Token identifier) {
+    public String formal_argument(String identifier) {
         if (!is_local_id(identifier)) yyerror("formal argument must be local variable");
 
         return shadowing_lvar(identifier);
     }
 
     // 1.9
-    public Token shadowing_lvar(Token identifier) {
-        String name = (String) identifier.getValue();
-
-        if (name == "_") return identifier;
+    public String shadowing_lvar(String name) {
+        if (name == "_") return name;
 
         StaticScope current = getCurrentScope();
         if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
             if (warnings.isVerbose() && current.isDefined(name) >= 0) {
-                warnings.warning(ID.STATEMENT_NOT_REACHED, identifier.getPosition(),
+                warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
                         "shadowing outer local variable - " + name);
             }
         } else if (current.exists(name) >= 0) {
             yyerror("duplicated argument name");
         }
 
-        return identifier;
+        return name;
     }
 
     // 1.9
@@ -1336,6 +1282,20 @@ public class ParserSupport {
         if (optionEncoding == RubyLexer.UTF8_ENCODING) return 'u';
 
         return ' ';
+    }
+
+    public void compile_error(String message) { // mri: rb_compile_error_with_enc
+        String line = lexer.getCurrentLine();
+        ISourcePosition position = lexer.getPosition();
+        String errorMessage = position.getFile() + ":" + position.getLine() + ": ";
+
+        if (line != null && line.length() > 5) {
+            boolean addNewline = message != null && ! message.endsWith("\n");
+
+            message += (addNewline ? "\n" : "") + line;
+        }
+
+        throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message);
     }
 
     protected void compileError(Encoding optionEncoding, Encoding encoding) {
@@ -1468,7 +1428,7 @@ public class ParserSupport {
         return new DefinedNode(position, something);
     }
     
-    public Token internalId() {
-        return new Token("", null);
+    public String internalId() {
+        return "";
     }
 }

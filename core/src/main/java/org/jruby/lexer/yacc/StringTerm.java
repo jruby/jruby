@@ -68,7 +68,7 @@ public class StringTerm extends StrTerm {
             }
 
             if ((flags & RubyLexer.STR_FUNC_REGEXP) != 0) {
-                RegexpOptions options = parseRegexpFlags(src);
+                RegexpOptions options = parseRegexpFlags(lexer, src);
                 ByteList regexpBytelist = ByteList.create("");
 
                 lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, options));
@@ -105,7 +105,7 @@ public class StringTerm extends StrTerm {
         }
         
         ByteList buffer = createByteList(lexer);
-
+        lexer.newtok();
         if ((flags & RubyLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
             c = src.read();
             switch (c) {
@@ -131,11 +131,12 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private RegexpOptions parseRegexpFlags(LexerSource src) throws IOException {
+    private RegexpOptions parseRegexpFlags(RubyLexer lexer, LexerSource src) throws IOException {
         RegexpOptions options = new RegexpOptions();
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
+        lexer.newtok();
         for (c = src.read(); c != RubyLexer.EOF
                 && Character.isLetter(c); c = src.read()) {
             switch (c) {
