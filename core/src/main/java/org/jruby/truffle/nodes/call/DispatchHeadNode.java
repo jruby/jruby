@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class DispatchHeadNode extends DispatchNode {
 
-    private static final boolean useNewDispatch = false;
+    private static final boolean useNewDispatch = true;
 
     private final String name;
     private final boolean isSplatted;
