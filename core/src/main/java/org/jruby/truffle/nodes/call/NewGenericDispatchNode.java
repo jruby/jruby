@@ -30,22 +30,22 @@ import java.util.Map;
 public abstract class NewGenericDispatchNode extends NewDispatchNode {
 
     private final String name;
+    private final boolean ignoreVisibility;
+
     private final Map<LookupNode, MethodCacheEntry> cache = new HashMap<>();
-    @CompilerDirectives.CompilationFinal
-    private boolean hasAnyMethodsMissing = false;
+    @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
+    @Child protected IndirectCallNode callNode;
 
-    @Child
-    protected IndirectCallNode callNode;
-
-    public NewGenericDispatchNode(RubyContext context, String name) {
+    public NewGenericDispatchNode(RubyContext context, String name, boolean ignoreVisibility) {
         super(context);
         assert name != null;
         this.name = name;
+        this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     public NewGenericDispatchNode(NewGenericDispatchNode prev) {
-        this(prev.getContext(), prev.name);
+        this(prev.getContext(), prev.name, prev.ignoreVisibility);
     }
 
     @Specialization(order=1)
@@ -60,10 +60,10 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             try {
-                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name), false);
+                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name, ignoreVisibility), false);
             } catch (UseMethodMissingException e) {
                 try {
-                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing"), true);
+                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing", ignoreVisibility), true);
                 } catch (UseMethodMissingException e2) {
                     throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this));
                 }

@@ -50,7 +50,7 @@ public class DispatchHeadNode extends DispatchNode {
 
         final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, ignoreVisibility, name, missingBehavior);
         dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
-        newDispatch = new NewUnresolvedDispatchNode(context, name, missingBehavior);
+        newDispatch = new NewUnresolvedDispatchNode(context, name, ignoreVisibility, missingBehavior);
     }
 
     public Object newDispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {

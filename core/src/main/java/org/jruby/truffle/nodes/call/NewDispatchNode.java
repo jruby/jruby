@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 @NodeChildren({@NodeChild(value="methodReceiverObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class)})
 public abstract class NewDispatchNode extends RubyNode {
 
-
     public NewDispatchNode(RubyContext context) {
         super(context, null);
     }
@@ -57,8 +56,7 @@ public abstract class NewDispatchNode extends RubyNode {
 
     public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects);
 
-
-    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
+    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility) throws UseMethodMissingException {
         CompilerAsserts.neverPartOfCompilation();
 
         // TODO(CS): why are we using an exception to convey method missing here?
@@ -83,7 +81,7 @@ public abstract class NewDispatchNode extends RubyNode {
             return method;
         }
 
-        if (!method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
+        if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
         }
