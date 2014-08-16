@@ -1039,8 +1039,7 @@ public class RubyLexer {
             case Tokens.tLAMBDA: System.err.print("tLAMBDA,"); break;
             case Tokens.tLAMBEG: System.err.print("tLAMBEG,"); break;
             case Tokens.tRPAREN: System.err.print("tRPAREN,"); break;
-            case Tokens.tLABEL: System.err.print("tLABEL("+
-                    ((Token) value()).getValue() +":),"); break;
+            case Tokens.tLABEL: System.err.print("tLABEL("+ value() +":),"); break;
             case '\n': System.err.println("NL"); break;
             case EOF: System.out.println("EOF"); break;
             case Tokens.tDSTAR: System.err.print("tDSTAR"); break;

@@ -75,7 +75,7 @@ public class StringTerm extends StrTerm {
                 return Tokens.tREGEXP_END;
             }
 
-            lexer.setValue(new Token("\"", lexer.getPosition()));
+            lexer.setValue("\"");
             return Tokens.tSTRING_END;
     }
 
@@ -86,7 +86,7 @@ public class StringTerm extends StrTerm {
         // FIXME: How much more obtuse can this be?
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
-            lexer.setValue(new Token("\"", lexer.getPosition()));
+            lexer.setValue("\"");
             return Tokens.tSTRING_END;
         }
 
@@ -112,10 +112,10 @@ public class StringTerm extends StrTerm {
             case '$':
             case '@':
                 src.unread(c);
-                lexer.setValue(new Token("#" + c, lexer.getPosition()));
+                lexer.setValue("#" + c);
                 return Tokens.tSTRING_DVAR;
             case '{':
-                lexer.setValue(new Token("#" + c, lexer.getPosition())); 
+                lexer.setValue("#" + c);
                 return Tokens.tSTRING_DBEG;
             }
             buffer.append((byte) '#');
