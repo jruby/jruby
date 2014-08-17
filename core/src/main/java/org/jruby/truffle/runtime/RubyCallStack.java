@@ -102,7 +102,7 @@ public abstract class RubyCallStack {
             @Override
             public RubyMethod visitFrame(FrameInstance frameInstance) {
                 activations.add(new Activation(getMethod(frameInstance), frameInstance.getCallNode(),
-                        frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
+                        frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                 return null;
             }
 
