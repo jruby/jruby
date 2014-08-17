@@ -4,3 +4,4 @@ fails(inherited):A class definition extending an object (sclass) allows accessin
 fails:A class definition extending an object (sclass) can use return to cause the enclosing method to return
 fails:Reopening a class adds new methods to subclasses
 fails:class provides hooks calls inherited when a class is created
+fails:Reopening a class raises a TypeError when superclasses mismatch
