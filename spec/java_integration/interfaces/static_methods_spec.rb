@@ -13,7 +13,7 @@ if (ENV_JAVA['java.specification.version'] >= '1.8')
       JAVA
       @tmpdir = Dir.mktmpdir
       $CLASSPATH << @tmpdir
-      @src = File.write(@tmpdir + "/Java8Interface.java", src)
+      @src = File.open(@tmpdir + "/Java8Interface.java", 'w'){ |f| f.print(src) }
 
       system "javac #{@tmpdir + "/Java8Interface.java"}"
     end
