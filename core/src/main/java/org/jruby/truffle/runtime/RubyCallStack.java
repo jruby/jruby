@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -105,18 +106,20 @@ public abstract class RubyCallStack {
     public static Backtrace getBacktrace(Node currentNode) {
         final ArrayList<Activation> activations = new ArrayList<>();
 
+        if (Options.TRUFFLE_BACKTRACE_GENERATE.load()) {
         /*
          * TODO(cs): if this materializing the frames proves really expensive
          * we might want to make it optional - I think it's only used for some
          * features beyond what MRI does like printing locals in backtraces.
          */
 
-        if (Truffle.getRuntime().getCurrentFrame() != null) {
-            activations.add(new Activation(getCurrentMethod(), currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
-        }
+            if (Truffle.getRuntime().getCurrentFrame() != null) {
+                activations.add(new Activation(getCurrentMethod(), currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+            }
 
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            activations.add(new Activation(getMethod(frame), frame.getCallNode(), frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+            for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+                activations.add(new Activation(getMethod(frame), frame.getCallNode(), frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+            }
         }
 
         return new Backtrace(activations.toArray(new Activation[activations.size()]));
