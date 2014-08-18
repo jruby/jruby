@@ -64,6 +64,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -2627,27 +2628,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newIOError("sysread for buffered IO");
         }
 
-//        n = fptr->fd;
-
-        // TODO: (JRuby) see if this is needed
-    /*
-     * FIXME: removing rb_thread_wait_fd() here changes sysread semantics
-     * on non-blocking IOs.  However, it's still currently possible
-     * for sysread to raise Errno::EAGAIN if another thread read()s
-     * the IO after we return from rb_thread_wait_fd() but before
-     * we call read()
-     */
-//        rb_thread_wait_fd(fptr->fd);
+        /*
+         * FIXME: removing rb_thread_wait_fd() here changes sysread semantics
+         * on non-blocking IOs.  However, it's still currently possible
+         * for sysread to raise Errno::EAGAIN if another thread read()s
+         * the IO after we return from rb_thread_wait_fd() but before
+         * we call read()
+         */
+        context.getThread().select(fptr.channel(), fptr, SelectionKey.OP_READ);
 
         fptr.checkClosed();
 
         str = EncodingUtils.setStrBuf(runtime, str, ilen);
-//        rb_str_locktmp(str);
-//        arg.fd = fptr->fd;
-//        arg.str_ptr = RSTRING_PTR(str);
-//        arg.len = ilen;
-//        rb_ensure(read_internal_call, (VALUE)&arg, rb_str_unlocktmp, str);
-//        n = arg.len;
         ByteList strByteList = ((RubyString)str).getByteList();
         n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
 
