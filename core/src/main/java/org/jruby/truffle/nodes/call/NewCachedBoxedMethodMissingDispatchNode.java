@@ -80,7 +80,7 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
 
         // Call the method
 
-        return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
     }
 
     @Generic

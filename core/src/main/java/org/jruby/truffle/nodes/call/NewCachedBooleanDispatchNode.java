@@ -75,7 +75,7 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
                 return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
             }
 
-            return trueCall.call(frame, RubyArguments.pack(trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+            return trueCall.call(frame, RubyArguments.pack(trueMethod, trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
         } else {
             falseProfile.enter();
 
@@ -85,7 +85,7 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
                 return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
             }
 
-            return falseCall.call(frame, RubyArguments.pack(falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+            return falseCall.call(frame, RubyArguments.pack(falseMethod, falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
         }
     }
 

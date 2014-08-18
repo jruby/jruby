@@ -79,7 +79,7 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
             argumentsToUse = argumentsObjects;
         }
 
-        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
+        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod(), entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
     }
 
     @Override

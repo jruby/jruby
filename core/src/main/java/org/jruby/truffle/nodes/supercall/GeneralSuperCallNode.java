@@ -80,9 +80,9 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
             // TODO(CS): need something better to splat the arguments array
             notDesignedForCompilation();
             final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
-            return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
+            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
         } else {
-            return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), self, blockObject, argumentsObjects));
+            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), self, blockObject, argumentsObjects));
         }
     }
 

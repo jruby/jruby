@@ -11,22 +11,17 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class Activation {
 
-    private final RubyMethod method;
     private final Node callNode;
     private final MaterializedFrame materializedFrame;
 
-    public Activation(RubyMethod method, Node callNode, MaterializedFrame materializedFrame) {
-        this.method = method;
+    public Activation(Node callNode, MaterializedFrame materializedFrame) {
         this.callNode = callNode;
         this.materializedFrame = materializedFrame;
-    }
-
-    public RubyMethod getMethod() {
-        return method;
     }
 
     public Node getCallNode() {

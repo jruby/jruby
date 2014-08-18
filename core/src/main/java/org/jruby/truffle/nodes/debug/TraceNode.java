@@ -72,7 +72,7 @@ public class TraceNode extends WrapperNode {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
+                    callNode.call(frame, RubyArguments.pack(traceFunc, traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
                 } finally {
                     getContext().getTraceManager().setInTraceFunc(false);
                 }

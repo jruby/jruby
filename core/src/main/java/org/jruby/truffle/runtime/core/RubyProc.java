@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 /**
  * Represents the Ruby {@code Proc} class.
  */
-public class RubyProc extends RubyObject {
+public class RubyProc extends RubyObject implements MethodLike {
 
     /**
      * The class from which we create the object that is {@code Proc}. A subclass of
@@ -85,9 +85,9 @@ public class RubyProc extends RubyObject {
 
         switch (type) {
             case PROC:
-                return callTarget.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
+                return callTarget.call(RubyArguments.pack(this, declarationFrame, modifiedSelf, block, args));
             case LAMBDA:
-                return callTargetForMethods.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
+                return callTargetForMethods.call(RubyArguments.pack(this, declarationFrame, modifiedSelf, block, args));
         }
 
         throw new IllegalStateException();

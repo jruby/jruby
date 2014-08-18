@@ -36,6 +36,6 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
             return next.dispatch(frame, block, argumentsObjects);
         }
 
-        return callNode.call(frame, RubyArguments.pack(block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
     }
 }
