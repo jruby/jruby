@@ -429,6 +429,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return;
     }
 
+    // MRI: rb_io_reopen
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -471,7 +472,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (!nmode.isNil() || !opt.isNil()) {
             ConvConfig convconfig = new ConvConfig();
-            Object vmode_vperm = vmodeVperm(null, null);
+            Object vmode_vperm = vmodeVperm(nmode, null);
             int[] fmode_p = {0};
 
             EncodingUtils.extractModeEncoding(context, convconfig, vmode_vperm, opt, oflags_p, fmode_p);
