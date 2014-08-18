@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.Options;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -73,18 +74,8 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
                 hasAnyMethodsMissing = true;
             }
 
-            cache.put(receiverObject.getLookupNode(), entry);
-
-            if (cache.size() > RubyContext.GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD) {
-                final SourceSection sourceSection = getEncapsulatingSourceSection();
-
-                // TODO(CS): figure out why we don't have proper source sections here
-
-                if (sourceSection instanceof NullSourceSection) {
-                    getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "(unknown)", 0, "general call node cache has " + cache.size() + " entries");
-                } else {
-                    getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
-                }
+            if (cache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
+                cache.put(receiverObject.getLookupNode(), entry);
             }
         }
 
