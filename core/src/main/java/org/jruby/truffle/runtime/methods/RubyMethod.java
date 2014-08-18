@@ -48,6 +48,9 @@ public class RubyMethod implements MethodLike {
         assert self != null;
         assert args != null;
 
+        System.err.println("warning: slow path method call");
+        new Exception().printStackTrace();
+
         CompilerAsserts.neverPartOfCompilation();
 
         assert RubyContext.shouldObjectBeVisible(self) : self.getClass();
