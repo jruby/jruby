@@ -803,12 +803,22 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
+        public boolean doesRespondToMissing(Object object, RubyString name, UndefinedPlaceholder includeAll) {
+            return false;
+        }
+
+        @Specialization(order = 2)
+        public boolean doesRespondToMissing(Object object, RubySymbol name, UndefinedPlaceholder includeAll) {
+            return false;
+        }
+
+        @Specialization(order = 3)
         public boolean doesRespondToMissing(Object object, RubySymbol name, boolean includeAll) {
             return false;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean doesRespondToMissing(Object object, RubyString name, boolean includeAll) {
             return false;
         }
