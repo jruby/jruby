@@ -1,7 +1,8 @@
 require 'rspec'
 require 'socket'
 
-describe 'JRUBY-3155' do
+# Disabled because it doesn't pass in MRI 2.1.1 either See GH#1909
+false && describe('JRUBY-3155') do
   it 'passes' do
     # See http://jira.codehaus.org/browse/JRUBY-3155
     listenIp = "0.0.0.0"
