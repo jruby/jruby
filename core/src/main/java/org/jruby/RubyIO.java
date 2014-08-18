@@ -2652,7 +2652,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
 
         if (n == -1) {
-            throw runtime.newSystemCallError(fptr.getPath());
+            throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         }
         ((RubyString)str).setReadLength(n);
         if (n == 0 && ilen > 0) {
