@@ -13,6 +13,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
@@ -28,9 +29,7 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
     private Variable result;
 
     // Constant caching
-    private volatile transient Object cachedConstant = null;
-    private Object generation = -1;
-    private Invalidator invalidator;
+    private volatile transient ConstantCache cache;
 
     public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST);
@@ -73,6 +72,10 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
         return super.toString() + "(" + constName + ", " + startingScope + ", no-private-consts=" + noPrivateConsts + ")";
     }
 
+    public ConstantCache getConstantCache() {
+        return cache;
+    }
+
     public Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // Lexical lookup
         Ruby runtime = context.getRuntime();
@@ -93,27 +96,24 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
             constant = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
         } else {
             // recache
-            generation = runtime.getConstantInvalidator(constName).getData();
-            cachedConstant = constant;
+            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator);
         }
 
         return constant;
     }
 
     public Object getCachedConst() {
-        return cachedConstant;
-    }
-
-    public boolean isCached(ThreadContext context, Object value) {
-        return value != null && generation == invalidator(context.getRuntime()).getData();
+        ConstantCache cache = this.cache;
+        return cache == null ? null : cache.value;
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(context, constant)) constant = cache(context, currScope, currDynScope, self, temp);
+        ConstantCache cache = this.cache;
+        if (!ConstantCache.isCached(cache)) return cache(context, currScope, currDynScope, self, temp);
 
-        return constant;
+        return cache.value;
     }
 
     @Override
@@ -131,12 +131,5 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
 
     public boolean isNoPrivateConsts() {
         return noPrivateConsts;
-    }
-
-    private Invalidator invalidator(Ruby runtime) {
-        if (invalidator == null) {
-            invalidator = runtime.getConstantInvalidator(constName);
-        }
-        return invalidator;
     }
 }
