@@ -31,6 +31,7 @@ package org.jruby.ext.tempfile;
 import java.io.File;
 import java.io.IOException;
 import org.jruby.CompatVersion;
+import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFile;
@@ -55,7 +56,7 @@ import org.jruby.util.io.ModeFlags;
  * An implementation of tempfile.rb in Java.
  */
 @JRubyClass(name="Tempfile", parent="File")
-public class Tempfile extends org.jruby.RubyFile {
+public class Tempfile extends RubyFile implements Finalizable {
     private static ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -101,6 +102,9 @@ public class Tempfile extends org.jruby.RubyFile {
         // tempfile in lib/ruby/shared/tempfile.rb. We use create here to
         // match filename algorithm and allow them to be overridden.
         callMethod(context, "create", args, CallBlock19.newCallClosure(this, this.getMetaClass(), Arity.OPTIONAL, body, context));
+
+        // GH#1905: don't use JDK's deleteOnExit because it grows a set without bounds
+        context.runtime.addInternalFinalizer(Tempfile.this);
         
         return context.nil;
     }
@@ -130,16 +134,6 @@ public class Tempfile extends org.jruby.RubyFile {
                 if (tmp.createNewFile()) {
                     tmpFile = tmp;
                     path = tmp.getPath();
-                    try {
-                        tmpFile.deleteOnExit();
-                    } catch (NullPointerException npe) {
-                        // See JRUBY-4624.
-                        // Due to JDK bug, NPE could be thrown
-                        // when shutdown is in progress.
-                        // Do nothing.
-                    } catch (IllegalStateException ise) {
-                        // do nothing, shutdown in progress
-                    }
                     initializeOpen(ioOptions);
                 } else {
                     throw context.runtime.newErrnoEEXISTError(path);
@@ -271,7 +265,7 @@ public class Tempfile extends org.jruby.RubyFile {
     }
 
     @Override
-    protected void finalize() throws Throwable {
+    public void finalize() throws Throwable {
         try {
             super.finalize();
         } finally {
