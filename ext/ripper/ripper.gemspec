@@ -9,6 +9,7 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/jruby/jruby'
   s.description = "ripper extension for JRuby"
   s.files = Dir['[A-Z]*'] + Dir['lib/**/*']
+  s.platform = 'java'
 end
 
 # vim: syntax=Ruby

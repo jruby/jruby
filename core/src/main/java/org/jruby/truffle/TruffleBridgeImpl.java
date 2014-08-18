@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyException;
@@ -92,15 +91,18 @@ public class TruffleBridgeImpl implements TruffleBridge {
     @Override
     public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
+            final String inputFile = rootNode.getPosition().getFile();
+
             final Source source;
 
-            try {
-                source = Source.fromFileName(rootNode.getPosition().getFile());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (inputFile.equals("-e")) {
+                // TODO(CS): what if a file is legitimately called -e?
+                source = Source.asPseudoFile(runtime.getInstanceConfig().getInlineScript().toString(), "-e");
+            } else {
+                source = Source.fromFileName(inputFile);
             }
 
-            final RubyParserResult parseResult = truffleContext.getTranslator().parse(null, truffleContext, source, parserContext, parentFrame, rootNode);
+            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
             return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (RaiseException e) {
@@ -112,6 +114,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
             }
 
             return NilPlaceholder.INSTANCE;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

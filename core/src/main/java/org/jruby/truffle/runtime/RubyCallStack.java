@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 
@@ -95,24 +96,26 @@ public abstract class RubyCallStack {
     public static Backtrace getBacktrace(Node currentNode) {
         final ArrayList<Activation> activations = new ArrayList<>();
 
+        if (Options.TRUFFLE_BACKTRACE_GENERATE.load()) {
         /*
          * TODO(cs): if this materializing the frames proves really expensive
          * we might want to make it optional - I think it's only used for some
          * features beyond what MRI does like printing locals in backtraces.
          */
 
-        activations.add(new Activation(getCurrentMethod(), currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
+            activations.add(new Activation(getCurrentMethod(), currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
 
-        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
+            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
 
-            @Override
-            public RubyMethod visitFrame(FrameInstance frameInstance) {
-                activations.add(new Activation(getMethod(frameInstance), frameInstance.getCallNode(),
-                        frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
-                return null;
-            }
+                @Override
+                public RubyMethod visitFrame(FrameInstance frameInstance) {
+                    activations.add(new Activation(getMethod(frameInstance), frameInstance.getCallNode(),
+                            frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                    return null;
+                }
 
-        });
+            });
+        }
 
         return new Backtrace(activations.toArray(new Activation[activations.size()]));
     }

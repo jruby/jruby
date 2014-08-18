@@ -18,13 +18,13 @@ import java.util.jar.JarEntry;
  * </p>
  */
 class JarFileResource extends JarResource {
+  private final JarCache.JarIndex index;
   private final JarEntry entry;
-  private final InputStream entryStream;
 
-  JarFileResource(String jarPath, boolean rootSlashPrefix, JarEntry entry, InputStream entryStream) {
+  JarFileResource(String jarPath, boolean rootSlashPrefix, JarCache.JarIndex index, JarEntry entry) {
     super(jarPath, rootSlashPrefix);
+    this.index = index;
     this.entry = entry;
-    this.entryStream = entryStream;
   }
 
   @Override
@@ -59,12 +59,12 @@ class JarFileResource extends JarResource {
   }
 
   @Override
-  public InputStream getInputStream() {
-    return entryStream;
+  public InputStream openInputStream() {
+    return index.getInputStream(entry);
   }
 
   @Override
   public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
-    return Channels.newChannel(entryStream);
+    return Channels.newChannel(openInputStream());
   }
 }

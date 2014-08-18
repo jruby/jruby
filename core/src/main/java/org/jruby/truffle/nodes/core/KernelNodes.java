@@ -34,29 +34,42 @@ import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.subsystems.*;
 
 @CoreClass(name = "Kernel")
-public abstract class
-        KernelNodes {
+public abstract class KernelNodes {
 
     @CoreMethod(names = "Array", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class ArrayNode extends CoreMethodNode {
 
+        @Child ArrayBuilderNode arrayBuilderNode;
+
         public ArrayNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilderNode = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public ArrayNode(ArrayNode prev) {
             super(prev);
+            arrayBuilderNode = prev.arrayBuilderNode;
         }
 
-        @Specialization
-        public RubyArray array(Object[] args) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isOneArrayElement", order = 1)
+        public RubyArray arrayOneArrayElement(Object[] args) {
+            return (RubyArray) args[0];
+        }
 
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                return (RubyArray) args[0];
-            } else {
-                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
+        @Specialization(guards = "!isOneArrayElement", order = 2)
+        public RubyArray array(Object[] args) {
+            final int length = args.length;
+            Object store = arrayBuilderNode.start(length);
+
+            for (int n = 0; n < length; n++) {
+                store = arrayBuilderNode.append(store, n, args[n]);
             }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
+        }
+
+        protected boolean isOneArrayElement(Object[] args) {
+            return args.length == 1 && args[0] instanceof RubyArray;
         }
 
     }
@@ -821,6 +834,11 @@ public abstract class
 
         @Specialization
         public double sleep(double duration) {
+            return doSleep(duration);
+        }
+
+        @SlowPath
+        private double doSleep(double duration) {
             notDesignedForCompilation();
 
             final RubyContext context = getContext();

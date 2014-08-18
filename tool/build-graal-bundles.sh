@@ -10,17 +10,10 @@
 #    * jruby-dist-9000+graal-macosx-x86_64.dev-bin.tar.gz
 # which are the artifacts to be published.
 
-# Creates files and directories in the working directory. Always downloads the
-# latest JRuby snapshot, but doesn't download Graal if it's already there, as
-# it's versioned. Removes some stuff from the Graal distribution to save space.
+# Run in the root directory. Run -Pdist first.
 
-# Chris Seaton, 6 Feb 14
-
-rm -rf jruby-dist-9000.dev-bin.tar.gz jruby-dist-9000+graal-linux-x86_64.dev-bin.tar.gz jruby-dist-9000+graal-macosx-x86_64.dev-bin.tar.gz graalvm-jdk1.8.0 jruby-9000.dev jruby-9000.dev-SNAPSHOT
-
-wget http://ci.jruby.org/snapshots/master/jruby-dist-9000.dev-bin.tar.gz || exit $?
-tar -zxf jruby-dist-9000.dev-bin.tar.gz || exit $?
-mv jruby-9000.dev-SNAPSHOT jruby-9000.dev
+tar -zxf maven/jruby-dist/target/jruby-dist-9000.dev-bin.tar.gz || exit $?
+mv jruby-9000.dev-SNAPSHOT jruby-9000.dev || exit $?
 
 # Remove files we aren't going to patch so people don't use them by mistake
 
@@ -41,7 +34,7 @@ fi
 
 rm jruby-9000.dev/bin/jruby.backup
 
-chmod +x jruby-9000.dev/bin/jruby
+chmod +x jruby-9000.dev/bin/jruby || exit $?
 
 function pack {
     # $1 ... platform (linux, ...)

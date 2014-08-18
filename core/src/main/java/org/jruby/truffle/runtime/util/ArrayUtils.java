@@ -162,7 +162,13 @@ public abstract class ArrayUtils {
         final long[] boxed = new long[length];
 
         for (int n = 0; n < length; n++) {
-            boxed[n] = (long) unboxed[n];
+            final Object value = unboxed[n];
+
+            if (value instanceof Integer) {
+                boxed[n] = (long) (int) unboxed[n];
+            } else if (value instanceof Long) {
+                boxed[n] = (long) unboxed[n];
+            }
         }
 
         return boxed;

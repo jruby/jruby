@@ -61,7 +61,7 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream openInputStream() {
       return null;
     }
 

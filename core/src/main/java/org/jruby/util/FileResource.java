@@ -38,6 +38,9 @@ public interface FileResource {
     // otherwise.
     JRubyFile hackyGetJRubyFile();
 
-    InputStream getInputStream();
+    // Opens a new input stream to read the contents of a resource and returns it.
+    // Note that implementations may be allocating native memory for the stream, so
+    // callers need to close this when they are done with it.
+    InputStream openInputStream();
     Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException;
 }

@@ -128,6 +128,11 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public NilPlaceholder garbageCollect() {
+            return doGC();
+        }
+
+        @CompilerDirectives.SlowPath
+        private NilPlaceholder doGC() {
             notDesignedForCompilation();
 
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();

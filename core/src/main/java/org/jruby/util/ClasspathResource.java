@@ -16,8 +16,6 @@ public class ClasspathResource implements FileResource {
 
     private final String uri;
 
-    private final InputStream is;
-    
     private String[] list = null;
     
     private final JarFileStat fileStat;
@@ -25,7 +23,6 @@ public class ClasspathResource implements FileResource {
     ClasspathResource(String uri) throws IOException
     {
         this.uri = uri;
-        this.is = getResourceURL(uri).openStream();
         this.fileStat = new JarFileStat(this);
     }
 
@@ -146,9 +143,13 @@ public class ClasspathResource implements FileResource {
     }
 
     @Override
-    public InputStream getInputStream()
+    public InputStream openInputStream()
     {
-        return is;
+        try {
+            return getResourceURL(uri).openStream();
+        } catch (IOException ioE) {
+            return null;
+        }
     }
 
     @Override

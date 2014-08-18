@@ -47,22 +47,6 @@ class OperandEncoderMap extends IRVisitor {
         encoder.encode(variable.getScopeDepth());
     }
 
-    @Override public void CompoundString(CompoundString compoundstring) {
-        Encoding encoding = compoundstring.getEncoding();
-
-        if (encoding == null) {
-            encoder.encode("");
-        } else {
-            encoder.encode(encoding.toString());
-        }
-        List<Operand> pieces = compoundstring.getPieces();
-        encoder.encode(pieces.size());
-
-        for (Operand piece: pieces) {
-            encode(piece);
-        }
-    }
-
     @Override public void CurrentScope(CurrentScope scope) {
         encoder.encode(scope.getScopeNestingDepth());
     }

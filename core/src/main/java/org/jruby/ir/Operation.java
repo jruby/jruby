@@ -139,9 +139,10 @@ public enum Operation {
     /** JRuby-impl instructions **/
     BINDING_LOAD(OpFlags.f_is_load),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    // FIXME: BUILD_COMPOUND_ARRAY is marked side-effecting since it *can* call to_a methods
-    BUILD_COMPOUND_ARRAY(OpFlags.f_has_side_effect),
-    BACKTICK_STRING(OpFlags.f_has_side_effect),
+    BUILD_COMPOUND_ARRAY(OpFlags.f_can_raise_exception),
+    BUILD_COMPOUND_STRING(OpFlags.f_can_raise_exception),
+    BUILD_DREGEXP(OpFlags.f_can_raise_exception),
+    BACKTICK_STRING(OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CLASS_VAR_MODULE(0),

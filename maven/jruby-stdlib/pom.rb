@@ -7,9 +7,7 @@ project 'JRuby Stdlib' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'jar'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
-              'tesla.version' => '0.0.9',
+  properties( 'tesla.dump.pom' => 'pom-generated.xml',
               'jruby.home' => '${basedir}/../..',
               'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
               'main.basedir' => '${project.parent.parent.basedir}',

@@ -28,7 +28,9 @@ public class RubiniusBacktraceFormatter implements BacktraceFormatter {
 
             final ArrayList<String> lines = new ArrayList<>();
 
-            if (backtrace != null) {
+            if (activations.isEmpty()) {
+                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
+            } else {
                 final Activation firstActivation = activations.get(activations.size() - 1);
 
                 lines.add(String.format("An exception occurred running %s:",

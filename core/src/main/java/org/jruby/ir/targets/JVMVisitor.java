@@ -24,6 +24,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -644,6 +645,64 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().invokeHelper("argsCat", RubyArray.class, IRubyObject.class, IRubyObject.class);
         }
         jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
+        ByteList csByteList = new ByteList();
+        csByteList.setEncoding(compoundstring.getEncoding());
+        jvmMethod().pushString(csByteList);
+        for (Operand p : compoundstring.getPieces()) {
+            if ((p instanceof StringLiteral) && (compoundstring.isSameEncoding((StringLiteral)p))) {
+                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
+                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
+            } else {
+                visit(p);
+                jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
+            }
+        }
+        jvmStoreLocal(compoundstring.getResult());
+    }
+
+    @Override
+    public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
+        IRBytecodeAdapter m = jvmMethod();
+        SkinnyMethodAdapter a = m.adapter;
+
+        RegexpOptions options = instr.getOptions();
+        if (!options.isOnce()) {
+            m.loadRuntime();
+            { // negotiate RubyString pattern from parts
+                m.loadRuntime();
+                { // build RubyString[]
+                    List<Operand> operands = instr.getPieces();
+                    a.ldc(operands.size());
+                    a.anewarray(p(RubyString.class));
+                    for (int i = 0; i < operands.size(); i++) {
+                        Operand operand = operands.get(i);
+                        a.dup();
+                        a.ldc(i);
+                        visit(operand);
+                        a.aastore();
+                    }
+                }
+                a.ldc(options.toEmbeddedOptions());
+                a.invokestatic(p(RubyRegexp.class), "preprocessDRegexp", sig(RubyString.class, Ruby.class, RubyString[].class, int.class));
+            }
+            a.ldc(options.toEmbeddedOptions());
+            a.invokestatic(p(RubyRegexp.class), "newDRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
+            a.dup();
+            a.invokevirtual(p(RubyRegexp.class), "setLiteral", sig(void.class));
+        } else {
+            // FIXME: need to check this on cached path
+            // context.runtime.getKCode() != rubyRegexp.getKCode()) {
+            m.loadContext();
+            // SSS FIXME: How does this cached thing work again?
+            // We don't have access to the instr in compiled code.
+            // So, not sure what is going on ...
+            // instr.getRegexp();
+            m.pushRegexp(options.toEmbeddedOptions());
+        }
     }
 
     @Override
@@ -1775,22 +1834,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void CompoundString(CompoundString compoundstring) {
-        ByteList csByteList = new ByteList();
-        csByteList.setEncoding(compoundstring.getEncoding());
-        jvmMethod().pushString(csByteList);
-        for (Operand p : compoundstring.getPieces()) {
-            if ((p instanceof StringLiteral) && (compoundstring.isSameEncoding((StringLiteral)p))) {
-                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
-                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
-            } else {
-                visit(p);
-                jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
-            }
-        }
-    }
-
-    @Override
     public void CurrentScope(CurrentScope currentscope) {
         jvmAdapter().aload(1);
     }
@@ -1884,35 +1927,11 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void Regexp(Regexp regexp) {
         if (!regexp.hasKnownValue() && !regexp.options.isOnce()) {
-            if (regexp.getRegexp() instanceof CompoundString) {
-                // FIXME: I don't like this custom logic for building CompoundString bits a different way :-\
-                jvmMethod().loadRuntime();
-                { // negotiate RubyString pattern from parts
-                    jvmMethod().loadRuntime();
-                    { // build RubyString[]
-                        List<Operand> operands = ((CompoundString)regexp.getRegexp()).getPieces();
-                        jvmAdapter().ldc(operands.size());
-                        jvmAdapter().anewarray(p(RubyString.class));
-                        for (int i = 0; i < operands.size(); i++) {
-                            Operand operand = operands.get(i);
-                            jvmAdapter().dup();
-                            jvmAdapter().ldc(i);
-                            visit(operand);
-                            jvmAdapter().aastore();
-                        }
-                    }
-                    jvmAdapter().ldc(regexp.options.toEmbeddedOptions());
-                    jvmAdapter().invokestatic(p(RubyRegexp.class), "preprocessDRegexp", sig(RubyString.class, Ruby.class, RubyString[].class, int.class));
-                }
-                jvmAdapter().ldc(regexp.options.toEmbeddedOptions());
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "newDRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
-            } else {
-                jvmMethod().loadRuntime();
-                visit(regexp.getRegexp());
-                jvmAdapter().invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
-                jvmAdapter().ldc(regexp.options.toEmbeddedOptions());
-                jvmAdapter().invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
-            }
+            jvmMethod().loadRuntime();
+            visit(regexp.getRegexp());
+            jvmAdapter().invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
+            jvmAdapter().ldc(regexp.options.toEmbeddedOptions());
+            jvmAdapter().invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
             jvmAdapter().dup();
             jvmAdapter().invokevirtual(p(RubyRegexp.class), "setLiteral", sig(void.class));
         } else {

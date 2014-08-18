@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class DispatchHeadNode extends DispatchNode {
 
-    private static final boolean useNewDispatch = false;
+    private static final boolean useNewDispatch = true;
 
     private final String name;
     private final boolean isSplatted;
@@ -50,7 +50,7 @@ public class DispatchHeadNode extends DispatchNode {
 
         final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, ignoreVisibility, name, missingBehavior);
         dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
-        newDispatch = new NewUnresolvedDispatchNode(context, name, missingBehavior);
+        newDispatch = new NewUnresolvedDispatchNode(context, name, ignoreVisibility, missingBehavior);
     }
 
     public Object newDispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
