@@ -12,8 +12,11 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.util.ByteList;
@@ -40,29 +43,19 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyProc toProc(SourceSection sourceSection, final RubyNode currentNode) {
+        // TODO(CS): cache this?
+
         RubyNode.notDesignedForCompilation();
 
         final RubyContext context = getRubyClass().getContext();
 
-        // TODO(CS): we need a proper method in here
-        RubyNode.notDesignedForCompilation();
-
-        final CallTarget callTarget = new CallTarget() {
-
-            @Override
-            public Object call(Object... args) {
-                RubyNode.notDesignedForCompilation();
-
-                final Object receiver = RubyArguments.getUserArgument(args, 0);
-                final Object[] arguments = RubyArguments.extractUserArguments(args);
-                final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
-                final RubyBasicObject receiverObject = context.getCoreLibrary().box(receiver);
-                return receiverObject.send(currentNode, symbol, RubyArguments.getBlock(args), sendArgs);
-            }
-
-        };
-
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, true, null);
+
+        final RubyRootNode rootNode = new RubyRootNode(sourceSection, new FrameDescriptor(), sharedMethodInfo,
+                new SymbolProcNode(context, sourceSection, symbol));
+
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget,
                 callTarget, null, NilPlaceholder.INSTANCE, null);
     }
