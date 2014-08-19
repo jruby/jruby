@@ -44,25 +44,6 @@ public class RubyMethod implements MethodLike {
         this.declarationFrame = declarationFrame;
     }
 
-    public Object call(Object self, RubyProc block, Object... args) {
-        assert self != null;
-        assert args != null;
-
-        System.err.println("warning: slow path method call");
-        new Exception().printStackTrace();
-
-        CompilerAsserts.neverPartOfCompilation();
-
-        assert RubyContext.shouldObjectBeVisible(self) : self.getClass();
-        assert RubyContext.shouldObjectsBeVisible(args);
-
-        final Object result = callTarget.call(RubyArguments.pack(this, declarationFrame, self, block, args));
-
-        assert RubyContext.shouldObjectBeVisible(result);
-
-        return result;
-    }
-
     public SharedMethodInfo getSharedMethodInfo() {
         return sharedMethodInfo;
     }
