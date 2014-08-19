@@ -25,6 +25,7 @@ import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
@@ -1835,12 +1836,16 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, minArgs = 0, maxArgs = 1)
     public abstract static class InjectNode extends YieldingArrayCoreMethodNode {
 
+        @Child protected DynamicNameDispatchHeadNode dispatch;
+
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dispatch = new DynamicNameDispatchHeadNode(context);
         }
 
         public InjectNode(InjectNode prev) {
             super(prev);
+            dispatch = prev.dispatch;
         }
 
         @Specialization(guards = "isObject")
@@ -1869,7 +1874,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object inject(RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
+        public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
             notDesignedForCompilation();
 
             final Object[] store = array.slowToArray();
@@ -1878,10 +1883,10 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            Object accumulator = getContext().getCoreLibrary().box(store[0]).send(this, symbol.toString(), null, store[1]);
+            Object accumulator = dispatch.dispatch(frame, store[0], symbol, null, store[1]);
 
             for (int n = 2; n < array.getSize(); n++) {
-                accumulator = getContext().getCoreLibrary().box(accumulator).send(this, symbol.toString(), null, store[n]);
+                accumulator = dispatch.dispatch(frame, accumulator, symbol, null, store[n]);
             }
 
             return accumulator;
