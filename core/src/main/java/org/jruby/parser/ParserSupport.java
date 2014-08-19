@@ -851,11 +851,11 @@ public class ParserSupport {
         return new FCallNode(lexer.tokline, operation);
     }
 
-    public Node new_super(Node args, String operation) {
+    public Node new_super(ISourcePosition position, Node args) {
         if (args != null && args instanceof BlockPassNode) {
-            return new SuperNode(getPosition(args), ((BlockPassNode) args).getArgsNode(), args);
+            return new SuperNode(position, ((BlockPassNode) args).getArgsNode(), args);
         }
-        return new SuperNode(getPosition(args), args);
+        return new SuperNode(position, args);
     }
 
     /**

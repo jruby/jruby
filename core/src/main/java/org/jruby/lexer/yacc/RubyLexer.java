@@ -1771,7 +1771,7 @@ public class RubyLexer {
                 if (state == LexState.EXPR_FNAME) {
                     yaccValue = keyword.name;
                 } else {
-                    yaccValue = tempVal;
+                    yaccValue = getPosition();
                     if (keyword.id0 == Tokens.kDO) return doKeyword(state);
                 }
 
