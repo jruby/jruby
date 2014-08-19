@@ -126,7 +126,13 @@ public class RbConfigLibrary implements Library {
     public static String getLibDir(Ruby runtime) {
         String libdir = SafePropertyAccessor.getProperty("jruby.lib");
         if (libdir == null) {
-            libdir = new NormalizedFile(getNormalizedHome(runtime), "lib").getPath();
+            String home = getNormalizedHome(runtime);
+            if (home.startsWith("uri:")) {
+                libdir = home + "/lib";
+            }
+            else {
+                libdir = new NormalizedFile(home, "lib").getPath();
+            }
         } else {
             try {
             // Our shell scripts pass in non-canonicalized paths, but even if we didn't

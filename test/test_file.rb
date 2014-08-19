@@ -253,11 +253,15 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_looks_like_url
       jruby_specific_test
       assert_equal "classpath:/META-INF/jruby.home", File.expand_path("classpath:/META-INF/jruby.home")
+      assert_equal "uri:bundle://12.0:1/META-INF/jruby.home", File.expand_path("uri:bundle://12.0:1/META-INF/jruby.home")
       assert_equal "http://example.com/a.jar", File.expand_path("http://example.com/a.jar")
       assert_equal "http://example.com/", File.expand_path("..", "http://example.com/a.jar")
       assert_equal "classpath:/foo/bar/baz", File.expand_path("baz", "classpath:/foo/bar")
       assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar", "classpath:/baz/quux")
       assert_equal "classpath:/foo", File.expand_path("..", "classpath:/foo/bar")
+      assert_equal "uri:bundle://12.0:1/foo/bar/baz", File.expand_path("baz", "uri:bundle://12.0:1/foo/bar")
+      assert_equal "uri:bundle://12.0:1/foo/bar", File.expand_path("uri:bundle://12.0:1/foo/bar", "uri:bundle://12.0:1/baz/quux")
+      assert_equal "uri:bundle://12.0:1/foo", File.expand_path("..", "uri:bundle://12.0:1/foo/bar")
     end
 
     def test_mkdir_with_non_file_uri_raises_error

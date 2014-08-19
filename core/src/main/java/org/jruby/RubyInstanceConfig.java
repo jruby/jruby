@@ -354,7 +354,7 @@ public class RubyInstanceConfig {
         }
         if (home.startsWith("cp:")) {
             home = home.substring(3);
-        } else if (!home.startsWith("file:") && !home.startsWith("classpath:")) {
+        } else if (!home.startsWith("file:") && !home.startsWith("classpath:") && !home.startsWith("uri:")) {
             NormalizedFile f = new NormalizedFile(home);
             if (!f.isAbsolute()) {
                 home = f.getAbsolutePath();

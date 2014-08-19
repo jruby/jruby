@@ -13,6 +13,21 @@ module JRuby
         end
       end
 
+      def generate_dir_info( dir, is_root = true )
+        return if dir != nil && !File.directory?( dir )
+        File.open( dir + '/.jrubydir', 'w' ) do |f|
+          f.puts ".." unless is_root
+          f.puts "."
+          Dir[ dir + '/*'].entries.each do |e|
+            f.print File.basename( e )
+            if File.directory?( e )
+              generate_dir_info( e, false )
+            end
+            f.puts
+          end
+        end
+      end
+
       def maybe_install_gems
         require 'rubygems'
         require 'rubygems/package'

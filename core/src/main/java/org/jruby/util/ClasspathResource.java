@@ -20,10 +20,11 @@ public class ClasspathResource implements FileResource {
     
     private final JarFileStat fileStat;
 
-    ClasspathResource(String uri) throws IOException
+    ClasspathResource(String uri, InputStream is, String[] files)
     {
         this.uri = uri;
         this.fileStat = new JarFileStat(this);
+        this.list = files;
     }
 
     public static URL getResourceURL(String pathname) {
@@ -40,19 +41,17 @@ public class ClasspathResource implements FileResource {
         return null;
     }
     
-    public static boolean isResource(String pathname) {
-        return getResourceURL(pathname) != null;
-    }
-
     public static FileResource create(String pathname) {
         if (!pathname.startsWith(CLASSPATH)) {
             return null;
         }
         
-        if (isResource(pathname)) {
+        URL url = getResourceURL(pathname);
+        if (url != null) {
             try
             {
-                return new ClasspathResource(pathname);
+                // TODO open stream on demand
+                return new ClasspathResource(pathname, url.openStream(), null);
             }
             catch (IOException e)
             {

@@ -81,7 +81,8 @@ public class JRubyFile extends JavaSecuredFile {
             if (cpResource != null) return cpResource;
 
             // HACK this codes get triggers by LoadService via findOnClasspath, so remove the prefix to get the uri
-            FileResource urlResource = URLResource.create(pathname.replace("classpath:/", ""));
+            FileResource urlResource = URLResource.create(pathname.replace(cwd == null ? "" : cwd, "" ).replace("classpath:/", "")
+                                                          .replaceFirst( "^.+uri:", "uri:" ));
             if (urlResource != null) return urlResource;
 
             if (pathname.startsWith("file:")) pathname = pathname.substring(5);
@@ -102,6 +103,9 @@ public class JRubyFile extends JavaSecuredFile {
     private static JRubyFile createNoUnicodeConversion(String cwd, String pathname) {
         if (pathname == null || pathname.equals("") || Ruby.isSecurityRestricted()) {
             return JRubyNonExistentFile.NOT_EXIST;
+        }
+        if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:")) {
+            return new JRubyFile(cwd + "/" + pathname);
         }
         File internal = new JavaSecuredFile(pathname);
         if(!internal.isAbsolute()) {
@@ -127,7 +131,11 @@ public class JRubyFile extends JavaSecuredFile {
 
     @Override
     public String getAbsolutePath() {
-	return normalizeSeps(new File(super.getPath()).getAbsolutePath());
+        if(super.getPath().startsWith("uri:")) {
+            // TODO better do not collapse // to / for uri: files
+            return super.getPath().replaceFirst(":/([^/])", "://$1" );
+        }
+        return normalizeSeps(new File(super.getPath()).getAbsolutePath());
     }
  
     @Override
