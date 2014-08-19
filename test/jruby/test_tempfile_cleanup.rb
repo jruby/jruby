@@ -21,12 +21,16 @@ class TestTempfilesCleanUp < Test::Unit::TestCase
     # check that files were created
     assert Dir["#{@tmpdir}/*"].size > 0
 
-    100.times do
+    # spin for up to 10 seconds, attempting to get finalization to trigger
+    t = Time.now
+    loop do
       if defined?(JRuby)
         JRuby.gc
       else
         GC.start
       end
+      break if Time.now - t > 10 || Dir["#{@tmpdir}/*"].size == 0
+      Thread.pass
     end
 
     # test that the files are gone
