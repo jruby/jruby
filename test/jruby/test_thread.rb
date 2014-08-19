@@ -241,6 +241,9 @@ class TestThread < Test::Unit::TestCase
     rescue SystemExit
       # rescued!
       assert(true)
+    ensure
+      a.kill rescue nil
+      b.kill rescue nil
     end
   end
 

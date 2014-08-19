@@ -533,6 +533,10 @@ class ServerTest < Test::Unit::TestCase
   rescue => ex
     # FIXME: make Windows behave the same?
     raise ex if !WINDOWS
+  ensure
+    t.kill rescue nil
+    server.close rescue nil
+    sock.close rescue nil
   end
 end
 
