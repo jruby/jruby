@@ -34,7 +34,8 @@ before_install:
 
 install: /bin/true
 # |^[[:space:]]*\[exec\][[:space:]]*$
-script: "ant $TARGET | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]"
+#script: "ant $TARGET | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]"
+script: "ant $TARGET"
 notifications:
   irc:
     channels:
