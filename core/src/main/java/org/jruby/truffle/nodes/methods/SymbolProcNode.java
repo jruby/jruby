@@ -12,19 +12,19 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Arrays;
 
 public class SymbolProcNode extends RubyNode {
 
-    private final String symbol;
+    @Child protected DispatchHeadNode dispatch;
 
     public SymbolProcNode(RubyContext context, SourceSection sourceSection, String symbol) {
         super(context, sourceSection);
-        this.symbol = symbol;
+        dispatch = new DispatchHeadNode(context, symbol, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @Override
@@ -35,8 +35,7 @@ public class SymbolProcNode extends RubyNode {
         final Object receiver = RubyArguments.getUserArgument(args, 0);
         final Object[] arguments = RubyArguments.extractUserArguments(args);
         final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
-        final RubyBasicObject receiverObject = getContext().getCoreLibrary().box(receiver);
-        return receiverObject.send(this, symbol, RubyArguments.getBlock(args), sendArgs);
+        return dispatch.dispatch(frame, receiver, RubyArguments.getBlock(args), sendArgs);
     }
 
 }
