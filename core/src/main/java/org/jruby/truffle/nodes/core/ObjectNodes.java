@@ -17,6 +17,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.call.BooleanDispatchHeadNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -463,12 +464,16 @@ public abstract class ObjectNodes {
     @CoreMethod(names = "instance_eval", needsBlock = true, maxArgs = 0)
     public abstract static class InstanceEvalNode extends CoreMethodNode {
 
+        @Child protected YieldDispatchHeadNode yield;
+
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
         }
 
         public InstanceEvalNode(InstanceEvalNode prev) {
             super(prev);
+            yield = prev.yield;
         }
 
         @Specialization
@@ -479,7 +484,7 @@ public abstract class ObjectNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias", this));
             }
 
-            return block.callWithModifiedSelf(receiver);
+            return yield.dispatchWithModifiedSelf(frame, block, receiver);
         }
 
         @Specialization

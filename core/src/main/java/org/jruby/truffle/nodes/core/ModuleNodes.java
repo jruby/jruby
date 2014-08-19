@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -335,12 +336,16 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "class_eval", maxArgs = 3, minArgs = 0, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
+        @Child protected YieldDispatchHeadNode yield;
+
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
         }
 
         public ClassEvalNode(ClassEvalNode prev) {
             super(prev);
+            yield = prev.yield;
         }
 
         @Specialization(order = 1)
@@ -368,10 +373,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(order = 4)
-        public Object classEval(RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
-            return block.callWithModifiedSelf(self);
+            return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
     }
