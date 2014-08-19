@@ -9,37 +9,25 @@
  */
 package org.jruby.truffle.nodes.respondto;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class RespondToNode extends RubyNode {
 
     @Child protected RubyNode child;
-    private final String name;
+    @Child protected DispatchHeadNode dispatch;
 
     public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String name) {
         super(context, sourceSection);
         this.child = child;
-        this.name = name;
+        dispatch = new DispatchHeadNode(context, name, false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        // TODO(CS): need a fast path version of this using caching
-
-        getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "using slow respond_to?");
-
-        final Object receiver = child.execute(frame);
-
-        final RubyBasicObject boxed = getContext().getCoreLibrary().box(receiver);
-
-        return boxed.getLookupNode().lookupMethod(name) != null;
+        return dispatch.doesRespondTo(frame, child.execute(frame));
     }
 
     @Override
