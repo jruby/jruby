@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
@@ -21,9 +22,12 @@ import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -324,6 +328,26 @@ public class CoreLibrary {
         numericClass.getSingletonClass(null).undefMethod(null, "new");
         trueClass.getSingletonClass(null).undefMethod(null, "new");
         encodingClass.getSingletonClass(null).undefMethod(null, "new");
+
+        final String[] files = new String[]{
+                "jruby/truffle/core/kernel.rb"
+        };
+
+        for (String file : files) {
+            loadRubyCore(file);
+        }
+    }
+
+    private void loadRubyCore(String fileName) {
+        final Source source;
+
+        try {
+            source = context.getSourceManager().get(fileName, context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName).getInputStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        context.execute(context, source, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null);
     }
 
     public void initializeEncodingConstants() {
