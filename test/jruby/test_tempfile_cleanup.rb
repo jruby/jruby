@@ -30,7 +30,7 @@ class TestTempfilesCleanUp < Test::Unit::TestCase
         GC.start
       end
       break if Time.now - t > 10 || Dir["#{@tmpdir}/*"].size == 0
-      Thread.pass
+      sleep(0.1)
     end
 
     # test that the files are gone
