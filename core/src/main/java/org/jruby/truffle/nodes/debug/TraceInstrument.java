@@ -77,7 +77,7 @@ public class TraceInstrument extends Instrument {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
+                    callNode.call(frame, RubyArguments.pack(traceFunc, traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

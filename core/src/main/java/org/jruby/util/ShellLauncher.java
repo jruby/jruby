@@ -740,10 +740,12 @@ public class ShellLauncher {
         return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
     }
 
+    @Deprecated
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
         return new POpenProcess(popenShared(runtime, strings));
     }
 
+    @Deprecated
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings, boolean addShell) throws IOException {
         return new POpenProcess(popenShared(runtime, strings, null, addShell));
     }
@@ -980,24 +982,20 @@ public class ShellLauncher {
         private void prepareInput(Process child) {
             // popen callers wants to be able to read, provide subprocess in directly
             realInput = child.getInputStream();
-            input = unwrapBufferedStream(realInput);
-            if (input instanceof FileInputStream) {
-//                inputChannel = ((FileInputStream) input).getChannel();
-            } else {
-                inputChannel = null;
-            }
+            // We no longer unwrap, because Java 7+ empties the underlying stream and new native IO popen[3,4] works
+            // properly. The pure-Java version has always been somewhat crippled and hacky.
+            input = realInput;
+            inputChannel = null;
             inputPumper = null;
         }
 
         private void prepareInerr(Process child) {
             // popen callers wants to be able to read, provide subprocess in directly
             realInerr = child.getErrorStream();
-            inerr = unwrapBufferedStream(realInerr);
-            if (inerr instanceof FileInputStream) {
-                inerrChannel = ((FileInputStream) inerr).getChannel();
-            } else {
-                inerrChannel = null;
-            }
+            // We no longer unwrap, because Java 7+ empties the underlying stream and new native IO popen[3,4] works
+            // properly. The pure-Java version has always been somewhat crippled and hacky.
+            inerr = realInerr;
+            inerrChannel = null;
             inerrPumper = null;
         }
 

@@ -19,6 +19,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -446,8 +447,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         case SEARCH_CONST: {
             SearchConstInstr sci = (SearchConstInstr)instr;
-            result = sci.getCachedConst();
-            if (!sci.isCached(context, result)) result = sci.cache(context, currScope, currDynScope, self, temp);
+            ConstantCache cache = sci.getConstantCache();
+            if (!ConstantCache.isCached(cache)) {
+                result = sci.cache(context, currScope, currDynScope, self, temp);
+            } else {
+                result = cache.value;
+            }
             setResult(temp, currDynScope, sci.getResult(), result);
             break;
         }

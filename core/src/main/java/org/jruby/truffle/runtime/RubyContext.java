@@ -44,7 +44,6 @@ import org.jruby.util.cli.Options;
 public class RubyContext extends ExecutionContext {
 
     public static final boolean PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
-    public static final int GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = Options.TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD.load();
     public static final boolean TRACE = Options.TRUFFLE_TRACE.load();
     public static final boolean OBJECTSPACE = Options.TRUFFLE_OBJECTSPACE.load();
     public static final boolean EXCEPTIONS_PRINT_JAVA = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
@@ -196,7 +195,7 @@ public class RubyContext extends ExecutionContext {
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
         final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame, currentNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-        return callTarget.call(RubyArguments.pack(parentFrame, self, null));
+        return callTarget.call(RubyArguments.pack(null, parentFrame, self, null));
     }
 
     public long getNextObjectID() {

@@ -48,6 +48,24 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
         return dispatch.dispatch(frame, block, argumentsObjects);
     }
 
+    @Override
+    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object[] argumentsObjects) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        int depth = getDepth();
+        final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
+
+        if (depth > MAX_DEPTH) {
+            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
+            dispatchHead.getDispatch().replace(newGeneralYield);
+            return newGeneralYield.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
+        }
+
+        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
+        replace(dispatch);
+        return dispatch.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
+    }
+
     public int getDepth() {
         int depth = 1;
         Node parent = this.getParent();

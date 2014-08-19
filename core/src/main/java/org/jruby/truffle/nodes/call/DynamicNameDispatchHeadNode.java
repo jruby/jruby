@@ -26,11 +26,11 @@ public class DynamicNameDispatchHeadNode extends Node {
         dispatch = new UninitializedDynamicNameDispatchNode(context);
     }
 
-    public Object dispatch(VirtualFrame frame, Object receiverObject, RubySymbol name, RubyProc blockObject, Object[] argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, Object receiverObject, RubySymbol name, RubyProc blockObject, Object... argumentsObjects) {
         return dispatch.dispatch(frame, receiverObject, name, blockObject, argumentsObjects);
     }
 
-    public Object dispatch(VirtualFrame frame, Object receiverObject, RubyString name, RubyProc blockObject, Object[] argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, Object receiverObject, RubyString name, RubyProc blockObject, Object... argumentsObjects) {
         return dispatch.dispatch(frame, receiverObject, name, blockObject, argumentsObjects);
     }
 

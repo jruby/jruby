@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.MethodLike;
 
 import java.util.Iterator;
 
@@ -22,16 +23,18 @@ import java.util.Iterator;
  */
 public final class RubyArguments {
 
-    public static final int DECLARATION_FRAME_INDEX = 0;
-    public static final int SELF_INDEX = 1;
-    public static final int BLOCK_INDEX = 2;
-    public static final int RUNTIME_ARGUMENT_COUNT = 3;
+    public static final int METHOD_INDEX = 0;
+    public static final int DECLARATION_FRAME_INDEX = 1;
+    public static final int SELF_INDEX = 2;
+    public static final int BLOCK_INDEX = 3;
+    public static final int RUNTIME_ARGUMENT_COUNT = 4;
 
-    public static Object[] pack(MaterializedFrame declarationFrame, Object self, RubyProc block, Object... arguments) {
+    public static Object[] pack(MethodLike method, MaterializedFrame declarationFrame, Object self, RubyProc block, Object... arguments) {
         assert RubyContext.shouldObjectBeVisible(self);
         assert RubyContext.shouldObjectsBeVisible(arguments);
 
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
+        packed[METHOD_INDEX] = method;
         packed[DECLARATION_FRAME_INDEX] = declarationFrame;
         packed[SELF_INDEX] = self;
         packed[BLOCK_INDEX] = block;
@@ -41,6 +44,10 @@ public final class RubyArguments {
         }
 
         return packed;
+    }
+
+    public static MethodLike getMethod(Object[] arguments) {
+        return (MethodLike) arguments[METHOD_INDEX];
     }
 
     public static Object getSelf(Object[] arguments) {

@@ -144,7 +144,7 @@ public abstract class CoreMethodNodeManager {
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
         final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
-                Truffle.getRuntime().createCallTarget(rootNode), null, true);
+                Truffle.getRuntime().createCallTarget(rootNode), null);
 
         module.addMethod(null, method);
 

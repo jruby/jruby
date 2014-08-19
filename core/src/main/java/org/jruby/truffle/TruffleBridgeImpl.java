@@ -104,7 +104,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
+            return callTarget.call(RubyArguments.pack(null, parentFrame, self, null));
         } catch (RaiseException e) {
             // TODO(CS): what's this cast about?
             final RubyException rubyException = (RubyException) e.getRubyException();

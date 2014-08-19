@@ -38,7 +38,7 @@ public class RubyContinuation extends RubyObject {
         RubyNode.notDesignedForCompilation();
 
         try {
-            return block.call(null, this);
+            return block.rootCall(this);
         } catch (ContinuationReturnException e) {
             // Thrown in call
 

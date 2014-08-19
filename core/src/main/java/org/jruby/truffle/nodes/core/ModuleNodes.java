@@ -30,6 +30,7 @@ import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -235,7 +236,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null, true);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -288,7 +289,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null, true);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -336,12 +337,16 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "class_eval", maxArgs = 3, minArgs = 0, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
+        @Child protected YieldDispatchHeadNode yield;
+
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
         }
 
         public ClassEvalNode(ClassEvalNode prev) {
             super(prev);
+            yield = prev.yield;
         }
 
         @Specialization
@@ -369,10 +374,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
-            return block.callWithModifiedSelf(self);
+            return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
     }
@@ -521,7 +526,7 @@ public abstract class ModuleNodes {
             currentCatchReturn.replace(new CatchReturnNode(getContext(), currentCatchReturn.getSourceSection(), currentCatchReturn.getBody(), currentCatchReturn.getReturnID()));
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
-            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame(), true);
+            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
         }
 

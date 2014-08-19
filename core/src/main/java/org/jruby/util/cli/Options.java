@@ -122,7 +122,6 @@ public class Options {
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
     public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
-    public static final Option<Integer> TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = integer(TRUFFLE, "truffle.generalDispatchSizeWarningThreshold", 64, "Warn when a general dispatch cache grows larger than this many methods.");
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.trace", true, "Install trace probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_OBJECTSPACE = bool(TRUFFLE, "truffle.object_space", true, "Install safepoints needed for ObjectSpace.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
@@ -138,6 +137,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
     public static final Option<String> TRUFFLE_BACKTRACE_FORMAT = string(TRUFFLE, "truffle.backtrace.format", new String[]{"mri", "rubinius"}, "mri", "How to format backtraces.");
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
+    public static final Option<Integer> TRUFFLE_DISPATCH_MEGAMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.megamorphic.max", 255, "Maximum size of a megamorphic call site cache.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

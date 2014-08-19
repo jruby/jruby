@@ -217,12 +217,20 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object send(RubyBasicObject self, Object[] args, RubyProc block) {
-            notDesignedForCompilation();
-
-            final String name = args[0].toString();
+        public Object send(VirtualFrame frame, RubyBasicObject self, Object[] args, RubyProc block) {
+            final Object name = args[0];
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
-            return self.send(this, name, block, sendArgs);
+
+            if (name instanceof RubySymbol) {
+                symbolProfile.enter();
+                return dispatchNode.dispatch(frame, self, (RubySymbol) name, block, sendArgs);
+            } else if (name instanceof RubyString) {
+                stringProfile.enter();
+                return dispatchNode.dispatch(frame, self, (RubyString) name, block, sendArgs);
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
+            }
         }
 
     }

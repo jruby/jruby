@@ -139,18 +139,6 @@ public class RubyBasicObject extends ObjectStorage {
         getSingletonClass(currentNode).include(currentNode, module);
     }
 
-    public Object send(RubyNode currentNode, String name, RubyProc block, Object... args) {
-        RubyNode.notDesignedForCompilation();
-
-        final RubyMethod method = getLookupNode().lookupMethod(name);
-
-        if (method == null || method.isUndefined()) {
-            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(name, toString(), currentNode));
-        }
-
-        return method.call(this, block, args);
-    }
-
     public void unsafeSetRubyClass(RubyClass newRubyClass) {
         assert rubyClass == null;
 

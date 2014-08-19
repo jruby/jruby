@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 /**
  * Represents the Ruby {@code Proc} class.
  */
-public class RubyProc extends RubyObject {
+public class RubyProc extends RubyObject implements MethodLike {
 
     /**
      * The class from which we create the object that is {@code Proc}. A subclass of
@@ -73,24 +73,21 @@ public class RubyProc extends RubyObject {
         this.block = block;
     }
 
-    public Object call(Object... args) {
-        return callWithModifiedSelf(self, args);
-    }
-
-    public Object callWithModifiedSelf(Object modifiedSelf, Object... args) {
-        RubyNode.notDesignedForCompilation();
-
-        assert modifiedSelf != null;
-        assert args != null;
-
+    public CallTarget getCallTargetForType() {
         switch (type) {
             case PROC:
-                return callTarget.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
+                return callTarget;
             case LAMBDA:
-                return callTargetForMethods.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
+                return callTargetForMethods;
         }
 
-        throw new IllegalStateException();
+        throw new UnsupportedOperationException(type.toString());
+    }
+
+    public Object rootCall(Object... args) {
+        RubyNode.notDesignedForCompilation();
+
+        return getCallTargetForType().call(RubyArguments.pack(this, declarationFrame, self, block, args));
     }
 
     public Type getType() {

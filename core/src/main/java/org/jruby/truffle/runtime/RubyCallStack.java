@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
@@ -27,56 +28,40 @@ public abstract class RubyCallStack {
     public static RubyMethod getCurrentMethod() {
         CompilerAsserts.neverPartOfCompilation();
 
-        RubyMethod method;
+        MethodLike method;
 
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
 
         method = getMethod(currentFrame);
 
-        if (method != null) {
-            return method;
+        if (method instanceof RubyMethod) {
+            return (RubyMethod) method;
         }
 
-        method = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
 
             @Override
             public RubyMethod visitFrame(FrameInstance frameInstance) {
-                return getMethod(frameInstance);
+                final MethodLike maybeMethod = getMethod(frameInstance);
+
+                if (maybeMethod instanceof RubyMethod) {
+                    return (RubyMethod) maybeMethod;
+                } else {
+                    return null;
+                }
             }
 
         });
-
-        if (method != null) {
-            return method;
-        }
-
-        return null;
     }
 
-    private static RubyMethod getMethod(FrameInstance frame) {
+    private static MethodLike getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (frame == null) {
             return null;
         }
 
-        final CallTarget callTarget = frame.getCallTarget();
-
-        if (!(callTarget instanceof RootCallTarget)) {
-            return null;
-        }
-
-        final RootCallTarget rootCallTarget = (RootCallTarget) callTarget;
-
-        final RootNode rootNode = rootCallTarget.getRootNode();
-
-        if (!(rootNode instanceof RubyRootNode)) {
-            return null;
-        }
-
-        final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
-
-        return RubyMethod.getMethod(rubyRootNode.getSharedMethodInfo());
+        return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
     public static RubyModule getCurrentDeclaringModule() {
@@ -103,18 +88,19 @@ public abstract class RubyCallStack {
          * features beyond what MRI does like printing locals in backtraces.
          */
 
-            activations.add(new Activation(getCurrentMethod(), currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
+            activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
 
             Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
 
                 @Override
                 public RubyMethod visitFrame(FrameInstance frameInstance) {
-                    activations.add(new Activation(getMethod(frameInstance), frameInstance.getCallNode(),
+                    activations.add(new Activation(frameInstance.getCallNode(),
                             frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                     return null;
                 }
 
             });
+
         }
 
         return new Backtrace(activations.toArray(new Activation[activations.size()]));

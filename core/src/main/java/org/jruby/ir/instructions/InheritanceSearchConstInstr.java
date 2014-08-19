@@ -10,6 +10,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
@@ -26,10 +27,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr, F
     private final boolean  noPrivateConsts;
 
     // Constant caching
-    private volatile transient Object cachedConstant = null;
-    private volatile int hash = -1;
-    private volatile Object generation = -1;
-    private Invalidator invalidator;
+    private volatile transient ConstantCache cache;
 
     public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
         super(Operation.INHERITANCE_SEARCH_CONST);
@@ -78,15 +76,10 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr, F
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            generation = runtime.getConstantInvalidator(constName).getData();
-            hash = module.hashCode();
-            cachedConstant = constant;
+            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
-    }
-
-    private boolean isCached(Ruby runtime, RubyModule target, Object value) {
-        return value != null && generation == invalidator(runtime).getData() && hash == target.hashCode();
     }
 
     @Override
@@ -99,10 +92,10 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr, F
         } else {
             throw runtime.newTypeError(cmVal + " is not a type/class");
         }
-        Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(runtime, module, constant)) constant = cache(runtime, module);
+        ConstantCache cache = this.cache;
+        if (!ConstantCache.isCachedFrom(module, cache)) return cache(runtime, module);
 
-        return constant;
+        return cache.value;
     }
 
     @Override
@@ -120,12 +113,5 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr, F
 
     public boolean isNoPrivateConsts() {
         return noPrivateConsts;
-    }
-
-    private Invalidator invalidator(Ruby runtime) {
-        if (invalidator == null) {
-            invalidator = runtime.getConstantInvalidator(constName);
-        }
-        return invalidator;
     }
 }

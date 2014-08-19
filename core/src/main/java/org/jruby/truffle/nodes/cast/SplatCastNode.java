@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -33,14 +34,18 @@ public abstract class SplatCastNode extends RubyNode {
 
     private final NilBehavior nilBehavior;
 
+    @Child protected DispatchHeadNode toA;
+
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
+        toA = new DispatchHeadNode(context, true, "to_a", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public SplatCastNode(SplatCastNode prev) {
         super(prev);
         nilBehavior = prev.nilBehavior;
+        toA = prev.toA;
     }
 
     protected abstract RubyNode getChild();
@@ -51,7 +56,7 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyArray doObject(Object object) {
+    public RubyArray doObject(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
         if (object == NilPlaceholder.INSTANCE) {
@@ -70,18 +75,10 @@ public abstract class SplatCastNode extends RubyNode {
         } else if (object instanceof RubyArray) {
             return (RubyArray) object;
         } else {
-            // TODO(CS): need to specialize for this
+            final Object array = toA.dispatch(frame, object, null);
 
-            final RubyBasicObject boxedObject = getContext().getCoreLibrary().box(object);
-
-            final RubyMethod toA = boxedObject.getLookupNode().lookupMethod("to_a");
-
-            if (toA != null) {
-                final Object toAResult = toA.call(boxedObject, null);
-
-                if (toAResult instanceof RubyArray) {
-                    return (RubyArray) toAResult;
-                }
+            if (array instanceof RubyArray) {
+                return (RubyArray) array;
             }
 
             return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);

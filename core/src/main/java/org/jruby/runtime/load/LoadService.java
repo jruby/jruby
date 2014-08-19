@@ -1543,7 +1543,7 @@ public class LoadService {
     }
 
     private static final Pattern URI_PATTERN = Pattern.compile("([a-z]+?://.*)$");
-    protected LoadServiceResource getClassPathResource(ClassLoader classLoader, String name) {
+    public LoadServiceResource getClassPathResource(ClassLoader classLoader, String name) {
         boolean isClasspathScheme = false;
 
         // strip the classpath scheme first

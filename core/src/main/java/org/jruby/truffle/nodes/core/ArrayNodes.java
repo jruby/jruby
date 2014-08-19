@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
@@ -34,6 +35,7 @@ import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
@@ -1833,12 +1835,16 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, minArgs = 0, maxArgs = 1)
     public abstract static class InjectNode extends YieldingArrayCoreMethodNode {
 
+        @Child protected DynamicNameDispatchHeadNode dispatch;
+
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dispatch = new DynamicNameDispatchHeadNode(context);
         }
 
         public InjectNode(InjectNode prev) {
             super(prev);
+            dispatch = prev.dispatch;
         }
 
         @Specialization(guards = "isObject")
@@ -1867,7 +1873,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object inject(RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
+        public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
             notDesignedForCompilation();
 
             final Object[] store = array.slowToArray();
@@ -1876,10 +1882,10 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            Object accumulator = getContext().getCoreLibrary().box(store[0]).send(this, symbol.toString(), null, store[1]);
+            Object accumulator = dispatch.dispatch(frame, store[0], symbol, null, store[1]);
 
             for (int n = 2; n < array.getSize(); n++) {
-                accumulator = getContext().getCoreLibrary().box(accumulator).send(this, symbol.toString(), null, store[n]);
+                accumulator = dispatch.dispatch(frame, accumulator, symbol, null, store[n]);
             }
 
             return accumulator;
@@ -2222,7 +2228,7 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, array, null), maxBlock.getFrameDescriptor());
+            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(maxBlock, null, array, null), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
@@ -2271,7 +2277,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public static class MaxBlock {
+    public static class MaxBlock implements MethodLike {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;
@@ -2334,7 +2340,7 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, array, null), minBlock.getFrameDescriptor());
+            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(minBlock, null, array, null), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
@@ -2383,7 +2389,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public static class MinBlock {
+    public static class MinBlock implements MethodLike {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;

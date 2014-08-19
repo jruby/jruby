@@ -19,6 +19,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -195,6 +196,7 @@ public abstract class HashNodes {
     public abstract static class GetIndexNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
+        @Child protected YieldDispatchHeadNode yield;
 
         private final BranchProfile notInHashProfile = new BranchProfile();
         private final BranchProfile useDefaultProfile = new BranchProfile();
@@ -202,22 +204,23 @@ public abstract class HashNodes {
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            yield = new YieldDispatchHeadNode(context);
         }
 
         public GetIndexNode(GetIndexNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
+            yield = prev.yield;
         }
 
         @Specialization(guards = "isNull")
-        public Object getNull(RubyHash hash, Object key) {
+        public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
             if (hash.getDefaultBlock() == null) {
                 return NilPlaceholder.INSTANCE;
             } else {
-                // TODO(CS): need a call node here
-                return hash.getDefaultBlock().call(hash, key);
+                return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
             }
         }
 
@@ -242,12 +245,11 @@ public abstract class HashNodes {
 
             useDefaultProfile.enter();
 
-            // TODO(CS): need a call node here
-            return hash.getDefaultBlock().call(hash, key);
+            return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
         }
 
         @Specialization(guards = "isObjectLinkedHashMap")
-        public Object getObjectLinkedHashMap(RubyHash hash, Object key) {
+        public Object getObjectLinkedHashMap(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
             final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
@@ -260,8 +262,7 @@ public abstract class HashNodes {
                 if (hash.getDefaultBlock() == null) {
                     return NilPlaceholder.INSTANCE;
                 } else {
-                    // TODO(CS): need a call node here
-                    return hash.getDefaultBlock().call(hash, key);
+                    return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
                 }
             }
 

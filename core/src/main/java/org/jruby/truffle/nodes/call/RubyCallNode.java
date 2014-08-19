@@ -15,6 +15,8 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -70,6 +72,9 @@ public class RubyCallNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
+    @Child protected DispatchHeadNode respondToMissing;
+    @Child protected BooleanCastNode respondToMissingCast;
+
     public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
 
@@ -89,6 +94,8 @@ public class RubyCallNode extends RubyNode {
         this.isSplatted = isSplatted;
 
         dispatchHead = new DispatchHeadNode(context, name, isSplatted, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        respondToMissing = new DispatchHeadNode(context, "respond_to_missing?", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
 
     @Override
@@ -202,17 +209,17 @@ public class RubyCallNode extends RubyNode {
 
         final RubyBasicObject receiverBasicObject = context.getCoreLibrary().box(receiverObject);
 
+        // TODO(CS): this lookup should be cached
+
         final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(dispatchHead.getName());
 
         final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
         if (method == null) {
-            final RubyMethod respondToMissing = receiverBasicObject.getLookupNode().lookupMethod("respond_to_missing?");
+            final Object r = respondToMissing.dispatch(frame, receiverBasicObject, null, context.makeString(dispatchHead.getName()));
 
-            if (respondToMissing != null) {
-                if (!RubyTrueClass.toBoolean(respondToMissing.call(receiverBasicObject, null, context.makeString(dispatchHead.getName()), true))) {
-                    return NilPlaceholder.INSTANCE;
-                }
+            if (r != DispatchHeadNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
+                return NilPlaceholder.INSTANCE;
             }
         } else if (method.isUndefined()) {
             return NilPlaceholder.INSTANCE;

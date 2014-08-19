@@ -34,7 +34,7 @@ public class RubyWrapper extends RubyNode implements Wrapper {
         super(context, sourceSection);
         assert !(child instanceof RubyWrapper);
         this.child = child;
-        probe = context.getProbe(child.getSourceSection());
+        probe = context.createProbe(child.getSourceSection());
     }
 
     @Override
