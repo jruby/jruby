@@ -1004,7 +1004,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         status.set(Status.RUN);
-        notifyAll();
+        interrupt();
 
         return this;
     }
