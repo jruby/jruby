@@ -61,8 +61,9 @@ class TestThread < Test::Unit::TestCase
     
     # check that "run", sleep", and "dead" appear in inspected output
     q = Queue.new
-    t = Thread.new { q << Thread.current.inspect; sleep }
-    Thread.pass until t.status == "sleep" || !t.alive?
+    ready = false
+    t = Thread.new { q << Thread.current.inspect; ready = true; sleep }
+    Thread.pass until ready && (t.status == "sleep" || !t.alive?)
     assert(q.shift(true)["run"])
     assert(t.inspect["sleep"])
     t.kill
