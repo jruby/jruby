@@ -13,6 +13,7 @@ project 'JRuby Stdlib' do
 
   properties( 'tesla.dump.pom' => 'pom-generated.xml',
               'jruby.basedir' => '${basedir}/../../',
+              'jruby.home' => '${basedir}/../../',
               'bundle.name' => 'JRuby Stdlib',
               'bundle.symbolic_name' => 'org.jruby.jruby-stdlib',
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared',
@@ -67,16 +68,10 @@ project 'JRuby Stdlib' do
                                       'classifier' =>  'javadoc' } ] )
   end
 
-  plugin 'org.apache.felix:maven-bundle-plugin'
-  plugin :jar do
-    execute_goals( 'jar',
-                   :id => 'default-jar',
-                   :phase => 'package',
-                   'archive' => {
-                     'manifestFile' =>  '${project.build.outputDirectory}/META-INF/MANIFEST.MF'
-                   } )
+  execute 'jrubydir', 'prepare-package' do |ctx|
+    require( ctx.project.properties['jruby.home'].to_pathname + 'core/src/main/ruby/jruby/commands.rb' )
+    JRuby::Commands.generate_dir_info( ctx.project.build.output_directory.to_pathname + '/META-INF/jruby.home' )
   end
-
 
   build do
 

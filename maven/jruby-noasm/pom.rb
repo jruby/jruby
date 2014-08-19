@@ -35,16 +35,6 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
                                       'classifier' =>  'javadoc' } ] )
   end
 
-  plugin 'org.apache.felix:maven-bundle-plugin'
-  plugin :jar do
-    execute_goals( 'jar',
-                   :id => 'default-jar',
-                   :phase => 'package',
-                   'archive' => {
-                     'manifestFile' =>  '${project.build.outputDirectory}/META-INF/MANIFEST.MF'
-                   } )
-  end
-
   plugin( :invoker,
           'projectsDirectory' =>  'src/it',
           'cloneProjectsTo' =>  '${project.build.directory}/it',

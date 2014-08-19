@@ -10,14 +10,16 @@
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Stdlib</name>
   <properties>
-    <jruby.basedir>${basedir}/../../</jruby.basedir>
-    <bundle.name>JRuby Stdlib</bundle.name>
-    <bundle.symbolic_name>org.jruby.jruby-stdlib</bundle.symbolic_name>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
+    <tesla.version>0.1.1</tesla.version>
+    <bundle.symbolic_name>org.jruby.jruby-stdlib</bundle.symbolic_name>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
     <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+    <bundle.name>JRuby Stdlib</bundle.name>
+    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <jruby.home>${basedir}/../../</jruby.home>
   </properties>
   <build>
     <resources>
@@ -142,25 +144,29 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
+        <groupId>io.tesla.polyglot</groupId>
+        <artifactId>tesla-polyglot-maven-plugin</artifactId>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
-            <id>default-jar</id>
-            <phase>package</phase>
+            <id>jrubydir</id>
+            <phase>prepare-package</phase>
             <goals>
-              <goal>jar</goal>
+              <goal>execute</goal>
             </goals>
             <configuration>
-              <archive>
-                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-              </archive>
+              <taskId>jrubydir</taskId>
+              <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-ruby</artifactId>
+            <version>${tesla.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>

@@ -8,6 +8,7 @@
     <version>1.7.14-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-complete</artifactId>
+  <packaging>bundle</packaging>
   <name>JRuby Complete</name>
   <properties>
     <jruby.basedir>${basedir}/../../</jruby.basedir>
@@ -15,6 +16,7 @@
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+    <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -56,92 +58,27 @@
     </resources>
     <plugins>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.1</version>
-        <executions>
-          <execution>
-            <id>pack jruby.artifact</id>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb</pattern>
-                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                </relocation>
-              </relocations>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.jruby.Main</mainClass>
-                </transformer>
-              </transformers>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unzip jruby-core.jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <workingDirectory>${basedir}/../..</workingDirectory>
-              <arguments>
-                <argument>-d</argument>
-                <argument>${project.build.outputDirectory}</argument>
-                <argument>-o</argument>
-                <argument>${project.build.directory}/${project.build.finalName}.jar</argument>
-              </arguments>
-              <executable>unzip</executable>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>manifest</goal>
-            </goals>
-          </execution>
-        </executions>
+        <extensions>true</extensions>
         <configuration>
           <archive>
             <manifest>
               <mainClass>org.jruby.Main</mainClass>
             </manifest>
           </archive>
+          <instructions>
+            <Export-Package>org.jruby.*;version=${project.version}</Export-Package>
+            <Import-Package>!org.jruby.*, *;resolution:=optional</Import-Package>
+            <DynamicImport-Package>*</DynamicImport-Package>
+            <Embed-Dependency>*;type=jar;scope=compile|runtime;inline=true</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+            <Private-Package>*,.</Private-Package>
+            <Bundle-Name>JRuby ${project.version}</Bundle-Name>
+            <Bundle-Description>JRuby ${project.version} OSGi bundle</Bundle-Description>
+            <Bundle-SymbolicName>org.jruby.jruby</Bundle-SymbolicName>
+          </instructions>
         </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>update manifest</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <archive>
-                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-              </archive>
-              <excludes>
-                <exclue>Dummy.class</exclue>
-              </excludes>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
@@ -163,7 +100,35 @@
           <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
           <preBuildHookScript>setup.bsh</preBuildHookScript>
           <postBuildHookScript>verify.bsh</postBuildHookScript>
+          <goals>
+            <goal>install</goal>
+          </goals>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>io.tesla.polyglot</groupId>
+        <artifactId>tesla-polyglot-maven-plugin</artifactId>
+        <version>${tesla.version}</version>
+        <executions>
+          <execution>
+            <id>setup other osgi frameworks</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>setup other osgi frameworks</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-ruby</artifactId>
+            <version>${tesla.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
@@ -212,6 +177,24 @@
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>jdk8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <configuration>
+              <pomExcludes>
+                <pomExclude>osgi_many_bundles_with_embedded_gems_felix-3.2/pom.xml</pomExclude>
+              </pomExcludes>
+            </configuration>
           </plugin>
         </plugins>
       </build>

@@ -9,7 +9,7 @@ project 'JRuby Complete' do
   model_version '4.0.0'
   id "org.jruby:jruby-complete:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
-  packaging 'jar'
+  packaging 'bundle'
 
   plugin_repository( :id => 'rubygems-releases',
                      :url => 'http://rubygems-proxy.torquebox.org/releases' )
@@ -25,68 +25,56 @@ project 'JRuby Complete' do
        :exclusions => [ 'org.bouncycastle:bcpkix-jdk15on',
                         'org.bouncycastle:bcprov-jdk15on' ] )
 
-  plugin :shade, '2.1' do
-    execute_goals( 'shade',
-                   :id => 'pack jruby.artifact',
-                   :phase => 'package',
-                   'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                        'shadedPattern' =>  'org.jruby.org.objectweb' } ],
-                   'transformers' => [ { '@implementation' =>  'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' =>  'org.jruby.Main' } ] )
-  end
-
-  plugin 'org.codehaus.mojo:exec-maven-plugin' do
-    execute_goals( 'exec',
-                   :id => 'unzip jruby-core.jar',
-                   :phase => 'package',
-                   'workingDirectory' =>  '${basedir}/../..',
-                   'arguments' => [ '-d',
-                                    '${project.build.outputDirectory}',
-                                    '-o',
-                                    '${project.build.directory}/${project.build.finalName}.jar' ],
-                   'executable' =>  'unzip' )
-  end
-
   plugin( 'org.apache.felix:maven-bundle-plugin',
           'archive' => {
             'manifest' => {
               'mainClass' =>  'org.jruby.Main'
             }
+          },
+          :instructions => { 
+            'Export-Package' => 'org.jruby.*;version=${project.version}',
+            'Import-Package' => '!org.jruby.*, *;resolution:=optional',
+            'DynamicImport-Package' => '*',
+            'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=true',
+            'Embed-Transitive' => true,
+            'Private-Package' => '*,.',
+            'Bundle-Name' => 'JRuby ${project.version}',
+            'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
+            'Bundle-SymbolicName' => 'org.jruby.jruby'
           } ) do
-    execute_goals( 'manifest',
-                   :phase => 'package' )
-  end
-
-  plugin :jar do
-    execute_goals( 'jar',
-                   :id => 'update manifest',
-                   :phase => 'package',
-                   'archive' => {
-                     'manifestFile' =>  '${project.build.outputDirectory}/META-INF/MANIFEST.MF'
-                   },
-                   'excludes' => {
-                     'exclue' =>  'Dummy.class'
-                   } )
+    # TODO fix DSL
+    @current.extensions = true
   end
 
   plugin( :invoker,
           'projectsDirectory' =>  'src/it',
           'cloneProjectsTo' =>  '${project.build.directory}/it',
           'preBuildHookScript' =>  'setup.bsh',
-          'postBuildHookScript' =>  'verify.bsh' ) do
+          'postBuildHookScript' =>  'verify.bsh',
+          'goals' => ['install'] ) do
     execute_goals( 'install', 'run',
                    :id => 'integration-test',
                    'settingsFile' =>  '${basedir}/src/it/settings.xml',
                    'localRepositoryPath' =>  '${project.build.directory}/local-repo' )
   end
 
+  execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
+    require 'fileutils'
+    felix = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_many_bundles_with_embedded_gems' )
+    [ 'equinox-3.6', 'equinox-3.7', 'felix-3.2' ].each do |m|
+      target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_many_bundles_with_embedded_gems_' + m )
+      FileUtils.cp_r( felix, target )
+      File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
+        f.puts 'invoker.profiles = ' + m
+      end
+    end
+  end
 
   build do
 
     resource do
       directory '${jruby.basedir}/lib'
       includes '**/ruby/shared/bc*.jar'
-      excludes 
       target_path '${jruby.complete.home}/lib'
     end
   end
@@ -111,11 +99,16 @@ project 'JRuby Complete' do
       resource do
         directory '${jruby.basedir}/core/target'
         includes '*-sources.jar', '*-javadoc.jar'
-        excludes 
         target_path '${project.build.directory}'
       end
     end
 
   end
 
+  profile :id => :jdk8 do
+    activation do
+      jdk '1.8'
+    end
+    plugin :invoker, :pomExcludes => ['osgi_many_bundles_with_embedded_gems_felix-3.2/pom.xml']
+  end
 end

@@ -231,10 +231,6 @@
     <defaultGoal>package</defaultGoal>
     <plugins>
       <plugin>
-	<groupId>org.apache.felix</groupId>
-	<artifactId>maven-bundle-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>properties-maven-plugin</artifactId>
         <version>1.0-alpha-2</version>
@@ -428,23 +424,6 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-	    <configuration>
-	      <archive>
-		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-	      </archive>
-	    </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
@@ -483,6 +462,7 @@
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
+            <include>org/jruby/util/**/*Test*.java</include>
           </includes>
           <additionalClasspathElements>
               <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
