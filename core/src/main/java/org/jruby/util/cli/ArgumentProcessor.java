@@ -354,6 +354,7 @@ public class ArgumentProcessor {
                         checkGraalVersion();
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         Options.WARN_USELESSS_USE_OF.force(Boolean.toString(false));
+                        Options.WARN_NOT_REACHED.force(Boolean.toString(false));
                         config.setDisableGems(true);
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");

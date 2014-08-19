@@ -207,7 +207,7 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast())) {
+        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.WARN_NOT_REACHED.load()) {
             warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "Statement not reached.");
         }
 
