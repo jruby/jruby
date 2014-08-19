@@ -337,4 +337,25 @@ class TestThread < Test::Unit::TestCase
     assert_equal 0, t.priority
     t.exit
   end
+
+  # Simpler case for sleep/wakeup close together, which can race if thread state is not managed well
+  def test_sleep_wakeup_interlacing
+    go = false
+    ret = []
+    t = Thread.new do
+      10000.times do
+        Thread.pass until go
+        sleep
+        ret << 'ok'
+      end
+    end
+    10000.times do
+      go = true
+      Thread.pass until t.status == 'sleep'
+      go = false
+      t.wakeup
+    end
+    t.join
+    assert_equal(10000, ret.size)
+  end
 end
