@@ -15,16 +15,16 @@ public class ClasspathResource implements FileResource {
     public static final String CLASSPATH = "classpath:/";
 
     private final String uri;
-
-    private String[] list = null;
     
     private final JarFileStat fileStat;
 
-    ClasspathResource(String uri, InputStream is, String[] files)
+    private boolean isFile;
+
+    ClasspathResource(String uri, URL url)
     {
         this.uri = uri;
         this.fileStat = new JarFileStat(this);
-        this.list = files;
+        this.isFile = url != null;
     }
 
     public static URL getResourceURL(String pathname) {
@@ -42,23 +42,15 @@ public class ClasspathResource implements FileResource {
     }
     
     public static FileResource create(String pathname) {
-        if (!pathname.startsWith(CLASSPATH)) {
+        if (!pathname.startsWith("classpath:")) {
             return null;
+        }
+        if (pathname.equals("classpath:")) {
+            return new ClasspathResource(pathname, null);
         }
         
         URL url = getResourceURL(pathname);
-        if (url != null) {
-            try
-            {
-                // TODO open stream on demand
-                return new ClasspathResource(pathname, url.openStream(), null);
-            }
-            catch (IOException e)
-            {
-               return null;
-            }
-        }
-        return null;
+        return new ClasspathResource(pathname, url);
     }
 
     @Override
@@ -70,19 +62,19 @@ public class ClasspathResource implements FileResource {
     @Override
     public boolean exists()
     {
-        return true;
+        return isFile;
     }
 
     @Override
     public boolean isDirectory()
     {
-        return list != null;
+        return false;
     }
 
     @Override
     public boolean isFile()
     {
-        return list == null;
+        return isFile;
     }
 
     @Override
@@ -114,7 +106,7 @@ public class ClasspathResource implements FileResource {
     @Override
     public String[] list()
     {
-        return list;
+        return null;
     }
 
     @Override
