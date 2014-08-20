@@ -38,7 +38,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -1321,7 +1321,7 @@ public class OpenFile implements Finalizable {
 
         // kinda-hacky way to see if there's more data to read from a seekable channel
         if (fd.chSeek != null) {
-            SeekableByteChannel fdSeek = fd.chSeek;
+            FileChannel fdSeek = fd.chSeek;
             try {
                 // not a real file, can't get size...we'll have to just read and block
                 if (fdSeek.size() < 0) return true;
@@ -2097,7 +2097,7 @@ public class OpenFile implements Finalizable {
         return fd.chWrite;
     }
 
-    public SeekableByteChannel seekChannel() {
+    public FileChannel seekChannel() {
         return fd.chSeek;
     }
 
