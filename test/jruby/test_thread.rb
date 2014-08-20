@@ -278,26 +278,14 @@ class TestThread < Test::Unit::TestCase
   # JRUBY-2380: Thread.list has a race condition
   # Fix is to make sure the thread is added to the global list before returning from Thread#new
   def test_new_thread_in_list
-    count = 10
-    live = Thread.list.size
-
-    100.times do
-      threads = []
-      count.times do
-        threads << Thread.new do
-          sleep
-        end
+    1000.times do
+      t = Thread.new do
+        sleep
       end
-
-      if (size = Thread.list.size) != count + live
-        raise "wrong! (expected #{count + live} but was #{size})"
-      end
-
-      threads.each do |t|
-        Thread.pass until t.status == 'sleep'
-        t.wakeup
-        t.join
-      end
+      fail("new thread was not in Thread.list") unless Thread.list.include? t
+      Thread.pass until t.status == 'sleep'
+      t.wakeup
+      t.join
     end
   end
   
