@@ -158,13 +158,8 @@ public class URLResource implements FileResource {
         URL url;
         try
         {
-            pathname = pathname
-                    // collapse // to / - some OSGi classloaders do not like //
-                    .replaceAll("([^:])//", "$1/")
-                    // TODO NormalizedFile does too much - should leave uri: files as they are
-                    .replaceFirst( ":/([^/])", "://$1" )
-                    // file protocol file:// does not open stream :(
-                    .replace("file://", "file:/");
+            // TODO NormalizedFile does too much - should leave uri: files as they are
+            pathname = pathname.replaceFirst( ":/([^/])", "://$1" );
             url = new URL(pathname);
             // we do not want to deal with those url here like this though they are valid url/uri
             if (url.getProtocol().startsWith("http")){
