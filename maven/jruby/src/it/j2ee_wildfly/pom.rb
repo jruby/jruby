@@ -46,17 +46,27 @@ execute 'download', :phase => 'integration-test' do
   FileUtils.cp( 'target/j2ee_wildfly.war', 'target/wildfly-run/wildfly-8.1.0.Final/standalone/deployments/packed.war' )
   FileUtils.cp_r( 'target/j2ee_wildfly', 'target/wildfly-run/wildfly-8.1.0.Final/standalone/deployments/unpacked.war' )
   FileUtils.touch( 'target/wildfly-run/wildfly-8.1.0.Final/standalone/deployments/unpacked.war.dodeploy' )
+
+  # packed application
   count = 10
   begin
     sleep 1
     result = open( 'http://localhost:8080/packed/index.jsp' ).string
-    count = 0
   rescue
     count -= 1
     retry if count > 0
   end
   File.open( 'result1', 'w' ) { |f| f.puts result }
-  result = open( 'http://localhost:8080/unpacked/index.jsp' ).string
+
+  # unpacked application
+  count = 10
+  begin
+    sleep 1
+    result = open( 'http://localhost:8080/unpacked/index.jsp' ).string
+  rescue
+    count -= 1
+    retry if count > 0
+  end
   File.open( 'result2', 'w' ) { |f| f.puts result }
 end
 

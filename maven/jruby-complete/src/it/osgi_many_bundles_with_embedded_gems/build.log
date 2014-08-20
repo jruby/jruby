@@ -1,0 +1,439 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] gems-bundle
+[INFO] scripts-bundle
+[INFO] test
+[INFO] osgi_many_bundles_with_embedded_gems
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building gems-bundle 1.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- gem-maven-plugin:1.0.3:initialize (install gems) @ gems-bundle ---
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ gems-bundle ---
+[INFO] Using 'utf-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/gems-bundle/src/main/resources
+[INFO] Copying 676 resources
+[INFO] 
+[INFO] --- tesla-polyglot-maven-plugin:0.1.1:execute (jrubydir) @ gems-bundle ---
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ gems-bundle ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 1 source file to /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/gems-bundle/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ gems-bundle ---
+[INFO] Using 'utf-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/gems-bundle/src/test/resources
+[INFO] Copying 676 resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ gems-bundle ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.17:test (default-test) @ gems-bundle ---
+[INFO] 
+[INFO] --- maven-jar-plugin:2.4:jar (default) @ gems-bundle ---
+[INFO] Building jar: /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/gems-bundle/osgi_many_bundles_with_embedded_gems.jar
+[INFO] 
+[INFO] --- maven-bundle-plugin:2.4.0:bundle (default-bundle) @ gems-bundle ---
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building scripts-bundle 1.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ scripts-bundle ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] Copying 3 resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ scripts-bundle ---
+[INFO] Changes detected - recompiling the module!
+[WARNING] File encoding has not been set, using platform encoding UTF-8, i.e. build is platform dependent!
+[INFO] Compiling 1 source file to /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/scripts-bundle/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ scripts-bundle ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/scripts-bundle/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ scripts-bundle ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.17:test (default-test) @ scripts-bundle ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- maven-bundle-plugin:2.4.0:bundle (default-bundle) @ scripts-bundle ---
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building test 0.0.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ test ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/test/src/main/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ test ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ test ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/test/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ test ---
+[INFO] Changes detected - recompiling the module!
+[WARNING] File encoding has not been set, using platform encoding UTF-8, i.e. build is platform dependent!
+[INFO] Compiling 1 source file to /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/test/target/test-classes
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.17:test (default-test) @ test ---
+[INFO] Surefire report directory: /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/test/target/surefire-reports
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running org.jruby.embed.osgi.test.JRubyOsgiEmbedTest
+22:28:12.308 [main] INFO  org.ops4j.pax.exam.junit.PaxExam - creating PaxExam runner for class org.jruby.embed.osgi.test.JRubyOsgiEmbedTest
+22:28:12.331 [main] INFO  o.o.pax.exam.spi.DefaultExamSystem - Pax Exam System (Version: 3.0.3) created.
+22:28:12.336 [main] DEBUG o.ops4j.store.intern.TemporaryStore - Storage Area is /tmp/1406842092335-0
+22:28:12.345 [main] DEBUG o.ops4j.pax.exam.spi.PaxExamRuntime - Found TestContainerFactory: org.ops4j.pax.exam.forked.ForkedTestContainerFactory
+22:28:12.348 [main] DEBUG o.o.pax.exam.spi.DefaultExamSystem - creating default probe
+22:28:12.360 [main] DEBUG o.o.p.e.spi.reactors.ReactorManager - No User defined probe hook found
+22:28:12.361 [main] DEBUG o.o.p.e.s.intern.DefaultTestAddress - NEW ADDRESS= PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297 parent=null root=[TestAddress:PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297 root:PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297] args=[Ljava.lang.Object;@66aa50f
+22:28:12.362 [main] DEBUG o.o.pax.exam.spi.DefaultExamReactor - Staging reactor with probes: 1 using strategy: org.ops4j.pax.exam.spi.reactors.PerMethod@43e65667
+22:28:12.363 [main] DEBUG o.ops4j.store.intern.TemporaryStore - Storage Area is /tmp/1406842092363-0
+22:28:12.519 [main] DEBUG o.o.p.e.s.intern.DefaultTestAddress - NEW ADDRESS= PaxExam-fb3dfd32-95c5-4bb6-a42d-aab5cedebc3a parent=[TestAddress:PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297 root:PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297] root=[TestAddress:PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297 root:PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297] args=[Ljava.lang.Object;@79e3b3c
+22:28:12.519 [main] INFO  org.ops4j.pax.exam.junit.PaxExam - running test class org.jruby.embed.osgi.test.JRubyOsgiEmbedTest
+22:28:12.524 [main] DEBUG org.ops4j.pax.exam.junit.PaxExam - Invoke testJRubyCreate @ [TestAddress:PaxExam-fb3dfd32-95c5-4bb6-a42d-aab5cedebc3a root:PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297] Arguments: [Ljava.lang.Object;@66aa50f
+22:28:12.524 [main] DEBUG o.ops4j.store.intern.TemporaryStore - Storage Area is /tmp/1406842092524-0
+22:28:12.531 [main] DEBUG o.o.p.e.f.ForkedFrameworkFactory - using RMI registry at port 21000
+22:28:12.561 [main] DEBUG org.ops4j.exec.DefaultJavaRunner - Start command line [[/usr/lib/jvm/java-7-openjdk-amd64/bin/java, -Djava.protocol.handler.pkgs=org.ops4j.pax.url, -Dpax.exam.service.timeout=10000, -Dpax.swissbox.framework.rmi.port=21000, -Dpax.exam.invoker=junit, -Dpax.swissbox.framework.rmi.name=ExamRemoteFramework-0e943064-dfeb-4063-bc39-208819e13a4c, -cp, /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/local-repo/org/eclipse/osgi/org.eclipse.osgi/3.7.1/org.eclipse.osgi-3.7.1.jar:/home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/local-repo/org/ops4j/pax/swissbox/pax-swissbox-framework/1.6.0/pax-swissbox-framework-1.6.0.jar:/home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/local-repo/org/ops4j/pax/swissbox/pax-swissbox-tracker/1.6.0/pax-swissbox-tracker-1.6.0.jar, org.ops4j.pax.swissbox.framework.RemoteFrameworkImpl, -Forg.osgi.framework.bootdelegation=sun.*, -Forg.osgi.framework.storage=/tmp/1406842092524-0]]
+22:28:12.561 [main] DEBUG org.ops4j.exec.DefaultJavaRunner - Starting platform process.
+22:28:12.565 [main] DEBUG org.ops4j.exec.DefaultJavaRunner - Wrapping stream I/O.
+22:28:12.567 [main] DEBUG org.ops4j.exec.DefaultJavaRunner - Added shutdown hook.
+22:28:12.568 [main] INFO  org.ops4j.exec.DefaultJavaRunner - DefaultJavaRunner completed successfully
+
+22:28:13.483 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.exam.link]
+22:28:13.483 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/112124771.jar
+22:28:13.488 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.exam.link : downloading...
+22:28:13.624 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.exam/pax-exam/3.0.3]
+22:28:13.625 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.626 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.626 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.626 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.642 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.647 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.exam:pax-exam:jar:3.0.3) as /usr/local/repository/org/ops4j/pax/exam/pax-exam/3.0.3/pax-exam-3.0.3.jar
+22:28:13.649 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.exam.link : 71726 bytes @ [ 35863kBps ]
+22:28:13.649 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/112124771.jar]
+22:28:13.667 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.exam.inject.link]
+22:28:13.668 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/344876718.jar
+22:28:13.668 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.exam.inject.link : downloading...
+22:28:13.675 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.exam/pax-exam-inject/3.0.3]
+22:28:13.677 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.677 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.677 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.677 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.678 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.679 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.exam:pax-exam-inject:jar:3.0.3) as /usr/local/repository/org/ops4j/pax/exam/pax-exam-inject/3.0.3/pax-exam-inject-3.0.3.jar
+22:28:13.679 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.exam.inject.link : 6167 bytes @ [ 6167kBps ]
+22:28:13.679 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/344876718.jar]
+22:28:13.683 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.extender.service.link]
+22:28:13.683 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/2007868628.jar
+22:28:13.683 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.extender.service.link : downloading...
+22:28:13.692 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.exam/pax-exam-extender-service/3.0.3]
+22:28:13.694 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.694 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.694 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.695 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.697 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.697 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.exam:pax-exam-extender-service:jar:3.0.3) as /usr/local/repository/org/ops4j/pax/exam/pax-exam-extender-service/3.0.3/pax-exam-extender-service-3.0.3.jar
+22:28:13.698 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.extender.service.link : 12845 bytes @ [ 12845kBps ]
+22:28:13.698 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/2007868628.jar]
+22:28:13.712 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.osgi.compendium.link]
+22:28:13.712 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/-869645532.jar
+22:28:13.712 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.osgi.compendium.link : downloading...
+22:28:13.720 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.osgi/org.osgi.compendium/4.2.0]
+22:28:13.721 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.721 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.721 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.721 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.723 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.723 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.osgi:org.osgi.compendium:jar:4.2.0) as /usr/local/repository/org/osgi/org.osgi.compendium/4.2.0/org.osgi.compendium-4.2.0.jar
+22:28:13.724 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.osgi.compendium.link : 614152 bytes @ [ 614152kBps ]
+22:28:13.724 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/-869645532.jar]
+22:28:13.772 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.logging.api.link]
+22:28:13.772 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/146328771.jar
+22:28:13.772 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.logging.api.link : downloading...
+22:28:13.778 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.logging/pax-logging-api/1.6.4]
+22:28:13.779 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.779 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.779 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.779 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.781 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.781 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.logging:pax-logging-api:jar:1.6.4) as /usr/local/repository/org/ops4j/pax/logging/pax-logging-api/1.6.4/pax-logging-api-1.6.4.jar
+22:28:13.782 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.logging.api.link : 96728 bytes @ [ 96728kBps ]
+22:28:13.782 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/146328771.jar]
+22:28:13.815 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.base.link]
+22:28:13.816 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/1257848056.jar
+22:28:13.816 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.base.link : downloading...
+22:28:13.822 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.base/ops4j-base/1.4.0]
+22:28:13.823 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.823 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.823 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.823 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.824 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.824 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.base:ops4j-base:jar:1.4.0) as /usr/local/repository/org/ops4j/base/ops4j-base/1.4.0/ops4j-base-1.4.0.jar
+22:28:13.824 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.base.link : 97938 bytes @ [ 97938kBps ]
+22:28:13.824 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/1257848056.jar]
+22:28:13.836 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.swissbox.core.link]
+22:28:13.836 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/-1010742457.jar
+22:28:13.836 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.core.link : downloading...
+22:28:13.841 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.swissbox/pax-swissbox-core/1.6.0]
+22:28:13.842 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.842 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.842 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.842 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.843 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.843 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.swissbox:pax-swissbox-core:jar:1.6.0) as /usr/local/repository/org/ops4j/pax/swissbox/pax-swissbox-core/1.6.0/pax-swissbox-core-1.6.0.jar
+22:28:13.844 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.core.link : 8814 bytes @ [ 8814kBps ]
+22:28:13.844 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/-1010742457.jar]
+22:28:13.848 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.swissbox.extender.link]
+22:28:13.849 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/1849587615.jar
+22:28:13.849 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.extender.link : downloading...
+22:28:13.854 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.swissbox/pax-swissbox-extender/1.6.0]
+22:28:13.855 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.855 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.855 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.855 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.856 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.856 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.swissbox:pax-swissbox-extender:jar:1.6.0) as /usr/local/repository/org/ops4j/pax/swissbox/pax-swissbox-extender/1.6.0/pax-swissbox-extender-1.6.0.jar
+22:28:13.856 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.extender.link : 21761 bytes @ [ 21761kBps ]
+22:28:13.856 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/1849587615.jar]
+22:28:13.893 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.swissbox.framework.link]
+22:28:13.893 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/-1756583348.jar
+22:28:13.893 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.framework.link : downloading...
+22:28:13.900 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.swissbox/pax-swissbox-framework/1.6.0]
+22:28:13.901 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.901 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.901 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.901 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.902 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.903 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.swissbox:pax-swissbox-framework:jar:1.6.0) as /usr/local/repository/org/ops4j/pax/swissbox/pax-swissbox-framework/1.6.0/pax-swissbox-framework-1.6.0.jar
+22:28:13.903 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.framework.link : 10277 bytes @ [ 10277kBps ]
+22:28:13.903 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/-1756583348.jar]
+22:28:13.933 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.swissbox.lifecycle.link]
+22:28:13.933 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/419182688.jar
+22:28:13.934 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.lifecycle.link : downloading...
+22:28:13.939 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.swissbox/pax-swissbox-lifecycle/1.6.0]
+22:28:13.940 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.940 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.940 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.940 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.942 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.942 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.swissbox:pax-swissbox-lifecycle:jar:1.6.0) as /usr/local/repository/org/ops4j/pax/swissbox/pax-swissbox-lifecycle/1.6.0/pax-swissbox-lifecycle-1.6.0.jar
+22:28:13.942 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.lifecycle.link : 6490 bytes @ [ 6490kBps ]
+22:28:13.942 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/419182688.jar]
+22:28:13.947 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.swissbox.tracker.link]
+22:28:13.947 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/1964747218.jar
+22:28:13.948 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.tracker.link : downloading...
+22:28:13.955 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.swissbox/pax-swissbox-tracker/1.6.0]
+22:28:13.956 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.956 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.956 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.956 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.958 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.958 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.swissbox:pax-swissbox-tracker:jar:1.6.0) as /usr/local/repository/org/ops4j/pax/swissbox/pax-swissbox-tracker/1.6.0/pax-swissbox-tracker-1.6.0.jar
+22:28:13.958 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.swissbox.tracker.link : 14802 bytes @ [ 14802kBps ]
+22:28:13.958 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/1964747218.jar]
+22:28:13.975 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.apache.geronimo.specs.atinject.link]
+22:28:13.976 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/-1754928833.jar
+22:28:13.976 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.apache.geronimo.specs.atinject.link : downloading...
+22:28:13.984 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.apache.geronimo.specs/geronimo-atinject_1.0_spec/1.0]
+22:28:13.986 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.986 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.986 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.986 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:13.988 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:13.988 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.apache.geronimo.specs:geronimo-atinject_1.0_spec:jar:1.0) as /usr/local/repository/org/apache/geronimo/specs/geronimo-atinject_1.0_spec/1.0/geronimo-atinject_1.0_spec-1.0.jar
+22:28:13.988 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.apache.geronimo.specs.atinject.link : 10034 bytes @ [ 10034kBps ]
+22:28:13.988 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/-1754928833.jar]
+22:28:13.993 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.junit/4.11.0.1]
+22:28:13.993 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/-2085258732.jar
+22:28:13.993 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.junit/4.11.0.1 : downloading...
+22:28:13.998 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.junit/4.11.0.1]
+22:28:13.999 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:13.999 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:13.999 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:13.999 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:14.000 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:14.000 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.tipi:org.ops4j.pax.tipi.junit:jar:4.11.0.1) as /usr/local/repository/org/ops4j/pax/tipi/org.ops4j.pax.tipi.junit/4.11.0.1/org.ops4j.pax.tipi.junit-4.11.0.1.jar
+22:28:14.001 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.junit/4.11.0.1 : 252220 bytes @ [ 252220kBps ]
+22:28:14.001 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/-2085258732.jar]
+22:28:14.028 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.hamcrest.core/1.3.0.1]
+22:28:14.029 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/1985847874.jar
+22:28:14.029 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.hamcrest.core/1.3.0.1 : downloading...
+22:28:14.035 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.hamcrest.core/1.3.0.1]
+22:28:14.036 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:14.036 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:14.036 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:14.036 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:14.037 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:14.037 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.tipi:org.ops4j.pax.tipi.hamcrest.core:jar:1.3.0.1) as /usr/local/repository/org/ops4j/pax/tipi/org.ops4j.pax.tipi.hamcrest.core/1.3.0.1/org.ops4j.pax.tipi.hamcrest.core-1.3.0.1.jar
+22:28:14.037 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.hamcrest.core/1.3.0.1 : 48078 bytes @ [ 48078kBps ]
+22:28:14.037 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/1985847874.jar]
+22:28:14.056 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [link:classpath:META-INF/links/org.ops4j.pax.exam.invoker.junit.link]
+22:28:14.056 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/2113721367.jar
+22:28:14.056 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.exam.invoker.junit.link : downloading...
+22:28:14.061 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.ops4j.pax.exam/pax-exam-invoker-junit/3.0.3]
+22:28:14.061 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:14.062 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:14.062 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:14.062 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:14.063 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:14.063 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.ops4j.pax.exam:pax-exam-invoker-junit:jar:3.0.3) as /usr/local/repository/org/ops4j/pax/exam/pax-exam-invoker-junit/3.0.3/pax-exam-invoker-junit-3.0.3.jar
+22:28:14.063 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - link:classpath:META-INF/links/org.ops4j.pax.exam.invoker.junit.link : 9812 bytes @ [ 9812kBps ]
+22:28:14.063 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/2113721367.jar]
+22:28:14.077 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Downloading [mvn:org.jruby.osgi/scripts-bundle/1.0]
+22:28:14.078 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Creating new file at destination: /tmp/1406842092524-0/bundles/-762673941.jar
+22:28:14.078 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - mvn:org.jruby.osgi/scripts-bundle/1.0 : downloading...
+22:28:14.086 [main] DEBUG o.o.pax.url.mvn.internal.Connection - Resolving [mvn:org.jruby.osgi/scripts-bundle/1.0]
+22:28:14.087 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [nexus] is inactive (ignored).
+22:28:14.087 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [jboss] is inactive (ignored).
+22:28:14.087 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-staging] is inactive (ignored).
+22:28:14.087 [main] DEBUG o.o.p.u.m.commons.MavenSettingsImpl - Profile [sonatype-snapshot] is inactive (ignored).
+22:28:14.088 [main] DEBUG o.o.pax.url.mvn.internal.LogAdapter - Using manager SimpleLocalRepositoryManager with priority 0 for /usr/local/repository
+22:28:14.088 [main] DEBUG o.o.p.u.m.i.AetherBasedResolver - Resolved (org.jruby.osgi:scripts-bundle:jar:1.0) as /usr/local/repository/org/jruby/osgi/scripts-bundle/1.0/scripts-bundle-1.0.jar
+22:28:14.089 [main] DEBUG o.o.p.e.forked.provision.StreamUtils - mvn:org.jruby.osgi/scripts-bundle/1.0 : 3590 bytes @ [ 3590kBps ]
+22:28:14.089 [main] DEBUG o.o.p.e.f.provision.PlatformImpl - Successfully downloaded to [/tmp/1406842092524-0/bundles/-762673941.jar]
+22:28:14.130 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.exam.link'}'}
+22:28:14.132 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.exam.inject.link'}'}
+22:28:14.133 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.extender.service.link'}'}
+22:28:14.135 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.osgi.compendium.link'}'}
+22:28:14.136 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.logging.api.link'}'}
+22:28:14.137 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.base.link'}'}
+22:28:14.138 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.swissbox.core.link'}'}
+22:28:14.140 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.swissbox.extender.link'}'}
+22:28:14.141 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.swissbox.framework.link'}'}
+22:28:14.141 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.swissbox.lifecycle.link'}'}
+22:28:14.142 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.swissbox.tracker.link'}'}
+22:28:14.143 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.apache.geronimo.specs.atinject.link'}'}
+22:28:14.144 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@2) JUnitBundlesOption{url=mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.junit/4.11.0.1}
+22:28:14.145 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@3) UrlProvisionOption{url='RawUrlReference{url='mvn:org.ops4j.pax.tipi/org.ops4j.pax.tipi.hamcrest.core/1.3.0.1'}'}
+22:28:14.146 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@3) UrlProvisionOption{url='RawUrlReference{url='link:classpath:META-INF/links/org.ops4j.pax.exam.invoker.junit.link'}'}
+22:28:14.150 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - + Install (start@3) MavenArtifactUrlReference{groupId='org.jruby.osgi', artifactId='scripts-bundle', version='1.0', type='null'}
+22:28:14.150 [main] DEBUG o.o.p.e.forked.ForkedTestContainer - Jump to startlevel: 5
+[org.ops4j.pax.swissbox.extender.BundleWatcher] : Creating bundle watcher with scanner [org.ops4j.pax.swissbox.extender.BundleManifestScanner@1f053d25]...
+[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.eclipse.osgi]
+[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.exam]
+[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.exam.inject]
+[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.exam.extender.service]
+[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [osgi.cmpn]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Enabling SLF4J API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Enabling Jakarta Commons Logging API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Enabling Log4J API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Enabling Avalon Logger API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Enabling JULI Logger API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.logging.pax-logging-api]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.base]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.swissbox.core]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.swissbox.extender]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.swissbox.framework]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.swissbox.lifecycle]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.swissbox.tracker]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.apache.geronimo.specs.geronimo-atinject_1.0_spec]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.tipi.junit]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.tipi.hamcrest.core]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [org.ops4j.pax.exam.invoker.junit]
+22:28:14.222 [main] ERROR o.o.p.e.forked.ForkedTestContainer - Bundle [16] is not resolved
+22:28:14.228 [main] DEBUG o.ops4j.store.intern.TemporaryStore - Storage Area is /tmp/tb
+22:28:14.233 [main] DEBUG o.o.p.t.core.intern.RawBuilder - make()
+22:28:14.235 [main] DEBUG o.ops4j.store.intern.TemporaryStore - Enter store()
+22:28:14.235 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - Creating manifest from added headers.
+22:28:14.236 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - DynamicImport-Package = *
+22:28:14.237 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - Ignore-Package = 
+22:28:14.237 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - PaxExam-Executable = PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297,
+22:28:14.237 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297 = org.jruby.embed.osgi.test.JRubyOsgiEmbedTest;testJRubyCreate
+22:28:14.237 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - Bundle-SymbolicName = PAXEXAM-PROBE-b70f37b3-c3a4-4227-944a-443cc3ce35b7
+22:28:14.237 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - Bundle-ManifestVersion = 2
+22:28:14.239 [Thread-4] DEBUG o.o.p.t.core.intern.RawBuilder - Copying resource org/jruby/embed/osgi/test/JRubyOsgiEmbedTest.class
+22:28:14.242 [main] DEBUG o.ops4j.store.intern.TemporaryStore - Exit store(): 612396b9f88f6ee821a77e2f9cfcfc60716a14f9
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Scanning bundle [PAXEXAM-PROBE-b70f37b3-c3a4-4227-944a-443cc3ce35b7]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Found resources [ManifestEntry{ key=PaxExam-Executable, value=PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297, }, ManifestEntry{ key=PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297, value=org.jruby.embed.osgi.test.JRubyOsgiEmbedTest;testJRubyCreate }]
+org.ops4j.pax.exam.extender.service[org.ops4j.pax.exam.raw.extender.intern.Probe] : Test PaxExam-Executable to be in PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297,
+org.ops4j.pax.exam.extender.service[org.ops4j.pax.exam.raw.extender.intern.Probe] : Test PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297 to be in PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297,
+org.ops4j.pax.exam.extender.service[org.ops4j.pax.exam.raw.extender.intern.Probe] : Registering Service: org.ops4j.pax.exam.ProbeInvoker with Probe-Signature="PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297" and expression="org.jruby.embed.osgi.test.JRubyOsgiEmbedTest;testJRubyCreate"
+org.ops4j.pax.exam.invoker.junit[org.ops4j.pax.exam.invoker.junit.internal.ContainerTestRunner] : running testJRubyCreate in reactor
+
+
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.exam.invoker.junit]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.tipi.hamcrest.core]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.tipi.junit]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.apache.geronimo.specs.geronimo-atinject_1.0_spec]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.swissbox.tracker]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.swissbox.lifecycle]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.swissbox.framework]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.swissbox.extender]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.swissbox.core]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.base]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Disabling SLF4J API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Disabling Jakarta Commons Logging API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Disabling Log4J API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Disabling Avalon Logger API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.logging.internal.Activator] : Disabling JULI Logger API support.
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.logging.pax-logging-api]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [osgi.cmpn]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.exam.inject]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.eclipse.osgi]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [PAXEXAM-PROBE-b70f37b3-c3a4-4227-944a-443cc3ce35b7]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Un-registering [ManifestEntry{ key=PaxExam-Executable, value=PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297, }, ManifestEntry{ key=PaxExam-2b79200e-2070-4611-b0b5-aa19f33ca297, value=org.jruby.embed.osgi.test.JRubyOsgiEmbedTest;testJRubyCreate }]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.exam.raw.extender.intern.TestBundleObserver] : Unregistered testcase [org.ops4j.pax.exam.raw.extender.intern.Probe@267a24df.]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.exam]
+org.ops4j.pax.logging.pax-logging-api[org.ops4j.pax.swissbox.extender.BundleWatcher] : Releasing bundle [org.ops4j.pax.exam.extender.service]
+22:28:14.337 [main] DEBUG org.ops4j.exec.DefaultJavaRunner - Shutdown in progress...
+
+22:28:14.338 [main] DEBUG org.ops4j.exec.DefaultJavaRunner - Unwrapping stream I/O.
+22:28:14.338 [main] INFO  org.ops4j.exec.DefaultJavaRunner - Platform has been shutdown.
+22:28:14.347 [main] INFO  o.o.p.e.spi.reactors.ReactorManager - suite finished
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 2.205 sec <<< FAILURE! - in org.jruby.embed.osgi.test.JRubyOsgiEmbedTest
+testJRubyCreate(org.jruby.embed.osgi.test.JRubyOsgiEmbedTest)  Time elapsed: 1.824 sec  <<< ERROR!
+java.lang.ClassNotFoundException: org.jruby.embed.IsolatedScriptingContainer
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:513)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:429)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:417)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:358)
+	at org.jruby.embed.osgi.test.JRubyOsgiEmbedTest.testJRubyCreate(JRubyOsgiEmbedTest.java:79)
+
+
+Results :
+
+Tests in error: 
+  JRubyOsgiEmbedTest.testJRubyCreate:79 » ClassNotFound org.jruby.embed.Isolated...
+
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0
+
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary:
+[INFO] 
+[INFO] gems-bundle ....................................... SUCCESS [7.060s]
+[INFO] scripts-bundle .................................... SUCCESS [0.173s]
+[INFO] test .............................................. FAILURE [3.587s]
+[INFO] osgi_many_bundles_with_embedded_gems .............. SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 11.654s
+[INFO] Finished at: Thu Jul 31 22:28:14 BST 2014
+[INFO] Final Memory: 43M/492M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:2.17:test (default-test) on project test: There are test failures.
+[ERROR] 
+[ERROR] Please refer to /home/christian/projects/active/maven/jruby17uri/maven/jruby-complete/target/it/osgi_many_bundles_with_embedded_gems/test/target/surefire-reports for the individual test results.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <goals> -rf :test

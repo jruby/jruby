@@ -29,10 +29,12 @@ project 'JRuby Stdlib' do
                    :phase => 'initialize',
                    'script' =>  'puts \'fix the gem stub files\'
 		Dir[ \'../../lib/ruby/gems/shared/bin/*\' ].each do |f|
-		  content = File.read( f )
-		  new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
+                  if File.file?( f )
+		    content = File.read( f )
+		    new_content = content.sub(/#!.*/, "#!/usr/bin/env jruby
 ")
-		  File.open( f, "w" ) { |file| file.print( new_content ) }
+		     File.open( f, "w" ) { |file| file.print( new_content ) }
+                  end
 		end
 	
 		puts \'generate the missing bat files\'

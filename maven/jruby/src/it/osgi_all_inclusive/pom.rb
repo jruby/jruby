@@ -10,9 +10,16 @@ properties( 'tesla.dump.pom' => 'pom.xml',
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
-jruby_plugin! :gem, :includeGemsInResources => :compile, :includeRubygemsInTestResources => false
-# TODO it should be
-# jruby_plugin! :gem, :includeRubygemsInResources => true, :includeRubygemsInTestResources => false
+jruby_plugin! :gem, :includeRubygemsInResources => true
+
+# ruby-maven will dump an equivalent pom.xml
+properties( 'tesla.dump.pom' => 'pom.xml',
+            'jruby.home' => '../../../../../' )
+
+execute 'jrubydir', 'process-resources' do |ctx|
+  require 'jruby/commands'
+  JRuby::Commands.generate_dir_info( ctx.project.build.directory.to_pathname + '/rubygems' )
+end
 
 # add some ruby scripts to bundle
 resource :directory => 'src/main/ruby'
@@ -23,6 +30,7 @@ plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0',
           'Export-Package' => 'org.jruby.*,org.junit.*',
           # this is needed to find javax.* packages
           'DynamicImport-Package' => '*',
+          'Include-Resource' => '{maven-resources}',
           'Import-Package' => '!org.jruby.*,*;resolution:=optional',
           'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=true',
           'Embed-Transitive' => true
@@ -33,10 +41,9 @@ plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0',
   @current.extensions = true
 end
 
-# the tests run inside the bundle so we need it as dependency for the bundle
-jar 'junit:junit:4.11'
-
 scope :test do
+  jar 'junit:junit:4.11'
+
   jar 'org.osgi:org.osgi.core:5.0.0'
 
   jar 'org.ops4j.pax.exam:pax-exam-link-mvn', '${exam.version}'
@@ -47,7 +54,25 @@ scope :test do
   jar 'ch.qos.logback:logback-core', '${logback.version}'
   jar 'ch.qos.logback:logback-classic', '${logback.version}'
 
-  #jar 'org.eclipse.osgi:org.eclipse.osgi:3.6.0.v20100517'
-  #jar 'org.eclipse.osgi:org.eclipse.osgi:3.7.1'
-  jar 'org.apache.felix:org.apache.felix.framework:4.4.1'
+  profile :id => 'equinox-3.6' do
+    jar 'org.eclipse.osgi:org.eclipse.osgi:3.6.0.v20100517'
+  end
+  profile :id => 'equinox-3.7' do
+    jar 'org.eclipse.osgi:org.eclipse.osgi:3.7.1'
+  end
+  profile :id => 'felix-4.4' do
+    jar 'org.apache.felix:org.apache.felix.framework:4.4.1'
+  end
+  profile :id => 'felix-3.2' do
+    jar 'org.apache.felix:org.apache.felix.framework:3.2.2'
+  end
+  profile :id => 'knoplerfish' do
+    repository( :id => :knoplerfish, 
+                :url => 'http://www.knopflerfish.org/maven2' )
+    jar 'org.knopflerfish:framework:5.1.6'
+  end
+end
+
+build do
+  final_name 'osgi-test'
 end
