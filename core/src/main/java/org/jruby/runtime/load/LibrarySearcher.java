@@ -186,7 +186,10 @@ class LibrarySearcher {
             // it'd have to worry about schema.
             return true;
         }
-
+        if (path.startsWith("uri:")) {
+            // uri: are absolute
+            return true;
+        }
         return new File(path).isAbsolute();
     }
 
