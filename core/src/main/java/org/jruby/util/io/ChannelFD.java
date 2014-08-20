@@ -166,8 +166,4 @@ public class ChannelFD implements Closeable {
     private POSIX posix;
     public boolean isNativeFile = false;
     private final FilenoUtil filenoUtil;
-
-    // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
-    public static int FIRST_FAKE_FD = 100000;
-    protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
 }
