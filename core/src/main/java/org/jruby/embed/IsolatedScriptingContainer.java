@@ -42,8 +42,6 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     private static final String JRUBY_HOME = "/META-INF/jruby.home";
     private static final String JRUBY_HOME_DIR = JRUBY_HOME + JRUBYDIR;
     
-    private boolean isContextClassLoader;
-    
     public IsolatedScriptingContainer()
     {
         this(LocalContextScope.SINGLETON);
@@ -70,7 +68,7 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
                                        boolean lazy )
     {
         super( scope, behavior, lazy );
-        isContextClassLoader = true;
+        boolean isContextClassLoader = true;
         URL home = Thread.currentThread().getContextClassLoader().getResource( JRUBY_HOME_DIR.substring( 1 ) );
         if ( home == null ) {
             isContextClassLoader = false;
