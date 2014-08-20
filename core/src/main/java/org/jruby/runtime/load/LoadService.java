@@ -993,38 +993,18 @@ public class LoadService {
         }
     }
 
-    private static final String BASE_URI;
-    static {
-        URL url = Thread.currentThread().getContextClassLoader().getResource( "META-INF/jruby.home/.jrubydir" );
-        if (url != null) {
-            BASE_URI = "uri:classloader:";
-        }
-        else if (LoadService.class.getClassLoader() != null) {
-            url = LoadService.class.getClassLoader().getResource("/META-INF/jruby.home/.jrubydir");
-            if (url != null) {
-                BASE_URI = "uri:" + url.toString().replace("/META-INF/jruby.home/.jrubydir", "");
-            }
-            else {
-                // case when using jruby.home from filesystem
-                BASE_URI = "uri:classloader:";
-            }
-        }
-        else {
-            // case when using jruby.home from filesystem
-            BASE_URI = "uri:classloader:";
-        }
-    }
-
     private Library findLibraryBySearchState(SearchState state) {
         if (librarySearcher.findBySearchState(state) != null) {
             // findBySearchState should fill the state already
             return state.library;
         }
 
-        // TODO can be removed once the BASE_URI is added to the LOAD_PATH per default
-        state.searchFile = BASE_URI + "/" + state.searchFile;
-        librarySearcher.findBySearchState(state);
-        return state.library;
+        // TODO(ratnikov): Remove the special classpath case by introducing a classpath file resource
+        Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+        if (library != null) {
+            state.library = library;
+        }
+        return library;
     }
 
     @Deprecated
