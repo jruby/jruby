@@ -141,7 +141,7 @@ public class ParserSupport {
     }
 
     public Node declareIdentifier(String name) {
-        return currentScope.declare(lexer.getPosition(), name);
+        return currentScope.declare(lexer.tokline, name);
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
