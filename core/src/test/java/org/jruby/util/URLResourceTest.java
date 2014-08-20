@@ -21,9 +21,9 @@ public class URLResourceTest extends TestCase {
 
     public void testNoneDirectory(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir/dir_without_listing" ).toExternalForm();
-        // hmm not sure why the url from the classloader does not work :(
-        FileResource resource = URLResource.create( "uri:" + uri.replace( "file://", "file:/" ));
-        
+        // TODO once the URLResource does keep the protocol part of the uri as is we can remove this replace
+        FileResource resource = URLResource.create( "uri:" + uri.replace( "file:/", "file:///" ));
+
         assertNotNull(resource );
         // you can open streams on file-system directories
         assertTrue(resource.isFile());
@@ -34,8 +34,8 @@ public class URLResourceTest extends TestCase {
 
     public void testFile(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir/.jrubydir" ).toExternalForm();
-        // hmm not sure why the url from the classloader does not work :(
-        FileResource resource = URLResource.create( "uri:" + uri.replace( "file://", "file:/" ));
+        // TODO once the URLResource does keep the protocol part of the uri as is we can remove this replace
+        FileResource resource = URLResource.create( "uri:" + uri.replace( "file:/", "file:///" ));
         
         assertNotNull(resource );
         // you can open streams on file-system directories
