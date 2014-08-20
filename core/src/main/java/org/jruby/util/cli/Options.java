@@ -251,12 +251,7 @@ public class Options {
     }
 
     private static boolean calculateInvokedynamicDefault() {
-        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-        if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.8")) >= 0) {
-            return true;
-        } else {
-            // on only if forced
-            return false;
-        }
+        // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
+        return false;
     }
 }
