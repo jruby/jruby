@@ -84,7 +84,9 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         }
 
         // clean up LOAD_PATH
-        runScriptlet( "$LOAD_PATH.delete_if{|p| p =~ /jar$/ }" );
+        runScriptlet( "$LOAD_PATH.delete_if{|p| p =~ /jar$/ };"
+                      // TODO NormalizedFile does too much - should leave uri: files as they are
+                      + "$LOAD_PATH.each{|p| p.sub!( /:\\/([^\\/])/,'://\\1' )}" );
         
         if ( isContextClassLoader ) {
             runScriptlet( "Gem::Specification.reset;"
