@@ -47,12 +47,11 @@ public class URLResourceTest extends TestCase {
     
     public void testNonExistingFile(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir" ).toExternalForm();
-        // hmm not sure why the url from the classloader does not work :(
-        FileResource resource = URLResource.create( "uri:" + uri.replace( "file://", "file:/" ) + "/not_there");
+        // TODO once the URLResource does keep the protocol part of the uri as is we can remove this replace
+        FileResource resource = URLResource.create( "uri:" + uri.replace( "file:/", "file:///" ) + "/not_there");
         
         assertNotNull(resource );
-        // you can open streams on file-system directories
-        assertTrue(resource.isFile());
+        assertFalse(resource.isFile());
         assertFalse(resource.exists());
         assertFalse(resource.isDirectory());
         assertNull(resource.list());
