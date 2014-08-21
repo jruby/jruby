@@ -33,6 +33,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
@@ -3103,8 +3104,9 @@ public class Helpers {
     }
 
     public static IRubyObject rewriteStackTraceAndThrow(Throwable t, Ruby runtime) {
-        RaiseException rewriteStackTrace = RaiseException.createNativeRaiseException(runtime, t);
-        t.setStackTrace(rewriteStackTrace.getStackTrace());
+        StackTraceElement[] javaTrace = t.getStackTrace();
+        BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(runtime.getCurrentContext(), javaTrace);
+        t.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)));
         throwException(t);
 
         // not reached

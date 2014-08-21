@@ -144,7 +144,7 @@ public class RaiseException extends JumpException {
         providedMessage = buildMessage(cause);
         setException(nativeException, true);
         preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
-        setStackTrace(javaTraceFromRubyTrace(exception.getBacktraceElements()));
+        setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }
 
     /**
@@ -222,7 +222,7 @@ public class RaiseException extends JumpException {
         if (exception instanceof NativeException) {
             setStackTrace(((NativeException)exception).getCause().getStackTrace());
         } else {
-            setStackTrace(javaTraceFromRubyTrace(exception.getBacktraceElements()));
+            setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
         }
 
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
@@ -247,7 +247,7 @@ public class RaiseException extends JumpException {
         this.nativeException = nativeException;
     }
 
-    private StackTraceElement[] javaTraceFromRubyTrace(RubyStackTraceElement[] trace) {
+    public static StackTraceElement[] javaTraceFromRubyTrace(RubyStackTraceElement[] trace) {
         StackTraceElement[] newTrace = new StackTraceElement[trace.length];
         for (int i = 0; i < newTrace.length; i++) {
             newTrace[i] = trace[i].getElement();

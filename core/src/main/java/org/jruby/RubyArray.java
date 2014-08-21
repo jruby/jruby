@@ -2615,30 +2615,22 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject rejectBang(ThreadContext context, Block block) {
         if (!block.isGiven()) throw context.runtime.newLocalJumpErrorNoBlock();
 
-        int i2 = 0;
+        IRubyObject result = context.runtime.getNil();
         modify();
         
-        for (int i1 = 0; i1 < realLength; i1++) {
+        for (int i = 0; i < realLength; /* we adjust i in the loop */) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
-            IRubyObject v = safeArrayRef(values, begin + i1);
-            if (block.yield(context, v).isTrue()) continue;
-            if (i1 != i2) store(i2, v);
-            i2++;
-        }
-
-        if (realLength == i2) return context.runtime.getNil();
-
-        if (i2 < realLength) {
-            try {
-                Helpers.fillNil(values, begin + i2, begin + realLength, context.runtime);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
+            IRubyObject v = safeArrayRef(values, begin + i);
+            if (block.yield(context, v).isTrue()) {
+                delete_at(i);
+                result = this;
+            } else {
+                i++;
             }
-            realLength = i2;
         }
 
-        return this;
+        return result;
     }
 
     @JRubyMethod(name = "reject!")
