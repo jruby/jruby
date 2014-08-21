@@ -16,6 +16,12 @@ project 'JRuby Dist' do
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
+  gem 'ruby-maven', '3.1.1.0.8'
+
+  jruby_plugin :gem do
+    execute_goal :initialize
+  end
+
   phase 'prepare-package' do
     plugin :dependency do
       execute_goals( 'unpack',
