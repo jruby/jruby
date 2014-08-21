@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -866,24 +867,26 @@ public abstract class ObjectNodes {
         public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
-            if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#singleton_methods always returns inherited methods at the moment");
-            }
-
-            return singletonMethods(self, UndefinedPlaceholder.INSTANCE);
-        }
-
-        @Specialization
-        public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
-            notDesignedForCompilation();
-
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
-            for (RubyMethod method : self.getSingletonClass(this).getDeclaredMethods()) {
+            final Collection<RubyMethod> methods;
+
+            if (includeInherited) {
+                methods = self.getSingletonClass(this).getAllMethods();
+            } else {
+                methods = self.getSingletonClass(this).getDeclaredMethods();
+            }
+
+            for (RubyMethod method : methods) {
                 array.slowPush(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
             }
 
             return array;
+        }
+
+        @Specialization
+        public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+            return singletonMethods(self, false);
         }
 
     }

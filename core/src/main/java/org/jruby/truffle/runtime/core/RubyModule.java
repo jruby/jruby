@@ -459,6 +459,15 @@ public class RubyModule extends RubyObject implements LookupNode {
         return new ArrayList<>(getMethods().values());
     }
 
+    public Collection<RubyMethod> getAllMethods() {
+        final Map<String, RubyMethod> allMethods = new HashMap<>();
+
+        lookupParent.getMethods(allMethods);
+        allMethods.putAll(methods);
+
+        return allMethods.values();
+    }
+
     public void moduleEval(RubyNode currentNode, String source) {
         RubyNode.notDesignedForCompilation();
 
