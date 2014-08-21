@@ -16,7 +16,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-complete</artifactId>
-      <version>1.7.14.dev-SNAPSHOT</version>
+      <version>@project.version@</version>
       <type>bundle</type>
     </dependency>
     <dependency>
