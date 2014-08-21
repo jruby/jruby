@@ -1,4 +1,0 @@
-#-*- mode: ruby -*-
-source 'https://rubygems.org'
-
-gem 'example', '3'
