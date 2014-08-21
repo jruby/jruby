@@ -43,7 +43,9 @@ import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.Colon3Node;
+import org.jruby.ast.ConstNode;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
@@ -51,14 +53,20 @@ import org.jruby.ast.DXStrNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.DefsNode;
 import org.jruby.ast.DotNode;
+import org.jruby.ast.EncodingNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FalseNode;
+import org.jruby.ast.FileNode;
+import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
+import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.IfNode;
+import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LambdaNode;
@@ -91,6 +99,7 @@ import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
+import org.jruby.ast.TrueNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
@@ -111,7 +120,6 @@ import org.jruby.lexer.yacc.RubyLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -138,64 +146,64 @@ public class RubyParser {
 
 // We need to make sure we have same tokens in the same order and up
 // front so 1.8 and 1.9 parser can use the same Tokens.java file.
-%token <Token> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
+%token <ISourcePosition> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
   kUNLESS kTHEN kELSIF kELSE kCASE kWHEN kWHILE kUNTIL kFOR kBREAK kNEXT
   kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
   kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
   kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
   k__ENCODING__ kDO_LAMBDA 
 
-%token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
-%type <Token> sym symbol operation operation2 operation3 cname fname op 
-%type <Token> f_norm_arg dot_or_colon restarg_mark blkarg_mark
-%token <Token> tUPLUS         /* unary+ */
-%token <Token> tUMINUS        /* unary- */
-%token <Token> tUMINUS_NUM    /* unary- */
-%token <Token> tPOW           /* ** */
-%token <Token> tCMP           /* <=> */
-%token <Token> tEQ            /* == */
-%token <Token> tEQQ           /* === */
-%token <Token> tNEQ           /* != */
-%token <Token> tGEQ           /* >= */
-%token <Token> tLEQ           /* <= */
-%token <Token> tANDOP tOROP   /* && and || */
-%token <Token> tMATCH tNMATCH /* =~ and !~ */
-%token <Token>  tDOT           /* Is just '.' in ruby and not a token */
-%token <Token> tDOT2 tDOT3    /* .. and ... */
-%token <Token> tAREF tASET    /* [] and []= */
-%token <Token> tLSHFT tRSHFT  /* << and >> */
-%token <Token> tCOLON2        /* :: */
-%token <Token> tCOLON3        /* :: at EXPR_BEG */
-%token <Token> tOP_ASGN       /* +=, -=  etc. */
-%token <Token> tASSOC         /* => */
-%token <Token> tLPAREN        /* ( */
-%token <Token> tLPAREN2        /* ( Is just '(' in ruby and not a token */
-%token <Token> tRPAREN        /* ) */
-%token <Token> tLPAREN_ARG    /* ( */
-%token <Token> tLBRACK        /* [ */
-%token <Token> tRBRACK        /* ] */
-%token <Token> tLBRACE        /* { */
-%token <Token> tLBRACE_ARG    /* { */
-%token <Token> tSTAR          /* * */
-%token <Token> tSTAR2         /* *  Is just '*' in ruby and not a token */
-%token <Token> tAMPER         /* & */
-%token <Token> tAMPER2        /* &  Is just '&' in ruby and not a token */
-%token <Token> tTILDE         /* ` is just '`' in ruby and not a token */
-%token <Token> tPERCENT       /* % is just '%' in ruby and not a token */
-%token <Token> tDIVIDE        /* / is just '/' in ruby and not a token */
-%token <Token> tPLUS          /* + is just '+' in ruby and not a token */
-%token <Token> tMINUS         /* - is just '-' in ruby and not a token */
-%token <Token> tLT            /* < is just '<' in ruby and not a token */
-%token <Token> tGT            /* > is just '>' in ruby and not a token */
-%token <Token> tPIPE          /* | is just '|' in ruby and not a token */
-%token <Token> tBANG          /* ! is just '!' in ruby and not a token */
-%token <Token> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <Token> tLCURLY        /* { is just '{' in ruby and not a token */
-%token <Token> tRCURLY        /* } is just '}' in ruby and not a token */
-%token <Token> tBACK_REF2     /* { is just '`' in ruby and not a token */
-%token <Token> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
-%token <Token> tSTRING_DBEG tSTRING_DVAR tSTRING_END
-%token <Token> tLAMBDA tLAMBEG
+%token <String> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
+%type <String> sym symbol operation operation2 operation3 cname fname op 
+%type <String> f_norm_arg dot_or_colon restarg_mark blkarg_mark
+%token <String> tUPLUS         /* unary+ */
+%token <String> tUMINUS        /* unary- */
+%token <String> tUMINUS_NUM    /* unary- */
+%token <String> tPOW           /* ** */
+%token <String> tCMP           /* <=> */
+%token <String> tEQ            /* == */
+%token <String> tEQQ           /* === */
+%token <String> tNEQ           /* != */
+%token <String> tGEQ           /* >= */
+%token <String> tLEQ           /* <= */
+%token <String> tANDOP tOROP   /* && and || */
+%token <String> tMATCH tNMATCH /* =~ and !~ */
+%token <String>  tDOT           /* Is just '.' in ruby and not a token */
+%token <String> tDOT2 tDOT3    /* .. and ... */
+%token <String> tAREF tASET    /* [] and []= */
+%token <String> tLSHFT tRSHFT  /* << and >> */
+%token <String> tCOLON2        /* :: */
+%token <String> tCOLON3        /* :: at EXPR_BEG */
+%token <String> tOP_ASGN       /* +=, -=  etc. */
+%token <String> tASSOC         /* => */
+%token <String> tLPAREN        /* ( */
+%token <String> tLPAREN2        /* ( Is just '(' in ruby and not a token */
+%token <String> tRPAREN        /* ) */
+%token <String> tLPAREN_ARG    /* ( */
+%token <String> tLBRACK        /* [ */
+%token <String> tRBRACK        /* ] */
+%token <String> tLBRACE        /* { */
+%token <String> tLBRACE_ARG    /* { */
+%token <String> tSTAR          /* * */
+%token <String> tSTAR2         /* *  Is just '*' in ruby and not a token */
+%token <String> tAMPER         /* & */
+%token <String> tAMPER2        /* &  Is just '&' in ruby and not a token */
+%token <String> tTILDE         /* ` is just '`' in ruby and not a token */
+%token <String> tPERCENT       /* % is just '%' in ruby and not a token */
+%token <String> tDIVIDE        /* / is just '/' in ruby and not a token */
+%token <String> tPLUS          /* + is just '+' in ruby and not a token */
+%token <String> tMINUS         /* - is just '-' in ruby and not a token */
+%token <String> tLT            /* < is just '<' in ruby and not a token */
+%token <String> tGT            /* > is just '>' in ruby and not a token */
+%token <String> tPIPE          /* | is just '|' in ruby and not a token */
+%token <String> tBANG          /* ! is just '!' in ruby and not a token */
+%token <String> tCARET         /* ^ is just '^' in ruby and not a token */
+%token <String> tLCURLY        /* { is just '{' in ruby and not a token */
+%token <String> tRCURLY        /* } is just '}' in ruby and not a token */
+%token <String> tBACK_REF2     /* { is just '`' in ruby and not a token */
+%token <String> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
+%token <String> tSTRING_DBEG tSTRING_DVAR tSTRING_END
+%token <String> tLAMBDA tLAMBEG
 %token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER tIMAGINARY
 %token <FloatNode> tFLOAT  
 %token <RationalNode> tRATIONAL
@@ -242,17 +250,17 @@ public class RubyParser {
 %type <LambdaNode> lambda
 %type <Node> mlhs_inner f_block_opt for_var
 %type <Node> opt_call_args f_marg f_margs
-%type <Token> bvar
-%type <Token> user_variable, keyword_variable
+%type <String> bvar
    // ENEBO: end all new types
 
-%type <Token> rparen rbracket reswords f_bad_arg
+%type <String> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
-%token <Token> tSYMBOLS_BEG
-%token <Token> tQSYMBOLS_BEG
-%token <Token> tDSTAR
-%token <Token> tSTRING_DEND
-%type <Token> kwrest_mark, f_kwrest, f_label
+%token <String> tSYMBOLS_BEG
+%token <String> tQSYMBOLS_BEG
+%token <String> tDSTAR
+%token <String> tSTRING_DEND
+%type <String> kwrest_mark, f_kwrest, f_label
+%type <FCallNode> fcall
 
 /*
  *    precedence table
@@ -325,7 +333,7 @@ top_stmt      : stmt
                         support.yyerror("BEGIN in method");
                     }
               } tLCURLY top_compstmt tRCURLY {
-                    support.getResult().addBeginNode(new PreExe19Node($1.getPosition(), support.getCurrentScope(), $4));
+                    support.getResult().addBeginNode(new PreExe19Node(support.getPosition($4), support.getCurrentScope(), $4));
                     $$ = null;
               }
 
@@ -343,6 +351,7 @@ bodystmt      : compstmt opt_rescue opt_else opt_ensure {
                       node = new EnsureNode(support.getPosition($1), node, $4);
                   }
 
+                  support.fixpos(node, $1);
                   $$ = node;
                 }
 
@@ -371,19 +380,19 @@ stmt_or_begin   : stmt {
                 | kBEGIN {
                    support.yyerror("BEGIN is permitted only at toplevel");
                 } tLCURLY top_compstmt tRCURLY {
-                    $$ = new BeginNode(support.getPosition($1), $2 == null ? NilImplicitNode.NIL : $2);
+                    $$ = new BeginNode($1, $2 == null ? NilImplicitNode.NIL : $2);
                 }
 
 stmt            : kALIAS fitem {
                     lexer.setState(LexState.EXPR_FNAME);
                 } fitem {
-                    $$ = support.newAlias($1.getPosition(), $2, $4);
+                    $$ = support.newAlias($1, $2, $4);
                 }
                 | kALIAS tGVAR tGVAR {
-                    $$ = new VAliasNode($1.getPosition(), (String) $2.getValue(), (String) $3.getValue());
+                    $$ = new VAliasNode($1, $2, $3);
                 }
                 | kALIAS tGVAR tBACK_REF {
-                    $$ = new VAliasNode($1.getPosition(), (String) $2.getValue(), "$" + $<BackRefNode>3.getType());
+                    $$ = new VAliasNode($1, $2, "$" + $<BackRefNode>3.getType());
                 }
                 | kALIAS tGVAR tNTH_REF {
                     support.yyerror("can't make alias for the number variables");
@@ -393,9 +402,11 @@ stmt            : kALIAS fitem {
                 }
                 | stmt kIF_MOD expr_value {
                     $$ = new IfNode(support.getPosition($1), support.getConditionNode($3), $1, null);
+                    support.fixpos($<Node>$, $3);
                 }
                 | stmt kUNLESS_MOD expr_value {
                     $$ = new IfNode(support.getPosition($1), support.getConditionNode($3), null, $1);
+                    support.fixpos($<Node>$, $3);
                 }
                 | stmt kWHILE_MOD expr_value {
                     if ($1 != null && $1 instanceof BeginNode) {
@@ -417,9 +428,9 @@ stmt            : kALIAS fitem {
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (support.isInDef() || support.isInSingle()) {
-                        support.warn(ID.END_IN_METHOD, $1.getPosition(), "END in method; use at_exit");
+                        support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
                     }
-                    $$ = new PostExeNode($1.getPosition(), $3);
+                    $$ = new PostExeNode($1, $3);
                 }
                 | command_asgn
                 | mlhs '=' command_call {
@@ -431,7 +442,7 @@ stmt            : kALIAS fitem {
                     support.checkExpression($3);
 
                     ISourcePosition pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
+                    String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
                         $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
@@ -446,13 +457,13 @@ stmt            : kALIAS fitem {
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
   // FIXME: arg_concat logic missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode(support.getPosition($1), $1, (String) $5.getValue(), $3, $6);
+                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN command_call {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
                     support.yyerror("can't make alias for the number variables");
@@ -460,7 +471,7 @@ stmt            : kALIAS fitem {
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
                 }
                 | backref tOP_ASGN command_call {
                     support.backrefAssignError($1);
@@ -487,10 +498,10 @@ command_asgn    : lhs '=' command_call {
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr kAND expr {
-                    $$ = support.newAndNode($2.getPosition(), $1, $3);
+                    $$ = support.newAndNode(support.getPosition($1), $1, $3);
                 }
                 | expr kOR expr {
-                    $$ = support.newOrNode($2.getPosition(), $1, $3);
+                    $$ = support.newOrNode(support.getPosition($1), $1, $3);
                 }
                 | kNOT opt_nl expr {
                     $$ = support.getOperatorCallNode(support.getConditionNode($3), "!");
@@ -518,16 +529,22 @@ block_command   : block_call
 cmd_brace_block : tLBRACE_ARG {
                     support.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode($1.getPosition(), $3, $4, support.getCurrentScope());
+                    $$ = new IterNode($3.getPosition(), $3, $4, support.getCurrentScope());
                     support.popCurrentScope();
                 }
 
-// Node:command - fcall/call/yield/super [!null]
-command        : operation command_args %prec tLOWEST {
-                    $$ = support.new_fcall($1, $2, null);
+fcall           : operation {
+                    $$ = support.new_fcall($1);
                 }
-                | operation command_args cmd_brace_block {
-                    $$ = support.new_fcall($1, $2, $3);
+
+// Node:command - fcall/call/yield/super [!null]
+command        : fcall command_args %prec tLOWEST {
+                    support.frobnicate_fcall_args($1, $2, null);
+                    $$ = $1;
+                }
+                | fcall command_args cmd_brace_block {
+                    support.frobnicate_fcall_args($1, $2, $3);
+                    $$ = $1;
                 }
                 | primary_value tDOT operation2 command_args %prec tLOWEST {
                     $$ = support.new_call($1, $3, $4, null);
@@ -542,19 +559,19 @@ command        : operation command_args %prec tLOWEST {
                     $$ = support.new_call($1, $3, $4, $5);
                 }
                 | kSUPER command_args {
-                    $$ = support.new_super($2, $1); // .setPosFrom($2);
+                    $$ = support.new_super($1, $2);
                 }
                 | kYIELD command_args {
-                    $$ = support.new_yield($1.getPosition(), $2);
+                    $$ = support.new_yield($1, $2);
                 }
                 | kRETURN call_args {
-                    $$ = new ReturnNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
+                    $$ = new ReturnNode($1, support.ret_args($2, $1));
                 }
                 | kBREAK call_args {
-                    $$ = new BreakNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
+                    $$ = new BreakNode($1, support.ret_args($2, $1));
                 }
                 | kNEXT call_args {
-                    $$ = new NextNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
+                    $$ = new NextNode($1, support.ret_args($2, $1));
                 }
 
 // MultipleAssig19Node:mlhs - [!null]
@@ -568,7 +585,7 @@ mlhs_inner      : mlhs_basic {
                     $$ = $1;
                 }
                 | tLPAREN mlhs_inner rparen {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), support.newArrayNode($1.getPosition(), $2), null, null);
+                    $$ = new MultipleAsgn19Node($2.getPosition(), support.newArrayNode($2.getPosition(), $2), null, null);
                 }
 
 // MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
@@ -591,16 +608,16 @@ mlhs_basic      : mlhs_head {
                     $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), $4);
                 }
                 | tSTAR mlhs_node {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, $2, null);
+                    $$ = new MultipleAsgn19Node($2.getPosition(), null, $2, null);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, $2, $4);
+                    $$ = new MultipleAsgn19Node($2.getPosition(), null, $2, $4);
                 }
                 | tSTAR {
-                      $$ = new MultipleAsgn19Node($1.getPosition(), null, new StarNode(lexer.getPosition()), null);
+                      $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
                 }
                 | tSTAR ',' mlhs_post {
-                      $$ = new MultipleAsgn19Node($1.getPosition(), null, new StarNode(lexer.getPosition()), $3);
+                      $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), $3);
                 }
 
 mlhs_item       : mlhs_node
@@ -624,23 +641,62 @@ mlhs_post       : mlhs_item {
                     $$ = $1.add($3);
                 }
 
-mlhs_node       : user_variable {
-                    $$ = support.assignable($1, NilImplicitNode.NIL);
+mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
+                    $$ = support.assignableLabelOrIdentifier($1, null);
                 }
-                | keyword_variable {
-                    $$ = support.assignable($1, NilImplicitNode.NIL);
+                | tIVAR {
+                   $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
+                | tGVAR {
+                   $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                }
+                | tCONSTANT {
+                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
+
+                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
+                }
+                | tCVAR {
+                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                } /*mri:user_variable*/
+                | /*mri:keyword_variable*/ kNIL {
+                    support.compile_error("Can't assign to nil");
+                    $$ = null;
+                }
+                | kSELF {
+                    support.compile_error("Can't change the value of self");
+                    $$ = null;
+                }
+                | kTRUE {
+                    support.compile_error("Can't assign to true");
+                    $$ = null;
+                }
+                | kFALSE {
+                    support.compile_error("Can't assign to false");
+                    $$ = null;
+                }
+                | k__FILE__ {
+                    support.compile_error("Can't assign to __FILE__");
+                    $$ = null;
+                }
+                | k__LINE__ {
+                    support.compile_error("Can't assign to __LINE__");
+                    $$ = null;
+                }
+                | k__ENCODING__ {
+                    support.compile_error("Can't assign to __ENCODING__");
+                    $$ = null;
+                } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     $$ = support.aryset($1, $3);
                 }
                 | primary_value tDOT tIDENTIFIER {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value tDOT tCONSTANT {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -649,38 +705,77 @@ mlhs_node       : user_variable {
 
                     ISourcePosition position = support.getPosition($1);
 
-                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = $1.getPosition();
+                    ISourcePosition position = lexer.getPosition();
 
-                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, (String) $2.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, $2), NilImplicitNode.NIL);
                 }
                 | backref {
                     support.backrefAssignError($1);
                 }
 
-lhs             : user_variable {
-                    $$ = support.assignable($1, NilImplicitNode.NIL);
+lhs             : /*mri:user_variable*/ tIDENTIFIER {
+                    $$ = support.assignableLabelOrIdentifier($1, null);
                 }
-                | keyword_variable {
-                    $$ = support.assignable($1, NilImplicitNode.NIL);
+                | tIVAR {
+                   $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
+                | tGVAR {
+                   $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                }
+                | tCONSTANT {
+                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
+
+                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
+                }
+                | tCVAR {
+                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                } /*mri:user_variable*/
+                | /*mri:keyword_variable*/ kNIL {
+                    support.compile_error("Can't assign to nil");
+                    $$ = null;
+                }
+                | kSELF {
+                    support.compile_error("Can't change the value of self");
+                    $$ = null;
+                }
+                | kTRUE {
+                    support.compile_error("Can't assign to true");
+                    $$ = null;
+                }
+                | kFALSE {
+                    support.compile_error("Can't assign to false");
+                    $$ = null;
+                }
+                | k__FILE__ {
+                    support.compile_error("Can't assign to __FILE__");
+                    $$ = null;
+                }
+                | k__LINE__ {
+                    support.compile_error("Can't assign to __LINE__");
+                    $$ = null;
+                }
+                | k__ENCODING__ {
+                    support.compile_error("Can't assign to __ENCODING__");
+                    $$ = null;
+                } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     $$ = support.aryset($1, $3);
                 }
                 | primary_value tDOT tIDENTIFIER {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value tDOT tCONSTANT {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -689,16 +784,16 @@ lhs             : user_variable {
 
                     ISourcePosition position = support.getPosition($1);
 
-                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = $1.getPosition();
+                    ISourcePosition position = lexer.getPosition();
 
-                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, (String) $2.getValue()), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, $2), NilImplicitNode.NIL);
                 }
                 | backref {
                     support.backrefAssignError($1);
@@ -710,16 +805,16 @@ cname           : tIDENTIFIER {
                 | tCONSTANT
 
 cpath           : tCOLON3 cname {
-                    $$ = support.new_colon3($1.getPosition(), (String) $2.getValue());
+                    $$ = support.new_colon3(lexer.getPosition(), $2);
                 }
                 | cname {
-                    $$ = support.new_colon2($1.getPosition(), null, (String) $1.getValue());
+                    $$ = support.new_colon2(lexer.getPosition(), null, $1);
                 }
                 | primary_value tCOLON2 cname {
-                    $$ = support.new_colon2(support.getPosition($1), $1, (String) $3.getValue());
+                    $$ = support.new_colon2(support.getPosition($1), $1, $3);
                 }
 
-// Token:fname - A function name [!null]
+// String:fname - A function name [!null]
 fname          : tIDENTIFIER | tCONSTANT | tFID 
                | op {
                    lexer.setState(LexState.EXPR_ENDFN);
@@ -732,10 +827,10 @@ fname          : tIDENTIFIER | tCONSTANT | tFID
 
 // LiteralNode:fsym
 fsym           : fname {
-                    $$ = new LiteralNode($1);
+                    $$ = new LiteralNode(lexer.getPosition(), $1);
                 }
                 | symbol {
-                    $$ = new LiteralNode($1);
+                    $$ = new LiteralNode(lexer.getPosition(), $1);
                 }
 
 // Node:fitem
@@ -755,21 +850,140 @@ undef_list      : fitem {
                     $$ = support.appendToBlock($1, support.newUndef($1.getPosition(), $4));
                 }
 
-// Token:op
+// String:op
 op              : tPIPE | tCARET | tAMPER2 | tCMP | tEQ | tEQQ | tMATCH
                 | tNMATCH | tGT | tGEQ | tLT | tLEQ | tNEQ | tLSHFT | tRSHFT
                 | tDSTAR | tPLUS | tMINUS | tSTAR2 | tSTAR | tDIVIDE | tPERCENT 
                 | tPOW | tBANG | tTILDE | tUPLUS | tUMINUS | tAREF | tASET 
                 | tBACK_REF2
 
-// Token:op
-reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
-                | kALIAS | kAND | kBEGIN | kBREAK | kCASE | kCLASS | kDEF
-                | kDEFINED | kDO | kELSE | kELSIF | kEND | kENSURE | kFALSE
-                | kFOR | kIN | kMODULE | kNEXT | kNIL | kNOT
-                | kOR | kREDO | kRESCUE | kRETRY | kRETURN | kSELF | kSUPER
-                | kTHEN | kTRUE | kUNDEF | kWHEN | kYIELD
-                | kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
+// String:op
+reswords        : k__LINE__ {
+                    $$ = "__LINE__";
+                }
+                | k__FILE__ {
+                    $$ = "__FILE__";
+                }
+                | k__ENCODING__ {
+                    $$ = "__ENCODING__";
+                }
+                | klBEGIN {
+                    $$ = "BEGIN";
+                }
+                | klEND {
+                    $$ = "END";
+                }
+                | kALIAS {
+                    $$ = "alias";
+                }
+                | kAND {
+                    $$ = "and";
+                }
+                | kBEGIN {
+                    $$ = "begin";
+                }
+                | kBREAK {
+                    $$ = "break";
+                }
+                | kCASE {
+                    $$ = "case";
+                }
+                | kCLASS {
+                    $$ = "class";
+                }
+                | kDEF {
+                    $$ = "def";
+                }
+                | kDEFINED {
+                    $$ = "defined?";
+                }
+                | kDO {
+                    $$ = "do";
+                }
+                | kELSE {
+                    $$ = "else";
+                }
+                | kELSIF {
+                    $$ = "elsif";
+                }
+                | kEND {
+                    $$ = "end";
+                }
+                | kENSURE {
+                    $$ = "ensure";
+                }
+                | kFALSE {
+                    $$ = "false";
+                }
+                | kFOR {
+                    $$ = "for";
+                }
+                | kIN {
+                    $$ = "in";
+                }
+                | kMODULE {
+                    $$ = "module";
+                }
+                | kNEXT {
+                    $$ = "next";
+                }
+                | kNIL {
+                    $$ = "nil";
+                }
+                | kNOT {
+                    $$ = "not";
+                }
+                | kOR {
+                    $$ = "or";
+                }
+                | kREDO {
+                    $$ = "redo";
+                }
+                | kRESCUE {
+                    $$ = "rescue";
+                }
+                | kRETRY {
+                    $$ = "retry";
+                }
+                | kRETURN {
+                    $$ = "return";
+                }
+                | kSELF {
+                    $$ = "self";
+                }
+                | kSUPER {
+                    $$ = "super";
+                }
+                | kTHEN {
+                    $$ = "then";
+                }
+                | kTRUE {
+                    $$ = "true";
+                }
+                | kUNDEF {
+                    $$ = "undef";
+                }
+                | kWHEN {
+                    $$ = "when";
+                }
+                | kYIELD {
+                    $$ = "yield";
+                }
+                | kIF_MOD {
+                    $$ = "if";
+                }
+                | kUNLESS_MOD {
+                    $$ = "unless";
+                }
+                | kWHILE_MOD {
+                    $$ = "while";
+                }
+                | kUNTIL_MOD {
+                    $$ = "until";
+                }
+                | kRESCUE_MOD {
+                    $$ = "rescue";
+                }
 
 arg             : lhs '=' arg {
                     $$ = support.node_assign($1, $3);
@@ -777,7 +991,7 @@ arg             : lhs '=' arg {
                     $<Node>$.setPosition(support.getPosition($1));
                 }
                 | lhs '=' arg kRESCUE_MOD arg {
-                    ISourcePosition position = $4.getPosition();
+                    ISourcePosition position = support.getPosition($1);
                     Node body = $5 == null ? NilImplicitNode.NIL : $5;
                     $$ = support.node_assign($1, new RescueNode(position, $3, new RescueBodyNode(position, null, body, null), null));
                 }
@@ -785,7 +999,7 @@ arg             : lhs '=' arg {
                     support.checkExpression($3);
 
                     ISourcePosition pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
+                    String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
                         $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
@@ -800,12 +1014,12 @@ arg             : lhs '=' arg {
                 }
                 | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
                     support.checkExpression($3);
-                    ISourcePosition pos = $4.getPosition();
+                    ISourcePosition pos = support.getPosition($5);
                     Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    Node rescue = new RescueNode($4.getPosition(), $3, new RescueBodyNode($4.getPosition(), null, body, null), null);
+                    Node rescue = new RescueNode(pos, $3, new RescueBodyNode(support.getPosition($3), null, body, null), null);
 
                     pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
+                    String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode(rescue);
                         $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
@@ -820,16 +1034,16 @@ arg             : lhs '=' arg {
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
   // FIXME: arg_concat missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode(support.getPosition($1), $1, (String) $5.getValue(), $3, $6);
+                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
                     support.yyerror("constant re-assignment");
@@ -939,13 +1153,13 @@ arg             : lhs '=' arg {
                     $$ = support.getOperatorCallNode($1, ">>", $3, lexer.getPosition());
                 }
                 | arg tANDOP arg {
-                    $$ = support.newAndNode($2.getPosition(), $1, $3);
+                    $$ = support.newAndNode($1.getPosition(), $1, $3);
                 }
                 | arg tOROP arg {
-                    $$ = support.newOrNode($2.getPosition(), $1, $3);
+                    $$ = support.newOrNode($1.getPosition(), $1, $3);
                 }
                 | kDEFINED opt_nl arg {
-                    $$ = support.new_defined($1.getPosition(), $3);
+                    $$ = support.new_defined($1, $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
                     $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
@@ -972,7 +1186,7 @@ aref_args       : none
 
 paren_args      : tLPAREN2 opt_call_args rparen {
                     $$ = $2;
-                    if ($$ != null) $<Node>$.setPosition($1.getPosition());
+                    if ($$ != null) $<Node>$.setPosition(support.getPosition($2));
                 }
 
 opt_paren_args  : none | paren_args
@@ -1016,7 +1230,7 @@ command_args    : /* none */ {
                 }
 
 block_arg       : tAMPER arg_value {
-                    $$ = new BlockPassNode($1.getPosition(), $2);
+                    $$ = new BlockPassNode(support.getPosition($2), $2);
                 }
 
 opt_block_arg   : ',' block_arg {
@@ -1030,7 +1244,7 @@ args            : arg_value {
                     $$ = support.newArrayNode(pos, $1);
                 }
                 | tSTAR arg_value {
-                    $$ = support.newSplatNode($1.getPosition(), $2);
+                    $$ = support.newSplatNode(support.getPosition($2), $2);
                 }
                 | args ',' arg_value {
                     Node node = support.splat_array($1);
@@ -1081,7 +1295,7 @@ mrhs            : args ',' arg_value {
                     }
                 }
                 | tSTAR arg_value {
-                     $$ = support.newSplatNode(support.getPosition($1), $2);  
+                     $$ = support.newSplatNode(support.getPosition($2), $2);
                 }
 
 primary         : literal
@@ -1099,10 +1313,10 @@ primary         : literal
                 | var_ref
                 | backref
                 | tFID {
-                    $$ = support.new_fcall($1, null, null);
+                    $$ = support.new_fcall($1);
                 }
                 | kBEGIN bodystmt kEND {
-                    $$ = new BeginNode(support.getPosition($1), $2 == null ? NilImplicitNode.NIL : $2);
+                    $$ = new BeginNode($1, $2 == null ? NilImplicitNode.NIL : $2);
                 }
                 | tLPAREN_ARG {
                     lexer.setState(LexState.EXPR_ENDARG);
@@ -1112,50 +1326,49 @@ primary         : literal
                 | tLPAREN_ARG expr {
                     lexer.setState(LexState.EXPR_ENDARG); 
                 } rparen {
-                    support.warning(ID.GROUPED_EXPRESSION, $1.getPosition(), "(...) interpreted as grouped expression");
+                    support.warning(ID.GROUPED_EXPRESSION, support.getPosition($2), "(...) interpreted as grouped expression");
                     $$ = $2;
                 }
                 | tLPAREN compstmt tRPAREN {
                     if ($2 != null) {
                         // compstmt position includes both parens around it
-                        ((ISourcePositionHolder) $2).setPosition($1.getPosition());
+                        ((ISourcePositionHolder) $2).setPosition(support.getPosition($2));
                         $$ = $2;
                     } else {
-                        $$ = new NilNode($1.getPosition());
+                        $$ = new NilNode(support.getPosition($2));
                     }
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    $$ = support.new_colon2(support.getPosition($1), $1, (String) $3.getValue());
+                    $$ = support.new_colon2(support.getPosition($1), $1, $3);
                 }
                 | tCOLON3 tCONSTANT {
-                    $$ = support.new_colon3($1.getPosition(), (String) $2.getValue());
+                    $$ = support.new_colon3(lexer.getPosition(), $2);
                 }
                 | tLBRACK aref_args tRBRACK {
-                    ISourcePosition position = $1.getPosition();
+                    ISourcePosition position = support.getPosition($2);
                     if ($2 == null) {
                         $$ = new ZArrayNode(position); /* zero length array */
                     } else {
                         $$ = $2;
-                        $<ISourcePositionHolder>$.setPosition(position);
                     }
                 }
                 | tLBRACE assoc_list tRCURLY {
                     $$ = $2;
                 }
                 | kRETURN {
-                    $$ = new ReturnNode($1.getPosition(), NilImplicitNode.NIL);
+                    $$ = new ReturnNode($1, NilImplicitNode.NIL);
                 }
                 | kYIELD tLPAREN2 call_args rparen {
-                    $$ = support.new_yield($1.getPosition(), $3);
+                    $$ = support.new_yield($1, $3);
                 }
                 | kYIELD tLPAREN2 rparen {
-                    $$ = new ZYieldNode($1.getPosition());
+                    $$ = new ZYieldNode($1);
                 }
                 | kYIELD {
-                    $$ = new ZYieldNode($1.getPosition());
+                    $$ = new ZYieldNode($1);
                 }
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
-                    $$ = support.new_defined($1.getPosition(), $4);
+                    $$ = support.new_defined($1, $4);
                 }
                 | kNOT tLPAREN2 expr rparen {
                     $$ = support.getOperatorCallNode(support.getConditionNode($3), "!");
@@ -1163,8 +1376,9 @@ primary         : literal
                 | kNOT tLPAREN2 rparen {
                     $$ = support.getOperatorCallNode(NilImplicitNode.NIL, "!");
                 }
-                | operation brace_block {
-                    $$ = support.new_fcall($1, null, $2);
+                | fcall brace_block {
+                    support.frobnicate_fcall_args($1, null, $2);
+                    $$ = $1;                    
                 }
                 | method_call
                 | method_call brace_block {
@@ -1179,10 +1393,10 @@ primary         : literal
                     $$ = $2;
                 }
                 | kIF expr_value then compstmt if_tail kEND {
-                    $$ = new IfNode($1.getPosition(), support.getConditionNode($2), $4, $5);
+                    $$ = new IfNode($1, support.getConditionNode($2), $4, $5);
                 }
                 | kUNLESS expr_value then compstmt opt_else kEND {
-                    $$ = new IfNode($1.getPosition(), support.getConditionNode($2), $5, $4);
+                    $$ = new IfNode($1, support.getConditionNode($2), $5, $4);
                 }
                 | kWHILE {
                     lexer.getConditionState().begin();
@@ -1190,7 +1404,7 @@ primary         : literal
                     lexer.getConditionState().end();
                 } compstmt kEND {
                     Node body = $6 == null ? NilImplicitNode.NIL : $6;
-                    $$ = new WhileNode($1.getPosition(), support.getConditionNode($3), body);
+                    $$ = new WhileNode($1, support.getConditionNode($3), body);
                 }
                 | kUNTIL {
                   lexer.getConditionState().begin();
@@ -1198,13 +1412,13 @@ primary         : literal
                   lexer.getConditionState().end();
                 } compstmt kEND {
                     Node body = $6 == null ? NilImplicitNode.NIL : $6;
-                    $$ = new UntilNode($1.getPosition(), support.getConditionNode($3), body);
+                    $$ = new UntilNode($1, support.getConditionNode($3), body);
                 }
                 | kCASE expr_value opt_terms case_body kEND {
-                    $$ = support.newCaseNode($1.getPosition(), $2, $4);
+                    $$ = support.newCaseNode($1, $2, $4);
                 }
                 | kCASE opt_terms case_body kEND {
-                    $$ = support.newCaseNode($1.getPosition(), null, $3);
+                    $$ = support.newCaseNode($1, null, $3);
                 }
                 | kFOR for_var kIN {
                     lexer.getConditionState().begin();
@@ -1212,7 +1426,7 @@ primary         : literal
                     lexer.getConditionState().end();
                 } compstmt kEND {
                       // ENEBO: Lots of optz in 1.9 parser here
-                    $$ = new ForNode($1.getPosition(), $2, $8, $5, support.getCurrentScope());
+                    $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope());
                 }
                 | kCLASS cpath superclass {
                     if (support.isInDef() || support.isInSingle()) {
@@ -1222,7 +1436,7 @@ primary         : literal
                 } bodystmt kEND {
                     Node body = $5 == null ? NilImplicitNode.NIL : $5;
 
-                    $$ = new ClassNode($1.getPosition(), $<Colon3Node>2, support.getCurrentScope(), body, $3);
+                    $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3);
                     support.popCurrentScope();
                 }
                 | kCLASS tLSHFT expr {
@@ -1235,7 +1449,7 @@ primary         : literal
                 } bodystmt kEND {
                     Node body = $7 == null ? NilImplicitNode.NIL : $7;
 
-                    $$ = new SClassNode($1.getPosition(), $3, support.getCurrentScope(), body);
+                    $$ = new SClassNode($1, $3, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef($<Boolean>4.booleanValue());
                     support.setInSingle($<Integer>6.intValue());
@@ -1248,7 +1462,7 @@ primary         : literal
                 } bodystmt kEND {
                     Node body = $4 == null ? NilImplicitNode.NIL : $4;
 
-                    $$ = new ModuleNode($1.getPosition(), $<Colon3Node>2, support.getCurrentScope(), body);
+                    $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body);
                     support.popCurrentScope();
                 }
                 | kDEF fname {
@@ -1258,7 +1472,7 @@ primary         : literal
                     Node body = $5;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefnNode($1.getPosition(), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $4, support.getCurrentScope(), body);
+                    $$ = new DefnNode($1, new ArgumentNode($1, $2), $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                 }
@@ -1272,21 +1486,21 @@ primary         : literal
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefsNode($1.getPosition(), $2, new ArgumentNode($5.getPosition(), (String) $5.getValue()), $7, support.getCurrentScope(), body);
+                    $$ = new DefsNode($1, $2, new ArgumentNode($1, $5), $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                 }
                 | kBREAK {
-                    $$ = new BreakNode($1.getPosition(), NilImplicitNode.NIL);
+                    $$ = new BreakNode($1, NilImplicitNode.NIL);
                 }
                 | kNEXT {
-                    $$ = new NextNode($1.getPosition(), NilImplicitNode.NIL);
+                    $$ = new NextNode($1, NilImplicitNode.NIL);
                 }
                 | kREDO {
-                    $$ = new RedoNode($1.getPosition());
+                    $$ = new RedoNode($1);
                 }
                 | kRETRY {
-                    $$ = new RetryNode($1.getPosition());
+                    $$ = new RetryNode($1);
                 }
 
 primary_value   : primary {
@@ -1304,7 +1518,7 @@ do              : term
 
 if_tail         : opt_else
                 | kELSIF expr_value then compstmt if_tail {
-                    $$ = new IfNode($1.getPosition(), support.getConditionNode($2), $4, $5);
+                    $$ = new IfNode($1, support.getConditionNode($2), $4, $5);
                 }
 
 opt_else        : none
@@ -1317,7 +1531,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                     $$ = support.assignable($1, NilImplicitNode.NIL);
+                     $$ = support.assignableLabelOrIdentifier($1, NilImplicitNode.NIL);
                 }
                 | tLPAREN f_margs rparen {
                     $$ = $2;
@@ -1335,10 +1549,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgn19Node($1.getPosition(), $1, null, null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignable($4, null), null);
+                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignable($4, null), $6);
+                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), $6);
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
@@ -1347,16 +1561,16 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, support.assignable($2, null), null);
+                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), null);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, support.assignable($2, null), $4);
+                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), $4);
                 }
                 | tSTAR {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, new StarNode(lexer.getPosition()), null);
+                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
                 }
                 | tSTAR ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), null, null, $3);
+                    $$ = new MultipleAsgn19Node(support.getPosition($3), null, null, $3);
                 }
 
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
@@ -1366,7 +1580,7 @@ block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
                     $$ = support.new_args_tail($1.getPosition(), $1, null, $2);
                 }
                 | f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail($1.getPosition(), null, $1, $2);
+                    $$ = support.new_args_tail(lexer.getPosition(), null, $1, $2);
                 }
                 | f_block_arg {
                     $$ = support.new_args_tail($1.getPosition(), null, null, $1);
@@ -1437,10 +1651,10 @@ opt_block_param : none {
                 }
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
-                    $$ = support.new_args($1.getPosition(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tOROP {
-                    $$ = support.new_args($1.getPosition(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
                     $$ = $2;
@@ -1481,7 +1695,6 @@ lambda          : /* none */  {
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
                     $$ = $2;
-                    $<ISourcePositionHolder>$.setPosition($1.getPosition());
                 }
                 | f_args {
                     $$ = $1;
@@ -1497,7 +1710,7 @@ lambda_body     : tLAMBEG compstmt tRCURLY {
 do_block        : kDO_BLOCK {
                     support.pushBlockScope();
                 } opt_block_param compstmt kEND {
-                    $$ = new IterNode(support.getPosition($1), $3, $4, support.getCurrentScope());
+                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
                     support.popCurrentScope();
                 }
 
@@ -1531,8 +1744,9 @@ block_call      : command do_block {
                 }
 
 // [!null]
-method_call     : operation paren_args {
-                    $$ = support.new_fcall($1, $2, null);
+method_call     : fcall paren_args {
+                    support.frobnicate_fcall_args($1, $2, null);
+                    $$ = $1;
                 }
                 | primary_value tDOT operation2 opt_paren_args {
                     $$ = support.new_call($1, $3, $4, null);
@@ -1544,42 +1758,41 @@ method_call     : operation paren_args {
                     $$ = support.new_call($1, $3, null, null);
                 }
                 | primary_value tDOT paren_args {
-                    $$ = support.new_call($1, new Token("call", $1.getPosition()), $3, null);
+                    $$ = support.new_call($1, "call", $3, null);
                 }
                 | primary_value tCOLON2 paren_args {
-                    $$ = support.new_call($1, new Token("call", $1.getPosition()), $3, null);
+                    $$ = support.new_call($1, "call", $3, null);
                 }
                 | kSUPER paren_args {
-                    $$ = support.new_super($2, $1);
+                    $$ = support.new_super($1, $2);
                 }
                 | kSUPER {
-                    $$ = new ZSuperNode($1.getPosition());
+                    $$ = new ZSuperNode($1);
                 }
                 | primary_value '[' opt_call_args rbracket {
                     if ($1 instanceof SelfNode) {
-                        $$ = support.new_fcall(new Token("[]", support.getPosition($1)), $3, null);
+                        $$ = support.new_fcall("[]");
+                        support.frobnicate_fcall_args($<FCallNode>$, $3, null);
                     } else {
-                        $$ = support.new_call($1, new Token("[]", support.getPosition($1)), $3, null);
+                        $$ = support.new_call($1, "[]", $3, null);
                     }
                 }
 
 brace_block     : tLCURLY {
                     support.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode($1.getPosition(), $3, $4, support.getCurrentScope());
+                    $$ = new IterNode(support.getPosition($3), $3, $4, support.getCurrentScope());
                     support.popCurrentScope();
                 }
                 | kDO {
                     support.pushBlockScope();
                 } opt_block_param compstmt kEND {
-                    $$ = new IterNode($1.getPosition(), $3, $4, support.getCurrentScope());
-                    // FIXME: What the hell is this?
-                    $<ISourcePositionHolder>0.setPosition(support.getPosition($<ISourcePositionHolder>0));
+                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
                     support.popCurrentScope();
                 }
 
 case_body       : kWHEN args then compstmt cases {
-                    $$ = support.newWhenNode($1.getPosition(), $2, $4, $5);
+                    $$ = support.newWhenNode($1, $2, $4, $5);
                 }
 
 cases           : opt_else | case_body
@@ -1587,15 +1800,15 @@ cases           : opt_else | case_body
 opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
                     Node node;
                     if ($3 != null) {
-                        node = support.appendToBlock(support.node_assign($3, new GlobalVarNode($1.getPosition(), "$!")), $5);
+                        node = support.appendToBlock(support.node_assign($3, new GlobalVarNode($1, "$!")), $5);
                         if ($5 != null) {
-                            node.setPosition(support.unwrapNewlineNode($5).getPosition());
+                            node.setPosition($1);
                         }
                     } else {
                         node = $5;
                     }
                     Node body = node == null ? NilImplicitNode.NIL : node;
-                    $$ = new RescueBodyNode($1.getPosition(), $2, body, $6);
+                    $$ = new RescueBodyNode($1, $2, body, $6);
                 }
                 | { 
                     $$ = null; 
@@ -1623,7 +1836,7 @@ opt_ensure      : kENSURE compstmt {
 literal         : numeric
                 | symbol {
                     // FIXME: We may be intern'ing more than once.
-                    $$ = new SymbolNode($1.getPosition(), ((String) $1.getValue()).intern());
+                    $$ = new SymbolNode(lexer.getPosition(), $1.intern());
                 }
                 | dsym
 
@@ -1642,9 +1855,9 @@ strings         : string {
 
 // [!null]
 string          : tCHAR {
-                    ByteList aChar = ByteList.create((String) $1.getValue());
+                    ByteList aChar = ByteList.create($1);
                     aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStrNode($<Token>0.getPosition(), aChar, 0);
+                    $$ = lexer.createStrNode(lexer.getPosition(), aChar, 0);
                 }
                 | string1 {
                     $$ = $1;
@@ -1655,21 +1868,10 @@ string          : tCHAR {
 
 string1         : tSTRING_BEG string_contents tSTRING_END {
                     $$ = $2;
-
-                    $<ISourcePositionHolder>$.setPosition($1.getPosition());
-                    int extraLength = ((String) $1.getValue()).length() - 1;
-
-                    // We may need to subtract addition offset off of first 
-                    // string fragment (we optimistically take one off in
-                    // ParserSupport.literal_concat).  Check token length
-                    // and subtract as neeeded.
-                    if (($2 instanceof DStrNode) && extraLength > 0) {
-                      Node strNode = ((DStrNode)$2).get(0);
-                    }
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
-                    ISourcePosition position = $1.getPosition();
+                    ISourcePosition position = support.getPosition($2);
 
                     if ($2 == null) {
                         $$ = new XStrNode(position, null);
@@ -1685,11 +1887,11 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 }
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = support.newRegexpNode($1.getPosition(), $2, (RegexpNode) $3);
+                    $$ = support.newRegexpNode(support.getPosition($2), $2, (RegexpNode) $3);
                 }
 
 words           : tWORDS_BEG ' ' tSTRING_END {
-                    $$ = new ZArrayNode($1.getPosition());
+                    $$ = new ZArrayNode(lexer.getPosition());
                 }
                 | tWORDS_BEG word_list tSTRING_END {
                     $$ = $2;
@@ -1722,19 +1924,17 @@ symbol_list     : /* none */ {
                 }
 
 qwords          : tQWORDS_BEG ' ' tSTRING_END {
-                     $$ = new ZArrayNode($1.getPosition());
+                     $$ = new ZArrayNode(lexer.getPosition());
                 }
                 | tQWORDS_BEG qword_list tSTRING_END {
                     $$ = $2;
-                    $<ISourcePositionHolder>$.setPosition($1.getPosition());
                 }
 
 qsymbols        : tQSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = new ZArrayNode($1.getPosition());
+                    $$ = new ZArrayNode(lexer.getPosition());
                 }
                 | tQSYMBOLS_BEG qsym_list tSTRING_END {
                     $$ = $2;
-                    $<ISourcePositionHolder>$.setPosition($1.getPosition());
                 }
 
 
@@ -1755,7 +1955,7 @@ qsym_list      : /* none */ {
 string_contents : /* none */ {
                     ByteList aChar = ByteList.create("");
                     aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStrNode($<Token>0.getPosition(), aChar, 0);
+                    $$ = lexer.createStrNode(lexer.getPosition(), aChar, 0);
                 }
                 | string_contents string_content {
                     $$ = support.literal_concat($1.getPosition(), $1, $2);
@@ -1785,7 +1985,7 @@ string_content  : tSTRING_CONTENT {
                     lexer.setState(LexState.EXPR_BEG);
                 } string_dvar {
                     lexer.setStrTerm($<StrTerm>2);
-                    $$ = new EvStrNode($1.getPosition(), $3);
+                    $$ = new EvStrNode(support.getPosition($3), $3);
                 }
                 | tSTRING_DBEG {
                    $$ = lexer.getStrTerm();
@@ -1798,28 +1998,27 @@ string_content  : tSTRING_CONTENT {
                    lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
 
-                   $$ = support.newEvStrNode($1.getPosition(), $3);
+                   $$ = support.newEvStrNode(support.getPosition($3), $3);
                 }
 
 string_dvar     : tGVAR {
-                     $$ = new GlobalVarNode($1.getPosition(), (String) $1.getValue());
+                     $$ = new GlobalVarNode(lexer.getPosition(), $1);
                 }
                 | tIVAR {
-                     $$ = new InstVarNode($1.getPosition(), (String) $1.getValue());
+                     $$ = new InstVarNode(lexer.getPosition(), $1);
                 }
                 | tCVAR {
-                     $$ = new ClassVarNode($1.getPosition(), (String) $1.getValue());
+                     $$ = new ClassVarNode(lexer.getPosition(), $1);
                 }
                 | backref
 
-// Token:symbol
+// String:symbol
 symbol          : tSYMBEG sym {
                      lexer.setState(LexState.EXPR_END);
                      $$ = $2;
-                     $<ISourcePositionHolder>$.setPosition($1.getPosition());
                 }
 
-// Token:symbol
+// String:symbol
 sym             : fname | tIVAR | tGVAR | tCVAR
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
@@ -1830,13 +2029,13 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      // EvStrNode :"#{some expression}"
                      // Ruby 1.9 allows empty strings as symbols
                      if ($2 == null) {
-                         $$ = new SymbolNode($1.getPosition(), "");
+                         $$ = new SymbolNode(lexer.getPosition(), "");
                      } else if ($2 instanceof DStrNode) {
-                         $$ = new DSymbolNode($1.getPosition(), $<DStrNode>2);
+                         $$ = new DSymbolNode($2.getPosition(), $<DStrNode>2);
                      } else if ($2 instanceof StrNode) {
-                         $$ = new SymbolNode($1.getPosition(), $<StrNode>2.getValue().toString().intern());
+                         $$ = new SymbolNode($2.getPosition(), $<StrNode>2.getValue().toString().intern());
                      } else {
-                         $$ = new DSymbolNode($1.getPosition());
+                         $$ = new DSymbolNode($2.getPosition());
                          $<DSymbolNode>$.add($2);
                      }
                 }
@@ -1845,7 +2044,7 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                     $$ = $1;  
                 }
                 | tUMINUS_NUM simple_numeric %prec tLOWEST {
-                     $$ = support.negateNumeric($1.getPosition(), $2);
+                     $$ = support.negateNumeric($2.getPosition(), $2);
                 }
 
 simple_numeric  : tINTEGER {
@@ -1862,45 +2061,90 @@ simple_numeric  : tINTEGER {
                 }
 
 // [!null]
-user_variable   : tIDENTIFIER | tIVAR | tGVAR | tCONSTANT | tCVAR
-
-keyword_variable : kNIL { 
-                    $$ = new Token("nil", Tokens.kNIL, $1.getPosition());
+var_ref         : /*mri:user_variable*/ tIDENTIFIER {
+                    $$ = support.declareIdentifier($1);
+                }
+                | tIVAR {
+                    $$ = new InstVarNode(lexer.getPosition(), $1);
+                }
+                | tGVAR {
+                    $$ = new GlobalVarNode(lexer.getPosition(), $1);
+                }
+                | tCONSTANT {
+                    $$ = new ConstNode(lexer.getPosition(), $1);
+                }
+                | tCVAR {
+                    $$ = new ClassVarNode(lexer.getPosition(), $1);
+                } /*mri:user_variable*/
+                | /*mri:keyword_variable*/ kNIL { 
+                    $$ = new NilNode(lexer.getPosition());
                 }
                 | kSELF {
-                    $$ = new Token("self", Tokens.kSELF, $1.getPosition());
+                    $$ = new SelfNode(lexer.getPosition());
                 }
                 | kTRUE { 
-                    $$ = new Token("true", Tokens.kTRUE, $1.getPosition());
+                    $$ = new TrueNode(lexer.getPosition());
                 }
                 | kFALSE {
-                    $$ = new Token("false", Tokens.kFALSE, $1.getPosition());
+                    $$ = new FalseNode(lexer.getPosition());
                 }
                 | k__FILE__ {
-                    $$ = new Token("__FILE__", Tokens.k__FILE__, $1.getPosition());
+                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getPosition().getFile().getBytes(),
+                    support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                 }
                 | k__LINE__ {
-                    $$ = new Token("__LINE__", Tokens.k__LINE__, $1.getPosition());
+                    $$ = new FixnumNode(lexer.getPosition(), lexer.tokline.getStartLine()+1);
                 }
                 | k__ENCODING__ {
-                    $$ = new Token("__ENCODING__", Tokens.k__ENCODING__, $1.getPosition());
-                }
+                    $$ = new EncodingNode(lexer.getPosition(), lexer.getEncoding());
+                } /*mri:keyword_variable*/
 
 // [!null]
-var_ref         : user_variable {
-                    $$ = support.gettable($1);
+var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
+                    $$ = support.assignableLabelOrIdentifier($1, null);
                 }
-                | keyword_variable {
-                    $$ = support.gettable($1);
+                | tIVAR {
+                   $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
+                | tGVAR {
+                   $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                }
+                | tCONSTANT {
+                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-// [!null]
-var_lhs         : user_variable {
-                    $$ = support.assignable($1, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
                 }
-                | keyword_variable {
-                    $$ = support.assignable($1, NilImplicitNode.NIL);
+                | tCVAR {
+                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                } /*mri:user_variable*/
+                | /*mri:keyword_variable*/ kNIL {
+                    support.compile_error("Can't assign to nil");
+                    $$ = null;
                 }
+                | kSELF {
+                    support.compile_error("Can't change the value of self");
+                    $$ = null;
+                }
+                | kTRUE {
+                    support.compile_error("Can't assign to true");
+                    $$ = null;
+                }
+                | kFALSE {
+                    support.compile_error("Can't assign to false");
+                    $$ = null;
+                }
+                | k__FILE__ {
+                    support.compile_error("Can't assign to __FILE__");
+                    $$ = null;
+                }
+                | k__LINE__ {
+                    support.compile_error("Can't assign to __LINE__");
+                    $$ = null;
+                }
+                | k__ENCODING__ {
+                    support.compile_error("Can't assign to __ENCODING__");
+                    $$ = null;
+                } /*mri:keyword_variable*/
 
 // [!null]
 backref         : tNTH_REF {
@@ -1926,7 +2170,6 @@ superclass      : term {
 // ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
                     $$ = $2;
-                    $<ISourcePositionHolder>$.setPosition($1.getPosition());
                     lexer.setState(LexState.EXPR_BEG);
                     lexer.commandStart = true;
                 }
@@ -1944,7 +2187,7 @@ args_tail       : f_kwarg ',' f_kwrest opt_f_block_arg {
                     $$ = support.new_args_tail($1.getPosition(), $1, null, $2);
                 }
                 | f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail($1.getPosition(), null, $1, $2);
+                    $$ = support.new_args_tail(lexer.getPosition(), null, $1, $2);
                 }
                 | f_block_arg {
                     $$ = support.new_args_tail($1.getPosition(), null, null, $1);
@@ -2017,7 +2260,7 @@ f_bad_arg       : tCONSTANT {
                     support.yyerror("formal argument cannot be a class variable");
                 }
 
-// Token:f_norm_arg [!null]
+// String:f_norm_arg [!null]
 f_norm_arg      : f_bad_arg
                 | tIDENTIFIER {
                     $$ = support.formal_argument($1);
@@ -2025,9 +2268,6 @@ f_norm_arg      : f_bad_arg
 
 f_arg_item      : f_norm_arg {
                     $$ = support.arg_var($1);
-  /*
-                    $$ = new ArgAuxiliaryNode($1.getPosition(), (String) $1.getValue(), 1);
-  */
                 }
                 | tLPAREN f_margs rparen {
                     $$ = $2;
@@ -2059,17 +2299,17 @@ f_label 	: tLABEL {
                 }
 
 f_kw            : f_label arg_value {
-                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
+                    $$ = support.keyword_arg($2.getPosition(), support.assignableLabelOrIdentifier($1, $2));
                 }
                 | f_label {
-                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = support.keyword_arg(lexer.getPosition(), support.assignableLabelOrIdentifier($1, new RequiredKeywordArgumentValueNode()));
                 }
 
 f_block_kw      : f_label primary_value {
-                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
+                    $$ = support.keyword_arg(support.getPosition($2), support.assignableLabelOrIdentifier($1, $2));
                 }
                 | f_label {
-                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = support.keyword_arg(lexer.getPosition(), support.assignableLabelOrIdentifier($1, new RequiredKeywordArgumentValueNode()));
                 }
              
 
@@ -2104,12 +2344,12 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
 
 f_opt           : f_norm_arg '=' arg_value {
                     support.arg_var($1);
-                    $$ = new OptArgNode($1.getPosition(), support.assignable($1, $3));
+                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1, $3));
                 }
 
 f_block_opt     : tIDENTIFIER '=' primary_value {
                     support.arg_var(support.formal_argument($1));
-                    $$ = new OptArgNode($1.getPosition(), support.assignable($1, $3));
+                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1, $3));
                 }
 
 f_block_optarg  : f_block_opt {
@@ -2137,7 +2377,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                     $$ = new RestArgNode(support.arg_var(support.shadowing_lvar($2)));
                 }
                 | restarg_mark {
-                    $$ = new UnnamedRestArgNode($1.getPosition(), "", support.getCurrentScope().addVariable("*"));
+                    $$ = new UnnamedRestArgNode(lexer.getPosition(), "", support.getCurrentScope().addVariable("*"));
                 }
 
 // [!null]
@@ -2198,7 +2438,7 @@ assoc           : arg_value tASSOC arg_value {
                     $$ = new KeyValuePair<Node,Node>($1, $3);
                 }
                 | tLABEL arg_value {
-                    $$ = new KeyValuePair<Node,Node>(new SymbolNode($1.getPosition(), (String) $1.getValue()), $2);
+                    $$ = new KeyValuePair<Node,Node>(new SymbolNode(support.getPosition($2), $1), $2);
                 }
                 | tDSTAR arg_value {
                     $$ = new KeyValuePair<Node,Node>(null, $2);

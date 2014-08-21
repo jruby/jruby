@@ -45,6 +45,9 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     protected Node argsNode;
     protected Node iterNode;
 
+    public FCallNode(ISourcePosition position, String name) {
+        this(position, name, null, null);
+    }
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position);
         this.name = name;

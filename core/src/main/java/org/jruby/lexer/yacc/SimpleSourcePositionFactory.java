@@ -58,7 +58,9 @@ public class SimpleSourcePositionFactory implements SourcePositionFactory {
     }
 
     public ISourcePosition getPosition() {
-        if (lastPosition.getStartLine() == source.getVirtualLine()) return lastPosition;
+        // Only give new position if we are at least one char past \n of previous line so that last tokens
+        // of previous line will not get associated with the next line.
+        if (lastPosition.getStartLine() == source.getVirtualLine() || source.lastWasBeginOfLine()) return lastPosition;
 
         lastPosition = new SimpleSourcePosition(source.getFilename(), source.getVirtualLine());
 

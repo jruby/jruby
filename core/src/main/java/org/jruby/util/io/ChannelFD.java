@@ -13,7 +13,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
@@ -130,7 +129,7 @@ public class ChannelFD implements Closeable {
         else chRead = null;
         if (ch instanceof WritableByteChannel) chWrite = (WritableByteChannel)ch;
         else chWrite = null;
-        if (ch instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)ch;
+        if (ch instanceof FileChannel) chSeek = (FileChannel)ch;
         else chSeek = null;
         if (ch instanceof SelectableChannel) chSelect = (SelectableChannel)ch;
         else chSelect = null;
@@ -154,7 +153,7 @@ public class ChannelFD implements Closeable {
     public Channel ch;
     public ReadableByteChannel chRead;
     public WritableByteChannel chWrite;
-    public SeekableByteChannel chSeek;
+    public FileChannel chSeek;
     public SelectableChannel chSelect;
     public FileChannel chFile;
     public SocketChannel chSock;
@@ -166,8 +165,4 @@ public class ChannelFD implements Closeable {
     private POSIX posix;
     public boolean isNativeFile = false;
     private final FilenoUtil filenoUtil;
-
-    // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
-    public static int FIRST_FAKE_FD = 100000;
-    protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
 }
