@@ -424,8 +424,13 @@ public abstract class ModuleNodes {
         public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
             notDesignedForCompilation();
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (String constant : module.getConstants().keySet()) {
+                array.slowPush(getContext().newSymbol(constant));
+            }
+
+            return array;
         }
     }
 
