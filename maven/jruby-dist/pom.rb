@@ -16,7 +16,7 @@ project 'JRuby Dist' do
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
-  phase 'package' do
+  phase 'prepare-package' do
     plugin :dependency do
       execute_goals( 'unpack',
                      :id => 'unpack jruby-stdlib',
@@ -41,7 +41,8 @@ project 'JRuby Dist' do
         end
       end
     end
-
+  end
+  phase :package do
     plugin( :assembly, '2.4',
             'finalName' => "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}",
             'tarLongFileMode' =>  'gnu',

@@ -24,7 +24,7 @@
         <executions>
           <execution>
             <id>unpack jruby-stdlib</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>unpack</goal>
             </goals>
@@ -93,7 +93,7 @@
         <executions>
           <execution>
             <id>fix_executable_bits</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>execute</goal>
             </goals>
