@@ -176,10 +176,10 @@ public class RubyParser {
 %token <String> tCOLON3        /* :: at EXPR_BEG */
 %token <String> tOP_ASGN       /* +=, -=  etc. */
 %token <String> tASSOC         /* => */
-%token <String> tLPAREN        /* ( */
-%token <String> tLPAREN2        /* ( Is just '(' in ruby and not a token */
+%token <ISourcePosition> tLPAREN        /* ( */
+%token <ISourcePosition> tLPAREN2        /* ( Is just '(' in ruby and not a token */
 %token <String> tRPAREN        /* ) */
-%token <String> tLPAREN_ARG    /* ( */
+%token <ISourcePosition> tLPAREN_ARG    /* ( */
 %token <String> tLBRACK        /* [ */
 %token <String> tRBRACK        /* ] */
 %token <String> tLBRACE        /* { */
@@ -585,7 +585,7 @@ mlhs_inner      : mlhs_basic {
                     $$ = $1;
                 }
                 | tLPAREN mlhs_inner rparen {
-                    $$ = new MultipleAsgn19Node($2.getPosition(), support.newArrayNode($2.getPosition(), $2), null, null);
+                    $$ = new MultipleAsgn19Node($1, support.newArrayNode($1, $2), null, null);
                 }
 
 // MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
@@ -1186,7 +1186,7 @@ aref_args       : none
 
 paren_args      : tLPAREN2 opt_call_args rparen {
                     $$ = $2;
-                    if ($$ != null) $<Node>$.setPosition(support.getPosition($2));
+                    if ($$ != null) $<Node>$.setPosition($1);
                 }
 
 opt_paren_args  : none | paren_args
@@ -1326,16 +1326,16 @@ primary         : literal
                 | tLPAREN_ARG expr {
                     lexer.setState(LexState.EXPR_ENDARG); 
                 } rparen {
-                    support.warning(ID.GROUPED_EXPRESSION, support.getPosition($2), "(...) interpreted as grouped expression");
+                    support.warning(ID.GROUPED_EXPRESSION, $1, "(...) interpreted as grouped expression");
                     $$ = $2;
                 }
                 | tLPAREN compstmt tRPAREN {
                     if ($2 != null) {
                         // compstmt position includes both parens around it
-                        ((ISourcePositionHolder) $2).setPosition(support.getPosition($2));
+                        ((ISourcePositionHolder) $2).setPosition($1);
                         $$ = $2;
                     } else {
-                        $$ = new NilNode(support.getPosition($2));
+                        $$ = new NilNode($1);
                     }
                 }
                 | primary_value tCOLON2 tCONSTANT {

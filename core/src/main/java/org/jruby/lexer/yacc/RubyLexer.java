@@ -1877,7 +1877,7 @@ public class RubyLexer {
         cmdArgumentState.stop();
         setState(LexState.EXPR_BEG);
         
-        yaccValue = "(";
+        yaccValue = getPosition();
         return result;
     }
     
