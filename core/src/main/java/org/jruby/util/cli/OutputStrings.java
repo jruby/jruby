@@ -115,8 +115,7 @@ public class OutputStrings {
         String versionString = "";
         ver = Constants.RUBY_VERSION;
         patchlevel = Constants.RUBY_PATCHLEVEL;
-        // TODO: add patchlevel once 2.1 is released
-        versionString = String.format("%s", ver);
+        versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
 
         String fullVersion = String.format(
                 "jruby %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
