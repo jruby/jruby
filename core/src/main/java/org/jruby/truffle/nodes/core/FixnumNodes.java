@@ -1325,6 +1325,29 @@ public abstract class FixnumNodes {
 
     }
 
+    @CoreMethod(names = "floor", maxArgs = 0)
+    public abstract static class FloorNode extends CoreMethodNode {
+
+        public FloorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FloorNode(FloorNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int abs(int n) {
+            return n;
+        }
+
+        @Specialization
+        public long abs(long n) {
+            return n;
+        }
+
+    }
+
     @CoreMethod(names = "chr", maxArgs = 0)
     public abstract static class ChrNode extends CoreMethodNode {
 
