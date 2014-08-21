@@ -375,8 +375,6 @@ public class RubyLexer {
     public int nextToken() throws IOException {
         token = yylex();
 
-        final ISourcePosition p = getPosition();
-
         return token == EOF ? 0 : token;
     }
     
@@ -414,7 +412,7 @@ public class RubyLexer {
     }
 
     public ISourcePosition getPosition() {
-        return src.getPosition();
+        return src.getPosition(null);
     }
 
     public String getCurrentLine() {
@@ -1849,8 +1847,8 @@ public class RubyLexer {
         conditionState.stop();
         cmdArgumentState.stop();
         setState(LexState.EXPR_BEG);
-        
-        yaccValue = "{";
+        yaccValue = getPosition();
+
         if (c != Tokens.tLBRACE) commandStart = true;
         return c;
     }

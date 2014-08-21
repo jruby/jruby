@@ -1734,7 +1734,7 @@ states[9] = new ParserState() {
 };
 states[10] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.getResult().addBeginNode(new PreExe19Node(support.getPosition(((Node)yyVals[-1+yyTop])), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
+                    support.getResult().addBeginNode(new PreExe19Node(((ISourcePosition)yyVals[-4+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
                     yyVal = null;
     return yyVal;
   }
@@ -2028,7 +2028,7 @@ states[57] = new ParserState() {
 };
 states[58] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new IterNode(((ArgsNode)yyVals[-2+yyTop]).getPosition(), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
+                    yyVal = new IterNode(((ISourcePosition)yyVals[-4+yyTop]), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
                     support.popCurrentScope();
     return yyVal;
   }
@@ -4140,7 +4140,7 @@ states[433] = new ParserState() {
 };
 states[434] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new IterNode(support.getPosition(((ArgsNode)yyVals[-2+yyTop])), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
+                    yyVal = new IterNode(((ISourcePosition)yyVals[-4+yyTop]), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
                     support.popCurrentScope();
     return yyVal;
   }
@@ -5195,7 +5195,7 @@ states[631] = new ParserState() {
   }
 };
 }
-					// line 2476 "RubyParser.y"
+					// line 2477 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure

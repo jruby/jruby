@@ -176,14 +176,14 @@ public class RubyParser {
 %token <String> tCOLON3        /* :: at EXPR_BEG */
 %token <String> tOP_ASGN       /* +=, -=  etc. */
 %token <String> tASSOC         /* => */
-%token <ISourcePosition> tLPAREN        /* ( */
-%token <ISourcePosition> tLPAREN2        /* ( Is just '(' in ruby and not a token */
+%token <ISourcePosition> tLPAREN       /* ( */
+%token <ISourcePosition> tLPAREN2      /* ( Is just '(' in ruby and not a token */
 %token <String> tRPAREN        /* ) */
 %token <ISourcePosition> tLPAREN_ARG    /* ( */
 %token <String> tLBRACK        /* [ */
 %token <String> tRBRACK        /* ] */
-%token <String> tLBRACE        /* { */
-%token <String> tLBRACE_ARG    /* { */
+%token <ISourcePosition> tLBRACE        /* { */
+%token <ISourcePosition> tLBRACE_ARG    /* { */
 %token <String> tSTAR          /* * */
 %token <String> tSTAR2         /* *  Is just '*' in ruby and not a token */
 %token <String> tAMPER         /* & */
@@ -198,12 +198,13 @@ public class RubyParser {
 %token <String> tPIPE          /* | is just '|' in ruby and not a token */
 %token <String> tBANG          /* ! is just '!' in ruby and not a token */
 %token <String> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <String> tLCURLY        /* { is just '{' in ruby and not a token */
+%token <ISourcePosition> tLCURLY        /* { is just '{' in ruby and not a token */
 %token <String> tRCURLY        /* } is just '}' in ruby and not a token */
 %token <String> tBACK_REF2     /* { is just '`' in ruby and not a token */
 %token <String> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <String> tSTRING_DBEG tSTRING_DVAR tSTRING_END
-%token <String> tLAMBDA tLAMBEG
+%token <String> tLAMBDA
+%token <String> tLAMBEG
 %token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER tIMAGINARY
 %token <FloatNode> tFLOAT  
 %token <RationalNode> tRATIONAL
@@ -333,7 +334,7 @@ top_stmt      : stmt
                         support.yyerror("BEGIN in method");
                     }
               } tLCURLY top_compstmt tRCURLY {
-                    support.getResult().addBeginNode(new PreExe19Node(support.getPosition($4), support.getCurrentScope(), $4));
+                    support.getResult().addBeginNode(new PreExe19Node($1, support.getCurrentScope(), $4));
                     $$ = null;
               }
 
@@ -529,7 +530,7 @@ block_command   : block_call
 cmd_brace_block : tLBRACE_ARG {
                     support.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode($3.getPosition(), $3, $4, support.getCurrentScope());
+                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
                     support.popCurrentScope();
                 }
 
@@ -1781,7 +1782,7 @@ method_call     : fcall paren_args {
 brace_block     : tLCURLY {
                     support.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode(support.getPosition($3), $3, $4, support.getCurrentScope());
+                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
                     support.popCurrentScope();
                 }
                 | kDO {
