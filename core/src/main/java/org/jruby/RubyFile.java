@@ -1413,6 +1413,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return runtime.newString("//./" + relativePath.substring(0, 3));
         }
 
+        if (relativePath.startsWith("uri:")) {
+            return runtime.newString(relativePath);
+        }
+
         String[] uriParts = splitURI(relativePath);
         String cwd;
 
@@ -1433,32 +1437,36 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // If there's a second argument, it's the path to which the first
         // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
-            cwd = get_path(context, args[1]).getUnicodeValue();
-
-            // Handle ~user paths.
-            if (expandUser) {
-                cwd = expandUserPath(context, cwd, true);
+            // TODO maybe combine this with get_path method
+            if ((args[1] instanceof RubyString) && args[1].asJavaString().startsWith("uri:")) {
+                cwd = args[1].asJavaString();
+            } else {
+                cwd = get_path(context, args[1]).getUnicodeValue();
+    
+                // Handle ~user paths.
+                if (expandUser) {
+                    cwd = expandUserPath(context, cwd, true);
+                }
+    
+                String[] cwdURIParts = splitURI(cwd);
+                if (uriParts == null && cwdURIParts != null) {
+                    uriParts = cwdURIParts;
+                    cwd = cwdURIParts[1];
+                }
+    
+                cwd = adjustRootPathOnWindows(runtime, cwd, null);
+    
+                boolean startsWithSlashNotOnWindows = (cwd != null)
+                        && !Platform.IS_WINDOWS && cwd.length() > 0
+                        && cwd.charAt(0) == '/';
+    
+                // TODO: better detection when path is absolute or not.
+                // If the path isn't absolute, then prepend the current working
+                // directory to the path.
+                if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
+                    cwd = new File(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
+                }
             }
-
-            String[] cwdURIParts = splitURI(cwd);
-            if (uriParts == null && cwdURIParts != null) {
-                uriParts = cwdURIParts;
-                cwd = cwdURIParts[1];
-            }
-
-            cwd = adjustRootPathOnWindows(runtime, cwd, null);
-
-            boolean startsWithSlashNotOnWindows = (cwd != null)
-                    && !Platform.IS_WINDOWS && cwd.length() > 0
-                    && cwd.charAt(0) == '/';
-
-            // TODO: better detection when path is absolute or not.
-            // If the path isn't absolute, then prepend the current working
-            // directory to the path.
-            if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
-                cwd = new File(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
-            }
-
         } else {
             // If there's no second argument, simply use the working directory
             // of the runtime.
