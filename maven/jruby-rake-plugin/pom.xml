@@ -5,15 +5,16 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.14.dev-SNAPSHOT</version>
+    <version>1.7.14-SNAPSHOT</version>
   </parent>
   <groupId>org.jruby.plugins</groupId>
   <artifactId>jruby-rake-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>JRuby Rake Plugin</name>
   <properties>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
   <dependencies>
     <dependency>

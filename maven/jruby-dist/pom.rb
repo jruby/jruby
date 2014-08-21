@@ -11,7 +11,8 @@ project 'JRuby Dist' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readOnly' => true,
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 

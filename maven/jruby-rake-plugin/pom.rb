@@ -11,7 +11,8 @@ project 'JRuby Rake Plugin' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'maven-plugin'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readOnly' => true,
               'main.basedir' => '${project.parent.parent.basedir}' )
 
   jar 'org.apache.maven:maven-plugin-api:2.2.1'

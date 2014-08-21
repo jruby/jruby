@@ -11,7 +11,8 @@
   <packaging>pom</packaging>
   <name>JRuby Artifacts</name>
   <properties>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
   <profiles>
     <profile>

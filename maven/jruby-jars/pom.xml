@@ -39,8 +39,9 @@ freezing to) a specific jruby-complete jar version.</description>
   </scm>
   <properties>
     <jruby.home>${basedir}/../../</jruby.home>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <jruby.plugins.version>1.0.3</jruby.plugins.version>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.version>0.1.1</tesla.version>
   </properties>

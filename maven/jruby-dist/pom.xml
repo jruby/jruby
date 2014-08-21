@@ -7,58 +7,61 @@
     <artifactId>jruby-artifacts</artifactId>
     <version>1.7.14-SNAPSHOT</version>
   </parent>
-  <artifactId>jruby</artifactId>
-  <name>JRuby Main Maven Artifact</name>
+  <artifactId>jruby-dist</artifactId>
+  <packaging>pom</packaging>
+  <name>JRuby Dist</name>
   <properties>
-    <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <jruby.home>${basedir}/../..</jruby.home>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
   </properties>
-  <dependencies>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-source-plugin</artifactId>
-        <configuration>
-          <skipSource>true</skipSource>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
+        <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <id>attach-artifacts</id>
+            <id>unpack jruby-stdlib</id>
             <phase>package</phase>
             <goals>
-              <goal>attach-artifact</goal>
+              <goal>unpack</goal>
             </goals>
             <configuration>
-              <artifacts>
-                <artifact>
-                  <file>${basedir}/src/empty.jar</file>
-                  <classifier>sources</classifier>
-                </artifact>
-                <artifact>
-                  <file>${basedir}/src/empty.jar</file>
-                  <classifier>javadoc</classifier>
-                </artifact>
-              </artifacts>
+              <stripVersion>true</stripVersion>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-stdlib-complete</artifactId>
+                  <version>${project.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <finalName>jruby-dist-1.7.14</finalName>
+          <tarLongFileMode>gnu</tarLongFileMode>
+          <descriptors>
+            <descriptor>src/main/assembly/jruby.xml</descriptor>
+          </descriptors>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
@@ -80,9 +83,7 @@
           <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
           <preBuildHookScript>setup.bsh</preBuildHookScript>
           <postBuildHookScript>verify.bsh</postBuildHookScript>
-          <goals>
-            <goal>install</goal>
-          </goals>
+          <streamLogs>true</streamLogs>
         </configuration>
       </plugin>
       <plugin>
@@ -91,13 +92,13 @@
         <version>${tesla.version}</version>
         <executions>
           <execution>
-            <id>setup other osgi frameworks</id>
-            <phase>pre-integration-test</phase>
+            <id>fix_executable_bits</id>
+            <phase>package</phase>
             <goals>
               <goal>execute</goal>
             </goals>
             <configuration>
-              <taskId>setup other osgi frameworks</taskId>
+              <taskId>fix_executable_bits</taskId>
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>
@@ -114,49 +115,11 @@
   </build>
   <profiles>
     <profile>
-      <id>jdk8</id>
+      <id>source dist</id>
       <activation>
-        <jdk>1.8</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-invoker-plugin</artifactId>
-            <configuration>
-              <pomExcludes>
-                <pomExclude>osgi_all_inclusive_felix-3.2/pom.xml</pomExclude>
-              </pomExcludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jdk6</id>
-      <activation>
-        <jdk>1.6</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-invoker-plugin</artifactId>
-            <configuration>
-              <pomExcludes>
-                <pomExclude>jetty/pom.xml</pomExclude>
-                <pomExclude>j2ee_jetty/pom.xml</pomExclude>
-                <pomExclude>j2ee_wildfly/pom.xml</pomExclude>
-              </pomExcludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>wlp</id>
-      <activation>
-        <property>
-          <name>wlp.jar</name>
-        </property>
+        <file>
+          <exists>../../.git</exists>
+        </file>
       </activation>
       <build>
         <plugins>
@@ -166,13 +129,13 @@
             <version>${tesla.version}</version>
             <executions>
               <execution>
-                <id>install_wlp</id>
-                <phase>pre-integration-test</phase>
+                <id>pack_sources</id>
+                <phase>package</phase>
                 <goals>
                   <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <taskId>install_wlp</taskId>
+                  <taskId>pack_sources</taskId>
                   <nativePom>pom.rb</nativePom>
                 </configuration>
               </execution>

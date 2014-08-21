@@ -11,7 +11,8 @@ project 'JRuby Stdlib' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'jar'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readOnly' => true,
               'jruby.basedir' => '${basedir}/../../',
               'jruby.home' => '${basedir}/../../',
               'bundle.name' => 'JRuby Stdlib',

@@ -12,13 +12,14 @@
   <properties>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <tesla.version>0.1.1</tesla.version>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <bundle.symbolic_name>org.jruby.jruby-stdlib</bundle.symbolic_name>
     <jruby.basedir>${basedir}/../../</jruby.basedir>
     <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <bundle.name>JRuby Stdlib</bundle.name>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.home>${basedir}/../../</jruby.home>
   </properties>
   <build>

@@ -21,7 +21,8 @@ plugin( :clean, '2.5' ) do
                  :failOnError => false )
 end
 
-properties( 'tesla.dump.pom' => 'pom-generated.xml',
+properties( 'tesla.dump.pom' => 'pom.xml',
+            'tesla.dump.readOnly' => true,
             'jruby.home' => '${basedir}/../../' )
 
 jruby_plugin!( :gem,

@@ -11,8 +11,9 @@
   <name>JRuby Core Complete</name>
   <properties>
     <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
   <dependencies>
     <dependency>

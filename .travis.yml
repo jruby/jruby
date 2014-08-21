@@ -1,7 +1,6 @@
 language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
-  - find -name pom-generated.xml | xargs rename s/-generated//
   - "export PATH=`pwd`/bin:$PATH"
 
 jdk:
