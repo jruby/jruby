@@ -28,15 +28,24 @@ public class URLResource implements FileResource {
 
     private final String[] list;
 
-    private final InputStream is;
+    private final URL url;
+    private final String pathname;
 
     private final JarFileStat fileStat;
 
-    // TODO open stream on demand
-    URLResource(String uri, InputStream is, String[] files) {
+    URLResource(String uri, URL url, String[] files) {
+        this(uri, url, null, files);
+    }
+    
+    URLResource(String uri, String pathname, String[] files) {
+        this(uri, null, pathname, files);
+    }
+    
+    private URLResource(String uri, URL url, String pathname, String[] files) {
         this.uri = uri;
         this.list = files;
-        this.is = is;
+        this.url = url;
+        this.pathname = pathname;
         this.fileStat = new JarFileStat(this);
     }
     
@@ -49,7 +58,7 @@ public class URLResource implements FileResource {
     @Override
     public boolean exists()
     {
-        return is != null || list != null;
+        return url != null || pathname != null || list != null;
     }
 
     @Override
@@ -61,7 +70,7 @@ public class URLResource implements FileResource {
     @Override
     public boolean isFile()
     {
-        return list == null;
+        return list == null && (url != null || pathname != null);
     }
 
     @Override
@@ -123,7 +132,17 @@ public class URLResource implements FileResource {
     @Override
     public InputStream openInputStream()
     {
-        return is;
+        try
+        {
+            if (pathname != null) {
+                return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
+            }
+            return url.openStream();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 
     @Override
@@ -138,8 +157,18 @@ public class URLResource implements FileResource {
             pathname = pathname.substring(1);
         }
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
+        if (is != null) {
+            try
+            {
+                is.close();
+            }
+            // need Exception here due to strange NPE in some cases
+            catch (Exception e) {}
+        }
         String[] files = listClassLoaderFiles(pathname);
-        return new URLResource(URI_CLASSLOADER + pathname, is, files);
+        return new URLResource(URI_CLASSLOADER + pathname,
+                               is == null ? null : pathname,
+                               files);
     }
 
     public static FileResource create(String pathname)
@@ -169,20 +198,20 @@ public class URLResource implements FileResource {
         catch (MalformedURLException e)
         {
             // file does not exists
-            return new URLResource(URI + pathname, null, null);
+            return new URLResource(URI + pathname, (URL)null, null);
         }
         String[] files = listFiles(pathname);
-        if (files != null) {            
-            return new URLResource(URI + pathname, null, files);
+        if (files != null) {
+            return new URLResource(URI + pathname, (URL)null, files);
         }
-        try
-        {   
-            return new URLResource(URI + pathname, url.openStream(), null);
+        try {
+            url.openStream().close();
+            return new URLResource(URI + pathname, url, null);
         }
         catch (IOException e)
         {
             // can not open stream - treat it as not existing file
-            return new URLResource(URI + pathname, null, null);
+            return new URLResource(URI + pathname, (URL)null, null);
         }
     }
 
@@ -255,7 +284,7 @@ public class URLResource implements FileResource {
         }
         try
         {
-            return new URL( location.replaceFirst("^" + URI, ""));
+            return new URL(location.replaceFirst("^" + URI, ""));
         }
         catch (MalformedURLException e)
         {
