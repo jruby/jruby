@@ -54,6 +54,7 @@ project 'JRuby Complete' do
           'goals' => ['install'] ) do
     execute_goals( 'install', 'run',
                    :id => 'integration-test',
+                   'properties' => {'project.version' => '${project.version}'},
                    'settingsFile' =>  '${basedir}/src/it/settings.xml',
                    'localRepositoryPath' =>  '${project.build.directory}/local-repo' )
   end

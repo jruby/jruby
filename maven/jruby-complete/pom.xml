@@ -90,6 +90,9 @@
               <goal>run</goal>
             </goals>
             <configuration>
+              <properties>
+                <project.version>${project.version}</project.version>
+              </properties>
               <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
               <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
             </configuration>
