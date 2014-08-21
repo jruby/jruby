@@ -3,6 +3,7 @@ package org.jruby.util.cli;
 import com.headius.options.Option;
 import jnr.posix.util.Platform;
 import org.jruby.CompatVersion;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 /**
@@ -127,7 +128,7 @@ public class OutputStrings {
         }
 
         String fullVersion = String.format(
-                "jruby %s (%s) %s %s on %s %s%s [%s-%s]",
+                "jruby %s (%s) %s %s on %s %s%s%s [%s-%s]",
                 Constants.VERSION,
                 versionString,
                 Constants.COMPILE_DATE,
@@ -135,6 +136,7 @@ public class OutputStrings {
                 SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
+                RubyInstanceConfig.CompileMode.valueOf(Options.COMPILE_MODE.load()).shouldJIT() ? " +jit" : "",
                 Platform.getOSName(),
                 SafePropertyAccessor.getProperty("os.arch", "Unknown arch")
                 );
