@@ -1,6 +1,0 @@
-#-*- mode: ruby -*-
-source 'https://rubygems.org'
-
-VERSION='2.0.2'
-
-gem 'zip', VERSION
