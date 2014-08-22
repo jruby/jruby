@@ -12,7 +12,7 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Generic;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
@@ -60,7 +60,8 @@ public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode
         return doDispatch(frame, methodReceiverObject, callingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
-    @Generic
+
+    @Fallback
     public Object dispatchGeneric(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
         return doNext(frame, methodReceiverObject, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
     }

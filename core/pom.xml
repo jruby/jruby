@@ -161,7 +161,12 @@
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle</artifactId>
-      <version>0.3</version>
+      <version>0.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>truffle-dsl-processor</artifactId>
+      <version>0.4</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -539,6 +544,7 @@
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
+            <include>org/jruby/util/**/*Test*.java</include>
           </includes>
           <additionalClasspathElements>
             <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>

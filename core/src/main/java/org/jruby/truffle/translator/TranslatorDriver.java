@@ -9,13 +9,13 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.runtime.*;
@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.methods.*;
 
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class TranslatorDriver {
@@ -41,9 +42,7 @@ public class TranslatorDriver {
     }
 
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, RubyNode currentNode) {
-        final SourceSection sourceSection = new DefaultSourceSection(
-                context.getSourceManager().get(bodyNode.getPosition().getFile()),
-                "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1);
+        final SourceSection sourceSection = null;
 
         final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", false, parseTree);
 
@@ -56,7 +55,13 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final MethodTranslator translator = new MethodTranslator(currentNode, context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
+        final MethodTranslator translator;
+
+        try {
+            translator = new MethodTranslator(currentNode, context, null, environment, false, false, Source.fromFileName(bodyNode.getPosition().getFile()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false);
     }
@@ -111,7 +116,8 @@ public class TranslatorDriver {
     }
 
     public RubyParserResult parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(new DefaultSourceSection(source, "<main>", 0, 0, 0, 0), "<main>", false, rootNode);
+        final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "<main>", false, rootNode);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
 
@@ -210,7 +216,7 @@ public class TranslatorDriver {
         if (frame == null) {
             return null;
         } else {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(SourceSection.NULL, "(unknown)", false, null);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(new NullSourceSection("Unknown source section", "(unknown)"), "(unknown)", false, null);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);

@@ -10,8 +10,8 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -28,6 +28,7 @@ import org.jruby.util.cli.OutputStrings;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -342,7 +343,7 @@ public class CoreLibrary {
         final Source source;
 
         try {
-            source = context.getSourceManager().get(fileName, context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName).getInputStream());
+            source = Source.fromReader(new InputStreamReader(context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName).getInputStream()), fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

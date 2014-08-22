@@ -1,6 +1,6 @@
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;

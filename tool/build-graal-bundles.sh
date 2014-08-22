@@ -48,6 +48,7 @@ function pack {
     fi
 
     tar -zxf $buildname || exit $?
+    chmod -R +w graalvm-jdk1.8.0
     cp -r graalvm-jdk1.8.0 jruby-9000.dev || exit $?
     rm -rf jruby-9000.dev/graalvm-jdk1.8.0/src.zip jruby-9000.dev/graalvm-jdk1.8.0/demo jruby-9000.dev/graalvm-jdk1.8.0/include jruby-9000.dev/graalvm-jdk1.8.0/sample
     targetname=jruby-dist-9000+graal-$1-x86_64.dev-bin.tar.gz
@@ -55,5 +56,5 @@ function pack {
     shasum -a 1 $targetname > $targetname.sha1
 }
 
-pack "linux" "b132" "0.3"
-pack "macosx" "b132" "0.3"
+pack "linux" "b132" "0.4"
+pack "macosx" "b132" "0.4"

@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
@@ -52,7 +52,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = sourceSection.getIdentifier();
@@ -87,7 +87,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = sourceSection.getIdentifier();

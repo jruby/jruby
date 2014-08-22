@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.Source;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
@@ -28,8 +28,7 @@ import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.debug.ObjectSpaceSafepointNode;
-import org.jruby.truffle.nodes.debug.TraceNode;
+import org.jruby.truffle.nodes.debug.ObjectSpaceSafepointInstrument;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
@@ -1499,13 +1498,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
-        final RubyNode translated = node.getNextNode().accept(this);
-
-        if (RubyContext.TRACE) {
-            return new TraceNode(context, translated.getEncapsulatingSourceSection(), translated);
-        } else {
-            return translated;
-        }
+        return context.getASTProber().probeAsStatement(node.getNextNode().accept(this));
     }
 
     @Override
@@ -1905,9 +1898,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode body = node.getBodyNode().accept(this);
 
-        if (RubyContext.OBJECTSPACE) {
-            body = new ObjectSpaceSafepointNode(context, sourceSection, body);
-        }
+        body = context.getASTProber().probeAsPeriodic(body);
 
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCastNotCast, body);
@@ -1941,9 +1932,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode body = node.getBodyNode().accept(this);
 
-        if (RubyContext.OBJECTSPACE) {
-            body = new ObjectSpaceSafepointNode(context, sourceSection, body);
-        }
+        body = context.getASTProber().probeAsPeriodic(body);
 
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCast, body);

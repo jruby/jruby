@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.literal;
 import java.math.*;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
