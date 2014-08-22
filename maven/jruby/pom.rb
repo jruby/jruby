@@ -23,6 +23,6 @@ project 'JRuby Main Maven Artifact' do
   # this plugin is configured to attach empty jars for sources and javadocs
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
-  plugin( :invoker )
+  plugin( :invoker, :pomExcludes => [ '*jetty/pom.xml' ] )
 
 end

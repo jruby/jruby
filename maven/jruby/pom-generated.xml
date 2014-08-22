@@ -40,6 +40,11 @@
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
+        <configuration>
+          <pomExcludes>
+            <pomExclude>*jetty/pom.xml</pomExclude>
+          </pomExcludes>
+        </configuration>
       </plugin>
     </plugins>
   </build>
