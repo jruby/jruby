@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.literal;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -38,27 +37,27 @@ public abstract class RangeLiteralNode extends RubyNode {
         this(prev.getContext(), prev.getSourceSection(), prev.excludeEnd);
     }
 
-    @Specialization
+    @Specialization(order = 1)
     public RubyRange.IntegerFixnumRange doRange(int begin, int end) {
         return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
-    @Specialization
+    @Specialization(order = 2)
     public RubyRange.LongFixnumRange doRange(int begin, long end) {
         return new RubyRange.LongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
-    @Specialization
+    @Specialization(order = 3)
     public RubyRange.LongFixnumRange doRange(long begin, long end) {
         return new RubyRange.LongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
-    @Specialization
+    @Specialization(order = 4)
     public RubyRange.LongFixnumRange doRange(long begin, int end) {
         return new RubyRange.LongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
-    @Specialization
+    @Specialization(order = 5)
     public Object doRange(Object begin, Object end) {
         if (begin instanceof Integer) {
             beginIntegerProfile.enter();

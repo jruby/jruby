@@ -15,7 +15,6 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 
@@ -109,7 +108,7 @@ public abstract class KernelNodes {
         public Object binding(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
         }
     }
 
@@ -128,7 +127,7 @@ public abstract class KernelNodes {
         public boolean blockGiven() {
             notDesignedForCompilation();
 
-            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
+            return RubyArguments.getBlock(RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
 
@@ -328,7 +327,7 @@ public abstract class KernelNodes {
 
             final RubyContext context = getContext();
 
-            final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final Frame caller = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
             final ThreadManager threadManager = context.getThreadManager();
 
@@ -656,21 +655,21 @@ public abstract class KernelNodes {
             initialize = prev.initialize;
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public Object raise(VirtualFrame frame, RubyString message, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, exceptionClass, getContext().makeString(""));
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
             notDesignedForCompilation();
 
@@ -718,20 +717,21 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder setTraceFunc(NilPlaceholder nil) {
+        public NilPlaceholder setTraceFunc(NilPlaceholder proc) {
             notDesignedForCompilation();
 
             getContext().getTraceManager().setTraceFunc(null);
-            return nil;
+            return proc;
         }
 
         @Specialization
-        public RubyProc setTraceFunc(RubyProc traceFunc) {
+        public RubyProc setTraceFunc(RubyProc proc) {
             notDesignedForCompilation();
 
-            getContext().getTraceManager().setTraceFunc(traceFunc);
-            return traceFunc;
+            getContext().getTraceManager().setTraceFunc(proc);
+            return proc;
         }
+
     }
 
     @CoreMethod(names = "String", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)

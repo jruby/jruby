@@ -10,12 +10,13 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.TruffleBridge;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -23,12 +24,11 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.translator.TranslatorDriver;
-
-import java.io.IOException;
 
 public class TruffleBridgeImpl implements TruffleBridge {
 
@@ -97,9 +97,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
             if (inputFile.equals("-e")) {
                 // TODO(CS): what if a file is legitimately called -e?
-                source = Source.asPseudoFile(runtime.getInstanceConfig().getInlineScript().toString(), "-e");
+                source = truffleContext.getSourceManager().get("-e", runtime.getInstanceConfig().getInlineScript().toString());
             } else {
-                source = Source.fromFileName(inputFile);
+                source = truffleContext.getSourceManager().get(inputFile);
             }
 
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
@@ -114,8 +114,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
             }
 
             return NilPlaceholder.INSTANCE;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 

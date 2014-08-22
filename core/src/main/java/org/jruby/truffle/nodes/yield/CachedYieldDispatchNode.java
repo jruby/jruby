@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;

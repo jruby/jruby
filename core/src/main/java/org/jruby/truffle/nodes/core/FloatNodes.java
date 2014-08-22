@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import java.math.*;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.*;

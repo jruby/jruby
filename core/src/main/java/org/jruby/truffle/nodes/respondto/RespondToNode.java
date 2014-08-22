@@ -9,9 +9,8 @@
  */
 package org.jruby.truffle.nodes.respondto;
 
-import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;

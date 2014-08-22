@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import java.math.*;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
@@ -247,17 +246,17 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public Object mod(BigInteger a, int b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public Object mod(BigInteger a, long b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object mod(BigInteger a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, b));
         }

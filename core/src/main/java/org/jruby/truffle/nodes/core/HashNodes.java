@@ -13,7 +13,6 @@ import java.util.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -43,12 +42,12 @@ public abstract class HashNodes {
             equalNode = prev.equalNode;
         }
 
-        @Specialization(guards = {"isNull", "isOtherNull"})
+        @Specialization(guards = {"isNull", "isOtherNull"}, order = 1)
         public boolean equalNull(RubyHash a, RubyHash b) {
             return true;
         }
 
-        @Specialization(guards = {"isObjectArray", "isOtherObjectArray"})
+        @Specialization(guards = {"isObjectArray", "isOtherObjectArray"}, order = 2)
         public boolean equalObjectArray(VirtualFrame frame, RubyHash a, RubyHash b) {
             notDesignedForCompilation();
 
@@ -76,13 +75,13 @@ public abstract class HashNodes {
             return true;
         }
 
-        @Specialization(guards = {"isObjectLinkedHashMap", "isOtherObjectLinkedHashMap"})
+        @Specialization(guards = {"isObjectLinkedHashMap", "isOtherObjectLinkedHashMap"}, order = 3)
         public boolean equalObjectLinkedHashMap(RubyHash a, RubyHash b) {
             notDesignedForCompilation();
             throw new UnsupportedOperationException();
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean equal(RubyHash a, RubySymbol b) {
             notDesignedForCompilation();
             return false;
@@ -213,7 +212,7 @@ public abstract class HashNodes {
             yield = prev.yield;
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
@@ -225,7 +224,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public Object getObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getStoreSize();
@@ -248,7 +247,7 @@ public abstract class HashNodes {
             return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public Object getObjectLinkedHashMap(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
@@ -290,7 +289,7 @@ public abstract class HashNodes {
             eqlNode = prev.eqlNode;
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public Object setNull(RubyHash hash, Object key, Object value) {
             hash.checkFrozen(this);
             final Object[] store = new Object[RubyContext.HASHES_SMALL * 2];
@@ -301,7 +300,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public Object setObjectArray(VirtualFrame frame, RubyHash hash, Object key, Object value) {
             hash.checkFrozen(this);
 
@@ -347,7 +346,7 @@ public abstract class HashNodes {
             hash.setStore(newStore, 0);
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public Object setObjectLinkedHashMap(RubyHash hash, Object key, Object value) {
             notDesignedForCompilation();
 
@@ -377,13 +376,13 @@ public abstract class HashNodes {
             eqlNode = prev.eqlNode;
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public NilPlaceholder deleteNull(RubyHash hash, Object key) {
             hash.checkFrozen(this);
             return NilPlaceholder.INSTANCE;
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public Object deleteObjectArray(RubyHash hash, Object key) {
             notDesignedForCompilation();
 
@@ -411,7 +410,7 @@ public abstract class HashNodes {
             }
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public Object delete(RubyHash hash, Object key) {
             notDesignedForCompilation();
 
@@ -443,14 +442,14 @@ public abstract class HashNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public RubyHash dupNull(RubyHash hash) {
             notDesignedForCompilation();
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, 0);
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public RubyHash dupObjectArray(RubyHash hash) {
             notDesignedForCompilation();
 
@@ -460,7 +459,7 @@ public abstract class HashNodes {
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy, hash.getStoreSize());
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public RubyHash dupObjectLinkedHashMap(RubyHash hash) {
             notDesignedForCompilation();
 
@@ -483,7 +482,7 @@ public abstract class HashNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public RubyHash eachNull(RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
@@ -491,7 +490,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public RubyHash eachObjectArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
@@ -519,7 +518,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public RubyHash eachObjectLinkedHashMap(VirtualFrame frame, RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
@@ -557,17 +556,17 @@ public abstract class HashNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public boolean emptyNull(RubyHash hash) {
             return true;
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public boolean emptyObjectArray(RubyHash hash) {
             return hash.getStoreSize() == 0;
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public boolean emptyObjectLinkedHashMap(RubyHash hash) {
             notDesignedForCompilation();
 
@@ -653,14 +652,14 @@ public abstract class HashNodes {
             inspect = prev.inspect;
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public RubyString inspectNull(RubyHash hash) {
             notDesignedForCompilation();
 
             return getContext().makeString("{}");
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public RubyString inspectObjectArray(VirtualFrame frame, RubyHash hash) {
             notDesignedForCompilation();
 
@@ -687,7 +686,7 @@ public abstract class HashNodes {
             return getContext().makeString(builder.toString());
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public RubyString inspectObjectLinkedHashMap(VirtualFrame frame, RubyHash hash) {
             notDesignedForCompilation();
 
@@ -730,7 +729,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 1)
         public RubyArray mapObjectArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getStoreSize();
@@ -761,7 +760,7 @@ public abstract class HashNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, resultSize);
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 2)
         public RubyArray mapObjectLinkedHashMap(VirtualFrame frame, RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
@@ -813,7 +812,7 @@ public abstract class HashNodes {
             eqlNode = prev.eqlNode;
         }
 
-        @Specialization(guards = {"isObjectArray", "isOtherNull"})
+        @Specialization(guards = {"isObjectArray", "isOtherNull"}, order = 1)
         public RubyHash mergeObjectArrayNull(RubyHash hash, RubyHash other) {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, RubyContext.HASHES_SMALL * 2);
@@ -822,7 +821,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = {"isObjectArray", "isOtherObjectArray"})
+        @Specialization(guards = {"isObjectArray", "isOtherObjectArray"}, order = 2)
         public RubyHash mergeObjectArrayObjectArray(VirtualFrame frame, RubyHash hash, RubyHash other) {
             // TODO(CS): what happens with the default block here? Which side does it get merged from?
 
@@ -918,12 +917,12 @@ public abstract class HashNodes {
             eqlNode = prev.eqlNode;
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public boolean keyNull(RubyHash hash, Object key) {
             return false;
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public boolean keyObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
@@ -939,7 +938,7 @@ public abstract class HashNodes {
             return false;
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public boolean keyObjectLinkedHashMap(RubyHash hash, Object key) {
             notDesignedForCompilation();
 
@@ -963,12 +962,12 @@ public abstract class HashNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public RubyArray keysNull(RubyHash hash) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public RubyArray keysObjectArray(RubyHash hash) {
             notDesignedForCompilation();
 
@@ -983,7 +982,7 @@ public abstract class HashNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public RubyArray keysObjectLinkedHashMap(RubyHash hash) {
             notDesignedForCompilation();
 
@@ -1014,17 +1013,17 @@ public abstract class HashNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public int sizeNull(RubyHash hash) {
             return 0;
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public int sizeObjectArray(RubyHash hash) {
             return hash.getStoreSize();
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public int sizeObjectLinkedHashMap(RubyHash hash) {
             notDesignedForCompilation();
             return ((LinkedHashMap<Object, Object>) hash.getStore()).size();
@@ -1043,12 +1042,12 @@ public abstract class HashNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNull", order = 1)
         public RubyArray valuesNull(RubyHash hash) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
         }
 
-        @Specialization(guards = "isObjectArray")
+        @Specialization(guards = "isObjectArray", order = 2)
         public RubyArray valuesObjectArray(RubyHash hash) {
             final Object[] store = (Object[]) hash.getStore();
 
@@ -1061,7 +1060,7 @@ public abstract class HashNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, values.length);
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public RubyArray valuesObjectLinkedHashMap(RubyHash hash) {
             notDesignedForCompilation();
 

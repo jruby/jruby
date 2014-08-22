@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -35,14 +35,14 @@ public abstract class ArrayGetTailNode extends RubyNode {
         index = prev.index;
     }
 
-    @Specialization(guards = "isNull")
+    @Specialization(guards = "isNull", order = 1)
     public RubyArray getTailNull(RubyArray array) {
         notDesignedForCompilation();
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
-    @Specialization(guards = "isIntegerFixnum")
+    @Specialization(guards = "isIntegerFixnum", order = 2)
     public RubyArray getTailIntegerFixnum(RubyArray array) {
         notDesignedForCompilation();
 
@@ -53,7 +53,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum")
+    @Specialization(guards = "isLongFixnum", order = 3)
     public RubyArray getTailLongFixnum(RubyArray array) {
         notDesignedForCompilation();
 
@@ -64,7 +64,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat")
+    @Specialization(guards = "isFloat", order = 4)
     public RubyArray getTailFloat(RubyArray array) {
         notDesignedForCompilation();
 
@@ -75,7 +75,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObject")
+    @Specialization(guards = "isObject", order = 5)
     public RubyArray getTailObject(RubyArray array) {
         notDesignedForCompilation();
 

@@ -18,7 +18,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.RubyNode;
@@ -296,16 +295,12 @@ public class ObjectSpaceManager {
         }
     }
 
-    public void visitCallStack(final ObjectGraphVisitor visitor) {
+    public void visitCallStack(ObjectGraphVisitor visitor) {
         visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
 
-        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-            @Override
-            public Void visitFrame(FrameInstance frameInstance) {
-                visitFrameInstance(frameInstance, visitor);
-                return null;
-            }
-        });
+        for (FrameInstance frameInstance : Truffle.getRuntime().getStackTrace()) {
+            visitFrameInstance(frameInstance, visitor);
+        }
     }
 
     public void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) {

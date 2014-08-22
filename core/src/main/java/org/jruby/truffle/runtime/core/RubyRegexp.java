@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -21,6 +20,7 @@ import org.joni.*;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.nio.ByteBuffer;
@@ -85,7 +85,7 @@ public class RubyRegexp extends RubyObject {
     public Object matchOperator(String string) {
         // TODO(CS) merge with match
 
-        final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final RubyContext context = getRubyClass().getContext();
 
@@ -157,7 +157,7 @@ public class RubyRegexp extends RubyObject {
     public Object match(String string) {
         final RubyContext context = getRubyClass().getContext();
 
-        final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
         final Matcher matcher = regex.matcher(stringBytes);

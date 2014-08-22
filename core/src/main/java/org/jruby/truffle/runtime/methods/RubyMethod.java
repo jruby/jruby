@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;

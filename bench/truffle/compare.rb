@@ -97,7 +97,7 @@ scores = {}
 
 benchmarks.each do |benchmark|
   if disable_splitting.include? benchmark
-    splitting = "-J-G:-TruffleSplitting"
+    splitting = "-J-G:-TruffleSplittingEnabled"
   else
     splitting = ""
   end

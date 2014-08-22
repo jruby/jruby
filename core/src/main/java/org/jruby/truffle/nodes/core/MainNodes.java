@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;

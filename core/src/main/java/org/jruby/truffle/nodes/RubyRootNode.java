@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.RubyContext;
@@ -56,32 +55,25 @@ public class RubyRootNode extends RootNode {
         return true;
     }
 
-    public void reportLoopCountThroughBlocks(final int count) {
+    public void reportLoopCountThroughBlocks(int count) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (RubyContext.COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
-            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+            for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+                final RootNode rootNode = frame.getCallNode().getRootNode();
 
-                @Override
-                public Object visitFrame(FrameInstance frameInstance) {
-                    final RootNode rootNode = frameInstance.getCallNode().getRootNode();
-
-                    if (!(rootNode instanceof RubyRootNode)) {
-                        return frameInstance;
-                    }
-
-                    final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
-
-                    rootNode.reportLoopCount(count);
-
-                    if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
-                        return frameInstance;
-                    }
-
-                    return null;
+                if (!(rootNode instanceof RubyRootNode)) {
+                    break;
                 }
 
-            });
+                final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
+
+                rootNode.reportLoopCount(count);
+
+                if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
+                    break;
+                }
+            }
         }
 
         reportLoopCount(count);

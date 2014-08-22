@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
@@ -35,28 +34,28 @@ public abstract class RangeNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.IntegerFixnumRange b) {
             notDesignedForCompilation();
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.LongFixnumRange b) {
             notDesignedForCompilation();
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean equal(RubyRange.LongFixnumRange a, RubyRange.LongFixnumRange b) {
             notDesignedForCompilation();
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean equal(RubyRange.LongFixnumRange a, RubyRange.IntegerFixnumRange b) {
             notDesignedForCompilation();
 

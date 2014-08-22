@@ -11,23 +11,18 @@ package org.jruby.truffle.nodes.debug;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.Instrument;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
 
-public class TraceInstrument extends Instrument {
-
-    private final RubyContext context;
+public class TraceNode extends WrapperNode {
 
     @CompilerDirectives.CompilationFinal private Assumption traceAssumption;
     @CompilerDirectives.CompilationFinal private RubyProc traceFunc;
@@ -37,8 +32,8 @@ public class TraceInstrument extends Instrument {
     private final RubyString file;
     private final int line;
 
-    public TraceInstrument(RubyContext context, SourceSection sourceSection) {
-        this.context = context;
+    public TraceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+        super(context, sourceSection, child);
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
         callNode = null;
@@ -48,13 +43,13 @@ public class TraceInstrument extends Instrument {
     }
 
     @Override
-    public void enter(Node node, VirtualFrame frame) {
+    public void before(VirtualFrame frame) {
         try {
             traceAssumption.check();
         } catch (InvalidAssumptionException e) {
 
-            traceAssumption = context.getTraceManager().getTraceAssumption();
-            traceFunc = context.getTraceManager().getTraceFunc();
+            traceAssumption = getContext().getTraceManager().getTraceAssumption();
+            traceFunc = getContext().getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
                 callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTarget()));
@@ -64,25 +59,26 @@ public class TraceInstrument extends Instrument {
         }
 
         if (traceFunc != null) {
-            if (!context.getTraceManager().isInTraceFunc()) {
-                context.getTraceManager().setInTraceFunc(true);
+            if (!getContext().getTraceManager().isInTraceFunc()) {
+                getContext().getTraceManager().setInTraceFunc(true);
 
                 final Object[] args = new Object[]{
                         event,
                         file,
                         line,
                         NilPlaceholder.INSTANCE,
-                        new RubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
+                        new RubyBinding(getContext().getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
                         NilPlaceholder.INSTANCE
                 };
 
                 try {
                     callNode.call(frame, RubyArguments.pack(traceFunc, traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
                 } finally {
-                    context.getTraceManager().setInTraceFunc(false);
+                    getContext().getTraceManager().setInTraceFunc(false);
                 }
             }
         }
     }
+
 
 }

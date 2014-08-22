@@ -13,7 +13,6 @@ import java.math.*;
 import java.util.*;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -91,37 +90,37 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public boolean equal(double a, double b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }

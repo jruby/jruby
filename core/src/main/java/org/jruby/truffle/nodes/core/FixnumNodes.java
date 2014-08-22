@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import java.math.*;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -69,22 +68,13 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
-        public long negWithLongOverflow(int value) {
-            return ExactMath.subtractExact(0, (long) value);
-        }
-
-        @Specialization
-        public BigInteger negWithBigIntegerOverflow(int value) {
-            return BigInteger.valueOf(value).negate();
-        }
-
-        @Specialization(rewriteOn = ArithmeticException.class)
         public long neg(long value) {
             return ExactMath.subtractExact(0, value);
         }
 
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(long value) {
+        public BigInteger negWithOverflow(int value) {
+            notDesignedForCompilation();
             return BigInteger.valueOf(value).negate();
         }
 
@@ -105,67 +95,57 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 1, rewriteOn = ArithmeticException.class)
         public int add(int a, int b) {
             return ExactMath.addExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 2, rewriteOn = ArithmeticException.class)
         public long addWithLongOverflow(int a, int b) {
             return ExactMath.addExact((long) a, (long) b);
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object addWithBigIntegerOverflow(int a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public double add(int a, double b) {
             return a + b;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public long add(int a, long b) {
             return ExactMath.addExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public Object add(int a, BigInteger b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), b));
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 7, rewriteOn = ArithmeticException.class)
         public long add(long a, int b) {
             return ExactMath.addExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long addWithLong(long a, int b) {
-            return ExactMath.addExact(a, (long) b);
-        }
-
-        @Specialization
-        public Object addWithBigIntegerOverflow(long a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
-        }
-
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 8, rewriteOn = ArithmeticException.class)
         public long add(long a, long b) {
             return ExactMath.addExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 9)
         public Object addWithBigIntegerOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 10)
         public double add(long a, double b) {
             return a + b;
         }
 
-        @Specialization
+        @Specialization(order = 11)
         public Object add(long a, BigInteger b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), b));
         }
@@ -187,67 +167,57 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 1, rewriteOn = ArithmeticException.class)
         public int sub(int a, int b) {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 2, rewriteOn = ArithmeticException.class)
         public long subWithLongOverflow(int a, int b) {
             return ExactMath.subtractExact((long) a, (long) b);
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object subWithBigIntegerOverflow(int a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.subtract(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public double sub(int a, double b) {
             return a - b;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public long sub(int a, long b) {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public Object sub(int a, BigInteger b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.subtract(BigInteger.valueOf(a), b));
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 7, rewriteOn = ArithmeticException.class)
         public long sub(long a, int b) {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long subWithLongOverflow(long a, int b) {
-            return ExactMath.subtractExact(a, (long) b);
-        }
-
-        @Specialization
-        public Object subWithBigIntegerOverflow(long a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
-        }
-
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 8, rewriteOn = ArithmeticException.class)
         public long sub(long a, long b) {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 9)
         public Object subWithBigIntegerOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 10)
         public double sub(long a, double b) {
             return a - b;
         }
 
-        @Specialization
+        @Specialization(order = 11)
         public Object sub(long a, BigInteger b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.subtract(BigInteger.valueOf(a), b));
         }
@@ -269,67 +239,67 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 1, rewriteOn = ArithmeticException.class)
         public int mul(int a, int b) {
             return ExactMath.multiplyExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 2, rewriteOn = ArithmeticException.class)
         public long mulWithLong(int a, int b) {
             return ExactMath.multiplyExact((long) a, (long) b);
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object mulWithBigInteger(int a, int b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 4, rewriteOn = ArithmeticException.class)
         public Object mul(int a, long b) {
             return ExactMath.multiplyExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public Object mulWithBigInteger(int a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public double mul(int a, double b) {
             return a * b;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public Object mul(int a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), b));
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 8, rewriteOn = ArithmeticException.class)
         public long mul(long a, int b) {
             return ExactMath.multiplyExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 9)
         public Object mulWithBigInteger(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 10, rewriteOn = ArithmeticException.class)
         public Object mul(long a, long b) {
             return ExactMath.multiplyExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 11)
         public Object mulWithBigInteger(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 12)
         public double mul(long a, double b) {
             return a * b;
         }
 
-        @Specialization
+        @Specialization(order = 13)
         public Object mul(long a, BigInteger b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), b));
         }
@@ -351,12 +321,12 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt", order = 1)
         public int pow2(int a, int b) {
             return 1 << b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public Object pow(int a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.pow(BigInteger.valueOf(a), b));
         }
@@ -408,7 +378,7 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 1)
         public int div(int a, int b) throws UnexpectedResultException {
             if (b > 0) {
                 bGreaterZero.enter();
@@ -437,7 +407,7 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public Object divEdgeCase(int a, int b) {
             if (b > 0) {
                 bGreaterZero.enter();
@@ -466,38 +436,38 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 3)
         public long div(int a, long b) throws UnexpectedResultException {
             return div((long) a, b);
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public Object divEdgeCase(int a, long b) {
             return divEdgeCase((long) a, b);
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public double div(int a, double b) {
             return a / b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public int div(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") BigInteger b) {
             // TODO(CS): not entirely sure this is correct
             return 0;
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 7)
         public long div(long a, int b) throws UnexpectedResultException {
             return div(a, (long) b);
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public Object divEdgeCase(long a, int b) {
             return divEdgeCase(a, (long) b);
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 9)
         public long div(long a, long b) throws UnexpectedResultException {
             if (b > 0) {
                 bGreaterZero.enter();
@@ -526,7 +496,7 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization
+        @Specialization(order = 10)
         public Object divEdgeCase(long a, long b) {
             if (b > 0) {
                 bGreaterZero.enter();
@@ -555,12 +525,12 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization
+        @Specialization(order = 11)
         public double div(long a, double b) {
             return a / b;
         }
 
-        @Specialization
+        @Specialization(order = 12)
         public int div(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") BigInteger b) {
             // TODO(CS): not entirely sure this is correct
             return 0;
@@ -580,7 +550,7 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int mod(int a, int b) {
             int mod = a % b;
 
@@ -592,22 +562,22 @@ public abstract class FixnumNodes {
             return mod;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public long mod(int a, long b) {
             return mod((long) a, b);
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object mod(int a, BigInteger b) {
             return mod(BigInteger.valueOf(a), b);
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public long mod(long a, int b) {
             return mod(a, (long) b);
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public long mod(long a, long b) {
             long mod = a % b;
 
@@ -619,7 +589,7 @@ public abstract class FixnumNodes {
             return mod;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public Object mod(long a, BigInteger b) {
             return mod(BigInteger.valueOf(a), b);
         }
@@ -645,32 +615,32 @@ public abstract class FixnumNodes {
             divModNode = new GeneralDivModNode(getContext());
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public RubyArray divMod(int a, int b) {
             return divModNode.execute(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public RubyArray divMod(int a, long b) {
             return divModNode.execute(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public RubyArray divMod(int a, BigInteger b) {
             return divModNode.execute(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public RubyArray divMod(long a, int b) {
             return divModNode.execute(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public RubyArray divMod(long a, long b) {
             return divModNode.execute(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public RubyArray divMod(long a, BigInteger b) {
             return divModNode.execute(a, b);
         }
@@ -688,42 +658,42 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean less(int a, int b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean less(int a, long b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean less(int a, double b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean less(int a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) < 0;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public boolean less(long a, int b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public boolean less(long a, long b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public boolean less(long a, double b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public boolean less(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) < 0;
         }
@@ -740,42 +710,42 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean lessEqual(int a, int b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean lessEqual(int a, long b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean lessEqual(int a, double b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean lessEqual(int a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) <= 0;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public boolean lessEqual(long a, int b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public boolean lessEqual(long a, long b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public boolean lessEqual(long a, double b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public boolean lessEqual(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) <= 0;
         }
@@ -792,42 +762,42 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean equal(int a, long b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean equal(int a, double b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean equal(int a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public boolean equal(long a, int b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public boolean equal(long a, double b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public boolean equal(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
         }
@@ -844,42 +814,42 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int compare(int a, int b) {
             return Integer.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public int compare(int a, long b) {
             return Long.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public int compare(int a, double b) {
             return Double.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public int compare(int a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b);
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public int compare(long a, int b) {
             return Long.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public int compare(long a, long b) {
             return Long.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public int compare(long a, double b) {
             return Double.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public int compare(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b);
         }
@@ -896,42 +866,42 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean notEqual(int a, int b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean notEqual(int a, long b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean notEqual(int a, double b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean notEqual(int a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public boolean notEqual(long a, int b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public boolean notEqual(long a, long b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public boolean notEqual(long a, double b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public boolean notEqual(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
         }
@@ -948,42 +918,42 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean greaterEqual(int a, int b) {
             return a >= b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean greaterEqual(int a, long b) {
             return a >= b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean greaterEqual(int a, double b) {
             return a >= b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean greaterEqual(int a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) >= 0;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public boolean greaterEqual(long a, int b) {
             return a >= b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public boolean greaterEqual(long a, long b) {
             return a >= b;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public boolean greaterEqual(long a, double b) {
             return a >= b;
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public boolean greaterEqual(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) >= 0;
         }
@@ -1000,42 +970,42 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean greater(int a, int b) {
             return a > b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public boolean greater(int a, long b) {
             return a > b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public boolean greater(int a, double b) {
             return a > b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean greater(int a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) > 0;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public boolean greater(long a, int b) {
             return a > b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public boolean greater(long a, long b) {
             return a > b;
         }
 
-        @Specialization
+        @Specialization(order = 7)
         public boolean greater(long a, double b) {
             return a > b;
         }
 
-        @Specialization
+        @Specialization(order = 8)
         public boolean greater(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) > 0;
         }
@@ -1076,32 +1046,32 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int bitAnd(int a, int b) {
             return a & b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public long bitAnd(int a, long b) {
             return a & b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object bitAnd(int a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.and(BigInteger.valueOf(a), b));
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public long bitAnd(long a, int b) {
             return a & b;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public long bitAnd(long a, long b) {
             return a & b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public Object bitAnd(long a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.and(BigInteger.valueOf(a), b));
         }
@@ -1118,32 +1088,32 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int bitOr(int a, int b) {
             return a | b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public long bitOr(int a, long b) {
             return a | b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object bitOr(int a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.or(BigInteger.valueOf(a), b));
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public long bitOr(long a, int b) {
             return a | b;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public long bitOr(long a, long b) {
             return a | b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public Object bitOr(long a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.or(BigInteger.valueOf(a), b));
         }
@@ -1160,32 +1130,32 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int bitXOr(int a, int b) {
             return a ^ b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public long bitXOr(int a, long b) {
             return a ^ b;
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public Object bitXOr(int a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.xor(BigInteger.valueOf(a), b));
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public long bitXOr(long a, int b) {
             return a ^ b;
         }
 
-        @Specialization
+        @Specialization(order = 5)
         public long bitXOr(long a, long b) {
             return a ^ b;
         }
 
-        @Specialization
+        @Specialization(order = 6)
         public Object bitXOr(long a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.xor(BigInteger.valueOf(a), b));
         }

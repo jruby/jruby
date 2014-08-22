@@ -170,7 +170,7 @@ benchmarks.each do |benchmark|
 
   rubies_to_run.each do |ruby|
     if disable_splitting.include? benchmark and ruby.command.include? "-J-server"
-      splitting = "-J-G:-TruffleSplitting"
+      splitting = "-J-G:-TruffleSplittingEnabled"
     else
       splitting = ""
     end
