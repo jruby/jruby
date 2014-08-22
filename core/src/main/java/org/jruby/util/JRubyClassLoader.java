@@ -27,13 +27,15 @@
 
 package org.jruby.util;
 
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
-
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
@@ -47,6 +49,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class JRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
 
@@ -70,6 +75,56 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
 
     public JRubyClassLoader(ClassLoader parent) {
         super(new URL[0], parent);
+    }
+
+    public void addURLNoIndex(URL url) {
+        // if we have such embedded jar within a jar, we copy it to temp file and use the
+        // the temp file with the super URLClassLoader
+        if ( url.toString().contains( "!/" )) {
+            InputStream in = null;
+            OutputStream out = null;
+            try
+            {
+                File f = File.createTempFile( "jruby", ".jar");
+                f.deleteOnExit();
+                out = new BufferedOutputStream( new FileOutputStream( f ) );
+                in = new BufferedInputStream( url.openStream() );
+                int i = in.read();
+                while( i != -1 ) {
+                    out.write( i );
+                    i = in.read();
+                }
+                out.close();
+                in.close();
+                url = f.toURI().toURL();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
+            }
+            finally {
+                // make sure we close everything
+                if ( out != null ) {
+                    try
+                    {
+                        out.close();
+                    }
+                    catch (IOException e)
+                    {
+                    }
+                }
+                if ( in != null ) {
+                    try
+                    {
+                        in.close();
+                    }
+                    catch (IOException e)
+                    {
+                    }
+                }
+            }
+        }
+        super.addURL( url );
     }
 
     // Change visibility so others can see it

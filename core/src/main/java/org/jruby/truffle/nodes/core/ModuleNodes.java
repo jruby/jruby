@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.NodeUtil;
@@ -29,6 +30,7 @@ import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -53,21 +55,6 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
-
-            if (self == other || self.getLookupNode().chainContains(other)) {
-                return true;
-            }
-
-            if (other.getLookupNode().chainContains(self)) {
-                return false;
-            }
-
-            return NilPlaceholder.INSTANCE;
-        }
-
-        @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyClass self, RubyClass other) {
             notDesignedForCompilation();
 
@@ -89,6 +76,21 @@ public abstract class ModuleNodes {
                 if (c == self) {
                     return false;
                 }
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+        @Specialization
+        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
+            notDesignedForCompilation();
+
+            if (self == other || self.getLookupNode().chainContains(other)) {
+                return true;
+            }
+
+            if (other.getLookupNode().chainContains(self)) {
+                return false;
             }
 
             return NilPlaceholder.INSTANCE;
@@ -202,7 +204,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrReader(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -234,7 +236,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null, true);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -254,7 +256,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrWriter(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -287,7 +289,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null, true);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -307,7 +309,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrAccessor(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -335,43 +337,47 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "class_eval", maxArgs = 3, minArgs = 0, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
+        @Child protected YieldDispatchHeadNode yield;
+
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
         }
 
         public ClassEvalNode(ClassEvalNode prev) {
             super(prev);
+            yield = prev.yield;
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = getContext().getSourceManager().get("(eval)", code.toString());
+            final Source source = Source.fromText(code.toString(), "(eval)");
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 4)
-        public Object classEval(RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+        @Specialization
+        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
-            return block.callWithModifiedSelf(self);
+            return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
     }
@@ -418,8 +424,13 @@ public abstract class ModuleNodes {
         public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
             notDesignedForCompilation();
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (String constant : module.getConstants().keySet()) {
+                array.slowPush(getContext().newSymbol(constant));
+            }
+
+            return array;
         }
     }
 
@@ -434,14 +445,14 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
             return module.lookupConstant(name.toString()) != null;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, boolean inherit) {
             notDesignedForCompilation();
 
@@ -452,7 +463,7 @@ public abstract class ModuleNodes {
             }
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
@@ -472,14 +483,14 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -488,14 +499,14 @@ public abstract class ModuleNodes {
             return symbol;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -507,7 +518,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame(), true);
+            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
         }
 
@@ -581,12 +592,12 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             return module.lookupMethod(name.toString()) != null;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, boolean inherit) {
             notDesignedForCompilation();
 
@@ -597,7 +608,7 @@ public abstract class ModuleNodes {
             }
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
@@ -641,7 +652,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (args.length == 0) {
-                final Frame unpacked = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+                final Frame unpacked = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
                 final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
 
@@ -1073,6 +1084,35 @@ public abstract class ModuleNodes {
 
             module.setConstant(this, name.toString(), object);
             return module;
+        }
+
+    }
+
+    @CoreMethod(names = "class_variable_get", minArgs = 1, maxArgs = 1)
+    public abstract static class ClassVariableGetNode extends CoreMethodNode {
+
+        public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClassVariableGetNode(ClassVariableGetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubyString name) {
+            notDesignedForCompilation();
+            return getClassVariable(module, name.toString());
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+            return getClassVariable(module, name.toString());
+        }
+
+        public Object getClassVariable(RubyModule module, String name){
+            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name, this));
         }
 
     }

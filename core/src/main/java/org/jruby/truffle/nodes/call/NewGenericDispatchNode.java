@@ -15,6 +15,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -23,6 +25,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.Options;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,40 +33,40 @@ import java.util.Map;
 public abstract class NewGenericDispatchNode extends NewDispatchNode {
 
     private final String name;
+    private final boolean ignoreVisibility;
+
     private final Map<LookupNode, MethodCacheEntry> cache = new HashMap<>();
-    @CompilerDirectives.CompilationFinal
-    private boolean hasAnyMethodsMissing = false;
+    @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
+    @Child protected IndirectCallNode callNode;
 
-    @Child
-    protected IndirectCallNode callNode;
-
-    public NewGenericDispatchNode(RubyContext context, String name) {
+    public NewGenericDispatchNode(RubyContext context, String name, boolean ignoreVisibility) {
         super(context);
         assert name != null;
         this.name = name;
+        this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     public NewGenericDispatchNode(NewGenericDispatchNode prev) {
-        this(prev.getContext(), prev.name);
+        this(prev.getContext(), prev.name, prev.ignoreVisibility);
     }
 
     @Specialization(order=1)
-    public Object dispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object blockObject, Object argumentsObjects) {
-        return doDispatch(frame, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object blockObject, Object argumentsObjects) {
+        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
-    private Object doDispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
 
         if (entry == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             try {
-                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name), false);
+                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name, ignoreVisibility), false);
             } catch (UseMethodMissingException e) {
                 try {
-                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing"), true);
+                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing", ignoreVisibility), true);
                 } catch (UseMethodMissingException e2) {
                     throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this));
                 }
@@ -73,18 +76,8 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
                 hasAnyMethodsMissing = true;
             }
 
-            cache.put(receiverObject.getLookupNode(), entry);
-
-            if (cache.size() > RubyContext.GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD) {
-                final SourceSection sourceSection = getEncapsulatingSourceSection();
-
-                // TODO(CS): figure out why we don't have proper source sections here
-
-                if (sourceSection instanceof NullSourceSection) {
-                    getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "(unknown)", 0, "general call node cache has " + cache.size() + " entries");
-                } else {
-                    getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
-                }
+            if (cache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
+                cache.put(receiverObject.getLookupNode(), entry);
             }
         }
 
@@ -99,13 +92,13 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
             argumentsToUse = argumentsObjects;
         }
 
-        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
+        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod(), entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
     }
 
 
     @Specialization(order=2)
-    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
-        return dispatch(frame, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
+        return dispatch(frame, methodReceiverObject, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
 

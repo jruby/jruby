@@ -170,6 +170,9 @@ public class RubyFixnum extends RubyInteger {
     }
 
     @Override
+    public int getIntValue() { return (int)value; }
+
+    @Override
     public BigInteger getBigIntegerValue() {
         return BigInteger.valueOf(value);
     }

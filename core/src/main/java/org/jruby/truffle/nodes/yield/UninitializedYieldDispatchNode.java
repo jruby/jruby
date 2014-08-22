@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeCost;
@@ -45,6 +46,24 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
         final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
         replace(dispatch);
         return dispatch.dispatch(frame, block, argumentsObjects);
+    }
+
+    @Override
+    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object[] argumentsObjects) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        int depth = getDepth();
+        final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
+
+        if (depth > MAX_DEPTH) {
+            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
+            dispatchHead.getDispatch().replace(newGeneralYield);
+            return newGeneralYield.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
+        }
+
+        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
+        replace(dispatch);
+        return dispatch.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
     }
 
     public int getDepth() {

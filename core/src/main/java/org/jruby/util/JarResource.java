@@ -3,7 +3,6 @@ package org.jruby.util;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.jar.JarEntry;
@@ -16,27 +15,22 @@ abstract class JarResource implements FileResource {
     private static final JarCache jarCache = new JarCache();
 
     public static JarResource create(String pathname) {
+        if (!pathname.contains("!")) return null;  // Optimization: no ! no jar!
+
         Matcher matcher = PREFIX_MATCH.matcher(pathname);
         String sanitized = matcher.matches() ? matcher.group(1) : pathname;
 
-        int bang = sanitized.indexOf('!');
-        if (bang < 0) {
-            return null;
-        }
-
-        String jarPath;
-        String entryPath;
-        try
-        {
+        try {
             // since pathname is actually an uri we need to decode any url decoded characters like %20
             // which happens when directory names contain spaces
-            jarPath = URLDecoder.decode(sanitized.substring(0, bang), "UTF-8");
-            entryPath = URLDecoder.decode(sanitized.substring(bang + 1), "UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
+            sanitized = URLDecoder.decode(sanitized, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
         }
+
+        int bang = sanitized.indexOf('!');
+        String jarPath = sanitized.substring(0, bang);
+        String entryPath = sanitized.substring(bang + 1);
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
@@ -65,8 +59,7 @@ abstract class JarResource implements FileResource {
 
         JarEntry jarEntry = index.getJarEntry(entryPath);
         if (jarEntry != null) {
-            InputStream jarEntryStream = index.getInputStream(jarEntry);
-            return new JarFileResource(jarPath, rootSlashPrefix, jarEntry, jarEntryStream);
+            return new JarFileResource(jarPath, rootSlashPrefix, index, jarEntry);
         }
 
         return null;

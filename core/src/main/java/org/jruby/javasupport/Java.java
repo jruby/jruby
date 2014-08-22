@@ -559,12 +559,12 @@ public class Java implements Library {
         RubyClass superClass = (RubyClass) baseType;
         proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass(superClass.getMetaClass());
-        try {
-            javaClass.javaClass().asSubclass(java.util.Map.class);
+
+        if (Map.class.isAssignableFrom(javaClass.javaClass())) {
             proxyClass.setAllocator(runtime.getJavaSupport().getMapJavaProxyClass().getAllocator());
             proxyClass.defineAnnotatedMethods(MapJavaProxy.class);
             proxyClass.includeModule(runtime.getEnumerable());
-        } catch (ClassCastException e) {
+        } else {
             proxyClass.setAllocator(superClass.getAllocator());
         }
         if (invokeInherited) {

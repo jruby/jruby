@@ -41,14 +41,13 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
-import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
 import static org.jruby.util.io.EncodingUtils.vmodeVperm;
 import static org.jruby.util.io.EncodingUtils.vmode;
 import static org.jruby.util.io.EncodingUtils.vperm;
-import org.jruby.util.io.FileExistsException;
+
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.POSIXProcess;
@@ -64,14 +63,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -92,17 +88,13 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.SelectExecutor;
-import org.jruby.util.io.Stream;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.ChannelDescriptor;
 
 import org.jruby.runtime.Arity;
 
@@ -119,6 +111,10 @@ import org.jruby.util.io.IOEncodable;
  */
 @JRubyClass(name="IO", include="Enumerable")
 public class RubyIO extends RubyObject implements IOEncodable {
+    // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it)
+    public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
+    public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
+
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
     public RubyIO(Ruby runtime, RubyClass type) {
@@ -138,7 +134,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         openFile = MakeOpenFile();
-        openFile.setFD(new ChannelFD(Channels.newChannel(outputStream), runtime.getPosix()));
+        openFile.setFD(new ChannelFD(Channels.newChannel(outputStream), runtime.getPosix(), runtime.getFilenoUtil()));
         openFile.setMode(OpenFile.WRITABLE | OpenFile.APPEND);
         openFile.setAutoclose(autoclose);
     }
@@ -151,7 +147,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         openFile = MakeOpenFile();
-        openFile.setFD(new ChannelFD(Channels.newChannel(inputStream), runtime.getPosix()));
+        openFile.setFD(new ChannelFD(Channels.newChannel(inputStream), runtime.getPosix(), runtime.getFilenoUtil()));
         openFile.setMode(OpenFile.READABLE);
     }
     
@@ -168,7 +164,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         ThreadContext context = runtime.getCurrentContext();
-        initializeCommon(context, new ChannelFD(channel, runtime.getPosix()), runtime.newFixnum(ModeFlags.oflagsFrom(runtime.getPosix(), channel)), context.nil);
+        initializeCommon(context, new ChannelFD(channel, runtime.getPosix(), runtime.getFilenoUtil()), runtime.newFixnum(ModeFlags.oflagsFrom(runtime.getPosix(), channel)), context.nil);
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, IOOptions ioOptions) {
@@ -289,9 +285,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ioClass.defineAnnotatedMethods(RubyIO.class);
 
         // Constants for seek
-        ioClass.setConstant("SEEK_SET", runtime.newFixnum(Stream.SEEK_SET));
-        ioClass.setConstant("SEEK_CUR", runtime.newFixnum(Stream.SEEK_CUR));
-        ioClass.setConstant("SEEK_END", runtime.newFixnum(Stream.SEEK_END));
+        ioClass.setConstant("SEEK_SET", runtime.newFixnum(PosixShim.SEEK_SET));
+        ioClass.setConstant("SEEK_CUR", runtime.newFixnum(PosixShim.SEEK_CUR));
+        ioClass.setConstant("SEEK_END", runtime.newFixnum(PosixShim.SEEK_END));
 
         ioClass.defineModuleUnder("WaitReadable");
         ioClass.defineModuleUnder("WaitWritable");
@@ -434,6 +430,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return;
     }
 
+    // MRI: rb_io_reopen
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -476,7 +473,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (!nmode.isNil() || !opt.isNil()) {
             ConvConfig convconfig = new ConvConfig();
-            Object vmode_vperm = vmodeVperm(null, null);
+            Object vmode_vperm = vmodeVperm(nmode, null);
             int[] fmode_p = {0};
 
             EncodingUtils.extractModeEncoding(context, convconfig, vmode_vperm, opt, oflags_p, fmode_p);
@@ -608,8 +605,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             ByteList rsByteList = rsStr.getByteList();
             rslen = rsByteList.getRealSize();
             if (rslen == 0) {
-                rsptrBytes = Stream.PARAGRAPH_SEPARATOR.unsafeBytes();
-                rsptr = Stream.PARAGRAPH_SEPARATOR.getBegin();
+                rsptrBytes = PARAGRAPH_SEPARATOR.unsafeBytes();
+                rsptr = PARAGRAPH_SEPARATOR.getBegin();
                 rslen = 2;
                 rspara = true;
                 fptr.swallow(context, '\n');
@@ -753,9 +750,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ChannelFD fd;
 
         if (FilenoUtil.isFake(fileno)) {
-            fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix());
+            fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
         } else {
-            ChannelFD descriptor = FilenoUtil.getWrapperFromFileno(fileno);
+            ChannelFD descriptor = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
             if (descriptor == null) throw runtime.newErrnoEBADFError();
 
@@ -1131,7 +1128,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         // TODO, if we need it?
 //        rb_maygvl_fd_fix_cloexec(ret);
-        return new ChannelFD(ret, runtime.getPosix());
+        return new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil());
     }
 
     // MRI: rb_io_autoclose_p
@@ -1489,7 +1486,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public RubyFixnum seek(ThreadContext context, IRubyObject[] args) {
-        int whence = Stream.SEEK_SET;
+        int whence = PosixShim.SEEK_SET;
         
         if (args.length > 1) {
             whence = interpretSeekWhence(args[1]);
@@ -1500,7 +1497,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject arg0) {
-        int whence = Stream.SEEK_SET;
+        int whence = PosixShim.SEEK_SET;
         
         return doSeek(context, arg0, whence);
     }
@@ -1796,7 +1793,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr.getProcess() != null) {
             context.setLastExitStatus(context.nil);
 
-            if (runtime.getPosix().isNative()) {
+            if (runtime.getPosix().isNative() && fptr.getProcess() instanceof POSIXProcess) {
                 // We do not need to nuke native-launched child process, since we now have full control
                 // over child process pipes.
                 IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, ((POSIXProcess)fptr.getProcess()).status(), fptr.getPid());
@@ -2631,32 +2628,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newIOError("sysread for buffered IO");
         }
 
-//        n = fptr->fd;
-
-        // TODO: (JRuby) see if this is needed
-    /*
-     * FIXME: removing rb_thread_wait_fd() here changes sysread semantics
-     * on non-blocking IOs.  However, it's still currently possible
-     * for sysread to raise Errno::EAGAIN if another thread read()s
-     * the IO after we return from rb_thread_wait_fd() but before
-     * we call read()
-     */
-//        rb_thread_wait_fd(fptr->fd);
+        /*
+         * FIXME: removing rb_thread_wait_fd() here changes sysread semantics
+         * on non-blocking IOs.  However, it's still currently possible
+         * for sysread to raise Errno::EAGAIN if another thread read()s
+         * the IO after we return from rb_thread_wait_fd() but before
+         * we call read()
+         */
+        context.getThread().select(fptr.channel(), fptr, SelectionKey.OP_READ);
 
         fptr.checkClosed();
 
         str = EncodingUtils.setStrBuf(runtime, str, ilen);
-//        rb_str_locktmp(str);
-//        arg.fd = fptr->fd;
-//        arg.str_ptr = RSTRING_PTR(str);
-//        arg.len = ilen;
-//        rb_ensure(read_internal_call, (VALUE)&arg, rb_str_unlocktmp, str);
-//        n = arg.len;
         ByteList strByteList = ((RubyString)str).getByteList();
         n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
 
         if (n == -1) {
-            throw runtime.newSystemCallError(fptr.getPath());
+            throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         }
         ((RubyString)str).setReadLength(n);
         if (n == 0 && ilen > 0) {
@@ -3402,10 +3390,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
             file.close();
         }
     }
-   
-    public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return popen19(context, recv, args, block);
-    }
 
     private void setupPopen(ModeFlags modes, POpenProcess process) throws RaiseException {
         Ruby runtime = getRuntime();
@@ -3422,7 +3406,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 inChannel = Channels.newChannel(process.getInputStream());
             }
 
-            ChannelFD main = new ChannelFD(inChannel, runtime.getPosix());
+            ChannelFD main = new ChannelFD(inChannel, runtime.getPosix(), runtime.getFilenoUtil());
 
             openFile.setFD(main);
             openFile.setMode(OpenFile.READABLE);
@@ -3437,7 +3421,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 outChannel = Channels.newChannel(process.getOutputStream());
             }
 
-            ChannelFD pipe = new ChannelFD(outChannel, runtime.getPosix());
+            ChannelFD pipe = new ChannelFD(outChannel, runtime.getPosix(), runtime.getFilenoUtil());
 
             RubyIO writeIO = new RubyIO(runtime, runtime.getIO());
             writeIO.initializeCommon(runtime.getCurrentContext(), pipe, runtime.newFixnum(OpenFlags.O_WRONLY), runtime.getNil());
@@ -3513,7 +3497,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @JRubyMethod(name = "popen", required = 1, optional = 2, meta = true)
-    public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
         if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
@@ -3607,181 +3591,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newThreadError("unexpected interrupt");
         }
     }
-   
-    public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return popen3_19(context, recv, args, block);
-    }
-   
-    @JRubyMethod(name = "popen3", rest = true, meta = true)
-    public static IRubyObject popen3_19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
-
-        // TODO: handle opts
-        if (args.length > 0 && args[args.length - 1] instanceof RubyHash) {
-            args = Arrays.copyOf(args, args.length - 1);
-        }
-
-        final POpenTuple tuple = popenSpecial(context, args);
-        final long pid = ShellLauncher.getPidFromProcess(tuple.process);
-
-        // array trick to be able to reference enclosing RubyThread
-        final RubyThread[] waitThread = new RubyThread[1];
-        waitThread[0] = new RubyThread(
-                runtime,
-                (RubyClass) runtime.getClassFromPath("Process::WaitThread"),
-                new ThreadedRunnable() {
-
-            volatile Thread javaThread;
-
-            @Override
-            public Thread getJavaThread() {
-                return javaThread;
-            }
-
-            @Override
-            public void run() {
-                javaThread = Thread.currentThread();
-                RubyThread rubyThread;
-                // spin a bit until this happens; should almost never spin
-                while ((rubyThread = waitThread[0]) == null) {
-                    Thread.yield();
-                }
-                
-                ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
-
-                rubyThread.op_aset(
-                        runtime.newSymbol("pid"),
-                        runtime.newFixnum(pid));
-
-                try {
-                    int exitValue = tuple.process.waitFor();
-
-                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
-                    RubyProcess.RubyStatus status = RubyProcess.RubyStatus.newProcessStatus(
-                            runtime,
-                            exitValue << 8,
-                            pid);
-                    
-                    rubyThread.cleanTerminate(status);
-                } catch (Throwable t) {
-                    rubyThread.exceptionRaised(t);
-                } finally {
-                    rubyThread.dispose();
-                }
-            }
-
-        });
-
-        RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
-                tuple.output,
-                tuple.input,
-                tuple.error,
-                waitThread[0]);
-
-        if (block.isGiven()) {
-            try {
-                return block.yield(context, yieldArgs);
-            } finally {
-                cleanupPOpen(tuple);
-                
-                IRubyObject status = waitThread[0].join(IRubyObject.NULL_ARRAY);
-                context.setLastExitStatus(status);
-            }
-        }
-        
-        return yieldArgs;
-    }
-
-    @JRubyMethod(rest = true, meta = true)
-    public static IRubyObject popen4(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
-        try {
-            POpenTuple tuple = popenSpecial(context, args);
-
-            RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
-                    runtime.newFixnum(ShellLauncher.getPidFromProcess(tuple.process)),
-                    tuple.output,
-                    tuple.input,
-                    tuple.error);
-
-            if (block.isGiven()) {
-                try {
-                    return block.yield(context, yieldArgs);
-                } finally {
-                    cleanupPOpen(tuple);
-                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor() << 8, ShellLauncher.getPidFromProcess(tuple.process)));
-                }
-            }
-            return yieldArgs;
-        } catch (InterruptedException e) {
-            throw runtime.newThreadError("unexpected interrupt");
-        }
-    }
-
-    private static void cleanupPOpen(POpenTuple tuple) {
-        if (tuple.input.openFile.isOpen()) {
-            tuple.input.close();
-        }
-        if (tuple.output.openFile.isOpen()) {
-            tuple.output.close();
-        }
-        if (tuple.error.openFile.isOpen()) {
-            tuple.error.close();
-        }
-    }
-
-    private static class POpenTuple {
-        public POpenTuple(RubyIO i, RubyIO o, RubyIO e, Process p) {
-            input = i; output = o; error = e; process = p;
-        }
-        public final RubyIO input;
-        public final RubyIO output;
-        public final RubyIO error;
-        public final Process process;
-    }
-
-    public static POpenTuple popenSpecial(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        try {
-            ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args, false);
-            RubyIO input = process.getInput() != null ?
-                new RubyIO(runtime, process.getInput()) :
-                new RubyIO(runtime, process.getInputStream());
-            RubyIO output = process.getOutput() != null ?
-                new RubyIO(runtime, process.getOutput()) :
-                new RubyIO(runtime, process.getOutputStream());
-            RubyIO error = process.getError() != null ?
-                new RubyIO(runtime, process.getError()) :
-                new RubyIO(runtime, process.getErrorStream());
-
-            // ensure the OpenFile knows it's a process; see OpenFile#finalize
-            input.getOpenFile().setProcess(process);
-            output.getOpenFile().setProcess(process);
-            error.getOpenFile().setProcess(process);
-
-            // set all streams as popenSpecial streams, so we don't shut down process prematurely
-            input.popenSpecial = true;
-            output.popenSpecial = true;
-            error.popenSpecial = true;
-            
-            // process streams are not seekable
-//            input.getOpenFile().getMainStreamSafe().getDescriptor().
-//              setCanBeSeekable(false);
-//            output.getOpenFile().getMainStreamSafe().getDescriptor().
-//              setCanBeSeekable(false);
-//            error.getOpenFile().getMainStreamSafe().getDescriptor().
-//              setCanBeSeekable(false);
-
-            return new POpenTuple(input, output, error, process);
-//        } catch (BadDescriptorException e) {
-//            throw runtime.newErrnoEBADFError();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        }
-    }
 
     public static IRubyObject pipe(ThreadContext context, IRubyObject recv) {
         return pipe19(context, recv);
@@ -3849,7 +3658,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            rb_jump_tag(state);
 //        }
         r = new RubyIO(runtime, (RubyClass)klass);
-        r.initializeCommon(context, new ChannelFD(fds[0], runtime.getPosix()), runtime.newFixnum(OpenFlags.O_RDONLY), context.nil);
+        r.initializeCommon(context, new ChannelFD(fds[0], runtime.getPosix(), runtime.getFilenoUtil()), runtime.newFixnum(OpenFlags.O_RDONLY), context.nil);
         fptr = r.getOpenFileChecked();
 
         r.setEncoding(context, v1, v2, opt);
@@ -3863,7 +3672,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            rb_jump_tag(state);
 //        }
         w = new RubyIO(runtime, (RubyClass)klass);
-        w.initializeCommon(context, new ChannelFD(fds[1], runtime.getPosix()), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
+        w.initializeCommon(context, new ChannelFD(fds[1], runtime.getPosix(), runtime.getFilenoUtil()), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
         fptr2 = w.getOpenFileChecked();
         fptr2.setSync(true);
 
@@ -3981,6 +3790,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             io2.flush(context);
             return size;
         }
+
+        io2 = io2.GetWriteIO();
 
         if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
         if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
@@ -4457,11 +4268,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @Deprecated
-    public boolean writeDataBuffered() {
-        return openFile.getMainStream().writeDataBuffered();
-    }
-
-    @Deprecated
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         return args.length == 0 ? readline(context) : readline(context, args[0]);
     }
@@ -4625,11 +4431,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @Deprecated
-    public Stream getHandler() throws BadDescriptorException {
-        return getOpenFileChecked().getMainStreamSafe();
-    }
-
-    @Deprecated
     public static ModeFlags getIOModes(Ruby runtime, String modesString) {
         return newModeFlags(runtime, modesString);
     }
@@ -4644,50 +4445,187 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @Deprecated
-    protected Stream fdopen(ChannelDescriptor existingDescriptor, ModeFlags modes) {
-        Ruby runtime = getRuntime();
+    public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block unusedBlock) {
+        return write(context, recv, argv);
+    }
 
-        // See if we already have this descriptor open.
-        // If so then we can mostly share the handler (keep open
-        // file, but possibly change the mode).
+    @Deprecated
+    public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return popen3_19(context, recv, args, block);
+    }
 
-        if (existingDescriptor == null) {
-            // redundant, done above as well
+    @Deprecated
+    public static IRubyObject popen3_19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        final Ruby runtime = context.runtime;
 
-            // this seems unlikely to happen unless it's a totally bogus fileno
-            // ...so do we even need to bother trying to create one?
+        // TODO: handle opts
+        if (args.length > 0 && args[args.length - 1] instanceof RubyHash) {
+            args = Arrays.copyOf(args, args.length - 1);
+        }
 
-            // IN FACT, we should probably raise an error, yes?
-            throw runtime.newErrnoEBADFError();
+        final POpenTuple tuple = popenSpecial(context, args);
+        final long pid = ShellLauncher.getPidFromProcess(tuple.process);
 
-//            if (mode == null) {
-//                mode = "r";
-//            }
-//
-//            try {
-//                openFile.setMainStream(streamForFileno(getRuntime(), fileno));
-//            } catch (BadDescriptorException e) {
-//                throw getRuntime().newErrnoEBADFError();
-//            } catch (IOException e) {
-//                throw getRuntime().newErrnoEBADFError();
-//            }
-//            //modes = new IOModes(getRuntime(), mode);
-//
-//            registerStream(openFile.getMainStream());
-        } else {
-            // We are creating a new IO object that shares the same
-            // IOHandler (and fileno).
+        // array trick to be able to reference enclosing RubyThread
+        final RubyThread[] waitThread = new RubyThread[1];
+        waitThread[0] = new RubyThread(
+                runtime,
+                (RubyClass) runtime.getClassFromPath("Process::WaitThread"),
+                new ThreadedRunnable() {
+
+                    volatile Thread javaThread;
+
+                    @Override
+                    public Thread getJavaThread() {
+                        return javaThread;
+                    }
+
+                    @Override
+                    public void run() {
+                        javaThread = Thread.currentThread();
+                        RubyThread rubyThread;
+                        // spin a bit until this happens; should almost never spin
+                        while ((rubyThread = waitThread[0]) == null) {
+                            Thread.yield();
+                        }
+
+                        ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+
+                        rubyThread.op_aset(
+                                runtime.newSymbol("pid"),
+                                runtime.newFixnum(pid));
+
+                        try {
+                            int exitValue = tuple.process.waitFor();
+
+                            // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                            RubyProcess.RubyStatus status = RubyProcess.RubyStatus.newProcessStatus(
+                                    runtime,
+                                    exitValue << 8,
+                                    pid);
+
+                            rubyThread.cleanTerminate(status);
+                        } catch (Throwable t) {
+                            rubyThread.exceptionRaised(t);
+                        } finally {
+                            rubyThread.dispose();
+                        }
+                    }
+
+                });
+
+        RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
+                tuple.output,
+                tuple.input,
+                tuple.error,
+                waitThread[0]);
+
+        if (block.isGiven()) {
             try {
-                return ChannelStream.fdopen(runtime, existingDescriptor, modes);
-            } catch (InvalidValueException ive) {
-                throw runtime.newErrnoEINVALError();
+                return block.yield(context, yieldArgs);
+            } finally {
+                cleanupPOpen(tuple);
+
+                IRubyObject status = waitThread[0].join(IRubyObject.NULL_ARRAY);
+                context.setLastExitStatus(status);
             }
+        }
+
+        return yieldArgs;
+    }
+
+    @Deprecated
+    public static IRubyObject popen4(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
+
+        try {
+            POpenTuple tuple = popenSpecial(context, args);
+
+            RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
+                    runtime.newFixnum(ShellLauncher.getPidFromProcess(tuple.process)),
+                    tuple.output,
+                    tuple.input,
+                    tuple.error);
+
+            if (block.isGiven()) {
+                try {
+                    return block.yield(context, yieldArgs);
+                } finally {
+                    cleanupPOpen(tuple);
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor() << 8, ShellLauncher.getPidFromProcess(tuple.process)));
+                }
+            }
+            return yieldArgs;
+        } catch (InterruptedException e) {
+            throw runtime.newThreadError("unexpected interrupt");
         }
     }
 
     @Deprecated
-    public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block unusedBlock) {
-        return write(context, recv, argv);
+    private static void cleanupPOpen(POpenTuple tuple) {
+        if (tuple.input.openFile.isOpen()) {
+            tuple.input.close();
+        }
+        if (tuple.output.openFile.isOpen()) {
+            tuple.output.close();
+        }
+        if (tuple.error.openFile.isOpen()) {
+            tuple.error.close();
+        }
+    }
+
+    @Deprecated
+    private static class POpenTuple {
+        public POpenTuple(RubyIO i, RubyIO o, RubyIO e, Process p) {
+            input = i; output = o; error = e; process = p;
+        }
+        public final RubyIO input;
+        public final RubyIO output;
+        public final RubyIO error;
+        public final Process process;
+    }
+
+    @Deprecated
+    public static POpenTuple popenSpecial(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        try {
+            ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args, false);
+            RubyIO input = process.getInput() != null ?
+                    new RubyIO(runtime, process.getInput()) :
+                    new RubyIO(runtime, process.getInputStream());
+            RubyIO output = process.getOutput() != null ?
+                    new RubyIO(runtime, process.getOutput()) :
+                    new RubyIO(runtime, process.getOutputStream());
+            RubyIO error = process.getError() != null ?
+                    new RubyIO(runtime, process.getError()) :
+                    new RubyIO(runtime, process.getErrorStream());
+
+            // ensure the OpenFile knows it's a process; see OpenFile#finalize
+            input.getOpenFile().setProcess(process);
+            output.getOpenFile().setProcess(process);
+            error.getOpenFile().setProcess(process);
+
+            // set all streams as popenSpecial streams, so we don't shut down process prematurely
+            input.popenSpecial = true;
+            output.popenSpecial = true;
+            error.popenSpecial = true;
+
+            // process streams are not seekable
+//            input.getOpenFile().getMainStreamSafe().getDescriptor().
+//              setCanBeSeekable(false);
+//            output.getOpenFile().getMainStreamSafe().getDescriptor().
+//              setCanBeSeekable(false);
+//            error.getOpenFile().getMainStreamSafe().getDescriptor().
+//              setCanBeSeekable(false);
+
+            return new POpenTuple(input, output, error, process);
+//        } catch (BadDescriptorException e) {
+//            throw runtime.newErrnoEBADFError();
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        }
     }
     
     protected OpenFile openFile;

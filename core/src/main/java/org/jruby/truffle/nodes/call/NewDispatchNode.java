@@ -11,12 +11,12 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -24,9 +24,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-@NodeChildren({@NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class)})
+@NodeChildren({@NodeChild(value="methodReceiverObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class)})
 public abstract class NewDispatchNode extends RubyNode {
-
 
     public NewDispatchNode(RubyContext context) {
         super(context, null);
@@ -55,10 +54,9 @@ public abstract class NewDispatchNode extends RubyNode {
         throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
-    public abstract Object executeDispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects);
+    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects);
 
-
-    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
+    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility) throws UseMethodMissingException {
         CompilerAsserts.neverPartOfCompilation();
 
         // TODO(CS): why are we using an exception to convey method missing here?
@@ -83,7 +81,7 @@ public abstract class NewDispatchNode extends RubyNode {
             return method;
         }
 
-        if (!method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
+        if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
         }

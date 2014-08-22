@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import org.jruby.truffle.nodes.*;
@@ -38,7 +39,7 @@ public class OpenModuleNode extends RubyNode {
         notDesignedForCompilation();
 
         final RubyMethod definition = definitionMethod.executeMethod(frame);
-        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition.getDeclarationFrame(), definingModule.execute(frame), null));
+        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), definingModule.execute(frame), null));
     }
 
 }

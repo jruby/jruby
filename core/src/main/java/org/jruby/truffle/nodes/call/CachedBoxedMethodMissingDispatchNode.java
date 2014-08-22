@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
@@ -80,7 +80,7 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
     }
 
     @Override

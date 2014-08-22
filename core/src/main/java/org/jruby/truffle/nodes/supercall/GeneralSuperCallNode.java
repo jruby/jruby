@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.supercall;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
@@ -80,9 +81,9 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
             // TODO(CS): need something better to splat the arguments array
             notDesignedForCompilation();
             final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
-            return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
+            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
         } else {
-            return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), self, blockObject, argumentsObjects));
+            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), self, blockObject, argumentsObjects));
         }
     }
 

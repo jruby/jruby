@@ -10,6 +10,7 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 
 import org.jruby.RubyModule;
 import org.jruby.TruffleBridge;
@@ -41,7 +42,7 @@ public class TruffleMethod extends DynamicMethod {
             truffleArgs[n] = bridge.toTruffle(args[n]);
         }
 
-        return bridge.toJRuby(callTarget.call(RubyArguments.pack(null, bridge.toTruffle(self), null, truffleArgs)));
+        return bridge.toJRuby(callTarget.call(RubyArguments.pack(null, null, bridge.toTruffle(self), null, truffleArgs)));
     }
 
     @Override

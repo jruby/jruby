@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.util.ArrayList;
@@ -28,7 +30,9 @@ public class RubiniusBacktraceFormatter implements BacktraceFormatter {
 
             final ArrayList<String> lines = new ArrayList<>();
 
-            if (backtrace != null) {
+            if (activations.isEmpty()) {
+                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
+            } else {
                 final Activation firstActivation = activations.get(activations.size() - 1);
 
                 lines.add(String.format("An exception occurred running %s:",
@@ -63,14 +67,14 @@ public class RubiniusBacktraceFormatter implements BacktraceFormatter {
         final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
-        final RubyMethod reportedMethod;
+        final MethodLike reportedMethod;
 
         final Activation activation = activations.get(n);
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
-            reportedMethod = activations.get(n).getMethod();
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
+            reportedMethod = RubyArguments.getMethod(activations.get(n).getMaterializedFrame().getArguments());
         } else {
             reportedSourceSection = sourceSection;
 
@@ -80,10 +84,10 @@ public class RubiniusBacktraceFormatter implements BacktraceFormatter {
                 reportedName = sourceSection.getIdentifier();
             }
 
-            if (activations.get(n).getMethod() == null && n < activations.size() - 1) {
-                reportedMethod = activations.get(n + 1).getMethod();
+            if (RubyArguments.getMethod(activations.get(n).getMaterializedFrame().getArguments()) == null && n < activations.size() - 1) {
+                reportedMethod = RubyArguments.getMethod(activations.get(n + 1).getMaterializedFrame().getArguments());
             } else {
-                reportedMethod = activations.get(n).getMethod();
+                reportedMethod = RubyArguments.getMethod(activations.get(n).getMaterializedFrame().getArguments());
             }
         }
 
@@ -94,9 +98,9 @@ public class RubiniusBacktraceFormatter implements BacktraceFormatter {
                 builder.append("{ } in ");
                 builder.append(RubyMethod.removeBlockDecorator(sourceSection.getIdentifier()));
             } else {
-                builder.append(reportedMethod.getDeclaringModule().getName());
+                builder.append(((RubyMethod) reportedMethod).getDeclaringModule().getName());
                 builder.append("#");
-                builder.append(reportedMethod.getName());
+                builder.append(((RubyMethod) reportedMethod).getName());
             }
         }
 

@@ -17,6 +17,11 @@ import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.Arrays;
 
+/*
+ * TODO(CS): how does this work when when multithreaded? Could a node get replaced by someone else and
+ * then suddenly you're passing it a store type it doesn't expect?
+ */
+
 public abstract class ArrayBuilderNode extends Node {
 
     private final RubyContext context;

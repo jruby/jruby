@@ -50,7 +50,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
@@ -145,7 +144,7 @@ public class RubySocket extends RubyBasicSocket {
         if (_fd instanceof RubyFixnum) {
             int intFD = (int)((RubyFixnum)_fd).getLongValue();
 
-            ChannelFD fd = FilenoUtil.getWrapperFromFileno(intFD);
+            ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
 
             if (fd == null) {
                 throw runtime.newErrnoEBADFError();
@@ -606,47 +605,6 @@ public class RubySocket extends RubyBasicSocket {
     @Deprecated
     public static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
-    }
-
-    @Deprecated
-    protected ChannelDescriptor initChannel(Ruby runtime) {
-        Channel channel;
-
-        try {
-            if(soType == Sock.SOCK_STREAM) {
-
-                if (soProtocol == ProtocolFamily.PF_UNIX ||
-                        soProtocol == ProtocolFamily.PF_LOCAL) {
-                    channel = UnixSocketChannel.open();
-                } else if (soProtocol == ProtocolFamily.PF_INET ||
-                        soProtocol == ProtocolFamily.PF_INET6 ||
-                        soProtocol == ProtocolFamily.PF_UNSPEC) {
-                    channel = SocketChannel.open();
-                } else {
-                    throw runtime.newArgumentError("unsupported protocol family `" + soProtocol + "'");
-                }
-
-            } else if(soType == Sock.SOCK_DGRAM) {
-                channel = DatagramChannel.open();
-
-            } else {
-                throw runtime.newArgumentError("unsupported socket type `" + soType + "'");
-
-            }
-
-            return newChannelDescriptor(runtime, channel);
-
-        } catch(IOException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
-
-        }
-    }
-
-    @Deprecated
-    protected static ChannelDescriptor newChannelDescriptor(Ruby runtime, Channel channel) {
-        ModeFlags modeFlags = newModeFlags(runtime, ModeFlags.RDWR);
-
-        return new ChannelDescriptor(channel, modeFlags);
     }
 
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");

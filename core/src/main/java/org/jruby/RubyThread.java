@@ -1004,7 +1004,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         status.set(Status.RUN);
-        notifyAll();
+        interrupt();
 
         return this;
     }
@@ -1242,9 +1242,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Deprecated
     public void executeBlockingTask(BlockingTask task) throws InterruptedException {
-        enterSleep();
         try {
             this.currentBlockingTask = task;
+            enterSleep();
             pollThreadEvents();
             task.run();
         } finally {
@@ -1255,10 +1255,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
-        enterSleep();
         try {
             this.unblockFunc = task;
             this.unblockArg = data;
+            enterSleep();
             return task.run(context, data);
         } finally {
             exitSleep();

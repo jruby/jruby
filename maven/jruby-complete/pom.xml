@@ -12,7 +12,7 @@
   <name>JRuby Complete</name>
   <properties>
     <jruby.basedir>${basedir}/../../</jruby.basedir>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>

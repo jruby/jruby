@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
@@ -36,6 +37,16 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
             return next.dispatch(frame, block, argumentsObjects);
         }
 
-        return callNode.call(frame, RubyArguments.pack(block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
     }
+
+    @Override
+    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
+        if (block.getCallTarget() != callNode.getCallTarget()) {
+            return next.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
+        }
+
+        return callNode.call(frame, RubyArguments.pack(block, block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
+    }
+
 }

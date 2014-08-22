@@ -165,6 +165,11 @@ public class RubyFloat extends RubyNumeric {
     }
 
     @Override
+    public int getIntValue() {
+        return (int) value;
+    }
+
+    @Override
     public BigInteger getBigIntegerValue() {
         return BigInteger.valueOf((long)value);
     }

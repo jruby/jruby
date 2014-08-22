@@ -14,12 +14,12 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.util.cli.Options;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,10 +61,8 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
                 hasAnyMethodsMissing = true;
             }
 
-            cache.put(receiverObject.getLookupNode(), entry);
-
-            if (cache.size() > RubyContext.GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
+            if (cache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
+                cache.put(receiverObject.getLookupNode(), entry);
             }
         }
 
@@ -79,7 +77,7 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
             argumentsToUse = argumentsObjects;
         }
 
-        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
+        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod(), entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
     }
 
     @Override
@@ -107,10 +105,8 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
                 hasAnyMethodsMissing = true;
             }
 
-            cache.put(receiverObject.getLookupNode(), entry);
-
-            if (cache.size() > RubyContext.GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
+            if (cache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
+                cache.put(receiverObject.getLookupNode(), entry);
             }
         }
 

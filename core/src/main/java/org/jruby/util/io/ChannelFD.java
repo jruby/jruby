@@ -13,7 +13,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
@@ -23,24 +22,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 * Created by headius on 5/24/14.
 */
 public class ChannelFD implements Closeable {
-    public ChannelFD(Channel fd, POSIX posix) {
+    public ChannelFD(Channel fd, POSIX posix, FilenoUtil filenoUtil) {
         assert fd != null;
         this.ch = fd;
         this.posix = posix;
+        this.filenoUtil = filenoUtil;
 
         initFileno();
         initChannelTypes();
 
         refs = new AtomicInteger(1);
 
-        FilenoUtil.registerWrapper(realFileno, this);
-        FilenoUtil.registerWrapper(fakeFileno, this);
+        filenoUtil.registerWrapper(realFileno, this);
+        filenoUtil.registerWrapper(fakeFileno, this);
     }
 
     private void initFileno() {
         realFileno = FilenoUtil.filenoFrom(ch);
         if (realFileno == -1) {
-            fakeFileno = FilenoUtil.getNewFileno();
+            fakeFileno = filenoUtil.getNewFileno();
         } else {
             fakeFileno = -1;
         }
@@ -50,13 +50,13 @@ public class ChannelFD implements Closeable {
         if (realFileno != -1) {
             // real file descriptors, so we can dup directly
             // TODO: investigate how badly this might damage JVM streams (prediction: not badly)
-            return new ChannelFD(new NativeDeviceChannel(posix.dup(realFileno)), posix);
+            return new ChannelFD(new NativeDeviceChannel(posix.dup(realFileno)), posix, filenoUtil);
         }
 
         // TODO: not sure how well this combines native and non-native streams
         // simulate dup by copying our channel into a new ChannelFD and incrementing ref count
         Channel ch = this.ch;
-        ChannelFD fd = new ChannelFD(ch, posix);
+        ChannelFD fd = new ChannelFD(ch, posix, filenoUtil);
         fd.refs = refs;
         fd.refs.incrementAndGet();
 
@@ -115,8 +115,8 @@ public class ChannelFD implements Closeable {
                     try {
                         ch.close();
                     } finally {
-                        FilenoUtil.unregisterWrapper(realFileno);
-                        FilenoUtil.unregisterWrapper(fakeFileno);
+                        filenoUtil.unregisterWrapper(realFileno);
+                        filenoUtil.unregisterWrapper(fakeFileno);
                     }
                 }
             }
@@ -129,7 +129,7 @@ public class ChannelFD implements Closeable {
         else chRead = null;
         if (ch instanceof WritableByteChannel) chWrite = (WritableByteChannel)ch;
         else chWrite = null;
-        if (ch instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)ch;
+        if (ch instanceof FileChannel) chSeek = (FileChannel)ch;
         else chSeek = null;
         if (ch instanceof SelectableChannel) chSelect = (SelectableChannel)ch;
         else chSelect = null;
@@ -153,7 +153,7 @@ public class ChannelFD implements Closeable {
     public Channel ch;
     public ReadableByteChannel chRead;
     public WritableByteChannel chWrite;
-    public SeekableByteChannel chSeek;
+    public FileChannel chSeek;
     public SelectableChannel chSelect;
     public FileChannel chFile;
     public SocketChannel chSock;
@@ -164,8 +164,5 @@ public class ChannelFD implements Closeable {
     public FileLock currentLock;
     private POSIX posix;
     public boolean isNativeFile = false;
-
-    // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
-    public static int FIRST_FAKE_FD = 100000;
-    protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
+    private final FilenoUtil filenoUtil;
 }

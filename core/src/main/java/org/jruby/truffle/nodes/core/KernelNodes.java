@@ -15,6 +15,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 
@@ -33,29 +34,42 @@ import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.subsystems.*;
 
 @CoreClass(name = "Kernel")
-public abstract class
-        KernelNodes {
+public abstract class KernelNodes {
 
     @CoreMethod(names = "Array", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class ArrayNode extends CoreMethodNode {
 
+        @Child ArrayBuilderNode arrayBuilderNode;
+
         public ArrayNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilderNode = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public ArrayNode(ArrayNode prev) {
             super(prev);
+            arrayBuilderNode = prev.arrayBuilderNode;
         }
 
-        @Specialization
-        public RubyArray array(Object[] args) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isOneArrayElement", order = 1)
+        public RubyArray arrayOneArrayElement(Object[] args) {
+            return (RubyArray) args[0];
+        }
 
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                return (RubyArray) args[0];
-            } else {
-                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
+        @Specialization(guards = "!isOneArrayElement", order = 2)
+        public RubyArray array(Object[] args) {
+            final int length = args.length;
+            Object store = arrayBuilderNode.start(length);
+
+            for (int n = 0; n < length; n++) {
+                store = arrayBuilderNode.append(store, n, args[n]);
             }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
+        }
+
+        protected boolean isOneArrayElement(Object[] args) {
+            return args.length == 1 && args[0] instanceof RubyArray;
         }
 
     }
@@ -95,7 +109,7 @@ public abstract class
         public Object binding(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
         }
     }
 
@@ -114,7 +128,7 @@ public abstract class
         public boolean blockGiven() {
             notDesignedForCompilation();
 
-            return RubyArguments.getBlock(RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
+            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
 
@@ -314,7 +328,7 @@ public abstract class
 
             final RubyContext context = getContext();
 
-            final Frame caller = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
             final ThreadManager threadManager = context.getThreadManager();
 
@@ -509,16 +523,20 @@ public abstract class
     @CoreMethod(names = "print", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode toS;
+
         public PrintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PrintNode(PrintNode prev) {
             super(prev);
+            toS = prev.toS;
         }
 
         @Specialization
-        public NilPlaceholder print(Object[] args) {
+        public NilPlaceholder print(VirtualFrame frame, Object[] args) {
             notDesignedForCompilation();
 
             final ThreadManager threadManager = getContext().getThreadManager();
@@ -528,7 +546,7 @@ public abstract class
             try {
                 for (Object arg : args) {
                     try {
-                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes().bytes());
+                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.dispatch(frame, arg, null)).getBytes().bytes());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -623,55 +641,6 @@ public abstract class
         }
     }
 
-    @CoreMethod(names = "puts", isModuleMethod = true, needsSelf = false, isSplatted = true)
-    public abstract static class PutsNode extends CoreMethodNode {
-
-        public PutsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PutsNode(PutsNode prev) {
-            super(prev);
-        }
-
-        @SlowPath
-        @Specialization
-        public NilPlaceholder puts(Object[] args) {
-            final ThreadManager threadManager = getContext().getThreadManager();
-            final PrintStream standardOut = getContext().getRuntime().getInstanceConfig().getOutput();
-
-            final RubyThread runningThread = threadManager.leaveGlobalLock();
-
-            try {
-                if (args.length == 0) {
-                    standardOut.println();
-                } else {
-                    for (int n = 0; n < args.length; n++) {
-                        puts(getContext(), standardOut, args[n]);
-                    }
-                }
-            } finally {
-                threadManager.enterGlobalLock(runningThread);
-            }
-
-            return NilPlaceholder.INSTANCE;
-        }
-
-        private void puts(RubyContext context, PrintStream standardOut, Object value) {
-            if (value instanceof RubyArray) {
-                final RubyArray array = (RubyArray) value;
-
-                for (Object object : array.slowToArray()) {
-                    puts(context, standardOut, object);
-                }
-            } else {
-                // TODO(CS): slow path send
-                standardOut.println(context.getCoreLibrary().box(value).send(this, "to_s", null));
-            }
-        }
-
-    }
-
     @CoreMethod(names = "raise", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 2)
     public abstract static class RaiseNode extends CoreMethodNode {
 
@@ -687,21 +656,21 @@ public abstract class
             initialize = prev.initialize;
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyString message, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, exceptionClass, getContext().makeString(""));
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
             notDesignedForCompilation();
 
@@ -749,21 +718,20 @@ public abstract class
         }
 
         @Specialization
-        public NilPlaceholder setTraceFunc(NilPlaceholder proc) {
+        public NilPlaceholder setTraceFunc(NilPlaceholder nil) {
             notDesignedForCompilation();
 
             getContext().getTraceManager().setTraceFunc(null);
-            return proc;
+            return nil;
         }
 
         @Specialization
-        public RubyProc setTraceFunc(RubyProc proc) {
+        public RubyProc setTraceFunc(RubyProc traceFunc) {
             notDesignedForCompilation();
 
-            getContext().getTraceManager().setTraceFunc(proc);
-            return proc;
+            getContext().getTraceManager().setTraceFunc(traceFunc);
+            return traceFunc;
         }
-
     }
 
     @CoreMethod(names = "String", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
@@ -821,6 +789,11 @@ public abstract class
 
         @Specialization
         public double sleep(double duration) {
+            return doSleep(duration);
+        }
+
+        @SlowPath
+        private double doSleep(double duration) {
             notDesignedForCompilation();
 
             final RubyContext context = getContext();

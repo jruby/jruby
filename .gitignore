@@ -14,6 +14,7 @@ build.eclipse
 build.properties
 target
 dist
+ext/*/pom-*.gemspec.xml
 lib/jruby*.jar
 lib/native
 lib/jni
@@ -66,7 +67,7 @@ lib/ruby/shared/bcpkix-jdk15on-*.jar
 lib/ruby/shared/bcprov-jdk15on-*.jar
 lib/ruby/shared/*jopenssl*.jar
 lib/ruby/shared/readline/*readline*.jar
-lib/ruby/shared/readline/jline*.jar
+lib/ruby/shared/jline
 lib/ruby/shared/ripper.jar
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
@@ -76,6 +77,13 @@ dependency-reduced-pom.xml
 !lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/rdoc
 !lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/ri
 install/updates.xml
+
+# generated ITs
+maven/jruby/src/it/osgi_*equinox*
+maven/jruby/src/it/osgi_*felix-3*
+maven/jruby/src/it/osgi_*knoplerfish
+maven/jruby/src/it/j2ee_wlp
+maven/jruby-complete/src/it/osgi_many_bundles_with_embedded_gems_*
 
 # IntelliJ project files
 .idea

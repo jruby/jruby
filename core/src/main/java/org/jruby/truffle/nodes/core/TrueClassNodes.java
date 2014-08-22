@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -78,7 +79,7 @@ public abstract class TrueClassNodes {
 
     }
 
-    @CoreMethod(names = "to_s", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, needsSelf = false, maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
@@ -52,9 +53,9 @@ public class DefineOrGetClassNode extends RubyNode {
         final RubyModule.RubyConstant constant = parentModuleObject.lookupConstant(name);
 
         RubyClass definingClass;
+        RubyClass superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            RubyClass superClassObject = getRubySuperClass(frame, context);
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
                 definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
@@ -69,6 +70,8 @@ public class DefineOrGetClassNode extends RubyNode {
         } else {
             if (constant.value instanceof RubyClass) {
                 definingClass = (RubyClass) constant.value;
+                checkSuperClassCompatibility(context, superClassObject, definingClass);
+
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class", this));
             }
@@ -82,11 +85,22 @@ public class DefineOrGetClassNode extends RubyNode {
 
         if (superClassObj instanceof RubyClass){
             if (((RubyClass) superClassObj).isSingleton()){
-                throw new RaiseException(context.getCoreLibrary().typeError(("can't make subclass of virtual class"), this));
+                throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
             return (RubyClass) superClassObj;
         }
-        throw new RaiseException(context.getCoreLibrary().typeError(("superclass must be a Class"), this));
+        throw new RaiseException(context.getCoreLibrary().typeError("superclass must be a Class", this));
+    }
+
+    private boolean isBlankOrRootClass(RubyClass rubyClass){
+        return rubyClass.getName() == "BasicObject" || rubyClass.getName() == "Object";
+    }
+
+    private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass){
+        // TODO(cs): temporarily disabled as it prevents us running psd.rb benchmarks
+        if (false && !isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperclass().getObjectID() != superClassObject.getObjectID()){
+            throw new RaiseException(context.getCoreLibrary().typeError(("superclass mismatch for class " + definingClass.getName()), this));
+        }
     }
 }

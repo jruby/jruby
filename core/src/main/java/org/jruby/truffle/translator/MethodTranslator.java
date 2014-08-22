@@ -10,8 +10,9 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
@@ -19,7 +20,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
-import org.jruby.truffle.nodes.debug.ObjectSpaceSafepointNode;
+import org.jruby.truffle.nodes.debug.ObjectSpaceSafepointInstrument;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
@@ -159,9 +160,7 @@ class MethodTranslator extends BodyTranslator {
             body = new CatchBreakAsReturnNode(context, sourceSection, body);
         }
 
-        if (RubyContext.OBJECTSPACE) {
-            body = new ObjectSpaceSafepointNode(context, sourceSection, body);
-        }
+        body = context.getASTProber().probeAsPeriodic(body);
 
         if (!isBlock) {
             body = new ExceptionTranslatingNode(context, sourceSection, body);

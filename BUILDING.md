@@ -240,6 +240,7 @@ mvn -Pjruby-jars
 
 the gem will be in ./maven/jruby-jars/target
 
+<<<<<<< HEAD
 ### building ALL packages ###
 
 ```
@@ -251,7 +252,7 @@ mvn -Pall
 this will also clean the **ext** directories, i.e. a new build will then use the latest code from there for **lib/ruby**
 
 ```
-mvn -Pclean
+jruby -S rmvn -Pclean
 ```
 
 ## release ##
@@ -259,7 +260,8 @@ mvn -Pclean
 first set the new version (on jruby-1_7 branch):
 
 ```
-mvn versions:set -DnewVersion=1.7.5 -Pall
+mvn versions:set -DnewVersion=1.7.5
+rmvn validate -Pall
 ```
 
 on master you need to run
@@ -300,5 +302,6 @@ at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which 
 After the release set the new development version:
 
 ```
-mvn versions:set -DnewVersion=1.7.6-SNAPSHOT -Pall
+mvn versions:set -DnewVersion=1.7.6-SNAPSHOT
+rmvn validate -Pall
 ```

@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
@@ -27,10 +27,14 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
             final ArrayList<String> lines = new ArrayList<>();
 
-            lines.add(formatInLine(activations, exception));
+            if (activations.isEmpty()) {
+                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
+            } else {
+                lines.add(formatInLine(activations, exception));
 
-            for (int n = 1; n < activations.size(); n++) {
-                lines.add(formatFromLine(activations, n));
+                for (int n = 1; n < activations.size(); n++) {
+                    lines.add(formatFromLine(activations, n));
+                }
             }
 
             return lines.toArray(new String[lines.size()]);
@@ -48,7 +52,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = sourceSection.getIdentifier();
@@ -75,7 +79,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     private static String formatFromLine(List<Activation> activations, int n) {
         final StringBuilder builder = new StringBuilder();
 
-        builder.append("from ");
+        builder.append("\tfrom ");
 
         final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
@@ -83,7 +87,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = sourceSection.getIdentifier();

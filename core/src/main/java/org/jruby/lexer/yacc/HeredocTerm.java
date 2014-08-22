@@ -77,7 +77,7 @@ public class HeredocTerm extends StrTerm {
             // Put back lastLine for any elements past start of heredoc marker
             src.unreadMany(lastLine);
             
-            lexer.yaccValue = new Token(marker, position);
+            lexer.yaccValue = marker;
             return Tokens.tSTRING_END;
         }
 
@@ -93,16 +93,17 @@ public class HeredocTerm extends StrTerm {
                 position = lexer.getPosition();
             } while (!src.matchMarker(marker, indent, true));
         } else {
+            lexer.newtok();
             int c = src.read();
             if (c == '#') {
                 switch (c = src.read()) {
                 case '$':
                 case '@':
                     src.unread(c);
-                    lexer.setValue(new Token("#" + c, lexer.getPosition()));
+                    lexer.setValue("#" + c);
                     return Tokens.tSTRING_DVAR;
                 case '{':
-                    lexer.setValue(new Token("#" + c, lexer.getPosition()));
+                    lexer.setValue("#" + c);
                     return Tokens.tSTRING_DBEG;
                 }
                 str.append('#');

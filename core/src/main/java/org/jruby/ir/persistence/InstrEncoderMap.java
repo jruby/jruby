@@ -47,6 +47,10 @@ public class InstrEncoderMap {
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
+            // SSS FIXME: Needs fixing
+            // case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
+            // SSS FIXME: TODO
+            // case BUILD_DREGEXP: return encodeBuildDynRegExpInstr();
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
             case DEF_CLASS: encodeDefineClassInstr((DefineClassInstr) instr); break;
@@ -197,6 +201,24 @@ public class InstrEncoderMap {
         e.encode(instr.getStartingScope());
         e.encode(instr.getObject());
     }
+
+/**
+    private void encodeBuildCompoundStringInstr(BuildCompoundStringInstr instr) {
+        Encoding encoding = compoundstring.getEncoding();
+
+        if (encoding == null) {
+            encoder.encode("");
+        } else {
+            encoder.encode(encoding.toString());
+        }
+        List<Operand> pieces = compoundstring.getPieces();
+        encoder.encode(pieces.size());
+
+        for (Operand piece: pieces) {
+            encode(piece);
+        }
+    }
+**/
 
     private void encodeConstMissingInstr(ConstMissingInstr instr) {
         e.encode(instr.getReceiver());

@@ -10,27 +10,18 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
  * lambdas and native methods written in Java.
  */
-public class RubyMethod {
-
-    // TODO(CS): should be weak
-    private static final ConcurrentHashMap<SharedMethodInfo, RubyMethod> methodMap = new ConcurrentHashMap<>();
+public class RubyMethod implements MethodLike {
 
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;
@@ -41,11 +32,10 @@ public class RubyMethod {
 
     private final CallTarget callTarget;
     private final MaterializedFrame declarationFrame;
-    private final boolean mapCallTarget;
 
     public RubyMethod(SharedMethodInfo sharedMethodInfo, String name,
                       RubyModule declaringModule, Visibility visibility, boolean undefined,
-                      CallTarget callTarget, MaterializedFrame declarationFrame, boolean mapCallTarget) {
+                      CallTarget callTarget, MaterializedFrame declarationFrame) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
@@ -53,34 +43,6 @@ public class RubyMethod {
         this.undefined = undefined;
         this.callTarget = callTarget;
         this.declarationFrame = declarationFrame;
-        this.mapCallTarget = mapCallTarget;
-
-        CompilerAsserts.compilationConstant(mapCallTarget);
-
-        if (mapCallTarget) {
-            mapMethod(sharedMethodInfo, this);
-        }
-    }
-
-    @CompilerDirectives.SlowPath
-    private static void mapMethod(SharedMethodInfo sharedMethodInfo, RubyMethod method) {
-        methodMap.put(sharedMethodInfo, method);
-    }
-
-    public Object call(Object self, RubyProc block, Object... args) {
-        assert self != null;
-        assert args != null;
-
-        CompilerAsserts.neverPartOfCompilation();
-
-        assert RubyContext.shouldObjectBeVisible(self) : self.getClass();
-        assert RubyContext.shouldObjectsBeVisible(args);
-
-        final Object result = callTarget.call(RubyArguments.pack(declarationFrame, self, block, args));
-
-        assert RubyContext.shouldObjectBeVisible(result);
-
-        return result;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {
@@ -110,19 +72,19 @@ public class RubyMethod {
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
-        return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame, mapCallTarget);
+        return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withNewName(String newName) {
-        return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame, mapCallTarget);
+        return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame, mapCallTarget);
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod undefined() {
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame, mapCallTarget);
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
     public boolean isVisibleTo(Node currentNode, RubyBasicObject caller, RubyBasicObject receiver) {
@@ -192,12 +154,6 @@ public class RubyMethod {
             default:
                 return false;
         }
-    }
-
-    public static RubyMethod getMethod(SharedMethodInfo sharedMethodInfo) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        return methodMap.get(sharedMethodInfo);
     }
 
     @Override

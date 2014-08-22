@@ -2,8 +2,6 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 import java.io.InputStream;
 
@@ -88,18 +86,12 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream openInputStream() {
       return null;
     }
 
     @Override
     public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
-        throw new ResourceException.NotFound(absolutePath());
-    }
-
-    @Override
-    @Deprecated
-    public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
         throw new ResourceException.NotFound(absolutePath());
     }
 }

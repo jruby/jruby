@@ -228,10 +228,6 @@ public final class ThreadContext {
         return lastCallType;
     }
 
-    public void setLastVisibility(Visibility visibility) {
-        lastVisibility = visibility;
-    }
-
     public Visibility getLastVisibility() {
         return lastVisibility;
     }
@@ -263,11 +259,7 @@ public final class ThreadContext {
     public StaticScope getCurrentStaticScope() {
         return scopeStack[scopeIndex].getStaticScope();
     }
-    
-    public DynamicScope getPreviousScope() {
-        return scopeStack[scopeIndex - 1];
-    }
-    
+
     private void expandFrameStack() {
         int newSize = frameStack.length * 2;
         frameStack = fillNewFrameStack(new Frame[newSize], newSize);
@@ -533,15 +525,6 @@ public final class ThreadContext {
         return newBacktrace;
     }
 
-    public static void pushBacktrace(ThreadContext context, String method, ISourcePosition position) {
-        int index = ++context.backtraceIndex;
-        BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], method, position);
-        if (index + 1 == stack.length) {
-            ThreadContext.expandBacktraceStack(context);
-        }
-    }
-
     public static void pushBacktrace(ThreadContext context, String method, String file, int line) {
         int index = ++context.backtraceIndex;
         BacktraceElement[] stack = context.backtrace;
@@ -635,11 +618,7 @@ public final class ThreadContext {
         return getCurrentFrame().getVisibility();
     }
     
-    public Visibility getPreviousVisibility() {
-        return getPreviousFrame().getVisibility();
-    }
-    
-    public void setCurrentVisibility(Visibility visibility) {
+      public void setCurrentVisibility(Visibility visibility) {
         getCurrentFrame().setVisibility(visibility);
     }
     
@@ -669,11 +648,6 @@ public final class ThreadContext {
         runtime.callEventHooks(this, event, file, line, name, implClass);
     }
 
-    @Deprecated
-    public boolean getConstantDefined(String internedName) {
-        return getCurrentStaticScope().isConstantDefined(internedName);
-    }
-    
     /**
      * Used by the evaluator and the compiler to look up a constant by name
      */
@@ -682,55 +656,11 @@ public final class ThreadContext {
         return getCurrentStaticScope().getConstant(internedName);
     }
 
-    /**
-     * Used by the evaluator and the compiler to set a constant by name
-     * This is for a null const decl
-     */
-    @Deprecated
-    public IRubyObject setConstantInCurrent(String internedName, IRubyObject result) {
-        return getCurrentStaticScope().setConstant(internedName, result);
-    }
-    
-    /**
-     * Used by the evaluator and the compiler to set a constant by name.
-     * This is for a Colon2 const decl
-     */
-    @Deprecated
-    public IRubyObject setConstantInModule(String internedName, IRubyObject target, IRubyObject result) {
-        if (!(target instanceof RubyModule)) {
-            throw runtime.newTypeError(target.toString() + " is not a class/module");
-        }
-        RubyModule module = (RubyModule)target;
-        module.setConstant(internedName, result);
-        
-        return result;
-    }
-    
-    /**
-     * Used by the evaluator and the compiler to set a constant by name
-     * This is for a Colon2 const decl
-     */
-    @Deprecated
-    public IRubyObject setConstantInObject(String internedName, IRubyObject result) {
-        runtime.getObject().setConstant(internedName, result);
-        
-        return result;
-    }
-    
     private static void addBackTraceElement(Ruby runtime, RubyArray backtrace, RubyStackTraceElement element) {
         RubyString str = RubyString.newString(runtime, element.mriStyleString());
         backtrace.append(str);
     }
     
-    /**
-     * Create an Array with backtrace information for Kernel#caller
-     * @param level
-     * @return an Array with the backtrace
-     */
-    public IRubyObject createCallerBacktrace(int level, StackTraceElement[] stacktrace) {
-        return createCallerBacktrace(level, null, stacktrace);
-    }
-
     /**
      * Create an Array with backtrace information for Kernel#caller
      * @param level
@@ -813,31 +743,6 @@ public final class ThreadContext {
     public RubyStackTraceElement[] gatherCallerBacktrace() {
         return Gather.CALLER.getBacktraceData(this, false).getBacktrace(runtime);
     }
-    
-    /**
-     * Create an Array with backtrace information.
-     * @param level
-     * @param nativeException
-     * @return an Array with the backtrace
-     */
-    public Frame[] createBacktrace(int level, boolean nativeException) {
-        int traceSize = frameIndex - level + 1;
-        Frame[] traceFrames;
-        
-        if (traceSize <= 0) return null;
-        
-        if (nativeException) {
-            // assert level == 0;
-            traceFrames = new Frame[traceSize + 1];
-            traceFrames[traceSize] = frameStack[frameIndex];
-        } else {
-            traceFrames = new Frame[traceSize];
-        }
-        
-        System.arraycopy(frameStack, 0, traceFrames, 0, traceSize);
-        
-        return traceFrames;
-    }
 
     public boolean isEventHooksEnabled() {
         return eventHooksEnabled;
@@ -892,18 +797,6 @@ public final class ThreadContext {
         return buffer.toString();
     }
 
-    public static RubyStackTraceElement[] gatherRawBacktrace(Ruby runtime, StackTraceElement[] stackTrace) {
-        List trace = new ArrayList(stackTrace.length);
-        
-        for (int i = 0; i < stackTrace.length; i++) {
-            StackTraceElement element = stackTrace[i];
-            trace.add(new RubyStackTraceElement(element));
-        }
-
-        RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
-        return (RubyStackTraceElement[])trace.toArray(rubyStackTrace);
-    }
-
     private Frame pushFrameForBlock(Binding binding) {
         Frame lastFrame = getNextFrame();
         Frame f = pushFrame(binding.getFrame());
@@ -930,53 +823,6 @@ public final class ThreadContext {
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
     }
 
-    public void postExtensionLoad() {
-        popFrame();
-    }
-    
-    public void preCompiledClass(RubyModule type, StaticScope staticScope) {
-        pushFrameCopy();
-        getCurrentFrame().setSelf(type);
-        getCurrentFrame().setVisibility(Visibility.PUBLIC);
-        staticScope.setModule(type);
-        pushScope(DynamicScope.newDynamicScope(staticScope));
-    }
-
-    public void preCompiledClassDummyScope(RubyModule type, StaticScope staticScope) {
-        pushFrameCopy();
-        getCurrentFrame().setSelf(type);
-        getCurrentFrame().setVisibility(Visibility.PUBLIC);
-        staticScope.setModule(type);
-        pushScope(staticScope.getDummyScope());
-    }
-
-    public void postCompiledClass() {
-        popScope();
-        popFrame();
-    }
-    
-    public void preScopeNode(StaticScope staticScope) {
-        pushScope(DynamicScope.newDynamicScope(staticScope, getCurrentScope()));
-    }
-
-    public void postScopeNode() {
-        popScope();
-    }
-
-    public void preClassEval(StaticScope staticScope, RubyModule type) {
-        pushFrameCopy();
-        getCurrentFrame().setSelf(type);
-        getCurrentFrame().setVisibility(Visibility.PUBLIC);
-        getCurrentFrame().setName(null);
-
-        pushScope(DynamicScope.newDynamicScope(staticScope, null));
-    }
-    
-    public void postClassEval() {
-        popScope();
-        popFrame();
-    }
-    
     public void preBsfApply(String[] names) {
         // FIXME: I think we need these pushed somewhere?
         StaticScope staticScope = runtime.getStaticScopeFactory().newLocalScope(null);
@@ -995,12 +841,6 @@ public final class ThreadContext {
         pushCallFrame(implClass, name, self, block);
     }
 
-    // FIXME: This may not be correct for RubyClass in all cases
-    public void preMethodFrameAndClass(String name, IRubyObject self, Block block, StaticScope staticScope) {
-        RubyModule ssModule = staticScope.getModule();
-        pushCallFrame(ssModule, name, self, block);
-    }
-    
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 
             StaticScope staticScope) {
         RubyModule implementationClass = staticScope.getModule();
@@ -1122,15 +962,7 @@ public final class ThreadContext {
         popFrame();
         popScope();
     }
-    
-    public void preMproc() {
-        pushFrame();
-    }
-    
-    public void postMproc() {
-        popFrame();
-    }
-    
+
     public void preTrace() {
         setWithinTrace(true);
         pushFrame();
@@ -1283,27 +1115,6 @@ public final class ThreadContext {
     }
 
     /**
-     * Return a binding representing the previous call's state
-     * @return the current binding
-     */
-    @Deprecated
-    public Binding previousBinding() {
-        Frame frame = getPreviousFrame();
-        return new Binding(frame, getCurrentScope(), backtrace[backtraceIndex].clone());
-    }
-
-    /**
-     * Return a binding representing the previous call's state but with a specified self
-     * @param self the self object to use
-     * @return the current binding, using the specified self
-     */
-    @Deprecated
-    public Binding previousBinding(IRubyObject self) {
-        Frame frame = getPreviousFrame();
-        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), backtrace[backtraceIndex].clone());
-    }
-
-    /**
      * Get the profile collection for this thread (ThreadContext).
      *
      * @return the thread's profile collection
@@ -1380,5 +1191,4 @@ public final class ThreadContext {
         
         return dateFormat;
     }
-    
 }

@@ -23,10 +23,16 @@ public class YieldDispatchHeadNode extends YieldDispatchNode {
 
     }
 
-    public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, RubyProc block, Object... argumentsObjects) {
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
 
         return dispatch.dispatch(frame, block, argumentsObjects);
+    }
+
+    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
+        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
+
+        return dispatch.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
     }
 
     public YieldDispatchNode getDispatch() {

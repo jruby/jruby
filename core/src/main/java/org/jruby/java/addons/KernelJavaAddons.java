@@ -17,34 +17,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class KernelJavaAddons {
-    @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = Visibility.PRIVATE, omit = true)
-    public static IRubyObject rbRaise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
-        // Check for a Java exception
-        ConcreteJavaProxy exception = null;
-        if (args.length == 0 && runtime.getGlobalVariables().get("$!") instanceof ConcreteJavaProxy) {
-            exception = (ConcreteJavaProxy)runtime.getGlobalVariables().get("$!");
-        } else if (args.length == 1 && args[0] instanceof ConcreteJavaProxy) {
-            exception = (ConcreteJavaProxy)args[0];
-        }
-
-        if (exception != null) {
-            // looks like someone's trying to raise a Java exception. Let them.
-            Object maybeThrowable = exception.getObject();
-
-            if (maybeThrowable instanceof Throwable) {
-                // yes, we're cheating here.
-                Helpers.throwException((Throwable)maybeThrowable);
-                return recv; // not reached
-            } else {
-                throw runtime.newTypeError("can't raise a non-Throwable Java object");
-            }
-        } else {
-            return RubyKernel.raise(context, recv, args, block);
-        }
-    }
-
     @JRubyMethod
     public static IRubyObject to_java(ThreadContext context, IRubyObject fromObject) {
         if (fromObject instanceof RubyArray) {

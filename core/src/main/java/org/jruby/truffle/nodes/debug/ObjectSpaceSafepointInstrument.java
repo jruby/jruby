@@ -9,20 +9,22 @@
  */
 package org.jruby.truffle.nodes.debug;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.instrument.Instrument;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-public class ObjectSpaceSafepointNode extends WrapperNode {
+public class ObjectSpaceSafepointInstrument extends Instrument {
 
-    public ObjectSpaceSafepointNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
-        super(context, sourceSection, child);
+    private final RubyContext context;
+
+    public ObjectSpaceSafepointInstrument(RubyContext context) {
+        this.context = context;
     }
 
     @Override
-    protected void before(VirtualFrame frame) {
-        getContext().getObjectSpaceManager().checkSafepoint();
+    public void enter(Node node, VirtualFrame frame) {
+        context.getObjectSpaceManager().checkSafepoint();
     }
 
 }

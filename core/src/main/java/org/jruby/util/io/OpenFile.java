@@ -38,7 +38,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -186,7 +186,7 @@ public class OpenFile implements Finalizable {
     }
 
     public void setChannel(Channel fd) {
-        this.fd = new ChannelFD(fd, runtime.getPosix());
+        this.fd = new ChannelFD(fd, runtime.getPosix(), runtime.getFilenoUtil());
     }
 
     public int getMode() {
@@ -710,10 +710,6 @@ public class OpenFile implements Finalizable {
 
     public boolean isSync() {
         return (mode & (SYNC | TTY)) != 0;
-    }
-
-    public boolean areBothEOF() throws IOException, BadDescriptorException {
-        return mainStream.feof() && (pipeStream != null ? pipeStream.feof() : true);
     }
 
     public void setMode(int modes) {
@@ -1325,7 +1321,7 @@ public class OpenFile implements Finalizable {
 
         // kinda-hacky way to see if there's more data to read from a seekable channel
         if (fd.chSeek != null) {
-            SeekableByteChannel fdSeek = fd.chSeek;
+            FileChannel fdSeek = fd.chSeek;
             try {
                 // not a real file, can't get size...we'll have to just read and block
                 if (fdSeek.size() < 0) return true;
@@ -2101,7 +2097,7 @@ public class OpenFile implements Finalizable {
         return fd.chWrite;
     }
 
-    public SeekableByteChannel seekChannel() {
+    public FileChannel seekChannel() {
         return fd.chSeek;
     }
 
@@ -2240,54 +2236,6 @@ public class OpenFile implements Finalizable {
     public int readPending() {
         if (READ_CHAR_PENDING()) return 1;
         return READ_DATA_PENDING_COUNT();
-    }
-
-    @Deprecated
-    public Stream getMainStream() {
-        return mainStream;
-    }
-
-    @Deprecated
-    public Stream getMainStreamSafe() throws BadDescriptorException {
-        Thread.dumpStack();
-        Stream stream = mainStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
-    }
-
-    @Deprecated
-    public void setMainStream(Stream mainStream) {
-        this.mainStream = mainStream;
-        setChannel(mainStream.getChannel());
-    }
-
-    @Deprecated
-    public Stream getPipeStream() {
-        return pipeStream;
-    }
-
-    @Deprecated
-    public Stream getPipeStreamSafe() throws BadDescriptorException {
-        Stream stream = pipeStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
-    }
-
-    @Deprecated
-    public void setPipeStream(Stream pipeStream) {
-        this.pipeStream = pipeStream;
-    }
-
-    @Deprecated
-    public Stream getWriteStream() {
-        return pipeStream == null ? mainStream : pipeStream;
-    }
-
-    @Deprecated
-    public Stream getWriteStreamSafe() throws BadDescriptorException {
-        Stream stream = pipeStream == null ? mainStream : pipeStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
     }
 
     @Deprecated
@@ -2496,9 +2444,4 @@ public class OpenFile implements Finalizable {
         // TODO
         return null;
     }
-
-    @Deprecated
-    private Stream mainStream;
-    @Deprecated
-    private Stream pipeStream;
 }

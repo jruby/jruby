@@ -25,7 +25,7 @@ public abstract class NewCachedDispatchNode extends NewDispatchNode {
         super(prev.getContext());
     }
 
-    protected static final boolean isPrimitive(Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
+    protected static final boolean isPrimitive(Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
         return !(receiverObject instanceof  RubyBasicObject);
     }
 

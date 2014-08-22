@@ -9,67 +9,28 @@
  */
 package org.jruby.truffle.nodes;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.NullSourceSection;
 
 /**
  * Source sections used for core method nodes.
  */
-public final class CoreSourceSection implements NullSourceSection {
+public final class CoreSourceSection extends NullSourceSection {
 
-    private final CoreSource source;
+    private final String className;
+    private final String methodName;
 
-    public CoreSourceSection(CoreSource source) {
-        this.source = source;
+    public CoreSourceSection(String className, String methodName) {
+        super("core", String.format("%s#%s", className, methodName));
+        this.className = className;
+        this.methodName = methodName;
     }
 
-    @Override
-    public CoreSource getSource() {
-        return source;
+    public String getClassName() {
+        return className;
     }
 
-    @Override
-    public int getStartLine() {
-        return 0;
-    }
-
-    @Override
-    public int getStartColumn() {
-        return 0;
-    }
-
-    @Override
-    public int getCharIndex() {
-        return 0;
-    }
-
-    @Override
-    public int getCharLength() {
-        return 0;
-    }
-
-    @Override
-    public int getCharEndIndex() {
-        return 0;
-    }
-
-    @Override
-    public String getIdentifier() {
-        return source.getMethodName();
-    }
-
-    @Override
-    public String getCode() {
-        return toString();
-    }
-
-    @Override
-    public String getShortDescription() {
-        return toString();
-    }
-
-    @Override
-    public String toString() {
-        return source.toString();
+    public String getMethodName() {
+        return methodName;
     }
 
 }

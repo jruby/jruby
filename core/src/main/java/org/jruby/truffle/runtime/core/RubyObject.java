@@ -44,6 +44,16 @@ public class RubyObject extends RubyBasicObject {
         return name;
     }
 
+    public static String checkClassVariableName(RubyContext context, String name, RubyNode currentNode) {
+        RubyNode.notDesignedForCompilation();
+
+        if (!name.startsWith("@@")) {
+            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+        }
+
+        return name;
+    }
+
     public Ruby getJRubyRuntime(){
         return getRubyClass().getContext().getRuntime();
     }

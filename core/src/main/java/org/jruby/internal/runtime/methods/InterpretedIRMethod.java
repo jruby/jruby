@@ -97,30 +97,29 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         ensureInstrsReady();
 
-        if (IRRuntimeHelpers.isDebug()) {
-            // FIXME: name should probably not be "" ever.
-            String realName = name == null || "".equals(name) ? method.getName() : name;
-            LOG.info("Executing '" + realName + "'");
-            if (displayedCFG == false) {
-                // The base IR may not have been processed yet
-                CFG cfg = method.getCFG();
-                LOG.info("Graph:\n" + cfg.toStringGraph());
-                LOG.info("CFG:\n" + cfg.toStringInstrs());
-                displayedCFG = true;
-            }
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (method.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+
+        try {
+            pre(context, self, name, block);
+
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+        } finally {
+            post(context);
         }
+    }
 
-        if (method.hasExplicitCallProtocol()) {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block, null, false);
-        } else {
-            try {
-                pre(context, self, name, block);
-
-                return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block, null, false);
-            } finally {
-                post(context);
-
-            }
+    protected void doDebug() {
+        // FIXME: name should probably not be "" ever.
+        String realName = name == null || "".equals(name) ? method.getName() : name;
+        LOG.info("Executing '" + realName + "'");
+        if (displayedCFG == false) {
+            // The base IR may not have been processed yet
+            CFG cfg = method.getCFG();
+            LOG.info("Graph:\n" + cfg.toStringGraph());
+            LOG.info("CFG:\n" + cfg.toStringInstrs());
+            displayedCFG = true;
         }
     }
 

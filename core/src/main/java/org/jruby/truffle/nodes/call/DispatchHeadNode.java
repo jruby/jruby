@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -19,7 +20,7 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class DispatchHeadNode extends DispatchNode {
 
-    private static final boolean useNewDispatch = false;
+    private static final boolean useNewDispatch = true;
 
     private final String name;
     private final boolean isSplatted;
@@ -49,7 +50,7 @@ public class DispatchHeadNode extends DispatchNode {
 
         final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, ignoreVisibility, name, missingBehavior);
         dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
-        newDispatch = new NewUnresolvedDispatchNode(context, name, missingBehavior);
+        newDispatch = new NewUnresolvedDispatchNode(context, name, ignoreVisibility, missingBehavior);
     }
 
     public Object newDispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
@@ -59,7 +60,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object newDispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-        return newDispatch.executeDispatch(frame, callingSelf, receiverObject, blockObject, argumentsObjects);
+        return newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects);
     }
 
     public NewDispatchNode getNewDispatch() {
@@ -70,14 +71,18 @@ public class DispatchHeadNode extends DispatchNode {
         return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
     }
 
-    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
         if (useNewDispatch) {
-            return newDispatch.executeDispatch(frame, callingSelf, receiverObject, blockObject, argumentsObjects);
+            return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects);
         } else {
             return dispatch.dispatch(frame, callingSelf, receiverObject, blockObject, argumentsObjects);
         }
+    }
+
+    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+        return dispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects);
     }
 
     public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {

@@ -115,6 +115,11 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
+    public int getIntValue() {
+        return (int)big2long(this);
+    }
+
+    @Override
     public BigInteger getBigIntegerValue() {
         return value;
     }

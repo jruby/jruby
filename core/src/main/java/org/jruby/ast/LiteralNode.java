@@ -2,7 +2,7 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.Token;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * This is not a node in the classic sense in that it has no defined or
@@ -15,10 +15,10 @@ import org.jruby.lexer.yacc.Token;
 public class LiteralNode extends Node implements InvisibleNode {
     private String name;
 
-    public LiteralNode(Token token) {
-        super(token.getPosition());
+    public LiteralNode(ISourcePosition position, String name) {
+        super(position);
 
-        this.name = (String) token.getValue();
+        this.name = name;
     }
 
     public String getName() {

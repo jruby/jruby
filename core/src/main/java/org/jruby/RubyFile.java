@@ -1243,9 +1243,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return path;
     }
     
-    private static final ByteList FILE_URL_START = ByteList.create("file:");
-
-
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
      * account the runtime's current directory.
@@ -1259,17 +1256,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
         } else {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
-            ByteList pathByteList = pathStr.getByteList();
-
-            if ((pathByteList.bytes().length > FILE_URL_START.bytes().length) && pathByteList.startsWith(FILE_URL_START)) {
-                String path = pathStr.asJavaString();
-                String[] pathParts = splitURI(path);
-                if (pathParts != null && pathParts[0].equals("file:")) {
-                    path = pathParts[1];
-                }
-
-                return JRubyFile.createResource(runtime, path);
-            }
 
             return JRubyFile.createResource(runtime, pathStr.toString());
         }
@@ -1427,6 +1413,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return runtime.newString("//./" + relativePath.substring(0, 3));
         }
 
+        if (relativePath.startsWith("uri:")) {
+            return runtime.newString(relativePath);
+        }
+
         String[] uriParts = splitURI(relativePath);
         String cwd;
 
@@ -1447,32 +1437,36 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // If there's a second argument, it's the path to which the first
         // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
-            cwd = get_path(context, args[1]).getUnicodeValue();
-
-            // Handle ~user paths.
-            if (expandUser) {
-                cwd = expandUserPath(context, cwd, true);
+            // TODO maybe combine this with get_path method
+            if ((args[1] instanceof RubyString) && args[1].asJavaString().startsWith("uri:")) {
+                cwd = args[1].asJavaString();
+            } else {
+                cwd = get_path(context, args[1]).getUnicodeValue();
+    
+                // Handle ~user paths.
+                if (expandUser) {
+                    cwd = expandUserPath(context, cwd, true);
+                }
+    
+                String[] cwdURIParts = splitURI(cwd);
+                if (uriParts == null && cwdURIParts != null) {
+                    uriParts = cwdURIParts;
+                    cwd = cwdURIParts[1];
+                }
+    
+                cwd = adjustRootPathOnWindows(runtime, cwd, null);
+    
+                boolean startsWithSlashNotOnWindows = (cwd != null)
+                        && !Platform.IS_WINDOWS && cwd.length() > 0
+                        && cwd.charAt(0) == '/';
+    
+                // TODO: better detection when path is absolute or not.
+                // If the path isn't absolute, then prepend the current working
+                // directory to the path.
+                if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
+                    cwd = new File(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
+                }
             }
-
-            String[] cwdURIParts = splitURI(cwd);
-            if (uriParts == null && cwdURIParts != null) {
-                uriParts = cwdURIParts;
-                cwd = cwdURIParts[1];
-            }
-
-            cwd = adjustRootPathOnWindows(runtime, cwd, null);
-
-            boolean startsWithSlashNotOnWindows = (cwd != null)
-                    && !Platform.IS_WINDOWS && cwd.length() > 0
-                    && cwd.charAt(0) == '/';
-
-            // TODO: better detection when path is absolute or not.
-            // If the path isn't absolute, then prepend the current working
-            // directory to the path.
-            if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
-                cwd = new File(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
-            }
-
         } else {
             // If there's no second argument, simply use the working directory
             // of the runtime.

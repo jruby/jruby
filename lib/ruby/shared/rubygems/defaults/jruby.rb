@@ -88,6 +88,14 @@ class Gem::Specification
       }.compact + spec_directories_from_classpath
     end
 
+    def add_dir dir
+      new_dirs = [ dir ] + (@@dirs||[]).collect { |d| d.sub /.specifications/, '' }
+      self.reset
+
+      # ugh
+      @@dirs = new_dirs.map { |dir| File.join dir, "specifications" }
+    end
+
     # Replace existing dirs=
     def dirs= dirs
       self.reset
@@ -120,6 +128,6 @@ rescue LoadError
 end
 
 begin
-  require 'rubygems/defaults/jruby_jar_dependencies'
+  require 'jar_install_post_install_hook'
 rescue LoadError
 end

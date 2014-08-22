@@ -1,6 +1,8 @@
 require 'rspec'
+require 'socket'
 
-describe 'JRUBY-3155' do
+# Disabled because it doesn't pass in MRI 2.1.1 either See GH#1909
+false && describe('JRUBY-3155') do
   it 'passes' do
     # See http://jira.codehaus.org/browse/JRUBY-3155
     listenIp = "0.0.0.0"
@@ -31,21 +33,18 @@ describe 'JRUBY-3155' do
 
       s = TCPSocket.new 'localhost', listenPort
 
-      receive_thread = Thread.start do
-        begin
-          5.times do |i|
-            str = s.gets
-            client_strings << str
-          end
-        rescue Object
+      begin
+        5.times do |i|
+          str = s.gets
+          client_strings << str
         end
+      rescue Object
       end
 
       5.times do |i|
         s.puts i.to_s
       end
 
-      receive_thread.join
       server_thread.join
 
       server_strings.should == ["0\n", "1\n", "2\n", "3\n", "4\n"]

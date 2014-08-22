@@ -354,6 +354,7 @@ public class ArgumentProcessor {
                         checkGraalVersion();
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         Options.WARN_USELESSS_USE_OF.force(Boolean.toString(false));
+                        Options.WARN_NOT_REACHED.force(Boolean.toString(false));
                         config.setDisableGems(true);
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
@@ -664,7 +665,7 @@ public class ArgumentProcessor {
 
     public static void checkGraalVersion() {
         final String graalVersion = System.getProperty("graal.version", "unknown");
-        final String expectedGraalVersion = "0.3";
+        final String expectedGraalVersion = "0.4";
 
         if (graalVersion.equals("unknown")) {
             return;

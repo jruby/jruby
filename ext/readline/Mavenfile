@@ -3,10 +3,10 @@
 gemspec :include_jars => true, :jar => 'readline.jar'
 
 version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
-version.gsub!( /-SNAPSHOT$/, '' )
+parent 'org.jruby:jruby-ext', version
 
-if model.version.to_s.match /[a-zA-Z]/
-  model.group_id = 'org.jruby.gems'
+if model.version.match /[a-zA-Z]/
+  model.version = model.version + "-SNAPSHOT"
 
   plugin :deploy do
     execute_goal( :deploy, 
@@ -14,8 +14,6 @@ if model.version.to_s.match /[a-zA-Z]/
                   :altDeploymentRepository => 'sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/' )
 
   end
-else
-  parent 'org.jruby:jruby-ext', version
 end
 
 jruby_plugin! :gem do
@@ -25,8 +23,9 @@ end
 # we need the jruby API here, the version should be less important here
 jar 'org.jruby:jruby:1.7.11', :scope => :provided
 
-properties( 'gem.home' => '../target/rubygems',
+properties( 'gem.home' => '${basedir}/../target/rubygems',
             'gem.path' => '${gem.home}',
+            'jruby.plugins.version' => '1.0.5',
             'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true )
 

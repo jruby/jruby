@@ -36,6 +36,8 @@ public abstract class IRVisitor {
     public void BTrueInstr(BTrueInstr btrueinstr) { error(btrueinstr); }
     public void BUndefInstr(BUndefInstr bundefinstr) { error(bundefinstr); }
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) { error(instr); }
+    public void BuildCompoundStringInstr(BuildCompoundStringInstr instr) { error(instr); }
+    public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) { error(instr); }
     public void CallInstr(CallInstr callinstr) { error(callinstr); }
     public void CheckArgsArrayArityInstr(CheckArgsArrayArityInstr checkargsarrayarityinstr) { error(checkargsarrayarityinstr); }
     public void CheckArityInstr(CheckArityInstr checkarityinstr) { error(checkarityinstr); }
@@ -133,7 +135,6 @@ public abstract class IRVisitor {
     public void Boolean(Boolean bool) { error(bool); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { error(closurelocalvariable); }
-    public void CompoundString(CompoundString compoundstring) { error(compoundstring); }
     public void CurrentScope(CurrentScope currentscope) { error(currentscope); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { error(dynamicsymbol); }
     public void Fixnum(Fixnum fixnum) { error(fixnum); }

@@ -2816,7 +2816,7 @@ public class RubyModule extends RubyObject {
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             if (p.hasConstant(name)) {
                 return true;
-        }
+            }
         }
         return false;
     }

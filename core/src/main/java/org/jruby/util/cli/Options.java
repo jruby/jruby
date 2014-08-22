@@ -57,7 +57,8 @@ public class Options {
     // --properties output.
 
     public static final Option<Boolean> PARSER_ALWAYS_TRUFFLE_POSITIONS = bool(PARSER, "parser.always_truffle_positions", false, "Always generate Truffle source positions, even if we're not -X+T.");
-    public static final Option<Boolean> WARN_USELESSS_USE_OF = bool(PARSER, "parser.warnuselessuseof", true, "Print warnings about potentially useless expressions in void contents.");
+    public static final Option<Boolean> WARN_USELESSS_USE_OF = bool(PARSER, "parser.warn.useless_use_of", true, "Print warnings about potentially useless expressions in void contents.");
+    public static final Option<Boolean> WARN_NOT_REACHED = bool(PARSER, "parser.warn.not_reached", true, "Print warnings about statements that can never be reached.");
 
     public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
@@ -122,7 +123,6 @@ public class Options {
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
     public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
-    public static final Option<Integer> TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = integer(TRUFFLE, "truffle.generalDispatchSizeWarningThreshold", 64, "Warn when a general dispatch cache grows larger than this many methods.");
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.trace", true, "Install trace probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_OBJECTSPACE = bool(TRUFFLE, "truffle.object_space", true, "Install safepoints needed for ObjectSpace.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
@@ -137,6 +137,8 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS = bool(TRUFFLE, "truffle.compiler.pass_loops_through_blocks", true, "Pass loop counts through blocks to the method that is calling the block.");
     public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
     public static final Option<String> TRUFFLE_BACKTRACE_FORMAT = string(TRUFFLE, "truffle.backtrace.format", new String[]{"mri", "rubinius"}, "mri", "How to format backtraces.");
+    public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
+    public static final Option<Integer> TRUFFLE_DISPATCH_MEGAMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.megamorphic.max", 255, "Maximum size of a megamorphic call site cache.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
@@ -289,12 +291,7 @@ public class Options {
     }
 
     private static boolean calculateInvokedynamicDefault() {
-        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-        if (!javaVersion.equals("") && new BigDecimal(javaVersion).compareTo(new BigDecimal("1.8")) >= 0) {
-            return true;
-        } else {
-            // on only if forced
-            return false;
-        }
+        // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
+        return false;
     }
 }

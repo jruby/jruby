@@ -3,8 +3,12 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 
 public abstract class TemporaryVariable extends Variable {
-    public TemporaryVariable() {
+    private String name;
+
+    public TemporaryVariable(String name) {
         super(OperandType.TEMPORARY_VARIABLE);
+
+        this.name = name;
     }
 
     /**
@@ -17,6 +21,10 @@ public abstract class TemporaryVariable extends Variable {
         if (other == null || !(other instanceof TemporaryVariable)) return false;
 
         return getType() == ((TemporaryVariable) other).getType();
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override

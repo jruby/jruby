@@ -19,6 +19,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -446,8 +447,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         case SEARCH_CONST: {
             SearchConstInstr sci = (SearchConstInstr)instr;
-            result = sci.getCachedConst();
-            if (!sci.isCached(context, result)) result = sci.cache(context, currScope, currDynScope, self, temp);
+            ConstantCache cache = sci.getConstantCache();
+            if (!ConstantCache.isCached(cache)) {
+                result = sci.cache(context, currScope, currDynScope, self, temp);
+            } else {
+                result = cache.value;
+            }
             setResult(temp, currDynScope, sci.getResult(), result);
             break;
         }
@@ -593,16 +598,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
             } catch (Throwable t) {
-                if (!(t instanceof Unrescuable)) {
-                    if (!instr.canRaiseException()) {
-                        System.err.println("ERROR: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
-                    }
-                    if ((t instanceof RaiseException) && context.runtime.getGlobalVariables().get("$!") != IRRuntimeHelpers.unwrapRubyException(t)) {
-                        System.err.println("ERROR: $! and exception are not matching up.");
-                        System.err.println("$!: " + context.runtime.getGlobalVariables().get("$!"));
-                        System.err.println("t : " + t);
-                    }
-                }
+                extractToMethodToAvoidC2Crash(context, instr, t);
 
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = rescueMap.get(instr.getIPC());
@@ -619,6 +615,24 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // Control should never get here!
         // SSS FIXME: But looks like BEGIN/END blocks get here -- needs fixing
         return null;
+    }
+
+    /*
+     * If you put this code into the method above it will hard crash some production builds of C2 in Java 8. We aren't
+     * sure exactly which builds, but it seems to appear more often in Linux builds than Mac. - Chris Seaton
+     */
+
+    private static void extractToMethodToAvoidC2Crash(ThreadContext context, Instr instr, Throwable t) {
+        if (!(t instanceof Unrescuable)) {
+            if (!instr.canRaiseException()) {
+                System.err.println("ERROR: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
+            }
+            if ((t instanceof RaiseException) && context.runtime.getGlobalVariables().get("$!") != IRRuntimeHelpers.unwrapRubyException(t)) {
+                System.err.println("ERROR: $! and exception are not matching up.");
+                System.err.println("$!: " + context.runtime.getGlobalVariables().get("$!"));
+                System.err.println("t : " + t);
+            }
+        }
     }
 
     public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
@@ -651,34 +665,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod irMethod,
-        IRubyObject self, String name, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
-        Ruby       runtime   = context.runtime;
-        IRScope    scope     = irMethod.getIRMethod();
-        RubyModule implClass = irMethod.getImplementationClass();
-        Visibility viz       = irMethod.getVisibility();
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod method,
+        IRubyObject self, String name, IRubyObject[] args, Block block) {
+        IRScope    scope     = method.getIRMethod();
         boolean syntheticMethod = name == null || name.equals("");
 
         try {
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, scope, viz, implClass, name, args, block, blockType);
+
+            return interpret(context, self, scope, method.getVisibility(), method.getImplementationClass(), name, args, block, null);
         } finally {
-            if (isTraceable) {
-                try {methodPostTrace(runtime, context, name, implClass);}
-                finally { if (!syntheticMethod) ThreadContext.popBacktrace(context);}
-            } else {
-                if (!syntheticMethod) ThreadContext.popBacktrace(context);
-            }
+            if (!syntheticMethod) ThreadContext.popBacktrace(context);
         }
-    }
-
-    private static void methodPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks()) context.trace(RubyEvent.CALL, name, implClass);
-    }
-
-    private static void methodPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks()) context.trace(RubyEvent.RETURN, name, implClass);
     }
 
     /**

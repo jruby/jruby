@@ -61,8 +61,9 @@ class TestThread < Test::Unit::TestCase
     
     # check that "run", sleep", and "dead" appear in inspected output
     q = Queue.new
-    t = Thread.new { q << Thread.current.inspect; sleep }
-    Thread.pass until t.status == "sleep" || !t.alive?
+    ready = false
+    t = Thread.new { q << Thread.current.inspect; ready = true; sleep }
+    Thread.pass until ready && (t.status == "sleep" || !t.alive?)
     assert(q.shift(true)["run"])
     assert(t.inspect["sleep"])
     t.kill
@@ -241,6 +242,9 @@ class TestThread < Test::Unit::TestCase
     rescue SystemExit
       # rescued!
       assert(true)
+    ensure
+      a.kill rescue nil
+      b.kill rescue nil
     end
   end
 
@@ -274,26 +278,14 @@ class TestThread < Test::Unit::TestCase
   # JRUBY-2380: Thread.list has a race condition
   # Fix is to make sure the thread is added to the global list before returning from Thread#new
   def test_new_thread_in_list
-    count = 10
-    live = Thread.list.size
-
-    100.times do
-      threads = []
-      count.times do
-        threads << Thread.new do
-          sleep
-        end
+    1000.times do
+      t = Thread.new do
+        sleep
       end
-
-      if (size = Thread.list.size) != count + live
-        raise "wrong! (expected #{count + live} but was #{size})"
-      end
-
-      threads.each do |t|
-        Thread.pass until t.status == 'sleep'
-        t.wakeup
-        t.join
-      end
+      fail("new thread was not in Thread.list") unless Thread.list.include? t
+      Thread.pass until t.status == 'sleep'
+      t.wakeup
+      t.join
     end
   end
   
@@ -333,5 +325,26 @@ class TestThread < Test::Unit::TestCase
     t = Thread.new { sleep 1 while true }
     assert_equal 0, t.priority
     t.exit
+  end
+
+  # Simpler case for sleep/wakeup close together, which can race if thread state is not managed well
+  def test_sleep_wakeup_interlacing
+    go = false
+    ret = []
+    t = Thread.new do
+      10000.times do
+        Thread.pass until go
+        sleep
+        ret << 'ok'
+      end
+    end
+    10000.times do
+      go = true
+      Thread.pass until t.status == 'sleep'
+      go = false
+      t.wakeup
+    end
+    t.join
+    assert_equal(10000, ret.size)
   end
 end

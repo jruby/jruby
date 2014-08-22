@@ -16,7 +16,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 
 public class TraceManager {
 
-    private CyclicAssumption traceAssumption = new CyclicAssumption("before-func");
+    private CyclicAssumption traceAssumption = new CyclicAssumption("trace-func");
     private RubyProc traceFunc = null;
     private boolean isInTraceFunc = false;
 

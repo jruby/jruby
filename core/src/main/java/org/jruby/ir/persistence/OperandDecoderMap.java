@@ -36,9 +36,8 @@ class OperandDecoderMap {
             case BACKREF: return new Backref(d.decodeChar());
             case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
             case BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
-            case COMPOUND_STRING: return decodeCompoundString();
             case CURRENT_SCOPE: return new CurrentScope(d.decodeInt());
-            case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
+            case DYNAMIC_SYMBOL: return new DynamicSymbol(d.decodeOperand());
             case FIXNUM: return new Fixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
@@ -70,15 +69,6 @@ class OperandDecoderMap {
         }
 
         return null;
-    }
-
-    private Operand decodeCompoundString() {
-        String encodingString = d.decodeString();
-
-        if (encodingString.equals("")) return new CompoundString(d.decodeOperandList(), ASCIIEncoding.INSTANCE);
-
-        // FIXME: yuck
-        return new CompoundString(d.decodeOperandList(), NonIRObjectFactory.createEncoding(encodingString));
     }
 
     private Operand decodeHash() {

@@ -500,6 +500,14 @@ public class Main {
         }
     }
 
+    /**
+     * This is only used from the main(String[]) path, in which case the err for this
+     * run should be System.err. In order to avoid the Ruby err being closed and unable
+     * to write, we use System.err unconditionally.
+     *
+     * @param rj
+     * @return
+     */
     private static int handleRaiseException(RaiseException rj) {
         RubyException raisedException = rj.getException();
         Ruby runtime = raisedException.getRuntime();
@@ -511,7 +519,7 @@ public class Main {
                 return 0;
             }
         } else {
-            runtime.getErrorStream().print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
+            System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
             return 1;
         }
     }

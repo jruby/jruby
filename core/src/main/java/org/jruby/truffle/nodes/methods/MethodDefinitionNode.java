@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.Visibility;
@@ -84,7 +85,7 @@ public class MethodDefinitionNode extends RubyNode {
 
         final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
-        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame, true);
+        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
     }
 
     @Override

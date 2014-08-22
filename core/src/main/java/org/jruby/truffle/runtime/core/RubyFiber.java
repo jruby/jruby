@@ -103,7 +103,7 @@ public class RubyFiber extends RubyObject {
                 try {
                     try {
                         final Object arg = finalFiber.waitForResume();
-                        final Object result = finalBlock.call(null, arg);
+                        final Object result = finalBlock.rootCall(arg);
                         finalFiber.lastResumedByFiber.resume(finalFiber, result);
                     } catch (FiberExitException e) {
                         // Naturally exit the thread on catching this

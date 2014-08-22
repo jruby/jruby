@@ -10,12 +10,12 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.TruffleBridge;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -23,11 +23,12 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.translator.TranslatorDriver;
+
+import java.io.IOException;
 
 public class TruffleBridgeImpl implements TruffleBridge {
 
@@ -90,9 +91,20 @@ public class TruffleBridgeImpl implements TruffleBridge {
     @Override
     public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
-            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, null);
+            final String inputFile = rootNode.getPosition().getFile();
+
+            final Source source;
+
+            if (inputFile.equals("-e")) {
+                // TODO(CS): what if a file is legitimately called -e?
+                source = Source.asPseudoFile(runtime.getInstanceConfig().getInlineScript().toString(), "-e");
+            } else {
+                source = Source.fromFileName(inputFile);
+            }
+
+            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
+            return callTarget.call(RubyArguments.pack(null, parentFrame, self, null));
         } catch (RaiseException e) {
             // TODO(CS): what's this cast about?
             final RubyException rubyException = (RubyException) e.getRubyException();
@@ -102,6 +114,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
             }
 
             return NilPlaceholder.INSTANCE;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

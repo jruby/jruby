@@ -9,14 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.call.BooleanDispatchHeadNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -26,6 +28,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,37 +46,37 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a == b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
@@ -91,37 +94,37 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a == b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
@@ -139,37 +142,37 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a != b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a != b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a != b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a != b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) != 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a != b;
         }
@@ -311,20 +314,20 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public Object dup(VirtualFrame frame, RubyObject self) {
+        public Object dup(VirtualFrame frame, RubyModule self) {
             notDesignedForCompilation();
 
-            final RubyObject newObject = new RubyObject(self.getRubyClass());
+            final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.dispatch(frame, newObject, null, self);
             return newObject;
         }
 
         @Specialization
-        public Object dup(VirtualFrame frame, RubyModule self) {
+        public Object dup(VirtualFrame frame, RubyObject self) {
             notDesignedForCompilation();
 
-            final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
+            final RubyObject newObject = new RubyObject(self.getRubyClass());
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.dispatch(frame, newObject, null, self);
             return newObject;
@@ -463,12 +466,16 @@ public abstract class ObjectNodes {
     @CoreMethod(names = "instance_eval", needsBlock = true, maxArgs = 0)
     public abstract static class InstanceEvalNode extends CoreMethodNode {
 
+        @Child protected YieldDispatchHeadNode yield;
+
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
         }
 
         public InstanceEvalNode(InstanceEvalNode prev) {
             super(prev);
+            yield = prev.yield;
         }
 
         @Specialization
@@ -479,7 +486,7 @@ public abstract class ObjectNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias", this));
             }
 
-            return block.callWithModifiedSelf(receiver);
+            return yield.dispatchWithModifiedSelf(frame, block, receiver);
         }
 
         @Specialization
@@ -641,18 +648,18 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubyArray methods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
             if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
             }
 
             return methods(self, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
@@ -721,18 +728,18 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubyArray methods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
             if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
             }
 
             return methods(self, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
@@ -768,23 +775,23 @@ public abstract class ObjectNodes {
             dispatch = prev.dispatch;
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
             return dispatch.doesRespondTo(frame, object, name);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
             return dispatch.doesRespondTo(frame, object, name);
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
             return dispatch.doesRespondTo(frame, object, name);
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
             return dispatch.doesRespondTo(frame, object, name);
@@ -803,12 +810,22 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
+        public boolean doesRespondToMissing(Object object, RubyString name, UndefinedPlaceholder includeAll) {
+            return false;
+        }
+
+        @Specialization(order = 2)
+        public boolean doesRespondToMissing(Object object, RubySymbol name, UndefinedPlaceholder includeAll) {
+            return false;
+        }
+
+        @Specialization(order = 3)
         public boolean doesRespondToMissing(Object object, RubySymbol name, boolean includeAll) {
             return false;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean doesRespondToMissing(Object object, RubyString name, boolean includeAll) {
             return false;
         }
@@ -846,28 +863,30 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
-            notDesignedForCompilation();
-
-            if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#singleton_methods always returns inherited methods at the moment");
-            }
-
-            return singletonMethods(self, UndefinedPlaceholder.INSTANCE);
-        }
-
-        @Specialization(order = 2)
-        public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
-            for (RubyMethod method : self.getSingletonClass(this).getDeclaredMethods()) {
+            final Collection<RubyMethod> methods;
+
+            if (includeInherited) {
+                methods = self.getSingletonClass(this).getAllMethods();
+            } else {
+                methods = self.getSingletonClass(this).getDeclaredMethods();
+            }
+
+            for (RubyMethod method : methods) {
                 array.slowPush(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
             }
 
             return array;
+        }
+
+        @Specialization
+        public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+            return singletonMethods(self, false);
         }
 
     }

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.RubyNode;
@@ -69,7 +70,7 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
 
         // Call the method
 
-        return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
     }
 
     @Override

@@ -5,11 +5,11 @@ project 'JRuby Main Maven Artifact' do
   model_version '4.0.0'
   id "org.jruby:jruby:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
-  # keep it a jar even without sources - easier to add in project
+
+  # keep it a jar even without sources - easier to add to a project
   packaging 'jar'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'tesla.dump.pom' => 'pom-generated.xml',
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
@@ -18,12 +18,11 @@ project 'JRuby Main Maven Artifact' do
 
   # we have no sources and attach an empty jar later in the build to
   # satisfy oss.sonatype.org upload
-
   plugin( :source, 'skipSource' =>  'true' )
 
   # this plugin is configured to attach empty jars for sources and javadocs
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
-  plugin( :invoker )
+  plugin( :invoker, :pomExcludes => [ '*jetty/pom.xml' ] )
 
 end
