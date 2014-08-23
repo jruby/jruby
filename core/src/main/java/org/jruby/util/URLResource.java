@@ -1,6 +1,7 @@
 package org.jruby.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -127,8 +128,7 @@ public class URLResource implements FileResource {
  
     @Override
     public JRubyFile hackyGetJRubyFile() {
-        new RuntimeException().printStackTrace();
-        return null;
+        return JRubyNonExistentFile.NOT_EXIST;
     }
 
     @Override
@@ -156,6 +156,13 @@ public class URLResource implements FileResource {
     }
 
     public static FileResource createClassloaderURI(String pathname) {
+        if (pathname.contains("..")) {
+            try
+            {
+                pathname = new File(pathname).getCanonicalPath().replace( new File("").getCanonicalPath(), "" );
+            }
+            catch (IOException e) {}
+        }
         if (pathname.startsWith("/")) {
             pathname = pathname.substring(1);
         }

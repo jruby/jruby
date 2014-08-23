@@ -14,7 +14,6 @@ import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
-import org.jruby.util.ClasspathResource;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
@@ -32,7 +31,7 @@ class LibrarySearcher {
 
         @Override
         protected String resolveScriptName(FileResource unused, String ruby18Path) {
-            return ruby18Path;
+            return ruby18Path.contains("/") ? ruby18Path : "./" + ruby18Path;
         }
     }
 
@@ -141,9 +140,19 @@ class LibrarySearcher {
         }
 
         try {
+            FoundLibrary lib = findFileResourceWithLoadPath(baseName, suffix, null);
+            if (lib != null) {
+                return lib;
+            }
+
+            // search 'classpath:'-uri on LOAD_PATH
+            if (baseName.startsWith("classpath:")) baseName = baseName.replaceFirst("^classpath:/?", "");
             for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
-                FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, getPath(loadPathEntry));
-                if (library != null) return library;
+                String loadPathString = loadPathEntry.convertToString().asJavaString();
+                FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix,  getPath(loadPathEntry));
+                if (library != null) {
+                  return library;
+                }
             }
         } catch (Throwable t) {
             t.printStackTrace();
@@ -233,7 +242,7 @@ class LibrarySearcher {
             }
 
             try {
-                if (location.endsWith(".jar")) {
+                if (location.endsWith(".jar") || resource.hackyGetJRubyFile().getName().endsWith(".jar")) {
                     loadJar(runtime, wrap);
                 } else if (location.endsWith(".class")) {
                     loadClass(runtime, is, wrap);
@@ -267,29 +276,28 @@ class LibrarySearcher {
         private void loadJar(Ruby runtime, boolean wrap) {
             try {
                 URL url;
-                if (location.startsWith(ClasspathResource.CLASSPATH)){
-                    // get URL directly from the classloader with its StreamHandler set
-                    // by the classloader itself
-                    url = ClasspathResource.getResourceURL(location);
-                }
-                else if (location.startsWith(URLResource.URI)){
+                if (location.startsWith(URLResource.URI)){
                     url = null;
                     runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(location));
                 }
                 else {
-                    File f = new File(location);
-                    if (f.exists() || location.contains( "!")){
-                        url = f.toURI().toURL();
-                        if ( location.contains( "!") ) {
-                            url = new URL( "jar:" + url );
+                    // the JRubyClassLoaderResource
+                    url = runtime.getJRubyClassLoader().getResource(location);
+                    if (url == null) {
+                        File f = new File(location);
+                        if (f.exists() || location.contains( "!")){
+                            url = f.toURI().toURL();
+                            if ( location.contains( "!") ) {
+                                url = new URL( "jar:" + url );
+                            }
                         }
-                    }
-                    else {
-                        url = new URL(location);
+                        else {
+                            url = new URL(location);
+                        }
                     }
                 }
                 if ( url != null ) {
-                    runtime.getJRubyClassLoader().addURL(url);
+                    runtime.getJRubyClassLoader().addURLNoIndex(url);
                 }
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);

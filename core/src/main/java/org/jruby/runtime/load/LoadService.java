@@ -245,6 +245,9 @@ public class LoadService {
         String jrubyHome = runtime.getJRubyHome();
         loadedFeatures = new StringArraySet(runtime);
 
+        // add the URI to the root of the main classloader to the load paths
+        addClassloaderRootURI();
+
         // add all startup load paths to the list first
         addPaths(prependDirectories);
 
@@ -288,6 +291,18 @@ public class LoadService {
         if (!runtime.is1_9()) {
             addPath(".");
         }
+    }
+
+    private void addClassloaderRootURI() {
+        String uri = "uri:classloader:";
+        URL url = Thread.currentThread().getContextClassLoader().getResource( "META-INF/jruby.home/.jrubydir" );
+        if (url == null && LoadService.class.getClassLoader() != null) {
+            url = LoadService.class.getClassLoader().getResource("/META-INF/jruby.home/.jrubydir");
+            if (url != null) {
+                uri = "uri:" + url.toString().replace("/META-INF/jruby.home/.jrubydir", "");
+            }
+        }
+        addPath(uri);
     }
 
     /**
@@ -998,17 +1013,8 @@ public class LoadService {
     }
 
     private Library findLibraryBySearchState(SearchState state) {
-        if (librarySearcher.findBySearchState(state) != null) {
-            // findBySearchState should fill the state already
-            return state.library;
-        }
-
-        // TODO(ratnikov): Remove the special classpath case by introducing a classpath file resource
-        Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-        if (library != null) {
-            state.library = library;
-        }
-        return library;
+        librarySearcher.findBySearchState(state);
+        return state.library;
     }
 
     @Deprecated

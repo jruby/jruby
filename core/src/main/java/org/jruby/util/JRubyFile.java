@@ -68,6 +68,10 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createResource(POSIX posix, String cwd, String pathname) {
+      return createResource(posix, null, cwd, pathname);
+    }
+
+    public static FileResource createResource(POSIX posix, Ruby runtime, String cwd, String pathname) {
         FileResource emptyResource = EmptyFileResource.create(pathname);
         if (emptyResource != null) return emptyResource;
 
@@ -77,16 +81,18 @@ public class JRubyFile extends JavaSecuredFile {
         if (jarResource != null) return jarResource;
 
         if (pathname.contains(":")) { // scheme-oriented resources
-            if (pathname.startsWith("classpath:")) return ClasspathResource.create(pathname);
-
-            // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
-            if (pathname.startsWith("uri:")) return URLResource.create(pathname.replace("classpath:/", ""));
+            if (pathname.startsWith("uri:")) return URLResource.create(pathname);
 
             if (pathname.startsWith("file:")) {
                 pathname = pathname.substring(5);
 
                 if ("".equals(pathname)) return EmptyFileResource.create(pathname);
             }
+        }
+
+        if (runtime != null) {
+            FileResource jrubyClassloaderResource = JRubyClassloaderResource.create(runtime, pathname);
+            if (jrubyClassloaderResource != null) return jrubyClassloaderResource;
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.

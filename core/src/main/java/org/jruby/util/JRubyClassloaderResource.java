@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -7,50 +8,55 @@ import java.net.URL;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
+import org.jruby.Ruby;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
-public class ClasspathResource implements FileResource {
-
-    public static final String CLASSPATH = "classpath:/";
+public class JRubyClassloaderResource implements FileResource {
 
     private final String uri;
-    
+
     private final JarFileStat fileStat;
 
-    private boolean isFile;
+    private final InputStream is;
 
-    ClasspathResource(String uri, URL url)
+    // TODO maybe use URL from the JRubyClassLoader - jar: URI can be opened on openInputStream
+    JRubyClassloaderResource(String uri, InputStream is)
     {
         this.uri = uri;
+        this.is = is;
         this.fileStat = new JarFileStat(this);
-        this.isFile = url != null;
     }
 
-    public static URL getResourceURL(String pathname) {
-        String path = pathname.substring(CLASSPATH.length() );
-        // this is the J2EE case
-        URL url = Thread.currentThread().getContextClassLoader().getResource(path);
-        if ( url != null ) {
-            return url;
+    public static FileResource create(Ruby runtime, String pathname) {
+        if (pathname.contains("..")) {
+            try
+            {
+                pathname = new File(pathname).getCanonicalPath().replace(new File("").getCanonicalPath(), "");
+            }
+            catch (IOException e) {}
         }
-        else if (ClasspathResource.class.getClassLoader() != null) {
-            // this is OSGi case
-            return ClasspathResource.class.getClassLoader().getResource(path);
+        URL url = runtime.getJRubyClassLoader().findResourceNoIndex(pathname);
+        if (url == null) {
+            if (pathname.startsWith( "/")) {
+                pathname = pathname.substring(1);
+            }
+            else {
+                pathname = "/" + pathname;
+            }
+            url = runtime.getJRubyClassLoader().findResourceNoIndex(pathname);
+        }
+        if (url != null) {
+            try
+            {
+                return new JRubyClassloaderResource(pathname, url.openStream());
+            }
+            catch (IOException e)
+            {
+                return null;
+            }
         }
         return null;
-    }
-    
-    public static FileResource create(String pathname) {
-        if (!pathname.startsWith("classpath:")) {
-            return null;
-        }
-        if (pathname.equals("classpath:")) {
-            return new ClasspathResource(pathname, null);
-        }
-        
-        URL url = getResourceURL(pathname);
-        return new ClasspathResource(pathname, url);
     }
 
     @Override
@@ -67,7 +73,7 @@ public class ClasspathResource implements FileResource {
     @Override
     public boolean exists()
     {
-        return isFile;
+        return true;
     }
 
     @Override
@@ -79,7 +85,7 @@ public class ClasspathResource implements FileResource {
     @Override
     public boolean isFile()
     {
-        return isFile;
+        return true;
     }
 
     @Override
@@ -131,23 +137,19 @@ public class ClasspathResource implements FileResource {
     }
 
     @Override
-    public JRubyFile hackyGetJRubyFile() {
-        // TODO Auto-generated method stub
-        return null;
+    public JRubyFile hackyGetJRubyFile()
+    {
+        return JRubyNonExistentFile.NOT_EXIST;
     }
 
     @Override
-    public InputStream openInputStream() {
-        try {
-            return getResourceURL(uri).openStream();
-        } catch (IOException ioE) {
-            return null;
-        }
+    public InputStream openInputStream()
+    {
+        return is;
     }
 
     @Override
     public ChannelDescriptor openDescriptor(ModeFlags flags, int perm) throws ResourceException {
         return null;
     }
-    
 }

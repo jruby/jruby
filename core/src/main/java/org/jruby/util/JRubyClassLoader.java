@@ -223,6 +223,10 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         }
     }
 
+    public URL findResourceNoIndex(String resourceName) {
+        return super.findResource(resourceName);
+    }
+
     @Override
     public URL findResource(String resourceName) {
         URL result = super.findResource(resourceName);
