@@ -51,11 +51,19 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
-            reportedSourceSection = activations.get(1).getCallNode().getEncapsulatingSourceSection();
+            reportedSourceSection = nextUserSourceSection(activations, 1);
             reportedName = ((CoreSourceSection) sourceSection).getMethodName();
         } else {
             reportedSourceSection = sourceSection;
-            reportedName = sourceSection.getIdentifier();
+            reportedName = reportedSourceSection.getIdentifier();
+        }
+
+        if (reportedSourceSection == null) {
+            throw new IllegalStateException("Call node has no encapsulating source section");
+        }
+
+        if (reportedSourceSection.getSource() == null) {
+            throw new IllegalStateException("Call node source section " + reportedSourceSection + " has no source");
         }
 
         builder.append(reportedSourceSection.getSource().getName());
@@ -101,6 +109,18 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         builder.append("'");
 
         return builder.toString();
+    }
+
+    private static SourceSection nextUserSourceSection(List<Activation> activations, int n) {
+        while (true) {
+            SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
+
+            if (!(sourceSection instanceof CoreSourceSection)) {
+                return sourceSection;
+            }
+
+            n++;
+        }
     }
 
 }
