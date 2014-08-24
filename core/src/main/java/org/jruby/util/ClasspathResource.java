@@ -15,15 +15,16 @@ public class ClasspathResource implements FileResource {
     public static final String CLASSPATH = "classpath:/";
 
     private final String uri;
-
-    private String[] list = null;
     
     private final JarFileStat fileStat;
 
-    ClasspathResource(String uri) throws IOException
+    private boolean isFile;
+
+    ClasspathResource(String uri, URL url)
     {
         this.uri = uri;
         this.fileStat = new JarFileStat(this);
+        this.isFile = url != null;
     }
 
     public static URL getResourceURL(String pathname) {
@@ -40,26 +41,16 @@ public class ClasspathResource implements FileResource {
         return null;
     }
     
-    public static boolean isResource(String pathname) {
-        return getResourceURL(pathname) != null;
-    }
-
     public static FileResource create(String pathname) {
-        if (!pathname.startsWith(CLASSPATH)) {
+        if (!pathname.startsWith("classpath:")) {
             return null;
         }
-        
-        if (isResource(pathname)) {
-            try
-            {
-                return new ClasspathResource(pathname);
-            }
-            catch (IOException e)
-            {
-               return null;
-            }
+        if (pathname.equals("classpath:")) {
+            return new ClasspathResource(pathname, null);
         }
-        return null;
+        
+        URL url = getResourceURL(pathname);
+        return new ClasspathResource(pathname, url);
     }
 
     @Override
@@ -71,19 +62,19 @@ public class ClasspathResource implements FileResource {
     @Override
     public boolean exists()
     {
-        return true;
+        return isFile;
     }
 
     @Override
     public boolean isDirectory()
     {
-        return list != null;
+        return false;
     }
 
     @Override
     public boolean isFile()
     {
-        return list == null;
+        return isFile;
     }
 
     @Override
@@ -115,7 +106,7 @@ public class ClasspathResource implements FileResource {
     @Override
     public String[] list()
     {
-        return list;
+        return null;
     }
 
     @Override

@@ -76,13 +76,10 @@ public class JRubyFile extends JavaSecuredFile {
         if (jarResource != null) return jarResource;
 
         if (pathname.contains(":")) { // scheme-oriented resources
-            // HACK turn the pathname into something meaningful in case of being an URI
-            FileResource cpResource = ClasspathResource.create(pathname.replace(cwd == null ? "" : cwd, ""));
-            if (cpResource != null) return cpResource;
+            if (pathname.startsWith("classpath:")) return ClasspathResource.create(pathname);
 
-            // HACK this codes get triggers by LoadService via findOnClasspath, so remove the prefix to get the uri
-            FileResource urlResource = URLResource.create(pathname.replace("classpath:/", ""));
-            if (urlResource != null) return urlResource;
+            // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
+            if (pathname.startsWith("uri:")) return URLResource.create(pathname.replace("classpath:/", ""));
 
             if (pathname.startsWith("file:")) pathname = pathname.substring(5);
         }
@@ -102,6 +99,9 @@ public class JRubyFile extends JavaSecuredFile {
     private static JRubyFile createNoUnicodeConversion(String cwd, String pathname) {
         if (pathname == null || pathname.equals("") || Ruby.isSecurityRestricted()) {
             return JRubyNonExistentFile.NOT_EXIST;
+        }
+        if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:")) {
+            return new JRubyFile(cwd + "/" + pathname);
         }
         File internal = new JavaSecuredFile(pathname);
         if(!internal.isAbsolute()) {
@@ -127,7 +127,11 @@ public class JRubyFile extends JavaSecuredFile {
 
     @Override
     public String getAbsolutePath() {
-	return normalizeSeps(new File(super.getPath()).getAbsolutePath());
+        if(super.getPath().startsWith("uri:")) {
+            // TODO better do not collapse // to / for uri: files
+            return super.getPath().replaceFirst(":/([^/])", "://$1" );
+        }
+        return normalizeSeps(new File(super.getPath()).getAbsolutePath());
     }
  
     @Override

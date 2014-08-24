@@ -194,7 +194,7 @@ Clean Build
 To clean the build it is important to use the same profile for the clean as what you want to build. the best way to clean build something is, i.e. jruby-jars
 
 ```
-jruby -S rmvn clean install -Pjruby-jars
+mvn clean install -Pjruby-jars
 ```
 
 this first cleans everything and then starts the new build in one go !
@@ -211,7 +211,7 @@ Distribution Packages
 ###the tar.gz and zip distribution packages###
 
 ```
-jruby -S rmvn -Pdist
+mvn -Pdist
 ```
 
 the files will be found in ./maven/jruby-dist/target
@@ -219,7 +219,7 @@ the files will be found in ./maven/jruby-dist/target
 ###jruby-complete.jar###
 
 ```
-jruby -S rmvn -Pcomplete
+mvn -Pcomplete
 ```
 
 the file will be in ./maven/jruby-complete/target
@@ -235,7 +235,7 @@ and those files will be installed in you maven local-repository ready to use wit
 ###jruby jars gem###
 
 ```
-jruby -S rmvn -Pjruby-jars
+mvn -Pjruby-jars
 ```
 
 the gem will be in ./maven/jruby-jars/target
@@ -244,7 +244,7 @@ the gem will be in ./maven/jruby-jars/target
 ### building ALL packages ###
 
 ```
-jruby -S rmvn -Pall
+mvn -Pall
 ```
 
 ### cleaning the build ###
@@ -260,7 +260,8 @@ jruby -S rmvn -Pclean
 first set the new version (on jruby-1_7 branch):
 
 ```
-mvn versions:set -DnewVersion=1.7.5 -Pall
+mvn versions:set -DnewVersion=1.7.5
+rmvn validate -Pall
 ```
 
 on master you need to run
@@ -302,4 +303,5 @@ After the release set the new development version:
 
 ```
 mvn versions:set -DnewVersion=1.7.6-SNAPSHOT
+rmvn validate -Pall
 ```

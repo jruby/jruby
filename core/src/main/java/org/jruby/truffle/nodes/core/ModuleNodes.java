@@ -424,8 +424,13 @@ public abstract class ModuleNodes {
         public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
             notDesignedForCompilation();
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (String constant : module.getConstants().keySet()) {
+                array.slowPush(getContext().newSymbol(constant));
+            }
+
+            return array;
         }
     }
 
@@ -512,20 +517,7 @@ public abstract class ModuleNodes {
         private void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             notDesignedForCompilation();
 
-            if (!(proc.getCallTarget() instanceof RootCallTarget)) {
-                throw new UnsupportedOperationException("Can only use define_method with methods where we have the original AST, as we need to clone and modify it");
-            }
-
-            final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) proc.getCallTarget()).getRootNode();
-            final CatchReturnPlaceholderNode currentCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnPlaceholderNode.class);
-
-            if (currentCatchReturn == null) {
-                throw new UnsupportedOperationException("Doesn't seem to have a " + CatchReturnPlaceholderNode.class.getName());
-            }
-
-            currentCatchReturn.replace(new CatchReturnNode(getContext(), currentCatchReturn.getSourceSection(), currentCatchReturn.getBody(), currentCatchReturn.getReturnID()));
-
-            final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
+            final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
             final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
         }
@@ -774,6 +766,7 @@ public abstract class ModuleNodes {
             return module;
         }
     }
+
     @CoreMethod(names = "private_instance_methods", minArgs = 0, maxArgs = 1)
     public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
 
@@ -805,6 +798,45 @@ public abstract class ModuleNodes {
             }
             for (RubyMethod method : methods) {
                 if (method.getVisibility() == Visibility.PRIVATE){
+                    RubySymbol m = getContext().newSymbol(method.getName());
+                    array.slowPush(m);
+                }
+            }
+            return array;
+        }
+    }
+
+    @CoreMethod(names = "public_instance_methods", minArgs = 0, maxArgs = 1)
+    public abstract static class PublicInstanceMethodsNode extends CoreMethodNode {
+
+        public PublicInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicInstanceMethodsNode(PublicInstanceMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray publicInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return publicInstanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<RubyMethod> methods = module.getDeclaredMethods();
+            if (includeAncestors) {
+                RubyModule parent = module.getParentModule();
+                while(parent != null){
+                    methods.addAll(parent.getDeclaredMethods());
+                    parent = parent.getParentModule();
+                }
+            }
+            for (RubyMethod method : methods) {
+                if (method.getVisibility() == Visibility.PUBLIC){
                     RubySymbol m = getContext().newSymbol(method.getName());
                     array.slowPush(m);
                 }

@@ -25,6 +25,8 @@ public class InputStreamLexerSource extends LexerSource {
     // Character read before previous read
     private int oneAgo = '\n';
     private int twoAgo = 0;
+
+    private final boolean captureSource;
     
     /**
      * Create our food-source for the lexer
@@ -39,6 +41,7 @@ public class InputStreamLexerSource extends LexerSource {
         super(sourceName, list, line, extraPositionInformation, sourcePositionFactoryFactory);
         
         this.in = in;
+        this.captureSource = list != null;
     }
     
     /**
@@ -152,7 +155,7 @@ public class InputStreamLexerSource extends LexerSource {
             c = carriageReturn(c);
         }
 
-        captureFeature(c);
+        if (captureSource) captureFeature(c);
 
         return c;
     }

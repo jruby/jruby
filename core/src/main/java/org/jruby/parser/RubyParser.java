@@ -1734,7 +1734,7 @@ states[9] = new ParserState() {
 };
 states[10] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.getResult().addBeginNode(new PreExe19Node(support.getPosition(((Node)yyVals[-1+yyTop])), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
+                    support.getResult().addBeginNode(new PreExe19Node(((ISourcePosition)yyVals[-4+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
                     yyVal = null;
     return yyVal;
   }
@@ -2028,7 +2028,7 @@ states[57] = new ParserState() {
 };
 states[58] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new IterNode(((ArgsNode)yyVals[-2+yyTop]).getPosition(), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
+                    yyVal = new IterNode(((ISourcePosition)yyVals[-4+yyTop]), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
                     support.popCurrentScope();
     return yyVal;
   }
@@ -2121,7 +2121,7 @@ states[73] = new ParserState() {
 };
 states[74] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new MultipleAsgn19Node(((Node)yyVals[-1+yyTop]).getPosition(), support.newArrayNode(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop])), null, null);
+                    yyVal = new MultipleAsgn19Node(((ISourcePosition)yyVals[-2+yyTop]), support.newArrayNode(((ISourcePosition)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop])), null, null);
     return yyVal;
   }
 };
@@ -3159,7 +3159,7 @@ states[266] = new ParserState() {
 states[267] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = ((Node)yyVals[-1+yyTop]);
-                    if (yyVal != null) ((Node)yyVal).setPosition(support.getPosition(((Node)yyVals[-1+yyTop])));
+                    if (yyVal != null) ((Node)yyVal).setPosition(((ISourcePosition)yyVals[-2+yyTop]));
     return yyVal;
   }
 };
@@ -3363,7 +3363,7 @@ states[308] = new ParserState() {
 };
 states[309] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.warning(ID.GROUPED_EXPRESSION, support.getPosition(((Node)yyVals[-2+yyTop])), "(...) interpreted as grouped expression");
+                    support.warning(ID.GROUPED_EXPRESSION, ((ISourcePosition)yyVals[-3+yyTop]), "(...) interpreted as grouped expression");
                     yyVal = ((Node)yyVals[-2+yyTop]);
     return yyVal;
   }
@@ -3372,10 +3372,10 @@ states[310] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (((Node)yyVals[-1+yyTop]) != null) {
                         /* compstmt position includes both parens around it*/
-                        ((ISourcePositionHolder) ((Node)yyVals[-1+yyTop])).setPosition(support.getPosition(((Node)yyVals[-1+yyTop])));
+                        ((ISourcePositionHolder) ((Node)yyVals[-1+yyTop])).setPosition(((ISourcePosition)yyVals[-2+yyTop]));
                         yyVal = ((Node)yyVals[-1+yyTop]);
                     } else {
-                        yyVal = new NilNode(support.getPosition(((Node)yyVals[-1+yyTop])));
+                        yyVal = new NilNode(((ISourcePosition)yyVals[-2+yyTop]));
                     }
     return yyVal;
   }
@@ -4140,7 +4140,7 @@ states[433] = new ParserState() {
 };
 states[434] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new IterNode(support.getPosition(((ArgsNode)yyVals[-2+yyTop])), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
+                    yyVal = new IterNode(((ISourcePosition)yyVals[-4+yyTop]), ((ArgsNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), support.getCurrentScope());
                     support.popCurrentScope();
     return yyVal;
   }
@@ -5195,7 +5195,7 @@ states[631] = new ParserState() {
   }
 };
 }
-					// line 2476 "RubyParser.y"
+					// line 2477 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure

@@ -16,6 +16,7 @@ import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.ClasspathResource;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.URLResource;
 
 class LibrarySearcher {
     static class Ruby18 extends LibrarySearcher {
@@ -185,7 +186,10 @@ class LibrarySearcher {
             // it'd have to worry about schema.
             return true;
         }
-
+        if (path.startsWith("uri:")) {
+            // uri: are absolute
+            return true;
+        }
         return new File(path).isAbsolute();
     }
 
@@ -258,6 +262,10 @@ class LibrarySearcher {
                     // by the classloader itself
                     url = ClasspathResource.getResourceURL(location);
                 }
+                else if (location.startsWith(URLResource.URI)){
+                    url = null;
+                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(location));
+                }
                 else {
                     File f = new File(location);
                     if (f.exists() || location.contains( "!")){
@@ -270,7 +278,9 @@ class LibrarySearcher {
                         url = new URL(location);
                     }
                 }
-                runtime.getJRubyClassLoader().addURL(url);
+                if ( url != null ) {
+                    runtime.getJRubyClassLoader().addURL(url);
+                }
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);
             }
