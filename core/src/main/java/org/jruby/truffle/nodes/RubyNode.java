@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
-import org.jruby.truffle.nodes.call.DispatchNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -31,8 +30,7 @@ import java.math.BigInteger;
 
 /**
  * Base class for most nodes in Ruby.
- * 
- * @see DispatchNode
+ *
  * @see YieldDispatchNode
  */
 @TypeSystemReference(RubyTypes.class)
