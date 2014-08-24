@@ -10,16 +10,15 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.call.DispatchNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -187,6 +186,10 @@ public abstract class RubyNode extends Node {
 
     public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectUndefinedPlaceholder(execute(frame));
+    }
+
+    public DispatchHeadNode.DispatchAction executeDispatchAction(VirtualFrame frame) {
+        throw new UnsupportedOperationException();
     }
 
     public void executeVoid(VirtualFrame frame) {

@@ -51,24 +51,30 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
         this(prev.getContext(), prev.name, prev.ignoreVisibility);
     }
 
-    @Specialization(order=1)
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object blockObject, Object argumentsObjects) {
-        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+    @Specialization(guards = "isDispatch", order=1)
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
 
         if (entry == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             try {
-                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name, ignoreVisibility), false);
+                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name, ignoreVisibility, dispatchAction), false);
             } catch (UseMethodMissingException e) {
                 try {
-                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing", ignoreVisibility), true);
+                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing", ignoreVisibility, dispatchAction), true);
                 } catch (UseMethodMissingException e2) {
-                    throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this));
+                    if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+                        // TODO(CS): we should cache the fact that we would throw an exception - this will transfer each time
+                        getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "Lack of method_missing isn't cached and is being used for respond");
+                        return false;
+                    } else {
+                        throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this));
+                    }
                 }
             }
 
@@ -81,24 +87,34 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
             }
         }
 
-        final Object[] argumentsToUse;
+        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            final Object[] argumentsToUse;
 
-        if (hasAnyMethodsMissing && entry.isMethodMissing()) {
-            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-            modifiedArgumentsObjects[0] = getContext().newSymbol(name);
-            System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
-            argumentsToUse = modifiedArgumentsObjects;
+            if (hasAnyMethodsMissing && entry.isMethodMissing()) {
+                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
+                modifiedArgumentsObjects[0] = getContext().newSymbol(name);
+                System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
+                argumentsToUse = modifiedArgumentsObjects;
+            } else {
+                argumentsToUse = argumentsObjects;
+            }
+
+            return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod(), entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
+        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            if (hasAnyMethodsMissing) {
+                return !entry.isMethodMissing();
+            } else {
+                return true;
+            }
         } else {
-            argumentsToUse = argumentsObjects;
+            throw new UnsupportedOperationException();
         }
-
-        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod(), entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
     }
 
 
     @Specialization(order=2)
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
-        return dispatch(frame, methodReceiverObject, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return dispatch(frame, methodReceiverObject, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
 

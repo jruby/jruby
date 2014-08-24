@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-@NodeChildren({@NodeChild(value="methodReceiverObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class)})
+@NodeChildren({@NodeChild(value="methodReceiverObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class), @NodeChild(value="action", type=NewDispatchNode.NeverExecuteRubyNode.class)})
 public abstract class NewDispatchNode extends RubyNode {
 
     public NewDispatchNode(RubyContext context) {
@@ -54,9 +54,9 @@ public abstract class NewDispatchNode extends RubyNode {
         throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
-    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects);
+    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction);
 
-    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility) throws UseMethodMissingException {
+    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility, DispatchHeadNode.DispatchAction dispatchAction) throws UseMethodMissingException {
         CompilerAsserts.neverPartOfCompilation();
 
         // TODO(CS): why are we using an exception to convey method missing here?
@@ -82,8 +82,13 @@ public abstract class NewDispatchNode extends RubyNode {
         }
 
         if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
+            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
+            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+                throw new UseMethodMissingException();
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
 
         return method;
@@ -111,4 +116,13 @@ public abstract class NewDispatchNode extends RubyNode {
 
         return head.respecialize(frame, reason, receiverObject, blockObject, argumentsObjects);
     }
+
+    protected static boolean isDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH;
+    }
+
+    protected static boolean isRespond(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return dispatchAction == DispatchHeadNode.DispatchAction.RESPOND;
+    }
+
 }

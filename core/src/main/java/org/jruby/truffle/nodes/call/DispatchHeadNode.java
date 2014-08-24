@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -20,14 +20,17 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class DispatchHeadNode extends DispatchNode {
 
-    private static final boolean useNewDispatch = true;
-
     private final String name;
     private final boolean isSplatted;
 
     public static enum MissingBehavior {
         RETURN_MISSING,
         CALL_METHOD_MISSING
+    }
+
+    public static enum DispatchAction {
+        DISPATCH,
+        RESPOND
     }
 
     public static final Object MISSING = new Object();
@@ -60,7 +63,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object newDispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-        return newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects);
+        return newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
     }
 
     public NewDispatchNode getNewDispatch() {
@@ -74,11 +77,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-        if (useNewDispatch) {
-            return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects);
-        } else {
-            return dispatch.dispatch(frame, callingSelf, receiverObject, blockObject, argumentsObjects);
-        }
+        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
     }
 
     public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
@@ -86,7 +85,11 @@ public class DispatchHeadNode extends DispatchNode {
     }
 
     public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
-        return dispatch.doesRespondTo(frame, receiverObject);
+        return doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject);
+    }
+
+    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, Object receiverObject) {
+        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, null, null, DispatchAction.RESPOND);
     }
 
     /**
