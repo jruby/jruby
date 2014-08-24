@@ -75,4 +75,32 @@ public abstract class MathNodes {
 
     }
 
+    @CoreMethod(names = "sin", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class SinNode extends CoreMethodNode {
+
+        public SinNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SinNode(SinNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double sin(int a) {
+            return Math.sin(a);
+        }
+
+        @Specialization
+        public double sin(BigInteger a) {
+            return Math.sin(a.doubleValue());
+        }
+
+        @Specialization
+        public double sin(double a) {
+            return Math.sin(a);
+        }
+
+    }
+
 }
