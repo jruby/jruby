@@ -50,20 +50,20 @@ public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode
 
 
 
-    @Specialization(guards = "isPrimitive")
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
+    @Specialization(guards = {"isDispatch", "isPrimitive"})
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the class is what we expect
 
         if (receiverObject.getClass() != expectedClass) {
-            return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects);
+            return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, dispatchAction);
         }
         return doDispatch(frame, methodReceiverObject, callingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
 
     @Fallback
-    public Object dispatchGeneric(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
-        return doNext(frame, methodReceiverObject, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
+    public Object dispatchGeneric(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return doNext(frame, methodReceiverObject, boxedCallingSelf, receiverObject, blockObject, argumentsObjects, dispatchAction);
     }
 
     private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
@@ -80,7 +80,7 @@ public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode
         return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
     }
 
-    private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
-        return next.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
+    private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return next.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, blockObject, argumentsObjects, dispatchAction);
     }
 }

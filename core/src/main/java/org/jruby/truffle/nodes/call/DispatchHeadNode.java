@@ -10,18 +10,22 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
  * The head of a chain of dispatch nodes. Can be used with {@link RubyCallNode} or on its own.
  */
-public class DispatchHeadNode extends DispatchNode {
+public class DispatchHeadNode extends Node {
 
-    private static final boolean useNewDispatch = true;
-
+    private final RubyContext context;
+    private final boolean ignoreVisibility;
     private final String name;
     private final boolean isSplatted;
 
@@ -30,9 +34,13 @@ public class DispatchHeadNode extends DispatchNode {
         CALL_METHOD_MISSING
     }
 
+    public static enum DispatchAction {
+        DISPATCH,
+        RESPOND
+    }
+
     public static final Object MISSING = new Object();
 
-    @Child protected UnboxedDispatchNode dispatch;
     @Child protected NewDispatchNode newDispatch;
 
     public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
@@ -40,16 +48,12 @@ public class DispatchHeadNode extends DispatchNode {
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, String name, boolean isSplatted, MissingBehavior missingBehavior) {
-        super(context, ignoreVisibility);
-
-        assert context != null;
-        assert name != null;
+        this.context = context;
+        this.ignoreVisibility = ignoreVisibility;
 
         this.name = name;
         this.isSplatted = isSplatted;
 
-        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, ignoreVisibility, name, missingBehavior);
-        dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
         newDispatch = new NewUnresolvedDispatchNode(context, name, ignoreVisibility, missingBehavior);
     }
 
@@ -60,7 +64,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object newDispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-        return newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects);
+        return newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
     }
 
     public NewDispatchNode getNewDispatch() {
@@ -74,11 +78,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-        if (useNewDispatch) {
-            return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects);
-        } else {
-            return dispatch.dispatch(frame, callingSelf, receiverObject, blockObject, argumentsObjects);
-        }
+        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
     }
 
     public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
@@ -86,7 +86,11 @@ public class DispatchHeadNode extends DispatchNode {
     }
 
     public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
-        return dispatch.doesRespondTo(frame, receiverObject);
+        return doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject);
+    }
+
+    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, Object receiverObject) {
+        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, null, null, DispatchAction.RESPOND);
     }
 
     /**
@@ -110,12 +114,82 @@ public class DispatchHeadNode extends DispatchNode {
         return newHead.doesRespondTo(frame, receiverObject);
     }
 
-    public UnboxedDispatchNode getDispatch() {
-        return dispatch;
-    }
-
     public String getName() {
         return name;
     }
+    /**
+     * Get the depth of this node in the dispatch chain. The first node below
+     * {@link DispatchHeadNode} is at depth 1.
+     */
+    public int getDepth() {
+        // TODO: can we use findParent instead?
+
+        int depth = 1;
+        Node parent = this.getParent();
+
+        while (!(parent instanceof DispatchHeadNode)) {
+            parent = parent.getParent();
+            depth++;
+        }
+
+        return depth;
+    }
+
+    public Object respecialize(String reason, VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        final int depth = getDepth();
+        final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
+
+        return head.respecialize(frame, reason, receiverObject, blockObject, argumentsObjects);
+    }
+
+    public boolean respecializeAndDoesRespondTo(String reason, VirtualFrame frame, Object receiverObject) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        final int depth = getDepth();
+        final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
+
+        return head.respecializeAndDoesRespondTo(frame, reason, receiverObject);
+    }
+
+    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
+        CompilerAsserts.neverPartOfCompilation();
+
+        // TODO(CS): why are we using an exception to convey method missing here?
+
+        RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
+
+        // If no method was found, use #method_missing
+
+        if (method == null) {
+            throw new UseMethodMissingException();
+        }
+
+        // Check for methods that are explicitly undefined
+
+        if (method.isUndefined()) {
+            throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
+        }
+
+        // Check visibility
+
+        if (boxedCallingSelf == receiverBasicObject.getRubyClass()){
+            return method;
+        }
+
+        if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().privateNoMethodError(name, receiverBasicObject.toString(), this));
+        }
+
+        return method;
+    }
+
+    public RubyContext getContext() {
+        return context;
+    }
+
+    public boolean getIgnoreVisibility() { return ignoreVisibility; }
 
 }

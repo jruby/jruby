@@ -44,8 +44,8 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
         this(prev.getContext(), prev.next, prev.method);
     }
 
-    @Specialization
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object blockObject, Object argumentsObjects) {
+    @Specialization(guards = "isDispatch")
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         return doDispatch(frame, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
@@ -72,8 +72,8 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects) {
-        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects);
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, dispatchAction);
     }
 
 }
