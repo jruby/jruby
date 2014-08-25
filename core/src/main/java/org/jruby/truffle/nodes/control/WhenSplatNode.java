@@ -27,7 +27,7 @@ public class WhenSplatNode extends RubyNode {
         super(context, sourceSection);
         this.readCaseExpression = readCaseExpression;
         this.splat = splat;
-        dispatchThreeEqual = new DispatchHeadNode(context, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchThreeEqual = new DispatchHeadNode(context, "===", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @Override

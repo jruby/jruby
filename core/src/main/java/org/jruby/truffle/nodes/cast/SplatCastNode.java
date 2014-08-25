@@ -36,7 +36,7 @@ public abstract class SplatCastNode extends RubyNode {
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
-        toA = new DispatchHeadNode(context, true, "to_a", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        toA = new DispatchHeadNode(context, true, "to_a", DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public SplatCastNode(SplatCastNode prev) {

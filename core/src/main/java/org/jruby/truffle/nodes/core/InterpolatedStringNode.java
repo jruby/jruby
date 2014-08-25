@@ -30,7 +30,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        toS = new DispatchHeadNode(context, "to_s", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @ExplodeLoop

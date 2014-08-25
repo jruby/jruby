@@ -65,8 +65,8 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context, name, isSplatted, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, "respond_to_missing?", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        dispatchHead = new DispatchHeadNode(context, name, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        respondToMissing = new DispatchHeadNode(context, "respond_to_missing?", DispatchHeadNode.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
 

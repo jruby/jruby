@@ -24,7 +24,7 @@ public class SymbolProcNode extends RubyNode {
 
     public SymbolProcNode(RubyContext context, SourceSection sourceSection, String symbol) {
         super(context, sourceSection);
-        dispatch = new DispatchHeadNode(context, symbol, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatch = new DispatchHeadNode(context, symbol, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @Override

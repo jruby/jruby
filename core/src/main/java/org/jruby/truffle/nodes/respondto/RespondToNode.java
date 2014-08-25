@@ -23,7 +23,7 @@ public class RespondToNode extends RubyNode {
     public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String name) {
         super(context, sourceSection);
         this.child = child;
-        dispatch = new DispatchHeadNode(context, name, false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        dispatch = new DispatchHeadNode(context, name, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {

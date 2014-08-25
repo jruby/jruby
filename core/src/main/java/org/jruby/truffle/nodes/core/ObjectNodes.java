@@ -187,7 +187,7 @@ public abstract class ObjectNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            equalNode = new DispatchHeadNode(context, "==", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
             booleanCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
@@ -308,7 +308,7 @@ public abstract class ObjectNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeDupNode = new DispatchHeadNode(context, true, "initialize_dup", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = new DispatchHeadNode(context, true, "initialize_dup", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
@@ -450,7 +450,7 @@ public abstract class ObjectNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {
@@ -770,7 +770,7 @@ public abstract class ObjectNodes {
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, false, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = new DispatchHeadNode(context, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RespondToNode(RespondToNode prev) {

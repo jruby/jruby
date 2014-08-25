@@ -26,7 +26,6 @@ public class DispatchHeadNode extends Node {
     private final RubyContext context;
     private final boolean ignoreVisibility;
     private final String cachedMethodName;
-    private final boolean isSplatted;
 
     public static enum MissingBehavior {
         RETURN_MISSING,
@@ -42,20 +41,19 @@ public class DispatchHeadNode extends Node {
 
     @Child protected DispatchNode newDispatch;
 
-    public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
-        this(context, false, name, isSplatted, missingBehavior);
+    public DispatchHeadNode(RubyContext context, String name, MissingBehavior missingBehavior) {
+        this(context, false, name, missingBehavior);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, String cachedMethodName, boolean isSplatted, MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, String cachedMethodName, MissingBehavior missingBehavior) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.cachedMethodName = cachedMethodName;
-        this.isSplatted = isSplatted;
         newDispatch = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean isSplatted, MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, null, isSplatted, missingBehavior);
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
+        this(context, ignoreVisibility, null, missingBehavior);
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
@@ -107,7 +105,7 @@ public class DispatchHeadNode extends Node {
     public Object respecialize(VirtualFrame frame, String reason, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), cachedMethodName, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), cachedMethodName, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentObjects, dispatchAction);
     }
