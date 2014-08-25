@@ -138,6 +138,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
     public static final Option<String> TRUFFLE_BACKTRACE_FORMAT = string(TRUFFLE, "truffle.backtrace.format", new String[]{"mri", "rubinius"}, "mri", "How to format backtraces.");
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
+    public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
     public static final Option<Integer> TRUFFLE_DISPATCH_MEGAMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.megamorphic.max", 255, "Maximum size of a megamorphic call site cache.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
