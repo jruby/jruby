@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -60,9 +59,9 @@ public abstract class DispatchNode extends RubyNode {
         throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
-    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction);
+    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction);
 
-    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility, DispatchHeadNode.DispatchAction dispatchAction) throws UseMethodMissingException {
+    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility, Dispatch.DispatchAction dispatchAction) throws UseMethodMissingException {
         CompilerAsserts.neverPartOfCompilation();
 
         // TODO(CS): why are we using an exception to convey method missing here?
@@ -88,9 +87,9 @@ public abstract class DispatchNode extends RubyNode {
         }
 
         if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
-            if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
-            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 throw new UseMethodMissingException();
             } else {
                 throw new UnsupportedOperationException();
@@ -100,7 +99,7 @@ public abstract class DispatchNode extends RubyNode {
         return method;
     }
 
-    protected Object resetAndDispatch(String reason, VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    protected Object resetAndDispatch(String reason, VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         final DispatchHeadNode head = getHeadNode();
         head.reset(reason);
         return head.dispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);

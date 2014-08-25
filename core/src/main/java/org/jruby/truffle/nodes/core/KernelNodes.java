@@ -415,7 +415,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object integer(VirtualFrame frame, Object value) {
-            return toInt.dispatch(frame, value, "to_int", null);
+            return toInt.call(frame, value, "to_int", null);
         }
 
     }
@@ -510,7 +510,7 @@ public abstract class KernelNodes {
 
             try {
                 for (Object arg : args) {
-                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.dispatch(frame, arg, "inspect", null));
+                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.call(frame, arg, "inspect", null));
                 }
             } finally {
                 threadManager.enterGlobalLock(runningThread);
@@ -546,7 +546,7 @@ public abstract class KernelNodes {
             try {
                 for (Object arg : args) {
                     try {
-                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.dispatch(frame, arg, "to_s", null)).getBytes().bytes());
+                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -616,7 +616,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object prettyInspect(VirtualFrame frame, Object self) {
-            return toS.dispatch(frame, self, "to_s", null);
+            return toS.call(frame, self, "to_s", null);
         }
     }
 
@@ -675,7 +675,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             final RubyBasicObject exception = exceptionClass.newInstance(this);
-            initialize.dispatch(frame, exception, "initialize", null, message);
+            initialize.call(frame, exception, "initialize", null, message);
             throw new RaiseException(exception);
         }
 
@@ -771,7 +771,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object string(VirtualFrame frame, Object value) {
-            return toS.dispatch(frame, value, "to_s", null);
+            return toS.call(frame, value, "to_s", null);
         }
 
     }

@@ -17,6 +17,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -201,7 +202,7 @@ public abstract class ObjectNodes {
         public Object compare(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
 
-            if ((self == other) || booleanCast.executeBoolean(frame, equalNode.dispatch(frame, self, "==", null, other))) {
+            if ((self == other) || booleanCast.executeBoolean(frame, equalNode.call(frame, self, "==", null, other))) {
                 return 0;
             }
 
@@ -308,7 +309,7 @@ public abstract class ObjectNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeDupNode = new DispatchHeadNode(context, true, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
@@ -322,7 +323,7 @@ public abstract class ObjectNodes {
 
             final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
             newObject.setInstanceVariables(self.getFields());
-            initializeDupNode.dispatch(frame, newObject, "initialize_dup", null, self);
+            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
@@ -332,7 +333,7 @@ public abstract class ObjectNodes {
 
             final RubyObject newObject = new RubyObject(self.getRubyClass());
             newObject.setInstanceVariables(self.getFields());
-            initializeDupNode.dispatch(frame, newObject, "initialize_dup", null, self);
+            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
@@ -461,7 +462,7 @@ public abstract class ObjectNodes {
         @Specialization
         public Object initializeDup(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
-            return initializeCopyNode.dispatch(frame, self, "initialize_copy", null, other);
+            return initializeCopyNode.call(frame, self, "initialize_copy", null, other);
         }
 
     }
@@ -770,7 +771,7 @@ public abstract class ObjectNodes {
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RespondToNode(RespondToNode prev) {
@@ -780,24 +781,24 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
     }

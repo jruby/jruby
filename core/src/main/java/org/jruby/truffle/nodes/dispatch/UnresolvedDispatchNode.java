@@ -23,16 +23,16 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private static final int MAX_DEPTH = 8;
 
     private final boolean ignoreVisibility;
-    private final DispatchHeadNode.MissingBehavior missingBehavior;
+    private final Dispatch.MissingBehavior missingBehavior;
 
-    public UnresolvedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchHeadNode.MissingBehavior missingBehavior) {
+    public UnresolvedDispatchNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
     }
 
     @Override
-    public Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         assert methodName != null;
@@ -52,7 +52,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
     }
 
-    private Object doUnboxed(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, RubyContext context, DispatchHeadNode.DispatchAction dispatchAction) {
+    private Object doUnboxed(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, RubyContext context, Dispatch.DispatchAction dispatchAction) {
         RubyBasicObject boxedCallingSelf = context.getCoreLibrary().box(callingSelf);
         RubyBasicObject boxedReceiverObject = context.getCoreLibrary().box(receiverObject);
         RubyMethod method;
@@ -87,7 +87,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
     }
 
-    private Object doRubyBasicObject(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, RubyContext context, DispatchHeadNode.DispatchAction dispatchAction) {
+    private Object doRubyBasicObject(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, RubyContext context, Dispatch.DispatchAction dispatchAction) {
         RubyBasicObject boxedCallingSelf = (RubyBasicObject) callingSelf;
         RubyBasicObject boxedReceiverObject = (RubyBasicObject) receiverObject;
         RubyMethod method;
@@ -123,7 +123,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         return newDispatch;
     }
 
-    private DispatchNode doMissingBehavior(RubyContext context, Object methodName, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject, DispatchHeadNode.DispatchAction dispatchAction) {
+    private DispatchNode doMissingBehavior(RubyContext context, Object methodName, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject, Dispatch.DispatchAction dispatchAction) {
         DispatchNode newDispatch;
         RubyMethod method;
 
@@ -150,7 +150,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
     }
 
-    private Object createAndExecuteGeneric(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    private Object createAndExecuteGeneric(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         return getHeadNode().getFirstDispatchNode().replace(GenericDispatchNodeFactory.create(getContext(), ignoreVisibility, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute())).executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 

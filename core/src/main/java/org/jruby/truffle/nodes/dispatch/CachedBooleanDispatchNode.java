@@ -67,11 +67,11 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
 
 
     @Specialization(guards = {"guardName"})
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, boolean receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, boolean receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, boolean receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, boolean receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         if ((boolean) receiverObject) {
             trueProfile.enter();
 
@@ -81,9 +81,9 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                 return resetAndDispatch("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL) {
                 return trueCall.call(frame, RubyArguments.pack(trueMethod, trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
-            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
             } else {
                 throw new UnsupportedOperationException();
@@ -97,9 +97,9 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                 return resetAndDispatch("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL) {
                 return falseCall.call(frame, RubyArguments.pack(falseMethod, falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
-            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
             } else {
                 throw new UnsupportedOperationException();
@@ -108,7 +108,7 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 

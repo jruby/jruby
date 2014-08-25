@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -66,7 +67,7 @@ public class RubyCallNode extends RubyNode {
         this.isSplatted = isSplatted;
 
         dispatchHead = new DispatchHeadNode(context);
-        respondToMissing = new DispatchHeadNode(context, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        respondToMissing = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
 
@@ -79,7 +80,7 @@ public class RubyCallNode extends RubyNode {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
 
-        return dispatchHead.dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
+        return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
     private RubyProc executeBlock(VirtualFrame frame) {
@@ -188,9 +189,9 @@ public class RubyCallNode extends RubyNode {
         final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
         if (method == null) {
-            final Object r = respondToMissing.dispatch(frame, receiverBasicObject, "respond_to_missing?", null, context.makeString(methodName));
+            final Object r = respondToMissing.call(frame, receiverBasicObject, "respond_to_missing?", null, context.makeString(methodName));
 
-            if (r != DispatchHeadNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
+            if (r != Dispatch.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return NilPlaceholder.INSTANCE;
             }
         } else if (method.isUndefined()) {

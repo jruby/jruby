@@ -126,7 +126,7 @@ public abstract class ModuleNodes {
                 return 0;
             }
 
-            final Object isSubclass = subclassNode.dispatch(frame, self, "<=", null, other);
+            final Object isSubclass = subclassNode.call(frame, self, "<=", null, other);
 
             if (RubyNilClass.isNil(isSubclass)) {
                 return NilPlaceholder.INSTANCE;
@@ -566,7 +566,7 @@ public abstract class ModuleNodes {
                 if (args[n] instanceof RubyModule) {
                     final RubyModule included = (RubyModule) args[n];
 
-                    appendFeaturesNode.dispatch(frame, included, "append_features", null, module);
+                    appendFeaturesNode.call(frame, included, "append_features", null, module);
 
                     // TODO(cs): call included hook
                 }

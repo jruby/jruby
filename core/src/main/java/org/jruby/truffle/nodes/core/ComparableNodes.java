@@ -34,7 +34,7 @@ public abstract class ComparableNodes {
         }
 
         public int compare(VirtualFrame frame, RubyBasicObject receiverObject, Object comparedTo) {
-            return (int) compareNode.dispatch(frame, receiverObject, "<=>", null, comparedTo);
+            return (int) compareNode.call(frame, receiverObject, "<=>", null, comparedTo);
         }
 
     }

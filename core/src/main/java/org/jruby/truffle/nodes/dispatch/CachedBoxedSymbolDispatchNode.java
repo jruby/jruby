@@ -48,11 +48,11 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     }
 
     @Specialization(guards = {"guardName"})
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, RubySymbol receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, RubySymbol receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         // Check no symbols have had their lookup modified
 
         try {
@@ -69,10 +69,10 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             return resetAndDispatch("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL) {
             // Call the method
             return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
-        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return true;
         } else {
             throw new UnsupportedOperationException();
@@ -80,7 +80,7 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 

@@ -92,7 +92,7 @@ public abstract class RegexpNodes {
 
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), getSourceSection().getStartLine(), "strange reversed match operator");
 
-            return matchNode.dispatch(frame, other, "=~", null, regexp);
+            return matchNode.call(frame, other, "=~", null, regexp);
         }
 
     }

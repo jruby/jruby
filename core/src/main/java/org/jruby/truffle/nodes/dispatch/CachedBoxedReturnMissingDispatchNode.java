@@ -43,7 +43,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     }
 
     @Specialization(guards = {"guardName"})
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {
@@ -53,7 +53,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
 
     }
 
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         RubyNode.notDesignedForCompilation();
         // Check the class has not been modified
 
@@ -63,9 +63,9 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             return resetAndDispatch("class modified", frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
-            return DispatchHeadNode.MISSING;
-        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL) {
+            return Dispatch.MISSING;
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return false;
         } else {
             throw new UnsupportedOperationException();
@@ -73,11 +73,11 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         return doNext(frame, methodReceiverObject, callingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), argumentsObjects, dispatchAction);
     }
 
-    private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 }

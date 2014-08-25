@@ -39,7 +39,7 @@ public final class InterpolatedStringNode extends RubyNode {
         final RubyString[] strings = new RubyString[children.length];
 
         for (int n = 0; n < children.length; n++) {
-            strings[n] = (RubyString) toS.dispatch(frame, children[n].execute(frame), "to_s", null);
+            strings[n] = (RubyString) toS.call(frame, children[n].execute(frame), "to_s", null);
         }
 
         return concat(strings);

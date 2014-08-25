@@ -16,77 +16,73 @@ import org.jruby.truffle.runtime.core.*;
 
 public class DispatchHeadNode extends Node {
 
-    public static enum MissingBehavior {
-        RETURN_MISSING,
-        CALL_METHOD_MISSING
-    }
-
-    public static enum DispatchAction {
-        CALL,
-        RESPOND
-    }
-
-    public static final Object MISSING = new Object();
-
     private final RubyContext context;
     private final boolean ignoreVisibility;
-    private final MissingBehavior missingBehavior;
+    private final Dispatch.MissingBehavior missingBehavior;
 
     @Child protected DispatchNode first;
 
     public DispatchHeadNode(RubyContext context) {
-        this(context, MissingBehavior.CALL_METHOD_MISSING);
+        this(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
     }
 
-    public DispatchHeadNode(RubyContext context, MissingBehavior missingBehavior) {
-        this(context, false, missingBehavior);
-    }
-
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
         first = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
     }
 
-    public Object dispatch(VirtualFrame frame, Object receiverObject, String methodName, RubyProc blockObject, Object... argumentsObjects) {
-        return dispatch(frame, NilPlaceholder.INSTANCE, RubyArguments.getSelf(frame.getArguments()), receiverObject, methodName, blockObject, argumentsObjects);
+    public Object call(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object... argumentsObjects) {
+        return dispatch(
+                frame,
+                NilPlaceholder.INSTANCE,
+                RubyArguments.getSelf(frame.getArguments()),
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                Dispatch.DispatchAction.CALL);
     }
 
-    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, String methodName, RubyProc blockObject, Object... argumentsObjects) {
-        return dispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, methodName, blockObject, argumentsObjects);
+    public boolean doesRespondTo(
+            VirtualFrame frame,
+            Object methodName,
+            Object receiverObject) {
+        return (boolean) dispatch(
+                frame,
+                NilPlaceholder.INSTANCE,
+                RubyArguments.getSelf(frame.getArguments()),
+                receiverObject,
+                methodName,
+                null,
+                null,
+                Dispatch.DispatchAction.RESPOND);
     }
 
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, String methodName, RubyProc blockObject, Object... argumentsObjects) {
-        return dispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, DispatchAction.CALL);
-    }
-
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubySymbol methodName, RubyProc blockObject, Object... argumentsObjects) {
-        return dispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, DispatchAction.CALL);
-    }
-
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyString methodName, RubyProc blockObject, Object... argumentsObjects) {
-        return dispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, DispatchAction.CALL);
-    }
-
-    public boolean doesRespondTo(VirtualFrame frame, Object methodName, Object receiverObject) {
-        return (boolean) dispatch(frame, NilPlaceholder.INSTANCE, RubyArguments.getSelf(frame.getArguments()), receiverObject, methodName, null, null, DispatchAction.RESPOND);
-    }
-
-    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, String methodName, Object receiverObject) {
-        return (boolean) dispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, methodName, null, null, DispatchAction.RESPOND);
-    }
-
-    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, RubySymbol methodName, Object receiverObject) {
-        return (boolean) dispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, methodName, null, null, DispatchAction.RESPOND);
-    }
-
-    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, RubyString methodName, Object receiverObject) {
-        return (boolean) dispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, methodName, null, null, DispatchAction.RESPOND);
-    }
-
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return first.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+    public Object dispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        return first.executeDispatch(
+                frame,
+                methodReceiverObject,
+                callingSelf,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                dispatchAction);
     }
 
     public void reset(String reason) {

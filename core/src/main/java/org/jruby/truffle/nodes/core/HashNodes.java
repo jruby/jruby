@@ -68,7 +68,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < aSize * 2; n++) {
                 // TODO(CS): cast
-                if (!(boolean) equalNode.dispatch(frame, aStore[n], "==", null, bStore[n])) {
+                if (!(boolean) equalNode.call(frame, aStore[n], "==", null, bStore[n])) {
                     return false;
                 }
             }
@@ -232,7 +232,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
                 // TODO(CS): cast
-                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && (boolean) eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
                     return store[n * 2 + 1];
                 }
             }
@@ -310,7 +310,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
                 // TODO(CS): cast
-                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && (boolean) eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
                     store[n * 2 + 1] = value;
                     return value;
                 }
@@ -673,9 +673,9 @@ public abstract class HashNodes {
 
                 // TODO(CS): to string
 
-                builder.append(inspect.dispatch(frame, store[n], "inspect", null));
+                builder.append(inspect.call(frame, store[n], "inspect", null));
                 builder.append("=>");
-                builder.append(inspect.dispatch(frame, store[n + 1], "inspect", null));
+                builder.append(inspect.call(frame, store[n + 1], "inspect", null));
             }
 
             builder.append("}");
@@ -702,9 +702,9 @@ public abstract class HashNodes {
                     builder.append(", ");
                 }
 
-                builder.append(inspect.dispatch(frame, entry.getKey(), "inspect", null));
+                builder.append(inspect.call(frame, entry.getKey(), "inspect", null));
                 builder.append("=>");
-                builder.append(inspect.dispatch(frame, entry.getValue(), "inspect", null));
+                builder.append(inspect.call(frame, entry.getValue(), "inspect", null));
             }
 
             builder.append("}");
@@ -838,7 +838,7 @@ public abstract class HashNodes {
                     for (int b = 0; b < RubyContext.HASHES_SMALL; b++) {
                         if (b < storeBSize) {
                             // TODO(CS): cast
-                            if ((boolean) eqlNode.dispatch(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
+                            if ((boolean) eqlNode.call(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
                                 merge = false;
                                 break;
                             }
@@ -927,7 +927,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < store.length; n += 2) {
                 // TODO(CS): cast
-                if ((boolean) eqlNode.dispatch(frame, store[n], "eql?", null, key)) {
+                if ((boolean) eqlNode.call(frame, store[n], "eql?", null, key)) {
                     return true;
                 }
             }
