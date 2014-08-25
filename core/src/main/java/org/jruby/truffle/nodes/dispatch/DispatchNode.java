@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.NeverExecuteRubyNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -23,13 +23,13 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @NodeChildren({
-        @NodeChild(value="methodReceiverObject", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="callingSelf", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="receiver", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="methodName", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="blockObject", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="arguments", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="action", type=DispatchNode.NeverExecuteRubyNode.class)})
+        @NodeChild(value="methodReceiverObject", type=NeverExecuteRubyNode.class),
+        @NodeChild(value="callingSelf", type=NeverExecuteRubyNode.class),
+        @NodeChild(value="receiver", type=NeverExecuteRubyNode.class),
+        @NodeChild(value="methodName", type=NeverExecuteRubyNode.class),
+        @NodeChild(value="blockObject", type=NeverExecuteRubyNode.class),
+        @NodeChild(value="arguments", type=NeverExecuteRubyNode.class),
+        @NodeChild(value="action", type=NeverExecuteRubyNode.class)})
 public abstract class DispatchNode extends RubyNode {
 
     public DispatchNode(RubyContext context) {
@@ -38,17 +38,6 @@ public abstract class DispatchNode extends RubyNode {
 
     public DispatchNode(DispatchNode prev) {
         this(prev.getContext());
-    }
-
-    public static class NeverExecuteRubyNode extends  RubyNode {
-        public NeverExecuteRubyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Override
-        public final Object execute(VirtualFrame frame) {
-            throw new IllegalStateException("Do not execute this node!");
-        }
     }
 
     public NeverExecuteRubyNode getNeverExecute() {
