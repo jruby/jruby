@@ -57,40 +57,20 @@ public class DispatchHeadNode extends Node {
         newDispatch = new NewUnresolvedDispatchNode(context, name, ignoreVisibility, missingBehavior);
     }
 
-    public Object newDispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
-        return newDispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
-    }
-
-    public Object newDispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
-        assert RubyContext.shouldObjectBeVisible(receiverObject);
-        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-        return newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
-    }
-
-    public NewDispatchNode getNewDispatch() {
-        return newDispatch;
-    }
-
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
-        return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
-    }
-
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
-        assert RubyContext.shouldObjectBeVisible(receiverObject);
-        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
+        return dispatch(frame, NilPlaceholder.INSTANCE, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
     }
 
     public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         return dispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, blockObject, argumentsObjects);
     }
 
-    public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
-        return doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject);
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
     }
 
-    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, Object receiverObject) {
-        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, null, null, DispatchAction.RESPOND);
+    public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
+        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, RubyArguments.getSelf(frame.getArguments()), receiverObject, null, null, DispatchAction.RESPOND);
     }
 
     /**
@@ -191,5 +171,9 @@ public class DispatchHeadNode extends Node {
     }
 
     public boolean getIgnoreVisibility() { return ignoreVisibility; }
+
+    public NewDispatchNode getNewDispatch() {
+        return newDispatch;
+    }
 
 }
