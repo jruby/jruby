@@ -1881,10 +1881,10 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            Object accumulator = dispatch.dispatch(frame, RubyArguments.getSelf(frame.getArguments()), store[0], store[0], symbol, null, store[1]);
+            Object accumulator = dispatch.dispatch(frame, NilPlaceholder.INSTANCE, RubyArguments.getSelf(frame.getArguments()), store[0], symbol, null, store[1]);
 
             for (int n = 2; n < array.getSize(); n++) {
-                accumulator = dispatch.dispatch(frame, RubyArguments.getSelf(frame.getArguments()), accumulator, accumulator, symbol, null, store[n]);
+                accumulator = dispatch.dispatch(frame, NilPlaceholder.INSTANCE, RubyArguments.getSelf(frame.getArguments()), accumulator, symbol, null, store[n]);
             }
 
             return accumulator;
