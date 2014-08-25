@@ -34,8 +34,8 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
 
     @Child protected DirectCallNode callNode;
 
-    public NewCachedBoxedMethodMissingDispatchNode(RubyContext context, NewDispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
-        super(context, next);
+    public NewCachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
+        super(context, cachedName, next);
         assert expectedLookupNode != null;
         assert method != null;
 
@@ -47,10 +47,14 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
     }
 
     public NewCachedBoxedMethodMissingDispatchNode(NewCachedBoxedMethodMissingDispatchNode prev) {
-        this(prev.getContext(), prev.next, prev.expectedLookupNode, prev.method);
+        super(prev);
+        expectedLookupNode = prev.expectedLookupNode;
+        unmodifiedAssumption = prev.unmodifiedAssumption;
+        method = prev.method;
+        callNode = prev.callNode;
     }
 
-    @Specialization(guards = "isDispatch")
+    @Specialization(guards = {"isDispatch", "guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 

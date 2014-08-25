@@ -28,8 +28,8 @@ public abstract class NewCachedBoxedReturnMissingDispatchNode extends NewCachedD
     private final Assumption unmodifiedAssumption;
 
 
-    public NewCachedBoxedReturnMissingDispatchNode(RubyContext context, NewDispatchNode next, LookupNode expectedLookupNode) {
-        super(context, next);
+    public NewCachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, LookupNode expectedLookupNode) {
+        super(context, cachedName, next);
         assert expectedLookupNode != null;
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
@@ -37,10 +37,12 @@ public abstract class NewCachedBoxedReturnMissingDispatchNode extends NewCachedD
     }
 
     public NewCachedBoxedReturnMissingDispatchNode(NewCachedBoxedReturnMissingDispatchNode prev) {
-        this(prev.getContext(), prev.next, prev.expectedLookupNode);
+        super(prev);
+        expectedLookupNode = prev.expectedLookupNode;
+        unmodifiedAssumption = prev.unmodifiedAssumption;
     }
 
-    @Specialization(guards = "isDispatch")
+    @Specialization(guards = {"isDispatch", "guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 

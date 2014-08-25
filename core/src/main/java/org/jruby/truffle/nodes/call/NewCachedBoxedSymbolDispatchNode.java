@@ -32,8 +32,8 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     @Child protected DirectCallNode callNode;
 
 
-    public NewCachedBoxedSymbolDispatchNode(RubyContext context, NewDispatchNode next, RubyMethod method) {
-        super(context, next);
+    public NewCachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, RubyMethod method) {
+        super(context, cachedName, next);
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
         this.method = method;
 
@@ -41,10 +41,13 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     }
 
     public NewCachedBoxedSymbolDispatchNode(NewCachedBoxedSymbolDispatchNode prev) {
-        this(prev.getContext(), prev.next, prev.method);
+        super(prev);
+        unmodifiedAssumption = prev.unmodifiedAssumption;
+        method = prev.method;
+        callNode = prev.callNode;
     }
 
-    @Specialization(guards = "isDispatch")
+    @Specialization(guards = {"isDispatch", "guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         return doDispatch(frame, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }

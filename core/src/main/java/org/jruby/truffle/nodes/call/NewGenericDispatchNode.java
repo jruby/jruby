@@ -34,7 +34,7 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
 
     private final boolean ignoreVisibility;
 
-    private final Map<LookupNode, MethodCacheEntry> cache = new HashMap<>();
+    private final Map<MethodCacheKey, MethodCacheEntry> cache = new HashMap<>();
     @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
     @Child protected IndirectCallNode callNode;
 
@@ -54,7 +54,7 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
     }
 
     private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
+        MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode(), methodName);
 
         if (entry == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -81,7 +81,7 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
             }
 
             if (cache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
-                cache.put(receiverObject.getLookupNode(), entry);
+                cache.put(new MethodCacheKey(receiverObject.getLookupNode(), methodName), entry);
             }
         }
 
@@ -120,8 +120,40 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
 
 
     @CompilerDirectives.SlowPath
-    public MethodCacheEntry lookupInCache(LookupNode lookupNode) {
-        return cache.get(lookupNode);
+    public MethodCacheEntry lookupInCache(LookupNode lookupNode, Object methodName) {
+        return cache.get(new MethodCacheKey(lookupNode, methodName));
+    }
+
+    private class MethodCacheKey {
+
+        private final LookupNode lookupNode;
+        private final Object methodName;
+
+        private MethodCacheKey(LookupNode lookupNode, Object methodName) {
+            this.lookupNode = lookupNode;
+            this.methodName = methodName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MethodCacheKey that = (MethodCacheKey) o;
+
+            if (!lookupNode.equals(that.lookupNode)) return false;
+            if (!methodName.equals(that.methodName)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = lookupNode.hashCode();
+            result = 31 * result + methodName.hashCode();
+            return result;
+        }
+
     }
 
     private class MethodCacheEntry {

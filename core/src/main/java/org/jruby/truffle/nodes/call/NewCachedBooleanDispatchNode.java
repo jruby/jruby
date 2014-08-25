@@ -38,9 +38,9 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
 
 
 
-    public NewCachedBooleanDispatchNode(RubyContext context, NewDispatchNode next, Assumption falseUnmodifiedAssumption, RubyMethod falseMethod, Assumption trueUnmodifiedAssumption,
+    public NewCachedBooleanDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, Assumption falseUnmodifiedAssumption, RubyMethod falseMethod, Assumption trueUnmodifiedAssumption,
                                         RubyMethod trueMethod) {
-        super(context, next);
+        super(context, cachedName, next);
         assert falseUnmodifiedAssumption != null;
         assert falseMethod != null;
         assert trueUnmodifiedAssumption != null;
@@ -56,11 +56,17 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
     }
 
     public NewCachedBooleanDispatchNode(NewCachedBooleanDispatchNode prev) {
-        this(prev.getContext(), prev.next, prev.falseUnmodifiedAssumption, prev.falseMethod, prev.trueUnmodifiedAssumption, prev.trueMethod);
+        super(prev);
+        falseUnmodifiedAssumption = prev.falseUnmodifiedAssumption;
+        falseMethod = prev.falseMethod;
+        falseCall = prev.falseCall;
+        trueUnmodifiedAssumption = prev.trueUnmodifiedAssumption;
+        trueMethod = prev.trueMethod;
+        trueCall = prev.trueCall;
     }
 
 
-    @Specialization(guards = "isDispatch")
+    @Specialization(guards = {"isDispatch", "guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, boolean receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         return doDispatch(frame, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }

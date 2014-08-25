@@ -24,7 +24,6 @@ import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
-import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
@@ -1835,11 +1834,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, minArgs = 0, maxArgs = 1)
     public abstract static class InjectNode extends YieldingArrayCoreMethodNode {
 
-        @Child protected DynamicNameDispatchHeadNode dispatch;
+        @Child protected DispatchHeadNode dispatch;
 
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DynamicNameDispatchHeadNode(context);
+            dispatch = new DispatchHeadNode(context, false, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InjectNode(InjectNode prev) {
@@ -1882,10 +1881,10 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            Object accumulator = dispatch.dispatch(frame, store[0], symbol, null, store[1]);
+            Object accumulator = dispatch.dispatch(frame, RubyArguments.getSelf(frame.getArguments()), store[0], store[0], symbol, null, store[1]);
 
             for (int n = 2; n < array.getSize(); n++) {
-                accumulator = dispatch.dispatch(frame, accumulator, symbol, null, store[n]);
+                accumulator = dispatch.dispatch(frame, RubyArguments.getSelf(frame.getArguments()), accumulator, accumulator, symbol, null, store[n]);
             }
 
             return accumulator;

@@ -63,9 +63,8 @@ public final class NewUnresolvedDispatchNode extends NewDispatchNode {
         try {
             method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility, dispatchAction);
         } catch (UseMethodMissingException e) {
-
             NewDispatchNode newDispatch;
-            newDispatch = doMissingBehavior(context, methodReceiverObject, boxedCallingSelf, boxedReceiverObject, head, dispatchAction);
+            newDispatch = doMissingBehavior(context, methodName, methodReceiverObject, boxedCallingSelf, boxedReceiverObject, head, dispatchAction);
             return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, boxedReceiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
@@ -76,14 +75,14 @@ public final class NewUnresolvedDispatchNode extends NewDispatchNode {
                 final Assumption trueUnmodifiedAssumption = context.getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
                 final RubyMethod trueMethod = lookup(boxedCallingSelf, context.getCoreLibrary().box(true), methodName.toString(), ignoreVisibility, dispatchAction);
 
-                final NewCachedBooleanDispatchNode newDispatch = NewCachedBooleanDispatchNodeFactory.create(getContext(), head, falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
+                final NewCachedBooleanDispatchNode newDispatch = NewCachedBooleanDispatchNodeFactory.create(getContext(), methodName, head, falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
                 head.replace(newDispatch);
                 return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             } catch (UseMethodMissingException e) {
                 throw new UnsupportedOperationException();
             }
         } else {
-            final NewCachedUnboxedDispatchNode newDispatch = NewCachedUnboxedDispatchNodeFactory.create(getContext(), head, receiverObject.getClass(), boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
+            final NewCachedUnboxedDispatchNode newDispatch = NewCachedUnboxedDispatchNodeFactory.create(getContext(), methodName, head, receiverObject.getClass(), boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
             head.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
@@ -98,7 +97,7 @@ public final class NewUnresolvedDispatchNode extends NewDispatchNode {
             method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility, dispatchAction);
         } catch (UseMethodMissingException e) {
             NewDispatchNode newDispatch;
-            newDispatch = doMissingBehavior(context, methodReceiverObject, boxedCallingSelf, boxedReceiverObject, head, dispatchAction);
+            newDispatch = doMissingBehavior(context, methodName, methodReceiverObject, boxedCallingSelf, boxedReceiverObject, head, dispatchAction);
             return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, boxedReceiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
             /*
@@ -107,28 +106,28 @@ public final class NewUnresolvedDispatchNode extends NewDispatchNode {
             */
 
 
-        return doRubyBasicObjectWithMethod(receiverObject, head, boxedReceiverObject, method).executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+        return doRubyBasicObjectWithMethod(receiverObject, methodName, head, boxedReceiverObject, method).executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 
-    private NewDispatchNode doRubyBasicObjectWithMethod(Object receiverObject, NewDispatchNode head, RubyBasicObject boxedReceiverObject, RubyMethod method) {
+    private NewDispatchNode doRubyBasicObjectWithMethod(Object receiverObject, Object methodName, NewDispatchNode head, RubyBasicObject boxedReceiverObject, RubyMethod method) {
         final NewDispatchNode newDispatch;
 
         if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
-            newDispatch = NewCachedBoxedSymbolDispatchNodeFactory.create(getContext(), head, method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
+            newDispatch = NewCachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, head, method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
         } else {
-            newDispatch = NewCachedBoxedDispatchNodeFactory.create(getContext(), head, boxedReceiverObject.getLookupNode(), method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
+            newDispatch = NewCachedBoxedDispatchNodeFactory.create(getContext(), methodName, head, boxedReceiverObject.getLookupNode(), method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
         }
 
         head.replace(newDispatch);
         return newDispatch;
     }
 
-    private NewDispatchNode doMissingBehavior(RubyContext context, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject, NewDispatchNode head, DispatchHeadNode.DispatchAction dispatchAction) {
+    private NewDispatchNode doMissingBehavior(RubyContext context, Object methodName, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject, NewDispatchNode head, DispatchHeadNode.DispatchAction dispatchAction) {
         NewDispatchNode newDispatch;
         RubyMethod method;
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                newDispatch = NewCachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), head, boxedReceiverObject.getLookupNode(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
+                newDispatch = NewCachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, head, boxedReceiverObject.getLookupNode(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
                 return head.replace(newDispatch);
             }
 
@@ -138,7 +137,7 @@ public final class NewUnresolvedDispatchNode extends NewDispatchNode {
                 } catch (UseMethodMissingException e2) {
                     throw new RaiseException(context.getCoreLibrary().runtimeError(boxedReceiverObject.toString() + " didn't have a #method_missing", this));
                 }
-                newDispatch = NewCachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), head, boxedReceiverObject.getLookupNode(), method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
+                newDispatch = NewCachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, head, boxedReceiverObject.getLookupNode(), method, getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute(), getNeverExecute());
                 return head.replace(newDispatch);
             }
 
