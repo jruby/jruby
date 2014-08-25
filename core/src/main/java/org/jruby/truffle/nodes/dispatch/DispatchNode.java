@@ -13,8 +13,8 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import org.jruby.truffle.nodes.NeverExecuteRubyNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -23,13 +23,13 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @NodeChildren({
-        @NodeChild(value="methodReceiverObject", type=NeverExecuteRubyNode.class),
-        @NodeChild(value="callingSelf", type=NeverExecuteRubyNode.class),
-        @NodeChild(value="receiver", type=NeverExecuteRubyNode.class),
-        @NodeChild(value="methodName", type=NeverExecuteRubyNode.class),
-        @NodeChild(value="blockObject", type=NeverExecuteRubyNode.class),
-        @NodeChild(value="arguments", type=NeverExecuteRubyNode.class),
-        @NodeChild(value="action", type=NeverExecuteRubyNode.class)})
+        @NodeChild(value="methodReceiverObject", type=Node.class),
+        @NodeChild(value="callingSelf", type=Node.class),
+        @NodeChild(value="receiver", type=Node.class),
+        @NodeChild(value="methodName", type=Node.class),
+        @NodeChild(value="blockObject", type=Node.class),
+        @NodeChild(value="arguments", type=Node.class),
+        @NodeChild(value="action", type=Node.class)})
 public abstract class DispatchNode extends RubyNode {
 
     public DispatchNode(RubyContext context) {
@@ -38,10 +38,6 @@ public abstract class DispatchNode extends RubyNode {
 
     public DispatchNode(DispatchNode prev) {
         this(prev.getContext());
-    }
-
-    public NeverExecuteRubyNode getNeverExecute() {
-        return new NeverExecuteRubyNode(getContext(), getSourceSection());
     }
 
     public final Object execute(VirtualFrame frame) {
