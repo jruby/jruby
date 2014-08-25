@@ -105,20 +105,12 @@ public class DispatchHeadNode extends Node {
      * such a significant way that it's best to start again rather than add new specializations to
      * the chain. Used for example when methods appear to have been monkey-patched.
      */
-    public Object respecialize(VirtualFrame frame, String reason, Object receiverObject, RubyProc blockObject, Object... argumentObjects) {
+    public Object respecialize(VirtualFrame frame, String reason, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         CompilerAsserts.neverPartOfCompilation();
 
         final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), cachedMethodName, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
-        return newHead.dispatch(frame, receiverObject, blockObject, argumentObjects);
-    }
-
-    public boolean respecializeAndDoesRespondTo(VirtualFrame frame, String reason, Object receiverObject) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), cachedMethodName, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
-        replace(newHead, reason);
-        return newHead.doesRespondTo(frame, receiverObject);
+        return newHead.newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentObjects, dispatchAction);
     }
 
     public String getName() {
@@ -140,24 +132,6 @@ public class DispatchHeadNode extends Node {
         }
 
         return depth;
-    }
-
-    public Object respecialize(String reason, VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final int depth = getDepth();
-        final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
-
-        return head.respecialize(frame, reason, receiverObject, blockObject, argumentsObjects);
-    }
-
-    public boolean respecializeAndDoesRespondTo(String reason, VirtualFrame frame, Object receiverObject) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final int depth = getDepth();
-        final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
-
-        return head.respecializeAndDoesRespondTo(frame, reason, receiverObject);
     }
 
     protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {

@@ -115,13 +115,13 @@ public abstract class NewDispatchNode extends RubyNode {
         return depth;
     }
 
-    public Object respecialize(String reason, VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+    public Object respecialize(String reason, VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         CompilerAsserts.neverPartOfCompilation();
 
         final int depth = getDepth();
         final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
 
-        return head.respecialize(frame, reason, receiverObject, blockObject, argumentsObjects);
+        return head.respecialize(frame, reason, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 
     protected static boolean isDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {

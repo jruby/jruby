@@ -49,16 +49,16 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
 
     @Specialization(guards = {"isDispatch", "guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return doDispatch(frame, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
-    private Object doDispatch(VirtualFrame frame, RubySymbol receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, RubySymbol receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check no symbols have had their lookup modified
 
         try {
             RubySymbol.globalSymbolLookupNodeAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("symbol lookup modified", frame, receiverObject, blockObject, argumentsObjects);
+            return respecialize("symbol lookup modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
         // Check the class has not been modified
@@ -66,7 +66,7 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
+            return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
         // Call the method
