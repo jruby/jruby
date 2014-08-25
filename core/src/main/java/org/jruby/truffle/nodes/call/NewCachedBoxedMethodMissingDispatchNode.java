@@ -31,11 +31,10 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
     private final LookupNode expectedLookupNode;
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
-    private final RubySymbol symbol;
 
     @Child protected DirectCallNode callNode;
 
-    public NewCachedBoxedMethodMissingDispatchNode(RubyContext context, NewDispatchNode next, LookupNode expectedLookupNode, RubyMethod method, String name) {
+    public NewCachedBoxedMethodMissingDispatchNode(RubyContext context, NewDispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
         super(context, next);
         assert expectedLookupNode != null;
         assert method != null;
@@ -43,27 +42,26 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
-        symbol = context.newSymbol(name);
 
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
     public NewCachedBoxedMethodMissingDispatchNode(NewCachedBoxedMethodMissingDispatchNode prev) {
-        this(prev.getContext(), prev.next, prev.expectedLookupNode, prev.method, prev.symbol.toString());
+        this(prev.getContext(), prev.next, prev.expectedLookupNode, prev.method);
     }
 
     @Specialization(guards = "isDispatch")
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {
-            return doNext(frame, methodReceiverObject, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), argumentsObjects, dispatchAction);
+            return doNext(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), argumentsObjects, dispatchAction);
         }
-        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
 
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects) {
         // Check the class has not been modified
 
         try {
@@ -75,7 +73,10 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
         // When calling #method_missing we need to prepend the symbol
 
         final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-        modifiedArgumentsObjects[0] = symbol;
+
+        // FIXME!!!!!
+        modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
+
         System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
         // Call the method
@@ -84,12 +85,12 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return doNext(frame, methodReceiverObject, callingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), argumentsObjects, dispatchAction);
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return doNext(frame, methodReceiverObject, callingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), argumentsObjects, dispatchAction);
     }
 
-    private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, dispatchAction);
+    private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 
 

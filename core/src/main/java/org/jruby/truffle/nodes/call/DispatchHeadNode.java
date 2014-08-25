@@ -26,7 +26,7 @@ public class DispatchHeadNode extends Node {
 
     private final RubyContext context;
     private final boolean ignoreVisibility;
-    private final String name;
+    private final String cachedMethodName;
     private final boolean isSplatted;
 
     public static enum MissingBehavior {
@@ -47,14 +47,16 @@ public class DispatchHeadNode extends Node {
         this(context, false, name, isSplatted, missingBehavior);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, String name, boolean isSplatted, MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, String cachedMethodName, boolean isSplatted, MissingBehavior missingBehavior) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
-
-        this.name = name;
+        this.cachedMethodName = cachedMethodName;
         this.isSplatted = isSplatted;
+        newDispatch = new NewUnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
+    }
 
-        newDispatch = new NewUnresolvedDispatchNode(context, name, ignoreVisibility, missingBehavior);
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean isSplatted, MissingBehavior missingBehavior) {
+        this(context, ignoreVisibility, null, isSplatted, missingBehavior);
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
@@ -66,12 +68,37 @@ public class DispatchHeadNode extends Node {
     }
 
     public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
-        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, DispatchAction.DISPATCH);
+        return dispatch(frame, methodReceiverObject, callingSelf, receiverObject, cachedMethodName, blockObject, argumentsObjects);
+    }
+
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, String methodName, RubyProc blockObject, Object... argumentsObjects) {
+        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, DispatchAction.DISPATCH);
+    }
+
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubySymbol methodName, RubyProc blockObject, Object... argumentsObjects) {
+        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, DispatchAction.DISPATCH);
+    }
+
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyString methodName, RubyProc blockObject, Object... argumentsObjects) {
+        return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, DispatchAction.DISPATCH);
     }
 
     public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
-        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, RubyArguments.getSelf(frame.getArguments()), receiverObject, null, null, DispatchAction.RESPOND);
+        return doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), cachedMethodName, receiverObject);
     }
+
+    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, String methodName, Object receiverObject) {
+        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, methodName, null, null, DispatchAction.RESPOND);
+    }
+
+    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, RubySymbol methodName, Object receiverObject) {
+        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, methodName, null, null, DispatchAction.RESPOND);
+    }
+
+    public boolean doesRespondTo(VirtualFrame frame, Object callingSelf, RubyString methodName, Object receiverObject) {
+        return (boolean) newDispatch.executeDispatch(frame, NilPlaceholder.INSTANCE, callingSelf, receiverObject, methodName, null, null, DispatchAction.RESPOND);
+    }
+
 
     /**
      * Replace the entire dispatch chain with a fresh chain. Used when the situation has changed in
@@ -81,7 +108,7 @@ public class DispatchHeadNode extends Node {
     public Object respecialize(VirtualFrame frame, String reason, Object receiverObject, RubyProc blockObject, Object... argumentObjects) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), cachedMethodName, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.dispatch(frame, receiverObject, blockObject, argumentObjects);
     }
@@ -89,13 +116,13 @@ public class DispatchHeadNode extends Node {
     public boolean respecializeAndDoesRespondTo(VirtualFrame frame, String reason, Object receiverObject) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), cachedMethodName, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.doesRespondTo(frame, receiverObject);
     }
 
     public String getName() {
-        return name;
+        return cachedMethodName;
     }
     /**
      * Get the depth of this node in the dispatch chain. The first node below
