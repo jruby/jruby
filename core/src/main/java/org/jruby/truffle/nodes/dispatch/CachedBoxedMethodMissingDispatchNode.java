@@ -53,7 +53,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         callNode = prev.callNode;
     }
 
-    @Specialization(guards = {"isDispatch", "guardName"})
+    @Specialization(guards = {"guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
@@ -73,18 +73,24 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             return respecialize("class modified", frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        // When calling #method_missing we need to prepend the symbol
+        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            // When calling #method_missing we need to prepend the symbol
 
-        final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
+            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
 
-        // FIXME!!!!!
-        modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
+            // FIXME!!!!!
+            modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
 
-        System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
+            System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
-        // Call the method
+            // Call the method
 
-        return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
+            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
+        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            return false;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Fallback

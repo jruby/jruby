@@ -66,7 +66,7 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     }
 
 
-    @Specialization(guards = {"isDispatch", "guardName"})
+    @Specialization(guards = {"guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, boolean receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
@@ -81,7 +81,13 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                 return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            return trueCall.call(frame, RubyArguments.pack(trueMethod, trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+                return trueCall.call(frame, RubyArguments.pack(trueMethod, trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+                return true;
+            } else {
+                throw new UnsupportedOperationException();
+            }
         } else {
             falseProfile.enter();
 
@@ -91,7 +97,13 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                 return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            return falseCall.call(frame, RubyArguments.pack(falseMethod, falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+                return falseCall.call(frame, RubyArguments.pack(falseMethod, falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+                return true;
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
     }
 

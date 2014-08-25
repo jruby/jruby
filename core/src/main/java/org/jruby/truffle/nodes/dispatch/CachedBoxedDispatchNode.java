@@ -54,7 +54,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
         callNode = prev.callNode;
     }
 
-    @Specialization(guards = {"isDispatch", "guardName"})
+    @Specialization(guards = {"guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
@@ -74,8 +74,14 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
             return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        // Call the method
-        return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            // Call the method
+            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            return true;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Fallback
