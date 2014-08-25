@@ -26,7 +26,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toArrayNode = new DispatchHeadNode(context, "to_ary", DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        toArrayNode = new DispatchHeadNode(context, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public ArrayCastNode(ArrayCastNode prev) {
@@ -50,7 +50,7 @@ public abstract class ArrayCastNode extends RubyNode {
     public Object doObject(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
-        final Object result = toArrayNode.dispatch(frame, object, null, new Object[]{});
+        final Object result = toArrayNode.dispatch(frame, object, "to_ary", null, new Object[]{});
 
         if (result == DispatchHeadNode.MISSING) {
             return NilPlaceholder.INSTANCE;

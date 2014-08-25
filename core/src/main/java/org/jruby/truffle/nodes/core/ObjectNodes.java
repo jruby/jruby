@@ -187,7 +187,7 @@ public abstract class ObjectNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context, "==", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            equalNode = new DispatchHeadNode(context);
             booleanCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
@@ -201,7 +201,7 @@ public abstract class ObjectNodes {
         public Object compare(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
 
-            if ((self == other) || booleanCast.executeBoolean(frame, equalNode.dispatch(frame, self, null, other))) {
+            if ((self == other) || booleanCast.executeBoolean(frame, equalNode.dispatch(frame, self, "==", null, other))) {
                 return 0;
             }
 
@@ -308,7 +308,7 @@ public abstract class ObjectNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeDupNode = new DispatchHeadNode(context, true, "initialize_dup", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = new DispatchHeadNode(context, true, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
@@ -322,7 +322,7 @@ public abstract class ObjectNodes {
 
             final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
             newObject.setInstanceVariables(self.getFields());
-            initializeDupNode.dispatch(frame, newObject, null, self);
+            initializeDupNode.dispatch(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
@@ -332,7 +332,7 @@ public abstract class ObjectNodes {
 
             final RubyObject newObject = new RubyObject(self.getRubyClass());
             newObject.setInstanceVariables(self.getFields());
-            initializeDupNode.dispatch(frame, newObject, null, self);
+            initializeDupNode.dispatch(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
@@ -450,7 +450,7 @@ public abstract class ObjectNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeCopyNode = new DispatchHeadNode(context);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {
@@ -461,7 +461,7 @@ public abstract class ObjectNodes {
         @Specialization
         public Object initializeDup(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
-            return initializeCopyNode.dispatch(frame, self, null, other);
+            return initializeCopyNode.dispatch(frame, self, "initialize_copy", null, other);
         }
 
     }

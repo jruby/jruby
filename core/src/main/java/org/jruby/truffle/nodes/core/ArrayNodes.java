@@ -409,7 +409,7 @@ public abstract class ArrayNodes {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equals = new DispatchHeadNode(context, "==", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            equals = new DispatchHeadNode(context);
         }
 
         public EqualNode(EqualNode prev) {
@@ -478,7 +478,7 @@ public abstract class ArrayNodes {
             final Object[] bs = b.slowToArray();
 
             for (int n = 0; n < a.getSize(); n++) {
-                if (!(boolean)equals.dispatch(frame, as[n], null, bs[n])) {
+                if (!(boolean)equals.dispatch(frame, as[n], "==", null, bs[n])) {
                     return false;
                 }
             }
@@ -1155,7 +1155,7 @@ public abstract class ArrayNodes {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context, "===", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            threeEqual = new DispatchHeadNode(context);
         }
 
         public DeleteNode(DeleteNode prev) {
@@ -1176,7 +1176,7 @@ public abstract class ArrayNodes {
 
                 // TODO(CS): need a cast node around the dispatch
 
-                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], "===", null, value)) {
                     found = store[n];
                     continue;
                 }
@@ -1205,7 +1205,7 @@ public abstract class ArrayNodes {
 
                 // TODO(CS): need a cast node around the dispatch
 
-                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], "===", null, value)) {
                     found = store[n];
                     continue;
                 }
@@ -1730,7 +1730,7 @@ public abstract class ArrayNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context, "===", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            threeEqual = new DispatchHeadNode(context);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -1753,7 +1753,7 @@ public abstract class ArrayNodes {
                 // TODO(CS): cast node around the dispatch
                 notDesignedForCompilation();
 
-                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], "===", null, value)) {
                     return true;
                 }
             }
@@ -1771,7 +1771,7 @@ public abstract class ArrayNodes {
                 // TODO(CS): cast node around the dispatch
                 notDesignedForCompilation();
 
-                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], "===", null, value)) {
                     return true;
                 }
             }
@@ -1945,7 +1945,7 @@ public abstract class ArrayNodes {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context, "inspect", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            inspect = new DispatchHeadNode(context);
         }
 
         public InspectNode(InspectNode prev) {
@@ -1969,7 +1969,7 @@ public abstract class ArrayNodes {
 
                 // TODO(CS): to string
 
-                builder.append(inspect.dispatch(frame, objects[n], null));
+                builder.append(inspect.dispatch(frame, objects[n], "inspect", null));
             }
 
             builder.append("]");
@@ -2211,7 +2211,7 @@ public abstract class ArrayNodes {
 
         public MaxNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context, "each", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eachNode = new DispatchHeadNode(context);
             maxBlock = context.getCoreLibrary().getArrayMaxBlock();
         }
 
@@ -2234,7 +2234,7 @@ public abstract class ArrayNodes {
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
                     maximumClosureFrame.materialize(), array, null);
 
-            eachNode.dispatch(frame, array, block);
+            eachNode.dispatch(frame, array, "each", block);
 
             if (maximum.get() == null) {
                 return NilPlaceholder.INSTANCE;
@@ -2251,7 +2251,7 @@ public abstract class ArrayNodes {
 
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, "<=>", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context);
         }
 
         public MaxBlockNode(MaxBlockNode prev) {
@@ -2267,7 +2267,7 @@ public abstract class ArrayNodes {
 
             final Object current = maximum.get();
 
-            if (current == null || (int) compareNode.dispatch(frame, value, null, current) < 0) {
+            if (current == null || (int) compareNode.dispatch(frame, value, "<=>", null, current) < 0) {
                 maximum.set(value);
             }
 
@@ -2323,7 +2323,7 @@ public abstract class ArrayNodes {
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context, "each", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eachNode = new DispatchHeadNode(context);
             minBlock = context.getCoreLibrary().getArrayMinBlock();
         }
 
@@ -2346,7 +2346,7 @@ public abstract class ArrayNodes {
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
                     minimumClosureFrame.materialize(), array, null);
 
-            eachNode.dispatch(frame, array, block);
+            eachNode.dispatch(frame, array, "each", block);
 
             if (minimum.get() == null) {
                 return NilPlaceholder.INSTANCE;
@@ -2363,7 +2363,7 @@ public abstract class ArrayNodes {
 
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, "<=>", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context);
         }
 
         public MinBlockNode(MinBlockNode prev) {
@@ -2379,7 +2379,7 @@ public abstract class ArrayNodes {
 
             final Object current = minimum.get();
 
-            if (current == null || (int) compareNode.dispatch(frame, value, null, current) < 0) {
+            if (current == null || (int) compareNode.dispatch(frame, value, "<=>", null, current) < 0) {
                 minimum.set(value);
             }
 
@@ -3044,7 +3044,7 @@ public abstract class ArrayNodes {
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context, "<=>", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareDispatchNode = new DispatchHeadNode(context);
         }
 
         public SortNode(SortNode prev) {
@@ -3073,7 +3073,7 @@ public abstract class ArrayNodes {
                     final int x = store[i];
                     int j = i;
                     // TODO(CS): node for this cast
-                    while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], null, x) > 0) {
+                    while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], "<=>", null, x) > 0) {
                         store[j] = store[j - 1];
                         j--;
                     }
@@ -3126,7 +3126,7 @@ public abstract class ArrayNodes {
                 final Object x = store[i];
                 int j = i;
                 // TODO(CS): node for this cast
-                while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], null, x) > 0) {
+                while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], "<=>", null, x) > 0) {
                     store[j] = store[j - 1];
                     j--;
                 }
@@ -3153,7 +3153,7 @@ public abstract class ArrayNodes {
                 @Override
                 public int compare(Object a, Object b) {
                     // TODO(CS): node for this cast
-                    return (int) compareDispatchNode.dispatch(finalFrame, a, null, b);
+                    return (int) compareDispatchNode.dispatch(finalFrame, a, "<=>", null, b);
                 }
 
             });

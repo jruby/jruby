@@ -35,7 +35,7 @@ public abstract class HashNodes {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context, "==", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            equalNode = new DispatchHeadNode(context);
         }
 
         public EqualNode(EqualNode prev) {
@@ -68,7 +68,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < aSize * 2; n++) {
                 // TODO(CS): cast
-                if (!(boolean) equalNode.dispatch(frame, aStore[n], null, bStore[n])) {
+                if (!(boolean) equalNode.dispatch(frame, aStore[n], "==", null, bStore[n])) {
                     return false;
                 }
             }
@@ -203,7 +203,7 @@ public abstract class HashNodes {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context);
             yield = new YieldDispatchHeadNode(context);
         }
 
@@ -232,7 +232,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
                 // TODO(CS): cast
-                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], null, key)) {
+                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], "eql?", null, key)) {
                     return store[n * 2 + 1];
                 }
             }
@@ -282,7 +282,7 @@ public abstract class HashNodes {
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context);
         }
 
         public SetIndexNode(SetIndexNode prev) {
@@ -310,7 +310,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
                 // TODO(CS): cast
-                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], null, key)) {
+                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], "eql?", null, key)) {
                     store[n * 2 + 1] = value;
                     return value;
                 }
@@ -365,16 +365,12 @@ public abstract class HashNodes {
     @CoreMethod(names = "delete", minArgs = 1, maxArgs = 1)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode eqlNode;
-
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
-            eqlNode = prev.eqlNode;
         }
 
         @Specialization(guards = "isNull")
@@ -645,7 +641,7 @@ public abstract class HashNodes {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context, "inspect", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            inspect = new DispatchHeadNode(context);
         }
 
         public InspectNode(InspectNode prev) {
@@ -677,9 +673,9 @@ public abstract class HashNodes {
 
                 // TODO(CS): to string
 
-                builder.append(inspect.dispatch(frame, store[n], null));
+                builder.append(inspect.dispatch(frame, store[n], "inspect", null));
                 builder.append("=>");
-                builder.append(inspect.dispatch(frame, store[n + 1], null));
+                builder.append(inspect.dispatch(frame, store[n + 1], "inspect", null));
             }
 
             builder.append("}");
@@ -706,9 +702,9 @@ public abstract class HashNodes {
                     builder.append(", ");
                 }
 
-                builder.append(inspect.dispatch(frame, entry.getKey(), null));
+                builder.append(inspect.dispatch(frame, entry.getKey(), "inspect", null));
                 builder.append("=>");
-                builder.append(inspect.dispatch(frame, entry.getValue(), null));
+                builder.append(inspect.dispatch(frame, entry.getValue(), "inspect", null));
             }
 
             builder.append("}");
@@ -805,7 +801,7 @@ public abstract class HashNodes {
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context);
         }
 
         public MergeNode(MergeNode prev) {
@@ -842,7 +838,7 @@ public abstract class HashNodes {
                     for (int b = 0; b < RubyContext.HASHES_SMALL; b++) {
                         if (b < storeBSize) {
                             // TODO(CS): cast
-                            if ((boolean) eqlNode.dispatch(frame, storeA[a * 2], null, storeB[b * 2])) {
+                            if ((boolean) eqlNode.dispatch(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
                                 merge = false;
                                 break;
                             }
@@ -910,7 +906,7 @@ public abstract class HashNodes {
 
         public KeyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context);
         }
 
         public KeyNode(KeyNode prev) {
@@ -931,7 +927,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < store.length; n += 2) {
                 // TODO(CS): cast
-                if ((boolean) eqlNode.dispatch(frame, store[n], null, key)) {
+                if ((boolean) eqlNode.dispatch(frame, store[n], "eql?", null, key)) {
                     return true;
                 }
             }

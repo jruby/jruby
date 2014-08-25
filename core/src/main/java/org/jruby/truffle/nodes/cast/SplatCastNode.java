@@ -36,7 +36,7 @@ public abstract class SplatCastNode extends RubyNode {
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
-        toA = new DispatchHeadNode(context, true, "to_a", DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        toA = new DispatchHeadNode(context, true, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public SplatCastNode(SplatCastNode prev) {
@@ -72,7 +72,7 @@ public abstract class SplatCastNode extends RubyNode {
         } else if (object instanceof RubyArray) {
             return (RubyArray) object;
         } else {
-            final Object array = toA.dispatch(frame, object, null);
+            final Object array = toA.dispatch(frame, object, "to_a", null);
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;

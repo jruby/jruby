@@ -65,8 +65,8 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context, methodName, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, "respond_to_missing?", DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        dispatchHead = new DispatchHeadNode(context);
+        respondToMissing = new DispatchHeadNode(context, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
 
@@ -79,7 +79,7 @@ public class RubyCallNode extends RubyNode {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
 
-        return dispatchHead.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+        return dispatchHead.dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
     private RubyProc executeBlock(VirtualFrame frame) {
@@ -188,7 +188,7 @@ public class RubyCallNode extends RubyNode {
         final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
         if (method == null) {
-            final Object r = respondToMissing.dispatch(frame, receiverBasicObject, null, context.makeString(methodName));
+            final Object r = respondToMissing.dispatch(frame, receiverBasicObject, "respond_to_missing?", null, context.makeString(methodName));
 
             if (r != DispatchHeadNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return NilPlaceholder.INSTANCE;

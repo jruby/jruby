@@ -109,7 +109,7 @@ public abstract class ModuleNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            subclassNode = new DispatchHeadNode(context, "<=", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            subclassNode = new DispatchHeadNode(context);
             booleanCastNode = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
@@ -126,7 +126,7 @@ public abstract class ModuleNodes {
                 return 0;
             }
 
-            final Object isSubclass = subclassNode.dispatch(frame, self, null, other);
+            final Object isSubclass = subclassNode.dispatch(frame, self, "<=", null, other);
 
             if (RubyNilClass.isNil(isSubclass)) {
                 return NilPlaceholder.INSTANCE;
@@ -548,7 +548,7 @@ public abstract class ModuleNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context, "append_features", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            appendFeaturesNode = new DispatchHeadNode(context);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -566,8 +566,7 @@ public abstract class ModuleNodes {
                 if (args[n] instanceof RubyModule) {
                     final RubyModule included = (RubyModule) args[n];
 
-                    // Note that we do appear to do full method lookup here
-                    appendFeaturesNode.dispatch(frame, included, null, module);
+                    appendFeaturesNode.dispatch(frame, included, "append_features", null, module);
 
                     // TODO(cs): call included hook
                 }

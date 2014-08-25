@@ -17,17 +17,20 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class RespondToNode extends RubyNode {
 
+    private final String methodName;
+
     @Child protected RubyNode child;
     @Child protected DispatchHeadNode dispatch;
 
-    public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String name) {
+    public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String methodName) {
         super(context, sourceSection);
+        this.methodName = methodName;
         this.child = child;
-        dispatch = new DispatchHeadNode(context, name, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        dispatch = new DispatchHeadNode(context, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {
-        return dispatch.doesRespondTo(frame, child.execute(frame));
+        return dispatch.doesRespondTo(frame, methodName, child.execute(frame));
     }
 
     @Override

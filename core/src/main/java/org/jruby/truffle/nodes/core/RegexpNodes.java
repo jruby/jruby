@@ -69,7 +69,7 @@ public abstract class RegexpNodes {
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = new DispatchHeadNode(context, "=~", DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            matchNode = new DispatchHeadNode(context);
         }
 
         public MatchOperatorNode(MatchOperatorNode prev) {
@@ -92,7 +92,7 @@ public abstract class RegexpNodes {
 
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), getSourceSection().getStartLine(), "strange reversed match operator");
 
-            return matchNode.dispatch(frame, other, null, regexp);
+            return matchNode.dispatch(frame, other, "=~", null, regexp);
         }
 
     }
