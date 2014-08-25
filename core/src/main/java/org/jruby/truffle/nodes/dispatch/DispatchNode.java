@@ -7,10 +7,9 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -25,20 +24,20 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @NodeChildren({
-        @NodeChild(value="methodReceiverObject", type=NewDispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="callingSelf", type=NewDispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="receiver", type=NewDispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="methodName", type=NewDispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="blockObject", type=NewDispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="arguments", type=NewDispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="action", type=NewDispatchNode.NeverExecuteRubyNode.class)})
-public abstract class NewDispatchNode extends RubyNode {
+        @NodeChild(value="methodReceiverObject", type=DispatchNode.NeverExecuteRubyNode.class),
+        @NodeChild(value="callingSelf", type=DispatchNode.NeverExecuteRubyNode.class),
+        @NodeChild(value="receiver", type=DispatchNode.NeverExecuteRubyNode.class),
+        @NodeChild(value="methodName", type=DispatchNode.NeverExecuteRubyNode.class),
+        @NodeChild(value="blockObject", type=DispatchNode.NeverExecuteRubyNode.class),
+        @NodeChild(value="arguments", type=DispatchNode.NeverExecuteRubyNode.class),
+        @NodeChild(value="action", type=DispatchNode.NeverExecuteRubyNode.class)})
+public abstract class DispatchNode extends RubyNode {
 
-    public NewDispatchNode(RubyContext context) {
+    public DispatchNode(RubyContext context) {
         super(context, null);
     }
 
-    public NewDispatchNode(NewDispatchNode prev) {
+    public DispatchNode(DispatchNode prev) {
         this(prev.getContext());
     }
 

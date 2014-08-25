@@ -7,16 +7,18 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -25,36 +27,6 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.Arrays;
 
-/**
- * A call node that has a chain of dispatch nodes.
- * <p>
- * The dispatch chain starts as {@link RubyCallNode} -&gt; {@link DispatchHeadNode} -&gt;
- * {@link UninitializedBoxingDispatchNode} -&gt; {@link UninitializedDispatchNode}.
- * <p>
- * When the {@link UninitializedDispatchNode} is reached a new node is inserted into the chain. If
- * the node dispatches based on some unboxed value (unboxed as in it's not a Ruby object, just a
- * Java object) such as {@link Integer}, then that node is inserted before the
- * {@link UninitializedBoxingDispatchNode}, otherwise if it dispatches based on some Ruby
- * BasicObject, it is inserted afterwards.
- * <p>
- * The {@link UninitializedBoxingDispatchNode} becomes a {@link BoxingDispatchNode} when we find
- * that the boxing has to be done on the fast path - when there is some boxed dispatch node.
- * <p>
- * So the general format is {@link RubyCallNode} -&gt; {@link DispatchHeadNode} -&gt; zero or more
- * unboxed dispatches -&gt; {@link UninitializedBoxingDispatchNode} | {@link BoxingDispatchNode}
- * -&gt; zero or more boxed dispatches -&gt; {@link UninitializedDispatchNode}.
- * <p>
- * There are several special cases of unboxed and boxed dispatch nodes based on the types and
- * methods involved.
- * <p>
- * If we have too many dispatch nodes we replace the whole chain with {@link DispatchHeadNode} -&gt;
- * {@link BoxingDispatchNode} -&gt; {@link GeneralDispatchNode}.
- * <p>
- * This system allows us to dispatch based purely on Java class, before we have to turn the object
- * into a full {@link RubyBasicObject} and consider the full Ruby lookup process, and something such
- * as a math call which may work on Fixnum or Float to work as just a couple of applications of
- * {@code instanceof} and assumption checks.
- */
 public class RubyCallNode extends RubyNode {
 
     @Child protected RubyNode receiver;

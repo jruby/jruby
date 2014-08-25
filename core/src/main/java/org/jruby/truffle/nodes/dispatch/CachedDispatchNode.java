@@ -7,20 +7,20 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
-public abstract class NewCachedDispatchNode extends NewDispatchNode {
+public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
 
-    @Child protected NewDispatchNode next;
+    @Child protected DispatchNode next;
 
-    public NewCachedDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next) {
+    public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next) {
         super(context);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
@@ -29,7 +29,7 @@ public abstract class NewCachedDispatchNode extends NewDispatchNode {
         this.next = next;
     }
 
-    public NewCachedDispatchNode(NewCachedDispatchNode prev) {
+    public CachedDispatchNode(CachedDispatchNode prev) {
         super(prev.getContext());
         cachedName = prev.cachedName;
         next = prev.next;

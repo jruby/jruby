@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode {
+public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
 
     private final Assumption falseUnmodifiedAssumption;
     private final RubyMethod falseMethod;
@@ -38,8 +38,8 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
 
 
 
-    public NewCachedBooleanDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, Assumption falseUnmodifiedAssumption, RubyMethod falseMethod, Assumption trueUnmodifiedAssumption,
-                                        RubyMethod trueMethod) {
+    public CachedBooleanDispatchNode(RubyContext context, Object cachedName, DispatchNode next, Assumption falseUnmodifiedAssumption, RubyMethod falseMethod, Assumption trueUnmodifiedAssumption,
+                                     RubyMethod trueMethod) {
         super(context, cachedName, next);
         assert falseUnmodifiedAssumption != null;
         assert falseMethod != null;
@@ -55,7 +55,7 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
         trueCall = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
     }
 
-    public NewCachedBooleanDispatchNode(NewCachedBooleanDispatchNode prev) {
+    public CachedBooleanDispatchNode(CachedBooleanDispatchNode prev) {
         super(prev);
         falseUnmodifiedAssumption = prev.falseUnmodifiedAssumption;
         falseMethod = prev.falseMethod;

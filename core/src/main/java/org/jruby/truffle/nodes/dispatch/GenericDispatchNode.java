@@ -7,16 +7,13 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.source.NullSourceSection;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -30,7 +27,7 @@ import org.jruby.util.cli.Options;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class NewGenericDispatchNode extends NewDispatchNode {
+public abstract class GenericDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
 
@@ -38,13 +35,13 @@ public abstract class NewGenericDispatchNode extends NewDispatchNode {
     @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
     @Child protected IndirectCallNode callNode;
 
-    public NewGenericDispatchNode(RubyContext context, boolean ignoreVisibility) {
+    public GenericDispatchNode(RubyContext context, boolean ignoreVisibility) {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
-    public NewGenericDispatchNode(NewGenericDispatchNode prev) {
+    public GenericDispatchNode(GenericDispatchNode prev) {
         this(prev.getContext(), prev.ignoreVisibility);
     }
 

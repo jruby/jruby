@@ -21,9 +21,9 @@ import com.oracle.truffle.api.frame.*;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;

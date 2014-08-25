@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode {
+public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
     private final Class expectedClass;
     private final Assumption unmodifiedAssumption;
@@ -31,7 +31,7 @@ public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode
 
     @Child protected DirectCallNode callNode;
 
-    public NewCachedUnboxedDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, Class expectedClass, Assumption unmodifiedAssumption, RubyMethod method) {
+    public CachedUnboxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next, Class expectedClass, Assumption unmodifiedAssumption, RubyMethod method) {
         super(context, cachedName, next);
         assert expectedClass != null;
         assert unmodifiedAssumption != null;
@@ -44,7 +44,7 @@ public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
-    public NewCachedUnboxedDispatchNode(NewCachedUnboxedDispatchNode prev) {
+    public CachedUnboxedDispatchNode(CachedUnboxedDispatchNode prev) {
         super(prev);
         expectedClass = prev.expectedClass;
         unmodifiedAssumption = prev.unmodifiedAssumption;
