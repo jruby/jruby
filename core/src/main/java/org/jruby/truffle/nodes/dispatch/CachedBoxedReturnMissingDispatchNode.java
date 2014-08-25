@@ -42,7 +42,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         unmodifiedAssumption = prev.unmodifiedAssumption;
     }
 
-    @Specialization(guards = {"isDispatch", "guardName"})
+    @Specialization(guards = {"guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
@@ -63,7 +63,13 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             return respecialize("class modified", frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        return DispatchHeadNode.MISSING;
+        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            return DispatchHeadNode.MISSING;
+        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            return false;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Fallback

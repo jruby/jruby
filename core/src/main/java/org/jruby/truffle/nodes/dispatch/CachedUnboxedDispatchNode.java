@@ -54,7 +54,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
 
 
-    @Specialization(guards = {"isDispatch", "isPrimitive", "guardName"})
+    @Specialization(guards = {"isPrimitive", "guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the class is what we expect
 
@@ -79,9 +79,14 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
             return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        // Call the method
-
-        return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            // Call the method
+            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+        } else  if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            return true;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {

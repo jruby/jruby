@@ -88,7 +88,7 @@ public abstract class RubyCallStack {
          * features beyond what MRI does like printing locals in backtraces.
          */
 
-            activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize()));
+            activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
 
             Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
 
