@@ -60,7 +60,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return resetAndDispatch("class modified", frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+            return resetAndDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, "class modified");
         }
 
         if (dispatchAction == Dispatch.DispatchAction.CALL) {

@@ -40,18 +40,25 @@ public abstract class DispatchNode extends RubyNode {
         this(prev.getContext());
     }
 
-    public final Object execute(VirtualFrame frame) {
-        throw new IllegalStateException("do not call execute on dispatch nodes");
-    }
+    public abstract Object executeDispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction);
 
-    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction);
-
-    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility, Dispatch.DispatchAction dispatchAction) throws UseMethodMissingException {
+    protected RubyMethod lookup(
+            RubyBasicObject callingSelf,
+            RubyBasicObject receiver,
+            String name,
+            boolean ignoreVisibility,
+            Dispatch.DispatchAction dispatchAction) throws UseMethodMissingException {
         CompilerAsserts.neverPartOfCompilation();
 
-        // TODO(CS): why are we using an exception to convey method missing here?
-
-        RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
+        RubyMethod method = receiver.getLookupNode().lookupMethod(name);
 
         // If no method was found, use #method_missing
 
@@ -62,18 +69,18 @@ public abstract class DispatchNode extends RubyNode {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
         }
 
         // Check visibility
 
-        if (boxedCallingSelf == receiverBasicObject.getRubyClass()){
+        if (callingSelf == receiver.getRubyClass()){
             return method;
         }
 
-        if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
+        if (!ignoreVisibility && !method.isVisibleTo(this, callingSelf, receiver)) {
             if (dispatchAction == Dispatch.DispatchAction.CALL) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 throw new UseMethodMissingException();
             } else {
@@ -84,14 +91,35 @@ public abstract class DispatchNode extends RubyNode {
         return method;
     }
 
-    protected Object resetAndDispatch(String reason, VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, Dispatch.DispatchAction dispatchAction) {
+    protected Object resetAndDispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object[] argumentsObjects,
+            Dispatch.DispatchAction dispatchAction,
+            String reason) {
         final DispatchHeadNode head = getHeadNode();
         head.reset(reason);
-        return head.dispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+        return head.dispatch(
+                frame,
+                methodReceiverObject,
+                callingSelf,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                dispatchAction);
     }
 
     protected DispatchHeadNode getHeadNode() {
         return NodeUtil.findParent(this, DispatchHeadNode.class);
+    }
+
+    public final Object execute(VirtualFrame frame) {
+        throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
 }

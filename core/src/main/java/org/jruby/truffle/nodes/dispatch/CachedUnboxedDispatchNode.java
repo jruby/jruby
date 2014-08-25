@@ -76,7 +76,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return resetAndDispatch("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+            return resetAndDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, "class modified");
         }
 
         if (dispatchAction == Dispatch.DispatchAction.CALL) {
