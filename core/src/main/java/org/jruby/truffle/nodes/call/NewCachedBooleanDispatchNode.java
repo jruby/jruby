@@ -68,17 +68,17 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
 
     @Specialization(guards = {"isDispatch", "guardName"})
     public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, boolean receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return doDispatch(frame, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
-    private Object doDispatch(VirtualFrame frame, boolean receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, boolean receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         if ((boolean) receiverObject) {
             trueProfile.enter();
 
             try {
                 trueUnmodifiedAssumption.check();
             } catch (InvalidAssumptionException e) {
-                return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
+                return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
             return trueCall.call(frame, RubyArguments.pack(trueMethod, trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
@@ -88,7 +88,7 @@ public abstract class NewCachedBooleanDispatchNode extends NewCachedDispatchNode
             try {
                 falseUnmodifiedAssumption.check();
             } catch (InvalidAssumptionException e) {
-                return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
+                return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
             return falseCall.call(frame, RubyArguments.pack(falseMethod, falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));

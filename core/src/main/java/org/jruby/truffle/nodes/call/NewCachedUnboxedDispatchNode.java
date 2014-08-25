@@ -61,7 +61,7 @@ public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode
         if (receiverObject.getClass() != expectedClass) {
             return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
-        return doDispatch(frame, methodReceiverObject, callingSelf, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+        return doDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
 
@@ -70,13 +70,13 @@ public abstract class NewCachedUnboxedDispatchNode extends NewCachedDispatchNode
         return doNext(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         // Check the class has not been modified
 
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
+            return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
         // Call the method
