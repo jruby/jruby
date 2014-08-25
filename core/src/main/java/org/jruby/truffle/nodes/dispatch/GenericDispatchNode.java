@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -31,18 +32,27 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
 
-    private final Map<MethodCacheKey, MethodCacheEntry> cache = new HashMap<>();
+    private final Map<MethodCacheKey, MethodCacheEntry> cache;
     @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
     @Child protected IndirectCallNode callNode;
+
+    @Child protected BoxingNode box;
 
     public GenericDispatchNode(RubyContext context, boolean ignoreVisibility) {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
+        cache = new HashMap<>();
         callNode = Truffle.getRuntime().createIndirectCallNode();
+        box = new BoxingNode(context, null, null);
     }
 
     public GenericDispatchNode(GenericDispatchNode prev) {
-        this(prev.getContext(), prev.ignoreVisibility);
+        super(prev);
+        ignoreVisibility = prev.ignoreVisibility;
+        cache = prev.cache;
+        hasAnyMethodsMissing = prev.hasAnyMethodsMissing;
+        callNode = prev.callNode;
+        box = prev.box;
     }
 
     @Specialization(guards = "isDispatch", order=1)
@@ -112,7 +122,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     @Specialization(order=2)
     public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return dispatch(frame, methodReceiverObject, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
+        return dispatch(frame, methodReceiverObject, box.box(callingSelf), box.box(receiverObject), methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
 
 
