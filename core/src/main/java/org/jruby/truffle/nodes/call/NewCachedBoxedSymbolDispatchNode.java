@@ -32,8 +32,8 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     @Child protected DirectCallNode callNode;
 
 
-    public NewCachedBoxedSymbolDispatchNode(RubyContext context, NewDispatchNode next, RubyMethod method) {
-        super(context, next);
+    public NewCachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, RubyMethod method) {
+        super(context, cachedName, next);
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
         this.method = method;
 
@@ -41,15 +41,18 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     }
 
     public NewCachedBoxedSymbolDispatchNode(NewCachedBoxedSymbolDispatchNode prev) {
-        this(prev.getContext(), prev.next, prev.method);
+        super(prev);
+        unmodifiedAssumption = prev.unmodifiedAssumption;
+        method = prev.method;
+        callNode = prev.callNode;
     }
 
-    @Specialization(guards = "isDispatch")
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return doDispatch(frame, receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
+    @Specialization(guards = {"isDispatch", "guardName"})
+    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return doDispatch(frame, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true));
     }
 
-    private Object doDispatch(VirtualFrame frame, RubySymbol receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    private Object doDispatch(VirtualFrame frame, RubySymbol receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects) {
         // Check no symbols have had their lookup modified
 
         try {
@@ -72,8 +75,8 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects, dispatchAction);
+    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 
 }

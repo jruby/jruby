@@ -18,7 +18,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -184,14 +184,14 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = {"send", "__send__"}, needsBlock = true, minArgs = 1, isSplatted = true)
     public abstract static class SendNode extends CoreMethodNode {
 
-        @Child protected DynamicNameDispatchHeadNode dispatchNode;
+        @Child protected DispatchHeadNode dispatchNode;
 
         private final BranchProfile symbolProfile = new BranchProfile();
         private final BranchProfile stringProfile = new BranchProfile();
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatchNode = new DynamicNameDispatchHeadNode(context);
+            dispatchNode = new DispatchHeadNode(context, false, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public SendNode(SendNode prev) {
@@ -206,10 +206,10 @@ public abstract class BasicObjectNodes {
 
             if (name instanceof RubySymbol) {
                 symbolProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubySymbol) name, null, sendArgs);
+                return dispatchNode.dispatch(frame, self, RubyArguments.getSelf(frame.getArguments()), self, (RubySymbol) name, null, sendArgs);
             } else if (name instanceof RubyString) {
                 stringProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubyString) name, null, sendArgs);
+                return dispatchNode.dispatch(frame, self, RubyArguments.getSelf(frame.getArguments()), self, (RubyString) name, null, sendArgs);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -223,10 +223,10 @@ public abstract class BasicObjectNodes {
 
             if (name instanceof RubySymbol) {
                 symbolProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubySymbol) name, block, sendArgs);
+                return dispatchNode.dispatch(frame, self, RubyArguments.getSelf(frame.getArguments()), self, (RubySymbol) name, block, sendArgs);
             } else if (name instanceof RubyString) {
                 stringProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubyString) name, block, sendArgs);
+                return dispatchNode.dispatch(frame, self, RubyArguments.getSelf(frame.getArguments()), self, (RubyString) name, block, sendArgs);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();

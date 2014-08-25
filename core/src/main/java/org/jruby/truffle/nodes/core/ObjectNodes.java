@@ -17,7 +17,6 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.call.BooleanDispatchHeadNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
-import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -763,11 +762,11 @@ public abstract class ObjectNodes {
     @CoreMethod(names = "respond_to?", minArgs = 1, maxArgs = 2)
     public abstract static class RespondToNode extends CoreMethodNode {
 
-        @Child protected DynamicNameDispatchHeadNode dispatch;
+        @Child protected DispatchHeadNode dispatch;
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DynamicNameDispatchHeadNode(context);
+            dispatch = new DispatchHeadNode(context, false, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RespondToNode(RespondToNode prev) {
@@ -777,24 +776,24 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, object, name);
+            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, object, name);
+            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, object, name);
+            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, object, name);
+            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
         }
 
     }
