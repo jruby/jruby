@@ -15,7 +15,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.dispatch.BooleanDispatchHeadNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -181,23 +182,26 @@ public abstract class ObjectNodes {
     @CoreMethod(names = {"<=>"}, minArgs = 1, maxArgs = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child protected BooleanDispatchHeadNode equalNode;
+        @Child protected DispatchHeadNode equalNode;
+        @Child protected BooleanCastNode booleanCast;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new BooleanDispatchHeadNode(context, sourceSection, new DispatchHeadNode(context, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING));
+            equalNode = new DispatchHeadNode(context, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            booleanCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
         public CompareNode(CompareNode prev) {
             super(prev);
             equalNode = prev.equalNode;
+            booleanCast = prev.booleanCast;
         }
 
         @Specialization
         public Object compare(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
 
-            if ((self == other) || equalNode.executeBoolean(frame, self, null, other)) {
+            if ((self == other) || booleanCast.executeBoolean(frame, equalNode.dispatch(frame, self, null, other))) {
                 return 0;
             }
 
