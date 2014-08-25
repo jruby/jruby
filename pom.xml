@@ -29,7 +29,7 @@
     </pluginRepository>
   </pluginRepositories>
   <repositories>
-    <repository>
+<!--    <repository>
       <id>tesla</id>
       <url>http://repository.tesla.io:8081/nexus/content/repositories/snapshots/</url>
       <releases>
@@ -38,7 +38,7 @@
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
-    </repository>
+    </repository> -->
     <repository>
       <id>sonatype</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
