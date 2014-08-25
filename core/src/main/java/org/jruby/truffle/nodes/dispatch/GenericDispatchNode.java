@@ -55,7 +55,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
         box = prev.box;
     }
 
-    @Specialization(guards = "isDispatch", order=1)
+    @Specialization(order=1)
     public Object dispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
         return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
     }
@@ -92,7 +92,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
             }
         }
 
-        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+        if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
             final Object[] argumentsToUse;
 
             if (hasAnyMethodsMissing && entry.isMethodMissing()) {

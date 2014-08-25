@@ -88,7 +88,7 @@ public abstract class DispatchNode extends RubyNode {
         }
 
         if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
-            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
             } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
                 throw new UseMethodMissingException();
@@ -100,35 +100,14 @@ public abstract class DispatchNode extends RubyNode {
         return method;
     }
 
-    public int getDepth() {
-        // TODO: can we use findParent instead?
-
-        int depth = 1;
-        Node parent = this.getParent();
-
-        while (!(parent instanceof DispatchHeadNode)) {
-            parent = parent.getParent();
-            depth++;
-        }
-
-        return depth;
+    protected Object resetAndDispatch(String reason, VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+        final DispatchHeadNode head = getHeadNode();
+        head.reset(reason);
+        return head.dispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
     }
 
-    public Object respecialize(String reason, VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final int depth = getDepth();
-        final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
-
-        return head.respecialize(frame, reason, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
-    }
-
-    protected static boolean isDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH;
-    }
-
-    protected static boolean isRespond(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return dispatchAction == DispatchHeadNode.DispatchAction.RESPOND;
+    protected DispatchHeadNode getHeadNode() {
+        return NodeUtil.findParent(this, DispatchHeadNode.class);
     }
 
 }

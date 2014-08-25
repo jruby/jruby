@@ -58,7 +58,7 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         try {
             RubySymbol.globalSymbolLookupNodeAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("symbol lookup modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+            return resetAndDispatch("symbol lookup modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
         // Check the class has not been modified
@@ -66,10 +66,10 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+            return resetAndDispatch("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+        if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
             // Call the method
             return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
         } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {

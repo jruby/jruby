@@ -70,10 +70,10 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("class modified", frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+            return resetAndDispatch("class modified", frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
-        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+        if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
             // When calling #method_missing we need to prepend the symbol
 
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];

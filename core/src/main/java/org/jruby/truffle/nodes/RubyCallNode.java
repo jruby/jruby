@@ -29,6 +29,8 @@ import java.util.Arrays;
 
 public class RubyCallNode extends RubyNode {
 
+    private final String methodName;
+
     @Child protected RubyNode receiver;
     @Child protected ProcOrNullNode block;
     @Children protected final RubyNode[] arguments;
@@ -47,12 +49,10 @@ public class RubyCallNode extends RubyNode {
     @Child protected DispatchHeadNode respondToMissing;
     @Child protected BooleanCastNode respondToMissingCast;
 
-    public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
 
-        assert receiver != null;
-        assert arguments != null;
-        assert name != null;
+        this.methodName = methodName;
 
         this.receiver = receiver;
 
@@ -65,7 +65,7 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context, name, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchHead = new DispatchHeadNode(context, methodName, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         respondToMissing = new DispatchHeadNode(context, "respond_to_missing?", DispatchHeadNode.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
@@ -183,12 +183,12 @@ public class RubyCallNode extends RubyNode {
 
         // TODO(CS): this lookup should be cached
 
-        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(dispatchHead.getName());
+        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(methodName);
 
         final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
         if (method == null) {
-            final Object r = respondToMissing.dispatch(frame, receiverBasicObject, null, context.makeString(dispatchHead.getName()));
+            final Object r = respondToMissing.dispatch(frame, receiverBasicObject, null, context.makeString(methodName));
 
             if (r != DispatchHeadNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return NilPlaceholder.INSTANCE;
@@ -203,7 +203,7 @@ public class RubyCallNode extends RubyNode {
     }
 
     public String getName() {
-        return dispatchHead.getName();
+        return methodName;
     }
 
 }

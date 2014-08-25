@@ -78,10 +78,10 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             try {
                 trueUnmodifiedAssumption.check();
             } catch (InvalidAssumptionException e) {
-                return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+                return resetAndDispatch("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
                 return trueCall.call(frame, RubyArguments.pack(trueMethod, trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
             } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
                 return true;
@@ -94,10 +94,10 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             try {
                 falseUnmodifiedAssumption.check();
             } catch (InvalidAssumptionException e) {
-                return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+                return resetAndDispatch("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+            if (dispatchAction == DispatchHeadNode.DispatchAction.CALL) {
                 return falseCall.call(frame, RubyArguments.pack(falseMethod, falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
             } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
                 return true;
