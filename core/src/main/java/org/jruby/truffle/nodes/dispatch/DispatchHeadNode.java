@@ -7,20 +7,19 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
- * The head of a chain of dispatch nodes. Can be used with {@link RubyCallNode} or on its own.
+ * The head of a chain of dispatch nodes. Can be used with {@link org.jruby.truffle.nodes.RubyCallNode} or on its own.
  */
 public class DispatchHeadNode extends Node {
 
@@ -41,7 +40,7 @@ public class DispatchHeadNode extends Node {
 
     public static final Object MISSING = new Object();
 
-    @Child protected NewDispatchNode newDispatch;
+    @Child protected DispatchNode newDispatch;
 
     public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
         this(context, false, name, isSplatted, missingBehavior);
@@ -52,7 +51,7 @@ public class DispatchHeadNode extends Node {
         this.ignoreVisibility = ignoreVisibility;
         this.cachedMethodName = cachedMethodName;
         this.isSplatted = isSplatted;
-        newDispatch = new NewUnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
+        newDispatch = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean isSplatted, MissingBehavior missingBehavior) {
@@ -173,7 +172,7 @@ public class DispatchHeadNode extends Node {
 
     public boolean getIgnoreVisibility() { return ignoreVisibility; }
 
-    public NewDispatchNode getNewDispatch() {
+    public DispatchNode getNewDispatch() {
         return newDispatch;
     }
 

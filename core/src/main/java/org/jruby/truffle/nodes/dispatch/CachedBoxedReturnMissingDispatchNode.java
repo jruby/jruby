@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -22,13 +22,13 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 
-public abstract class NewCachedBoxedReturnMissingDispatchNode extends NewCachedDispatchNode {
+public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
     private final LookupNode expectedLookupNode;
     private final Assumption unmodifiedAssumption;
 
 
-    public NewCachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, LookupNode expectedLookupNode) {
+    public CachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next, LookupNode expectedLookupNode) {
         super(context, cachedName, next);
         assert expectedLookupNode != null;
         this.expectedLookupNode = expectedLookupNode;
@@ -36,7 +36,7 @@ public abstract class NewCachedBoxedReturnMissingDispatchNode extends NewCachedD
         this.next = next;
     }
 
-    public NewCachedBoxedReturnMissingDispatchNode(NewCachedBoxedReturnMissingDispatchNode prev) {
+    public CachedBoxedReturnMissingDispatchNode(CachedBoxedReturnMissingDispatchNode prev) {
         super(prev);
         expectedLookupNode = prev.expectedLookupNode;
         unmodifiedAssumption = prev.unmodifiedAssumption;

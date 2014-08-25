@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatchNode {
+public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
@@ -32,7 +32,7 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
     @Child protected DirectCallNode callNode;
 
 
-    public NewCachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, RubyMethod method) {
+    public CachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, DispatchNode next, RubyMethod method) {
         super(context, cachedName, next);
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
         this.method = method;
@@ -40,7 +40,7 @@ public abstract class NewCachedBoxedSymbolDispatchNode extends NewCachedDispatch
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
-    public NewCachedBoxedSymbolDispatchNode(NewCachedBoxedSymbolDispatchNode prev) {
+    public CachedBoxedSymbolDispatchNode(CachedBoxedSymbolDispatchNode prev) {
         super(prev);
         unmodifiedAssumption = prev.unmodifiedAssumption;
         method = prev.method;

@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.dsl.ImplicitCast;
 import com.oracle.truffle.api.dsl.TypeSystem;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;

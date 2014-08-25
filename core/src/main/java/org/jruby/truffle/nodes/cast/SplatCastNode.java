@@ -13,13 +13,10 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.

@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-public abstract class NewCachedBoxedDispatchNode extends NewCachedDispatchNode {
+public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     private final LookupNode expectedLookupNode;
     private final Assumption unmodifiedAssumption;
@@ -33,7 +33,7 @@ public abstract class NewCachedBoxedDispatchNode extends NewCachedDispatchNode {
 
     @Child protected DirectCallNode callNode;
 
-    public NewCachedBoxedDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
+    public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
         super(context, cachedName, next);
         assert expectedLookupNode != null;
         assert method != null;
@@ -46,7 +46,7 @@ public abstract class NewCachedBoxedDispatchNode extends NewCachedDispatchNode {
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
-    public NewCachedBoxedDispatchNode(NewCachedBoxedDispatchNode prev) {
+    public CachedBoxedDispatchNode(CachedBoxedDispatchNode prev) {
         super(prev);
         expectedLookupNode = prev.expectedLookupNode;
         unmodifiedAssumption = prev.unmodifiedAssumption;

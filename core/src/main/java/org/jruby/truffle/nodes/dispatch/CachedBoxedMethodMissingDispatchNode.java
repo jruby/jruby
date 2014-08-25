@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -22,11 +22,10 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedDispatchNode {
+public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
     private final LookupNode expectedLookupNode;
     private final Assumption unmodifiedAssumption;
@@ -34,7 +33,7 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
 
     @Child protected DirectCallNode callNode;
 
-    public NewCachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, NewDispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
+    public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
         super(context, cachedName, next);
         assert expectedLookupNode != null;
         assert method != null;
@@ -46,7 +45,7 @@ public abstract class NewCachedBoxedMethodMissingDispatchNode extends NewCachedD
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
-    public NewCachedBoxedMethodMissingDispatchNode(NewCachedBoxedMethodMissingDispatchNode prev) {
+    public CachedBoxedMethodMissingDispatchNode(CachedBoxedMethodMissingDispatchNode prev) {
         super(prev);
         expectedLookupNode = prev.expectedLookupNode;
         unmodifiedAssumption = prev.unmodifiedAssumption;
