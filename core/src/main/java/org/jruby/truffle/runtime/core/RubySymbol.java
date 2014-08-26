@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;

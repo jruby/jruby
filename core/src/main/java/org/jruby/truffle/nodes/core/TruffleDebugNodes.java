@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
@@ -78,7 +79,7 @@ public abstract class TruffleDebugNodes {
         public RubyString fullTree() {
             notDesignedForCompilation();
 
-            return getContext().makeString(NodeUtil.printTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
+            return getContext().makeString(NodeUtil.printTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
     }
@@ -163,7 +164,7 @@ public abstract class TruffleDebugNodes {
         public RubyString tree() {
             notDesignedForCompilation();
 
-            return getContext().makeString(NodeUtil.printCompactTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
+            return getContext().makeString(NodeUtil.printCompactTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
     }

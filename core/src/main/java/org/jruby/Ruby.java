@@ -857,7 +857,8 @@ public final class Ruby {
        try {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                assert parseResult instanceof RootNode;
-               return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult));
+               getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult);
+               return getNil();
            }
 
            return Interpreter.getInstance().execute(this, parseResult, self);
@@ -872,7 +873,8 @@ public final class Ruby {
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 assert rootNode instanceof RootNode;
-                return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode));
+                getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode);
+                return getNil();
             }
 
             // FIXME: retrieve from IRManager unless lifus does it later

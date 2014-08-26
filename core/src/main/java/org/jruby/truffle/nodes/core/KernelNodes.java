@@ -15,14 +15,15 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
@@ -108,7 +109,7 @@ public abstract class KernelNodes {
         public Object binding(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
         }
     }
 
@@ -127,7 +128,7 @@ public abstract class KernelNodes {
         public boolean blockGiven() {
             notDesignedForCompilation();
 
-            return RubyArguments.getBlock(RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
+            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
 
@@ -327,7 +328,7 @@ public abstract class KernelNodes {
 
             final RubyContext context = getContext();
 
-            final Frame caller = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
             final ThreadManager threadManager = context.getThreadManager();
 
@@ -384,7 +385,7 @@ public abstract class KernelNodes {
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context, "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toInt = new DispatchHeadNode(context);
         }
 
         public IntegerNode(IntegerNode prev) {
@@ -414,7 +415,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object integer(VirtualFrame frame, Object value) {
-            return toInt.dispatch(frame, value, null);
+            return toInt.call(frame, value, "to_int", null);
         }
 
     }
@@ -491,7 +492,7 @@ public abstract class KernelNodes {
 
         public PNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            inspect = new DispatchHeadNode(context);
         }
 
         public PNode(PNode prev) {
@@ -509,7 +510,7 @@ public abstract class KernelNodes {
 
             try {
                 for (Object arg : args) {
-                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.dispatch(frame, arg, null));
+                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.call(frame, arg, "inspect", null));
                 }
             } finally {
                 threadManager.enterGlobalLock(runningThread);
@@ -526,7 +527,7 @@ public abstract class KernelNodes {
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context);
         }
 
         public PrintNode(PrintNode prev) {
@@ -545,7 +546,7 @@ public abstract class KernelNodes {
             try {
                 for (Object arg : args) {
                     try {
-                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.dispatch(frame, arg, null)).getBytes().bytes());
+                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -605,7 +606,7 @@ public abstract class KernelNodes {
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
@@ -615,7 +616,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object prettyInspect(VirtualFrame frame, Object self) {
-            return toS.dispatch(frame, self, null);
+            return toS.call(frame, self, "to_s", null);
         }
     }
 
@@ -647,7 +648,7 @@ public abstract class KernelNodes {
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context);
         }
 
         public RaiseNode(RaiseNode prev) {
@@ -655,26 +656,26 @@ public abstract class KernelNodes {
             initialize = prev.initialize;
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyString message, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             return raise(frame, exceptionClass, getContext().makeString(""));
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
             notDesignedForCompilation();
 
             final RubyBasicObject exception = exceptionClass.newInstance(this);
-            initialize.dispatch(frame, exception, null, message);
+            initialize.call(frame, exception, "initialize", null, message);
             throw new RaiseException(exception);
         }
 
@@ -717,21 +718,20 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder setTraceFunc(NilPlaceholder proc) {
+        public NilPlaceholder setTraceFunc(NilPlaceholder nil) {
             notDesignedForCompilation();
 
             getContext().getTraceManager().setTraceFunc(null);
-            return proc;
+            return nil;
         }
 
         @Specialization
-        public RubyProc setTraceFunc(RubyProc proc) {
+        public RubyProc setTraceFunc(RubyProc traceFunc) {
             notDesignedForCompilation();
 
-            getContext().getTraceManager().setTraceFunc(proc);
-            return proc;
+            getContext().getTraceManager().setTraceFunc(traceFunc);
+            return traceFunc;
         }
-
     }
 
     @CoreMethod(names = "String", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
@@ -741,7 +741,7 @@ public abstract class KernelNodes {
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context);
         }
 
         public StringNode(StringNode prev) {
@@ -771,7 +771,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object string(VirtualFrame frame, Object value) {
-            return toS.dispatch(frame, value, null);
+            return toS.call(frame, value, "to_s", null);
         }
 
     }

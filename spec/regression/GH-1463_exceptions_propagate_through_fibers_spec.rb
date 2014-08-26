@@ -13,7 +13,7 @@ if (RUBY_VERSION >= '1.9')
               f = Fiber.new do
                 fiber_running = true
                 begin
-                  sleep 0.2
+                  sleep 10
                 rescue => e
                   fiber_exceptions << e
                 end

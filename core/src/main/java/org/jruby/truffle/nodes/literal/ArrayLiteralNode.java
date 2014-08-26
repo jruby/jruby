@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.runtime.*;

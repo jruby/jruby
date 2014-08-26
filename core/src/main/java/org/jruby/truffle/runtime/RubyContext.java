@@ -14,15 +14,17 @@ import java.math.*;
 import java.util.Arrays;
 import java.util.concurrent.atomic.*;
 
-import com.oracle.truffle.api.source.SourceManager;
+import com.oracle.truffle.api.instrument.SourceCallback;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -39,7 +41,7 @@ import org.jruby.util.cli.Options;
 /**
  * The global state of a running Ruby system.
  */
-public class RubyContext {
+public class RubyContext extends ExecutionContext {
 
     public static final boolean PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
     public static final boolean TRACE = Options.TRUFFLE_TRACE.load();
@@ -58,8 +60,8 @@ public class RubyContext {
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
+    private final RubyASTProber astProber;
     private final CoreLibrary coreLibrary;
-    private final SourceManager sourceManager;
     private final FeatureManager featureManager;
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager;
@@ -68,6 +70,8 @@ public class RubyContext {
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
+    private SourceCallback sourceCallback = null;
+
     private final AtomicLong nextObjectID = new AtomicLong(0);
 
     public RubyContext(Ruby runtime) {
@@ -75,6 +79,7 @@ public class RubyContext {
 
         this.runtime = runtime;
         translator = new TranslatorDriver(this);
+        astProber = new RubyASTProber();
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
@@ -83,7 +88,6 @@ public class RubyContext {
         coreLibrary = new CoreLibrary(this);
         coreLibrary.initialize();
 
-        sourceManager = new SourceManager();
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
         atExitManager = new AtExitManager();
@@ -107,7 +111,13 @@ public class RubyContext {
     }
 
     private void loadFileAbsolute(String fileName, RubyNode currentNode) {
-        final Source source = sourceManager.get(fileName);
+        final Source source;
+
+        try {
+            source = Source.fromFileName(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         final String code = source.getCode();
         if (code == null) {
@@ -132,17 +142,17 @@ public class RubyContext {
     }
 
     public Object eval(String code, RubyNode currentNode) {
-        final Source source = sourceManager.get("(eval)", code);
+        final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
     public Object eval(String code, RubyModule module, RubyNode currentNode) {
-        final Source source = sourceManager.get("(eval)", code);
+        final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.MODULE, module, null, currentNode);
     }
 
     public Object eval(String code, RubyBinding binding, RubyNode currentNode) {
-        final Source source = sourceManager.get("(eval)", code);
+        final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);
     }
 
@@ -178,7 +188,7 @@ public class RubyContext {
     }
 
     public ShellResult evalShell(String code, MaterializedFrame existingLocals) {
-        final Source source = sourceManager.get("(shell)", code);
+        final Source source = Source.fromText(code, "shell");
         return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals, null);
     }
 
@@ -360,15 +370,29 @@ public class RubyContext {
         return atExitManager;
     }
 
+    @Override
+    public String getLanguageShortName() {
+        return "ruby";
+    }
+
+    @Override
+    public void setSourceCallback(SourceCallback sourceCallback) {
+        this.sourceCallback = sourceCallback;
+    }
+
+    public SourceCallback getSourceCallback() {
+        return sourceCallback;
+    }
+
     public TruffleHooks getHooks() {
         return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
     }
 
-    public TraceManager getTraceManager() {
-        return traceManager;
+    public RubyASTProber getASTProber() {
+        return astProber;
     }
 
-    public SourceManager getSourceManager() {
-        return sourceManager;
+    public TraceManager getTraceManager() {
+        return traceManager;
     }
 }

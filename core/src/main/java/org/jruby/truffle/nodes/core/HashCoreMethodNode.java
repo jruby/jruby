@@ -9,11 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.util.cli.Options;
 
 import java.util.LinkedHashMap;
 

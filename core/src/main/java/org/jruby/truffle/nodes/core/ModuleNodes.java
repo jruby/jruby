@@ -10,19 +10,16 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.NodeUtil;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.methods.CatchReturnNode;
-import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -54,21 +51,6 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
-
-            if (self == other || self.getLookupNode().chainContains(other)) {
-                return true;
-            }
-
-            if (other.getLookupNode().chainContains(self)) {
-                return false;
-            }
-
-            return NilPlaceholder.INSTANCE;
-        }
-
-        @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyClass self, RubyClass other) {
             notDesignedForCompilation();
 
@@ -96,6 +78,21 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
+        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
+            notDesignedForCompilation();
+
+            if (self == other || self.getLookupNode().chainContains(other)) {
+                return true;
+            }
+
+            if (other.getLookupNode().chainContains(self)) {
+                return false;
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+        @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
             notDesignedForCompilation();
 
@@ -112,7 +109,7 @@ public abstract class ModuleNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            subclassNode = new DispatchHeadNode(context, "<=", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            subclassNode = new DispatchHeadNode(context);
             booleanCastNode = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
@@ -129,7 +126,7 @@ public abstract class ModuleNodes {
                 return 0;
             }
 
-            final Object isSubclass = subclassNode.dispatch(frame, self, null, other);
+            final Object isSubclass = subclassNode.call(frame, self, "<=", null, other);
 
             if (RubyNilClass.isNil(isSubclass)) {
                 return NilPlaceholder.INSTANCE;
@@ -203,7 +200,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrReader(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -255,7 +252,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrWriter(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -308,7 +305,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrAccessor(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -348,31 +345,31 @@ public abstract class ModuleNodes {
             yield = prev.yield;
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = getContext().getSourceManager().get("(eval)", code.toString());
+            final Source source = Source.fromText(code.toString(), "(eval)");
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
@@ -423,8 +420,13 @@ public abstract class ModuleNodes {
         public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
             notDesignedForCompilation();
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (String constant : module.getConstants().keySet()) {
+                array.slowPush(getContext().newSymbol(constant));
+            }
+
+            return array;
         }
     }
 
@@ -439,14 +441,14 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
             return module.lookupConstant(name.toString()) != null;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, boolean inherit) {
             notDesignedForCompilation();
 
@@ -457,7 +459,7 @@ public abstract class ModuleNodes {
             }
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
@@ -477,14 +479,14 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -493,14 +495,14 @@ public abstract class ModuleNodes {
             return symbol;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
@@ -511,20 +513,7 @@ public abstract class ModuleNodes {
         private void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             notDesignedForCompilation();
 
-            if (!(proc.getCallTarget() instanceof RootCallTarget)) {
-                throw new UnsupportedOperationException("Can only use define_method with methods where we have the original AST, as we need to clone and modify it");
-            }
-
-            final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) proc.getCallTarget()).getRootNode();
-            final CatchReturnPlaceholderNode currentCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnPlaceholderNode.class);
-
-            if (currentCatchReturn == null) {
-                throw new UnsupportedOperationException("Doesn't seem to have a " + CatchReturnPlaceholderNode.class.getName());
-            }
-
-            currentCatchReturn.replace(new CatchReturnNode(getContext(), currentCatchReturn.getSourceSection(), currentCatchReturn.getBody(), currentCatchReturn.getReturnID()));
-
-            final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
+            final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
             final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
         }
@@ -559,7 +548,7 @@ public abstract class ModuleNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context, "append_features", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            appendFeaturesNode = new DispatchHeadNode(context);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -577,8 +566,7 @@ public abstract class ModuleNodes {
                 if (args[n] instanceof RubyModule) {
                     final RubyModule included = (RubyModule) args[n];
 
-                    // Note that we do appear to do full method lookup here
-                    appendFeaturesNode.dispatch(frame, included, null, module);
+                    appendFeaturesNode.call(frame, included, "append_features", null, module);
 
                     // TODO(cs): call included hook
                 }
@@ -599,12 +587,12 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             return module.lookupMethod(name.toString()) != null;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, boolean inherit) {
             notDesignedForCompilation();
 
@@ -615,7 +603,7 @@ public abstract class ModuleNodes {
             }
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
@@ -659,7 +647,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (args.length == 0) {
-                final Frame unpacked = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+                final Frame unpacked = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
                 final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
 
@@ -773,6 +761,7 @@ public abstract class ModuleNodes {
             return module;
         }
     }
+
     @CoreMethod(names = "private_instance_methods", minArgs = 0, maxArgs = 1)
     public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
 
@@ -804,6 +793,45 @@ public abstract class ModuleNodes {
             }
             for (RubyMethod method : methods) {
                 if (method.getVisibility() == Visibility.PRIVATE){
+                    RubySymbol m = getContext().newSymbol(method.getName());
+                    array.slowPush(m);
+                }
+            }
+            return array;
+        }
+    }
+
+    @CoreMethod(names = "public_instance_methods", minArgs = 0, maxArgs = 1)
+    public abstract static class PublicInstanceMethodsNode extends CoreMethodNode {
+
+        public PublicInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicInstanceMethodsNode(PublicInstanceMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray publicInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return publicInstanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<RubyMethod> methods = module.getDeclaredMethods();
+            if (includeAncestors) {
+                RubyModule parent = module.getParentModule();
+                while(parent != null){
+                    methods.addAll(parent.getDeclaredMethods());
+                    parent = parent.getParentModule();
+                }
+            }
+            for (RubyMethod method : methods) {
+                if (method.getVisibility() == Visibility.PUBLIC){
                     RubySymbol m = getContext().newSymbol(method.getName());
                     array.slowPush(m);
                 }

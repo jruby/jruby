@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.call.*;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -25,7 +25,7 @@ public abstract class ComparableNodes {
 
         public ComparableCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context);
         }
 
         public ComparableCoreMethodNode(ComparableCoreMethodNode prev) {
@@ -34,7 +34,7 @@ public abstract class ComparableNodes {
         }
 
         public int compare(VirtualFrame frame, RubyBasicObject receiverObject, Object comparedTo) {
-            return (int) compareNode.dispatch(frame, receiverObject, null, comparedTo);
+            return (int) compareNode.call(frame, receiverObject, "<=>", null, comparedTo);
         }
 
     }

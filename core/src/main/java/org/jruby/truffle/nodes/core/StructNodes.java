@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -45,7 +46,7 @@ public abstract class StructNodes {
             }
 
             for (RubySymbol symbol : symbols) {
-                ModuleNodes.AttrAccessorNode.attrAccessor(this, getContext(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
+                ModuleNodes.AttrAccessorNode.attrAccessor(this, getContext(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
             }
 
             return NilPlaceholder.INSTANCE;
@@ -62,7 +63,7 @@ public abstract class StructNodes {
             }
 
             for (RubySymbol symbol : symbols) {
-                ModuleNodes.AttrAccessorNode.attrAccessor(this, getContext(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
+                ModuleNodes.AttrAccessorNode.attrAccessor(this, getContext(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
             }
 
             yield.dispatchWithModifiedSelf(frame, block, struct);

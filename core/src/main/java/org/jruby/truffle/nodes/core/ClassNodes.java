@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -58,7 +58,7 @@ public abstract class ClassNodes {
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context);
         }
 
         public NewNode(NewNode prev) {
@@ -78,7 +78,7 @@ public abstract class ClassNodes {
 
         private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
             final RubyBasicObject instance = rubyClass.newInstance(this);
-            initialize.dispatch(frame, instance, block, args);
+            initialize.call(frame, instance, "initialize", block, args);
             return instance;
         }
 

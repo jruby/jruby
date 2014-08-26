@@ -9,11 +9,11 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.*;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -27,7 +27,7 @@ public abstract class ProcCastNode extends RubyNode {
 
     public ProcCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toProc = new DispatchHeadNode(context, "to_proc", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        toProc = new DispatchHeadNode(context);
     }
 
     public ProcCastNode(ProcCastNode prev) {
@@ -49,7 +49,7 @@ public abstract class ProcCastNode extends RubyNode {
     public RubyProc doObject(VirtualFrame frame, RubyBasicObject object) {
         notDesignedForCompilation();
 
-        return (RubyProc) toProc.dispatch(frame, object, null);
+        return (RubyProc) toProc.call(frame, object, "to_proc", null);
     }
 
 }

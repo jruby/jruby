@@ -9,11 +9,11 @@
  */
 package org.jruby.truffle.nodes.control;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 
@@ -27,7 +27,7 @@ public class WhenSplatNode extends RubyNode {
         super(context, sourceSection);
         this.readCaseExpression = readCaseExpression;
         this.splat = splat;
-        dispatchThreeEqual = new DispatchHeadNode(context, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchThreeEqual = new DispatchHeadNode(context);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class WhenSplatNode extends RubyNode {
         for (Object value : array.slowToArray()) {
             // TODO(CS): how to cast this to a boolean?
 
-            if ((boolean) dispatchThreeEqual.dispatch(frame, caseExpression, null, value)) {
+            if ((boolean) dispatchThreeEqual.call(frame, caseExpression, "===", null, value)) {
                 return true;
             }
         }

@@ -10,15 +10,14 @@
 package org.jruby.truffle.nodes.cast;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -38,7 +37,7 @@ public abstract class SplatCastNode extends RubyNode {
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
-        toA = new DispatchHeadNode(context, true, "to_a", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        toA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
     }
 
     public SplatCastNode(SplatCastNode prev) {
@@ -74,7 +73,7 @@ public abstract class SplatCastNode extends RubyNode {
         } else if (object instanceof RubyArray) {
             return (RubyArray) object;
         } else {
-            final Object array = toA.dispatch(frame, object, null);
+            final Object array = toA.call(frame, object, "to_a", null);
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;

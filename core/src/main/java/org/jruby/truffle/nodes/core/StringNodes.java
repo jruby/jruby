@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
@@ -213,13 +213,13 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public RubyString getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
             // TODO(CS): not really right
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(new byte[]{(byte) string.getBytes().charAt(string.normaliseIndex(index))}, string.getBytes().getEncoding()));
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public RubyString getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
@@ -236,7 +236,7 @@ public abstract class StringNodes {
             }
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public RubyString getIndex(RubyString string, int start, int length) {
             // TODO(CS): not sure if this is right - encoding
             // TODO(CS): why does subSequence return CharSequence?

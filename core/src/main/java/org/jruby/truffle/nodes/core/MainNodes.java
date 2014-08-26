@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -26,7 +26,7 @@ public abstract class MainNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context, "append_features", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            appendFeaturesNode = new DispatchHeadNode(context);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -47,7 +47,7 @@ public abstract class MainNodes {
                     final RubyModule included = (RubyModule) args[n];
 
                     // Note that we do appear to do full method lookup here
-                    appendFeaturesNode.dispatch(frame, included, null, main.getSingletonClass(this));
+                    appendFeaturesNode.call(frame, included, "append_features", null, main.getSingletonClass(this));
 
                     // TODO(cs): call included hook
                 }

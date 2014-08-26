@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
@@ -51,11 +51,19 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
-            reportedSourceSection = activations.get(1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
+            reportedSourceSection = nextUserSourceSection(activations, 1);
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
         } else {
             reportedSourceSection = sourceSection;
-            reportedName = sourceSection.getIdentifier();
+            reportedName = reportedSourceSection.getIdentifier();
+        }
+
+        if (reportedSourceSection == null) {
+            throw new IllegalStateException("Call node has no encapsulating source section");
+        }
+
+        if (reportedSourceSection.getSource() == null) {
+            throw new IllegalStateException("Call node source section " + reportedSourceSection + " has no source");
         }
 
         builder.append(reportedSourceSection.getSource().getName());
@@ -87,7 +95,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = sourceSection.getIdentifier();
@@ -101,6 +109,18 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         builder.append("'");
 
         return builder.toString();
+    }
+
+    private static SourceSection nextUserSourceSection(List<Activation> activations, int n) {
+        while (true) {
+            SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
+
+            if (!(sourceSection instanceof CoreSourceSection)) {
+                return sourceSection;
+            }
+
+            n++;
+        }
     }
 
 }

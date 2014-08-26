@@ -12,12 +12,11 @@ package org.jruby.truffle.nodes.core;
 import java.math.*;
 import java.util.*;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -90,37 +89,37 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a == b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
@@ -183,14 +182,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = {"send", "__send__"}, needsBlock = true, minArgs = 1, isSplatted = true)
     public abstract static class SendNode extends CoreMethodNode {
 
-        @Child protected DynamicNameDispatchHeadNode dispatchNode;
-
-        private final BranchProfile symbolProfile = new BranchProfile();
-        private final BranchProfile stringProfile = new BranchProfile();
+        @Child protected DispatchHeadNode dispatchNode;
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatchNode = new DynamicNameDispatchHeadNode(context);
+            dispatchNode = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public SendNode(SendNode prev) {
@@ -202,34 +198,14 @@ public abstract class BasicObjectNodes {
         public Object send(VirtualFrame frame, RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final Object name = args[0];
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
-
-            if (name instanceof RubySymbol) {
-                symbolProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubySymbol) name, null, sendArgs);
-            } else if (name instanceof RubyString) {
-                stringProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubyString) name, null, sendArgs);
-            } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
-            }
+            return dispatchNode.call(frame, self, name, null, sendArgs);
         }
 
         @Specialization
         public Object send(VirtualFrame frame, RubyBasicObject self, Object[] args, RubyProc block) {
             final Object name = args[0];
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
-
-            if (name instanceof RubySymbol) {
-                symbolProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubySymbol) name, block, sendArgs);
-            } else if (name instanceof RubyString) {
-                stringProfile.enter();
-                return dispatchNode.dispatch(frame, self, (RubyString) name, block, sendArgs);
-            } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
-            }
+            return dispatchNode.call(frame, self, name, block, sendArgs);
         }
 
     }

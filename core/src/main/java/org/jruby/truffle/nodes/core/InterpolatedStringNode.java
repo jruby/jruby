@@ -10,10 +10,11 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
@@ -29,7 +30,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        toS = new DispatchHeadNode(context);
     }
 
     @ExplodeLoop
@@ -38,7 +39,7 @@ public final class InterpolatedStringNode extends RubyNode {
         final RubyString[] strings = new RubyString[children.length];
 
         for (int n = 0; n < children.length; n++) {
-            strings[n] = (RubyString) toS.dispatch(frame, children[n].execute(frame), null);
+            strings[n] = (RubyString) toS.call(frame, children[n].execute(frame), "to_s", null);
         }
 
         return concat(strings);

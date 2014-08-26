@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -73,7 +73,7 @@ public class RubiniusBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
+            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
             reportedMethod = RubyArguments.getMethod(activations.get(n).getMaterializedFrame().getArguments());
         } else {
             reportedSourceSection = sourceSection;
