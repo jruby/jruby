@@ -125,6 +125,7 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.cli.Options;
 
 public class RubyParser {
     protected ParserSupport support;
@@ -145,7 +146,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 149 "-"
+					// line 150 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3363,7 +3364,9 @@ states[308] = new ParserState() {
 };
 states[309] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.warning(ID.GROUPED_EXPRESSION, ((ISourcePosition)yyVals[-3+yyTop]), "(...) interpreted as grouped expression");
+                    if (Options.PARSER_WARN_GROUPED_EXPRESSIONS.load()) {
+                      support.warning(ID.GROUPED_EXPRESSION, ((ISourcePosition)yyVals[-3+yyTop]), "(...) interpreted as grouped expression");
+                    }
                     yyVal = ((Node)yyVals[-2+yyTop]);
     return yyVal;
   }
@@ -5195,7 +5198,7 @@ states[631] = new ParserState() {
   }
 };
 }
-					// line 2477 "RubyParser.y"
+					// line 2480 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5214,4 +5217,4 @@ states[631] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 9611 "-"
+					// line 9614 "-"

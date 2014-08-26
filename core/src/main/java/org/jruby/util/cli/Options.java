@@ -56,8 +56,11 @@ public class Options {
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output.
 
-    public static final Option<Boolean> PARSER_WARN_USELESSS_USE_OF = bool(PARSER, "parser.warn.useless_use_of", true, "Print warnings about potentially useless expressions in void contents.");
-    public static final Option<Boolean> PARSER_WARN_NOT_REACHED = bool(PARSER, "parser.warn.not_reached", true, "Print warnings about statements that can never be reached.");
+    public static final Option<Boolean> PARSER_WARN_USELESSS_USE_OF = bool(PARSER, "parser.warn.useless_use_of", true, "Warn about potentially useless expressions in void contents.");
+    public static final Option<Boolean> PARSER_WARN_NOT_REACHED = bool(PARSER, "parser.warn.not_reached", true, "Warn about statements that can never be reached.");
+    public static final Option<Boolean> PARSER_WARN_GROUPED_EXPRESSIONS = bool(PARSER, "parser.warn.grouped_expressions", true, "Warn about interpreting (...) as a grouped expression.");
+    public static final Option<Boolean> PARSER_WARN_LOCAL_SHADOWING = bool(PARSER, "parser.warn.shadowing_local", true, "Warn about shadowing local variables.");
+    public static final Option<Boolean> PARSER_WARN_REGEX_CONDITION = bool(PARSER, "parser.warn.regex_condition", true, "Warn about regex literals in conditions.");
     public static final Option<Boolean> PARSER_ALWAYS_TRUFFLE_POSITIONS = bool(PARSER, "parser.always_truffle_positions", false, "Always generate Truffle source positions, even if we're not -X+T.");
 
     public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");

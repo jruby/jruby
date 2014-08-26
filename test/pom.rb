@@ -149,6 +149,9 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xtruffle.exceptions.print_java=true" />' +
                           '<arg value="-Xparser.warn.useless_use_of=false" />' +
                           '<arg value="-Xparser.warn.not_reached=false" />' +
+                          '<arg value="-Xparser.warn.grouped_expressions=false" />' +
+                          '<arg value="-Xparser.warn.shadowing_local=false" />' +
+                          '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-J-ea" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
                           '<arg value="run" />' +
@@ -162,6 +165,12 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.useless_use_of=false" />' +
                           '<arg value="-T" />' +
                           '<arg value="-Xparser.warn.not_reached=false" />' +
+                          '<arg value="-T" />' +
+                          '<arg value="-Xparser.warn.grouped_expressions=false" />' +
+                          '<arg value="-T" />' +
+                          '<arg value="-Xparser.warn.shadowing_local=false" />' +
+                          '<arg value="-T" />' +
+                          '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-T" />' +
                           '<arg value="-J-ea" />' +
                           '<arg value="--config" />' +
