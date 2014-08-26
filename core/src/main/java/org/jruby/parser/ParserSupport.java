@@ -207,7 +207,7 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.WARN_NOT_REACHED.load()) {
+        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
             warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "Statement not reached.");
         }
 
@@ -446,7 +446,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(Node node, String useless) {
-        if (Options.WARN_USELESSS_USE_OF.load()) {
+        if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
             warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.");
         }
     }
