@@ -699,8 +699,18 @@ public class BodyTranslator extends Translator {
         RubyNode readNode = environment.findLocalVarNode(node.getName(), translate(node.getPosition()));
 
         if (readNode == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "can't find variable " + node.getName() + ", translating as nil");
-            readNode = new NilLiteralNode(context, translate(node.getPosition()));
+            // If we haven't seen this dvar before it's possible that it's a block local variable
+
+            final int depth = node.getDepth();
+
+            TranslatorEnvironment e = environment;
+
+            for (int n = 0; n < node.getDepth(); n++) {
+                e = e.getParent();
+            }
+
+            e.declareVar(node.getName());
+            readNode = e.findLocalVarNode(node.getName(), translate(node.getPosition()));
         }
 
         return readNode;
