@@ -35,7 +35,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-enxio:0.4'
   jar 'com.github.jnr:jnr-x86asm:1.0.2'
   jar 'com.github.jnr:jnr-unixsocket:0.3'
-  jar 'com.github.jnr:jnr-posix:3.0.2-SNAPSHOT'
+  jar 'com.github.jnr:jnr-posix:3.0.2'
   jar 'com.github.jnr:jnr-constants:0.8.6-SNAPSHOT'
   jar 'com.github.jnr:jnr-ffi:2.0.0-SNAPSHOT'
   jar 'com.github.jnr:jffi:${jffi.version}'
@@ -233,7 +233,8 @@ project 'JRuby Core' do
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'includes' => [ 'org/jruby/test/MainTestSuite.java',
-                          'org/jruby/embed/**/*Test*.java' ],
+                          'org/jruby/embed/**/*Test*.java',
+                          'org/jruby/util/**/*Test*.java' ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   build do

@@ -69,7 +69,7 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             boolean receiverObject,
             Object methodName,
             Object blockObject,
-            Object[] argumentsObjects,
+            Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
         if (receiverObject) {
             trueProfile.enter();
@@ -97,7 +97,7 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                                 trueMethod.getDeclarationFrame(),
                                 receiverObject,
                                 CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                argumentsObjects));
+                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
             } else {
@@ -129,7 +129,7 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                                 falseMethod.getDeclarationFrame(),
                                 receiverObject,
                                 CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                argumentsObjects));
+                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
             } else {

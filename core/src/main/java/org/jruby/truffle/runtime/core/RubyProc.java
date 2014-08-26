@@ -87,6 +87,8 @@ public class RubyProc extends RubyObject implements MethodLike {
     public Object rootCall(Object... args) {
         RubyNode.notDesignedForCompilation();
 
+        // TODO(CS): handle exceptions in here?
+
         return getCallTargetForType().call(RubyArguments.pack(this, declarationFrame, self, block, args));
     }
 

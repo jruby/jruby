@@ -50,7 +50,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
-            Object[] argumentsObjects,
+            Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 

@@ -14,11 +14,16 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.signal.ProcSignalHandler;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 @CoreClass(name = "Signal")
 public abstract class SignalNodes {
 
-    @CoreMethod(names = "trap", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "trap", isModuleMethod = true, needsSelf = false, needsBlock = true, minArgs = 1, maxArgs = 2)
     public abstract static class SignalNode extends CoreMethodNode {
 
         public SignalNode(RubyContext context, SourceSection sourceSection) {
@@ -30,10 +35,25 @@ public abstract class SignalNodes {
         }
 
         @Specialization
-        public NilPlaceholder trap(@SuppressWarnings("unused") Object signal) {
+        public Object trap(RubyString signalName, UndefinedPlaceholder command, final RubyProc block) {
             notDesignedForCompilation();
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Signal#trap doesn't do anything");
+            final Signal signal = new Signal(signalName.toString());
+
+            final SignalHandler newHandler = new ProcSignalHandler(block);
+            final SignalHandler oldHandler = Signal.handle(signal, newHandler);
+
+            if (oldHandler instanceof ProcSignalHandler) {
+                return ((ProcSignalHandler) oldHandler).getProc();
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+        @Specialization
+        public Object trap(RubyString signalName, RubyString command, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Signal#trap with a string command not implemented yet");
             return NilPlaceholder.INSTANCE;
         }
 

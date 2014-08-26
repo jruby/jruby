@@ -63,7 +63,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
-            Object[] argumentsObjects,
+            Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode(), methodName);
 
@@ -105,15 +105,17 @@ public abstract class GenericDispatchNode extends DispatchNode {
         }
 
         if (dispatchAction == Dispatch.DispatchAction.CALL) {
+            final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+
             final Object[] argumentsToUse;
 
             if (hasAnyMethodsMissing && entry.isMethodMissing()) {
-                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
+                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
                 modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
-                System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
+                System.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
                 argumentsToUse = modifiedArgumentsObjects;
             } else {
-                argumentsToUse = argumentsObjects;
+                argumentsToUse = argumentsObjectsArray;
             }
 
             return callNode.call(

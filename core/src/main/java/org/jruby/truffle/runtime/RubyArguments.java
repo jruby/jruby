@@ -29,7 +29,7 @@ public final class RubyArguments {
     public static final int BLOCK_INDEX = 3;
     public static final int RUNTIME_ARGUMENT_COUNT = 4;
 
-    public static Object[] pack(MethodLike method, MaterializedFrame declarationFrame, Object self, RubyProc block, Object... arguments) {
+    public static Object[] pack(MethodLike method, MaterializedFrame declarationFrame, Object self, RubyProc block, Object[] arguments) {
         assert RubyContext.shouldObjectBeVisible(self);
         assert RubyContext.shouldObjectsBeVisible(arguments);
 

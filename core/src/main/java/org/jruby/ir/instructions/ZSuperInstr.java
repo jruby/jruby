@@ -72,8 +72,8 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
             superArgs[j] = allPossibleArgs[offset+j];
         }
 
-        // Prepare args -- but look up in 'argsDynScope', not 'currDynScope'
-        IRubyObject[] args = prepareArguments(context, self, superArgs, currScope, argsDynScope, temp);
+        // Prepare args
+        IRubyObject[] args = prepareArguments(context, self, superArgs, currScope, currDynScope, temp);
 
         // Prepare block -- fetching from the frame stack, if necessary
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
