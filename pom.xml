@@ -295,7 +295,6 @@
             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
             <preBuildHookScript>setup.bsh</preBuildHookScript>
             <postBuildHookScript>verify.bsh</postBuildHookScript>
-	    <skip>true</skip>
             <streamLogs>true</streamLogs>
           </configuration>
         </plugin>
@@ -605,6 +604,9 @@
         <module>test</module>
         <module>maven</module>
       </modules>
+      <properties>
+        <invoker.skip>true</invoker.skip>
+      </properties>
     </profile>
     <profile>
       <id>snapshots</id>

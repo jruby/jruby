@@ -224,6 +224,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   profile 'release' do
     modules [ 'test', 'maven' ]
+    properties 'invoker.skip' => true
   end
 
   profile 'snapshots' do
