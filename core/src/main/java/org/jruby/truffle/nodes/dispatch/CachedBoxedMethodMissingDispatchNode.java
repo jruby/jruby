@@ -33,10 +33,9 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
 
     @Child protected DirectCallNode callNode;
 
-    public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next, LookupNode expectedLookupNode, RubyMethod method) {
+    public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
+                                                LookupNode expectedLookupNode, RubyMethod method) {
         super(context, cachedName, next);
-        assert expectedLookupNode != null;
-        assert method != null;
 
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
@@ -53,39 +52,61 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         callNode = prev.callNode;
     }
 
-    @Specialization(guards = {"guardName"})
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
+    @Specialization(guards = "guardName")
+    public Object dispatch(
+            VirtualFrame frame,
+            NilPlaceholder methodReceiverObject,
+            Object callingSelf,
+            RubyBasicObject receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object[] argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {
-            return doNext(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), argumentsObjects, dispatchAction);
+            return next.executeDispatch(
+                    frame,
+                    methodReceiverObject,
+                    callingSelf,
+                    receiverObject,
+                    methodName,
+                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    argumentsObjects,
+                    dispatchAction);
         }
-        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
-    }
 
-
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, Dispatch.DispatchAction dispatchAction) {
         // Check the class has not been modified
 
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return resetAndDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, "class modified");
+            return resetAndDispatch(
+                    frame,
+                    methodReceiverObject,
+                    callingSelf,
+                    receiverObject,
+                    methodName,
+                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    argumentsObjects,
+                    dispatchAction,
+                    "class modified");
         }
 
         if (dispatchAction == Dispatch.DispatchAction.CALL) {
             // When calling #method_missing we need to prepend the symbol
 
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-
-            // FIXME!!!!!
             modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
-
             System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
-
-            // Call the method
-
-            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
+            return callNode.call(
+                    frame,
+                    RubyArguments.pack(
+                            method,
+                            method.getDeclarationFrame(),
+                            receiverObject,
+                            CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                            modifiedArgumentsObjects));
         } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return false;
         } else {
@@ -93,13 +114,25 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         }
     }
 
-    @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
-        return doNext(frame, methodReceiverObject, callingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), argumentsObjects, dispatchAction);
-    }
 
-    private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction) {
-        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+    @Fallback
+    public Object dispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        return next.executeDispatch(
+                frame,
+                methodReceiverObject,
+                callingSelf,
+                receiverObject,
+                methodName,
+                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                argumentsObjects, dispatchAction);
     }
 
 
