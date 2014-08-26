@@ -53,17 +53,16 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
-        final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(callingSelf);
-        final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
-
         if (callingSelf instanceof RubyBasicObject && receiverObject instanceof RubyBasicObject) {
-            return doRubyBasicObject(frame, methodReceiverObject, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, first, boxedCallingSelf, boxedReceiverObject);
+            return doRubyBasicObject(frame, first, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, methodReceiverObject);
         } else {
-            return doUnboxedObject(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, first, boxedCallingSelf, boxedReceiverObject);
+            return doUnboxedObject(frame, first, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, methodReceiverObject);
         }
     }
 
-    private Object doUnboxedObject(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction, DispatchNode first, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject) {
+    private Object doUnboxedObject(VirtualFrame frame, DispatchNode first, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction, Object methodReceiverObject) {
+        final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(callingSelf);
+        final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
         final RubyMethod method;
 
         try {
@@ -116,7 +115,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
     }
 
-    private Object doRubyBasicObject(VirtualFrame frame, Object methodReceiverObject, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction, DispatchNode first, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject) {
+    private Object doRubyBasicObject(VirtualFrame frame, DispatchNode first, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction, Object methodReceiverObject) {
+        final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(callingSelf);
+        final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
         final RubyMethod method;
 
         try {
