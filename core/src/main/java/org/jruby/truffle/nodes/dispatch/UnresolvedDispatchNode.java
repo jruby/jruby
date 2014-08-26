@@ -57,83 +57,91 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
 
         if (callingSelf instanceof RubyBasicObject && receiverObject instanceof RubyBasicObject) {
-            final RubyMethod method;
-
-            try {
-                method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
-                        dispatchAction);
-            } catch (UseMethodMissingException e) {
-                final DispatchNode newDispatch = createMethodMissingNode(methodName, boxedCallingSelf,
-                        boxedReceiverObject, dispatchAction);
-                return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, boxedReceiverObject,
-                        methodName, blockObject, argumentsObjects, dispatchAction);
-            }
-
-            final DispatchNode newDispatch;
-
-            if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
-                newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, method, null,
-                        null, null, null, null, null, null);
-            } else {
-                newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        boxedReceiverObject.getLookupNode(), method, null, null, null, null, null, null, null);
-            }
-
-            first.replace(newDispatch);
-            return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject,
-                    methodName, blockObject, argumentsObjects, dispatchAction);
+            return doRubyBasicObject(frame, methodReceiverObject, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, first, boxedCallingSelf, boxedReceiverObject);
         } else {
-            final RubyMethod method;
+            return doUnboxedObject(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction, first, boxedCallingSelf, boxedReceiverObject);
+        }
+    }
 
+    private Object doUnboxedObject(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction, DispatchNode first, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject) {
+        final RubyMethod method;
+
+        try {
+            method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
+                    dispatchAction);
+        } catch (UseMethodMissingException e) {
+            final DispatchNode newDispatch = createMethodMissingNode(methodName, boxedCallingSelf,
+                    boxedReceiverObject, dispatchAction);
+            return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, boxedReceiverObject,
+                    methodName, blockObject, argumentsObjects, dispatchAction);
+        }
+
+        if (receiverObject instanceof Boolean) {
             try {
-                method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
-                        dispatchAction);
-            } catch (UseMethodMissingException e) {
-                final DispatchNode newDispatch = createMethodMissingNode(methodName, boxedCallingSelf,
-                        boxedReceiverObject, dispatchAction);
-                return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, boxedReceiverObject,
-                        methodName, blockObject, argumentsObjects, dispatchAction);
-            }
+                final Assumption falseUnmodifiedAssumption =
+                        getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
 
-            if (receiverObject instanceof  Boolean) {
-                try {
-                    final Assumption falseUnmodifiedAssumption =
-                            getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
+                final RubyMethod falseMethod =
+                        lookup(boxedCallingSelf, getContext().getCoreLibrary().box(false), methodName.toString(),
+                                ignoreVisibility, dispatchAction);
 
-                    final RubyMethod falseMethod =
-                            lookup(boxedCallingSelf, getContext().getCoreLibrary().box(false), methodName.toString(),
-                                    ignoreVisibility, dispatchAction);
+                final Assumption trueUnmodifiedAssumption =
+                        getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
 
-                    final Assumption trueUnmodifiedAssumption =
-                            getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
+                final RubyMethod trueMethod =
+                        lookup(boxedCallingSelf, getContext().getCoreLibrary().box(true), methodName.toString(),
+                                ignoreVisibility, dispatchAction);
 
-                    final RubyMethod trueMethod =
-                            lookup(boxedCallingSelf, getContext().getCoreLibrary().box(true), methodName.toString(),
-                                    ignoreVisibility, dispatchAction);
-
-                    final CachedBooleanDispatchNode newDispatch = CachedBooleanDispatchNodeFactory.create(getContext(),
-                            methodName, first, falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption,
-                            trueMethod, null, null, null, null, null, null, null);
-
-                    first.replace(newDispatch);
-
-                    return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject,
-                            methodName, blockObject, argumentsObjects, dispatchAction);
-                } catch (UseMethodMissingException e) {
-                    throw new UnsupportedOperationException();
-                }
-            } else {
-                final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
-                        methodName, first, receiverObject.getClass(),
-                        boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), method, null, null, null, null,
-                        null, null, null);
+                final CachedBooleanDispatchNode newDispatch = CachedBooleanDispatchNodeFactory.create(getContext(),
+                        methodName, first, falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption,
+                        trueMethod, null, null, null, null, null, null, null);
 
                 first.replace(newDispatch);
 
-                return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName,
-                        blockObject, argumentsObjects, dispatchAction);
+                return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject,
+                        methodName, blockObject, argumentsObjects, dispatchAction);
+            } catch (UseMethodMissingException e) {
+                throw new UnsupportedOperationException();
             }
+        } else {
+            final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
+                    methodName, first, receiverObject.getClass(),
+                    boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), method, null, null, null, null,
+                    null, null, null);
+
+            first.replace(newDispatch);
+
+            return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName,
+                    blockObject, argumentsObjects, dispatchAction);
         }
+    }
+
+    private Object doRubyBasicObject(VirtualFrame frame, Object methodReceiverObject, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, Dispatch.DispatchAction dispatchAction, DispatchNode first, RubyBasicObject boxedCallingSelf, RubyBasicObject boxedReceiverObject) {
+        final RubyMethod method;
+
+        try {
+            method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
+                    dispatchAction);
+        } catch (UseMethodMissingException e) {
+            final DispatchNode newDispatch = createMethodMissingNode(methodName, boxedCallingSelf,
+                    boxedReceiverObject, dispatchAction);
+            return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, boxedReceiverObject,
+                    methodName, blockObject, argumentsObjects, dispatchAction);
+        }
+
+        final DispatchNode newDispatch;
+
+        if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
+            newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, method, null,
+                    null, null, null, null, null, null);
+        } else {
+            newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
+                    boxedReceiverObject.getLookupNode(), method, null, null, null, null, null, null, null);
+        }
+
+        first.replace(newDispatch);
+        return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject,
+                methodName, blockObject, argumentsObjects, dispatchAction);
     }
 
     private DispatchNode createMethodMissingNode(
