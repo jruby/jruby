@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -28,6 +29,8 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import java.util.Arrays;
 
 public class RubyCallNode extends RubyNode {
+
+    private final String methodName;
 
     @Child protected RubyNode receiver;
     @Child protected ProcOrNullNode block;
@@ -47,12 +50,10 @@ public class RubyCallNode extends RubyNode {
     @Child protected DispatchHeadNode respondToMissing;
     @Child protected BooleanCastNode respondToMissingCast;
 
-    public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
 
-        assert receiver != null;
-        assert arguments != null;
-        assert name != null;
+        this.methodName = methodName;
 
         this.receiver = receiver;
 
@@ -65,8 +66,8 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context, name, isSplatted, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, "respond_to_missing?", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        dispatchHead = new DispatchHeadNode(context);
+        respondToMissing = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
 
@@ -79,7 +80,7 @@ public class RubyCallNode extends RubyNode {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
 
-        return dispatchHead.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+        return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
     private RubyProc executeBlock(VirtualFrame frame) {
@@ -183,14 +184,14 @@ public class RubyCallNode extends RubyNode {
 
         // TODO(CS): this lookup should be cached
 
-        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(dispatchHead.getName());
+        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(methodName);
 
         final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
         if (method == null) {
-            final Object r = respondToMissing.dispatch(frame, receiverBasicObject, null, context.makeString(dispatchHead.getName()));
+            final Object r = respondToMissing.call(frame, receiverBasicObject, "respond_to_missing?", null, context.makeString(methodName));
 
-            if (r != DispatchHeadNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
+            if (r != Dispatch.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return NilPlaceholder.INSTANCE;
             }
         } else if (method.isUndefined()) {
@@ -203,7 +204,7 @@ public class RubyCallNode extends RubyNode {
     }
 
     public String getName() {
-        return dispatchHead.getName();
+        return methodName;
     }
 
 }

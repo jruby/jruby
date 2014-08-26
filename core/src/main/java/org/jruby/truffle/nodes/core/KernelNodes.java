@@ -385,7 +385,7 @@ public abstract class KernelNodes {
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context, "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toInt = new DispatchHeadNode(context);
         }
 
         public IntegerNode(IntegerNode prev) {
@@ -415,7 +415,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object integer(VirtualFrame frame, Object value) {
-            return toInt.dispatch(frame, value, null);
+            return toInt.call(frame, value, "to_int", null);
         }
 
     }
@@ -492,7 +492,7 @@ public abstract class KernelNodes {
 
         public PNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            inspect = new DispatchHeadNode(context);
         }
 
         public PNode(PNode prev) {
@@ -510,7 +510,7 @@ public abstract class KernelNodes {
 
             try {
                 for (Object arg : args) {
-                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.dispatch(frame, arg, null));
+                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.call(frame, arg, "inspect", null));
                 }
             } finally {
                 threadManager.enterGlobalLock(runningThread);
@@ -527,7 +527,7 @@ public abstract class KernelNodes {
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context);
         }
 
         public PrintNode(PrintNode prev) {
@@ -546,7 +546,7 @@ public abstract class KernelNodes {
             try {
                 for (Object arg : args) {
                     try {
-                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.dispatch(frame, arg, null)).getBytes().bytes());
+                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -606,7 +606,7 @@ public abstract class KernelNodes {
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
@@ -616,7 +616,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object prettyInspect(VirtualFrame frame, Object self) {
-            return toS.dispatch(frame, self, null);
+            return toS.call(frame, self, "to_s", null);
         }
     }
 
@@ -648,7 +648,7 @@ public abstract class KernelNodes {
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context);
         }
 
         public RaiseNode(RaiseNode prev) {
@@ -675,7 +675,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             final RubyBasicObject exception = exceptionClass.newInstance(this);
-            initialize.dispatch(frame, exception, null, message);
+            initialize.call(frame, exception, "initialize", null, message);
             throw new RaiseException(exception);
         }
 
@@ -741,7 +741,7 @@ public abstract class KernelNodes {
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context);
         }
 
         public StringNode(StringNode prev) {
@@ -771,7 +771,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object string(VirtualFrame frame, Object value) {
-            return toS.dispatch(frame, value, null);
+            return toS.call(frame, value, "to_s", null);
         }
 
     }

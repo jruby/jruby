@@ -58,7 +58,7 @@ public abstract class ClassNodes {
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context);
         }
 
         public NewNode(NewNode prev) {
@@ -78,7 +78,7 @@ public abstract class ClassNodes {
 
         private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
             final RubyBasicObject instance = rubyClass.newInstance(this);
-            initialize.dispatch(frame, instance, block, args);
+            initialize.call(frame, instance, "initialize", block, args);
             return instance;
         }
 

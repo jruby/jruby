@@ -32,11 +32,11 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
 
+    @Child protected IndirectCallNode callNode;
+    @Child protected BoxingNode box;
+
     private final Map<MethodCacheKey, MethodCacheEntry> cache;
     @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
-    @Child protected IndirectCallNode callNode;
-
-    @Child protected BoxingNode box;
 
     public GenericDispatchNode(RubyContext context, boolean ignoreVisibility) {
         super(context);
@@ -55,30 +55,42 @@ public abstract class GenericDispatchNode extends DispatchNode {
         box = prev.box;
     }
 
-    @Specialization(guards = "isDispatch", order=1)
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
-    }
-
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    @Specialization(order=1)
+    public Object dispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            RubyBasicObject callingSelf,
+            RubyBasicObject receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object[] argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode(), methodName);
 
         if (entry == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             try {
-                // FIXME!!!!
-                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, methodName.toString(), ignoreVisibility, dispatchAction), false);
+                final RubyMethod method = lookup(callingSelf, receiverObject, methodName.toString(),
+                        ignoreVisibility, dispatchAction);
+                entry = new MethodCacheEntry(method, false);
             } catch (UseMethodMissingException e) {
                 try {
-                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing", ignoreVisibility, dispatchAction), true);
+                    final RubyMethod method = lookup(callingSelf, receiverObject, "method_missing", ignoreVisibility,
+                            dispatchAction);
+                    entry = new MethodCacheEntry(method, true);
                 } catch (UseMethodMissingException e2) {
-                    if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
-                        // TODO(CS): we should cache the fact that we would throw an exception - this will transfer each time
-                        getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "Lack of method_missing isn't cached and is being used for respond");
+                    if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+                        // TODO(CS): we should cache the fact that we would throw an exception - this will miss each time
+                        getContext().getRuntime().getWarnings().warn(
+                                IRubyWarnings.ID.TRUFFLE,
+                                getEncapsulatingSourceSection().getSource().getName(),
+                                getEncapsulatingSourceSection().getStartLine(),
+                                "Lack of method_missing isn't cached and is being used for respond");
                         return false;
                     } else {
-                        throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this));
+                        throw new RaiseException(getContext().getCoreLibrary().runtimeError(
+                                receiverObject.toString() + " didn't have a #method_missing", this));
                     }
                 }
             }
@@ -92,23 +104,28 @@ public abstract class GenericDispatchNode extends DispatchNode {
             }
         }
 
-        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL) {
             final Object[] argumentsToUse;
 
             if (hasAnyMethodsMissing && entry.isMethodMissing()) {
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-
-                // FIXME!!!!
                 modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
-
                 System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
                 argumentsToUse = modifiedArgumentsObjects;
             } else {
                 argumentsToUse = argumentsObjects;
             }
 
-            return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod(), entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
-        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            return callNode.call(
+                    frame,
+                    entry.getMethod().getCallTarget(),
+                    RubyArguments.pack(
+                            entry.getMethod(),
+                            entry.getMethod().getDeclarationFrame(),
+                            receiverObject,
+                            CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                            argumentsToUse));
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             if (hasAnyMethodsMissing) {
                 return !entry.isMethodMissing();
             } else {
@@ -119,12 +136,26 @@ public abstract class GenericDispatchNode extends DispatchNode {
         }
     }
 
-
     @Specialization(order=2)
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return dispatch(frame, methodReceiverObject, box.box(callingSelf), box.box(receiverObject), methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
+    public Object dispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        return dispatch(
+                frame,
+                methodReceiverObject,
+                box.box(callingSelf),
+                box.box(receiverObject),
+                methodName,
+                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true),
+                dispatchAction);
     }
-
 
     @CompilerDirectives.SlowPath
     public MethodCacheEntry lookupInCache(LookupNode lookupNode, Object methodName) {
@@ -182,4 +213,5 @@ public abstract class GenericDispatchNode extends DispatchNode {
             return methodMissing;
         }
     }
+
 }

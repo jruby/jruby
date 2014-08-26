@@ -25,7 +25,7 @@ public abstract class ComparableNodes {
 
         public ComparableCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context);
         }
 
         public ComparableCoreMethodNode(ComparableCoreMethodNode prev) {
@@ -34,7 +34,7 @@ public abstract class ComparableNodes {
         }
 
         public int compare(VirtualFrame frame, RubyBasicObject receiverObject, Object comparedTo) {
-            return (int) compareNode.dispatch(frame, receiverObject, null, comparedTo);
+            return (int) compareNode.call(frame, receiverObject, "<=>", null, comparedTo);
         }
 
     }

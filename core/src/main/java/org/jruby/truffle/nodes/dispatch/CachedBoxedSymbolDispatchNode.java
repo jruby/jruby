@@ -31,9 +31,9 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
     @Child protected DirectCallNode callNode;
 
-
     public CachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, DispatchNode next, RubyMethod method) {
         super(context, cachedName, next);
+
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
         this.method = method;
 
@@ -47,18 +47,31 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         callNode = prev.callNode;
     }
 
-    @Specialization(guards = {"guardName"})
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, RubySymbol receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
-    }
-
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, RubySymbol receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
+    @Specialization(guards = "guardName")
+    public Object dispatch(
+            VirtualFrame frame,
+            NilPlaceholder methodReceiverObject,
+            Object callingSelf,
+            RubySymbol receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object[] argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
         // Check no symbols have had their lookup modified
 
         try {
             RubySymbol.globalSymbolLookupNodeAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("symbol lookup modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+            return resetAndDispatch(
+                    frame,
+                    methodReceiverObject,
+                    callingSelf,
+                    receiverObject,
+                    methodName,
+                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    argumentsObjects,
+                    dispatchAction,
+                    "symbol lookup modified");
         }
 
         // Check the class has not been modified
@@ -66,13 +79,28 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         try {
             unmodifiedAssumption.check();
         } catch (InvalidAssumptionException e) {
-            return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+            return resetAndDispatch(
+                    frame,
+                    methodReceiverObject,
+                    callingSelf,
+                    receiverObject,
+                    methodName,
+                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    argumentsObjects,
+                    dispatchAction,
+                    "class modified");
         }
 
-        if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
-            // Call the method
-            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
-        } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL) {
+            return callNode.call(
+                    frame,
+                    RubyArguments.pack(
+                            method,
+                            method.getDeclarationFrame(),
+                            receiverObject,
+                            CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                            argumentsObjects));
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return true;
         } else {
             throw new UnsupportedOperationException();
@@ -80,8 +108,24 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+    public Object dispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        return next.executeDispatch(
+                frame,
+                methodReceiverObject,
+                callingSelf,
+                receiverObject,
+                methodName,
+                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                argumentsObjects,
+                dispatchAction);
     }
 
 }

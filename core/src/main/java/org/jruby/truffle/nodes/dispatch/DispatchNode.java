@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -24,13 +23,13 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @NodeChildren({
-        @NodeChild(value="methodReceiverObject", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="callingSelf", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="receiver", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="methodName", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="blockObject", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="arguments", type=DispatchNode.NeverExecuteRubyNode.class),
-        @NodeChild(value="action", type=DispatchNode.NeverExecuteRubyNode.class)})
+        @NodeChild(value="methodReceiverObject", type=Node.class),
+        @NodeChild(value="callingSelf", type=Node.class),
+        @NodeChild(value="receiver", type=Node.class),
+        @NodeChild(value="methodName", type=Node.class),
+        @NodeChild(value="blockObject", type=Node.class),
+        @NodeChild(value="arguments", type=Node.class),
+        @NodeChild(value="action", type=Node.class)})
 public abstract class DispatchNode extends RubyNode {
 
     public DispatchNode(RubyContext context) {
@@ -41,33 +40,25 @@ public abstract class DispatchNode extends RubyNode {
         this(prev.getContext());
     }
 
-    public static class NeverExecuteRubyNode extends  RubyNode {
-        public NeverExecuteRubyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
+    public abstract Object executeDispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction);
 
-        @Override
-        public final Object execute(VirtualFrame frame) {
-            throw new IllegalStateException("Do not execute this node!");
-        }
-    }
-
-    public NeverExecuteRubyNode getNeverExecute() {
-        return new NeverExecuteRubyNode(getContext(), getSourceSection());
-    }
-
-    public final Object execute(VirtualFrame frame) {
-        throw new IllegalStateException("do not call execute on dispatch nodes");
-    }
-
-    public abstract Object executeDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction);
-
-    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name, boolean ignoreVisibility, DispatchHeadNode.DispatchAction dispatchAction) throws UseMethodMissingException {
+    protected RubyMethod lookup(
+            RubyBasicObject callingSelf,
+            RubyBasicObject receiver,
+            String name,
+            boolean ignoreVisibility,
+            Dispatch.DispatchAction dispatchAction) throws UseMethodMissingException {
         CompilerAsserts.neverPartOfCompilation();
 
-        // TODO(CS): why are we using an exception to convey method missing here?
-
-        RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
+        RubyMethod method = receiver.getLookupNode().lookupMethod(name);
 
         // If no method was found, use #method_missing
 
@@ -78,19 +69,19 @@ public abstract class DispatchNode extends RubyNode {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
         }
 
         // Check visibility
 
-        if (boxedCallingSelf == receiverBasicObject.getRubyClass()){
+        if (callingSelf == receiver.getRubyClass()){
             return method;
         }
 
-        if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
-            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
-            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+        if (!ignoreVisibility && !method.isVisibleTo(this, callingSelf, receiver)) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 throw new UseMethodMissingException();
             } else {
                 throw new UnsupportedOperationException();
@@ -100,35 +91,35 @@ public abstract class DispatchNode extends RubyNode {
         return method;
     }
 
-    public int getDepth() {
-        // TODO: can we use findParent instead?
-
-        int depth = 1;
-        Node parent = this.getParent();
-
-        while (!(parent instanceof DispatchHeadNode)) {
-            parent = parent.getParent();
-            depth++;
-        }
-
-        return depth;
+    protected Object resetAndDispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object[] argumentsObjects,
+            Dispatch.DispatchAction dispatchAction,
+            String reason) {
+        final DispatchHeadNode head = getHeadNode();
+        head.reset(reason);
+        return head.dispatch(
+                frame,
+                methodReceiverObject,
+                callingSelf,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                dispatchAction);
     }
 
-    public Object respecialize(String reason, VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final int depth = getDepth();
-        final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
-
-        return head.respecialize(frame, reason, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+    protected DispatchHeadNode getHeadNode() {
+        return NodeUtil.findParent(this, DispatchHeadNode.class);
     }
 
-    protected static boolean isDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH;
-    }
-
-    protected static boolean isRespond(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return dispatchAction == DispatchHeadNode.DispatchAction.RESPOND;
+    public final Object execute(VirtualFrame frame) {
+        throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
 }

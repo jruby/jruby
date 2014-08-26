@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -26,7 +27,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toArrayNode = new DispatchHeadNode(context, "to_ary", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        toArrayNode = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
     }
 
     public ArrayCastNode(ArrayCastNode prev) {
@@ -50,15 +51,15 @@ public abstract class ArrayCastNode extends RubyNode {
     public Object doObject(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
-        final Object result = toArrayNode.dispatch(frame, object, null, new Object[]{});
+        final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
-        if (result == DispatchHeadNode.MISSING) {
+        if (result == Dispatch.MISSING) {
             return NilPlaceholder.INSTANCE;
         }
 
         if (!(result instanceof RubyArray)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), toArrayNode.getName(), "Array", this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), "to_ary", "Array", this));
         }
 
         return result;

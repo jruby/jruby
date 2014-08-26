@@ -36,15 +36,11 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     private final BranchProfile trueProfile = new BranchProfile();
     @Child protected DirectCallNode trueCall;
 
-
-
-    public CachedBooleanDispatchNode(RubyContext context, Object cachedName, DispatchNode next, Assumption falseUnmodifiedAssumption, RubyMethod falseMethod, Assumption trueUnmodifiedAssumption,
-                                     RubyMethod trueMethod) {
+    public CachedBooleanDispatchNode(
+            RubyContext context, Object cachedName, DispatchNode next,
+            Assumption falseUnmodifiedAssumption, RubyMethod falseMethod,
+            Assumption trueUnmodifiedAssumption, RubyMethod trueMethod) {
         super(context, cachedName, next);
-        assert falseUnmodifiedAssumption != null;
-        assert falseMethod != null;
-        assert trueUnmodifiedAssumption != null;
-        assert trueMethod != null;
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
@@ -65,25 +61,44 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
         trueCall = prev.trueCall;
     }
 
-
-    @Specialization(guards = {"guardName"})
-    public Object dispatch(VirtualFrame frame, NilPlaceholder methodReceiverObject, Object boxedCallingSelf, boolean receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return doDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject, methodName, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false), CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true), dispatchAction);
-    }
-
-    private Object doDispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, boolean receiverObject, Object methodName, RubyProc blockObject, Object[] argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        if ((boolean) receiverObject) {
+    @Specialization(guards = "guardName")
+    public Object dispatch(
+            VirtualFrame frame,
+            NilPlaceholder methodReceiverObject,
+            Object callingSelf,
+            boolean receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object[] argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        if (receiverObject) {
             trueProfile.enter();
 
             try {
                 trueUnmodifiedAssumption.check();
             } catch (InvalidAssumptionException e) {
-                return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+                return resetAndDispatch(
+                        frame,
+                        methodReceiverObject,
+                        callingSelf,
+                        receiverObject,
+                        methodName,
+                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                        argumentsObjects,
+                        dispatchAction,
+                        "class modified");
             }
 
-            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
-                return trueCall.call(frame, RubyArguments.pack(trueMethod, trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
-            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL) {
+                return trueCall.call(
+                        frame,
+                        RubyArguments.pack(
+                                trueMethod,
+                                trueMethod.getDeclarationFrame(),
+                                receiverObject,
+                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                argumentsObjects));
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
             } else {
                 throw new UnsupportedOperationException();
@@ -94,12 +109,28 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             try {
                 falseUnmodifiedAssumption.check();
             } catch (InvalidAssumptionException e) {
-                return respecialize("class modified", frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+                return resetAndDispatch(
+                        frame,
+                        methodReceiverObject,
+                        callingSelf,
+                        receiverObject,
+                        methodName,
+                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                        argumentsObjects,
+                        dispatchAction,
+                        "class modified");
             }
 
-            if (dispatchAction == DispatchHeadNode.DispatchAction.DISPATCH) {
-                return falseCall.call(frame, RubyArguments.pack(falseMethod, falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
-            } else if (dispatchAction == DispatchHeadNode.DispatchAction.RESPOND) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL) {
+                return falseCall.call(
+                        frame,
+                        RubyArguments.pack(
+                                falseMethod,
+                                falseMethod.getDeclarationFrame(),
+                                receiverObject,
+                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                argumentsObjects));
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
             } else {
                 throw new UnsupportedOperationException();
@@ -108,9 +139,24 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     }
 
     @Fallback
-    public Object dispatch(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects, DispatchHeadNode.DispatchAction dispatchAction) {
-        return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName, blockObject, argumentsObjects, dispatchAction);
+    public Object dispatch(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        return next.executeDispatch(
+                frame,
+                methodReceiverObject,
+                callingSelf,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                dispatchAction);
     }
-
 
 }

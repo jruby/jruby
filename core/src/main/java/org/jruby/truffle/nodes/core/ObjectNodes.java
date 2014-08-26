@@ -15,7 +15,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.dispatch.BooleanDispatchHeadNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -181,23 +183,26 @@ public abstract class ObjectNodes {
     @CoreMethod(names = {"<=>"}, minArgs = 1, maxArgs = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child protected BooleanDispatchHeadNode equalNode;
+        @Child protected DispatchHeadNode equalNode;
+        @Child protected BooleanCastNode booleanCast;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new BooleanDispatchHeadNode(context, sourceSection, new DispatchHeadNode(context, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING));
+            equalNode = new DispatchHeadNode(context);
+            booleanCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
         public CompareNode(CompareNode prev) {
             super(prev);
             equalNode = prev.equalNode;
+            booleanCast = prev.booleanCast;
         }
 
         @Specialization
         public Object compare(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
 
-            if ((self == other) || equalNode.executeBoolean(frame, self, null, other)) {
+            if ((self == other) || booleanCast.executeBoolean(frame, equalNode.call(frame, self, "==", null, other))) {
                 return 0;
             }
 
@@ -304,7 +309,7 @@ public abstract class ObjectNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeDupNode = new DispatchHeadNode(context, true, "initialize_dup", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
@@ -318,7 +323,7 @@ public abstract class ObjectNodes {
 
             final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
             newObject.setInstanceVariables(self.getFields());
-            initializeDupNode.dispatch(frame, newObject, null, self);
+            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
@@ -328,7 +333,7 @@ public abstract class ObjectNodes {
 
             final RubyObject newObject = new RubyObject(self.getRubyClass());
             newObject.setInstanceVariables(self.getFields());
-            initializeDupNode.dispatch(frame, newObject, null, self);
+            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
@@ -446,7 +451,7 @@ public abstract class ObjectNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeCopyNode = new DispatchHeadNode(context);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {
@@ -457,7 +462,7 @@ public abstract class ObjectNodes {
         @Specialization
         public Object initializeDup(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
-            return initializeCopyNode.dispatch(frame, self, null, other);
+            return initializeCopyNode.call(frame, self, "initialize_copy", null, other);
         }
 
     }
@@ -766,7 +771,7 @@ public abstract class ObjectNodes {
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, false, false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RespondToNode(RespondToNode prev) {
@@ -776,24 +781,24 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
             // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, RubyArguments.getSelf(frame.getArguments()), name, object);
+            return dispatch.doesRespondTo(frame, name, object);
         }
 
     }

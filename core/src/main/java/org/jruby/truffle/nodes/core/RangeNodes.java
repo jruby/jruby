@@ -213,9 +213,9 @@ public abstract class RangeNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callLess = new DispatchHeadNode(context, "<", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-            callGreater = new DispatchHeadNode(context, ">", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-            callGreaterEqual = new DispatchHeadNode(context, ">=", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            callLess = new DispatchHeadNode(context);
+            callGreater = new DispatchHeadNode(context);
+            callGreaterEqual = new DispatchHeadNode(context);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -234,16 +234,16 @@ public abstract class RangeNodes {
         public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
             notDesignedForCompilation();
 
-            if ((boolean) callLess.dispatch(frame, value, null, range.getBegin())) {
+            if ((boolean) callLess.call(frame, value, "<", null, range.getBegin())) {
                 return false;
             }
 
             if (range.doesExcludeEnd()) {
-                if ((boolean) callGreaterEqual.dispatch(frame, value, null, range.getEnd())) {
+                if ((boolean) callGreaterEqual.call(frame, value, ">=", null, range.getEnd())) {
                     return false;
                 }
             } else {
-                if ((boolean) callGreater.dispatch(frame, value, null, range.getEnd())) {
+                if ((boolean) callGreater.call(frame, value, ">", null, range.getEnd())) {
                     return false;
                 }
             }
@@ -365,7 +365,7 @@ public abstract class RangeNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context);
         }
 
         public ToSNode(ToSNode prev) {
@@ -385,8 +385,8 @@ public abstract class RangeNodes {
             notDesignedForCompilation();
 
             // TODO(CS): cast?
-            final RubyString begin = (RubyString) toS.dispatch(frame, range.getBegin(), null);
-            final RubyString end = (RubyString) toS.dispatch(frame, range.getBegin(), null);
+            final RubyString begin = (RubyString) toS.call(frame, range.getBegin(), "to_s", null);
+            final RubyString end = (RubyString) toS.call(frame, range.getBegin(), "to_s", null);
 
             return getContext().makeString(begin + (range.doesExcludeEnd() ? "..." : "..") + end);
         }

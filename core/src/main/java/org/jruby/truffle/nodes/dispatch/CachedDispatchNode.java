@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -35,11 +37,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
         next = prev.next;
     }
 
-    protected static final boolean isPrimitive(Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects) {
-        return !(receiverObject instanceof  RubyBasicObject);
-    }
-
-    protected final boolean guardName(Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects) {
+    protected final boolean guardName(
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects) {
         if (cachedName instanceof String) {
             return cachedName.equals(methodName);
         } else if (cachedName instanceof RubySymbol) {
