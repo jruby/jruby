@@ -59,7 +59,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
+            Object[] argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
         // Check the class is what we expect
 
@@ -87,7 +87,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true),
+                    argumentsObjects,
                     dispatchAction,
                     "class modified");
         }
@@ -99,7 +99,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
                             method,
                             method.getDeclarationFrame(),
                             receiverObject,CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                            CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true)));
+                            argumentsObjects));
         } else  if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return true;
         } else {

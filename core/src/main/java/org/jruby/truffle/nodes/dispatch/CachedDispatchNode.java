@@ -37,7 +37,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
         next = prev.next;
     }
 
-    protected final boolean guardName(Object methodReceiverObject, Object callingSelf, Object receiverObject, Object methodName, Object blockObject, Object argumentsObjects) {
+    protected final boolean guardName(
+            Object methodReceiverObject,
+            Object callingSelf,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects) {
         if (cachedName instanceof String) {
             return cachedName.equals(methodName);
         } else if (cachedName instanceof RubySymbol) {

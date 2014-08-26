@@ -50,7 +50,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
+            Object[] argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
@@ -78,7 +78,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true),
+                    argumentsObjects,
                     dispatchAction,
                     "class modified");
         }
