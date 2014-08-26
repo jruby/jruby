@@ -195,7 +195,7 @@ public class RubyContext extends ExecutionContext {
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
         final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame, currentNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-        return callTarget.call(RubyArguments.pack(null, parentFrame, self, null));
+        return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
     }
 
     public long getNextObjectID() {

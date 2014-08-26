@@ -55,7 +55,7 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             RubySymbol receiverObject,
             Object methodName,
             Object blockObject,
-            Object[] argumentsObjects,
+            Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
         // Check no symbols have had their lookup modified
 
@@ -99,7 +99,7 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                             method.getDeclarationFrame(),
                             receiverObject,
                             CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                            argumentsObjects));
+                            CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
         } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return true;
         } else {

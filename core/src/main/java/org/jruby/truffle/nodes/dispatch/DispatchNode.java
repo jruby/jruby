@@ -98,7 +98,7 @@ public abstract class DispatchNode extends RubyNode {
             Object receiverObject,
             Object methodName,
             RubyProc blockObject,
-            Object[] argumentsObjects,
+            Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction,
             String reason) {
         final DispatchHeadNode head = getHeadNode();

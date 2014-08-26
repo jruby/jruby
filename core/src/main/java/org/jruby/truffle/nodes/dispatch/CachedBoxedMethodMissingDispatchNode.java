@@ -60,7 +60,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
-            Object[] argumentsObjects,
+            Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
         // Check the lookup node is what we expect
 
@@ -96,9 +96,11 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         if (dispatchAction == Dispatch.DispatchAction.CALL) {
             // When calling #method_missing we need to prepend the symbol
 
-            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
+            final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+
+            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
             modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
-            System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
+            System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
             return callNode.call(
                     frame,
                     RubyArguments.pack(
