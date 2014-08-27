@@ -56,7 +56,7 @@ project 'JRuby Core' do
   jar 'com.jcraft:jzlib:1.1.2'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'com.oracle:truffle:0.4'
-  jar 'com.oracle:truffle-dsl-processor:0.4'  # TODO(CS) this should only be a compile-time dependency - how to do that?
+  jar 'com.oracle:truffle-dsl-processor:0.4', :scope => 'provided'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
