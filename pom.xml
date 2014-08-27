@@ -436,7 +436,6 @@
     <profile>
       <id>main</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
       <build>
@@ -446,14 +445,12 @@
     <profile>
       <id>jruby-jars</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
     </profile>
     <profile>
       <id>complete</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
       <build>
@@ -472,7 +469,6 @@
     <profile>
       <id>dist</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
     </profile>
@@ -490,7 +486,6 @@
     <profile>
       <id>release</id>
       <modules>
-	<module>test</module>
         <module>maven</module>
       </modules>
       <properties>
