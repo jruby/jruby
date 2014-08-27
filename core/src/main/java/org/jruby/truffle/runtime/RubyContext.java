@@ -72,6 +72,7 @@ public class RubyContext extends ExecutionContext {
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
+    private final Warnings warnings;
 
     private SourceCallback sourceCallback = null;
 
@@ -83,6 +84,8 @@ public class RubyContext extends ExecutionContext {
         this.runtime = runtime;
         translator = new TranslatorDriver(this);
         astProber = new RubyASTProber();
+
+        warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
@@ -415,4 +418,9 @@ public class RubyContext extends ExecutionContext {
     public TraceManager getTraceManager() {
         return traceManager;
     }
+
+    public Warnings getWarnings() {
+        return warnings;
+    }
+
 }
