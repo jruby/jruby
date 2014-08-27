@@ -274,7 +274,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  if [ $java_class = $JAVA_CLASS_NGSERVER -a -n ${JRUBY_OPTS} ]; then
+  if [ $java_class = $JAVA_CLASS_NGSERVER -a -n "${JRUBY_OPTS}" ]; then
     echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
     JRUBY_OPTS=''
   fi
