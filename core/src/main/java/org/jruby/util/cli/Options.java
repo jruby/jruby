@@ -61,6 +61,7 @@ public class Options {
     public static final Option<Boolean> PARSER_WARN_GROUPED_EXPRESSIONS = bool(PARSER, "parser.warn.grouped_expressions", true, "Warn about interpreting (...) as a grouped expression.");
     public static final Option<Boolean> PARSER_WARN_LOCAL_SHADOWING = bool(PARSER, "parser.warn.shadowing_local", true, "Warn about shadowing local variables.");
     public static final Option<Boolean> PARSER_WARN_REGEX_CONDITION = bool(PARSER, "parser.warn.regex_condition", true, "Warn about regex literals in conditions.");
+    public static final Option<Boolean> PARSER_WARN_ARGUMENT_PREFIX = bool(PARSER, "parser.warn.argument_prefix", true, "Warn about splat operators being interpreted as argument prefixes.");
     public static final Option<Boolean> PARSER_ALWAYS_TRUFFLE_POSITIONS = bool(PARSER, "parser.always_truffle_positions", false, "Always generate Truffle source positions, even if we're not -X+T.");
 
     public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
