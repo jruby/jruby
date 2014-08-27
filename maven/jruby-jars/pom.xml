@@ -9,7 +9,6 @@
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-jars</artifactId>
-  <version>1.7.14.dev</version>
   <packaging>gem</packaging>
   <name>JRuby Jars Gem</name>
   <description>This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.

@@ -8,10 +8,6 @@ name "JRuby Jars Gem"
 jar 'org.jruby:jruby-core-complete', '${project.parent.version}'
 jar 'org.jruby:jruby-stdlib-complete', '${project.parent.version}'
 
-build do
-  final_name "${project.artifactId}#{model.version}.gem"
-end
-
 plugin( :clean, '2.5' ) do
   execute_goals( :clean,
                  :phase => :clean, 
@@ -30,6 +26,8 @@ jruby_plugin!( :gem,
                :includeDependencies => true ) do
   execute_goals :id => 'default-push', :skip => true
 end
+
+plugin :install, :skip => true
 
 execute 'rename gem file', :package do |ctx|
   require 'fileutils'

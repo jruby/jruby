@@ -1,3 +1,5 @@
+#-*- mode: ruby -*-
+
 require 'rake'
 require 'rexml/document'
 require 'rexml/xpath'
@@ -17,3 +19,5 @@ Gem::Specification.new do |s|
   s.licenses = %w(EPL-1.0 GPL-2.0 LGPL-2.1)
   s.files = FileList['[A-Z]*', 'lib/**/*.rb', "lib/**/jruby-*-#{version}.jar", 'test/**/*'].to_a
 end
+
+# vim: syntax=Ruby
