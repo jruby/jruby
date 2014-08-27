@@ -136,6 +136,20 @@
   </build>
   <profiles>
     <profile>
+      <id>gem proxy</id>
+      <activation>
+        <file>
+          <exists>../jruby</exists>
+        </file>
+      </activation>
+      <repositories>
+        <repository>
+          <id>rubygems-releases</id>
+          <url>http://rubygems-proxy.torquebox.org/releases</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
       <id>source dist</id>
       <activation>
         <file>
