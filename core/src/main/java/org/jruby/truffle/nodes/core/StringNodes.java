@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -213,10 +214,28 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
-        public RubyString getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
-            // TODO(CS): not really right
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(new byte[]{(byte) string.getBytes().charAt(string.normaliseIndex(index))}, string.getBytes().getEncoding()));
+        @Specialization(rewriteOn=UnexpectedResultException.class)
+        public RubyString getIndexInBounds(RubyString string, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
+            final int normalisedIndex = string.normaliseIndex(index);
+            final ByteList bytes = string.getBytes();
+
+            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            } else {
+                return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
+            }
+        }
+
+        @Specialization(contains = "getIndexInBounds")
+        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+            int normalisedIndex = string.normaliseIndex(index);
+            final ByteList bytes = string.getBytes();
+
+            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
+            }
         }
 
         @Specialization
