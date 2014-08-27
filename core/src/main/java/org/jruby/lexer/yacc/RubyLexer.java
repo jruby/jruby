@@ -374,7 +374,13 @@ public class RubyLexer {
     }
 
     public int nextToken() throws IOException {
+        src.getPositionFactory().startOfToken();
+
         token = yylex();
+
+        if (token != -1) {
+            src.getPositionFactory().endOfToken();
+        }
 
         return token == EOF ? 0 : token;
     }
@@ -1085,7 +1091,6 @@ public class RubyLexer {
         commandStart = false;
 
         loop: for(;;) {
-            src.startOfToken();
             last_state = lex_state;
             c = src.read();
             switch(c) {
