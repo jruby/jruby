@@ -342,7 +342,7 @@ public class CoreLibrary {
         }
     }
 
-    private void loadRubyCore(String fileName) {
+    public void loadRubyCore(String fileName) {
         final Source source;
 
         try {

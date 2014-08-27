@@ -41,7 +41,7 @@ public class FeatureManager {
             // Some features are handled specially
 
             if (feature.equals("stringio")) {
-                context.getWarnings().warn("stringio not yet implemented");
+                context.getCoreLibrary().loadRubyCore("jruby/truffle/standard/stringio.rb");
                 return true;
             }
 
