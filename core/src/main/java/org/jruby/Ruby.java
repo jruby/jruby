@@ -78,6 +78,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
+import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderFile;
@@ -1239,7 +1240,9 @@ public final class Ruby {
         // set up thread statuses
         initThreadStatuses();
         
+        // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
         irManager = new IRManager();
+        IRScriptBody topLevelScope = new IRScriptBody(irManager, "", "", tc.getCurrentScope().getStaticScope());
         
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
