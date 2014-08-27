@@ -1218,8 +1218,19 @@ public class BodyTranslator extends Translator {
         RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
         if (readNode == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "local variable " + name + " found by parser but not by translator");
-            readNode = new NilLiteralNode(context, sourceSection);
+            /*
+
+              This happens for code such as:
+
+                def destructure4r((*c,d))
+                    [c,d]
+                end
+
+               We're going to just assume that it should be there and add it...
+             */
+
+            environment.declareVar(node.getName());
+            readNode = environment.findLocalVarNode(name, sourceSection);
         }
 
         return readNode;
