@@ -1237,6 +1237,13 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitMatchNode(org.jruby.ast.MatchNode node) {
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), new org.jruby.ast.GlobalVarNode(node.getPosition(), "$_"));
+        final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getRegexpNode(), "=~", argsNode, null);
+        return callNode.accept(this);
+    }
+
+    @Override
     public RubyNode visitMatch2Node(org.jruby.ast.Match2Node node) {
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
