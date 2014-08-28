@@ -396,7 +396,7 @@ public class IRRuntimeHelpers {
         return b.yieldSpecific(context);
     }
 
-    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, Arity arity, boolean passArrayArg, boolean argIsArray) {
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, Arity arity, boolean argIsArray) {
         // SSS FIXME: This should not really happen -- so, some places in the runtime library are breaking this contract.
         if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;
 
@@ -408,9 +408,7 @@ public class IRRuntimeHelpers {
                if (argIsArray) {
                    RubyArray valArray = ((RubyArray)value);
                    if (valArray.size() == 0) {
-                       value = passArrayArg ? RubyArray.newEmptyArray(context.runtime) : context.nil;
-                   } else if (!passArrayArg) {
-                       value = valArray.eltInternal(0);
+                       value = RubyArray.newEmptyArray(context.runtime);
                    }
                }
                return new IRubyObject[] { value };
