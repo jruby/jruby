@@ -22,13 +22,13 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class TruffleDebugNodes {
 
     @CoreMethod(names = "array_storage_info", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
-    public abstract static class ArrayStorageInfo extends CoreMethodNode {
+    public abstract static class ArrayStorageInfoNode extends CoreMethodNode {
 
-        public ArrayStorageInfo(RubyContext context, SourceSection sourceSection) {
+        public ArrayStorageInfoNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ArrayStorageInfo(ArrayStorageInfo prev) {
+        public ArrayStorageInfoNode(ArrayStorageInfoNode prev) {
             super(prev);
         }
 
@@ -41,13 +41,13 @@ public abstract class TruffleDebugNodes {
     }
 
     @CoreMethod(names = "dump_call_stack", isModuleMethod = true, needsSelf = false, maxArgs = 0)
-    public abstract static class DumpCallStack extends CoreMethodNode {
+    public abstract static class DumpCallStackNode extends CoreMethodNode {
 
-        public DumpCallStack(RubyContext context, SourceSection sourceSection) {
+        public DumpCallStackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public DumpCallStack(FullTreeNode prev) {
+        public DumpCallStackNode(FullTreeNode prev) {
             super(prev);
         }
 
@@ -85,13 +85,13 @@ public abstract class TruffleDebugNodes {
     }
 
     @CoreMethod(names = "java_class_of", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
-    public abstract static class JavaClassOf extends CoreMethodNode {
+    public abstract static class JavaClassOfNode extends CoreMethodNode {
 
-        public JavaClassOf(RubyContext context, SourceSection sourceSection) {
+        public JavaClassOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public JavaClassOf(JavaClassOf prev) {
+        public JavaClassOfNode(JavaClassOfNode prev) {
             super(prev);
         }
 
