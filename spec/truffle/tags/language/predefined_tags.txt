@@ -29,7 +29,6 @@ fails:Predefined global $, raises TypeError if assigned a non-String
 fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
 fails:Predefined global $_ is set at the method-scoped level rather than block-scoped
 fails:Predefined global $_ is Thread-local
-fails(inherited):Execution variable $: does not include '.' when the taint check level > 1
 fails:Execution variable $: is the same object as $LOAD_PATH and $-I
 fails:Execution variable $: is read-only
 fails:Global variable $" is read-only
@@ -46,7 +45,6 @@ fails:Global variable $-w is an alias of $VERBOSE
 fails(inherited):Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:The predefined standard objects includes ARGF
 fails:The predefined global constants includes TOPLEVEL_BINDING
-fails:Processing RUBYOPT adds the -I path to $LOAD_PATH
 fails:Processing RUBYOPT sets $DEBUG to true for '-d'
 fails:Processing RUBYOPT sets $VERBOSE to true for '-w'
 fails:Processing RUBYOPT sets $VERBOSE to true for '-W'
