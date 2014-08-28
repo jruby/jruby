@@ -445,7 +445,7 @@
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
-                      <arg value=":language" />
+                      <arg value=":core" />
                     </exec>
                   </target>
                 </configuration>

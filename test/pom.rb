@@ -281,7 +281,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="spec/truffle/truffle.mspec" />' +
                           '<arg value="--excl-tag" />' +
                           '<arg value="fails" />' +
-                          '<arg value=":language" />' +
+                          '<arg value=":core" />' +
                         '</exec>' +
                       '</target>' ) ] )
     end
