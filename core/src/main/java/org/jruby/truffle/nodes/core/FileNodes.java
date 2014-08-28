@@ -327,6 +327,35 @@ public abstract class FileNodes {
 
     }
 
+    @CoreMethod(names = "puts", minArgs = 1, maxArgs = 1)
+    public abstract static class PutsNode extends CoreMethodNode {
+
+        public PutsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PutsNode(PutsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder puts(RubyFile file, RubyString string) {
+            notDesignedForCompilation();
+
+            try {
+                final Writer writer = file.getWriter();
+                writer.write(string.toString());
+                writer.write("\n");
+                writer.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
     @CoreMethod(names = "read", maxArgs = 0)
     public abstract static class ReadNode extends CoreMethodNode {
 
