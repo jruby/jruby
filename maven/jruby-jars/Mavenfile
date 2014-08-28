@@ -27,9 +27,9 @@ jruby_plugin!( :gem,
   execute_goals :id => 'default-push', :skip => true
 end
 
-plugin :install, :skip => true
+#plugin :install, :skip => true
 
-execute 'rename gem file', :package do |ctx|
+execute 'rename gem file', :verify do |ctx|
   require 'fileutils'
   FileUtils.rm_rf(Dir["#{ctx.project.build.directory}/*.gem"])
   FileUtils.mv(Dir["#{ctx.project.basedir}/*.gem"], ctx.project.build.directory)

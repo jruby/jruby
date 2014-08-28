@@ -9,6 +9,7 @@
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-jars</artifactId>
+  <version>1.7.15.dev</version>
   <packaging>gem</packaging>
   <name>JRuby Jars Gem</name>
   <description>This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.
@@ -71,7 +72,6 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
-    <finalName>${project.artifactId}1.7.14.dev.gem</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -138,7 +138,7 @@ freezing to) a specific jruby-complete jar version.</description>
         <executions>
           <execution>
             <id>rename gem file</id>
-            <phase>package</phase>
+            <phase>verify</phase>
             <goals>
               <goal>execute</goal>
             </goals>
