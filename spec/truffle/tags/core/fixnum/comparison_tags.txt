@@ -1,4 +1,1 @@
-fails:Fixnum#<=> returns -1 when self is less than the given argument
-fails:Fixnum#<=> returns 0 when self is equal to the given argument
-fails:Fixnum#<=> returns 1 when self is greater than the given argument
 fails:Fixnum#<=> returns nil when the given argument is not an Integer

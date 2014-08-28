@@ -6,7 +6,9 @@ class MSpecScript
   ]
 
   set :core, [
-    "spec/ruby/core"
+    "spec/ruby/core/fixnum",
+    "^spec/ruby/core/fixnum/exponent_spec.rb",
+    "^spec/ruby/core/fixnum/right_shift_spec.rb"
   ]
 
   set :tags_patterns, [
@@ -21,6 +23,6 @@ class MSpecScript
   MSpec.enable_feature :fork
   MSpec.enable_feature :generator
 
-  set :files, get(:language)
+  set :files, get(:language) + get(:core)
 
 end

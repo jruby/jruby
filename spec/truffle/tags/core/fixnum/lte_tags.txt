@@ -1,2 +1,1 @@
-fails:Fixnum#<= returns true if self is less than or equal to other
 fails:Fixnum#<= raises an ArgumentError when given a non-Integer
