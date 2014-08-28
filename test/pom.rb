@@ -136,56 +136,6 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'truffle' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml(
-                      '<target>' + 
-                        '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
-                          '<arg value="-X+T" />' +
-                          '<arg value="-Xtruffle.exceptions.print_java=true" />' +
-                          '<arg value="-Xparser.warn.useless_use_of=false" />' +
-                          '<arg value="-Xparser.warn.not_reached=false" />' +
-                          '<arg value="-Xparser.warn.grouped_expressions=false" />' +
-                          '<arg value="-Xparser.warn.shadowing_local=false" />' +
-                          '<arg value="-Xparser.warn.regex_condition=false" />' +
-                          '<arg value="-Xparser.warn.argument_prefix=false" />' +
-                          '<arg value="-J-ea" />' +
-                          '<arg value="spec/mspec/bin/mspec" />' +
-                          '<arg value="run" />' +
-                          '<arg value="-t" />' +
-                          '<arg value="bin/jruby" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-X+T" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xtruffle.exceptions.print_java=true" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.useless_use_of=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.not_reached=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.grouped_expressions=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.shadowing_local=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.regex_condition=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.argument_prefix=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-J-ea" />' +
-                          '<arg value="--config" />' +
-                          '<arg value="spec/truffle/truffle.mspec" />' +
-                          '<arg value="--excl-tag" />' +
-                          '<arg value="fails" />' +
-                        '</exec>' +
-                      '</target>' ) ] )
-    end
-
-  end
-
   profile 'truffle-specs-language' do
 
     plugin :antrun do

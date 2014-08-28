@@ -522,15 +522,6 @@
       </modules>
     </profile>
     <profile>
-      <id>truffle</id>
-      <build>
-        <defaultGoal>test</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-      </modules>
-    </profile>
-    <profile>
       <id>truffle-specs-language</id>
       <build>
         <defaultGoal>test</defaultGoal>
