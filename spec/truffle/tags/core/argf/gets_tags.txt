@@ -1,0 +1,9 @@
+fails:ARGF.gets reads one line of a file
+fails:ARGF.gets reads all lines of a file
+fails:ARGF.gets reads all lines of stdin
+fails:ARGF.gets reads all lines of two files
+fails:ARGF.gets sets $_ global variable with each line read
+fails:ARGF.gets modifies the files when in place edit mode is on
+fails:ARGF.gets modifies and backups two files when in place edit mode is on
+fails:ARGF.gets returns nil when reaching end of files
+fails:ARGF.gets reads the contents of the file with default encoding

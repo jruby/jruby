@@ -1,0 +1,6 @@
+fails:UnboundMethod#source_location sets the first value to the path of the file in which the method was defined
+fails:UnboundMethod#source_location sets the last value to a Fixnum representing the line on which the method was defined
+fails:UnboundMethod#source_location returns the last place the method was defined
+fails:UnboundMethod#source_location returns the location of the original method even if it was aliased
+fails:UnboundMethod#source_location works for define_method methods
+fails:UnboundMethod#source_location works for define_singleton_method methods

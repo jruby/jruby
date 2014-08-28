@@ -1,0 +1,4 @@
+fails:Fixnum#divmod returns an Array containing quotient and modulus obtained from dividing self by the given argument
+fails:Fixnum#divmod raises a ZeroDivisionError when the given argument is 0
+fails:Fixnum#divmod raises a ZeroDivisionError when the given argument is 0 and a Float
+fails:Fixnum#divmod raises a TypeError when given a non-Integer

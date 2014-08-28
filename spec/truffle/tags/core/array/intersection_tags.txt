@@ -1,0 +1,9 @@
+fails:Array#& creates an array with elements common to both arrays (intersection)
+fails:Array#& creates an array with no duplicates
+fails:Array#& creates an array with elements in order they are first encountered
+fails:Array#& does not modify the original Array
+fails:Array#& properly handles recursive arrays
+fails:Array#& tries to convert the passed argument to an Array using #to_ary
+fails:Array#& determines equivalence between elements in the sense of eql?
+fails:Array#& does return subclass instances for Array subclasses
+fails:Array#& does not call to_ary on array subclasses

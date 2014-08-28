@@ -1,0 +1,15 @@
+fails:String#dump taints the result if self is tainted
+fails:String#dump untrusts the result if self is untrusted
+fails:String#dump returns a subclass instance
+fails:String#dump returns a string with special characters replaced with \<char> notation
+fails:String#dump returns a string with " and \ escaped with a backslash
+fails:String#dump returns a string with \#<char> when # is followed by $, @, {
+fails:String#dump returns a string with # not escaped when followed by any other character
+fails:String#dump returns a string with printable non-alphanumeric characters unescaped
+fails:String#dump returns a string with numeric characters unescaped
+fails:String#dump returns a string with upper-case alpha characters unescaped
+fails:String#dump returns a string with lower-case alpha characters unescaped
+fails:String#dump returns a string with non-printing ASCII characters replaced by \x notation
+fails:String#dump returns a string with non-printing single-byte UTF-8 characters replaced by \x notation
+fails:String#dump returns a string with multi-byte UTF-8 characters replaced by \u{} notation with lower-case hex digits
+fails:String#dump includes .force_encoding(name) if the encoding isn't ASCII compatible

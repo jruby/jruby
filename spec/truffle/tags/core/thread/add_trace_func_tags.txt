@@ -1,0 +1,1 @@
+fails:Thread#add_trace_func needs to be reviewed for spec completeness

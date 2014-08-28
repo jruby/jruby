@@ -1,0 +1,2 @@
+fails:Kernel#untrace_var is a private method
+fails:Kernel.untrace_var needs to be reviewed for spec completeness

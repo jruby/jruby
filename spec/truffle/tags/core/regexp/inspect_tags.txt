@@ -1,0 +1,8 @@
+fails:Regexp#inspect returns a formatted string that would eval to the same regexp
+fails:Regexp#inspect returns options in the order 'mixn'
+fails:Regexp#inspect does not include the 'o' option
+fails:Regexp#inspect does not include a character set code
+fails:Regexp#inspect correctly escapes forward slashes /
+fails:Regexp#inspect doesn't over escape forward slashes
+fails:Regexp#inspect escapes 2 slashes in a row properly
+fails:Regexp#inspect does not over escape

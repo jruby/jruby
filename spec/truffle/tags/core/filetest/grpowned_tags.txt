@@ -1,0 +1,4 @@
+fails:FileTest.grpowned? returns true if the file exist
+fails:FileTest.grpowned? accepts an object that has a #to_path method
+fails:FileTest.grpowned? takes non primary groups into account
+fails:FileTest.grpowned? returns false if the file doesn't exist

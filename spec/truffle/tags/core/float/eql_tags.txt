@@ -1,0 +1,3 @@
+fails:Float#eql? returns true if other is a Float equal to self
+fails:Float#eql? returns false if other is a Float not equal to self
+fails:Float#eql? returns false if other is not a Float

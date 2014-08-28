@@ -1,0 +1,1 @@
+fails:TrueClass#to_s returns the string 'true'

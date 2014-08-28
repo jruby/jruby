@@ -1,0 +1,9 @@
+fails:Enumerator::Lazy#zip returns a new instance of Enumerator::Lazy
+fails:Enumerator::Lazy#zip keeps size
+fails:Enumerator::Lazy#zip calls the block with a gathered array when yield with multiple arguments
+fails:Enumerator::Lazy#zip returns a Lazy when no arguments given
+fails:Enumerator::Lazy#zip raises a TypeError if arguments contain non-list object
+fails:Enumerator::Lazy#zip when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
+fails:Enumerator::Lazy#zip on a nested Lazy keeps size
+fails:Enumerator::Lazy#zip on a nested Lazy behaves as Enumerable#zip when given a block
+fails:Enumerator::Lazy#zip on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times

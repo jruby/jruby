@@ -1,0 +1,6 @@
+fails:Time#nsec returns 0 for a Time constructed with a whole number of seconds
+fails:Time#nsec returns the nanoseconds part of a Time constructed with a Float number of seconds
+fails:Time#nsec returns the nanoseconds part of a Time constructed with an Integer number of microseconds
+fails:Time#nsec returns the nanoseconds part of a Time constructed with an Float number of microseconds
+fails:Time#nsec returns the nanoseconds part of a Time constructed with a Rational number of seconds
+fails:Time#nsec returns the nanoseconds part of a Time constructed with an Rational number of microseconds

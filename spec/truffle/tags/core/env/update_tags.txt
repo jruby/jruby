@@ -1,0 +1,2 @@
+fails:ENV.update adds the parameter hash to ENV
+fails:ENV.update yields key, the old value and the new value when replacing entries

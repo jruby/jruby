@@ -1,0 +1,8 @@
+fails:Float#angle returns NaN if NaN
+fails:Float#angle returns self if NaN
+fails:Float#angle returns 0 if positive
+fails:Float#angle returns 0 if +0.0
+fails:Float#angle returns 0 if +Infinity
+fails:Float#angle returns Pi if negative
+fails:Float#angle returns Pi if -0.0
+fails:Float#angle returns Pi if -Infinity

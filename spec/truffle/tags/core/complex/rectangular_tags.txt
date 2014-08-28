@@ -1,0 +1,10 @@
+fails:Complex#rectangular returns an Array
+fails:Complex#rectangular returns a two-element Array
+fails:Complex#rectangular returns the real part of self as the first element
+fails:Complex#rectangular returns the imaginary part of self as the last element
+fails:Complex#rectangular raises an ArgumentError if given any arguments
+fails:Complex.rectangular passed a Numeric n which responds to #real? with true returns a Complex with real part n and imaginary part 0
+fails:Complex.rectangular passed a Numeric which responds to #real? with false raises TypeError
+fails:Complex.rectangular passed Numerics n1 and n2 and at least one responds to #real? with false raises TypeError
+fails:Complex.rectangular passed Numerics n1 and n2 and both respond to #real? with true returns a Complex with real part n1 and imaginary part n2
+fails:Complex.rectangular passed a non-Numeric raises TypeError

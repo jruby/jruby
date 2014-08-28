@@ -1,0 +1,1 @@
+fails:Proc.allocate raises a TypeError

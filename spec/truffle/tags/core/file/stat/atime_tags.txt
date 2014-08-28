@@ -1,0 +1,1 @@
+fails:File::Stat#atime returns the atime of a File::Stat object

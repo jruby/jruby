@@ -1,0 +1,19 @@
+fails:Encoding::Converter.new accepts a String for the source encoding
+fails:Encoding::Converter.new accepts a String for the destination encoding
+fails:Encoding::Converter.new accepts an Encoding object for the source encoding
+fails:Encoding::Converter.new accepts an Encoding object for the destination encoding
+fails:Encoding::Converter.new raises an Encoding::ConverterNotFoundError if both encodings are the same
+fails:Encoding::Converter.new calls #to_str to convert the source encoding argument to an encoding name
+fails:Encoding::Converter.new calls #to_str to convert the destination encoding argument to an encoding name
+fails:Encoding::Converter.new sets replacement from the options Hash
+fails:Encoding::Converter.new calls #to_hash to convert the options argument to a Hash if not a Fixnum
+fails:Encoding::Converter.new calls #to_str to convert the replacement object to a String
+fails:Encoding::Converter.new raises a TypeError if #to_str does not return a String
+fails:Encoding::Converter.new raises a TypeError if passed true for the replacement object
+fails:Encoding::Converter.new raises a TypeError if passed false for the replacement object
+fails:Encoding::Converter.new raises a TypeError if passed a Fixnum for the replacement object
+fails:Encoding::Converter.new accepts an empty String for the replacement object
+fails:Encoding::Converter.new when passed nil for the replacement object when the destination encoding is not UTF-8 sets the replacement String to '?'
+fails:Encoding::Converter.new when passed nil for the replacement object when the destination encoding is not UTF-8 sets the replacement String encoding to US-ASCII
+fails:Encoding::Converter.new when passed nil for the replacement object when the destination encoding is not UTF-8 sets the replacement String to '\uFFFD'
+fails:Encoding::Converter.new when passed nil for the replacement object when the destination encoding is not UTF-8 sets the replacement String encoding to UTF-8

@@ -1,0 +1,1 @@
+fails:Process::Status#stopped? needs to be reviewed for spec completeness

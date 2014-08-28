@@ -1,0 +1,1 @@
+fails:Module#eql? returns true if self and the given module are the same

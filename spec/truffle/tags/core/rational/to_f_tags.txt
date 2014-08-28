@@ -1,0 +1,1 @@
+fails:Rational#to_f returns self converted to a Float

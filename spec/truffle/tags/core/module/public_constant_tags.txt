@@ -1,0 +1,2 @@
+fails:Module#public_constant can only be passed constant names defined in the target (self) module
+fails:Module#public_constant accepts multiple names

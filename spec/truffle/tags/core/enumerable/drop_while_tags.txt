@@ -1,0 +1,7 @@
+fails:Enumerable#drop_while returns an Enumerator if no block given
+fails:Enumerable#drop_while returns no/all elements for {true/false} block
+fails:Enumerable#drop_while accepts returns other than true/false
+fails:Enumerable#drop_while passes elements to the block until the first false
+fails:Enumerable#drop_while will only go through what's needed
+fails:Enumerable#drop_while doesn't return self when it could
+fails:Enumerable#drop_while gathers whole arrays as elements when each yields multiple

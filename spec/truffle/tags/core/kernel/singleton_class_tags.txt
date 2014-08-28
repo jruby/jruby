@@ -1,0 +1,6 @@
+fails:Kernel#singleton_class returns class extended from an object
+fails:Kernel#singleton_class returns NilClass for nil
+fails:Kernel#singleton_class returns TrueClass for true
+fails:Kernel#singleton_class returns FalseClass for false
+fails:Kernel#singleton_class raises TypeError for Fixnum
+fails:Kernel#singleton_class raises TypeError for Symbol

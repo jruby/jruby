@@ -1,0 +1,3 @@
+fails:Process.getpgid coerces the argument to an Integer
+fails:Process.getpgid returns the process group ID for the given process id
+fails:Process.getpgid returns the process group ID for the calling process id when passed 0

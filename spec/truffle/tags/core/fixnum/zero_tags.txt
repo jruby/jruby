@@ -1,0 +1,1 @@
+fails:Fixnum#zero? returns true if self is 0

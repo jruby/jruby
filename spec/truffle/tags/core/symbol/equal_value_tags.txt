@@ -1,0 +1,1 @@
+fails:Symbol#== only returns true when the other is exactly the same symbol

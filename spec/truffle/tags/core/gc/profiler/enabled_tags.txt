@@ -1,0 +1,2 @@
+fails:GC::Profiler.enabled? reports as enabled when enabled
+fails:GC::Profiler.enabled? reports as disabled when disabled

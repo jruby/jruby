@@ -1,0 +1,1 @@
+fails:Numeric#truncate converts self to a Float (using #to_f) and returns the #truncate'd result

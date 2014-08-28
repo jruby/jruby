@@ -1,0 +1,7 @@
+fails:Enumerable#min_by returns an enumerator if no block
+fails:Enumerable#min_by returns nil if #each yields no objects
+fails:Enumerable#min_by returns the object for whom the value returned by block is the largest
+fails:Enumerable#min_by returns the object that appears first in #each in case of a tie
+fails:Enumerable#min_by uses min.<=>(current) to determine order
+fails:Enumerable#min_by is able to return the maximum for enums that contain nils
+fails:Enumerable#min_by gathers whole arrays as elements when each yields multiple

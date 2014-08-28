@@ -1,0 +1,2 @@
+fails:Enumerator::Yielder#yield yields the value to the block
+fails:Enumerator::Yielder#yield returns the result of the block for the given value

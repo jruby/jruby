@@ -1,0 +1,2 @@
+fails:Encoding#name returns a String
+fails:Encoding#name uniquely identifies an encoding

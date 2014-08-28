@@ -1,0 +1,1 @@
+fails:Module#initialize_copy raises a TypeError when called on already initialized classes

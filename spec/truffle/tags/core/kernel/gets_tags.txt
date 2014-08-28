@@ -1,0 +1,2 @@
+fails:Kernel#gets is a private method
+fails:Kernel.gets needs to be reviewed for spec completeness

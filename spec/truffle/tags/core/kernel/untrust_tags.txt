@@ -1,0 +1,4 @@
+fails:Kernel#untrust returns self
+fails:Kernel#untrust sets the untrusted bit
+fails:Kernel#untrust raises RuntimeError on a trusted, frozen object
+fails:Kernel#untrust does not raise an error on an untrusted, frozen object

@@ -1,0 +1,2 @@
+fails:Struct::Tms#cstime needs to be reviewed for spec completeness
+fails:Struct::Tms#cstime= needs to be reviewed for spec completeness

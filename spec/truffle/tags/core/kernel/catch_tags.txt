@@ -1,0 +1,15 @@
+fails:Kernel.catch executes its block and catches a thrown value matching its argument
+fails:Kernel.catch returns the second value passed to throw
+fails:Kernel.catch returns the last expression evaluated if throw was not called
+fails:Kernel.catch passes the given symbol to its block
+fails:Kernel.catch raises an ArgumentError if a Symbol is thrown for a String catch value
+fails:Kernel.catch raises an ArgumentError if a String with different identity is thrown
+fails:Kernel.catch catches a Symbol when thrown a matching Symbol
+fails:Kernel.catch catches a String when thrown a String with the same identity
+fails:Kernel.catch accepts an object as an argument
+fails:Kernel.catch yields an object when called without arguments
+fails:Kernel.catch can be used even in a method different from where throw is called
+fails:Kernel.catch raises LocalJumpError if no block is given
+fails:Kernel.catch when nested catches across invocation boundaries
+fails:Kernel.catch when nested catches in the nested invocation with the same key object
+fails:Kernel#catch is a private method

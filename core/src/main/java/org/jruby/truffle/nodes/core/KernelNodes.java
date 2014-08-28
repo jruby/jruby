@@ -36,6 +36,25 @@ import org.jruby.truffle.runtime.subsystems.*;
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
+    @CoreMethod(names = "abort", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class AbortNode extends CoreMethodNode {
+
+        public AbortNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AbortNode(AbortNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder abort() {
+            CompilerDirectives.transferToInterpreter();
+            System.exit(1);
+            return NilPlaceholder.INSTANCE;
+        }
+    }
+
     @CoreMethod(names = "Array", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class ArrayNode extends CoreMethodNode {
 
@@ -309,6 +328,25 @@ public abstract class KernelNodes {
             return null;
         }
 
+    }
+
+    @CoreMethod(names = "exit!", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class ExitBangNode extends CoreMethodNode {
+
+        public ExitBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ExitBangNode(ExitBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder exit() {
+            CompilerDirectives.transferToInterpreter();
+            System.exit(1);
+            return NilPlaceholder.INSTANCE;
+        }
     }
 
     @CoreMethod(names = "gets", isModuleMethod = true, needsSelf = false, maxArgs = 0)

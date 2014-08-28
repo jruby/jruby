@@ -1,0 +1,5 @@
+fails:Integer#rationalize returns a Rational object
+fails:Integer#rationalize uses self as the numerator
+fails:Integer#rationalize uses 1 as the denominator
+fails:Integer#rationalize ignores a single argument
+fails:Integer#rationalize raises ArgumentError when passed more than one argument

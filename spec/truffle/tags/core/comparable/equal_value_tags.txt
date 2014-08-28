@@ -1,0 +1,9 @@
+fails:Comparable#== returns true if other is the same as self
+fails:Comparable#== calls #<=> on self with other and returns true if #<=> returns 0
+fails:Comparable#== calls #<=> on self with other and returns true if #<=> returns 0.0
+fails:Comparable#== returns false if calling #<=> on self returns a positive Integer
+fails:Comparable#== returns false if calling #<=> on self returns a negative Integer
+fails:Comparable#== returns false if calling #<=> on self returns nil
+fails:Comparable#== returns false if calling #<=> on self returns a non-Integer
+fails:Comparable#== when calling #<=> on self raises an Exception raises the error if #<=> raises an Exception that excluding StandardError
+fails:Comparable#== when calling #<=> on self raises an Exception returns false if #<=> raises a StandardError

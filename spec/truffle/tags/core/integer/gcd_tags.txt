@@ -1,0 +1,11 @@
+fails:Integer#gcd returns self if equal to the argument
+fails:Integer#gcd returns an Integer
+fails:Integer#gcd returns the greatest common divisor of self and argument
+fails:Integer#gcd returns a positive integer even if self is negative
+fails:Integer#gcd returns a positive integer even if the argument is negative
+fails:Integer#gcd returns a positive integer even if both self and argument are negative
+fails:Integer#gcd accepts a Bignum argument
+fails:Integer#gcd works if self is a Bignum
+fails:Integer#gcd raises an ArgumentError if not given an argument
+fails:Integer#gcd raises an ArgumentError if given more than one argument
+fails:Integer#gcd raises a TypeError unless the argument is an Integer

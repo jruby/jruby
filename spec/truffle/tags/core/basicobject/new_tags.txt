@@ -1,0 +1,1 @@
+fails:BasicObject.new returns an instance of BasicObject

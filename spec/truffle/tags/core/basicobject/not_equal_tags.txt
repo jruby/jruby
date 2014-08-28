@@ -1,0 +1,5 @@
+fails:BasicObject#!= is a public instance method
+fails:BasicObject#!= returns true if other is not identical to self
+fails:BasicObject#!= returns true if other is an Object
+fails:BasicObject#!= returns false if other is identical to self
+fails:BasicObject#!= dispatches to #==

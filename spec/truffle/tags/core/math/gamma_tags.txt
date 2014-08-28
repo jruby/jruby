@@ -1,0 +1,40 @@
+fails:Math.gamma returns +infinity given 0
+fails:Math.gamma returns -infinity given -0.0
+fails:Math.gamma returns Math.sqrt(Math::PI) given 0.5
+fails:Math.gamma returns exactly 1! given 2
+fails:Math.gamma returns exactly 2! given 3
+fails:Math.gamma returns exactly 3! given 4
+fails:Math.gamma returns exactly 4! given 5
+fails:Math.gamma returns exactly 5! given 6
+fails:Math.gamma returns exactly 6! given 7
+fails:Math.gamma returns exactly 7! given 8
+fails:Math.gamma returns exactly 8! given 9
+fails:Math.gamma returns exactly 9! given 10
+fails:Math.gamma returns exactly 10! given 11
+fails:Math.gamma returns exactly 11! given 12
+fails:Math.gamma returns exactly 12! given 13
+fails:Math.gamma returns exactly 13! given 14
+fails:Math.gamma returns exactly 14! given 15
+fails:Math.gamma returns exactly 15! given 16
+fails:Math.gamma returns exactly 16! given 17
+fails:Math.gamma returns exactly 17! given 18
+fails:Math.gamma returns exactly 18! given 19
+fails:Math.gamma returns exactly 19! given 20
+fails:Math.gamma returns exactly 20! given 21
+fails:Math.gamma returns exactly 21! given 22
+fails:Math.gamma returns exactly 22! given 23
+fails:Math.gamma returns approximately 23! given 24
+fails:Math.gamma returns approximately 24! given 25
+fails:Math.gamma returns approximately 25! given 26
+fails:Math.gamma returns approximately 26! given 27
+fails:Math.gamma returns approximately 27! given 28
+fails:Math.gamma returns approximately 28! given 29
+fails:Math.gamma returns approximately 29! given 30
+fails:Math.gamma returns good numerical approximation for gamma(3.2)
+fails:Math.gamma returns good numerical approximation for gamma(-2.15)
+fails:Math.gamma returns good numerical approximation for gamma(0.00001)
+fails:Math.gamma returns good numerical approximation for gamma(-0.00001)
+fails:Math.gamma raises Math::DomainError given -1
+fails:Math.gamma returns +infinity given +infinity
+fails:Math.gamma raises Math::DomainError given negative infinity
+fails:Math.gamma returns NaN given NaN

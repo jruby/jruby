@@ -1,0 +1,11 @@
+fails:Proc#lambda? returns true if the Proc was created from a block with the lambda keyword
+fails:Proc#lambda? returns false if the Proc was created from a block with the proc keyword
+fails:Proc#lambda? returns false if the Proc was created from a block with Proc.new
+fails:Proc#lambda? is preserved when passing a Proc with & to the lambda keyword
+fails:Proc#lambda? is preserved when passing a Proc with & to the proc keyword
+fails:Proc#lambda? is preserved when passing a Proc with & to Proc.new
+fails:Proc#lambda? returns false if the Proc was created from a block with &
+fails:Proc#lambda? is preserved when the Proc was passed using &
+fails:Proc#lambda? returns true for a Method converted to a Proc
+fails:Proc#lambda? is preserved when a Proc is curried
+fails:Proc#lambda? is preserved when a curried Proc is called without enough arguments

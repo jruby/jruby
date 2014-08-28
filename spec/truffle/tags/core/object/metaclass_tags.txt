@@ -1,0 +1,1 @@
+fails:Object#metaclass returns the object's metaclass

@@ -1,0 +1,1 @@
+fails:Symbol#to_sym returns self

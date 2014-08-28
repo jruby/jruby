@@ -1,0 +1,2 @@
+fails:Process::Status#termsig for a child that exited normally returns true
+fails:Process::Status#termsig for a child that was sent a signal returns the signal

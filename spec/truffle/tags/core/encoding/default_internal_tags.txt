@@ -1,0 +1,13 @@
+fails:Encoding.default_internal is nil by default
+fails:Encoding.default_internal returns an Encoding object if a default internal encoding is set
+fails:Encoding.default_internal returns nil if no default internal encoding is set
+fails:Encoding.default_internal returns the default internal encoding
+fails:Encoding.default_internal with command line options returns Encoding::UTF_8 if ruby was invoked with -U
+fails:Encoding.default_internal with command line options uses the encoding specified when ruby is invoked with an '-E :internal' argument
+fails:Encoding.default_internal with command line options uses the encoding specified when ruby is invoked with an '-E external:internal' argument
+fails:Encoding.default_internal= sets the default internal encoding
+fails:Encoding.default_internal= can accept a name of an encoding as a String
+fails:Encoding.default_internal= calls #to_str to convert an object to a String
+fails:Encoding.default_internal= raises a TypeError if #to_str does not return a String
+fails:Encoding.default_internal= raises a TypeError when passed an object not providing #to_str
+fails:Encoding.default_internal= accepts an argument of nil to unset the default internal encoding

@@ -1,0 +1,1 @@
+fails:Numeric#singleton_method_added raises a TypeError when trying to #dup a Numeric

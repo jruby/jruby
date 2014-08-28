@@ -1,0 +1,10 @@
+fails:ENV.[]= sets the environment variable to the given value
+fails:ENV.[]= returns the value
+fails:ENV.[]= deletes the environment variable when the value is nil
+fails:ENV.[]= coerces the key argument with #to_str
+fails:ENV.[]= coerces the value argument with #to_str
+fails:ENV.[]= raises TypeError when the key is not coercible to String
+fails:ENV.[]= raises TypeError when the value is not coercible to String
+fails:ENV.[]= raises Errno::EINVAL when the key contains the '=' character
+fails:ENV.[]= raises Errno::EINVAL when the key is an empty string
+fails:ENV.[]= does nothing when the key is not a valid environment variable key and the value is nil

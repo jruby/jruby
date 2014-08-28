@@ -1,0 +1,2 @@
+fails:Bignum#eql? when given a Bignum returns true if the given argument has the same value
+fails:Bignum#eql? when given a non-Bignum returns false

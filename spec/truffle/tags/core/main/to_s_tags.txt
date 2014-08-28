@@ -1,0 +1,1 @@
+fails:main#to_s returns 'main'

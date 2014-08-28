@@ -1,0 +1,9 @@
+fails:Enumerable#none? returns true if none of the elements in self are true
+fails:Enumerable#none? returns false if at least one of the elements in self are true
+fails:Enumerable#none? gathers whole arrays as elements when each yields multiple
+fails:Enumerable#none? with a block passes each element to the block in turn until it returns true
+fails:Enumerable#none? with a block stops passing elements to the block when it returns true
+fails:Enumerable#none? with a block returns true if the block never returns true
+fails:Enumerable#none? with a block returns false if the block ever returns true
+fails:Enumerable#none? with a block gathers initial args as elements when each yields multiple
+fails:Enumerable#none? with a block yields multiple arguments when each yields multiple

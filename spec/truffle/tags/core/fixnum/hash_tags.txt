@@ -1,0 +1,2 @@
+fails:Fixnum#hash is provided
+fails:Fixnum#hash is stable

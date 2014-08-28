@@ -1,0 +1,22 @@
+fails:String#scan returns an array containing all matches
+fails:String#scan respects $KCODE when the pattern collapses to nothing
+fails:String#scan stores groups as arrays in the returned arrays
+fails:String#scan scans for occurrences of the string if pattern is a string
+fails:String#scan sets $~ to MatchData of last match and nil when there's none
+fails:String#scan supports \G which matches the end of the previous match / string start for first match
+fails:String#scan tries to convert pattern to a string via to_str
+fails:String#scan raises a TypeError if pattern isn't a Regexp and can't be converted to a String
+fails:String#scan taints the results if the String argument is tainted
+fails:String#scan taints the results when passed a String argument if self is tainted
+fails:String#scan taints the results if the Regexp argument is tainted
+fails:String#scan taints the results when passed a Regexp argument if self is tainted
+fails:String#scan with pattern and block returns self
+fails:String#scan with pattern and block passes each match to the block as one argument: an array
+fails:String#scan with pattern and block passes groups to the block as one argument: an array
+fails:String#scan with pattern and block sets $~ for access from the block
+fails:String#scan with pattern and block restores $~ after leaving the block
+fails:String#scan with pattern and block sets $~ to MatchData of last match and nil when there's none for access from outside
+fails:String#scan with pattern and block taints the results if the String argument is tainted
+fails:String#scan with pattern and block taints the results when passed a String argument if self is tainted
+fails:String#scan with pattern and block taints the results if the Regexp argument is tainted
+fails:String#scan with pattern and block taints the results when passed a Regexp argument if self is tainted

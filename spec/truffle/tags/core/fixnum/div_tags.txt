@@ -1,0 +1,6 @@
+fails:Fixnum#div with a Fixnum returns self divided by the given argument as an Integer
+fails:Fixnum#div rounds towards -inf
+fails:Fixnum#div coerces self and the given argument to Floats and returns self divided by other as Fixnum
+fails:Fixnum#div raises a ZeroDivisionError when the given argument is 0 and a Float
+fails:Fixnum#div raises a ZeroDivisionError when the given argument is 0
+fails:Fixnum#div raises a TypeError when given a non-Integer

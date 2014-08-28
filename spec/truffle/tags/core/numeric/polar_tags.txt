@@ -1,0 +1,5 @@
+fails:Numeric#polar returns a two-element Array
+fails:Numeric#polar sets the first value to the absolute value of self
+fails:Numeric#polar sets the last value to 0 if self is positive
+fails:Numeric#polar sets the last value to Pi if self is negative
+fails:Numeric#polar returns [NaN, NaN] if self is NaN

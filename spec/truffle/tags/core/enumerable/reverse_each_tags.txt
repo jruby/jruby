@@ -1,0 +1,3 @@
+fails:Enumerable#reverse_each traverses enum in reverse order and pass each element to block
+fails:Enumerable#reverse_each returns an Enumerator if no block given
+fails:Enumerable#reverse_each gathers whole arrays as elements when each yields multiple

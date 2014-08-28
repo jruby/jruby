@@ -1,0 +1,7 @@
+fails:Enumerable#max_by returns an enumerator if no block
+fails:Enumerable#max_by returns nil if #each yields no objects
+fails:Enumerable#max_by returns the object for whom the value returned by block is the largest
+fails:Enumerable#max_by returns the object that appears first in #each in case of a tie
+fails:Enumerable#max_by uses max.<=>(current) to determine order
+fails:Enumerable#max_by is able to return the maximum for enums that contain nils
+fails:Enumerable#max_by gathers whole arrays as elements when each yields multiple

@@ -1,0 +1,3 @@
+fails:Thread.exclusive yields to the block
+fails:Thread.exclusive returns the result of yielding
+fails:Thread.exclusive needs to be reviewed for spec completeness

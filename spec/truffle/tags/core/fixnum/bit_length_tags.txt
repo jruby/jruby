@@ -1,0 +1,2 @@
+fails:Fixnum#bit_length returns the position of the leftmost bit of a positive number
+fails:Fixnum#bit_length returns the position of the leftmost 0 bit of a negative number

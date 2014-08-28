@@ -1,0 +1,1 @@
+fails:Complex#abs2 returns the sum of the squares of the real and imaginary parts

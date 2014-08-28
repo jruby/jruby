@@ -1,0 +1,3 @@
+fails:Binding#eval behaves like Kernel.eval(..., self)
+fails:Binding#eval needs to be reviewed for spec completeness
+fails:Binding#eval with a file given does not store the filename permanently

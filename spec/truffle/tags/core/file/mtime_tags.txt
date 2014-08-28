@@ -1,0 +1,3 @@
+fails:File.mtime returns the modification Time of the file
+fails:File.mtime raises an Errno::ENOENT exception if the file is not found
+fails:File#mtime returns the modification Time of the file

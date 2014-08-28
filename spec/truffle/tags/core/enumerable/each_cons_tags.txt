@@ -1,0 +1,7 @@
+fails:Enumerable#each_cons passes element groups to the block
+fails:Enumerable#each_cons raises an Argument Error if there is not a single parameter > 0
+fails:Enumerable#each_cons tries to convert n to an Integer using #to_int
+fails:Enumerable#each_cons works when n is >= full length
+fails:Enumerable#each_cons yields only as much as needed
+fails:Enumerable#each_cons returns an enumerator if no block
+fails:Enumerable#each_cons gathers whole arrays as elements when each yields multiple

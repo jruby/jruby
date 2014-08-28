@@ -1,0 +1,12 @@
+fails:Object#clone returns a new object duplicated from the original
+fails:Object#clone produces a shallow copy, contained objects are not recursively dupped
+fails:Object#clone calls #initialize_copy on the NEW object if available, passing in original object
+fails:Object#clone preserves tainted state from the original
+fails:Object#clone does not preserve the object_id
+fails:Object#clone preserves untrusted state from the original
+fails:Object#clone raises a TypeError for NilClass
+fails:Object#clone raises a TypeError for TrueClass
+fails:Object#clone raises a TypeError for FalseClass
+fails:Object#clone raises a TypeError for Fixnum
+fails:Object#clone raises a TypeError for Symbol
+fails:Object#clone preserves frozen state from the original

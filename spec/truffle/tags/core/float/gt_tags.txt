@@ -1,0 +1,1 @@
+fails:Float#> returns true if self is greater than other

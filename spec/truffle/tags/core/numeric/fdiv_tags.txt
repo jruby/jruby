@@ -1,0 +1,6 @@
+fails:Numeric#fdiv coerces self with #to_f
+fails:Numeric#fdiv coerces other with #to_f
+fails:Numeric#fdiv performs floating-point division
+fails:Numeric#fdiv returns a Float
+fails:Numeric#fdiv returns Infinity if other is 0
+fails:Numeric#fdiv returns NaN if other is NaN

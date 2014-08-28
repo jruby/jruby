@@ -1,0 +1,9 @@
+fails:Bignum#divmod returns an Array containing quotient and modulus obtained from dividing self by the given argument
+fails:Bignum#divmod raises a ZeroDivisionError when the given argument is 0
+fails:Bignum#divmod raises a FloatDomainError if other is NaN
+fails:Bignum#divmod raises a ZeroDivisionError when the given argument is 0 and a Float
+fails:Bignum#divmod raises a TypeError when the given argument is not an Integer
+fails:Bignum#divmod with q = floor(x/y), a = q*b + r, returns [q,r] when a < 0, b > 0 and |a| < b
+fails:Bignum#divmod with q = floor(x/y), a = q*b + r, returns [q,r] when a > 0, b < 0 and a > |b|
+fails:Bignum#divmod with q = floor(x/y), a = q*b + r, returns [q,r] when a > 0, b < 0 and a < |b|
+fails:Bignum#divmod with q = floor(x/y), a = q*b + r, returns [q,r] when a < 0, b < 0 and |a| < |b|

@@ -1,0 +1,10 @@
+fails:Encoding::Converter#primitive_errinfo returns [:source_buffer_empty,nil,nil,nil,nil] when no conversion has been attempted
+fails:Encoding::Converter#primitive_errinfo returns [:finished,nil,nil,nil,nil] when #primitive_convert last returned :finished
+fails:Encoding::Converter#primitive_errinfo returns [:source_buffer_empty,nil,nil,nil, nil] when #convert last succeeded
+fails:Encoding::Converter#primitive_errinfo returns [:destination_buffer_full,nil,nil,nil,nil] when #primitive_convert last returned :destination_buffer_full
+fails:Encoding::Converter#primitive_errinfo returns the status of the last primitive conversion, even if it was successful and the previous one wasn't
+fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, and the erroneous bytes when #primitive_convert last returned :undefined_conversion
+fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, and erroneous bytes when #primitive_convert last returned :incomplete_input
+fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #primitive_convert last returned :invalid_byte_sequence
+fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #convert last raised InvalidByteSequenceError
+fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #finish last raised InvalidByteSequenceError

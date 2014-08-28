@@ -1,0 +1,16 @@
+fails:Bignum#>> with n >> m returns n shifted right m bits when n > 0, m > 0
+fails:Bignum#>> with n >> m returns n shifted right m bits when n < 0, m > 0
+fails:Bignum#>> with n >> m respects twos complement signed shifting
+fails:Bignum#>> with n >> m respects twos complement signed shifting for very large values
+fails:Bignum#>> with n >> m returns n shifted left m bits when  n > 0, m < 0
+fails:Bignum#>> with n >> m returns n shifted left m bits when  n < 0, m < 0
+fails:Bignum#>> with n >> m returns n when n > 0, m == 0
+fails:Bignum#>> with n >> m returns n when n < 0, m == 0
+fails:Bignum#>> with n >> m returns 0 when m > 0 and m == p where 2**p > n >= 2**(p-1)
+fails:Bignum#>> with n >> m returns 0 when m is a Bignum
+fails:Bignum#>> with n >> m returns a Fixnum == fixnum_max() when (fixnum_max() * 2) >> 1 and n > 0
+fails:Bignum#>> with n >> m returns a Fixnum == fixnum_min() when (fixnum_min() * 2) >> 1 and n < 0
+fails:Bignum#>> with n >> m calls #to_int to convert the argument to an Integer
+fails:Bignum#>> with n >> m raises a TypeError when #to_int does not return an Integer
+fails:Bignum#>> with n >> m raises a TypeError when passed nil
+fails:Bignum#>> with n >> m raises a TypeError when passed a String

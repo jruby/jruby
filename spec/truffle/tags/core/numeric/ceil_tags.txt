@@ -1,0 +1,1 @@
+fails:Numeric#ceil converts self to a Float (using #to_f) and returns the #ceil'ed result

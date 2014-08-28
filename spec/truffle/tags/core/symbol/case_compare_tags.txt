@@ -1,0 +1,2 @@
+fails:Symbol#=== returns true when the argument is a Symbol
+fails:Symbol#=== returns false when the argument is a String

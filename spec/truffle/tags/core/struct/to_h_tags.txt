@@ -1,0 +1,2 @@
+fails:Struct#to_h returns a Hash with members as keys
+fails:Struct#to_h returns a Hash that is independent from the struct

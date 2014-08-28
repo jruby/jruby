@@ -1,0 +1,1 @@
+fails:Time.now creates a subclass instance if called on a subclass

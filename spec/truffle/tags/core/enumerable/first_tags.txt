@@ -1,0 +1,12 @@
+fails:Enumerable#first returns the first element
+fails:Enumerable#first returns nil if self is empty
+fails:Enumerable#first when passed an argument returns the first count elements if given a count
+fails:Enumerable#first when passed an argument returns an empty array when passed count on an empty array
+fails:Enumerable#first when passed an argument returns an empty array when passed count == 0
+fails:Enumerable#first when passed an argument returns an array containing the first element when passed count == 1
+fails:Enumerable#first when passed an argument raises an ArgumentError when count is negative
+fails:Enumerable#first when passed an argument returns the entire array when count > length
+fails:Enumerable#first when passed an argument tries to convert the passed argument to an Integer using #to_int
+fails:Enumerable#first when passed an argument raises a TypeError if the passed argument is not numeric
+fails:Enumerable#first when passed an argument gathers whole arrays as elements when each yields multiple
+fails:Enumerable#first when passed an argument consumes only what is needed

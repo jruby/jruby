@@ -1,0 +1,3 @@
+fails:BasicObject#instance_eval is a public instance method
+fails:BasicObject#instance_eval sets self to the receiver in the context of the passed block
+fails:BasicObject#instance_eval evaluates strings

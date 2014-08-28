@@ -1,0 +1,3 @@
+fails:Kernel#initialize_dup is a private method
+fails:Kernel#initialize_dup is called when object is cloned
+fails:Kernel#initialize_dup calls initialize_copy by default

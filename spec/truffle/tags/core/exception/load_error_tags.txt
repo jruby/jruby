@@ -1,0 +1,2 @@
+fails:LoadError#path is nil when constructed directly
+fails:LoadError raised by load or require provides the failing path in its #path attribute

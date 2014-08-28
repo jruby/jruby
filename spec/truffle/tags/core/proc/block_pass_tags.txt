@@ -1,0 +1,4 @@
+fails:Proc as a block pass argument remains the same object if re-vivified by the target method
+fails:Proc as a block pass argument remains the same object if reconstructed with Proc.new
+fails:Proc as an implicit block pass argument remains the same object if re-vivified by the target method
+fails:Proc as an implicit block pass argument remains the same object if reconstructed with Proc.new

@@ -1,0 +1,2 @@
+fails:Regexp.last_match returns MatchData instance when not passed arguments
+fails:Regexp.last_match returns the nth field in this MatchData when passed a Fixnum

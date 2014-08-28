@@ -1,0 +1,2 @@
+fails:ENV.keys returns all the keys
+fails:ENV.keys returns the keys in the locale encoding

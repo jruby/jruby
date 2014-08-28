@@ -1,0 +1,1 @@
+fails:Integer#numerator returns self

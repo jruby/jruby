@@ -1,0 +1,1 @@
+fails:Thread.allocate raises a TypeError

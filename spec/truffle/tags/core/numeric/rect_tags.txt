@@ -1,0 +1,5 @@
+fails:Numeric#rect returns an Array
+fails:Numeric#rect returns a two-element Array
+fails:Numeric#rect returns self as the first element
+fails:Numeric#rect returns 0 as the last element
+fails:Numeric#rect raises an ArgumentError if given any arguments

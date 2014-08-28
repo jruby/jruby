@@ -1,0 +1,3 @@
+fails:FileTest.writable? returns true if named file is writable by the effective user id of the process, otherwise false
+fails:FileTest.writable? accepts an object that has a #to_path method
+fails:FileTest.writable? returns false if the file does not exist

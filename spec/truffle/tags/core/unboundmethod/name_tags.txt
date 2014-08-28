@@ -1,0 +1,2 @@
+fails:UnboundMethod#name returns the name of the method
+fails:UnboundMethod#name returns the name even when aliased

@@ -1,0 +1,8 @@
+fails:Encoding.aliases returns a Hash
+fails:Encoding.aliases has Strings as keys
+fails:Encoding.aliases has Strings as values
+fails:Encoding.aliases has alias names as its keys
+fails:Encoding.aliases has the names of the aliased encoding as its values
+fails:Encoding.aliases has an 'external' key with the external default encoding as its value
+fails:Encoding.aliases has a 'locale' key and its value equals to the name of the encoding finded by the locale charmap
+fails:Encoding.aliases only contains valid aliased encodings

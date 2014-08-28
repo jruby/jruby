@@ -1,0 +1,3 @@
+fails:ENV.assoc returns an array of the key and value of the environment variable with the given key
+fails:ENV.assoc returns nil if no environment variable with the given key exists
+fails:ENV.assoc returns the key element coerced with #to_str

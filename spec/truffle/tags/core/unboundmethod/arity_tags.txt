@@ -1,0 +1,4 @@
+fails:UnboundMethod#arity returns the number of arguments accepted by a method, using Method#unbind
+fails:UnboundMethod#arity returns the number arguments accepted by a method, using Module#instance_method
+fails:UnboundMethod#arity if optional arguments returns the negative number of mandatory arguments, using Method#unbind
+fails:UnboundMethod#arity if optional arguments returns the negative number of mandatory arguments, using Module#instance_method

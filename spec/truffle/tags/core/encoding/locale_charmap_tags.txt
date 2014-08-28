@@ -1,0 +1,3 @@
+fails:Encoding.locale_charmap returns a String
+fails:Encoding.locale_charmap returns a value based on the LC_ALL environment variable
+fails:Encoding.locale_charmap is unaffected by assigning to ENV['LC_ALL'] in the same process

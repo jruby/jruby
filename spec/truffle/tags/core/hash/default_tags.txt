@@ -1,0 +1,6 @@
+fails:Hash#default returns the default value
+fails:Hash#default uses the default proc to compute a default value, passing given key
+fails:Hash#default calls default proc with nil arg if passed a default proc but no arg
+fails:Hash#default= sets the default value
+fails:Hash#default= unsets the default proc
+fails:Hash#default= raises a RuntimeError if called on a frozen instance

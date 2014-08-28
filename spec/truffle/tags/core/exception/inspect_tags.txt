@@ -1,0 +1,3 @@
+fails:Exception#inspect returns '#<Exception: Exception>' when no message given
+fails:Exception#inspect includes #to_s when the result is non-empty
+fails:Exception#inspect returns the class name when #to_s returns an empty string

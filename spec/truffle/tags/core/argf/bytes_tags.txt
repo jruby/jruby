@@ -1,0 +1,3 @@
+fails:ARGF.bytes yields each byte of all streams to the passed block
+fails:ARGF.bytes returns self when passed a block
+fails:ARGF.bytes returns an Enumerator when passed no block

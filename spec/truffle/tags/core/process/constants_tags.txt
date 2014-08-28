@@ -1,0 +1,2 @@
+fails:Process::Constants has the correct constant values on BSD-like systems
+fails:Process::Constants has the correct constant values on Darwin

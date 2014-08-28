@@ -1,0 +1,5 @@
+fails:Integer#to_r returns a Rational object
+fails:Integer#to_r constructs a rational number with self as the numerator
+fails:Integer#to_r constructs a rational number with 1 as the denominator
+fails:Integer#to_r works even if self is a Bignum
+fails:Integer#to_r raises an ArgumentError if given any arguments

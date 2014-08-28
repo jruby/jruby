@@ -1,0 +1,3 @@
+fails:Numeric#to_c returns a Complex object
+fails:Numeric#to_c uses self as the real component
+fails:Numeric#to_c uses 0 as the imaginary component

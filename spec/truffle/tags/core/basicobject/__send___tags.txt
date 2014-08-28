@@ -1,0 +1,1 @@
+fails:BasicObject#__send__ is a public instance method

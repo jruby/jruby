@@ -1,0 +1,3 @@
+fails:Encoding#inspect returns a String
+fails:Encoding#inspect returns #<Encoding:name> for a non-dummy encoding named 'name'
+fails:Encoding#inspect returns #<Encoding:name (dummy)> for a dummy encoding named 'name'

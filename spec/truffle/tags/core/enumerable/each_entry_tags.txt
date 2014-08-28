@@ -1,0 +1,5 @@
+fails:Enumerable#each_entry yields multiple arguments as an array
+fails:Enumerable#each_entry returns an enumerator if no block
+fails:Enumerable#each_entry passes through the values yielded by #each_with_index
+fails:Enumerable#each_entry raises an Argument error when extra arguments
+fails:Enumerable#each_entry passes extra arguments to #each

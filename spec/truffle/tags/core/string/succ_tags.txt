@@ -1,0 +1,10 @@
+fails:String#succ returns an empty string for empty strings
+fails:String#succ returns the successor by increasing the rightmost alphanumeric (digit => digit, letter => letter with same case)
+fails:String#succ increases non-alphanumerics (via ascii rules) if there are no alphanumerics
+fails:String#succ increases the next best alphanumeric (jumping over non-alphanumerics) if there is a carry
+fails:String#succ increases the next best character if there is a carry for non-alphanumerics
+fails:String#succ adds an additional character (just left to the last increased one) if there is a carry and no character left to increase
+fails:String#succ returns subclass instances when called on a subclass
+fails:String#succ taints the result if self is tainted
+fails:String#succ! is equivalent to succ, but modifies self in place (still returns self)
+fails:String#succ! raises a RuntimeError if self is frozen

@@ -1,0 +1,4 @@
+fails:Enumerable#sort_by returns an array of elements ordered by the result of block
+fails:Enumerable#sort_by sorts the object by the given attribute
+fails:Enumerable#sort_by returns an Enumerator when a block is not supplied
+fails:Enumerable#sort_by gathers whole arrays as elements when each yields multiple

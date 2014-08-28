@@ -1,0 +1,2 @@
+fails:Numeric#imaginary returns 0
+fails:Numeric#imaginary raises an ArgumentError if given any arguments

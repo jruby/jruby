@@ -1,0 +1,2 @@
+fails:File::Stat#sticky? accepts an object that has a #to_path method
+fails:File::Stat#sticky? needs to be reviewed for spec completeness

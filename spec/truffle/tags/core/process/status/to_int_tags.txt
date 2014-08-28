@@ -1,0 +1,1 @@
+fails:Process::Status#to_int needs to be reviewed for spec completeness

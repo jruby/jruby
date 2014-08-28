@@ -1,0 +1,1 @@
+fails:Fixnum#~ returns self with each bit flipped

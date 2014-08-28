@@ -1,0 +1,9 @@
+fails:Time#usec returns 0 for a Time constructed with a whole number of seconds
+fails:Time#usec returns the microseconds part of a Time constructed with a Float number of seconds
+fails:Time#usec returns the microseconds part of a Time constructed with an Integer number of microseconds
+fails:Time#usec returns the microseconds part of a Time constructed with an Float number of microseconds > 1
+fails:Time#usec returns 0 for a Time constructed with an Float number of microseconds < 1
+fails:Time#usec returns the microseconds part of a Time constructed with a Rational number of seconds
+fails:Time#usec returns the microseconds part of a Time constructed with an Rational number of microseconds > 1
+fails:Time#usec returns 0 for a Time constructed with an Rational number of microseconds < 1
+fails:Time#usec returns the microseconds for time created by Time#local

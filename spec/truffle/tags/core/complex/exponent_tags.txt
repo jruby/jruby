@@ -1,0 +1,6 @@
+fails:Complex#** with Fixnum 0 returns Complex(1)
+fails:Complex#** with Float 0.0 returns Complex(1.0, 0.0)
+fails:Complex#** with Complex returns self raised to the given power
+fails:Complex#** with Integer returns self raised to the given power
+fails:Complex#** with Rational returns self raised to the given power
+fails:Complex#** with Object tries to coerce self into other

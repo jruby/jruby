@@ -1,0 +1,6 @@
+fails:Complex#== with Complex returns true when self and other have numerical equality
+fails:Complex#== with Numeric returns true when self's imaginary part is 0 and the real part and other have numerical equality
+fails:Complex#== with Object calls other#== with self
+fails:Complex#== with a Numeric which responds to #real? with true returns real == other when the imaginary part is zero
+fails:Complex#== with a Numeric which responds to #real? with true returns false when when the imaginary part is not zero
+fails:Complex#== with a Numeric which responds to #real? with false returns other == self

@@ -1,0 +1,6 @@
+fails:Thread.new creates a thread executing the given block
+fails:Thread.new can pass arguments to the thread block
+fails:Thread.new raises an exception when not given a block
+fails:Thread.new creates a subclass of thread calls super with a block in initialize
+fails:Thread.new calls #initialize and raises an error if super not used
+fails:Thread.new calls and respects #initialize for the block to use

@@ -1,0 +1,2 @@
+fails:Time#thursday? returns true if time represents Thursday
+fails:Time#thursday? returns false if time doesn't represent Thursday

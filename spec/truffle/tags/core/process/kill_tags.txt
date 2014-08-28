@@ -1,0 +1,17 @@
+fails:Process.kill raises an ArgumentError for unknown signals
+fails:Process.kill raises an ArgumentError if passed a lowercase signal name
+fails:Process.kill raises an ArgumentError if signal is not a Fixnum or String
+fails:Process.kill raises Errno::ESRCH if the process does not exist
+fails:Process.kill accepts a Symbol as a signal name
+fails:Process.kill accepts a String as signal name
+fails:Process.kill accepts a signal name without the 'SIG' prefix
+fails:Process.kill accepts a signal name with the 'SIG' prefix
+fails:Process.kill acceps an Integer as a signal value
+fails:Process.kill calls #to_int to coerce the pid to an Integer
+fails:Process.kill raises an Errno::EPERM if permission is denied
+fails:Process.kill signals multiple processes
+fails:Process.kill returns the number of processes signaled
+fails:Process.kill signals the process group if the PID is zero
+fails:Process.kill signals the process group if the signal number is negative
+fails:Process.kill signals the process group if the short signal name starts with a minus sign
+fails:Process.kill signals the process group if the full signal name starts with a minus sign

@@ -1,0 +1,8 @@
+fails:String#eql? returns true if self <=> string returns 0
+fails:String#eql? returns false if self <=> string does not return 0
+fails:String#eql? ignores encoding difference of compatible string
+fails:String#eql? considers encoding difference of incompatible string
+fails:String#eql? considers encoding compatibility
+fails:String#eql? ignores subclass differences
+fails:String#eql? when given a non-String returns false
+fails:String#eql? when given a non-String does not try to call #to_str on the given argument

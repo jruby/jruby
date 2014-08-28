@@ -1,0 +1,8 @@
+fails:Kernel.throw transfers control to the end of the active catch block waiting for symbol
+fails:Kernel.throw transfers control to the innermost catch block waiting for the same sympol
+fails:Kernel.throw sets the return value of the catch block to nil by default
+fails:Kernel.throw sets the return value of the catch block to a value specified as second parameter
+fails:Kernel.throw raises an ArgumentError if there is no catch block for the symbol
+fails:Kernel.throw raises ArgumentError if 3 or more arguments provided
+fails:Kernel.throw can throw an object
+fails:Kernel#throw is a private method

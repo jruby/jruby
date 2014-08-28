@@ -1,0 +1,4 @@
+fails:Float#finite? returns true for finite values
+fails:Float#finite? returns false for positive infinity
+fails:Float#finite? returns false for negative infinity
+fails:Float#finite? returns false for NaN

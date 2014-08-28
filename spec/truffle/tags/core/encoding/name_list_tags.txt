@@ -1,0 +1,4 @@
+fails:Encoding.name_list returns an Array
+fails:Encoding.name_list returns encoding names as Strings
+fails:Encoding.name_list includes all aliases
+fails:Encoding.name_list includes all non-dummy encodings

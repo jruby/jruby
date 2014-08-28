@@ -1,0 +1,3 @@
+fails:Array.allocate returns an instance of Array
+fails:Array.allocate returns a fully-formed instance of Array
+fails:Array.allocate does not accept any arguments

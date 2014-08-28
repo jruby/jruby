@@ -1,0 +1,3 @@
+fails:Encoding::InvalidByteSequenceError#error_bytes returns a String
+fails:Encoding::InvalidByteSequenceError#error_bytes returns the bytes that caused the exception
+fails:Encoding::InvalidByteSequenceError#error_bytes uses ASCII-8BIT as the encoding

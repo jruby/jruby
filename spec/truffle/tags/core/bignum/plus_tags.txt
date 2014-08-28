@@ -1,0 +1,2 @@
+fails:Bignum#+ returns self plus the given Integer
+fails:Bignum#+ raises a TypeError when given a non-Integer

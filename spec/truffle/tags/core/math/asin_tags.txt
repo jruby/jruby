@@ -1,0 +1,7 @@
+fails:Math.asin returns a float
+fails:Math.asin returns the arcsine of the argument
+fails:Math.asin raises a TypeError if the argument cannot be coerced with Float()
+fails:Math.asin returns NaN given NaN
+fails:Math.asin raises a TypeError if the argument is nil
+fails:Math.asin accepts any argument that can be coerced with Float()
+fails:Math#asin is accessible as a private instance method

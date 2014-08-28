@@ -1,0 +1,4 @@
+fails:Enumerable#member? returns true if any element == argument for numbers
+fails:Enumerable#member? returns true if any element == argument for other objects
+fails:Enumerable#member? returns true if any member of enum equals obj when == compare different classes (legacy rubycon)
+fails:Enumerable#member? gathers whole arrays as elements when each yields multiple

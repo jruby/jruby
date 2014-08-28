@@ -1,0 +1,3 @@
+fails:Dir#to_path returns the path that was supplied to .new or .open
+fails:Dir#to_path returns the path even when called on a closed Dir instance
+fails:Dir#to_path returns a String with the same encoding as the argument to .open

@@ -1,0 +1,12 @@
+fails:Fixnum#[] returns 1 if the nth bit is set
+fails:Fixnum#[] returns 0 if the nth bit is not set
+fails:Fixnum#[] returns 0 if the nth bit is greater than the most significant bit
+fails:Fixnum#[] returns 0 when passed a negative argument
+fails:Fixnum#[] calls #to_int to convert the argument to an Integer and returns 1 if the nth bit is set
+fails:Fixnum#[] calls #to_int to convert the argument to an Integer and returns 0 if the nth bit is set
+fails:Fixnum#[] accepts a Float argument and returns 0 if the bit at the truncated value is not set
+fails:Fixnum#[] accepts a Float argument and returns 1 if the bit at the truncated value is set
+fails:Fixnum#[] raises a TypeError when passed a String
+fails:Fixnum#[] raises a TypeError when #to_int does not return an Integer
+fails:Fixnum#[] calls #to_int to coerce a String to a Bignum and returns 0
+fails:Fixnum#[] returns 0 when passed a Float in the range of a Bignum

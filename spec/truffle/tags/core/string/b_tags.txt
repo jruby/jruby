@@ -1,0 +1,3 @@
+fails:String#b returns an ASCII-8BIT encoded string
+fails:String#b returns new string without modifying self
+fails:String#b copies own tainted/untrusted status to the returning value

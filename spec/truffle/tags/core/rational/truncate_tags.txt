@@ -1,0 +1,6 @@
+fails:Rational#truncate with no arguments (precision = 0) returns an integer
+fails:Rational#truncate with no arguments (precision = 0) returns the truncated value toward 0
+fails:Rational#truncate with a precision < 0 returns an integer
+fails:Rational#truncate with a precision < 0 moves the truncation point n decimal places left
+fails:Rational#truncate with a precision > 0 returns a Rational
+fails:Rational#truncate with a precision > 0 moves the truncation point n decimal places right

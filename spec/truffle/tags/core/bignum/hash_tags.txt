@@ -1,0 +1,2 @@
+fails:Bignum#hash is provided
+fails:Bignum#hash is stable

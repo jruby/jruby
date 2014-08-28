@@ -1,0 +1,4 @@
+fails:Hash#to_h returns self for Hash instances
+fails:Hash#to_h when called on a subclass of Hash returns a new Hash instance
+fails:Hash#to_h when called on a subclass of Hash copies the default
+fails:Hash#to_h when called on a subclass of Hash copies the default_proc

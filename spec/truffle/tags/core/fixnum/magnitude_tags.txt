@@ -1,0 +1,1 @@
+fails:Fixnum#magnitude returns self's absolute value

@@ -1,0 +1,2 @@
+fails:Kernel#readline is a private method
+fails:Kernel.readline needs to be reviewed for spec completeness

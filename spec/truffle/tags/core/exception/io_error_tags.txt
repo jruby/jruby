@@ -1,0 +1,1 @@
+fails:IOError is a superclass of EOFError

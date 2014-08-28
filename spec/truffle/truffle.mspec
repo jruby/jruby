@@ -5,9 +5,14 @@ class MSpecScript
     "^spec/ruby/language/regexp/anchors_spec.rb"
   ]
 
+  set :core, [
+    "spec/ruby/core"
+  ]
+
   set :tags_patterns, [
                         [%r(^.*/language/),     'spec/truffle/tags/language/'],
-                        [/_spec.rb$/,       '_tags.txt']
+                        [%r(^.*/core/),         'spec/truffle/tags/core/'],
+                        [/_spec.rb$/,           '_tags.txt']
                       ]
 
   MSpec.enable_feature :encoding

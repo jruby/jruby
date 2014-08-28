@@ -1,0 +1,6 @@
+fails:Bignum#& returns self bitwise AND other
+fails:Bignum#& returns self bitwise AND other when one operand is negative
+fails:Bignum#& returns self bitwise AND other when both operands are negative
+fails:Bignum#& returns self bitwise AND other when both are negative and a multiple in bitsize of Fixnum::MIN
+fails:Bignum#& raises a TypeError when passed a Float
+fails:Bignum#& raises a TypeError and does not call #to_int when defined on an object

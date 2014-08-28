@@ -1,0 +1,2 @@
+fails:ENV.values returns an array of the values
+fails:ENV.values uses the locale encoding

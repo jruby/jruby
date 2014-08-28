@@ -1,0 +1,4 @@
+fails:ENV.delete_if deletes pairs if the block returns true
+fails:ENV.delete_if returns ENV even if nothing deleted
+fails:ENV.delete_if returns an Enumerator if no block given
+fails:ENV.delete_if deletes pairs through enumerator

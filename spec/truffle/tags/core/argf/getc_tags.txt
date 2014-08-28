@@ -1,0 +1,2 @@
+fails:ARGF.getc reads each char of files
+fails:ARGF.getc returns nil when end of stream reached

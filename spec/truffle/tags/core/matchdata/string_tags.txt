@@ -1,0 +1,2 @@
+fails:MatchData#string returns a copy of the match string
+fails:MatchData#string returns a frozen copy of the match string

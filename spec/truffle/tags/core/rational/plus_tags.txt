@@ -1,0 +1,5 @@
+fails:Rational#+ calls #coerce on the passed argument with self
+fails:Rational#+ calls #+ on the coerced Rational with the coerced Object
+fails:Rational#+ with a Rational returns the result of substracting other from self as a Rational
+fails:Rational#+ with a Float returns the result of substracting other from self as a Float
+fails:Rational#+ with an Integer returns the result of substracting other from self as a Rational

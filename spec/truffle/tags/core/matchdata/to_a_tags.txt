@@ -1,0 +1,1 @@
+fails:MatchData#to_a returns an array of matches

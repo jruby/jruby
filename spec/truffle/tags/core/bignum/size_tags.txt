@@ -1,0 +1,1 @@
+fails:Bignum#size returns the number of bytes in the machine representation in multiples of four
