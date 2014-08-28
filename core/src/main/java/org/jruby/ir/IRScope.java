@@ -558,11 +558,8 @@ public abstract class IRScope implements ParseResult {
             pass.run(this);
         }
 
-        CompilerPass pass;
-
         if (RubyInstanceConfig.IR_UNBOXING) {
-            pass = new UnboxingPass();
-            pass.run(this);
+            (new UnboxingPass()).run(this);
         }
     }
 
@@ -585,6 +582,18 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+        // Build CFG and run compiler passes, if necessary
+        if (getCFG() == null) {
+            runCompilerPasses(getManager().getCompilerPasses(this));
+
+            if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
+                // Run DCE and var load/store passes where applicable
+                // But, if we have been passed in a list of passes to run
+                // on the commandline, skip this opt.
+                runDeadCodeAndVarLoadStorePasses();
+            }
+        }
+
         if (isLambda) {
             // Add a global ensure block to catch uncaught breaks
             // and throw a LocalJumpError.
@@ -597,14 +606,6 @@ public abstract class IRScope implements ParseResult {
 
         if (linearizedInstrArray != null) return linearizedInstrArray;
 
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            runCompilerPasses(getManager().getCompilerPasses(this));
-
-            // run DCE and var load/store
-            runDeadCodeAndVarLoadStorePasses();
-        }
-
         // Linearize CFG, etc.
         return prepareInstructionsForInterpretation();
     }
@@ -616,8 +617,14 @@ public abstract class IRScope implements ParseResult {
         if (getCFG() == null) {
             runCompilerPasses(getManager().getJITPasses(this));
 
-            // no DCE for now to stress-test JIT
-            //runDeadCodeAndVarLoadStorePasses();
+            if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
+                // Run DCE and var load/store passes where applicable
+                // But, if we have been passed in a list of passes to run
+                // on the commandline, skip this opt.
+                //
+                // no DCE for now to stress-test JIT
+                //runDeadCodeAndVarLoadStorePasses();
+            }
         }
 
         // Add this always since we dont re-JIT a previously
@@ -959,7 +966,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public int getUsedVariablesCount() {
-        // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);
+        // System.out.println("For " + this + ", # lvs: " + getLocalVariablesCount());
         // # local vars, # flip vars
         //
         // SSS FIXME: When we are opting local var access,

@@ -2,6 +2,7 @@ package org.jruby.ir.passes;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
@@ -59,6 +60,9 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
             // Add loads,
             llvp.addLoads(varRenameMap);
         } else {
+            // Record the fact that we eliminated the scope
+            s.getFlags().add(IRFlags.DYNSCOPE_ELIMINATED);
+
             // Since the scope does not require a binding, no need to do
             // any analysis. It is sufficient to rename all local var uses
             // with a temporary variable.
