@@ -37,6 +37,7 @@ project 'JRuby Artifacts' do
             'jruby-rake-plugin',
             'jruby-core-complete',
             'jruby-stdlib-complete',
+            'jruby-jars',
             'jruby-dist' ]
 
   end
