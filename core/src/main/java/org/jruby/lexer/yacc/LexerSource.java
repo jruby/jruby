@@ -49,7 +49,8 @@ import org.jruby.util.ByteList;
  * 
  */
 public abstract class LexerSource {
-	// Where we get new positions from.
+
+    // Where we get new positions from.
 	private SourcePositionFactory positionFactory;
 	
     // The name of this source (e.g. a filename: foo.rb)
@@ -60,9 +61,6 @@ public abstract class LexerSource {
     
     // Virtual line as specified by eval, etc...
     protected int lineOffset = 0;
-
-    // How many bytes into the source were we when we started this lexeme?
-    protected int startOffset = 0;
     
     // How many bytes into the source are we?
     protected int offset = 0;
@@ -80,8 +78,6 @@ public abstract class LexerSource {
      * Create our food-source for the lexer
      * 
      * @param sourceName is the file we are reading
-     * @param reader is what represents the contents of file sourceName
-     * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
     protected LexerSource(String sourceName, List<String> list, int lineOffset, 
@@ -112,14 +108,6 @@ public abstract class LexerSource {
     
     public int getVirtualLine() {
         return line + lineOffset;
-    }
-
-    public int getStartOffset() {
-        return startOffset;
-    }
-
-    public void startOfToken() {
-        startOffset = offset;
     }
     
     /**
@@ -272,6 +260,10 @@ public abstract class LexerSource {
      * @throws IOException if an error occurred reading from underlying IO source
      */
     public abstract boolean matchMarker(ByteList marker, boolean indent, boolean withNewline) throws IOException;
+
+    public SourcePositionFactory getPositionFactory() {
+        return positionFactory;
+    }
 
     public abstract int read() throws IOException;
     public abstract ByteList readUntil(char c) throws IOException;

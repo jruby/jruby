@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy is a subclass of Enumerator
+fails:Enumerator::Lazy#lazy returns self

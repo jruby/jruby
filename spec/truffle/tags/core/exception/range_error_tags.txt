@@ -1,0 +1,1 @@
+fails:RangeError is a superclass of FloatDomainError

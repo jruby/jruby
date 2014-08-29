@@ -1,0 +1,6 @@
+fails:Complex#eql? returns false if other is not Complex
+fails:Complex#eql? returns true when the respective parts are of the same classes and self == other
+fails:Complex#eql? returns false when the real parts are of different classes
+fails:Complex#eql? returns false when the imaginary parts are of different classes
+fails:Complex#eql? returns false when self == other is false
+fails:Complex#eql? does NOT send #eql? to real or imaginary parts

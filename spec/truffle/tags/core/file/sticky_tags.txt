@@ -1,0 +1,5 @@
+fails:File.sticky? accepts an object that has a #to_path method
+fails:File.sticky? returns false if the file dies not exist
+fails:File.sticky? returns false if file does not exist
+fails:File.sticky? returns false if the file has not sticky bit set
+fails:File.sticky? returns true if the file has sticky bit set

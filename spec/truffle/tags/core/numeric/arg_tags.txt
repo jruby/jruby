@@ -1,0 +1,4 @@
+fails:Numeric#arg returns 0 if positive
+fails:Numeric#arg returns Pi if negative
+fails:Numeric#arg with a Numeric subclass returns 0 if self#<(0) returns false
+fails:Numeric#arg with a Numeric subclass returns Pi if self#<(0) returns true

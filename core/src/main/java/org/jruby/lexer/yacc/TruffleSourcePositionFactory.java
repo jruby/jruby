@@ -30,6 +30,11 @@ package org.jruby.lexer.yacc;
 
 public class TruffleSourcePositionFactory extends SimpleSourcePositionFactory {
 
+    private int newStart;
+
+    private int start;
+    private int end;
+
     public static class Factory implements SourcePositionFactoryFactory {
 
         @Override
@@ -44,8 +49,19 @@ public class TruffleSourcePositionFactory extends SimpleSourcePositionFactory {
         lastPosition = new TruffleSourcePosition(source.getFilename(), line, 0, 0);
     }
 
+    @Override
+    public void startOfToken() {
+        newStart = source.getOffset();
+    }
+
+    @Override
+    public void endOfToken() {
+        start = newStart;
+        end = source.getOffset();
+    }
+
     public ISourcePosition getPosition() {
-        lastPosition = new TruffleSourcePosition(source.getFilename(), source.getVirtualLine(), source.getStartOffset(), source.getOffset() - source.getStartOffset());
+        lastPosition = new TruffleSourcePosition(source.getFilename(), source.getVirtualLine(), start, end - start);
         return lastPosition;
     }
 }

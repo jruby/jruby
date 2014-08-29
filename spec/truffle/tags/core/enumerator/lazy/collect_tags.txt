@@ -1,0 +1,6 @@
+fails:Enumerator::Lazy#collect returns a new instance of Enumerator::Lazy
+fails:Enumerator::Lazy#collect keeps size
+fails:Enumerator::Lazy#collect calls the block with initial values when yield with multiple arguments
+fails:Enumerator::Lazy#collect when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
+fails:Enumerator::Lazy#collect on a nested Lazy keeps size
+fails:Enumerator::Lazy#collect on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times

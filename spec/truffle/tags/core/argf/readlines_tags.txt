@@ -1,0 +1,2 @@
+fails:ARGF.readlines reads all lines of all files
+fails:ARGF.readlines returns an empty Array when end of stream reached

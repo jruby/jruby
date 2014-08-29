@@ -1,0 +1,2 @@
+fails:FileTest.chardev? returns true/false depending if the named file is a char device
+fails:FileTest.chardev? accepts an object that has a #to_path method

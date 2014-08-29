@@ -53,4 +53,6 @@ public enum IRFlags {
     USES_ZSUPER,                  // has zsuper instr
     REQUIRES_FRAME,               // callee may read/write caller's frame elements
     REQUIRES_VISIBILITY,          // callee may read/write caller's visibility
+
+    DYNSCOPE_ELIMINATED,          // local var load/stores have been converted to tmp var accesses
 }

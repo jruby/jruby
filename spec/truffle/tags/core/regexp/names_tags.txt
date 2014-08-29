@@ -1,0 +1,6 @@
+fails:Regexp#names returns an Array
+fails:Regexp#names returns an empty Array if there are no named captures
+fails:Regexp#names returns each named capture as a String
+fails:Regexp#names returns all of the named captures
+fails:Regexp#names works with nested named captures
+fails:Regexp#names returns each capture name only once

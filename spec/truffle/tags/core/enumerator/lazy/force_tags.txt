@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy#force passes given arguments to receiver.each
+fails:Enumerator::Lazy#force on a nested Lazy calls all block and returns an Array

@@ -1,0 +1,6 @@
+fails:Regexp#named_captures returns a Hash
+fails:Regexp#named_captures returns an empty Hash when there are no capture groups
+fails:Regexp#named_captures sets the keys of the Hash to the names of the capture groups
+fails:Regexp#named_captures sets the values of the Hash to Arrays
+fails:Regexp#named_captures sets each element of the Array to the corresponding group's index
+fails:Regexp#named_captures works with duplicate capture group names

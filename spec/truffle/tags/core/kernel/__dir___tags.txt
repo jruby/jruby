@@ -1,0 +1,2 @@
+fails:Kernel#__dir__ returns the name of the directory containing the currently-executing file
+fails:Kernel#__dir__ when used in eval with top level binding returns the name of the directory containing the currently-executing file

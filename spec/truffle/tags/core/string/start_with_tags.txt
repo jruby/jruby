@@ -1,0 +1,6 @@
+fails:String#start_with? returns true only if beginning match
+fails:String#start_with? returns true only if any beginning match
+fails:String#start_with? converts its argument using :to_str
+fails:String#start_with? ignores arguments not convertible to string
+fails:String#start_with? uses only the needed arguments
+fails:String#start_with? works for multibyte strings

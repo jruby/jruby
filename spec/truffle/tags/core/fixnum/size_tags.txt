@@ -1,0 +1,1 @@
+fails:Fixnum#size returns the number of bytes in the machine representation of self

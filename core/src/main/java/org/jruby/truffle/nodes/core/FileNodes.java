@@ -64,6 +64,28 @@ public abstract class FileNodes {
 
     }
 
+    @CoreMethod(names = "delete", needsSelf = false, isModuleMethod = true, minArgs = 1, maxArgs = 1)
+    public abstract static class DeleteNode extends CoreMethodNode {
+
+        public DeleteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DeleteNode(DeleteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int delete(RubyString file) {
+            notDesignedForCompilation();
+
+            new File(file.toString()).delete();
+
+            return 1;
+        }
+
+    }
+
     @CoreMethod(names = "directory?", isModuleMethod = true, needsSelf = false, maxArgs = 1)
     public abstract static class DirectoryNode extends CoreMethodNode {
 
@@ -305,6 +327,35 @@ public abstract class FileNodes {
 
     }
 
+    @CoreMethod(names = "puts", minArgs = 1, maxArgs = 1)
+    public abstract static class PutsNode extends CoreMethodNode {
+
+        public PutsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PutsNode(PutsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder puts(RubyFile file, RubyString string) {
+            notDesignedForCompilation();
+
+            try {
+                final Writer writer = file.getWriter();
+                writer.write(string.toString());
+                writer.write("\n");
+                writer.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
     @CoreMethod(names = "read", maxArgs = 0)
     public abstract static class ReadNode extends CoreMethodNode {
 
@@ -339,6 +390,38 @@ public abstract class FileNodes {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+    }
+
+    @CoreMethod(names = "size?", minArgs = 1, maxArgs = 1, needsSelf = false, isModuleMethod = true)
+    public abstract static class SizeNode extends CoreMethodNode {
+
+        public SizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SizeNode(SizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object read(RubyString file) {
+            notDesignedForCompilation();
+
+            final File f = new File(file.toString());
+
+            if (!f.exists()) {
+                return NilPlaceholder.INSTANCE;
+            }
+
+            final long size = f.length();
+
+            if (size == 0) {
+                return NilPlaceholder.INSTANCE;
+            }
+
+            return size;
         }
 
     }

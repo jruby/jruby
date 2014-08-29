@@ -1,0 +1,2 @@
+fails:Symbol.all_symbols returns an array containing all the Symbols in the symbol table
+fails:Symbol.all_symbols increases size of the return array when new symbol comes

@@ -1,0 +1,7 @@
+fails:Module#instance_methods does not return methods undefined in a superclass
+fails:Module#instance_methods does not return methods undefined in a subclass
+fails:Module#instance_methods does not return methods undefined in the current class
+fails:Module#instance_methods does not return methods from an included module that are undefined in the class
+fails:Module#instance_methods returns the public and protected methods of self if include_super is false
+fails:Module#instance_methods returns the public and protected methods of self and it's ancestors
+fails:Module#instance_methods makes a private Object instance method public in Kernel

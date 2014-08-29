@@ -1,0 +1,3 @@
+fails:Regexp.try_convert returns the argument if given a Regexp
+fails:Regexp.try_convert returns nil if given an argument that can't be converted to a Regexp
+fails:Regexp.try_convert tries to coerce the argument by calling #to_regexp

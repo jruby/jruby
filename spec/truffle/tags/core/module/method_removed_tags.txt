@@ -1,0 +1,3 @@
+fails:Module#method_removed is a private instance method
+fails:Module#method_removed returns nil in the default implementation
+fails:Module#method_removed is called when a method is removed from self

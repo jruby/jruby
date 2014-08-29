@@ -1,0 +1,2 @@
+fails:Numeric#numerator converts self to a Rational object then returns its numerator
+fails:Numeric#numerator works with Numeric subclasses

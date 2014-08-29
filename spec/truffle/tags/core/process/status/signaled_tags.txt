@@ -1,0 +1,2 @@
+fails:Process::Status#signaled? for a cleanly exited child returns false
+fails:Process::Status#signaled? for a terminated child returns true

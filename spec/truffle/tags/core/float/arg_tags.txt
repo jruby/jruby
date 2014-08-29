@@ -1,0 +1,8 @@
+fails:Float#arg returns NaN if NaN
+fails:Float#arg returns self if NaN
+fails:Float#arg returns 0 if positive
+fails:Float#arg returns 0 if +0.0
+fails:Float#arg returns 0 if +Infinity
+fails:Float#arg returns Pi if negative
+fails:Float#arg returns Pi if -0.0
+fails:Float#arg returns Pi if -Infinity

@@ -5,9 +5,16 @@ class MSpecScript
     "^spec/ruby/language/regexp/anchors_spec.rb"
   ]
 
+  set :core, [
+    "spec/ruby/core/fixnum",
+    "^spec/ruby/core/fixnum/exponent_spec.rb",
+    "^spec/ruby/core/fixnum/right_shift_spec.rb"
+  ]
+
   set :tags_patterns, [
                         [%r(^.*/language/),     'spec/truffle/tags/language/'],
-                        [/_spec.rb$/,       '_tags.txt']
+                        [%r(^.*/core/),         'spec/truffle/tags/core/'],
+                        [/_spec.rb$/,           '_tags.txt']
                       ]
 
   MSpec.enable_feature :encoding
@@ -16,6 +23,6 @@ class MSpecScript
   MSpec.enable_feature :fork
   MSpec.enable_feature :generator
 
-  set :files, get(:language)
+  set :files, get(:language) + get(:core)
 
 end

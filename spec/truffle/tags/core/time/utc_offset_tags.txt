@@ -1,0 +1,7 @@
+fails:Time#utc_offset returns the offset in seconds between the timezone of time and UTC
+fails:Time#utc_offset returns the correct offset for US Eastern time zone around daylight savings time change
+fails:Time#utc_offset returns the correct offset for Hawaii around daylight savings time change
+fails:Time#utc_offset returns the correct offset for New Zealand around daylight savings time change
+fails:Time#utc_offset returns offset as Rational
+fails:Time#utc_offset given positive offset returns a positive offset
+fails:Time#utc_offset given negative offset returns a negative offset

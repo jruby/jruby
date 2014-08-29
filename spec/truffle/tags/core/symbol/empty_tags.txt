@@ -1,0 +1,2 @@
+fails:Symbol#empty? returns true if self is empty
+fails:Symbol#empty? returns false if self is non-empty

@@ -1,0 +1,5 @@
+fails:Bignum#/ returns self divided by other
+fails:Bignum#/ raises a ZeroDivisionError if other is zero and not a Float
+fails:Bignum#/ raises a TypeError when given a non-Integer
+fails:Bignum#/ returns self divided by float
+fails:Bignum#/ does NOT raise ZeroDivisionError if other is zero and is a Float

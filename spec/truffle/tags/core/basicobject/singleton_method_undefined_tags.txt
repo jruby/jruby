@@ -1,0 +1,2 @@
+fails:BasicObject#singleton_method_undefined is a private method
+fails:BasicObject#singleton_method_undefined is called when a method is removed on self

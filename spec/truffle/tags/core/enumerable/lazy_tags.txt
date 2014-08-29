@@ -1,0 +1,1 @@
+fails:Enumerable#lazy returns an instance of Enumerator::Lazy

@@ -1,0 +1,8 @@
+fails:Enumerator#each_with_index passes each element and its index to block
+fails:Enumerator#each_with_index returns the object being enumerated when given a block
+fails:Enumerator#each_with_index binds splat arguments properly
+fails:Enumerator#each_with_index returns an enumerator if no block is supplied
+fails:Enumerator#each_with_index raises an ArgumentError if passed extra arguments
+fails:Enumerator#each_with_index passes on the given block's return value
+fails:Enumerator#each_with_index returns the iterator's return value
+fails:Enumerator#each_with_index returns the correct value if chained with itself

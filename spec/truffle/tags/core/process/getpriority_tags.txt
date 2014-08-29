@@ -1,0 +1,4 @@
+fails:Process.getpriority coerces arguments to Integers
+fails:Process.getpriority gets the scheduling priority for a specified process
+fails:Process.getpriority gets the scheduling priority for a specified process group
+fails:Process.getpriority gets the scheduling priority for a specified user

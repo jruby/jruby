@@ -1,0 +1,3 @@
+fails:Bignum#<= returns true if self is less than or equal to other
+fails:Bignum#<= returns false if compares with near float
+fails:Bignum#<= raises an ArgumentError when given a non-Integer

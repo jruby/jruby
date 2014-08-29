@@ -1,0 +1,5 @@
+fails:Thread#priority inherits the priority of the current thread while running
+fails:Thread#priority maintain the priority of the current thread after death
+fails:Thread#priority returns an integer
+fails:Thread#priority= when set with an integer returns an integer
+fails:Thread#priority= when set with a non-integer raises a type error

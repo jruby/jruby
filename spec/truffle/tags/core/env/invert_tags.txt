@@ -1,0 +1,1 @@
+fails:ENV.invert returns a hash with ENV.keys as the values and vice versa

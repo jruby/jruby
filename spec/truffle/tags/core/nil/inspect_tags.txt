@@ -1,0 +1,1 @@
+fails:NilClass#inspect returns the string 'nil'

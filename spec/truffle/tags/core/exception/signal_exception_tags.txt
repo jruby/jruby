@@ -1,0 +1,10 @@
+fails:SignalException.new takes a signal number as the first argument
+fails:SignalException.new raises an exception with an invalid signal number
+fails:SignalException.new takes a signal name without SIG prefix as the first argument
+fails:SignalException.new takes a signal name with SIG prefix as the first argument
+fails:SignalException.new raises an exception with an invalid signal name
+fails:SignalException.new takes a signal symbol without SIG prefix as the first argument
+fails:SignalException.new takes a signal symbol with SIG prefix as the first argument
+fails:SignalException.new takes an optional message argument with a signal number
+fails:SignalException.new raises an exception for an optional argument with a signal name
+fails:rescueing SignalException raises a SignalException when sent a signal

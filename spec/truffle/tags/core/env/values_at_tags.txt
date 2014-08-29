@@ -1,0 +1,2 @@
+fails:ENV.values_at returns an array of the values referenced by the parameters as keys
+fails:ENV.values_at uses the locale encoding

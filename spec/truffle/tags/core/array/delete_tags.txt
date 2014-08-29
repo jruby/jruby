@@ -1,0 +1,9 @@
+fails:Array#delete removes elements that are #== to object
+fails:Array#delete calculates equality correctly for reference values
+fails:Array#delete returns object or nil if no elements match object
+fails:Array#delete may be given a block that is executed if no element matches object
+fails:Array#delete returns nil if the array is empty due to a shift
+fails:Array#delete returns nil on a frozen array if a modification does not take place
+fails:Array#delete raises a RuntimeError on a frozen array
+fails:Array#delete keeps tainted status
+fails:Array#delete keeps untrusted status

@@ -1,0 +1,3 @@
+fails:BasicObject#equal? is a public instance method
+fails:BasicObject#equal? returns true if other is identical to self
+fails:BasicObject#equal? returns false if other is not identical to self

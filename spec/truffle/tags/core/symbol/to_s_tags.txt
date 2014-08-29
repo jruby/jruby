@@ -1,0 +1,1 @@
+fails:Symbol#to_s returns the string corresponding to self

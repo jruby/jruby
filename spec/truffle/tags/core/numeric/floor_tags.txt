@@ -1,0 +1,1 @@
+fails:Numeric#floor converts self to a Float (using #to_f) and returns the #floor'ed result

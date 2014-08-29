@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -330,16 +331,18 @@ public class CoreLibrary {
         trueClass.getSingletonClass(null).undefMethod(null, "new");
         encodingClass.getSingletonClass(null).undefMethod(null, "new");
 
-        final String[] files = new String[]{
-                "jruby/truffle/core/kernel.rb"
-        };
+        if (Options.TRUFFLE_LOAD_CORE.load()) {
+            final String[] files = new String[]{
+                    "jruby/truffle/core/kernel.rb"
+            };
 
-        for (String file : files) {
-            loadRubyCore(file);
+            for (String file : files) {
+                loadRubyCore(file);
+            }
         }
     }
 
-    private void loadRubyCore(String fileName) {
+    public void loadRubyCore(String fileName) {
         final Source source;
 
         try {

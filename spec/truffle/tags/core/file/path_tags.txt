@@ -1,0 +1,2 @@
+fails:File#path returns the pathname used to create file as a string
+fails:File.path returns the full path for the given file

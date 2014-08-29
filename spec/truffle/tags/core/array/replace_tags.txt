@@ -1,0 +1,7 @@
+fails:Array#replace replaces the elements with elements from other array
+fails:Array#replace properly handles recursive arrays
+fails:Array#replace returns self
+fails:Array#replace does not make self dependent to the original array
+fails:Array#replace tries to convert the passed argument to an Array using #to_ary
+fails:Array#replace does not call #to_ary on Array subclasses
+fails:Array#replace raises a RuntimeError on a frozen array

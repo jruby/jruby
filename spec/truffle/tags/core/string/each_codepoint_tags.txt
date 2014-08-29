@@ -1,0 +1,11 @@
+fails:String#each_codepoint raises an ArgumentError when self has an invalid encoding and a method is called on the returned Enumerator
+fails:String#each_codepoint yields each codepoint to the block if one is given
+fails:String#each_codepoint raises an ArgumentError if self's encoding is invalid and a block is given
+fails:String#each_codepoint returns codepoints as Fixnums
+fails:String#each_codepoint returns one codepoint for each character
+fails:String#each_codepoint works for multibyte characters
+fails:String#each_codepoint returns the codepoint corresponding to the character's position in the String's encoding
+fails:String#each_codepoint round-trips to the original String using Integer#chr
+fails:String#each_codepoint is synonomous with #bytes for Strings which are single-byte optimisable
+fails:String#each_codepoint returns an Enumerator when no block is given
+fails:String#each_codepoint returns an Enumerator when no block is given even when self has an invalid encoding

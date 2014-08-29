@@ -84,7 +84,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
                 args = ((RubyArray)arg0).toJavaArray();
                 arity().checkArity(context.runtime, args);
             } else {
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, arity, true, true);
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, arity, true);
             }
             return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
         } else {
@@ -160,53 +160,9 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
                     length + " for 1)");
     }
 
-    protected IRubyObject prepareArrayArgsForCall(Ruby ruby, IRubyObject value) {
-        int length = (value instanceof RubyArray) ? ((RubyArray)value).getLength() : 0;
-        switch (length) {
-        case 0: return ruby.getNil();
-        case 1: return ((RubyArray)value).eltInternal(0);
-        default: blockArgWarning(ruby, length);
-        }
-        return value;
-    }
-
-    protected IRubyObject[] assignArrayToBlockArgs(Ruby ruby, IRubyObject value) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return IRubyObject.NULL_ARRAY;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return (value == null) ? IRubyObject.NULL_ARRAY : ((value instanceof RubyArray) ? ((RubyArray)value).toJavaArrayMaybeUnsafe() : new IRubyObject[] { value } );
-        default:
-            return new IRubyObject[] {prepareArrayArgsForCall(ruby, value)};
-        }
-    }
-
     protected IRubyObject[] convertToRubyArray(ThreadContext context, IRubyObject[] args) {
         return (args.length == 0) ? context.runtime.getSingleNilArray()
                                   : new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
-    }
-
-    protected IRubyObject[] prepareArgumentsForYield(ThreadContext context, IRubyObject[] args, Type type) {
-        // SSS FIXME: Hmm .. yield can yield to blocks other than NORMAL block type as well.
-        int blockArity = arity().getValue();
-
-        if (args.length == 1) {
-            IRubyObject soleArg = args[0];
-            if (soleArg instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT) args = ((RubyArray) soleArg).toJavaArray();
-            } else if (blockArity > 1) {
-                IRubyObject toAryArg = Helpers.aryToAry(soleArg);
-                if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
-                else {
-                    throw context.runtime.newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
-                }
-            }
-        } else if (argumentType == ARRAY) {
-            args = convertToRubyArray(context, args);
-        }
-
-        return args;
     }
 
     @Override
@@ -218,7 +174,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             // I thought only procs & lambdas can be called, and blocks are yielded to.
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arity, true, (type == Type.NORMAL) && (args[0] instanceof RubyArray));
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arity, (type == Type.NORMAL) && (args[0] instanceof RubyArray));
             } else if (arity().getValue() == 1) {
                // discard excess arguments
                 args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };

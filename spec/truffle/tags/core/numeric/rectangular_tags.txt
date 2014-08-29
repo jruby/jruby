@@ -1,0 +1,5 @@
+fails:Numeric#rectangular returns an Array
+fails:Numeric#rectangular returns a two-element Array
+fails:Numeric#rectangular returns self as the first element
+fails:Numeric#rectangular returns 0 as the last element
+fails:Numeric#rectangular raises an ArgumentError if given any arguments

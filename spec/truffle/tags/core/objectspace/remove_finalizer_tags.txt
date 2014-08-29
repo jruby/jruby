@@ -1,0 +1,1 @@
+fails:ObjectSpace.remove_finalizer needs to be reviewed for spec completeness

@@ -1,0 +1,4 @@
+fails:Range#size returns the number of elements in the range
+fails:Range#size returns 0 if last is less than first
+fails:Range#size returns Float::INFINITY for increasing, infinite ranges
+fails:Range#size returns nil if first and last are not Numeric

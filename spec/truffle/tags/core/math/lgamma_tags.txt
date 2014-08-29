@@ -1,0 +1,9 @@
+fails:Math.lgamma returns [Infinity, 1] when passed 0
+fails:Math.lgamma returns [Infinity, 1] when passed -1
+fails:Math.lgamma returns [log(sqrt(PI)), 1] when passed 0.5
+fails:Math.lgamma returns [log(2/3*PI, 1] when passed 6.0
+fails:Math.lgamma returns an approximate value when passed -0.5
+fails:Math.lgamma returns an approximate value when passed -1.5
+fails:Math.lgamma raises Math::DomainError when passed -Infinity
+fails:Math.lgamma returns [Infinity, 1] when passed Infinity
+fails:Math.lgamma returns [NaN, 1] when passed NaN

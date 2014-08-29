@@ -1,0 +1,2 @@
+fails:Float#** returns self raise to the other power
+fails:Float#** returns a complex number when negative and raised to a fractional power

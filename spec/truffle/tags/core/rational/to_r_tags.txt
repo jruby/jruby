@@ -1,0 +1,1 @@
+fails:Rational#to_r returns self

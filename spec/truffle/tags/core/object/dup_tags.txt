@@ -1,0 +1,12 @@
+fails:Object#dup returns a new object duplicated from the original
+fails:Object#dup produces a shallow copy, contained objects are not recursively dupped
+fails:Object#dup calls #initialize_copy on the NEW object if available, passing in original object
+fails:Object#dup preserves tainted state from the original
+fails:Object#dup does not preserve the object_id
+fails:Object#dup preserves untrusted state from the original
+fails:Object#dup raises a TypeError for NilClass
+fails:Object#dup raises a TypeError for TrueClass
+fails:Object#dup raises a TypeError for FalseClass
+fails:Object#dup raises a TypeError for Fixnum
+fails:Object#dup raises a TypeError for Symbol
+fails:Object#dup does not preserve frozen state from the original

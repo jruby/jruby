@@ -1,0 +1,8 @@
+fails:Thread#status can check it's own status
+fails:Thread#status describes a running thread
+fails:Thread#status describes a sleeping thread
+fails:Thread#status describes a blocked thread
+fails:Thread#status describes a completed thread
+fails:Thread#status describes a killed thread
+fails:Thread#status describes a thread with an uncaught exception
+fails:Thread#status describes a dying sleeping thread

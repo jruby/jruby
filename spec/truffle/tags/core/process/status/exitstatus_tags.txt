@@ -1,0 +1,1 @@
+fails:Process::Status#exitstatus returns the process exit code

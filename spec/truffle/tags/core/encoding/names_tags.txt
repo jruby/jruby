@@ -1,0 +1,4 @@
+fails:Encoding#names returns an Array
+fails:Encoding#names returns names as Strings
+fails:Encoding#names returns #name as the first value
+fails:Encoding#names includes any aliases the encoding has

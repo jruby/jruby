@@ -1,0 +1,3 @@
+fails:Complex.polar returns a complex number in terms of radius and angle
+fails:Complex.polar raises a TypeError when given non real arguments
+fails:Complex#polar returns the absolute value and the argument

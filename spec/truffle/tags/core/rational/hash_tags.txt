@@ -1,0 +1,1 @@
+fails:Rational#hash is static

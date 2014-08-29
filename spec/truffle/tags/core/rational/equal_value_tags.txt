@@ -1,0 +1,4 @@
+fails:Rational#== returns the result of calling #== with self on the passed argument
+fails:Rational#== when passed a Rational returns true if self has the same numerator and denominator as the passed argument
+fails:Rational#== when passed a Float converts self to a Float and compares it with the passed argument
+fails:Rational#== when passed an Integer returns true if self has the passed argument as numerator and a denominator of 1

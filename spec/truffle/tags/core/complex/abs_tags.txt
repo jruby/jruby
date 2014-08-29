@@ -1,0 +1,1 @@
+fails:Complex#abs returns the modulus: |a + bi| = sqrt((a ^ 2) + (b ^ 2))

@@ -1,0 +1,3 @@
+fails:Kernel#initialize_clone is a private method
+fails:Kernel#initialize_clone is called when object is cloned
+fails:Kernel#initialize_clone calls initialize_copy by default

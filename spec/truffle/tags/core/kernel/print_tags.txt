@@ -1,0 +1,2 @@
+fails:Kernel#print is a private method
+fails:Kernel.print needs to be reviewed for spec completeness

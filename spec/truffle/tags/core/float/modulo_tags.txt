@@ -1,0 +1,14 @@
+fails:Float#% returns self modulo other
+fails:Float#% returns self when modulus is +Infinity
+fails:Float#% returns -Infinity when modulus is -Infinity
+fails:Float#% returns NaN when called on NaN or Infinities
+fails:Float#% returns NaN when modulus is NaN
+fails:Float#% returns -0.0 when called on -0.0 with a non zero modulus
+fails:Float#% raises a ZeroDivisionError if other is zero
+fails:Float#modulo returns self modulo other
+fails:Float#modulo returns self when modulus is +Infinity
+fails:Float#modulo returns -Infinity when modulus is -Infinity
+fails:Float#modulo returns NaN when called on NaN or Infinities
+fails:Float#modulo returns NaN when modulus is NaN
+fails:Float#modulo returns -0.0 when called on -0.0 with a non zero modulus
+fails:Float#modulo raises a ZeroDivisionError if other is zero

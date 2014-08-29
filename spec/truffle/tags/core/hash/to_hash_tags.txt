@@ -1,0 +1,2 @@
+fails:Hash#to_hash returns self for Hash instances
+fails:Hash#to_hash returns self for instances of subclasses of Hash

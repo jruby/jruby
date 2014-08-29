@@ -1,0 +1,3 @@
+fails:String.allocate returns an instance of String
+fails:String.allocate returns a fully-formed String
+fails:String.allocate returns a binary String

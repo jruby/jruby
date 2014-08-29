@@ -1,0 +1,1 @@
+fails:Bignum#-@ returns self as a negative value

@@ -1,0 +1,4 @@
+fails:File.ctime Returns the change time for the named file (the time at which directory information about the file was changed, not the file itself).
+fails:File.ctime accepts an object that has a #to_path method
+fails:File.ctime raises an Errno::ENOENT exception if the file is not found
+fails:File#ctime Returns the change time for the named file (the time at which directory information about the file was changed, not the file itself).

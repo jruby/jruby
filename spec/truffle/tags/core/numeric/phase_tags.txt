@@ -1,0 +1,4 @@
+fails:Numeric#phase returns 0 if positive
+fails:Numeric#phase returns Pi if negative
+fails:Numeric#phase with a Numeric subclass returns 0 if self#<(0) returns false
+fails:Numeric#phase with a Numeric subclass returns Pi if self#<(0) returns true

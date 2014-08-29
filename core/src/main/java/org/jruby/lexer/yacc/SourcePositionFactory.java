@@ -18,6 +18,10 @@ public interface SourcePositionFactory {
 
     }
 
+    void startOfToken();
+
+    void endOfToken();
+
     ISourcePosition getPosition(ISourcePosition startPosition);
 
     ISourcePosition getPosition();

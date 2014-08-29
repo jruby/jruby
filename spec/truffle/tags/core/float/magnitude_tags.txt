@@ -1,0 +1,4 @@
+fails:Float#magnitude returns the absolute value
+fails:Float#magnitude returns 0.0 if -0.0
+fails:Float#magnitude returns Infinity if -Infinity
+fails:Float#magnitude returns NaN if NaN

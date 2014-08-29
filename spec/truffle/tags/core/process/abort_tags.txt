@@ -1,0 +1,6 @@
+fails:Process.abort raises a SystemExit exception
+fails:Process.abort sets the exception message to the given message
+fails:Process.abort sets the exception status code of of 1
+fails:Process.abort prints the specified message to STDERR
+fails:Process.abort coerces the argument with #to_str
+fails:Process.abort raises TypeError when given a non-String object

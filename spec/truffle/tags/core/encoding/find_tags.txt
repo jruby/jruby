@@ -1,0 +1,12 @@
+fails:Encoding.find returns the corresponding Encoding object if given a valid encoding name
+fails:Encoding.find returns the corresponding Encoding object if given a valid alias name
+fails:Encoding.find raises a TypeError if passed a Symbol
+fails:Encoding.find returns the passed Encoding object
+fails:Encoding.find accepts encoding names as Strings
+fails:Encoding.find accepts any object as encoding name, if it responds to #to_str
+fails:Encoding.find is case insensitive
+fails:Encoding.find raises an ArgumentError if the given encoding does not exist
+fails:Encoding.find supports the 'locale' encoding alias
+fails:Encoding.find returns default external encoding for the 'external' encoding alias
+fails:Encoding.find returns default internal encoding for the 'internal' encoding alias
+fails:Encoding.find uses default external encoding for the 'filesystem' encoding alias

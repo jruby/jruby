@@ -1,0 +1,2 @@
+fails:ENV.has_value? returns true if ENV has the value
+fails:ENV.has_value? returns false if ENV doesn't have the value

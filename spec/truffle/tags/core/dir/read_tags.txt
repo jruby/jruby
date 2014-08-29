@@ -1,0 +1,2 @@
+fails:Dir#read returns the file name in the current seek position
+fails:Dir#read raises an IOError when called on a closed Dir instance

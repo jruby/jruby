@@ -1,0 +1,7 @@
+fails:Array#clear removes all elements
+fails:Array#clear returns self
+fails:Array#clear leaves the Array empty
+fails:Array#clear keeps tainted status
+fails:Array#clear does not accept any arguments
+fails:Array#clear keeps untrusted status
+fails:Array#clear raises a RuntimeError on a frozen array

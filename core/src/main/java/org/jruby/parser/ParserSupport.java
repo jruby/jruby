@@ -207,7 +207,7 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.WARN_NOT_REACHED.load()) {
+        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
             warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "Statement not reached.");
         }
 
@@ -446,7 +446,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(Node node, String useless) {
-        if (Options.WARN_USELESSS_USE_OF.load()) {
+        if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
             warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.");
         }
     }
@@ -587,7 +587,9 @@ public class ParserSupport {
                     dotNode.isExclusive(), slot);
         }
         case REGEXPNODE:
-            warningUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
+            if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
+                warningUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
+            }
             
             return new MatchNode(node.getPosition(), node);
         }
@@ -1189,7 +1191,7 @@ public class ParserSupport {
         if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
-            if (warnings.isVerbose() && current.isDefined(name) >= 0) {
+            if (warnings.isVerbose() && current.isDefined(name) >= 0 && Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
                 warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
                         "shadowing outer local variable - " + name);
             }

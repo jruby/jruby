@@ -1,0 +1,4 @@
+fails:Thread.start Thread.start raises an ArgumentError if not passed a block
+fails:Thread.start Thread.start spawns a new Thread running the block
+fails:Thread.start Thread.start respects Thread subclasses
+fails:Thread.start Thread.start does not call #initialize

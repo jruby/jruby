@@ -1,0 +1,8 @@
+fails:String#chr returns a copy of self
+fails:String#chr returns a String
+fails:String#chr returns an empty String if self is an empty String
+fails:String#chr returns a 1-character String
+fails:String#chr returns the character at the start of the String
+fails:String#chr returns a String in the same encoding as self
+fails:String#chr understands multi-byte characters
+fails:String#chr understands Strings that contain a mixture of character widths

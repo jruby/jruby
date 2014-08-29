@@ -1,0 +1,4 @@
+fails:ARGF.eof returns true when reaching the end of a file
+fails:ARGF.eof raises IOError when called on a closed stream
+fails:ARGF.eof? returns true when reaching the end of a file
+fails:ARGF.eof? raises IOError when called on a closed stream

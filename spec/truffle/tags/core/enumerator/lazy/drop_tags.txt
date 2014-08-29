@@ -1,0 +1,5 @@
+fails:Enumerator::Lazy#drop returns a new instance of Enumerator::Lazy
+fails:Enumerator::Lazy#drop sets difference of given count with old size to new size
+fails:Enumerator::Lazy#drop when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
+fails:Enumerator::Lazy#drop on a nested Lazy sets difference of given count with old size to new size
+fails:Enumerator::Lazy#drop on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times

@@ -1,0 +1,2 @@
+fails:Thread#exit! needs to be reviewed for spec completeness
+fails:Thread.exit causes the current thread to exit

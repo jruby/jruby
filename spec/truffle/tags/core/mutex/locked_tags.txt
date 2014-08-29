@@ -1,0 +1,3 @@
+fails:Mutex#locked? returns true if locked
+fails:Mutex#locked? returns false if unlocked
+fails:Mutex#locked? returns the status of the lock

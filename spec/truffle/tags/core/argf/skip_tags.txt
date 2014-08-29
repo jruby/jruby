@@ -1,0 +1,4 @@
+fails:ARGF.skip skips the current file
+fails:ARGF.skip has no effect when called twice in a row
+fails:ARGF.skip has no effect at end of stream
+fails:ARGF.skip has no effect when the current file is the last

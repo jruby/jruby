@@ -1,0 +1,5 @@
+fails:Complex#- with Complex subtracts both the real and imaginary components
+fails:Complex#- with Integer subtracts the real number from the real component of self
+fails:Complex#- with Object tries to coerce self into other
+fails:Complex#- passed Numeric which responds to #real? with true coerces the passed argument to the type of the real part and subtracts the resulting elements
+fails:Complex#- passed Numeric which responds to #real? with false coerces the passed argument to Complex and subtracts the resulting elements

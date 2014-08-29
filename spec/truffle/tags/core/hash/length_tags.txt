@@ -1,0 +1,1 @@
+fails:Hash#length returns the number of entries

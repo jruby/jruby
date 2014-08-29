@@ -1,0 +1,8 @@
+fails:String#force_encoding accepts a String as the name of an Encoding
+fails:String#force_encoding accepts an Encoding instance
+fails:String#force_encoding calls #to_str to convert an object to an encoding name
+fails:String#force_encoding raises a TypeError if #to_str does not return a String
+fails:String#force_encoding raises a TypeError if passed nil
+fails:String#force_encoding returns self
+fails:String#force_encoding sets the encoding even if the String contents are invalid in that encoding
+fails:String#force_encoding does not transcode self

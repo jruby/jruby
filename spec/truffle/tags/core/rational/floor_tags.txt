@@ -1,0 +1,6 @@
+fails:Rational#floor with no arguments (precision = 0) returns an integer
+fails:Rational#floor with no arguments (precision = 0) returns the truncated value toward negative infinity
+fails:Rational#floor with a precision < 0 returns an integer
+fails:Rational#floor with a precision < 0 moves the truncation point n decimal places left
+fails:Rational#floor with a precision > 0 returns a Rational
+fails:Rational#floor with a precision > 0 moves the truncation point n decimal places right

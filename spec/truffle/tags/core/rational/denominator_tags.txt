@@ -1,0 +1,2 @@
+fails:Rational#denominator returns the denominator
+fails:Rational#denominator returns 1 if no denominator was given

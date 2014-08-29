@@ -1,0 +1,1 @@
+fails:ThreadGroup#enclose raises a ThreadError if attempting to move a Thread from an enclosed ThreadGroup

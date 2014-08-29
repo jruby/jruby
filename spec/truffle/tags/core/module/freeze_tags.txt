@@ -1,0 +1,1 @@
+fails:Module#freeze needs to be reviewed for spec completeness

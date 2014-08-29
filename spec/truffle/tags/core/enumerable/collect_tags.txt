@@ -1,0 +1,4 @@
+fails:Enumerable#collect returns a new array with the results of passing each element to block
+fails:Enumerable#collect passes through the values yielded by #each_with_index
+fails:Enumerable#collect gathers initial args as elements when each yields multiple
+fails:Enumerable#collect returns an enumerator when no block given

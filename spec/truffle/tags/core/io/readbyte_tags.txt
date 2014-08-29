@@ -1,0 +1,3 @@
+fails:IO#readbyte reads one byte from the stream
+fails:IO#readbyte raises EOFError on EOF
+fails:IO#readbyte needs to be reviewed for spec completeness

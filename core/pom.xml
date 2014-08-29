@@ -167,6 +167,7 @@
       <groupId>com.oracle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
       <version>0.5-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

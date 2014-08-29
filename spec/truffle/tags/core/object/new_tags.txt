@@ -1,0 +1,2 @@
+fails:Object.new creates a new Object
+fails:Object.new doesn't accept arguments

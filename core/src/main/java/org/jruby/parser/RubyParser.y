@@ -122,6 +122,7 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.cli.Options;
 
 public class RubyParser {
     protected ParserSupport support;
@@ -1327,7 +1328,9 @@ primary         : literal
                 | tLPAREN_ARG expr {
                     lexer.setState(LexState.EXPR_ENDARG); 
                 } rparen {
-                    support.warning(ID.GROUPED_EXPRESSION, $1, "(...) interpreted as grouped expression");
+                    if (Options.PARSER_WARN_GROUPED_EXPRESSIONS.load()) {
+                      support.warning(ID.GROUPED_EXPRESSION, $1, "(...) interpreted as grouped expression");
+                    }
                     $$ = $2;
                 }
                 | tLPAREN compstmt tRPAREN {

@@ -1,0 +1,8 @@
+fails:Process.exit raises a SystemExit with status 0
+fails:Process.exit raises a SystemExit with the specified status
+fails:Process.exit raises a SystemExit with the specified boolean status
+fails:Process.exit tries to convert the passed argument to an Integer using #to_int
+fails:Process.exit converts the passed Float argument to an Integer
+fails:Process.exit raises TypeError if can't convert the argument to an Integer
+fails:Process.exit! exits with the given status
+fails:Process.exit! exits immediately when called from a thread

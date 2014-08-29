@@ -41,17 +41,17 @@ public class FeatureManager {
             // Some features are handled specially
 
             if (feature.equals("stringio")) {
-                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "stringio not yet implemented");
+                context.getCoreLibrary().loadRubyCore("jruby/truffle/standard/stringio.rb");
                 return true;
             }
 
             if (feature.equals("zlib")) {
-                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "zlib not yet implemented");
+                context.getWarnings().warn("zlib not yet implemented");
                 return true;
             }
 
             if (feature.equals("enumerator")) {
-                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "enumerator not yet implemented");
+                context.getWarnings().warn("enumerator not yet implemented");
                 return true;
             }
 

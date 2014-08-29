@@ -90,7 +90,7 @@ public class RubyFile extends RubyObject {
             }
 
             writer = null;
-        } else if (mode.equals("w")) {
+        } else if (mode.equals("w") || mode.equals("wb")) {
             reader = null;
 
             try {

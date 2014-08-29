@@ -756,15 +756,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
             // and the thread-context rather than fetch one from the other.  Why is that?
             return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block);
-/*
- * SSS FIXME: Why was this here?
- * Do we need an IR equivalent here?
- *
-        } catch (JumpException.BreakJump bj) {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
-        } catch (JumpException.RedoJump rj) {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, (IRubyObject)rj.getValue(), "unexpected redo");
-*/
         } catch (StackOverflowError soe) {
             throw runtime.newSystemStackError("stack level too deep", soe);
         } finally {

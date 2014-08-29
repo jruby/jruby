@@ -1,0 +1,1 @@
+fails:Bignum includes Comparable

@@ -1,0 +1,2 @@
+fails:Hash#empty? returns true if the hash has no entries
+fails:Hash#empty? returns true if the hash has no entries and has a default value

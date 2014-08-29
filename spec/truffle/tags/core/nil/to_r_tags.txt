@@ -1,0 +1,1 @@
+fails:NilClass#to_r returns 0/1

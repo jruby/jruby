@@ -1,0 +1,2 @@
+fails:Kernel#eql? returns true if obj and anObject are the same object.
+fails:Kernel#eql? returns true if obj and anObject have the same value.

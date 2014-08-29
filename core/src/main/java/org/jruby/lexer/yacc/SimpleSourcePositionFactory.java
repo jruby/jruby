@@ -47,6 +47,14 @@ public class SimpleSourcePositionFactory implements SourcePositionFactory {
         lastPosition = new SimpleSourcePosition(source.getFilename(), line);
     }
 
+    @Override
+    public void startOfToken() {
+    }
+
+    @Override
+    public void endOfToken() {
+    }
+
     public ISourcePosition getPosition(ISourcePosition startPosition) {
         if (startPosition != null) {
             lastPosition = startPosition;

@@ -1,0 +1,1 @@
+fails:Numeric#conj returns self

@@ -1,0 +1,2 @@
+fails:Numeric#nonzero? returns self if self#zero? is false
+fails:Numeric#nonzero? returns nil if self#zero? is true

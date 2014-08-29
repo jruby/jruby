@@ -1,0 +1,3 @@
+fails:Array#include? returns true if object is present, false otherwise
+fails:Array#include? determines presence by using element == obj
+fails:Array#include? calls == on elements from left to right until success

@@ -178,6 +178,11 @@ public abstract class ObjectNodes {
             return a != b;
         }
 
+        @Specialization
+        public boolean equal(NilPlaceholder a, RubyBasicObject b) {
+            return false;
+        }
+
     }
 
     @CoreMethod(names = {"<=>"}, minArgs = 1, maxArgs = 1)

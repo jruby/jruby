@@ -1,0 +1,6 @@
+fails:Time#eql? returns true if self and other have the same whole number of seconds
+fails:Time#eql? returns false if self and other have differing whole numbers of seconds
+fails:Time#eql? returns true if self and other have the same number of microseconds
+fails:Time#eql? returns false if self and other have differing numbers of microseconds
+fails:Time#eql? returns false if self and other have differing fractional microseconds
+fails:Time#eql? returns false when given a non-time value

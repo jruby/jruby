@@ -1,0 +1,3 @@
+fails:File::Stat#<=> is able to compare files by the same modification times
+fails:File::Stat#<=> is able to compare files by different modification times
+fails:File::Stat#<=> includes Comparable and #== shows mtime equality between two File::Stat objects

@@ -1,0 +1,10 @@
+fails:Complex#rect returns an Array
+fails:Complex#rect returns a two-element Array
+fails:Complex#rect returns the real part of self as the first element
+fails:Complex#rect returns the imaginary part of self as the last element
+fails:Complex#rect raises an ArgumentError if given any arguments
+fails:Complex.rect passed a Numeric n which responds to #real? with true returns a Complex with real part n and imaginary part 0
+fails:Complex.rect passed a Numeric which responds to #real? with false raises TypeError
+fails:Complex.rect passed Numerics n1 and n2 and at least one responds to #real? with false raises TypeError
+fails:Complex.rect passed Numerics n1 and n2 and both respond to #real? with true returns a Complex with real part n1 and imaginary part n2
+fails:Complex.rect passed a non-Numeric raises TypeError

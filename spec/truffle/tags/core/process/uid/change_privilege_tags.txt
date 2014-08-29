@@ -1,0 +1,1 @@
+fails:Process::UID.change_privilege needs to be reviewed for spec completeness

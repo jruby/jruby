@@ -1,0 +1,7 @@
+fails:Encoding::Converter#convert returns a String
+fails:Encoding::Converter#convert sets the encoding of the result to the target encoding
+fails:Encoding::Converter#convert transcodes the given String to the target encoding
+fails:Encoding::Converter#convert allows Strings of different encodings to the source encoding
+fails:Encoding::Converter#convert reuses the given encoding pair if called multiple times
+fails:Encoding::Converter#convert raises UndefinedConversionError if the String contains characters invalid for the target encoding
+fails:Encoding::Converter#convert raises an ArgumentError if called on a finished stream

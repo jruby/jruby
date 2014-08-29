@@ -1,0 +1,4 @@
+fails:Rational#rationalize returns self with no argument
+fails:Rational#rationalize simplifies self to the degree specified by a Rational argument
+fails:Rational#rationalize simplifies self to the degree specified by a Float argument
+fails:Rational#rationalize raises ArgumentError when passed more than one argument

@@ -65,6 +65,7 @@ import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
 
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
@@ -373,7 +374,13 @@ public class RubyLexer {
     }
 
     public int nextToken() throws IOException {
+        src.getPositionFactory().startOfToken();
+
         token = yylex();
+
+        if (token != -1) {
+            src.getPositionFactory().endOfToken();
+        }
 
         return token == EOF ? 0 : token;
     }
@@ -1084,7 +1091,6 @@ public class RubyLexer {
         commandStart = false;
 
         loop: for(;;) {
-            src.startOfToken();
             last_state = lex_state;
             c = src.read();
             switch(c) {
@@ -1344,7 +1350,8 @@ public class RubyLexer {
         //a wrong position if the "inclusive" flag is not set.
         ISourcePosition tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
-            if (warnings.isVerbose()) warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
+            if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
+                warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
             c = Tokens.tAMPER;
@@ -2209,7 +2216,8 @@ public class RubyLexer {
             yaccValue = "**";
 
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose()) warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`**' interpreted as argument prefix");
+                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
+                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`**' interpreted as argument prefix");
                 c = Tokens.tDSTAR;
             } else if (isBEG()) {
                 c = Tokens.tDSTAR;
@@ -2225,7 +2233,8 @@ public class RubyLexer {
         default:
             src.unread(c);
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose()) warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
+                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
+                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {
                 c = Tokens.tSTAR;

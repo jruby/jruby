@@ -699,8 +699,18 @@ public class BodyTranslator extends Translator {
         RubyNode readNode = environment.findLocalVarNode(node.getName(), translate(node.getPosition()));
 
         if (readNode == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "can't find variable " + node.getName() + ", translating as nil");
-            readNode = new NilLiteralNode(context, translate(node.getPosition()));
+            // If we haven't seen this dvar before it's possible that it's a block local variable
+
+            final int depth = node.getDepth();
+
+            TranslatorEnvironment e = environment;
+
+            for (int n = 0; n < node.getDepth(); n++) {
+                e = e.getParent();
+            }
+
+            e.declareVar(node.getName());
+            readNode = e.findLocalVarNode(node.getName(), translate(node.getPosition()));
         }
 
         return readNode;
@@ -1208,11 +1218,29 @@ public class BodyTranslator extends Translator {
         RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
         if (readNode == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "local variable " + name + " found by parser but not by translator");
-            readNode = new NilLiteralNode(context, sourceSection);
+            /*
+
+              This happens for code such as:
+
+                def destructure4r((*c,d))
+                    [c,d]
+                end
+
+               We're going to just assume that it should be there and add it...
+             */
+
+            environment.declareVar(node.getName());
+            readNode = environment.findLocalVarNode(name, sourceSection);
         }
 
         return readNode;
+    }
+
+    @Override
+    public RubyNode visitMatchNode(org.jruby.ast.MatchNode node) {
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), new org.jruby.ast.GlobalVarNode(node.getPosition(), "$_"));
+        final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getRegexpNode(), "=~", argsNode, null);
+        return callNode.accept(this);
     }
 
     @Override
@@ -1260,6 +1288,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final org.jruby.ast.ArrayNode preArray = (org.jruby.ast.ArrayNode) node.getPre();
+        final org.jruby.ast.ArrayNode postArray = (org.jruby.ast.ArrayNode) node.getPost();
         final org.jruby.ast.Node rhs = node.getValueNode();
 
         RubyNode rhsTranslated;
@@ -1271,14 +1300,11 @@ public class BodyTranslator extends Translator {
             rhsTranslated = rhs.accept(this);
         }
 
-        /*
-         * One very common case is to do
-         *
-         * a, b = c, d
-         */
-
-        if (preArray != null && node.getPost() == null && node.getRest() == null && rhsTranslated instanceof ArrayLiteralNode.UninitialisedArrayLiteralNode &&
-                ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues().length == preArray.size()) {
+        if (preArray != null
+                && node.getPost() == null
+                && node.getRest() == null
+                && rhsTranslated instanceof ArrayLiteralNode.UninitialisedArrayLiteralNode
+                && ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues().length == preArray.size()) {
             /*
              * We can deal with this common case be rewriting as
              *
@@ -1377,9 +1403,15 @@ public class BodyTranslator extends Translator {
             }
 
             return SequenceNode.sequence(context, sourceSection, sequence);
-        } else if (node.getPre() == null && node.getPost() == null && node.getRest() instanceof org.jruby.ast.StarNode) {
+        } else if (node.getPre() == null
+                && node.getPost() == null
+                && node.getRest() instanceof org.jruby.ast.StarNode) {
             return rhsTranslated;
-        } else if (node.getPre() == null && node.getPost() == null && node.getRest() != null && rhs != null && !(rhs instanceof org.jruby.ast.ArrayNode)) {
+        } else if (node.getPre() == null
+                && node.getPost() == null
+                && node.getRest() != null
+                && rhs != null
+                && !(rhs instanceof org.jruby.ast.ArrayNode)) {
             /*
              * *a = b
              *
@@ -1408,7 +1440,11 @@ public class BodyTranslator extends Translator {
             final SplatCastNode rhsSplatCast = SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, rhsTranslated);
 
             return restRead.makeWriteNode(rhsSplatCast);
-        } else if (node.getPre() == null && node.getPost() == null && node.getRest() != null && rhs != null && rhs instanceof org.jruby.ast.ArrayNode) {
+        } else if (node.getPre() == null
+                && node.getPost() == null
+                && node.getRest() != null
+                && rhs != null
+                && rhs instanceof org.jruby.ast.ArrayNode) {
             /*
              * *a = [b, c]
              *
@@ -1435,6 +1471,51 @@ public class BodyTranslator extends Translator {
             }
 
             return restRead.makeWriteNode(rhsTranslated);
+        } else if (node.getPre() == null && node.getRest() != null && node.getPost() != null) {
+            /*
+             * Something like
+             *
+             *     *a,b = [1, 2, 3, 4]
+             */
+
+            // This is very similar to the case with pre and rest, so unify with that
+
+            /*
+             * Create a temp for the array.
+             */
+
+            final String tempName = environment.allocateLocalTemp("array");
+
+            /*
+             * Create a sequence of instructions, with the first being the literal array assigned to
+             * the temp.
+             */
+
+            final List<RubyNode> sequence = new ArrayList<>();
+
+            final RubyNode splatCastNode = SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, rhsTranslated);
+
+            final RubyNode writeTemp = ((ReadNode) environment.findLocalVarNode(tempName, sourceSection)).makeWriteNode(splatCastNode);
+
+            sequence.add(writeTemp);
+
+            /*
+             * Then index the temp array for each assignment on the LHS.
+             */
+
+            if (node.getRest() != null) {
+                final ArrayDropTailNode assignedValue = ArrayDropTailNodeFactory.create(context, sourceSection, postArray.size(), environment.findLocalVarNode(tempName, sourceSection));
+
+                sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
+            }
+
+            for (int n = 0; n < postArray.size(); n++) {
+                final ArrayIndexNode assignedValue = ArrayIndexNodeFactory.create(context, sourceSection, -(postArray.size() - n), environment.findLocalVarNode(tempName, sourceSection));
+
+                sequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
+            }
+
+            return SequenceNode.sequence(context, sourceSection, sequence);
         } else {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " unknown form of multiple assignment");
             return new NilLiteralNode(context, sourceSection);

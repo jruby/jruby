@@ -1,0 +1,2 @@
+fails:Encoding#ascii_compatible? returns true if self represents an ASCII-compatible encoding
+fails:Encoding#ascii_compatible? returns false if self does not represent an ASCII-compatible encoding

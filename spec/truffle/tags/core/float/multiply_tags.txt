@@ -1,0 +1,1 @@
+fails:Float#* returns self multiplied by other

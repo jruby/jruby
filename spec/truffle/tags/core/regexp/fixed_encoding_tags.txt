@@ -1,0 +1,8 @@
+fails:Regexp#fixed_encoding? returns false by default
+fails:Regexp#fixed_encoding? returns false if the 'n' modifier was supplied to the Regexp
+fails:Regexp#fixed_encoding? returns true if the 'u' modifier was supplied to the Regexp
+fails:Regexp#fixed_encoding? returns true if the 's' modifier was supplied to the Regexp
+fails:Regexp#fixed_encoding? returns true if the 'e' modifier was supplied to the Regexp
+fails:Regexp#fixed_encoding? returns true if the Regexp contains a \u escape
+fails:Regexp#fixed_encoding? returns true if the Regexp contains a UTF-8 literal
+fails:Regexp#fixed_encoding? returns true if the Regexp was created with the Regexp::FIXEDENCODING option

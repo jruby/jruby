@@ -13,7 +13,8 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
-import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.ast.CallNode;
+import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
@@ -70,15 +71,9 @@ public abstract class RubyCallStack {
         return getCurrentMethod().getDeclaringModule();
     }
 
-    public static String getFilename(){
-        return Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName();
-    }
-
-    public static int getLineNumber(){
-        return Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine();
-    }
-
     public static Backtrace getBacktrace(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+
         final ArrayList<Activation> activations = new ArrayList<>();
 
         if (Options.TRUFFLE_BACKTRACE_GENERATE.load()) {
@@ -104,6 +99,23 @@ public abstract class RubyCallStack {
         }
 
         return new Backtrace(activations.toArray(new Activation[activations.size()]));
+    }
+
+    public static Node getTopMostUserCallNode() {
+        CompilerAsserts.neverPartOfCompilation();
+
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
+
+            @Override
+            public Node visitFrame(FrameInstance frameInstance) {
+                if (frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof CoreSourceSection) {
+                    return null;
+                } else {
+                    return frameInstance.getCallNode();
+                }
+            }
+
+        });
     }
 
 }

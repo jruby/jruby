@@ -1,0 +1,7 @@
+fails:Math.cos returns a float
+fails:Math.cos returns the cosine of the argument expressed in radians
+fails:Math.cos raises a TypeError unless the argument is Numeric and has #to_f
+fails:Math.cos returns NaN given NaN
+fails:Math.cos raises a TypeError if the argument is nil
+fails:Math.cos coerces its argument with #to_f
+fails:Math#cos is accessible as a private instance method

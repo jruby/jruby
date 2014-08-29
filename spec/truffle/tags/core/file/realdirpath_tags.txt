@@ -1,0 +1,10 @@
+fails:File.realdirpath returns '/' when passed '/'
+fails:File.realdirpath returns the real (absolute) pathname not containing symlinks
+fails:File.realdirpath uses base directory for interpreting relative pathname
+fails:File.realdirpath uses current directory for interpreting relative pathname
+fails:File.realdirpath uses link directory for expanding relative links
+fails:File.realdirpath raises an Errno::ELOOP if the symlink points to itself
+fails:File.realdirpath returns the real (absolute) pathname if the file is absent
+fails:File.realdirpath raises Errno::ENOENT if the directory is absent
+fails:File.realdirpath returns the real (absolute) pathname if the symlink points to an absent file
+fails:File.realdirpath raises Errno::ENOENT if the symlink points to an absent directory

@@ -1,0 +1,1 @@
+fails:Range#end end returns the last element of self

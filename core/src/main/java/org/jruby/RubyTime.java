@@ -111,17 +111,6 @@ public class RubyTime extends RubyObject {
         "WET", "Europe/Lisbon" // Western European Time
     );
     
-    /* github-215
-     * Some non-JVM timezone names are recognized by MRI.
-     * This map translate those to JVM-friendly names.
-     */
-    private static final Map<String, String> NON_JVM_TZNAME = Helpers.map(
-        "EDT", "EST",
-        "CDT", "CST",
-        "MDT", "MST",
-        "PDT", "PST"
-    );
-    
     /* Some TZ values need to be overriden for Time#zone
      */
     private static final Map<String, String> SHORT_STD_TZNAME = Helpers.map(

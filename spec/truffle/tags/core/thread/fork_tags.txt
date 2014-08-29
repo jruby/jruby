@@ -1,0 +1,4 @@
+fails:Thread.fork Thread.start raises an ArgumentError if not passed a block
+fails:Thread.fork Thread.start spawns a new Thread running the block
+fails:Thread.fork Thread.start respects Thread subclasses
+fails:Thread.fork Thread.start does not call #initialize

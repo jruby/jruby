@@ -1,0 +1,1 @@
+fails:Kernel#kind_of? needs to be reviewed for spec completeness

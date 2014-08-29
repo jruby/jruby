@@ -1,0 +1,6 @@
+fails:String#valid_encoding? returns true if the String's encoding is valid
+fails:String#valid_encoding? returns true if self is valid in the current encoding and other encodings
+fails:String#valid_encoding? returns true for all encodings self is valid in
+fails:String#valid_encoding? returns false if self is valid in one encoding, but invalid in the one it's tagged with
+fails:String#valid_encoding? returns false if self contains a character invalid in the associated encoding
+fails:String#valid_encoding? returns false if a valid String had an invalid character appended to it

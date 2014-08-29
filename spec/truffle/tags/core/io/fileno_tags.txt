@@ -1,0 +1,2 @@
+fails:IO#fileno returns the numeric file descriptor of the given IO object
+fails:IO#fileno raises IOError on closed stream

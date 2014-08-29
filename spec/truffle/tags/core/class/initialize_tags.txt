@@ -1,0 +1,4 @@
+fails:Class#initialize is private
+fails:Class#initialize raises a TypeError when called on already initialized classes
+fails:Class#initialize raises a TypeError when called on BasicObject
+fails:Class#initialize when given the Class raises a TypeError

@@ -1,0 +1,2 @@
+fails:Kernel#iterator? is a private method
+fails:Kernel.iterator? needs to be reviewed for spec completeness

@@ -1,0 +1,1 @@
+fails:ThreadGroup#list returns the list of threads in the group

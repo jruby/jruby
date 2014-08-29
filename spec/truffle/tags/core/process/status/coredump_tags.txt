@@ -1,0 +1,1 @@
+fails:Process::Status#coredump? needs to be reviewed for spec completeness

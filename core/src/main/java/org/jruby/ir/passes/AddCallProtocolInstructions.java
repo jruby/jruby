@@ -91,7 +91,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 }
             }
 
-            boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores || scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
+            boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores
+                || (scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE) || !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED));
 
             // FIXME: Why do we need a push/pop for frame & binding for scopes with unrescued exceptions??
             // 1. I think we need a different check for frames -- it is NOT scopeHasUnrescuedExceptions

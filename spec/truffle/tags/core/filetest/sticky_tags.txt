@@ -1,0 +1,2 @@
+fails:FileTest.sticky? accepts an object that has a #to_path method
+fails:FileTest.sticky? returns false if the file dies not exist

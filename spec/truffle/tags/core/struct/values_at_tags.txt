@@ -1,0 +1,2 @@
+fails:Struct#values_at returns an array of values
+fails:Struct#values_at fails when passed unsupported types

@@ -1,0 +1,6 @@
+fails:Complex#rationalize raises RangeError if self has non-zero imaginary part
+fails:Complex#rationalize raises RangeError if self has 0.0 imaginary part
+fails:Complex#rationalize returns a Rational if self has zero imaginary part
+fails:Complex#rationalize sends #rationalize to the real part
+fails:Complex#rationalize ignores a single argument
+fails:Complex#rationalize raises ArgumentError when passed more than one argument

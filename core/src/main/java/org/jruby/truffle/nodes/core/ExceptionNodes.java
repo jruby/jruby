@@ -66,7 +66,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(names = "message", maxArgs = 0)
+    @CoreMethod(names = {"message", "to_s"}, maxArgs = 0)
     public abstract static class MessageNode extends CoreMethodNode {
 
         public MessageNode(RubyContext context, SourceSection sourceSection) {

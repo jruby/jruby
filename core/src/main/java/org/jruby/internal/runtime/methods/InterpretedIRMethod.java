@@ -53,7 +53,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
-        this.pushScope = method.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
+        this.pushScope = true;
 
         if (method.usesEval()) {
             // Methods that contain evals don't have interpreted parent context in JIT,
@@ -148,7 +148,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     private void ensureInstrsReady() {
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
-        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation(false);
+        if (method.getInstrsForInterpretation() == null) {
+            method.prepareForInterpretation(false);
+            this.pushScope = method.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE) || !method.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        }
     }
 
     private boolean tryCompile(ThreadContext context) {

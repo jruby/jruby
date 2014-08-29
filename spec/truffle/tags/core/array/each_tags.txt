@@ -1,0 +1,3 @@
+fails:Array#each yields each element to the block
+fails:Array#each yields each element to a block that takes multiple arguments
+fails:Array#each returns an Enumerator if no block given

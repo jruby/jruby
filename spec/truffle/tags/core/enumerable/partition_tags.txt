@@ -1,0 +1,3 @@
+fails:Enumerable#partition returns two arrays, the first containing elements for which the block is true, the second containing the rest
+fails:Enumerable#partition returns an Enumerator if called without a block
+fails:Enumerable#partition gathers whole arrays as elements when each yields multiple

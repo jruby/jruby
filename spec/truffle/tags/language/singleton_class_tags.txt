@@ -2,18 +2,10 @@ fails:A singleton class is a singleton Class instance
 fails:A singleton class inherits from Class for classes
 fails:A singleton class is a subclass of Class's singleton class
 fails(inherited):A singleton class is a subclass of the same level of Class's singleton class
-fails:A singleton class is a subclass of a superclass's singleton class
-fails(inherited):A singleton class is a subclass of the same level of superclass's singleton class
-fails:A singleton class for BasicObject has Class as it's superclass
-fails:A singleton class for BasicObject has the proper level of superclass for Class
-fails:A singleton class has class String as the superclass of a String instance
 fails(inherited):A singleton class doesn't have singleton class
 fails:A constant on a singleton class can be accessed via const_get
 fails:A constant on a singleton class cannot be accessed via object::CONST
 fails:A constant on a singleton class raises a NameError for anonymous_module::CONST
-fails:A constant on a singleton class appears in the singleton class constant list
-fails:A constant on a singleton class does not appear in the object's class constant list
-fails:A constant on a singleton class is not preserved when the object is duped
 fails:Defining instance methods on a singleton class define public methods
 fails:Instance methods of a singleton class include ones of the object's class
 fails:Instance methods of a singleton class for a class include instance methods of Class
@@ -23,4 +15,4 @@ fails:Class methods of a singleton class for a singleton class include instance 
 fails(inherited):Class methods of a singleton class for a singleton class include class methods of the singleton class of Class
 fails:Instantiating a singleton class raises a TypeError when new is called
 fails:Instantiating a singleton class raises a TypeError when allocate is called
-fails:Defining instance methods on a singleton class defines public methods
+fails:A constant on a singleton class is not preserved when the object is duped

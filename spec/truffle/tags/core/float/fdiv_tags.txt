@@ -1,0 +1,14 @@
+fails:Float#fdiv performs floating-point division between self and a Fixnum
+fails:Float#fdiv performs floating-point division between self and a Bignum
+fails:Float#fdiv performs floating-point division between self and a Float
+fails:Float#fdiv returns NaN when the argument is NaN
+fails:Float#fdiv returns Infinity when the argument is 0.0
+fails:Float#fdiv returns -Infinity when the argument is 0.0 and self is negative
+fails:Float#fdiv returns Infinity when the argument is 0
+fails:Float#fdiv returns -Infinity when the argument is 0 and self is negative
+fails:Float#fdiv returns 0.0 when the argument is Infinity
+fails:Float#fdiv returns -0.0 when the argument is -Infinity
+fails:Float#fdiv performs floating-point division between self and a Rational
+fails:Float#fdiv performs floating-point division between self and a Complex
+fails:Float#fdiv raises a TypeError when argument isn't numeric
+fails:Float#fdiv raises an ArgumentError when passed multiple arguments

@@ -1,0 +1,1 @@
+fails:Continuation.new raises a NoMethodError

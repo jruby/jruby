@@ -1,0 +1,2 @@
+fails:ThreadGroup#enclosed? returns false when a ThreadGroup has not been enclosed (default state)
+fails:ThreadGroup#enclosed? returns true when a ThreadGroup is enclosed

@@ -1,0 +1,5 @@
+fails:Float#numerator converts self to a Rational object then returns its numerator
+fails:Float#numerator returns 0 for 0.0
+fails:Float#numerator returns NaN for NaN
+fails:Float#numerator returns Infinity for Infinity
+fails:Float#numerator returns -Infinity for -Infinity

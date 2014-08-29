@@ -1,0 +1,9 @@
+fails:Enumerable#one? when passed a block returns true if block returns true once
+fails:Enumerable#one? when passed a block returns false if the block returns true more than once
+fails:Enumerable#one? when passed a block returns false if the block only returns false
+fails:Enumerable#one? when passed a block gathers initial args as elements when each yields multiple
+fails:Enumerable#one? when passed a block yields multiple arguments when each yields multiple
+fails:Enumerable#one? when not passed a block returns true if only one element evaluates to true
+fails:Enumerable#one? when not passed a block returns false if two elements evaluate to true
+fails:Enumerable#one? when not passed a block returns false if all elements evaluate to false
+fails:Enumerable#one? when not passed a block gathers whole arrays as elements when each yields multiple

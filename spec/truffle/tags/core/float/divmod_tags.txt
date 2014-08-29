@@ -1,0 +1,6 @@
+fails:Float#divmod returns an [quotient, modulus] from dividing self by other
+fails:Float#divmod raises a FloatDomainError if self is NaN
+fails:Float#divmod raises a FloatDomainError if other is NaN
+fails:Float#divmod raises a FloatDomainError if self is Infinity
+fails:Float#divmod raises a ZeroDivisionError if other is zero
+fails:Float#divmod returns the correct [quotient, modulus] even for large quotient

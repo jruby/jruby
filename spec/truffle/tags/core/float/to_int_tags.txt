@@ -1,0 +1,1 @@
+fails:Float#to_int returns self truncated to an Integer
