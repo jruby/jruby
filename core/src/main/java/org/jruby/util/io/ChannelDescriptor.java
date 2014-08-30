@@ -780,7 +780,7 @@ public class ChannelDescriptor {
             return new ChannelDescriptor(Channels.newChannel(is), flags);
         }
 
-        return JRubyFile.createResource(cwd, path).openDescriptor(flags, posix, perm);
+        return JRubyFile.createResource(posix, cwd, path).openDescriptor(flags, posix, perm);
     }
 
     /**

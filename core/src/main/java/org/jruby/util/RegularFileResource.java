@@ -21,14 +21,15 @@ import org.jruby.util.io.ModeFlags;
  */
 class RegularFileResource implements FileResource {
     private final JRubyFile file;
-    private final POSIX symlinkPosix = POSIXFactory.getPOSIX();
+    private final POSIX posix;
 
-    RegularFileResource(File file) {
-        this(file.getAbsolutePath());
+    RegularFileResource(POSIX posix, File file) {
+        this(posix, file.getAbsolutePath());
     }
 
-    protected RegularFileResource(String filename) {
+    protected RegularFileResource(POSIX posix, String filename) {
         this.file = new JRubyFile(filename);
+        this.posix = posix;
     }
 
     // TODO(ratnikov): This should likely be renamed to rubyPath, otherwise it's easy to get
@@ -74,9 +75,9 @@ class RegularFileResource implements FileResource {
 
     @Override
     public boolean isSymLink() {
-        FileStat stat = symlinkPosix.allocateStat();
+        FileStat stat = posix.allocateStat();
 
-        return symlinkPosix.lstat(file.getAbsolutePath(), stat) < 0 ?
+        return posix.lstat(file.getAbsolutePath(), stat) < 0 ?
                 false : stat.isSymlink();
     }
 
