@@ -50,7 +50,17 @@ public class SharedMethodInfo {
 
     @Override
     public String toString() {
-        return name + ":" + sourceSection.getShortDescription();
+        final StringBuilder builder = new StringBuilder();
+
+        if (isBlock) {
+            builder.append("block in ");
+        }
+
+        builder.append(name);
+        builder.append(":");
+        builder.append(sourceSection.getShortDescription());
+
+        return builder.toString();
     }
 
 }

@@ -2285,12 +2285,12 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", RubyMethod.blockDecorator("max"));
+            final SourceSection sourceSection = new CoreSourceSection("Array", "max");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, RubyMethod.blockDecorator("max"), false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, "max", false, null);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
@@ -2397,12 +2397,12 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", RubyMethod.blockDecorator("min"));
+            final SourceSection sourceSection = new CoreSourceSection("Array", "min");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, RubyMethod.blockDecorator("min"), false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, "min", false, null);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{

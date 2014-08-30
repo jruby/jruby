@@ -1126,7 +1126,7 @@ public class BodyTranslator extends Translator {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, RubyMethod.blockDecorator(currentCallMethodName), true, node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, currentCallMethodName, true, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
@@ -2136,7 +2136,7 @@ public class BodyTranslator extends Translator {
                 methodParent = methodParent.getParent();
             }
 
-            return RubyMethod.blockDecorator(methodParent.getNamedMethodName());
+            return methodParent.getNamedMethodName();
         } else {
             return environment.getNamedMethodName();
         }

@@ -161,16 +161,4 @@ public class RubyMethod implements MethodLike {
         return sharedMethodInfo.toString();
     }
 
-    public static String blockDecorator(String lexicalParentMethodName) {
-        return "block in " + lexicalParentMethodName;
-    }
-
-    public static boolean hasBlockDecorator(String name) {
-        return name.startsWith("block in ");
-    }
-
-    public static String removeBlockDecorator(String name) {
-        return name.substring("block in ".length());
-    }
-
 }
