@@ -35,8 +35,6 @@ public class Backtrace {
         switch (Options.TRUFFLE_BACKTRACE_FORMAT.load()) {
             case "mri":
                 return new MRIBacktraceFormatter();
-            case "rubinius":
-                return new RubiniusBacktraceFormatter();
             default:
                 throw new UnsupportedOperationException();
         }
