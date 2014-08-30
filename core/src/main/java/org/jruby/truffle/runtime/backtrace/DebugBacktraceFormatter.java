@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +85,13 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
 
     private static String debugString(RubyContext context, Object value) {
         try {
-            return context.getCoreLibrary().box(value).debugSend("inspect", null).toString();
+            String string = context.getCoreLibrary().box(value).debugSend("inspect", null).toString();
+
+            if (string.length() <= Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) {
+                return string;
+            } else {
+                return string.substring(0, Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) + "…";
+            }
         } catch (Exception e) {
             return "*error*";
         }
