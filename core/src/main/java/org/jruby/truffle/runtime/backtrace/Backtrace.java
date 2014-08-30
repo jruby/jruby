@@ -17,9 +17,14 @@ import java.util.List;
 
 public class Backtrace {
 
-    public static final BacktraceFormatter DISPLAY_FORMATTER = getDisplayFormatter();
-    public static final BacktraceFormatter OBJECT_FORMATTER = new MRIBacktraceFormatter();
-    public static final BacktraceFormatter DEBUG_FORMATTER = new MRIBacktraceFormatter();
+    public static enum Formatter {
+        MRI,
+        DEBUG
+    }
+
+    public static final BacktraceFormatter DISPLAY_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DISPLAY_FORMAT.load());
+    public static final BacktraceFormatter EXCEPTION_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_EXCEPTION_FORMAT.load());
+    public static final BacktraceFormatter DEBUG_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DEBUG_FORMAT.load());
 
     private final Activation[] activations;
 
@@ -31,10 +36,12 @@ public class Backtrace {
         return Collections.unmodifiableList(Arrays.asList(activations));
     }
 
-    private static BacktraceFormatter getDisplayFormatter() {
-        switch (Options.TRUFFLE_BACKTRACE_FORMAT.load()) {
-            case "mri":
+    private static BacktraceFormatter getFormatter(Formatter formatter) {
+        switch (formatter) {
+            case MRI:
                 return new MRIBacktraceFormatter();
+            case DEBUG:
+                return new DebugBacktraceFormatter();
             default:
                 throw new UnsupportedOperationException();
         }
