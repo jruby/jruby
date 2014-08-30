@@ -23,13 +23,13 @@ public interface FileResource {
     boolean canWrite();
 
     /**
-     * @see java.io.File.list
+     * @see java.io.File#list()
      */
     String[] list();
 
     boolean isSymLink();
 
-    FileStat stat(POSIX posix);
+    FileStat stat();
     FileStat lstat(POSIX posix);
 
     // For transition to file resources only. Implementations should return

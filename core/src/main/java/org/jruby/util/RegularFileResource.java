@@ -108,7 +108,7 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
-    public FileStat stat(POSIX posix) {
+    public FileStat stat() {
         return posix.stat(absolutePath());
     }
 

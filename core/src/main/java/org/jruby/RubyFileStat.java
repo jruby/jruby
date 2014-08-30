@@ -120,7 +120,7 @@ public class RubyFileStat extends RubyObject {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + filename);
         }
 
-        stat = lstat ? file.lstat(posix) : file.stat(posix);
+        stat = lstat ? file.lstat(posix) : file.stat();
     }
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)

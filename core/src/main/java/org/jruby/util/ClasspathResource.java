@@ -116,14 +116,14 @@ public class ClasspathResource implements FileResource {
     }
 
     @Override
-    public FileStat stat(POSIX posix) {
+    public FileStat stat() {
         return fileStat;
     }
 
     @Override
     public FileStat lstat(POSIX posix) {
       // we don't have symbolic links here, so lstat is no different than regular stat
-      return stat(posix);
+      return stat();
     }
 
     @Override
