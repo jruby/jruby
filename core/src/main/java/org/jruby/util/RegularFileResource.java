@@ -137,7 +137,7 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
-    public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
+    public ChannelDescriptor openDescriptor(ModeFlags flags, int perm) throws ResourceException {
         if (flags.isCreate()) {
             boolean fileCreated;
             try {

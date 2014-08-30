@@ -41,5 +41,5 @@ public interface FileResource {
     // Note that implementations may be allocating native memory for the stream, so
     // callers need to close this when they are done with it.
     InputStream openInputStream();
-    ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException;
+    ChannelDescriptor openDescriptor(ModeFlags flags, int perm) throws ResourceException;
 }
