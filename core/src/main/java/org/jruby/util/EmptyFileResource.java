@@ -73,7 +73,7 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public FileStat lstat(POSIX posix) {
+    public FileStat lstat() {
         throw new UnsupportedOperationException();
     }
 

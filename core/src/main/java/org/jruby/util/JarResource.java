@@ -111,7 +111,7 @@ abstract class JarResource implements FileResource {
     }
 
     @Override
-    public FileStat lstat(POSIX posix) {
+    public FileStat lstat() {
       return stat(); // jars don't have symbolic links, so lstat == stat
     }
 

@@ -320,7 +320,7 @@ public class RubyFileTest {
             // but broken symlink. So, we try without the existence check,
             // but in the try-catch block.
             // MRI behavior: symlink? on broken symlink should return true.
-            return runtime.newBoolean(file.lstat(runtime.getPosix()).isSymlink());
+            return runtime.newBoolean(file.lstat().isSymlink());
         } catch (SecurityException re) {
             return runtime.getFalse();
         } catch (RaiseException re) {

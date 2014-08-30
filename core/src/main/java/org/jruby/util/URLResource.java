@@ -117,13 +117,12 @@ public class URLResource implements FileResource {
     }
 
     @Override
-    public FileStat lstat(POSIX posix) {
+    public FileStat lstat() {
       return stat(); // URLs don't have symbolic links, so lstat == stat
     }
  
     @Override
-    public JRubyFile hackyGetJRubyFile()
-    {
+    public JRubyFile hackyGetJRubyFile() {
         new RuntimeException().printStackTrace();
         return null;
     }

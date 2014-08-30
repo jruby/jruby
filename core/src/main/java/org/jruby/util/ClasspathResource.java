@@ -121,21 +121,18 @@ public class ClasspathResource implements FileResource {
     }
 
     @Override
-    public FileStat lstat(POSIX posix) {
-      // we don't have symbolic links here, so lstat is no different than regular stat
-      return stat();
+    public FileStat lstat() {
+      return stat(); // we don't have symbolic links here, so lstat == stat
     }
 
     @Override
-    public JRubyFile hackyGetJRubyFile()
-    {
+    public JRubyFile hackyGetJRubyFile() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public InputStream openInputStream()
-    {
+    public InputStream openInputStream() {
         try {
             return getResourceURL(uri).openStream();
         } catch (IOException ioE) {

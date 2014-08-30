@@ -112,15 +112,13 @@ public class RubyFileStat extends RubyObject {
             filename += "/";
         }
 
-        POSIX posix = getRuntime().getPosix();
-
-        file = JRubyFile.createResource(posix, getRuntime().getCurrentDirectory(), filename);
+        file = JRubyFile.createResource(getRuntime().getPosix(), getRuntime().getCurrentDirectory(), filename);
 
         if (!file.exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + filename);
         }
 
-        stat = lstat ? file.lstat(posix) : file.stat();
+        stat = lstat ? file.lstat() : file.stat();
     }
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)

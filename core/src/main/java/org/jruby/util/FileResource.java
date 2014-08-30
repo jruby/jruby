@@ -30,7 +30,7 @@ public interface FileResource {
     boolean isSymLink();
 
     FileStat stat();
-    FileStat lstat(POSIX posix);
+    FileStat lstat();
 
     // For transition to file resources only. Implementations should return
     // JRubyFile if this resource is backed by one, and NOT_FOUND JRubyFile
