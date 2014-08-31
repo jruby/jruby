@@ -21,6 +21,8 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
@@ -37,6 +39,10 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     private final Map<MethodCacheKey, MethodCacheEntry> cache;
     @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
+
+    @CompilerDirectives.CompilationFinal private boolean hasSeenSymbolAsMethodName = false;
+    @CompilerDirectives.CompilationFinal private boolean hasSeenRubyStringAsMethodName = false;
+    @CompilerDirectives.CompilationFinal private boolean hasSeenJavaStringAsMethodName = false;
 
     public GenericDispatchNode(RubyContext context, boolean ignoreVisibility) {
         super(context);
@@ -111,7 +117,34 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
             if (hasAnyMethodsMissing && entry.isMethodMissing()) {
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
-                modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
+
+                final RubySymbol methodNameAsSymbol;
+
+                if (hasSeenSymbolAsMethodName && methodName instanceof RubySymbol) {
+                    methodNameAsSymbol = (RubySymbol) methodName;
+                } else if (hasSeenRubyStringAsMethodName && methodName instanceof RubyString) {
+                    methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
+                } else if (hasSeenJavaStringAsMethodName && methodName instanceof String) {
+                    methodNameAsSymbol = getContext().newSymbol((String) methodName);
+                } else {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                    if (methodName instanceof RubySymbol) {
+                        hasSeenSymbolAsMethodName = true;
+                        methodNameAsSymbol = (RubySymbol) methodName;
+                    } else if (methodName instanceof RubyString) {
+                        hasSeenRubyStringAsMethodName = true;
+                        methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
+                    } else if (methodName instanceof String) {
+                        hasSeenJavaStringAsMethodName = true;
+                        methodNameAsSymbol = getContext().newSymbol((String) methodName);
+                    } else {
+                        throw new UnsupportedOperationException();
+                    }
+                }
+
+                modifiedArgumentsObjects[0] = methodNameAsSymbol;
+
                 System.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
                 argumentsToUse = modifiedArgumentsObjects;
             } else {

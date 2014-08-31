@@ -154,12 +154,12 @@ public class RubyContext extends ExecutionContext {
         return symbolTable;
     }
 
+    @CompilerDirectives.SlowPath
     public RubySymbol newSymbol(String name) {
-        RubyNode.notDesignedForCompilation();
-
         return symbolTable.getSymbol(name);
     }
 
+    @CompilerDirectives.SlowPath
     public RubySymbol newSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }

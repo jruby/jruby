@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
@@ -97,9 +98,8 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             // When calling #method_missing we need to prepend the symbol
 
             final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
-
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
-            modifiedArgumentsObjects[0] = getContext().newSymbol(methodName.toString());
+            modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
             System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
             return callNode.call(
                     frame,

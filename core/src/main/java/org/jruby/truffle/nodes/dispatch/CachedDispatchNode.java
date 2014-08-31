@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.core.RubySymbol;
 public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
+    private final RubySymbol cachedNameAsSymbol;
 
     @Child protected DispatchNode next;
 
@@ -28,12 +29,23 @@ public abstract class CachedDispatchNode extends DispatchNode {
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
         this.cachedName = cachedName;
 
+        if (cachedName instanceof RubySymbol) {
+            cachedNameAsSymbol = (RubySymbol) cachedName;
+        } else if (cachedName instanceof RubyString) {
+            cachedNameAsSymbol = context.newSymbol(((RubyString) cachedName).getBytes());
+        } else if (cachedName instanceof String) {
+            cachedNameAsSymbol = context.newSymbol((String) cachedName);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+
         this.next = next;
     }
 
     public CachedDispatchNode(CachedDispatchNode prev) {
         super(prev.getContext());
         cachedName = prev.cachedName;
+        cachedNameAsSymbol = prev.cachedNameAsSymbol;
         next = prev.next;
     }
 
@@ -53,6 +65,10 @@ public abstract class CachedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    protected RubySymbol getCachedNameAsSymbol() {
+        return cachedNameAsSymbol;
     }
 
 }
