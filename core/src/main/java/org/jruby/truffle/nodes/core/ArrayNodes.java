@@ -3095,6 +3095,31 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
+        @ExplodeLoop
+        @Specialization(guards = {"isLongFixnum", "isSmall"})
+        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array) {
+            final long[] store = (long[]) array.getStore();
+
+            // Insertion sort
+
+            final int size = array.getSize();
+
+            for (int i = 1; i < RubyContext.ARRAYS_SMALL; i++) {
+                if (i < size) {
+                    final long x = store[i];
+                    int j = i;
+                    // TODO(CS): node for this cast
+                    while (j > 0 && (int) compareDispatchNode.call(frame, store[j - 1], "<=>", null, x) > 0) {
+                        store[j] = store[j - 1];
+                        j--;
+                    }
+                    store[j] = x;
+                }
+            }
+
+            return array;
+        }
+
         @Specialization(guards = "isLongFixnum")
         public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
