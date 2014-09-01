@@ -675,16 +675,6 @@ public class RubyWrapper extends RubyNode implements Wrapper {
         return probe;
     }
 
-    @Override
-    public boolean isTaggedAs(SyntaxTag tag) {
-        return probe.isTaggedAs(tag);
-    }
-
-    @Override
-    public Iterable<SyntaxTag> getSyntaxTags() {
-        return probe.getSyntaxTags();
-    }
-
     public void tagAs(SyntaxTag tag) {
         probe.tagAs(tag);
     }
