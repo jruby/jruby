@@ -70,12 +70,12 @@ public abstract class KernelNodes {
             arrayBuilderNode = prev.arrayBuilderNode;
         }
 
-        @Specialization(guards = "isOneArrayElement", order = 1)
+        @Specialization(guards = "isOneArrayElement")
         public RubyArray arrayOneArrayElement(Object[] args) {
             return (RubyArray) args[0];
         }
 
-        @Specialization(guards = "!isOneArrayElement", order = 2)
+        @Specialization(guards = "!isOneArrayElement")
         public RubyArray array(Object[] args) {
             final int length = args.length;
             Object store = arrayBuilderNode.start(length);

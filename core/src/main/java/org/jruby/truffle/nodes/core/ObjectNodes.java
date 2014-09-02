@@ -227,37 +227,37 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
             return true;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean equal(long a, long b) {
             return a == b;
         }
 
-        @Specialization(order = 5)
+        @Specialization
         public boolean equal(double a, double b) {
             return a == b;
         }
 
-        @Specialization(order = 6)
+        @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 7)
+        @Specialization
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
@@ -819,22 +819,22 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
+        @Specialization
         public boolean doesRespondToMissing(Object object, RubyString name, UndefinedPlaceholder includeAll) {
             return false;
         }
 
-        @Specialization(order = 2)
+        @Specialization
         public boolean doesRespondToMissing(Object object, RubySymbol name, UndefinedPlaceholder includeAll) {
             return false;
         }
 
-        @Specialization(order = 3)
+        @Specialization
         public boolean doesRespondToMissing(Object object, RubySymbol name, boolean includeAll) {
             return false;
         }
 
-        @Specialization(order = 4)
+        @Specialization
         public boolean doesRespondToMissing(Object object, RubyString name, boolean includeAll) {
             return false;
         }

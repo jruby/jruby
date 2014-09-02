@@ -61,7 +61,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
         box = prev.box;
     }
 
-    @Specialization(order=1)
+    @Specialization
     public Object dispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
@@ -171,7 +171,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
         }
     }
 
-    @Specialization(order=2)
+    @Specialization
     public Object dispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
