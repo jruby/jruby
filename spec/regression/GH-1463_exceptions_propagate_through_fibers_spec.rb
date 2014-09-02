@@ -11,8 +11,8 @@ if (RUBY_VERSION >= '1.9')
           t = Thread.new do
             begin
               f = Fiber.new do
-                fiber_running = true
                 begin
+                  fiber_running = true
                   sleep 10
                 rescue => e
                   fiber_exceptions << e
