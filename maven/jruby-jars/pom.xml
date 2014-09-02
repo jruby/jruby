@@ -66,10 +66,7 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
-<<<<<<< HEAD
     <finalName>jruby-jars-9000.dev</finalName>
-=======
->>>>>>> jruby-1_7
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -121,13 +118,8 @@ freezing to) a specific jruby-complete jar version.</description>
         <version>${tesla.version}</version>
         <executions>
           <execution>
-<<<<<<< HEAD
-            <id>copy jruby.jar</id>
-            <phase>prepare-package</phase>
-=======
             <id>rename gem file</id>
             <phase>verify</phase>
->>>>>>> jruby-1_7
             <goals>
               <goal>execute</goal>
             </goals>
