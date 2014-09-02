@@ -421,7 +421,7 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public int isFrozen(RubyObject self) {
+        public int hash(RubyObject self) {
             notDesignedForCompilation();
 
             return self.hashCode();
