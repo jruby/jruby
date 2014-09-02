@@ -98,7 +98,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>1.0.7</version>
+      <version>1.0.10</version>
       <type>jar</type>
     </dependency>
     <dependency>
