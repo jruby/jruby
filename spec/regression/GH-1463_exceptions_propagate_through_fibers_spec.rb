@@ -6,6 +6,8 @@ if (RUBY_VERSION >= '1.9')
       it "receives that exception" do
         fiber_exceptions = []
         thread_exceptions = []
+        mutex = Mutex.new
+
         100.times do
           fiber_running = false
           t = Thread.new do
@@ -15,12 +17,16 @@ if (RUBY_VERSION >= '1.9')
                   fiber_running = true
                   sleep 10
                 rescue => e
-                  fiber_exceptions << e
+                  mutex.synchronize do
+                    fiber_exceptions << e
+                  end
                 end
               end
               f.resume
             rescue => e
-              thread_exceptions << e
+              Mutex.synchronize do
+                thread_exceptions << e
+              end
             end
           end
           Thread.pass until fiber_running
@@ -41,6 +47,7 @@ if (RUBY_VERSION >= '1.9')
       it "raises that exception in its parent thread" do
         fiber_exceptions = []
         thread_exceptions = []
+        mutex = Mutex.new
 
         100.times do |i|
           t = Thread.new do
@@ -51,13 +58,17 @@ if (RUBY_VERSION >= '1.9')
                     Fiber.yield
                     end
                 rescue => e
-                  fiber_exceptions << e
+                  mutex.synchronize do
+                    fiber_exceptions << e
+                  end
                 end
               end
               f.resume
               sleep
             rescue Exception => e
-              thread_exceptions << e
+              mutex.synchronize do
+                thread_exceptions << e
+              end
             end
           end
           t.join rescue nil
