@@ -61,18 +61,16 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "blockdev?", required = 1, module = true)
     public static IRubyObject blockdev_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isBlockDev());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isBlockDev());
     }
 
     @JRubyMethod(name = "chardev?", required = 1, module = true)
     public static IRubyObject chardev_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isCharDev());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isCharDev());
     }
 
     public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
@@ -104,18 +102,16 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
     public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isExecutable());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isExecutable());
     }
 
     @JRubyMethod(name = "executable_real?", required = 1, module = true)
     public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isExecutableReal());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isExecutableReal());
     }
 
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
@@ -166,7 +162,7 @@ public class RubyFileTest {
             return runtime.getFalse();
         }
         
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isGroupOwned());
+        return runtime.newBoolean(file.exists() && file.stat().isGroupOwned());
     }
 
     @JRubyMethod(name = "identical?", required = 2, module = true)
@@ -192,24 +188,21 @@ public class RubyFileTest {
             }
         }
 
-        return runtime.newBoolean(file1.exists() && file2.exists() &&
-                file1.stat(runtime.getPosix()).isIdentical(file2.stat(runtime.getPosix())));
+        return runtime.newBoolean(file1.exists() && file2.exists() && file1.stat().isIdentical(file2.stat()));
     }
 
     @JRubyMethod(name = "owned?", required = 1, module = true)
     public static IRubyObject owned_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isOwned());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isOwned());
     }
 
     @JRubyMethod(name = "pipe?", required = 1, module = true)
     public static IRubyObject pipe_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isNamedPipe());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isNamedPipe());
     }
 
     public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
@@ -230,26 +223,23 @@ public class RubyFileTest {
 
     // Not exposed by filetest, but so similiar in nature that it is stored here
     public static IRubyObject rowned_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isROwned());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isROwned());
     }
 
     @JRubyMethod(name = "setgid?", required = 1, module = true)
     public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isSetgid());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSetgid());
     }
 
     @JRubyMethod(name = "setuid?", required = 1, module = true)
     public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isSetuid());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSetuid());
     }
 
     public static IRubyObject size(IRubyObject recv, IRubyObject filename) {
@@ -307,18 +297,16 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "socket?", required = 1, module = true)
     public static IRubyObject socket_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isSocket());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSocket());
     }
 
     @JRubyMethod(name = "sticky?", required = 1, module = true)
     public static IRubyObject sticky_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
-        return runtime.newBoolean(file.exists() && file.stat(runtime.getPosix()).isSticky());
+        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSticky());
     }
 
     @JRubyMethod(name = "symlink?", required = 1, module = true)
@@ -333,7 +321,7 @@ public class RubyFileTest {
             // but broken symlink. So, we try without the existence check,
             // but in the try-catch block.
             // MRI behavior: symlink? on broken symlink should return true.
-            return runtime.newBoolean(file.lstat(runtime.getPosix()).isSymlink());
+            return runtime.newBoolean(file.lstat().isSymlink());
         } catch (SecurityException re) {
             return runtime.getFalse();
         } catch (RaiseException re) {
@@ -526,7 +514,7 @@ public class RubyFileTest {
         RubyFileStat stat = null;
         if (!(filename instanceof RubyFile)) {
             RubyString path = get_path(context, filename);
-            FileResource file = JRubyFile.createResource(runtime.getCurrentDirectory(), path.getUnicodeValue());
+            FileResource file = JRubyFile.createResource(runtime.getPosix(), runtime.getCurrentDirectory(), path.getUnicodeValue());
             if (file.exists()) {
                 stat = runtime.newFileStat(file.absolutePath(), false);
             }

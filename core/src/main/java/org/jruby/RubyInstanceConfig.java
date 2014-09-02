@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.posix.util.Platform;
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.embed.util.SystemPropertyCatcher;
@@ -318,6 +319,16 @@ public class RubyInstanceConfig {
                 // otherwise fall back on system temp location
                 newJRubyHome = SafePropertyAccessor.getProperty("java.io.tmpdir");
             }
+        }
+
+        // RegularFileResource absolutePath will canonicalize resources so that will change c: paths to C:.
+        // We will cannonicalize on windows so that jruby.home is also C:.
+        if (Platform.IS_WINDOWS) {
+            File file = new File(newJRubyHome);
+
+            try {
+                newJRubyHome = file.getCanonicalPath();
+            } catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
         }
         
         return newJRubyHome;

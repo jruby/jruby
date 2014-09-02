@@ -30,8 +30,8 @@ public interface FileResource {
 
     boolean isSymLink();
 
-    FileStat stat(POSIX posix);
-    FileStat lstat(POSIX posix);
+    FileStat stat();
+    FileStat lstat();
 
     // For transition to file resources only. Implementations should return
     // JRubyFile if this resource is backed by one, and NOT_FOUND JRubyFile
@@ -42,5 +42,6 @@ public interface FileResource {
     // Note that implementations may be allocating native memory for the stream, so
     // callers need to close this when they are done with it.
     InputStream openInputStream();
-    Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException;
+
+    Channel openChannel(ModeFlags flags, int perm) throws ResourceException;
 }

@@ -64,6 +64,7 @@ import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.OutputStrings;
@@ -689,7 +690,33 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public void setProfile(Profile profile) {
         provider.getRubyInstanceConfig().setProfile(profile);
     }
-    
+
+    /**
+     * Returns currently configured ProfileOutput object, which determines where
+     * the output of profiling operations will be sent.  (e.g., a file specified
+     * by --profile.out).
+     *
+     * @since JRuby 1.7.15
+     *
+     * @return current profiling output location.
+     */
+    public ProfileOutput getProfileOutput() {
+        return provider.getRubyInstanceConfig().getProfileOutput();
+    }
+
+    /**
+     * Changes ProfileOutput to given one. The default value is a ProfileOutput
+     * instance that writes to stderr.  Similar to passing `--profile.out` from
+     * the command line
+     *
+     * @since JRuby 1.7.15
+     *
+     * @param out a new ProfileOutput object, to which profiling data should be written
+     */
+    public void setProfileOutput(ProfileOutput out) {
+        provider.getRubyInstanceConfig().setProfileOutput(out);
+    }
+
     /**
      * Returns a ProfilingMode currently used. The default value is ProfilingMode.OFF.
      *

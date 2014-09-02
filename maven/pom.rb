@@ -22,12 +22,17 @@ project 'JRuby Artifacts' do
     end
   end
 
-  map = { 'jruby' => [ :release, :main ],
-    'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars' ],
-    'jruby-complete' => [ :release, :complete ],
-    'jruby-dist' => [ :release, :dist ],
-    'jruby-jars' => [ :release, 'jruby-jars' ] }
-  map[ 'jruby-noasm' ] = map[ 'jruby' ]
+  profile 'release' do
+
+    modules [ 'jruby',
+            'jruby-noasm',
+            'jruby-stdlib',
+            'jruby-complete',
+            'jruby-rake-plugin',
+            'jruby-core-complete',
+            'jruby-stdlib-complete',
+            'jruby-jars',
+            'jruby-dist' ]
 
   profile :all do
     modules map.keys

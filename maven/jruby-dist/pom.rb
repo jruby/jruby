@@ -11,7 +11,26 @@ project 'JRuby Dist' do
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
-  phase 'package' do
+  gem 'ruby-maven', '3.1.1.0.8'
+
+  # add torquebox repo only when building from filesystem
+  # not when using the pom as "dependency" in some other projects
+  profile 'gem proxy' do
+    
+    activation do
+      file( :exists => '../jruby' )
+    end
+
+    repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+                :id => 'rubygems-releases' )
+  end
+
+  jruby_plugin :gem do
+    execute_goal :initialize
+  end
+
+  phase 'prepare-package' do
+
     plugin :dependency do
       execute_goals( 'unpack',
                      :id => 'unpack jruby-stdlib',
@@ -94,8 +113,9 @@ project 'JRuby Dist' do
   end
 
   # since the source packages are done from the git repository we need
-  # to inside git controlled directory. for example the source packages
-  # itself does not contain the git repository !!
+  # to be inside a git controlled directory. for example the source packages
+  # itself does not contain the git repository and can not pack 
+  # the source packages itself !!
 
   profile 'source dist' do
 

@@ -71,7 +71,14 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.2</version>
+      <version>3.0.5</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>bytelist</artifactId>
+      <version>1.0.11</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>

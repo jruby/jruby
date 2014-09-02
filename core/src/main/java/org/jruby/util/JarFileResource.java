@@ -64,7 +64,7 @@ class JarFileResource extends JarResource {
   }
 
   @Override
-  public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
+  public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
     return Channels.newChannel(openInputStream());
   }
 }
