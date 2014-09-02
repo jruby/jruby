@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 
+import org.jruby.RubyFile;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
@@ -34,7 +35,7 @@ class RegularFileResource implements FileResource {
 
     @Override
     public String absolutePath() {
-        return file.getAbsolutePath();
+        return RubyFile.canonicalize(file.getAbsolutePath());
     }
 
     @Override

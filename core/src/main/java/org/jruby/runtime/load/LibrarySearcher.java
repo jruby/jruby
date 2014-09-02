@@ -208,7 +208,7 @@ class LibrarySearcher {
     }
 
     protected String resolveScriptName(FileResource resource, String ruby18Path) {
-        return RubyFile.canonicalize(resource.absolutePath());
+        return resource.absolutePath();
     }
 
     static class ResourceLibrary implements Library {
