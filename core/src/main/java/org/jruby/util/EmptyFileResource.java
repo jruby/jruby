@@ -23,6 +23,11 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
+    public String canonicalPath() {
+        return "";
+    }
+
+    @Override
     public boolean exists() {
         return false;
     }

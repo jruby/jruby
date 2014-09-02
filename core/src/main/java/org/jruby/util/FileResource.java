@@ -11,6 +11,7 @@ import java.io.InputStream;
  */
 public interface FileResource {
     String absolutePath();
+    String canonicalPath();
 
     boolean exists();
     boolean isDirectory();

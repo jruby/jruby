@@ -55,6 +55,10 @@ public class URLResource implements FileResource {
         return uri;
     }
 
+    public String canonicalPath() {
+        return uri;
+    }
+
     @Override
     public boolean exists()
     {

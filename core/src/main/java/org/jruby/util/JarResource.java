@@ -79,6 +79,11 @@ abstract class JarResource implements FileResource {
     }
 
     @Override
+    public String canonicalPath() {
+        return absolutePath();
+    }
+
+    @Override
     public boolean exists() {
         // If a jar resource got created, then it always corresponds to some kind of resource
         return true;

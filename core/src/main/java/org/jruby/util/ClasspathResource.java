@@ -60,6 +60,11 @@ public class ClasspathResource implements FileResource {
     }
 
     @Override
+    public String canonicalPath() {
+        return uri;
+    }
+
+    @Override
     public boolean exists()
     {
         return isFile;

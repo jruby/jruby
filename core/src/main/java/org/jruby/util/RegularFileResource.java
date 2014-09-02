@@ -32,18 +32,20 @@ class RegularFileResource implements FileResource {
         this.posix = posix;
     }
 
-    // TODO(ratnikov): This should likely be renamed to rubyPath, otherwise it's easy to get
-    // confused between java's absolute path (no symlink resolution) and ruby absolute path (which
-    // does symlink resolution).
     @Override
     public String absolutePath() {
+        return file.getAbsolutePath();
+    }
+
+    @Override
+    public String canonicalPath() {
         // Seems like for Ruby absolute path implies resolving system links,
         // so canonicalization is in order.
         try {
-          return file.getCanonicalPath();
+            return file.getCanonicalPath();
         } catch (IOException ioError) {
-          // I guess absolute path is next best thing?
-          return file.getAbsolutePath();
+            // I guess absolute path is next best thing?
+            return file.getAbsolutePath();
         }
     }
 

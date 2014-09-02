@@ -204,11 +204,11 @@ class LibrarySearcher {
     }
 
     protected String resolveLoadName(FileResource resource, String ruby18path) {
-        return resource.absolutePath();
+        return resource.canonicalPath();
     }
 
     protected String resolveScriptName(FileResource resource, String ruby18Path) {
-        return resource.absolutePath();
+        return RubyFile.canonicalize(resource.absolutePath());
     }
 
     static class ResourceLibrary implements Library {
