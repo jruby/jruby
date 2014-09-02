@@ -421,6 +421,21 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
+        public int hash(int value) {
+            return value;
+        }
+
+        @Specialization
+        public int hash(long value) {
+            return (int) (value ^ value >>> 32);
+        }
+
+        @Specialization
+        public int hash(BigInteger value) {
+            return value.hashCode();
+        }
+
+        @Specialization
         public int hash(RubyObject self) {
             notDesignedForCompilation();
 
