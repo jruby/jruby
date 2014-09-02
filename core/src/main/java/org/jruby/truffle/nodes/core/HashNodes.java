@@ -666,7 +666,7 @@ public abstract class HashNodes {
 
             builder.append("{");
 
-            for (int n = 0; n < hash.getStoreSize(); n += 2) {
+            for (int n = 0; n < hash.getStoreSize() * 2; n += 2) {
                 if (n > 0) {
                     builder.append(", ");
                 }
