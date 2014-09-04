@@ -91,7 +91,7 @@ public class Mutex extends RubyObject {
                 context.getThread().lockInterruptibly(lock);
             } catch (InterruptedException ex) {
                 context.pollThreadEvents();
-                throw context.runtime.newConcurrencyError("interrupted waiting for mutex: " + ex.getMessage());
+                throw context.runtime.newConcurrencyError("interrupted waiting for mutex");
             }
         } finally {
             context.getThread().exitSleep();
