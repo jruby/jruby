@@ -57,12 +57,20 @@ import org.jruby.embed.internal.LocalContext;
  */
 public enum LocalContextScope {
     /**
-     * Uses a VM-wide singleton runtime and variables.
+     * Uses a "global" singleton runtime and variables.
      *
-     * <p>
      * All the {@link ScriptingContainer}s that are created with this scope will share a single
      * runtime and a single set of variables. Therefore one container can
      * {@link ScriptingContainer#put(String, Object) set a value} and another container will see the same value.
+     *
+     * The global runtime comes from {@link org.jruby.Ruby#getGlobalRuntime()}, which initializes or retrieves a Ruby
+     * instance in a static field on {@link org.jruby.Ruby}. All singleton context scopes will reuse this instance.
+     * When any singleton-based scripting container is torn down ({@link ScriptingContainer#terminate()}), the global runtime will also
+     * be torn down and cleared. Subsequent singleton containers will see a new runtime.
+     *
+     * Note that unlike the other modes, containers created with singleton context scoping will not tear down
+     * the associated JRuby runtime upon finalization.
+     *
      */
     SINGLETON,
 

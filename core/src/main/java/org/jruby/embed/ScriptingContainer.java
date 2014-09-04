@@ -173,6 +173,7 @@ import org.jruby.util.cli.Options;
  */
 public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     private Map basicProperties = null;
+    private final LocalContextScope scope;
     private LocalContextProvider provider = null;
     private EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
     private EmbedRubyObjectAdapter objectAdapter = new EmbedRubyObjectAdapterImpl(this);
@@ -225,7 +226,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *        get as many variables/constants as possible from Ruby runtime.
      */
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
-        provider = getProviderInstance(scope, behavior, lazy);
+        this.provider = getProviderInstance(scope, behavior, lazy);
+        this.scope = scope;
         try {
             initConfig();
         } catch (Exception ex) {
@@ -1850,6 +1852,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Ensure this ScriptingContainer instance is terminated when nobody holds any
      * references to it (and GC wants to reclaim it).
+     *
+     * Note that {@link org.jruby.embed.LocalContextScope::SINGLETON} containers will not terminate on GC.
      * 
      * @throws Throwable
      * 
@@ -1857,6 +1861,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public void finalize() throws Throwable {
         super.finalize();
-        terminate();
+        // singleton containers share global runtime, and should not tear it down
+        if (scope != LocalContextScope.SINGLETON) terminate();
     }
 }
