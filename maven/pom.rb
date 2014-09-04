@@ -22,17 +22,13 @@ project 'JRuby Artifacts' do
     end
   end
 
-  profile 'release' do
-
-    modules [ 'jruby',
-            'jruby-noasm',
-            'jruby-stdlib',
-            'jruby-complete',
-            'jruby-rake-plugin',
-            'jruby-core-complete',
-            'jruby-stdlib-complete',
-            'jruby-jars',
-            'jruby-dist' ]
+  map = { 'jruby' => ['release', 'main' ],
+    'jruby-noasm' => ['release', 'main' ],
+    'jruby-stdlib' => ['release', 'main', 'complete', 'dist', 'jruby-jars' ],
+    'jruby-complete' => ['release', 'complete', 'dist', 'jruby-jars' ],
+    'jruby-jars' => ['release', 'jruby-jars' ],
+    'jruby-dist' => ['release', 'dist']
+  }
 
   profile :all do
     modules map.keys
@@ -50,4 +46,5 @@ project 'JRuby Artifacts' do
       modules m
     end
   end
+
 end

@@ -2,13 +2,9 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.jruby</groupId>
-    <artifactId>jruby-artifacts</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
-  </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-jars</artifactId>
+  <version>9000.dev</version>
   <packaging>gem</packaging>
   <name>JRuby Jars Gem</name>
   <description>This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.
@@ -44,13 +40,6 @@ freezing to) a specific jruby-complete jar version.</description>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.version>0.1.1</tesla.version>
   </properties>
-  <dependencies>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
   <repositories>
     <repository>
       <id>rubygems-releases</id>
@@ -66,7 +55,6 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
-    <finalName>jruby-jars-9000.dev</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -110,9 +98,6 @@ freezing to) a specific jruby-complete jar version.</description>
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-invoker-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
         <version>${tesla.version}</version>
@@ -125,6 +110,17 @@ freezing to) a specific jruby-complete jar version.</description>
             </goals>
             <configuration>
               <taskId>copy jruby.jar</taskId>
+              <nativePom>Mavenfile</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>rename gem file</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>rename gem file</taskId>
               <nativePom>Mavenfile</nativePom>
             </configuration>
           </execution>
