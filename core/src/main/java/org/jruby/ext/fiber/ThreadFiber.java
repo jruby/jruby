@@ -90,7 +90,18 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     private static IRubyObject exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, IRubyObject val) {
-        targetFiberData.queue.push(context, val);
+        // At this point we consider ourselves "in" the resume, so we need to enforce exception-propagation
+        // rules for both the push (to wake up fiber) and pop (to wait for fiber). Failure to do this can
+        // cause interrupts destined for the fiber to be caught after the fiber is running but before the
+        // resuming thread has started waiting for it, leaving the fiber to run rather than receiving the
+        // interrupt, and the parent thread propagates the error.
+
+        // Note: these need to be separate try/catches because of the while loop.
+        try {
+            targetFiberData.queue.push(context, val);
+        } catch (RaiseException re) {
+            handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
+        }
 
         while (true) {
             try {
@@ -98,27 +109,48 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 if (result == NEVER) result = context.nil;
                 return result;
             } catch (RaiseException re) {
-                // If we received a LJC we need to bubble it out
-                if (context.runtime.getLocalJumpError().isInstance(re.getException())) {
-                    throw re;
-                }
-
-                // If we were trying to yield but our queue has been shut down,
-                // let the exception bubble out and (ideally) kill us.
-                if (currentFiberData.queue.isShutdown()) {
-                    throw re;
-                }
-
-                // re-raise if the target fiber has been shut down
-                if (targetFiberData.queue.isShutdown()) {
-                    throw re;
-                }
-
-                // Otherwise, we want to forward the exception to the target fiber
-                // since it has the ball
-                targetFiberData.fiber.get().thread.raise(re.getException());
+                handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
             }
         }
+    }
+
+    /**
+     * Handle exceptions raised while exchanging data with a fiber.
+     *
+     * The rules work like this:
+     *
+     * <ul>
+     *     <li>If the thread has called Fiber#resume on the fiber and an interrupt is sent to the thread,
+     *     forward it to the fiber</li>
+     *     <li>If the fiber has called Fiber.yield and an interrupt is sent to the fiber (e.g. Timeout.timeout(x) { Fiber.yield })
+     *     forward it to the fiber's parent thread.</li>
+     * </ul>
+     *
+     * @param context
+     * @param currentFiberData
+     * @param targetFiberData
+     * @param re
+     */
+    private static void handleExceptionDuringExchange(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, RaiseException re) {
+        // If we received a LJC we need to bubble it out
+        if (context.runtime.getLocalJumpError().isInstance(re.getException())) {
+            throw re;
+        }
+
+        // If we were trying to yield but our queue has been shut down,
+        // let the exception bubble out and (ideally) kill us.
+        if (currentFiberData.queue.isShutdown()) {
+            throw re;
+        }
+
+        // re-raise if the target fiber has been shut down
+        if (targetFiberData.queue.isShutdown()) {
+            throw re;
+        }
+
+        // Otherwise, we want to forward the exception to the target fiber
+        // since it has the ball
+        targetFiberData.fiber.get().thread.raise(re.getException());
     }
 
     @JRubyMethod(rest = true)
