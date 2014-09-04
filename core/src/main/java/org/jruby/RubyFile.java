@@ -1374,7 +1374,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         return path;
     }
-    
+
+
+    public static FileResource fileResource(ThreadContext context, IRubyObject pathOrFile) {
+        Ruby runtime = context.runtime;
+
+        if (pathOrFile instanceof RubyFile) {
+            return JRubyFile.createResource(runtime, ((RubyFile) pathOrFile).getPath());
+        } else if (pathOrFile instanceof RubyIO) {
+            return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
+
+        }
+
+        return JRubyFile.createResource(runtime, get_path(context, pathOrFile).toString());
+    }
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
      * account the runtime's current directory.

@@ -87,17 +87,11 @@ public class RubyFileTest {
     }
 
     public static IRubyObject directory_p(ThreadContext context, IRubyObject filename) {
-        Ruby runtime = context.runtime;
-        if (!(filename instanceof RubyFile || filename instanceof RubyIO)) {
-            if (filename.respondsTo("to_io")) {
-                filename = (RubyIO) TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
-            } else {
-                filename = get_path(context, filename);
-            }
+        if (!(filename instanceof RubyIO) && filename.respondsTo("to_io")) {
+            filename = TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
         }
 
-        FileResource file = fileResource(filename);
-        return runtime.newBoolean(file.exists() && file.isDirectory());
+        return context.runtime.newBoolean(fileResource(context, filename).isDirectory());
     }
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
