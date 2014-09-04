@@ -9,7 +9,6 @@
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-jars</artifactId>
-  <version>1.7.15.dev</version>
   <packaging>gem</packaging>
   <name>JRuby Jars Gem</name>
   <description>This gem includes the core JRuby code and the JRuby 1.8/1.9 stdlib as jar files.
@@ -113,6 +112,12 @@ freezing to) a specific jruby-complete jar version.</description>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-install-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>

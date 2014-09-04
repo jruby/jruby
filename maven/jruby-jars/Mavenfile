@@ -3,6 +3,8 @@ gemspec
 
 inherit "org.jruby:jruby-artifacts:#{model.version.sub( /.dev$/, '-SNAPSHOT' )}"
 
+model.version = nil
+
 name "JRuby Jars Gem"
 
 jar 'org.jruby:jruby-core-complete', '${project.parent.version}'
@@ -27,7 +29,7 @@ jruby_plugin!( :gem,
   execute_goals :id => 'default-push', :skip => true
 end
 
-#plugin :install, :skip => true
+plugin :install, :skip => true
 
 execute 'rename gem file', :verify do |ctx|
   require 'fileutils'
