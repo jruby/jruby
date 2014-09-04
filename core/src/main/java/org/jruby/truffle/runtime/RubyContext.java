@@ -117,35 +117,28 @@ public class RubyContext extends ExecutionContext {
     }
 
     private void loadFileAbsolute(String fileName, RubyNode currentNode) {
-        final Source source;
+        // TODO(CS): we have trouble working out where unicode characters are
 
-        if (fileName.endsWith("spec/ruby/language/precedence_spec.rb") || fileName.endsWith("spec/ruby/language/predefined_spec.rb")) {
-            // TODO(CS): we have trouble working out where unicode characters are
+        final byte[] utf8Bytes;
 
-            String code;
-
-            try {
-                code = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            code = code.replace("“", " '");
-            code = code.replace("”", " '");
-
-            source = Source.fromText(code, fileName);
-        } else {
-            try {
-                source = Source.fromFileName(fileName);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            utf8Bytes = Files.readAllBytes(Paths.get(fileName));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        final String code = source.getCode();
-        if (code == null) {
-            throw new RuntimeException("Can't read file " + fileName);
+        final String utf8String = new String(utf8Bytes, StandardCharsets.UTF_8);
+
+        final byte[] asciiBytes = utf8String.getBytes(StandardCharsets.US_ASCII);
+
+        final String asciiString = new String(asciiBytes, StandardCharsets.US_ASCII);
+
+        if (!utf8String.equals(asciiString)) {
+            warnings.warn("%s converted  to ASCII", fileName);
         }
+
+        final Source source = Source.fromText(asciiString, fileName);
+
         coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
