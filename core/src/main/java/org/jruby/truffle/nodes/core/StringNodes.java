@@ -219,7 +219,7 @@ public abstract class StringNodes {
             final int normalisedIndex = string.normaliseIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+            if (normalisedIndex < 0 || normalisedIndex + 1 >= bytes.length()) {
                 throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
             } else {
                 return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
@@ -231,7 +231,7 @@ public abstract class StringNodes {
             int normalisedIndex = string.normaliseIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+            if (normalisedIndex < 0 || normalisedIndex + 1 >= bytes.length()) {
                 return NilPlaceholder.INSTANCE;
             } else {
                 return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
