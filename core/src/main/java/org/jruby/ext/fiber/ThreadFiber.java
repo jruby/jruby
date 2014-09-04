@@ -185,7 +185,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     @JRubyMethod
     public IRubyObject __alive__(ThreadContext context) {
-        return context.runtime.newBoolean(thread != null && thread.isAlive());
+        return context.runtime.newBoolean(alive());
     }
     
     @JRubyMethod(meta = true)
