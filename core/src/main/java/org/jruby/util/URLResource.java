@@ -134,7 +134,9 @@ public class URLResource implements FileResource {
         try
         {
             if (pathname != null) {
-                return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                if (cl == null) cl = URLResource.class.getClassLoader();
+                return cl.getResourceAsStream(pathname);
             }
             return url.openStream();
         }
