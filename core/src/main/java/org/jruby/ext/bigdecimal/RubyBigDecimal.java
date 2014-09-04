@@ -1220,14 +1220,10 @@ public class RubyBigDecimal extends RubyNumeric {
         } else {
           bigDecimal = new RubyBigDecimal(getRuntime(), value.setScale(scale, mode));
         }
-        if (context.runtime.is1_8()) {
-            return bigDecimal;
+        if (args.length == 0) {
+            return bigDecimal.to_int();
         } else {
-            if (args.length == 0) {
-                return bigDecimal.to_int();
-            } else {
-                return bigDecimal;
-            }
+            return bigDecimal;
         }
     }
     
