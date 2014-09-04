@@ -71,14 +71,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.5</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby.extras</groupId>
-      <artifactId>bytelist</artifactId>
-      <version>1.0.11</version>
-      <type>jar</type>
+      <version>3.0.2</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -89,7 +82,6 @@
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
       <version>2.0.0-SNAPSHOT</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -105,7 +97,7 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.2</version>
+      <version>2.1.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>

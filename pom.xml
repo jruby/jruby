@@ -527,7 +527,7 @@
         <defaultGoal>test</defaultGoal>
       </build>
       <modules>
-        <module>maven</module>
+        <module>test</module>
       </modules>
     </profile>
     <profile>
@@ -542,13 +542,13 @@
     <profile>
       <id>bootstrap</id>
       <modules>
-        <module>maven</module>
+        <module>test</module>
       </modules>
     </profile>
     <profile>
       <id>bootstrap-no-launcher</id>
       <modules>
-        <module>maven</module>
+        <module>test</module>
       </modules>
     </profile>
     <profile>
@@ -610,6 +610,7 @@
     <profile>
       <id>release</id>
       <modules>
+        <module>test</module>
         <module>maven</module>
       </modules>
       <properties>
