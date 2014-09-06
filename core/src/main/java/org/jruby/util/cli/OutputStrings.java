@@ -79,14 +79,16 @@ public class OutputStrings {
         StringBuilder sb = new StringBuilder();
         sb
                 .append("Extended options:\n")
-                .append("  -X-O        run with ObjectSpace disabled (default; improves performance)\n")
-                .append("  -X+O        run with ObjectSpace enabled (reduces performance)\n")
-                .append("  -X-C        disable all compilation\n")
+                .append("  -X-O          run with ObjectSpace disabled (default; improves performance)\n")
+                .append("  -X+O          run with ObjectSpace enabled (reduces performance)\n")
+                .append("  -X-C          disable all compilation\n")
                 .append("  -X-CIR        disable all compilation and use IR runtime\n")
-                .append("  -X+C        force compilation of all scripts before they are run (except eval)\n")
-                .append("  -X+CIR      force compilation and use IR runtime\n")
-                .append("  -X+JIR      JIT compilation and use IR runtime\n")
-                .append("  -X+T        use Truffle\n");
+                .append("  -X+C          force compilation of all scripts before they are run (except eval)\n")
+                .append("  -X+CIR        force compilation and use IR runtime\n")
+                .append("  -X+JIR        JIT compilation and use IR runtime\n")
+                .append("  -X+T          use Truffle\n")
+                .append("  -Xsubstring?  list options that contain substring in their name\n")
+                .append("  -Xprefix...   list options that are prefixed wtih prefix\n");
 
         return sb.toString();
     }

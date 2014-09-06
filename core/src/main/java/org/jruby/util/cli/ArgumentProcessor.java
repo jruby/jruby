@@ -353,6 +353,12 @@ public class ArgumentProcessor {
                         checkGraalVersion();
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         config.setDisableGems(true);
+                    } else if (extendedOption.endsWith("...")) {
+                        Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
+                        config.setShouldRunInterpreter(false);
+                    } else if (extendedOption.endsWith("?")) {
+                        Options.listContains(extendedOption.substring(0, extendedOption.length() - 1));
+                        config.setShouldRunInterpreter(false);
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
                         mee.setUsageError(true);
