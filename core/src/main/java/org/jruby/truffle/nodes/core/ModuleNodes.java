@@ -703,6 +703,45 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "public_class_method", isSplatted = true)
+    public abstract static class PublicClassMethodNode extends CoreMethodNode {
+
+        public PublicClassMethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicClassMethodNode(PublicClassMethodNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule publicClassMethod(RubyModule module, Object... args) {
+            notDesignedForCompilation();
+
+            final RubyClass moduleSingleton = module.getSingletonClass(this);
+
+            for (Object arg : args) {
+                final String methodName;
+
+                if (arg instanceof RubySymbol) {
+                    methodName = arg.toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                final RubyMethod method = moduleSingleton.lookupMethod(methodName);
+
+                if (method == null) {
+                    throw new RuntimeException("Couldn't find method " + arg.toString());
+                }
+
+                moduleSingleton.addMethod(this, method.withNewVisibility(Visibility.PUBLIC));
+            }
+
+            return module;
+        }
+    }
+
     @CoreMethod(names = "private", isSplatted = true)
     public abstract static class PrivateNode extends CoreMethodNode {
 
@@ -744,7 +783,7 @@ public abstract class ModuleNodes {
                 final String methodName;
 
                 if (arg instanceof RubySymbol) {
-                    methodName = ((RubySymbol) arg).toString();
+                    methodName = arg.toString();
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1034,6 +1073,30 @@ public abstract class ModuleNodes {
 
         public UndefMethodNode(UndefMethodNode prev) {
             super(prev);
+        }
+
+        @Specialization
+        public RubyModule undefMethod(RubyClass rubyClass, RubyString name) {
+            notDesignedForCompilation();
+
+            final RubyMethod method = rubyClass.lookupMethod(name.toString());
+            if (method == null) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
+            }
+            rubyClass.undefMethod(this, method);
+            return rubyClass;
+        }
+
+        @Specialization
+        public RubyModule undefMethod(RubyClass rubyClass, RubySymbol name) {
+            notDesignedForCompilation();
+
+            final RubyMethod method = rubyClass.lookupMethod(name.toString());
+            if (method == null) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
+            }
+            rubyClass.undefMethod(this, method);
+            return rubyClass;
         }
 
         @Specialization
