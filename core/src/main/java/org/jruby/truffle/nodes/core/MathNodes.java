@@ -19,30 +19,90 @@ import org.jruby.truffle.runtime.*;
 @CoreClass(name = "Math")
 public abstract class MathNodes {
 
-    @CoreMethod(names = "sqrt", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
-    public abstract static class SqrtNode extends CoreMethodNode {
+    @CoreMethod(names = "acos", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class ACosNode extends CoreMethodNode {
 
-        public SqrtNode(RubyContext context, SourceSection sourceSection) {
+        public ACosNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SqrtNode(SqrtNode prev) {
+        public ACosNode(ACosNode prev) {
             super(prev);
         }
 
         @Specialization
-        public double sqrt(int a) {
-            return Math.sqrt(a);
+        public double acos(int a) {
+            return Math.acos(a);
         }
 
         @Specialization
-        public double sqrt(BigInteger a) {
-            return Math.sqrt(a.doubleValue());
+        public double acos(BigInteger a) {
+            return Math.acos(a.doubleValue());
         }
 
         @Specialization
-        public double sqrt(double a) {
-            return Math.sqrt(a);
+        public double acos(double a) {
+            return Math.acos(a);
+        }
+
+    }
+
+    @CoreMethod(names = "acosh", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class ACosHNode extends CoreMethodNode {
+
+        public ACosHNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ACosHNode(ACosHNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double acos(int a) {
+            return acosh(a);
+        }
+
+        @Specialization
+        public double acos(BigInteger a) {
+            return acosh(a.doubleValue());
+        }
+
+        @Specialization
+        public double acos(double a) {
+            return acosh(a);
+        }
+
+        private static double acosh(double a) {
+            return Math.log(a + Math.sqrt(a * a - 1));
+        }
+
+    }
+
+    @CoreMethod(names = "asin", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class ASinNode extends CoreMethodNode {
+
+        public ASinNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ASinNode(ASinNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double asin(int a) {
+            return Math.asin(a);
+        }
+
+        @Specialization
+        public double asin(BigInteger a) {
+            return Math.asin(a.doubleValue());
+        }
+
+        @Specialization
+        public double asin(double a) {
+            return Math.asin(a);
         }
 
     }
@@ -75,6 +135,62 @@ public abstract class MathNodes {
 
     }
 
+    @CoreMethod(names = "log", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class LogNode extends CoreMethodNode {
+
+        public LogNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LogNode(LogNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double log(int a) {
+            return Math.log(a);
+        }
+
+        @Specialization
+        public double log(BigInteger a) {
+            return Math.log(a.doubleValue());
+        }
+
+        @Specialization
+        public double log(double a) {
+            return Math.log(a);
+        }
+
+    }
+
+    @CoreMethod(names = "log10", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class Log10Node extends CoreMethodNode {
+
+        public Log10Node(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public Log10Node(Log10Node prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double log10(int a) {
+            return Math.log10(a);
+        }
+
+        @Specialization
+        public double log10(BigInteger a) {
+            return Math.log10(a.doubleValue());
+        }
+
+        @Specialization
+        public double log10(double a) {
+            return Math.log10(a);
+        }
+
+    }
+
     @CoreMethod(names = "sin", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class SinNode extends CoreMethodNode {
 
@@ -99,6 +215,34 @@ public abstract class MathNodes {
         @Specialization
         public double sin(double a) {
             return Math.sin(a);
+        }
+
+    }
+
+    @CoreMethod(names = "sqrt", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class SqrtNode extends CoreMethodNode {
+
+        public SqrtNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SqrtNode(SqrtNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double sqrt(int a) {
+            return Math.sqrt(a);
+        }
+
+        @Specialization
+        public double sqrt(BigInteger a) {
+            return Math.sqrt(a.doubleValue());
+        }
+
+        @Specialization
+        public double sqrt(double a) {
+            return Math.sqrt(a);
         }
 
     }
