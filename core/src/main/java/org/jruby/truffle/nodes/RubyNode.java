@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -208,14 +209,16 @@ public abstract class RubyNode extends Node {
         CompilerAsserts.neverPartOfCompilation();
     }
 
-    private static void panic(RubyContext context, String message, RubyNode currentNode) {
+    private static void panic(RubyContext context, RubyNode currentNode, String message) {
+        CompilerDirectives.transferToInterpreter();
+
         System.err.println("PANIC");
 
         if (message != null) {
             System.err.println(message);
         }
 
-        for (String line : Backtrace.DEBUG_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+        for (String line : Backtrace.PANIC_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
             System.err.println(line);
         }
 
@@ -229,11 +232,11 @@ public abstract class RubyNode extends Node {
     }
 
     public void panic(String message) {
-        panic(message, this);
+        panic(getContext(), this, message);
     }
 
     public void panic() {
-        panic(null, this);
+        panic(getContext(), this, null);
     }
 
     public static void panic(RubyContext context) {

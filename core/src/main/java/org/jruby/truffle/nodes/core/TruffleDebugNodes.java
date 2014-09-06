@@ -104,6 +104,25 @@ public abstract class TruffleDebugNodes {
 
     }
 
+    @CoreMethod(names = "panic", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class PanicNode extends CoreMethodNode {
+
+        public PanicNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PanicNode(PanicNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder doPanic() {
+            panic();
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
     @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class ParseTreeNode extends CoreMethodNode {
 

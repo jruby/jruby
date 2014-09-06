@@ -30,7 +30,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
         try {
             final List<Activation> activations = backtrace.getActivations();
 
-            final ArrayList<String> lines = new ArrayList<>();
+            final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
                 lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
@@ -47,6 +47,27 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
     }
 
     private static String formatLine(RubyContext context, Activation activation) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append(formatBasicLine(activation));
+
+        final MaterializedFrame frame = activation.getMaterializedFrame();
+        final FrameDescriptor frameDescriptor = frame.getFrameDescriptor();
+
+        builder.append(" self=");
+        builder.append(debugString(context, RubyArguments.getSelf(frame.getArguments())));
+
+        for (Object identifier : frameDescriptor.getIdentifiers()) {
+            if (identifier instanceof String) {
+                builder.append(" ");
+                builder.append(identifier);
+                builder.append("=");
+                builder.append(debugString(context, frame.getValue(frameDescriptor.findFrameSlot(identifier))));
+            }
+        }
+        return builder.toString();
+    }
+
+    public static String formatBasicLine(Activation activation) {
         final StringBuilder builder = new StringBuilder();
         builder.append("    at ");
 
@@ -66,24 +87,14 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             builder.append("'");
         }
 
-        final MaterializedFrame frame = activation.getMaterializedFrame();
-        final FrameDescriptor frameDescriptor = frame.getFrameDescriptor();
-
-        builder.append(" self=");
-        builder.append(debugString(context, RubyArguments.getSelf(frame.getArguments())));
-
-        for (Object identifier : frameDescriptor.getIdentifiers()) {
-            if (identifier instanceof String) {
-                builder.append(" ");
-                builder.append(identifier);
-                builder.append("=");
-                builder.append(debugString(context, frame.getValue(frameDescriptor.findFrameSlot(identifier))));
-            }
-        }
         return builder.toString();
     }
 
-    private static String debugString(RubyContext context, Object value) {
+    public static String debugString(RubyContext context, Object value) {
+        if (value == null) {
+            return "*null*";
+        }
+
         try {
             String string = context.getCoreLibrary().box(value).debugSend("inspect", null).toString();
 
