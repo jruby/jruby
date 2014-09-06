@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.util.cli.Options;
 
 /**
  * Manages the features loaded into Ruby. This basically means which library files are loaded, but
@@ -124,6 +125,10 @@ public class FeatureManager {
     private boolean requireFile(String fileName, RubyNode currentNode) throws IOException {
         if (Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray()).contains(fileName)) {
             return true;
+        }
+
+        if (Options.TRUFFLE_LOAD_PRINT.load()) {
+            context.getWarnings().warn("%s being loaded", fileName);
         }
 
         /*
