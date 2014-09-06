@@ -349,6 +349,26 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "fork", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    public abstract static class ForkNode extends CoreMethodNode {
+
+        public ForkNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ForkNode(ForkNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object fork(Object[] args) {
+            notDesignedForCompilation();
+            getContext().getWarnings().warn("Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
     @CoreMethod(names = "gets", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class GetsNode extends CoreMethodNode {
 
@@ -858,6 +878,26 @@ public abstract class KernelNodes {
         @Specialization
         public double sleep(int duration) {
             return sleep((double) duration);
+        }
+
+    }
+
+    @CoreMethod(names = "system", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    public abstract static class SystemNode extends CoreMethodNode {
+
+        public SystemNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SystemNode(SystemNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object fork(Object[] args) {
+            notDesignedForCompilation();
+            getContext().getWarnings().warn("Kernel#system not implemented - defined to satisfy some metaprogramming in RubySpec");
+            return NilPlaceholder.INSTANCE;
         }
 
     }
