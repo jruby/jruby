@@ -34,6 +34,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @CoreClass(name = "Module")
@@ -680,6 +681,53 @@ public abstract class ModuleNodes {
             }
 
             return NilPlaceholder.INSTANCE;
+        }
+    }
+
+    @CoreMethod(names = "name", maxArgs = 0)
+    public abstract static class NameNode extends CoreMethodNode {
+
+        public NameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NameNode(NameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString name(RubyModule module) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(module.getName());
+        }
+    }
+
+    @CoreMethod(names = "nesting", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class NestingNode extends CoreMethodNode {
+
+        public NestingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NestingNode(NestingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray nesting() {
+            notDesignedForCompilation();
+
+            final List<RubyModule> modules = new ArrayList<>();
+
+            RubyModule module = RubyCallStack.getCallingMethod().getDeclaringModule();
+
+            while (module != null) {
+                modules.add(module);
+                module = module.getParentModule();
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
         }
     }
 

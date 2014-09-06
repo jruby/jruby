@@ -13,6 +13,13 @@ public class Memo<T> {
 
     private T value;
 
+    public Memo() {
+    }
+
+    public Memo(T initial) {
+        value = initial;
+    }
+
     public void set(T value) {
         this.value = value;
     }

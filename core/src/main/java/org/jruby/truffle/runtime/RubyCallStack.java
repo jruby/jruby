@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -55,6 +56,42 @@ public abstract class RubyCallStack {
         });
     }
 
+    public static RubyMethod getCallingMethod() {
+        CompilerAsserts.neverPartOfCompilation();
+
+        final Memo<Boolean> seenCurrent = new Memo<Boolean>();
+
+        MethodLike method;
+
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+
+        method = getMethod(currentFrame);
+
+        if (method instanceof RubyMethod) {
+            seenCurrent.set(true);
+        }
+
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
+
+            @Override
+            public RubyMethod visitFrame(FrameInstance frameInstance) {
+                final MethodLike maybeMethod = getMethod(frameInstance);
+
+                if (maybeMethod instanceof RubyMethod) {
+                    if (seenCurrent.get()) {
+                        return (RubyMethod) maybeMethod;
+                    } else {
+                        seenCurrent.set(true);
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            }
+
+        });
+    }
+
     private static MethodLike getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -63,12 +100,6 @@ public abstract class RubyCallStack {
         }
 
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
-    }
-
-    public static RubyModule getCurrentDeclaringModule() {
-        CompilerAsserts.neverPartOfCompilation();
-
-        return getCurrentMethod().getDeclaringModule();
     }
 
     public static Backtrace getBacktrace(Node currentNode) {
