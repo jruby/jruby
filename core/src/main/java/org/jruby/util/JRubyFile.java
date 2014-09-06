@@ -35,6 +35,7 @@ import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
+import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.RubyFile;
 import org.jruby.runtime.ThreadContext;
@@ -63,10 +64,10 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createResource(Ruby runtime, String pathname) {
-      return createResource(runtime.getCurrentDirectory(), pathname);
+      return createResource(runtime.getPosix(), runtime.getCurrentDirectory(), pathname);
     }
 
-    public static FileResource createResource(String cwd, String pathname) {
+    public static FileResource createResource(POSIX posix, String cwd, String pathname) {
         FileResource emptyResource = EmptyFileResource.create(pathname);
         if (emptyResource != null) return emptyResource;
 
@@ -85,7 +86,7 @@ public class JRubyFile extends JavaSecuredFile {
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        return new RegularFileResource(create(cwd, pathname));
+        return new RegularFileResource(posix, create(cwd, pathname));
     }
 
     public static String normalizeSeps(String path) {

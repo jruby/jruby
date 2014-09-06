@@ -34,6 +34,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @CoreClass(name = "Module")
@@ -683,6 +684,53 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "name", maxArgs = 0)
+    public abstract static class NameNode extends CoreMethodNode {
+
+        public NameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NameNode(NameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString name(RubyModule module) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(module.getName());
+        }
+    }
+
+    @CoreMethod(names = "nesting", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class NestingNode extends CoreMethodNode {
+
+        public NestingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NestingNode(NestingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray nesting() {
+            notDesignedForCompilation();
+
+            final List<RubyModule> modules = new ArrayList<>();
+
+            RubyModule module = RubyCallStack.getCallingMethod().getDeclaringModule();
+
+            while (module != null) {
+                modules.add(module);
+                module = module.getParentModule();
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+        }
+    }
+
     @CoreMethod(names = "public", isSplatted = true)
     public abstract static class PublicNode extends CoreMethodNode {
 
@@ -699,6 +747,45 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             module.visibilityMethod(this, args, Visibility.PUBLIC);
+            return module;
+        }
+    }
+
+    @CoreMethod(names = "public_class_method", isSplatted = true)
+    public abstract static class PublicClassMethodNode extends CoreMethodNode {
+
+        public PublicClassMethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicClassMethodNode(PublicClassMethodNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule publicClassMethod(RubyModule module, Object... args) {
+            notDesignedForCompilation();
+
+            final RubyClass moduleSingleton = module.getSingletonClass(this);
+
+            for (Object arg : args) {
+                final String methodName;
+
+                if (arg instanceof RubySymbol) {
+                    methodName = arg.toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                final RubyMethod method = moduleSingleton.lookupMethod(methodName);
+
+                if (method == null) {
+                    throw new RuntimeException("Couldn't find method " + arg.toString());
+                }
+
+                moduleSingleton.addMethod(this, method.withNewVisibility(Visibility.PUBLIC));
+            }
+
             return module;
         }
     }
@@ -744,7 +831,7 @@ public abstract class ModuleNodes {
                 final String methodName;
 
                 if (arg instanceof RubySymbol) {
-                    methodName = ((RubySymbol) arg).toString();
+                    methodName = arg.toString();
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1034,6 +1121,30 @@ public abstract class ModuleNodes {
 
         public UndefMethodNode(UndefMethodNode prev) {
             super(prev);
+        }
+
+        @Specialization
+        public RubyModule undefMethod(RubyClass rubyClass, RubyString name) {
+            notDesignedForCompilation();
+
+            final RubyMethod method = rubyClass.lookupMethod(name.toString());
+            if (method == null) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
+            }
+            rubyClass.undefMethod(this, method);
+            return rubyClass;
+        }
+
+        @Specialization
+        public RubyModule undefMethod(RubyClass rubyClass, RubySymbol name) {
+            notDesignedForCompilation();
+
+            final RubyMethod method = rubyClass.lookupMethod(name.toString());
+            if (method == null) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
+            }
+            rubyClass.undefMethod(this, method);
+            return rubyClass;
         }
 
         @Specialization

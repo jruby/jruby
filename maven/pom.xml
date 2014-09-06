@@ -50,30 +50,30 @@
       <id>all</id>
       <modules>
         <module>jruby</module>
+        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
-        <module>jruby-dist</module>
         <module>jruby-jars</module>
-        <module>jruby-noasm</module>
+        <module>jruby-dist</module>
       </modules>
     </profile>
     <profile>
       <id>release</id>
       <modules>
         <module>jruby</module>
+        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
-        <module>jruby-dist</module>
         <module>jruby-jars</module>
-        <module>jruby-noasm</module>
+        <module>jruby-dist</module>
       </modules>
     </profile>
     <profile>
       <id>main</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-stdlib</module>
         <module>jruby-noasm</module>
+        <module>jruby-stdlib</module>
       </modules>
     </profile>
     <profile>
@@ -87,6 +87,7 @@
       <id>dist</id>
       <modules>
         <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
         <module>jruby-dist</module>
       </modules>
     </profile>
@@ -94,6 +95,7 @@
       <id>jruby-jars</id>
       <modules>
         <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
         <module>jruby-jars</module>
       </modules>
     </profile>

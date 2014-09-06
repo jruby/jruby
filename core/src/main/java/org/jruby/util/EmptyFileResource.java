@@ -68,12 +68,12 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public FileStat stat(POSIX posix) {
+    public FileStat stat() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public FileStat lstat(POSIX posix) {
+    public FileStat lstat() {
         throw new UnsupportedOperationException();
     }
 
@@ -91,7 +91,7 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
+    public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
         throw new ResourceException.NotFound(absolutePath());
     }
 }

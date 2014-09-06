@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Map;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
@@ -139,15 +140,24 @@ class LibrarySearcher {
           return findFileResource(baseName, suffix);
         }
 
-        for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
-            String loadPathString = loadPathEntry.convertToString().asJavaString();
-            FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, loadPathString);
-            if (library != null) {
-                return library;
+        try {
+            for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
+                FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, getPath(loadPathEntry));
+                if (library != null) return library;
             }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
 
         return null;
+    }
+
+    // FIXME: to_path should not be called n times it should only be once and that means a cache which would
+    // also reduce all this casting and/or string creates.
+    private String getPath(IRubyObject loadPathEntry) {
+        if (runtime.is1_8()) return loadPathEntry.convertToString().asJavaString();
+
+        return RubyFile.get_path(runtime.getCurrentContext(), loadPathEntry).asJavaString();
     }
 
     private FoundLibrary findFileResource(String searchName, String suffix) {

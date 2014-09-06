@@ -1,5 +1,6 @@
 #-*- mode: ruby -*-
 
+require 'rake'
 require 'rexml/document'
 require 'rexml/xpath'
 

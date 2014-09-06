@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
@@ -38,8 +39,10 @@ public class OpenModuleNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyMethod definition = definitionMethod.executeMethod(frame);
-        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), definingModule.execute(frame), null, new Object[]{}));
+        // TODO(CS): cast
+        final RubyModule module = (RubyModule) definingModule.execute(frame);
+        final RubyMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
+        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[]{}));
     }
 
 }

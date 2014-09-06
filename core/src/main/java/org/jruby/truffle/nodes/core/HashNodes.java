@@ -666,16 +666,16 @@ public abstract class HashNodes {
 
             builder.append("{");
 
-            for (int n = 0; n < hash.getStoreSize(); n += 2) {
+            for (int n = 0; n < hash.getStoreSize(); n++) {
                 if (n > 0) {
                     builder.append(", ");
                 }
 
                 // TODO(CS): to string
 
-                builder.append(inspect.call(frame, store[n], "inspect", null));
+                builder.append(inspect.call(frame, store[n * 2], "inspect", null));
                 builder.append("=>");
-                builder.append(inspect.call(frame, store[n + 1], "inspect", null));
+                builder.append(inspect.call(frame, store[n * 2 + 1], "inspect", null));
             }
 
             builder.append("}");

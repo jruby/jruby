@@ -383,8 +383,7 @@ public final class Ruby {
      */
     public void useAsGlobalRuntime() {
         synchronized(Ruby.class) {
-            globalRuntime = null;
-            setGlobalRuntimeFirstTimeOnly(this);
+            globalRuntime = this;
         }
     }
 
@@ -3241,6 +3240,18 @@ public final class Ruby {
         if (systemExit && status != 0) {
             throw newSystemExit(status);
         }
+
+        // This is a rather gross way to ensure nobody else performs the same clearing of globalRuntime followed by
+        // initializing a new runtime, which would cause our clear below to clear the wrong runtime. Synchronizing
+        // against the class is a problem, but the overhead of teardown and creating new containers should outstrip
+        // a global synchronize around a few field accesses. -CON
+        if (this == globalRuntime) {
+            synchronized (Ruby.class) {
+                if (this == globalRuntime) {
+                    globalRuntime = null;
+                }
+            }
+        }
     }
     
     /**
@@ -4920,7 +4931,7 @@ public final class Ruby {
     private final CoverageData coverageData = new CoverageData();
 
     /** The "global" runtime. Set to the first runtime created, normally. */
-    private static Ruby globalRuntime;
+    private static volatile Ruby globalRuntime;
     
     /** The "thread local" runtime. Set to the global runtime if unset. */
     private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();

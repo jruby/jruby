@@ -146,7 +146,6 @@ project 'JRuby Integration Tests' do
                       '<target>' + 
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-X+T" />' +
-                          '<arg value="-Xtruffle.exceptions.print_java=true" />' +
                           '<arg value="-Xparser.warn.useless_use_of=false" />' +
                           '<arg value="-Xparser.warn.not_reached=false" />' +
                           '<arg value="-Xparser.warn.grouped_expressions=false" />' +
@@ -160,8 +159,6 @@ project 'JRuby Integration Tests' do
                           '<arg value="bin/jruby" />' +
                           '<arg value="-T" />' +
                           '<arg value="-X+T" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xtruffle.exceptions.print_java=true" />' +
                           '<arg value="-T" />' +
                           '<arg value="-Xparser.warn.useless_use_of=false" />' +
                           '<arg value="-T" />' +
@@ -197,7 +194,6 @@ project 'JRuby Integration Tests' do
                       '<target>' + 
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-X+T" />' +
-                          '<arg value="-Xtruffle.exceptions.print_java=true" />' +
                           '<arg value="-Xparser.warn.useless_use_of=false" />' +
                           '<arg value="-Xparser.warn.not_reached=false" />' +
                           '<arg value="-Xparser.warn.grouped_expressions=false" />' +
@@ -211,8 +207,6 @@ project 'JRuby Integration Tests' do
                           '<arg value="bin/jruby" />' +
                           '<arg value="-T" />' +
                           '<arg value="-X+T" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xtruffle.exceptions.print_java=true" />' +
                           '<arg value="-T" />' +
                           '<arg value="-Xparser.warn.useless_use_of=false" />' +
                           '<arg value="-T" />' +

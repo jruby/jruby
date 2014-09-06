@@ -403,7 +403,7 @@ public class PosixShim {
         }
 
         try {
-            return JRubyFile.createResource(cwd, path).openChannel(flags, posix, perm);
+            return JRubyFile.createResource(posix, cwd, path).openChannel(flags, perm);
         } catch (ResourceException.FileExists e) {
             errno = Errno.EEXIST;
         } catch (ResourceException.FileIsDirectory e) {

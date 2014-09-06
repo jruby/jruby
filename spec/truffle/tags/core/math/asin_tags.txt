@@ -5,3 +5,5 @@ fails:Math.asin returns NaN given NaN
 fails:Math.asin raises a TypeError if the argument is nil
 fails:Math.asin accepts any argument that can be coerced with Float()
 fails:Math#asin is accessible as a private instance method
+fails:Math.asin raises an Errno::EDOM if the argument is greater than 1.0
+fails:Math.asin raises an Errno::EDOM if the argument is less than -1.0

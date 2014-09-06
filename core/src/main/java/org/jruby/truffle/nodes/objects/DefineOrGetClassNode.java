@@ -50,13 +50,12 @@ public class DefineOrGetClassNode extends RubyNode {
 
         // Look for a current definition of the class, or create a new one
 
-        final RubyModule.RubyConstant constant = parentModuleObject.lookupConstant(name);
+        final RubyModule.RubyConstant constant = parentModuleObject.getConstants().get(name);
 
         RubyClass definingClass;
         RubyClass superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
                 definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
             } else if (superClassObject instanceof RubyString.RubyStringClass) {

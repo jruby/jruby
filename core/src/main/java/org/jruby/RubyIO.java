@@ -749,7 +749,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ChannelFD fd;
 
-        if (FilenoUtil.isFake(fileno)) {
+        if (!FilenoUtil.isFake(fileno)) {
             fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
         } else {
             ChannelFD descriptor = runtime.getFilenoUtil().getWrapperFromFileno(fileno);

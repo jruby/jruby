@@ -5,3 +5,4 @@ fails:Math.acosh returns NaN given NaN
 fails:Math.acosh raises a TypeError if the argument is nil
 fails:Math.acosh accepts any argument that can be coerced with Float()
 fails:Math#acosh is accessible as a private instance method
+fails:Math.acosh raises Errno::EDOM if the passed argument is less than -1.0 or greater than 1.0

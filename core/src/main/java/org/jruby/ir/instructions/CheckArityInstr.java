@@ -32,7 +32,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + required + ", " + opt + ", " + rest + ", " + receivesKeywords + ", " + restKey + ")";
+        return super.toString() + " req: " + required + ", opt: " + opt + ", *r: " + rest + ", kw: " + receivesKeywords + ", **r: " + restKey;
     }
 
     @Override

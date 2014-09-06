@@ -66,7 +66,7 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
-    public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
+    public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
         // opening a directory seems to blow up with EACCESS in jruby (although MRI allows instantiation but blows up on read).
         // So mimicking that for now.
         throw new ResourceException.PermissionDenied(absolutePath());

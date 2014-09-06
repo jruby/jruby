@@ -7,16 +7,6 @@ name "JRuby Jars Gem"
 
 version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
-# overwrite the version from gemspec
-ruby_version = model.version
-model.version = version
-inherit "org.jruby:jruby-artifacts:#{model.version}"
-
-# we do not declare them in the gemspec
-jar 'org.jruby:jruby-stdlib', '${project.version}'
-
-# TODO this clean should be part of upstream when generating 
-# the pom for the gemspec 
 plugin( :clean, '2.5' ) do
   execute_goals( :clean,
                  :phase => :clean, 
@@ -51,19 +41,12 @@ jruby_plugin!( :gem,
   execute_goals :id => 'default-push', :skip => true
 end
 
-#execute 'rename gem file', :package do |ctx|
-#  gem = File.join( ctx.project.build.directory,
-#                   ctx.project.build.final_name + ".gem" )
-#  source = gem.sub( /-SNAPSHOT/, '.SNAPSHOT' )
-#  if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
-#    FileUtils.mv( source, gem )
-#  end
-#end
+#plugin :install, :skip => true
 
-plugin( :invoker )
-
-build do
-  final_name "#{model.artifact_id}-#{ruby_version}"
+execute 'rename gem file', :verify do |ctx|
+  require 'fileutils'
+  FileUtils.rm_rf(Dir["#{ctx.project.build.directory}/*.gem"])
+  FileUtils.mv(Dir["#{ctx.project.basedir}/*.gem"], ctx.project.build.directory)
 end
 
 # this is used on ci.jruby.org to cleanup snapshots artifacts

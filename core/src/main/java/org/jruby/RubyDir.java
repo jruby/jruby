@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import jnr.posix.FileStat;
 
+import jnr.posix.POSIX;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import jnr.posix.util.Platform;
@@ -151,8 +152,9 @@ public class RubyDir extends RubyObject {
     private static List<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags) {
         List<ByteList> dirs = new ArrayList<ByteList>();
 
+        POSIX posix = context.runtime.getPosix();
         for (int i = 0; i < args.length; i++) {
-            dirs.addAll(Dir.push_glob(cwd, globArgumentAsByteList(context, args[i]), flags));
+            dirs.addAll(Dir.push_glob(posix, cwd, globArgumentAsByteList(context, args[i]), flags));
         }
 
         return dirs;
@@ -188,7 +190,7 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.runtime;
         List<ByteList> dirs;
         if (args.length == 1) {
-            dirs = Dir.push_glob(getCWD(runtime), globArgumentAsByteList(context, args[0]), 0);
+            dirs = Dir.push_glob(runtime.getPosix(), getCWD(runtime), globArgumentAsByteList(context, args[0]), 0);
         } else {
             dirs = dirGlobs(context, getCWD(runtime), args, 0);
         }
@@ -214,7 +216,7 @@ public class RubyDir extends RubyObject {
         List<ByteList> dirs;
         IRubyObject tmp = args[0].checkArrayType();
         if (tmp.isNil()) {
-            dirs = Dir.push_glob(runtime.getCurrentDirectory(), globArgumentAsByteList(context, args[0]), flags);
+            dirs = Dir.push_glob(runtime.getPosix(), runtime.getCurrentDirectory(), globArgumentAsByteList(context, args[0]), flags);
         } else {
             dirs = dirGlobs(context, getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
         }

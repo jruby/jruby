@@ -52,7 +52,7 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-script: travis_retry mvn install ; mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
+script: travis_retry mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
 install: /bin/true
 notifications:
   irc:

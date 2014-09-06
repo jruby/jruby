@@ -2285,12 +2285,12 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", RubyMethod.blockDecorator("max"));
+            final SourceSection sourceSection = new CoreSourceSection("Array", "max");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, RubyMethod.blockDecorator("max"), false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, "max", false, null);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
@@ -2397,12 +2397,12 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", RubyMethod.blockDecorator("min"));
+            final SourceSection sourceSection = new CoreSourceSection("Array", "min");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, RubyMethod.blockDecorator("min"), false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, "min", false, null);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
@@ -3093,6 +3093,31 @@ public abstract class ArrayNodes {
             sort(frame, boxed);
             final int[] unboxed = ArrayUtils.unboxInteger(boxed, array.getSize());
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
+        }
+
+        @ExplodeLoop
+        @Specialization(guards = {"isLongFixnum", "isSmall"})
+        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array) {
+            final long[] store = (long[]) array.getStore();
+
+            // Insertion sort
+
+            final int size = array.getSize();
+
+            for (int i = 1; i < RubyContext.ARRAYS_SMALL; i++) {
+                if (i < size) {
+                    final long x = store[i];
+                    int j = i;
+                    // TODO(CS): node for this cast
+                    while (j > 0 && (int) compareDispatchNode.call(frame, store[j - 1], "<=>", null, x) > 0) {
+                        store[j] = store[j - 1];
+                        j--;
+                    }
+                    store[j] = x;
+                }
+            }
+
+            return array;
         }
 
         @Specialization(guards = "isLongFixnum")

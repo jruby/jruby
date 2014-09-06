@@ -113,19 +113,17 @@ public class URLResource implements FileResource {
     }
 
     @Override
-    public FileStat stat(POSIX posix) {
+    public FileStat stat() {
         return fileStat;
     }
 
     @Override
-    public FileStat lstat(POSIX posix) {
-      // jars don't have symbolic links, so lstat is no different than regular stat
-      return stat(posix);
+    public FileStat lstat() {
+      return stat(); // URLs don't have symbolic links, so lstat == stat
     }
  
     @Override
-    public JRubyFile hackyGetJRubyFile()
-    {
+    public JRubyFile hackyGetJRubyFile() {
         new RuntimeException().printStackTrace();
         return null;
     }
@@ -136,7 +134,9 @@ public class URLResource implements FileResource {
         try
         {
             if (pathname != null) {
-                return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                if (cl == null) cl = URLResource.class.getClassLoader();
+                return cl.getResourceAsStream(pathname);
             }
             return url.openStream();
         }
@@ -147,9 +147,7 @@ public class URLResource implements FileResource {
     }
 
     @Override
-    public Channel openChannel( ModeFlags flags, POSIX posix, int perm )
-            throws ResourceException
-    {
+    public Channel openChannel( ModeFlags flags, int perm ) throws ResourceException {
         return Channels.newChannel(openInputStream());
     }
 

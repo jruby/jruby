@@ -10,9 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 
 /**
  * Represents the Ruby {@code Exception} class.
@@ -67,7 +65,7 @@ public class RubyException extends RubyObject {
     }
 
     public RubyArray asRubyStringArray() {
-        final String[] lines = Backtrace.OBJECT_FORMATTER.format(getRubyClass().getContext(), this, backtrace);
+        final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(getRubyClass().getContext(), this, backtrace);
 
         final Object[] array = new Object[lines.length];
 
