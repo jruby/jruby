@@ -219,6 +219,8 @@ public abstract class RubyNode extends Node {
             System.err.println(line);
         }
 
+        new Exception().printStackTrace();
+
         System.exit(1);
     }
 
