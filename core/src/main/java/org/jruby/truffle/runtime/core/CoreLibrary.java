@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -74,7 +75,6 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass runtimeErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass standardErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass stringClass;
-    @CompilerDirectives.CompilationFinal private RubyClass structClass;
     @CompilerDirectives.CompilationFinal private RubyClass symbolClass;
     @CompilerDirectives.CompilationFinal private RubyClass syntaxErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass systemCallErrorClass;
@@ -168,7 +168,6 @@ public class CoreLibrary {
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
         signalModule = new RubyModule(moduleClass, null, "Signal");
         stringClass = new RubyString.RubyStringClass(objectClass);
-        structClass = new RubyClass(null, null, ioClass, "Struct");
         symbolClass = new RubyClass(null, null, objectClass, "Symbol");
         syntaxErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SyntaxError");
         systemCallErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SystemCallError");
@@ -223,6 +222,7 @@ public class CoreLibrary {
         errnoModule.setConstant(null, "EEXIST", new RubyClass(null, null, systemCallErrorClass, "EEXIST"));
         errnoModule.setConstant(null, "EXDEV", new RubyClass(null, null, systemCallErrorClass, "EXDEV"));
         errnoModule.setConstant(null, "EACCES", new RubyClass(null, null, systemCallErrorClass, "EACCES"));
+        errnoModule.setConstant(null, "EDOM", new RubyClass(null, null, systemCallErrorClass, "EDOM"));
 
         // Add all classes and modules as constants in Object
 
@@ -270,7 +270,6 @@ public class CoreLibrary {
                         standardErrorClass, //
                         stringClass, //
                         encodingClass, //
-                        structClass, //
                         symbolClass, //
                         syntaxErrorClass, //
                         systemCallErrorClass, //
@@ -616,10 +615,6 @@ public class CoreLibrary {
     }
 
     public RubyClass getEncodingClass(){ return encodingClass; }
-
-    public RubyClass getStructClass() {
-        return structClass;
-    }
 
     public RubyClass getSymbolClass() {
         return symbolClass;

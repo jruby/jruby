@@ -86,7 +86,6 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, RegexpNodesFactory.getFactories());
         getMethods(methods, SignalNodesFactory.getFactories());
         getMethods(methods, StringNodesFactory.getFactories());
-        getMethods(methods, StructNodesFactory.getFactories());
         getMethods(methods, SymbolNodesFactory.getFactories());
         getMethods(methods, ThreadNodesFactory.getFactories());
         getMethods(methods, TimeNodesFactory.getFactories());
