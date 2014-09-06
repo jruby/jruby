@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -48,7 +49,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
         }
 
-        final RubyModule.RubyConstant constantValue = parentModuleObject.lookupConstant(name);
+        final RubyModule.RubyConstant constantValue = parentModuleObject.getConstants().get(name);
 
         RubyModule definingModule;
 
@@ -57,7 +58,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             parentModuleObject.setConstant(this, name, definingModule);
             parentModuleObject.getSingletonClass(this).setConstant(this, name, definingModule);
         } else {
-            if (constantValue.value instanceof RubyModule && !(constantValue.value instanceof RubyClass)) {
+            if (constantValue.value == getContext().getCoreLibrary().getModuleClass() || (constantValue.value instanceof RubyModule && !(constantValue.value instanceof RubyClass))) {
                 definingModule = (RubyModule) constantValue.value;
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(name, "module", this));
