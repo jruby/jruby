@@ -18,8 +18,10 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
@@ -204,6 +206,36 @@ public abstract class RubyNode extends Node {
 
     public static void notDesignedForCompilation() {
         CompilerAsserts.neverPartOfCompilation();
+    }
+
+    private static void panic(RubyContext context, String message, RubyNode currentNode) {
+        System.err.println("PANIC");
+
+        if (message != null) {
+            System.err.println(message);
+        }
+
+        for (String line : Backtrace.DEBUG_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+            System.err.println(line);
+        }
+
+        System.exit(1);
+    }
+
+    public void panic(String format, Object... args) {
+        panic(String.format(format, args));
+    }
+
+    public void panic(String message) {
+        panic(message, this);
+    }
+
+    public void panic() {
+        panic(null, this);
+    }
+
+    public static void panic(RubyContext context) {
+        panic(context, null, null);
     }
 
 }
