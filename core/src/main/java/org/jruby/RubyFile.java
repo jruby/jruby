@@ -1341,9 +1341,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
-        if (path instanceof RubyString) {
-            return (RubyString)path;
-        }
+        if (path instanceof RubyString) return (RubyString) path;
+
         if (context.runtime.is1_9()) {
             if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
             
@@ -1399,11 +1398,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return JRubyFile.createResource(runtime, ((RubyFile) pathOrFile).getPath());
         } else if (pathOrFile instanceof RubyIO) {
             return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
-        } else {
-            RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
-
-            return JRubyFile.createResource(runtime, pathStr.toString());
         }
+
+        return JRubyFile.createResource(runtime, get_path(runtime.getCurrentContext(), pathOrFile).toString());
     }
 
     @Deprecated // Use fileResource instead

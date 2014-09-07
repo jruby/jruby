@@ -112,12 +112,16 @@ class RegularFileResource implements FileResource {
 
     @Override
     public FileStat stat() {
-        return posix.stat(absolutePath());
+        FileStat stat = posix.allocateStat();
+
+        return posix.stat(file.getAbsolutePath(), stat) < 0 ? null : stat;
     }
 
     @Override
     public FileStat lstat() {
-        return posix.lstat(file.getAbsolutePath());
+        FileStat stat = posix.allocateStat();
+
+        return posix.lstat(file.getAbsolutePath(), stat) < 0 ? null : stat;
     }
 
     @Override

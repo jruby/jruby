@@ -113,12 +113,9 @@ public class RubyFileStat extends RubyObject {
         }
 
         file = JRubyFile.createResource(getRuntime().getPosix(), getRuntime().getCurrentDirectory(), filename);
-
-        if (!file.exists()) {
-            throw getRuntime().newErrnoENOENTError("No such file or directory - " + filename);
-        }
-
         stat = lstat ? file.lstat() : file.stat();
+
+        if (stat == null) throw getRuntime().newErrnoFromInt(getRuntime().getPosix().errno());
     }
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)

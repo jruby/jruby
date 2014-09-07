@@ -74,12 +74,12 @@ class EmptyFileResource implements FileResource {
 
     @Override
     public FileStat stat() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public FileStat lstat() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
