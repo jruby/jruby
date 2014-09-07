@@ -117,7 +117,7 @@ class TestSystemError < Test::Unit::TestCase
     t.close
     File.open(t.path, 'w') {}
     File.chmod(0555, t.path)
-    expected_msg = "Permission denied - #{Pathname.new(t.path).realpath}"
+    expected_msg = "Permission denied - #{t.path}"
     begin
       File.open(t.path, 'w') {}
       fail
