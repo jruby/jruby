@@ -77,7 +77,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         super(new URL[0], parent);
     }
 
-    public void addURLNoIndex(URL url) {
+    public URL addURLNoIndex(URL url) {
         // if we have such embedded jar within a jar, we copy it to temp file and use the
         // the temp file with the super URLClassLoader
         if ( url.toString().contains( "!/" )) {
@@ -125,6 +125,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
             }
         }
         super.addURL( url );
+        return url;
     }
 
     // Change visibility so others can see it

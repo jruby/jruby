@@ -51,7 +51,7 @@
             <classpath refid="test.class.path"/>
             <jvmarg line="${java.opts}"/>
             <jvmarg line="-Djruby.home=${basedir}"/>
-            <arg line="-S rake test:extended"/>
+            <arg line="-I${basedir} -S rake test:extended"/>
         </java>
     </target>
 

@@ -64,7 +64,7 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createResource(Ruby runtime, String pathname) {
-      return createResource(runtime.getPosix(), runtime.getCurrentDirectory(), pathname);
+      return createResource(runtime.getPosix(), runtime, runtime.getCurrentDirectory(), pathname);
     }
 
     public static FileResource createResource(POSIX posix, String cwd, String pathname) {
@@ -90,10 +90,10 @@ public class JRubyFile extends JavaSecuredFile {
             }
         }
 
-        if (runtime != null) {
-            FileResource jrubyClassloaderResource = JRubyClassloaderResource.create(runtime, pathname);
-            if (jrubyClassloaderResource != null) return jrubyClassloaderResource;
-        }
+//        if (runtime != null) {
+//            FileResource jrubyClassloaderResource = JRubyClassloaderResource.create(runtime, pathname);
+//            if (jrubyClassloaderResource != null) return jrubyClassloaderResource;
+//        }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
         return new RegularFileResource(posix, create(cwd, pathname));

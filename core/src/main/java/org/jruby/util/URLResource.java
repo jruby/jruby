@@ -166,18 +166,16 @@ public class URLResource implements FileResource {
         if (pathname.startsWith("/")) {
             pathname = pathname.substring(1);
         }
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
-        if (is != null) {
-            try
-            {
-                is.close();
-            }
-            // need Exception here due to strange NPE in some cases
-            catch (Exception e) {}
+        URL url = Thread.currentThread().getContextClassLoader().getResource(pathname);
+        // do not find anything in current directory, i.e. file URIs
+        // TODO better way to detect if pathname is found on "."
+        if( url != null && url.getProtocol().equals("file") && !pathname.contains( "/" )){
+            System.err.println( url );
+            url = null;
         }
         String[] files = listClassLoaderFiles(pathname);
         return new URLResource(URI_CLASSLOADER + pathname,
-                               is == null ? null : pathname,
+                               url == null ? null : pathname,
                                files);
     }
 
