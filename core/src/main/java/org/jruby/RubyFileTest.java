@@ -119,7 +119,7 @@ public class RubyFileTest {
         RubyString path = get_path(context, filename);
 
         return context.runtime.newBoolean(existsOnClasspath(path) ||
-                !Ruby.isSecurityRestricted() && fileResource(context, path).stat() != null);
+                !Ruby.isSecurityRestricted() && fileResource(context, path).exists());
     }
 
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {

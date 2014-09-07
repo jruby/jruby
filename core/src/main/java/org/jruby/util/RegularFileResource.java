@@ -63,7 +63,8 @@ class RegularFileResource implements FileResource {
     @Override
     public boolean exists() {
         // MRI behavior: Even broken symlinks should return true.
-        return file.exists() || isSymLink();
+        // FIXME: Where is the above statement true?  For RubyFile{,Test} it does not seem to be.
+        return file.exists(); // || isSymLink();
     }
 
     @Override
