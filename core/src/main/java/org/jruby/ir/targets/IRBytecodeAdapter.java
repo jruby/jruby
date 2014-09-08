@@ -220,11 +220,13 @@ public class IRBytecodeAdapter {
     }
 
     public void pushNil() {
+        // FIXME: avoid traversing context
         adapter.aload(0);
         adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
     }
 
     public void pushBoolean(boolean b) {
+        // FIXME: avoid traversing runtime
         adapter.aload(0);
         adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
         if (b) {
