@@ -20,6 +20,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -252,6 +253,14 @@ public class IRBytecodeAdapter {
 
     public void pushHandleVarargs(String className, String methodName) {
         adapter.getMethodVisitor().visitLdcInsn(new Handle(Opcodes.H_INVOKESTATIC, className, methodName, ClassData.VARARGS_SIG));
+    }
+
+    public void pushBignum(BigInteger bigint) {
+        String bigintStr = bigint.toString();
+
+        loadContext();
+
+        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), Bootstrap.bignum(), bigintStr);
     }
 
     public void mark(org.objectweb.asm.Label label) {
