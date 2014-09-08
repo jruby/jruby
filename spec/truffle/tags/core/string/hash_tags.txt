@@ -1,1 +1,0 @@
-fails:String#hash returns a hash based on a string's length and content

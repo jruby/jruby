@@ -1,3 +1,1 @@
-fails:String#to_sym returns the symbol corresponding to self
-fails:String#to_sym does not special case +(binary) and -(binary)
 fails:String#to_sym does not special case certain operators

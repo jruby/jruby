@@ -1,5 +1,0 @@
-fails:Array#pack ignores directives text from '#' to the first newline
-fails:Array#pack ignores directives text from '#' to the end if no newline is present
-fails:Array#pack ignores comments at the start of the directives string
-fails:Array#pack ignores the entire directive string if it is a comment
-fails:Array#pack ignores multiple comments

@@ -9,18 +9,5 @@ fails:Regexp.union returns a Regexp with the encoding of multiple non-conflictin
 fails:Regexp.union returns a Regexp with the encoding of a String containing non-ASCII-compatible characters and another ASCII-only String
 fails:Regexp.union returns a Regexp with UTF-8 if one part is UTF-8
 fails:Regexp.union returns a Regexp if an array of string with special characters is passed
-fails:Regexp.union raises ArgumentError if the arguments include conflicting ASCII-incompatible Strings
-fails:Regexp.union raises ArgumentError if the arguments include conflicting ASCII-incompatible Regexps
-fails:Regexp.union raises ArgumentError if the arguments include conflicting fixed encoding Regexps
-fails:Regexp.union raises ArgumentError if the arguments include a fixed encoding Regexp and a String containing non-ASCII-compatible characters in a different encoding
-fails:Regexp.union raises ArgumentError if the arguments include a String containing non-ASCII-compatible characters and a fixed encoding Regexp in a different encoding
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible String and an ASCII-only String
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible Regexp and an ASCII-only String
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible String and an ASCII-only Regexp
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible Regexp and an ASCII-only Regexp
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible String and a String containing non-ASCII-compatible characters in a different encoding
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible Regexp and a String containing non-ASCII-compatible characters in a different encoding
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible String and a Regexp containing non-ASCII-compatible characters in a different encoding
-fails:Regexp.union raises ArgumentError if the arguments include an ASCII-incompatible Regexp and a Regexp containing non-ASCII-compatible characters in a different encoding
 fails:Regexp.union uses to_str to convert arguments (if not Regexp)
 fails:Regexp.union accepts a single array of patterns as arguments

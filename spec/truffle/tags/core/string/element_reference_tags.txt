@@ -1,5 +1,4 @@
 fails:String#[] returns the character code of the character at the given index
-fails:String#[] returns nil if index is outside of self
 fails:String#[] calls to_int on the given index
 fails:String#[] raises a TypeError if the given index is nil
 fails:String#[] raises a TypeError if the given index can't be converted to an Integer

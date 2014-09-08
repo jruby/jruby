@@ -1,1 +1,0 @@
-fails:Thread#backtrace needs to be reviewed for spec completeness

@@ -1,7 +1,4 @@
-fails:Math.sin returns a float
-fails:Math.sin returns the sine of the argument expressed in radians
 fails:Math.sin raises a TypeError if the argument cannot be coerced with Float()
 fails:Math.sin returns NaN given NaN
 fails:Math.sin raises a TypeError if the argument is nil
 fails:Math.sin accepts any argument that can be coerced with Float()
-fails:Math#sin is accessible as a private instance method

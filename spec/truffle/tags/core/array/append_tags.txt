@@ -1,4 +1,2 @@
 fails:Array#<< pushes the object onto the end of the array
-fails:Array#<< returns self to allow chaining
-fails:Array#<< correctly resizes the Array
 fails:Array#<< raises a RuntimeError on a frozen array

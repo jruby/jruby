@@ -1,4 +1,3 @@
-fails:MatchData#[] acts as normal array indexing [index]
 fails:MatchData#[] supports accessors [start, length]
 fails:MatchData#[] supports ranges [start..end]
 fails:MatchData#[Symbol] returns the corresponding named match when given a Symbol

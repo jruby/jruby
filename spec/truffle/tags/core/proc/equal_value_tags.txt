@@ -1,2 +1,0 @@
-fails:Proc#== is not defined
-fails:Proc#== returns false if other is a dup of the original

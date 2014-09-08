@@ -1,13 +1,5 @@
 fails:BasicObject raises NoMethodError for nonexistent methods after #method_missing is removed
 fails:BasicObject raises NameError when referencing built-in constants
-fails:BasicObject does not define built-in constants (according to const_defined?)
 fails:BasicObject does not define built-in constants (according to defined?)
 fails:BasicObject includes itself in its list of constants
-fails:BasicObject metaclass is an instance of Class
-fails:BasicObject metaclass has Class as superclass
-fails:BasicObject metaclass contains methods for the BasicObject class
-fails:BasicObject instance metaclass is an instance of Class
-fails:BasicObject instance metaclass has BasicObject as superclass
-fails:BasicObject instance metaclass contains methods defined for the BasicObject instance
 fails:BasicObject subclass contains Kernel methods when including Kernel
-fails:BasicObject subclass BasicObject references can refer to BasicObject from within itself

@@ -1,5 +1,3 @@
-fails:Array#to_s returns a string
-fails:Array#to_s returns '[]' for an empty Array
 fails:Array#to_s calls inspect on its elements and joins the results with commas
 fails:Array#to_s represents a recursive element with '[...]'
 fails:Array#to_s taints the result if the Array is non-empty and tainted

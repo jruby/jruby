@@ -1,1 +1,0 @@
-fails:ObjectSpace.count_objects needs to be reviewed for spec completeness

@@ -1,4 +1,3 @@
-fails:Array#compact returns a copy of array with all nil elements removed
 fails:Array#compact does not return self
 fails:Array#compact does not return subclass instance for Array subclasses
 fails:Array#compact does not keep tainted status even if all elements are removed

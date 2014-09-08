@@ -1,8 +1,6 @@
 fails:String#initialize is a private method
 fails:String#initialize with no arguments does not change self
 fails:String#initialize with no arguments does not raise an exception when frozen
-fails:String#initialize with an argument returns self
-fails:String#initialize with an argument replaces the content of self with other
 fails:String#initialize with an argument taints self if other is tainted
 fails:String#initialize with an argument does not untaint self if other is untainted
 fails:String#initialize with an argument untrusts self if other is untrusted

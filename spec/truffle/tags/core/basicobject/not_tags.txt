@@ -1,2 +1,0 @@
-fails:BasicObject#! is a public instance method
-fails:BasicObject#! returns false

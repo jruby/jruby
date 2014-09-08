@@ -4,7 +4,6 @@ fails:Range#include? raises an ArgumentError without exactly one argument
 fails:Range#include? returns true if argument is equal to the first value of the range
 fails:Range#include? returns true if argument is equal to the last value of the range
 fails:Range#include? returns true if argument is less than the last value of the range and greater than the first value
-fails:Range#include? returns true if argument is sole element in the range
 fails:Range#include? returns false if range is empty
 fails:Range#include? returns false if the range does not contain the argument
 fails:Range#include? on string elements returns true if other is matched by element.succ

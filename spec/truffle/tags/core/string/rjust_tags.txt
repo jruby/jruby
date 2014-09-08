@@ -1,6 +1,3 @@
-fails:String#rjust with length, padding returns a new string of specified length with self right justified and padded with padstr
-fails:String#rjust with length, padding pads with whitespace if no padstr is given
-fails:String#rjust with length, padding returns self if it's longer than or as long as the specified length
 fails:String#rjust with length, padding taints result when self or padstr is tainted
 fails:String#rjust with length, padding tries to convert length to an integer using to_int
 fails:String#rjust with length, padding raises a TypeError when length can't be converted to an integer

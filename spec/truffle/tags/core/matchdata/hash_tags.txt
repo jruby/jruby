@@ -1,1 +1,0 @@
-fails:MatchData#hash needs to be reviewed for spec completeness
