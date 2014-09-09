@@ -26,6 +26,74 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @CoreClass(name = "Math")
 public abstract class MathNodes {
 
+    protected abstract static class SimpleMathFunctionNode extends CoreMethodNode {
+
+        @Child protected BoxingNode box;
+        @Child protected DispatchHeadNode floatNode;
+
+        protected SimpleMathFunctionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            box = new BoxingNode(context, sourceSection);
+            floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+        }
+
+        protected SimpleMathFunctionNode(SimpleMathFunctionNode prev) {
+            super(prev);
+            box = prev.box;
+            floatNode = prev.floatNode;
+        }
+
+        // TODO: why can't we leave this abstract?
+
+        protected double doFunction(double a) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Specialization
+        public double function(int a) {
+            return doFunction(a);
+        }
+
+        @Specialization
+        public double function(long a) {
+            return doFunction(a);
+        }
+
+        @Specialization
+        public double function(BigInteger a) {
+            return doFunction(a.doubleValue());
+        }
+
+        @Specialization
+        public double function(double a) {
+            return doFunction(a);
+        }
+
+        @Fallback
+        public double function(VirtualFrame frame, Object a) {
+            final RubyBasicObject boxed = box.box(a);
+
+            if (boxed.isNumeric()) {
+                try {
+                    return doFunction(floatNode.callFloat(frame, box.box(a), "to_f", null));
+                } catch (UseMethodMissingException e) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                            box.box(a).getRubyClass().getName(),
+                            getContext().getCoreLibrary().getFloatClass().getName(),
+                            this));
+                }
+            } else {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                        box.box(a).getRubyClass().getName(),
+                        getContext().getCoreLibrary().getFloatClass().getName(),
+                        this));
+            }
+        }
+
+    }
+
     @CoreMethod(names = "acos", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class ACosNode extends CoreMethodNode {
 
@@ -199,64 +267,19 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "sin", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
-    public abstract static class SinNode extends CoreMethodNode {
-
-        @Child protected BoxingNode box;
-        @Child protected DispatchHeadNode floatNode;
+    public abstract static class SinNode extends SimpleMathFunctionNode {
 
         public SinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = new BoxingNode(context, sourceSection);
-            floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
         public SinNode(SinNode prev) {
             super(prev);
-            box = prev.box;
-            floatNode = prev.floatNode;
         }
 
-        @Specialization
-        public double sin(int a) {
+        @Override
+        protected double doFunction(double a) {
             return Math.sin(a);
-        }
-
-        @Specialization
-        public double sin(long a) {
-            return Math.sin(a);
-        }
-
-        @Specialization
-        public double sin(BigInteger a) {
-            return Math.sin(a.doubleValue());
-        }
-
-        @Specialization
-        public double sin(double a) {
-            return Math.sin(a);
-        }
-
-        @Fallback
-        public double sin(VirtualFrame frame, Object a) {
-            final RubyBasicObject boxed = box.box(a);
-
-            if (boxed.isNumeric()) {
-                try {
-                    return Math.sin(floatNode.callFloat(frame, box.box(a), "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            box.box(a).getRubyClass().getName(),
-                            getContext().getCoreLibrary().getFloatClass().getName(),
-                            this));
-                }
-            } else {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        box.box(a).getRubyClass().getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
-            }
         }
 
     }
