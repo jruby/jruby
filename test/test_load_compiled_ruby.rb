@@ -3,8 +3,9 @@ require 'jruby/jrubyc'
 require 'fileutils'
 
 class TestLoadCompiledRuby < Test::Unit::TestCase
-  FILENAME = 'test_load_compiled_ruby.rb'
-  COMPILED = 'test_load_compiled_ruby.class'
+  FILENAME = 'local_test_load_compiled_ruby.rb'
+  COMPILED = 'local_test_load_compiled_ruby.class'
+
   def test_load_compiled_ruby
     begin
       File.open(FILENAME, 'w') do |f|
@@ -19,6 +20,7 @@ class TestLoadCompiledRuby < Test::Unit::TestCase
 
       $:.unshift('.')
       load FILENAME
+
       assert $test_load_compiled_ruby
     ensure
       $:.shift
