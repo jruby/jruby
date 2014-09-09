@@ -110,6 +110,7 @@ namespace :test do
     ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '--1.9'
+    t.ruby_opts << '-I .'
     t.ruby_opts << '-I test/externals/ruby1.9'
     t.ruby_opts << '-I test/externals/ruby1.9/ruby'
     t.ruby_opts << '-r ./test/ruby19_env.rb'
@@ -145,6 +146,7 @@ namespace :test do
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
     t.ruby_opts << '--1.9'
+    t.ruby_opts << '-I .'
   end
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
@@ -177,6 +179,7 @@ namespace :test do
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '--1.9'
     t.ruby_opts << '-X+O'
+    t.ruby_opts << '-I .'
   end
 
   permute_tests(:rubicon, compile_flags) do |t|

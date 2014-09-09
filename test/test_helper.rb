@@ -66,6 +66,7 @@ module TestHelper
 
   def run_in_sub_runtime(script)
     container = org.jruby.embed.ScriptingContainer.new(org.jruby.embed.LocalContextScope::SINGLETHREAD)
+    container.runScriptlet("$LOAD_PATH << '.'")
     container.runScriptlet("require 'java'")
     container.runScriptlet(script)
   end
