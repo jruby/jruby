@@ -302,9 +302,12 @@ class TestKernel < Test::Unit::TestCase
           f.puts "raise"
         end
         $LOAD_PATH.delete_if{|dir| dir=='.'}
-        assert_raise(LoadError) {
-          load 'file_to_be_loaded'
-        }
+
+        unless RUBY_VERSION =~ /1\.8/
+          assert_raise(LoadError) {
+            load 'file_to_be_loaded'
+          }
+        end
       ensure
         File.delete(File.expand_path('.') +'/file_to_be_loaded')
         $LOAD_PATH.clear
