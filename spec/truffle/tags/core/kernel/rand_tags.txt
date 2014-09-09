@@ -1,5 +1,3 @@
-fails:Kernel.rand is a private method
-fails:Kernel.rand returns a float if no argument is passed
 fails:Kernel.rand returns an integer for an integer argument
 fails:Kernel.rand returns an integer for a float argument greater than 1
 fails:Kernel.rand returns a float for an argument between -1 and 1
