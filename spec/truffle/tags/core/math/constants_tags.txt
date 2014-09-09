@@ -1,2 +1,0 @@
-fails:Math::E approximates the value of Napier's constant
-fails:Math::E is accessible to a class that includes Math

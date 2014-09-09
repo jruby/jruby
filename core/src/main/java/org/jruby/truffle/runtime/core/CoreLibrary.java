@@ -19,6 +19,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.core.MathNodes;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -93,6 +94,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyModule objectSpaceModule;
     @CompilerDirectives.CompilationFinal private RubyModule signalModule;
     @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
+    @CompilerDirectives.CompilationFinal private RubyClass edomClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -148,7 +150,7 @@ public class CoreLibrary {
         fiberClass = new RubyFiber.RubyFiberClass(objectClass);
         fileClass = new RubyClass(null, null, ioClass, "File");
         fixnumClass = new RubyClass(null, null, integerClass, "Fixnum");
-        floatClass = new RubyClass(null, null, objectClass, "Float");
+        floatClass = new RubyClass(null, null, numericClass, "Float");
         hashClass = new RubyHash.RubyHashClass(objectClass);
         kernelModule = new RubyModule(moduleClass, null, "Kernel");
         loadErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LoadError");
@@ -208,7 +210,12 @@ public class CoreLibrary {
 
         objectClass.setConstant(null, "RbConfig", configModule);
 
+        floatClass.setConstant(null, "EPSILON", org.jruby.RubyFloat.EPSILON);
+        floatClass.setConstant(null, "INFINITY", org.jruby.RubyFloat.INFINITY);
+        floatClass.setConstant(null, "NAN", org.jruby.RubyFloat.NAN);
+
         mathModule.setConstant(null, "PI", Math.PI);
+        mathModule.setConstant(null, "E", Math.E);
 
         fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
         fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
@@ -222,7 +229,10 @@ public class CoreLibrary {
         errnoModule.setConstant(null, "EEXIST", new RubyClass(null, null, systemCallErrorClass, "EEXIST"));
         errnoModule.setConstant(null, "EXDEV", new RubyClass(null, null, systemCallErrorClass, "EXDEV"));
         errnoModule.setConstant(null, "EACCES", new RubyClass(null, null, systemCallErrorClass, "EACCES"));
-        errnoModule.setConstant(null, "EDOM", new RubyClass(null, null, systemCallErrorClass, "EDOM"));
+
+        edomClass = new RubyException.RubyExceptionClass(systemCallErrorClass, "EDOM");
+        errnoModule.setConstant(null, edomClass.getName(), edomClass);
+        mathModule.setConstant(null, "DomainError", edomClass);
 
         // Add all classes and modules as constants in Object
 
@@ -472,10 +482,6 @@ public class CoreLibrary {
         return noMethodError(String.format("undefined method `%s' for %s", name, object), currentNode);
     }
 
-    public RubyException privateNoMethodError(String name, String object, Node currentNode) {
-        return noMethodError(String.format("private Method method `%s' called for %s", name, object), currentNode);
-    }
-
     public RubyException loadError(String message, Node currentNode) {
         return new RubyException(context.getCoreLibrary().getLoadErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
@@ -490,6 +496,14 @@ public class CoreLibrary {
 
     public RubyException syntaxError(String message, Node currentNode) {
         return new RubyException(syntaxErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException mathDomainError(String method, Node currentNode) {
+        return new RubyException(edomClass, context.makeString(String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyBasicObject rangeError(String type, String value, String range, Node currentNode) {
+        return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {
@@ -676,5 +690,9 @@ public class CoreLibrary {
 
     public RubyClass getNumericClass() {
         return numericClass;
+    }
+
+    public RubyClass getIntegerClass() {
+        return integerClass;
     }
 }

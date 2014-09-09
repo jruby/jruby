@@ -68,7 +68,7 @@ public class RubyMath {
         }
     }
 
-    private static double chebylevSerie(double x, double coef[]) {
+    public static double chebylevSerie(double x, double coef[]) {
         double  b0, b1, b2, twox;
         int i;
         b1 = 0.0;
@@ -83,7 +83,7 @@ public class RubyMath {
         return 0.5*(b0 - b2);
     }
     
-    private static double sign(double x, double y) {
+    public static double sign(double x, double y) {
         double abs = ((x < 0) ? -x : x);
         return (y < 0.0) ? -abs : abs;
     }
@@ -229,7 +229,7 @@ public class RubyMath {
         return RubyFloat.newFloat(context.runtime,result);
     }
     
-    private static final double ASINH_COEF[] = {
+    public static final double[] ASINH_COEF = {
         -.12820039911738186343372127359268e+0,
         -.58811761189951767565211757138362e-1,
         .47274654322124815640725249756029e-2,
@@ -279,7 +279,7 @@ public class RubyMath {
         return RubyFloat.newFloat(context.runtime, result);        
     }
     
-    private static final double ATANH_COEF[] = {
+    public static final double[] ATANH_COEF = {
         .9439510239319549230842892218633e-1,
         .4919843705578615947200034576668e-1,
         .2102593522455432763479327331752e-2,
@@ -489,7 +489,7 @@ public class RubyMath {
                 needFloat(mantissa).getDoubleValue() * Math.pow(2.0, RubyNumeric.num2int(exponent)));
     }
 
-    private static final double ERFC_COEF[] = {
+    public static final double[] ERFC_COEF = {
          -.490461212346918080399845440334e-1,
          -.142261205103713642378247418996e0,
          .100355821875997955757546767129e-1,
@@ -532,7 +532,7 @@ public class RubyMath {
         return RubyFloat.newFloat(context.runtime,result);
     }
 
-    private static final double ERFC2_COEF[] = {
+    public static final double[] ERFC2_COEF = {
          -.69601346602309501127391508262e-1,
          -.411013393626208934898221208467e-1,
          .391449586668962688156114370524e-2,
@@ -562,7 +562,7 @@ public class RubyMath {
          .190081925136274520253692973329e-18
     };
 
-    private static final double ERFCC_COEF[] = {
+    public static final double[] ERFCC_COEF = {
          .715179310202924774503697709496e-1,
          -.265324343376067157558893386681e-1,
          .171115397792085588332699194606e-2,
@@ -737,7 +737,7 @@ public class RubyMath {
                 RubyFloat.newFloat(context.runtime, l.value), RubyInteger.int2fix(context.runtime, (int) l.sign));
     }
 
-    private static double nemes_gamma(double x) {
+    public static double nemes_gamma(double x) {
         double int_part = (int) x;
 
         if ((x - int_part) == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
@@ -750,11 +750,11 @@ public class RubyMath {
     /**
      * Inner class to help with &Gamma; functions
      */
-    private static class NemesLogGamma {
-        double value;
-        double sign = 1;
+    public static class NemesLogGamma {
+        public double value;
+        public double sign = 1;
 
-        private NemesLogGamma(double x) {
+        public NemesLogGamma(double x) {
             if (Double.isInfinite(x)) {
                 value = Double.POSITIVE_INFINITY;
                 return;

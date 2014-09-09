@@ -68,25 +68,62 @@ public class DispatchHeadNode extends Node {
             throw new UseMethodMissingException();
         }
 
-        if (!(value instanceof Double)) {
-            CompilerDirectives.transferToInterpreter();
-
-            final RubyBasicObject receiverBoxed = context.getCoreLibrary().box(receiverObject);
-            final RubyBasicObject valueBoxed = context.getCoreLibrary().box(value);
-
-            final String message = String.format("%s (%s#%s gives %s)",
-                    context.getCoreLibrary().getFloatClass().getName(),
-                    receiverBoxed.getRubyClass().getName(),
-                    methodName,
-                    valueBoxed.getRubyClass().getName());
-
-            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                    receiverBoxed.getRubyClass().getName(),
-                    message,
-                    this));
+        if (value instanceof Double) {
+            return (double) value;
         }
 
-        return (double) value;
+        CompilerDirectives.transferToInterpreter();
+
+        final RubyBasicObject receiverBoxed = context.getCoreLibrary().box(receiverObject);
+        final RubyBasicObject valueBoxed = context.getCoreLibrary().box(value);
+
+        final String message = String.format("%s (%s#%s gives %s)",
+                context.getCoreLibrary().getFloatClass().getName(),
+                receiverBoxed.getRubyClass().getName(),
+                methodName,
+                valueBoxed.getRubyClass().getName());
+
+        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                receiverBoxed.getRubyClass().getName(),
+                message,
+                this));
+    }
+
+    public long callLongFixnum(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object... argumentsObjects) throws UseMethodMissingException {
+        final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
+
+        if (missingBehavior == Dispatch.MissingBehavior.RETURN_MISSING && value == Dispatch.MISSING) {
+            throw new UseMethodMissingException();
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof Long) {
+            return (int) value;
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        final RubyBasicObject receiverBoxed = context.getCoreLibrary().box(receiverObject);
+        final RubyBasicObject valueBoxed = context.getCoreLibrary().box(value);
+
+        final String message = String.format("%s (%s#%s gives %s)",
+                context.getCoreLibrary().getFloatClass().getName(),
+                receiverBoxed.getRubyClass().getName(),
+                methodName,
+                valueBoxed.getRubyClass().getName());
+
+        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                receiverBoxed.getRubyClass().getName(),
+                message,
+                this));
     }
 
     public boolean doesRespondTo(
