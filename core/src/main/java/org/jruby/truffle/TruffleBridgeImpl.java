@@ -10,6 +10,7 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
@@ -29,6 +30,8 @@ import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class TruffleBridgeImpl implements TruffleBridge {
 
@@ -96,10 +99,20 @@ public class TruffleBridgeImpl implements TruffleBridge {
             final Source source;
 
             if (inputFile.equals("-e")) {
-                // TODO(CS): what if a file is legitimately called -e?
-                source = Source.asPseudoFile(runtime.getInstanceConfig().getInlineScript().toString(), "-e");
+                // Assume UTF-8 for the moment
+                source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
             } else {
-                source = Source.fromFileName(inputFile);
+                final byte[] bytes;
+
+                try {
+                    bytes = Files.readAllBytes(Paths.get(inputFile));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Assume UTF-8 for the moment
+
+                source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
             }
 
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
@@ -114,8 +127,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
             }
 
             return NilPlaceholder.INSTANCE;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
