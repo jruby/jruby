@@ -61,7 +61,6 @@ public class IOInputStream extends InputStream {
      */
     public IOInputStream(IRubyObject io) {
         if (!io.respondsTo("read")) {
-            Thread.dumpStack();
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"read\".");
         }
         this.io = io;
