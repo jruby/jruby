@@ -113,7 +113,7 @@ describe "JRuby class reification" do
     a_class = JRUBY5564.become_java!(false)
 
     # load the java class from the classloader
-    cl = java.lang.Thread.current_thread.getContextClassLoader
+    cl = JRuby.runtime.jruby_class_loader
     cl.load_class(a_class.get_name).should == a_class
   end
 

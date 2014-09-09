@@ -33,19 +33,21 @@ public class URLResource implements FileResource {
     private final String pathname;
 
     private final JarFileStat fileStat;
+    private final ClassLoader cl;
 
     URLResource(String uri, URL url, String[] files) {
-        this(uri, url, null, files);
+        this(uri, url, null, null, files);
     }
     
-    URLResource(String uri, String pathname, String[] files) {
-        this(uri, null, pathname, files);
+    URLResource(String uri, ClassLoader cl, String pathname, String[] files) {
+        this(uri, null, cl, pathname, files);
     }
     
-    private URLResource(String uri, URL url, String pathname, String[] files) {
+    private URLResource(String uri, URL url, ClassLoader cl, String pathname, String[] files) {
         this.uri = uri;
         this.list = files;
         this.url = url;
+        this.cl = cl;
         this.pathname = pathname;
         this.fileStat = new JarFileStat(this);
     }
@@ -137,7 +139,7 @@ public class URLResource implements FileResource {
         try
         {
             if (pathname != null) {
-                return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
+                return cl.getResourceAsStream(pathname);
             }
             return url.openStream();
         }
@@ -175,6 +177,7 @@ public class URLResource implements FileResource {
         }
         String[] files = listClassLoaderFiles(pathname);
         return new URLResource(URI_CLASSLOADER + pathname,
+                               cl,
                                url == null ? null : pathname,
                                files);
     }
@@ -250,10 +253,10 @@ public class URLResource implements FileResource {
             }
         }
     }
-    private static String[] listClassLoaderFiles(String pathname) {
+    private static String[] listClassLoaderFiles(ClassLoader cl, String pathname) {
         try
         {
-            Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(pathname + "/.jrubydir");
+            Enumeration<URL> urls = cl.getResources(pathname + "/.jrubydir");
             if (!urls.hasMoreElements()) {
                 return null;
             }
@@ -285,10 +288,10 @@ public class URLResource implements FileResource {
         }
     }
 
-    public static URL getResourceURL(String location)
+    public static URL getResourceURL(Ruby runtime, String location)
     {
         if (location.startsWith(URI + CLASSLOADER)){
-            return Thread.currentThread().getContextClassLoader().getResource(location.substring(URI_CLASSLOADER.length()));
+            return runtime.getJRubyClassLoader().getParent().getResource(location.substring(URI_CLASSLOADER.length()));
         }
         try
         {
