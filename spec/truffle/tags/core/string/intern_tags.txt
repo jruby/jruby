@@ -1,3 +1,1 @@
-fails:String#intern returns the symbol corresponding to self
-fails:String#intern does not special case +(binary) and -(binary)
 fails:String#intern does not special case certain operators

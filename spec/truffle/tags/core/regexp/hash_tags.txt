@@ -1,3 +1,2 @@
-fails:Regexp#hash is provided
 fails:Regexp#hash is based on the text and options of Regexp
 fails:Regexp#hash returns the same value for two Regexps differing only in the /n option

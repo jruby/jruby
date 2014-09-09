@@ -1,5 +1,4 @@
 fails:Array#- creates an array minus any items from other array
-fails:Array#- removes multiple items on the lhs equal to one on the rhs
 fails:Array#- properly handles recursive arrays
 fails:Array#- tries to convert the passed arguments to Arrays using #to_ary
 fails:Array#- raises a TypeError if the argument cannot be coerced to an Array by calling #to_ary
@@ -7,5 +6,4 @@ fails:Array#- does not return subclass instance for Array subclasses
 fails:Array#- does not call to_ary on array subclasses
 fails:Array#- removes an item identified as equivalent via #hash and #eql?
 fails:Array#- doesn't remove an item with the same hash but not #eql?
-fails:Array#- removes an identical item even when its #eql? isn't reflexive
 fails:Array#- is not destructive

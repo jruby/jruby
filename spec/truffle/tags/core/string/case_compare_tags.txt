@@ -1,9 +1,2 @@
-fails:String#=== returns true if self <=> string returns 0
-fails:String#=== returns false if self <=> string does not return 0
-fails:String#=== ignores encoding difference of compatible string
-fails:String#=== considers encoding difference of incompatible string
-fails:String#=== considers encoding compatibility
-fails:String#=== ignores subclass differences
 fails:String#=== returns false if obj does not respond to to_str
 fails:String#=== returns obj == self if obj responds to to_str
-fails:String#=== is not fooled by NUL characters

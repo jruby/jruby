@@ -1,4 +1,3 @@
-fails:String#chomp when passed no argument does not modify a String with no trailing carriage return or newline
 fails:String#chomp when passed no argument returns a copy of the String when it is not modified
 fails:String#chomp when passed no argument removes one trailing newline
 fails:String#chomp when passed no argument removes one trailing carriage return
@@ -32,7 +31,6 @@ fails:String#chomp when passed a String taints the result if self is tainted
 fails:String#chomp when passed a String does not taint the result when the argument is tainted
 fails:String#chomp! raises a RuntimeError on a frozen instance when it is modified
 fails:String#chomp! raises a RuntimeError on a frozen instance when it would not be modified
-fails:String#chomp! when passed no argument modifies self
 fails:String#chomp! when passed no argument returns nil if self is not modified
 fails:String#chomp! when passed no argument removes one trailing newline
 fails:String#chomp! when passed no argument removes one trailing carriage return
@@ -62,9 +60,6 @@ fails:String#chomp! when passed a String returns nil if the argument does not ma
 fails:String#chomp! when passed a String returns nil when self is empty
 fails:String#chomp! when passed a String taints the result if self is tainted
 fails:String#chomp! when passed a String does not taint the result when the argument is tainted
-fails:String#chomp does not modify a multi-byte character
-fails:String#chomp removes the final carriage return, newline from a multibyte String
 fails:String#chomp removes the final carriage return, newline from a non-ASCII String
 fails:String#chomp! returns nil when the String is not modified
-fails:String#chomp! removes the final carriage return, newline from a multibyte String
 fails:String#chomp! removes the final carriage return, newline from a non-ASCII String

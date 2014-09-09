@@ -1,7 +1,0 @@
-fails:Math.exp returns a float
-fails:Math.exp returns the base-e exponential of the argument
-fails:Math.exp raises a TypeError if the argument cannot be coerced with Float()
-fails:Math.exp returns NaN given NaN
-fails:Math.exp raises a TypeError if the argument is nil
-fails:Math.exp accepts any argument that can be coerced with Float()
-fails:Math#exp is accessible as a private instance method

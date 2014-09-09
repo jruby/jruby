@@ -76,6 +76,11 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public double add(double a, long b) {
+            return a + b;
+        }
+
+        @Specialization
         public double add(double a, double b) {
             return a + b;
         }
@@ -100,6 +105,11 @@ public abstract class FloatNodes {
 
         @Specialization
         public double sub(double a, int b) {
+            return a - b;
+        }
+
+        @Specialization
+        public double sub(double a, long b) {
             return a - b;
         }
 
@@ -132,6 +142,11 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public double mul(double a, long b) {
+            return a * b;
+        }
+
+        @Specialization
         public double mul(double a, double b) {
             return a * b;
         }
@@ -156,6 +171,11 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mul(double a, int b) {
+            return Math.pow(a, b);
+        }
+
+        @Specialization
+        public double mul(double a, long b) {
             return Math.pow(a, b);
         }
 
@@ -188,6 +208,11 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public double div(double a, long b) {
+            return a / b;
+        }
+
+        @Specialization
         public double div(double a, double b) {
             return a / b;
         }
@@ -212,6 +237,11 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") int b) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Specialization
+        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") long b) {
             throw new UnsupportedOperationException();
         }
 
@@ -244,6 +274,11 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") long b) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Specialization
         public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") double b) {
             throw new UnsupportedOperationException();
         }
@@ -272,13 +307,18 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public boolean less(double a, long b) {
+            return a < b;
+        }
+
+        @Specialization
         public boolean less(double a, double b) {
             return a < b;
         }
 
         @Specialization
         public boolean less(double a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) < 0;
+            return a < SlowPathBigInteger.doubleValue(b);
         }
     }
 
@@ -299,13 +339,18 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public boolean lessEqual(double a, long b) {
+            return a <= b;
+        }
+
+        @Specialization
         public boolean lessEqual(double a, double b) {
             return a <= b;
         }
 
         @Specialization
         public boolean lessEqual(double a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) <= 0;
+            return a <= SlowPathBigInteger.doubleValue(b);
         }
     }
 
@@ -326,13 +371,18 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public boolean equal(double a, long b) {
+            return a == b;
+        }
+
+        @Specialization
         public boolean equal(double a, double b) {
             return a == b;
         }
 
         @Specialization
         public boolean equal(double a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) == 0;
+            return a == SlowPathBigInteger.doubleValue(b);
         }
     }
 
@@ -353,13 +403,18 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public boolean notEqual(double a, long b) {
+            return a != b;
+        }
+
+        @Specialization
         public boolean notEqual(double a, double b) {
             return a != b;
         }
 
         @Specialization
         public boolean notEqual(double a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) != 0;
+            return a != SlowPathBigInteger.doubleValue(b);
         }
     }
 
@@ -380,13 +435,18 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public boolean greaterEqual(double a, long b) {
+            return a >= b;
+        }
+
+        @Specialization
         public boolean greaterEqual(double a, double b) {
             return a >= b;
         }
 
         @Specialization
         public boolean greaterEqual(double a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) >= 0;
+            return a >= SlowPathBigInteger.doubleValue(b);
         }
     }
 
@@ -407,13 +467,18 @@ public abstract class FloatNodes {
         }
 
         @Specialization
+        public boolean equal(double a, long b) {
+            return a > b;
+        }
+
+        @Specialization
         public boolean equal(double a, double b) {
             return a > b;
         }
 
         @Specialization
         public boolean equal(double a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) > 0;
+            return a > SlowPathBigInteger.doubleValue(b);
         }
     }
 
@@ -431,6 +496,50 @@ public abstract class FloatNodes {
         @Specialization
         public double abs(double n) {
             return Math.abs(n);
+        }
+
+    }
+
+    @CoreMethod(names = "infinite?", maxArgs = 0)
+    public abstract static class InfiniteNode extends CoreMethodNode {
+
+        public InfiniteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InfiniteNode(InfiniteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object infinite(double value) {
+            if (Double.isInfinite(value)) {
+                if (value < 0) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            } else {
+                return NilPlaceholder.INSTANCE;
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "nan?", maxArgs = 0)
+    public abstract static class NaNNode extends CoreMethodNode {
+
+        public NaNNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NaNNode(NaNNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean nan(double value) {
+            return Double.isNaN(value);
         }
 
     }
@@ -500,6 +609,24 @@ public abstract class FloatNodes {
             }
 
             return fixnumOrBignum.fixnumOrBignum(f);
+        }
+
+    }
+
+    @CoreMethod(names = "to_f", maxArgs = 0)
+    public abstract static class ToFNode extends CoreMethodNode {
+
+        public ToFNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToFNode(ToFNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double toF(double value) {
+            return value;
         }
 
     }

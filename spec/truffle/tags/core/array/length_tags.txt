@@ -1,2 +1,0 @@
-fails:Array#length returns the number of elements
-fails:Array#length properly handles recursive arrays

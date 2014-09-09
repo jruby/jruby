@@ -7,7 +7,6 @@ fails:Array#join attempts coercion via #to_str first
 fails:Array#join attempts coercion via #to_ary second
 fails:Array#join attempts coercion via #to_s third
 fails:Array#join raises a NoMethodError if an element does not respond to #to_str, #to_ary, or #to_s
-fails:Array#join raises an ArgumentError when the Array is recursive
 fails:Array#join taints the result if the Array is tainted and non-empty
 fails:Array#join does not taint the result if the Array is tainted but empty
 fails:Array#join taints the result if the result of coercing an element is tainted

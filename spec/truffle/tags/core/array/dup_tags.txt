@@ -1,7 +1,4 @@
 fails:Array#dup returns an Array or a subclass instance
-fails:Array#dup produces a shallow copy where the references are directly copied
 fails:Array#dup creates a new array containing all elements or the original
 fails:Array#dup copies taint status from the original
 fails:Array#dup copies untrusted status from the original
-fails:Array#dup does not copy frozen status from the original
-fails:Array#dup does not copy singleton methods

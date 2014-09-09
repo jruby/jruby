@@ -1,4 +1,3 @@
-fails:#String#bytesize needs to be reviewed for spec completeness
 fails:#String#bytesize returns the length of self in bytes
 fails:#String#bytesize works with strings containing single UTF-8 characters
 fails:#String#bytesize works with pseudo-ASCII strings containing single UTF-8 characters

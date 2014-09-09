@@ -1,1 +1,0 @@
-fails:NilClass#nil? returns true

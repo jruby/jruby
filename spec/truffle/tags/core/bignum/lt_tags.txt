@@ -1,2 +1,1 @@
-fails:Bignum#< returns true if self is less than the given argument
 fails:Bignum#< raises an ArgumentError when given a non-Integer

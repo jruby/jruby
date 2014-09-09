@@ -1,4 +1,3 @@
-fails:String#* returns a new string containing count copies of self
 fails:String#* tries to convert the given argument to an integer using to_int
 fails:String#* raises an ArgumentError when given integer is negative
 fails:String#* raises a RangeError when given integer is a Bignum

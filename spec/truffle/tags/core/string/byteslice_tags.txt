@@ -1,4 +1,3 @@
-fails:String#byteslice needs to reviewed for spec completeness
 fails:String#byteslice returns the character code of the character at the given index
 fails:String#byteslice returns nil if index is outside of self
 fails:String#byteslice calls to_int on the given index

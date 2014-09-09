@@ -1,8 +1,5 @@
-fails:Array#[] returns the element at index with [index]
-fails:Array#[] returns the element at index from the end of the array with [-index]
 fails:Array#[] returns count elements starting from index with [index, count]
 fails:Array#[] returns count elements starting at index from the end of array with [-index, count]
-fails:Array#[] returns the first count elements with [0, count]
 fails:Array#[] returns the subarray which is independent to self with [index,count]
 fails:Array#[] tries to convert the passed argument to an Integer using #to_int
 fails:Array#[] returns the elements specified by Range indexes with [m..n]
@@ -12,14 +9,8 @@ fails:Array#[] accepts Range instances having a negative m and both signs for n 
 fails:Array#[] returns the subarray which is independent to self with [m..n]
 fails:Array#[] tries to convert Range elements to Integers using #to_int with [m..n] and [m...n]
 fails:Array#[] returns the same elements as [m..n] and [m...n] with Range subclasses
-fails:Array#[] returns nil for a requested index not in the array with [index]
-fails:Array#[] returns [] if the index is valid but length is zero with [index, length]
-fails:Array#[] returns nil if length is zero but index is invalid with [index, length]
 fails:Array#[] returns [] if index == array.size with [index, length]
-fails:Array#[] returns nil if index > array.size with [index, length]
 fails:Array#[] returns nil if length is negative with [index, length]
-fails:Array#[] returns nil if no requested index is in the array with [m..n]
-fails:Array#[] returns nil if range start is not in the array with [m..n]
 fails:Array#[] returns an empty array when m == n with [m...n]
 fails:Array#[] returns an empty array with [0...0]
 fails:Array#[] returns a subarray where m, n negatives and m < n with [m..n]

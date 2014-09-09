@@ -1,3 +1,1 @@
-fails:Array#to_a returns self
 fails:Array#to_a does not return subclass instance on Array subclasses
-fails:Array#to_a properly handles recursive arrays

@@ -1,4 +1,2 @@
-fails:Regexp#=== is true if there is a match
-fails:Regexp#=== is false if there is no match
 fails:Regexp#=== returns true if it matches a Symbol
 fails:Regexp#=== returns false if it does not match a Symbol

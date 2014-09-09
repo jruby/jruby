@@ -9,9 +9,11 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
 public class DispatchHeadNode extends Node {
@@ -24,6 +26,10 @@ public class DispatchHeadNode extends Node {
 
     public DispatchHeadNode(RubyContext context) {
         this(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+    }
+
+    public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
+        this(context, false, missingBehavior);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
@@ -48,6 +54,76 @@ public class DispatchHeadNode extends Node {
                 blockObject,
                 argumentsObjects,
                 Dispatch.DispatchAction.CALL);
+    }
+
+    public double callFloat(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object... argumentsObjects) throws UseMethodMissingException {
+        final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
+
+        if (missingBehavior == Dispatch.MissingBehavior.RETURN_MISSING && value == Dispatch.MISSING) {
+            throw new UseMethodMissingException();
+        }
+
+        if (value instanceof Double) {
+            return (double) value;
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        final RubyBasicObject receiverBoxed = context.getCoreLibrary().box(receiverObject);
+        final RubyBasicObject valueBoxed = context.getCoreLibrary().box(value);
+
+        final String message = String.format("%s (%s#%s gives %s)",
+                context.getCoreLibrary().getFloatClass().getName(),
+                receiverBoxed.getRubyClass().getName(),
+                methodName,
+                valueBoxed.getRubyClass().getName());
+
+        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                receiverBoxed.getRubyClass().getName(),
+                message,
+                this));
+    }
+
+    public long callLongFixnum(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object... argumentsObjects) throws UseMethodMissingException {
+        final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
+
+        if (missingBehavior == Dispatch.MissingBehavior.RETURN_MISSING && value == Dispatch.MISSING) {
+            throw new UseMethodMissingException();
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof Long) {
+            return (int) value;
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        final RubyBasicObject receiverBoxed = context.getCoreLibrary().box(receiverObject);
+        final RubyBasicObject valueBoxed = context.getCoreLibrary().box(value);
+
+        final String message = String.format("%s (%s#%s gives %s)",
+                context.getCoreLibrary().getFloatClass().getName(),
+                receiverBoxed.getRubyClass().getName(),
+                methodName,
+                valueBoxed.getRubyClass().getName());
+
+        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                receiverBoxed.getRubyClass().getName(),
+                message,
+                this));
     }
 
     public boolean doesRespondTo(

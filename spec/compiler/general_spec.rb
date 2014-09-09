@@ -3,18 +3,46 @@ require 'java'
 require 'rspec'
 
 module CompilerTestUtils
-  def compile_to_class(src, filename = nil)
+  def compile_to_method(src, filename = nil)
     next_src_id = next_id
     node = JRuby.parse(src, filename || "testCompiler#{next_src_id}", false)
     filename = node.position.file
-    classname = org.jruby.util.JavaNameMangler.mangleFilenameForClasspath(filename)
-    inspector = ASTInspector.new
-    inspector.inspect(node)
-    context = StandardASMCompiler.new(classname, filename)
-    compiler = ASTCompiler.new
-    compiler.compileRoot(node, context, inspector)
+    oj = org.jruby
+    classname = oj.util.JavaNameMangler.mangleFilenameForClasspath(filename)
 
-    context.loadClass(JRuby.runtime.getJRubyClassLoader)
+    # This logic is a mix of logic from InterpretedIRMethod's JIT, o.j.Ruby's script compilation, and IRScriptBody's
+    # interpret. We need to figure out a cleaner path.
+
+    method = oj.ir.IRBuilder.createIRBuilder(JRuby.runtime, JRuby.runtime.getIRManager()).buildRoot(node)
+
+    method.prepareForInterpretation(false)
+    scope = method.getStaticScope
+    currModule = scope.getModule
+    if currModule == nil
+      currModule = Object
+      scope.setModule(currModule)
+    end
+
+    compiled = oj.ir.targets.JVMVisitor.compile(JRuby.runtime, method, oj.util.ClassCache::OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
+    scriptMethod = compiled.getMethod(
+        "__script__",
+        oj.runtime.ThreadContext.java_class,
+        oj.parser.StaticScope.java_class,
+        oj.runtime.builtin.IRubyObject.java_class,
+        oj.runtime.builtin.IRubyObject[].java_class,
+        oj.runtime.Block.java_class);
+    handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod);
+
+    return oj.internal.runtime.methods.CompiledIRMethod.new(
+        handle,
+        "script",
+        filename,
+        0,
+        method.getStaticScope(),
+        oj.runtime.Visibility::PUBLIC,
+        Class.new,
+        "",
+        method.hasExplicitCallProtocol())
   end
 
   def next_id
@@ -31,9 +59,15 @@ module CompilerTestUtils
   end
   
   def compile_and_run(src, filename = nil)
-    cls = compile_to_class(src, filename)
+    cls = compile_to_method(src, filename)
   
-    cls.new_instance.load(JRuby.runtime.current_context, JRuby.runtime.top_self, IRubyObject[0].new, Block::NULL_BLOCK)
+    cls.call(
+        JRuby.runtime.current_context,
+        JRuby.runtime.top_self,
+        JRuby.runtime.top_self.class,
+        "script",
+        IRubyObject[0].new,
+        Block::NULL_BLOCK)
   end
 end
 

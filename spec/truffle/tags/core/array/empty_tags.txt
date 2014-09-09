@@ -1,1 +1,0 @@
-fails:Array#empty? returns true if the array has no elements

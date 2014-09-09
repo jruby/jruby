@@ -1,8 +1,6 @@
-fails:String#<< concatenates the given argument to self and returns self
 fails:String#<< converts the given argument to a String using to_str
 fails:String#<< raises a TypeError if the given argument can't be converted to a String
 fails:String#<< raises a RuntimeError when self is frozen
-fails:String#<< works when given a subclass instance
 fails:String#<< taints self if other is tainted
 fails:String#<< untrusts self if other is untrusted
 fails:String#<< with Integer concatencates the argument interpreted as a codepoint

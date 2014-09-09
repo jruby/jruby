@@ -1,9 +1,0 @@
-fails:Math.atanh returns a float
-fails:Math.atanh returns the inverse hyperbolic tangent of the argument
-fails:Math.atanh raises a Math::DomainError for arguments greater than 1.0
-fails:Math.atanh raises a Math::DomainError for arguments less than -1.0
-fails:Math#atanh is a private instance method
-fails:Math#atanh returns a float
-fails:Math#atanh returns the inverse hyperbolic tangent of the argument
-fails:Math#atanh raises a Math::DomainError for arguments greater than 1.0
-fails:Math#atanh raises a Math::DomainError for arguments less than -1.0
