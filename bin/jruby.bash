@@ -232,6 +232,9 @@ do
             java_args=("${java_args[@]}" "${1:2}")
         fi
         ;;
+     # Pass -X... and -X? search options through
+     -X*\.\.\.|-X*\?)
+        ruby_args=("${ruby_args[@]}" "$1") ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
         val=${1:2}

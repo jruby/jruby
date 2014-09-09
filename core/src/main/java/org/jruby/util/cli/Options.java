@@ -306,4 +306,37 @@ public class Options {
         // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
         return false;
     }
+
+    private static enum SearchMode {
+        PREFIX,
+        CONTAINS
+    }
+
+    public static void listPrefix(String prefix) {
+        list(SearchMode.PREFIX, prefix);
+    }
+
+    public static void listContains(String substring) {
+        list(SearchMode.CONTAINS, substring);
+    }
+
+    private static void list(SearchMode mode, String string) {
+        for (Option option : PROPERTIES) {
+            boolean include = false;
+
+            switch (mode) {
+                case PREFIX:
+                    include = option.shortName().startsWith(string);
+                    break;
+                case CONTAINS:
+                    include = option.shortName().contains(string);
+                    break;
+            }
+
+            if (include) {
+                System.out.printf("%s=%s\n", option.shortName(), option.load());
+            }
+        }
+    }
+
 }
