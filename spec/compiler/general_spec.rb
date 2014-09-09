@@ -71,7 +71,7 @@ module CompilerTestUtils
   end
 end
 
-describe "JRuby's compiler" do
+describe "JRuby's bytecode compiler" do
   include CompilerTestUtils
 
   StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
@@ -575,83 +575,119 @@ ary
     expect{cls.remove}.not_to raise_error
   end
   
-  it "does a bunch of other stuff" do
+  it "yields nil when yielding no arguments" do
     silence_warnings {
       # bug 1305, no values yielded to single-arg block assigns a null into the arg
       expect(compile_and_run("def foo; yield; end; foo {|x| x.class}")).to  eq NilClass
     }
+  end
 
+  it "prevents reopening or extending non-modules" do
     # ensure that invalid classes and modules raise errors
     AFixnum = 1;
     expect { compile_and_run("class AFixnum; end")}.to raise_error(TypeError)
     expect { compile_and_run("class B < AFixnum; end")}.to raise_error(TypeError)
     expect { compile_and_run("module AFixnum; end")}.to raise_error(TypeError)
+  end
 
+  it "assigns array elements properly as LHS of masgn" do
     # attr assignment in multiple assign
     expect(compile_and_run("a = Object.new; class << a; attr_accessor :b; end; a.b, a.b = 'baz','bar'; a.b")).to eq "bar"
     expect(compile_and_run("a = []; a[0], a[1] = 'foo','bar'; a")).to eq(["foo", "bar"])
+  end
 
+  it "executes for loops properly" do
     # for loops
     expect(compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a")).to  eq([2, 4, 6])
     expect(compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort")).to  eq([1, 2, 3])
+  end
 
+  it "fires ensure blocks after normal or early block termination" do
     # ensure blocks
     expect(compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a")).to eq 1
     expect(compile_and_run("$a = 2; def foo; return; ensure; $a = 1; end; foo; $a")).to eq 1
+  end
 
+  it "handles array element assignment with ||, +, and && operators" do
     # op element assign
     expect(compile_and_run("a = []; [a[0] ||= 4, a[0]]")).to  eq([4, 4])
     expect(compile_and_run("a = [4]; [a[0] ||= 5, a[0]]")).to  eq([4, 4])
     expect(compile_and_run("a = [1]; [a[0] += 3, a[0]]")).to  eq([4, 4])
     expect(compile_and_run("a = {}; a[0] ||= [1]; a[0]")).to  eq([1])
     expect(compile_and_run("a = [1]; a[0] &&= 2; a[0]")).to eq 2
+  end
 
+  it "propagates closure returns to the method body" do
     # non-local return
     expect(compile_and_run("def foo; loop {return 3}; return 4; end; foo")).to eq 3
+  end
 
+  it "handles class variable declaration and access" do
     # class var declaration
     expect(compile_and_run("class Foo; @@foo = 3; end")).to eq 3
     expect(compile_and_run("class Bar; @@bar = 3; def self.bar; @@bar; end; end; Bar.bar")).to eq 3
+  end
 
+  it "handles exceptional flow transfer to rescue blocks" do
     # rescue
     expect(compile_and_run("x = begin; 1; raise; rescue; 2; end")).to eq 2
     expect(compile_and_run("x = begin; 1; raise; rescue TypeError; 2; rescue; 3; end")).to eq 3
     expect(compile_and_run("x = begin; 1; rescue; 2; else; 4; end")).to eq 4
     expect(compile_and_run("def foo; begin; return 4; rescue; end; return 3; end; foo")).to eq 4
+  end
 
+  it "properly resets $! to nil upon normal exit from a rescue" do
     # test that $! is getting reset/cleared appropriately
     $! = nil
     expect(compile_and_run("begin; raise; rescue; end; $!")).to  be_nil
     expect(compile_and_run("1.times { begin; raise; rescue; next; end }; $!")).to  be_nil
     expect(compile_and_run("begin; raise; rescue; begin; raise; rescue; end; $!; end")).to_not be_nil
     expect(compile_and_run("begin; raise; rescue; 1.times { begin; raise; rescue; next; end }; $!; end")).to_not be_nil
+  end
 
+  it "executes ensure wrapping a while body that breaks after the loop has terminated" do
     # break in a while in an ensure
     expect(compile_and_run("begin; x = while true; break 5; end; ensure; end")).to eq 5
+  end
 
+  it "resolves Foo::Bar style constants" do
     # JRUBY-1388, Foo::Bar broke in the compiler
     expect(compile_and_run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3")).to eq 5
+  end
 
+  it "re-runs enclosing block when redo is called from ensure" do
     expect(compile_and_run("def foo; yield; end; x = false; foo { break 5 if x; begin; ensure; x = true; redo; end; break 6}")).to eq 5
+  end
 
+  it "compiles END BLocks" do
     # END block
     expect { compile_and_run("END {}") }.to_not raise_error
+  end
 
+  it "compiles BEGIN blocks" do
     # BEGIN block
     expect(compile_and_run("BEGIN { $begin = 5 }; $begin")).to eq 5
+  end
 
+  it "compiles empty source" do
     # nothing at all!
     expect(compile_and_run("")).to  be_nil
+  end
 
+  it "properly assigns values in masgn without overwriting neighboring values" do
     # JRUBY-2043
     expect(compile_and_run("def foo; 1.times { a, b = [], 5; a[1] = []; return b; }; end; foo")).to eq 5
     expect(compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo")).to  eq({"1" => 2})
+  end
 
+  it "compiles very long code bodies" do
     # JRUBY-2246
     long_src = "a = 1\n"
     5000.times { long_src << "a += 1\n" }
     expect(compile_and_run(long_src)).to eq 5001
+  end
 
+  it "assigns the result of a terminated loop to LHS variable" do
     # variable assignment of various types from loop results
     expect(compile_and_run("a = while true; break 1; end; a")).to eq 1
     expect(compile_and_run("@a = while true; break 1; end; @a")).to eq 1
@@ -679,7 +715,9 @@ ary
     expect(compile_and_run("1 + begin; until false; break 1; end; end")).to eq 2
     expect(compile_and_run("def foo(a); a; end; foo(while false; end)")).to  be_nil
     expect(compile_and_run("def foo(a); a; end; foo(until true; end)")).to be_nil
+  end
 
+  it "constructs symbols on first execution and retrieves them from cache on subsequent executions" do
     # test that 100 symbols compiles ok; that hits both types of symbol caching/creation
     syms = [:a]
     99.times {|i| syms << ('foo' + i.to_s).intern }
@@ -687,7 +725,9 @@ ary
     expect(compile_and_run(syms.inspect)).to eq syms
     # 100 first instances and 100 second instances (caching)
     expect(compile_and_run("[#{syms.inspect},#{syms.inspect}]")).to eq([syms,syms])
+  end
 
+  it "can extend a class contained in a local variable" do
     # class created using local var as superclass
     expect(compile_and_run(<<-EOS)).to eq 'AFromLocal'
     a = Object
@@ -695,32 +735,31 @@ ary
     end
     AFromLocal.to_s
     EOS
+  end
 
-    # self should not always be true
-    module SelfCheck
-      def self_check; if self; true; else; false; end; end
-    end
-
-    [NilClass, FalseClass].each {|c| c.__send__ :include, SelfCheck}
-    nil.self_check.should == false
-    false.self_check.should == false
-
+  it "can compile large literal arrays and hashes" do
     # JRUBY-4757 and JRUBY-2621: can't compile large array/hash
     large_array = (1..10000).to_a.inspect
     large_hash = large_array.clone
     large_hash.gsub!('[', '{')
     large_hash.gsub!(']', '}')
     expect(compile_and_run(large_array)).to  eq(eval(large_array))
+  end
 
+  it "properly spreads incoming array when block args contain multiple variables" do
     # block arg spreading cases
     expect(compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}")).to eq([1])
     expect(compile_and_run("x = nil; [[1]].each {|a| x = a}; x")).to  eq([1])
     expect(compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}")).to  eq([1,2])
+  end
 
+  it "compiles non-expression case statements without an else clause" do
     # non-expr case statement with return with if modified with call
     # broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
     expect(compile_and_run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo")).to eq 3
+  end
 
+  it "assigns named groups in regular expressions to local variables" do
     # named groups with capture
     expect(
     compile_and_run("
@@ -738,10 +777,14 @@ ary
       ary
     end
     foo")).to  eq([nil,'ell', 'o', 'ell'])
+  end
 
+  it "handles complicated splatting at beginning and end of literal array" do
     # chained argscat and argspush
     expect(compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]")).to  eq([1,2,3,1,2,4,5])
+  end
 
+  it "dispatches super and zsuper arguments correctly in the presence of a rest argument" do
     # JRUBY-5871: test that "special" args dispatch along specific-arity path
     test = '
     %w[foo bar].__send__ :to_enum, *[], &nil
@@ -775,7 +818,9 @@ ary
     expect {
       JRuby5871B.new("foo", :each_byte)
     }.to_not raise_error
+  end
 
+  it "allows colon2 const assignment on LHS of masgn" do
     class JRUBY4925
     end
 

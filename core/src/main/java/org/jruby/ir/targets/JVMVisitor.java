@@ -1815,7 +1815,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Bignum(Bignum bignum) {
-        super.Bignum(bignum);    //To change body of overridden methods use File | Settings | File Templates.
+        jvmMethod().pushBignum(bignum.value);
     }
 
     @Override

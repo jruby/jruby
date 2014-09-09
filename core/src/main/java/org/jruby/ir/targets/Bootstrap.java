@@ -92,6 +92,16 @@ public class Bootstrap {
         return site;
     }
 
+    public static CallSite bignum(Lookup lookup, String name, MethodType type, String value) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = Binder
+                .from(RubyBignum.class, ThreadContext.class)
+                .append(value, site)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "bignum");
+        site.setTarget(handle);
+        return site;
+    }
+
     public static CallSite objectArray(Lookup lookup, String name, MethodType type) {
         MethodHandle handle = Binder
                 .from(type)
@@ -281,6 +291,10 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "hash", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
+    public static Handle bignum() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "bignum", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class));
+    }
+
     public static Handle objectArray() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "objectArray", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
@@ -346,6 +360,12 @@ public class Bootstrap {
                         .drop(0, 2)
                         .constant(regexp));
         return regexp;
+    }
+
+    public static RubyBignum bignum(ThreadContext context, String value, MutableCallSite site) {
+        RubyBignum bignum = RubyBignum.newBignum(context.runtime, value);
+        site.setTarget(Binder.from(site.type()).drop(0).constant(bignum));
+        return bignum;
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {

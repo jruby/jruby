@@ -296,14 +296,92 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public OutputStream getOutStream() {
-        return Channels.newOutputStream(openFile.writeChannel());
+        // FIXME: Could be faster by caching bytelist or string rather than creating for every call
+        return new OutputStream() {
+            final Ruby runtime = getRuntime();
+
+            @Override
+            public void write(int b) throws IOException {
+                putc(runtime.getCurrentContext(), runtime.newFixnum(b));
+            }
+
+            @Override
+            public void write(byte[] b) throws IOException {
+                RubyIO.this.write(runtime.getCurrentContext(), RubyString.newStringNoCopy(runtime, b));
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                RubyIO.this.write(runtime.getCurrentContext(), RubyString.newStringNoCopy(runtime, b, off, len));
+            }
+
+            @Override
+            public void flush() throws IOException {
+                RubyIO.this.flush(runtime.getCurrentContext());
+            }
+
+            @Override
+            public void close() throws IOException {
+                RubyIO.this.close();
+            }
+        };
     }
 
     public InputStream getInStream() {
-        return Channels.newInputStream(openFile.readChannel());
+        // FIXME: Could be faster by caching bytelist or string rather than creating for every call
+        return new InputStream() {
+            final Ruby runtime = getRuntime();
+
+            @Override
+            public int read() throws IOException {
+                return getByte(runtime.getCurrentContext());
+            }
+
+            @Override
+            public int read(byte[] b) throws IOException {
+                return read(b, 0, b.length);
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                RubyFixnum c = runtime.newFixnum(len);
+                RubyString s = RubyString.newStringNoCopy(runtime, b, off, len);
+                IRubyObject i = RubyIO.this.read(runtime.getCurrentContext(), c, s);
+                if (i.isNil()) return -1;
+                return s.size();
+            }
+
+            @Override
+            public long skip(long n) throws IOException {
+                return seek(runtime.getCurrentContext(), runtime.newFixnum(PosixShim.SEEK_CUR), runtime.newFixnum(n)).getLongValue();
+            }
+
+            @Override
+            public int available() throws IOException {
+                if (RubyIO.this instanceof RubyFile) {
+                    long size = ((RubyFixnum)((RubyFile)RubyIO.this).size(runtime.getCurrentContext())).getLongValue();
+                    if (size == 0) return 0;
+                    if (size >= 0) return (int)(size - pos(runtime.getCurrentContext()).getLongValue());
+                }
+                return 0;
+            }
+
+            @Override
+            public void close() throws IOException {
+                RubyIO.this.close();
+            }
+        };
     }
 
+    /**
+     * Get the underlying channel from this IO object. Note that IO buffers data internally, so the channel returned
+     * here may have been read into those buffers. If the channel and the IO are both being used at the same time, the
+     * stream will get out of sync.
+     *
+     * @return the underlying channel for this IO
+     */
     public Channel getChannel() {
+        // FIXME: Do we want to make a faux channel that is backed by IO's buffering? Or turn buffering off?
         return openFile.channel();
     }
 
@@ -2368,6 +2446,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_getbyte
     @JRubyMethod
     public IRubyObject getbyte(ThreadContext context) {
+        int c = getByte(context);
+
+        if (c == -1) return context.nil;
+
+        return RubyNumeric.int2fix(context.runtime, c & 0xff);
+    }
+
+    // rb_io_getbyte
+    public int getByte(ThreadContext context) {
         int c;
 
         OpenFile fptr = getOpenFileChecked();
@@ -2382,12 +2469,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            }
 //        }
         if (fptr.fillbuf(context) < 0) {
-            return context.nil;
+            return -1;
         }
         fptr.rbuf.off++;
         fptr.rbuf.len--;
-        c = fptr.rbuf.ptr[fptr.rbuf.off-1];
-        return RubyNumeric.int2fix(context.runtime, c & 0xff);
+        return fptr.rbuf.ptr[fptr.rbuf.off-1] & 0xFF;
     }
 
     // rb_io_readbyte
