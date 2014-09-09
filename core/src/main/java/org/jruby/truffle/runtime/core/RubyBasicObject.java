@@ -194,4 +194,8 @@ public class RubyBasicObject extends ObjectStorage {
         return method.getCallTarget().call(RubyArguments.pack(method, method.getDeclarationFrame(), this, block, arguments));
     }
 
+    public boolean isNumeric() {
+        return getRubyClass().assignableTo(getRubyClass().getContext().getCoreLibrary().getNumericClass());
+    }
+
 }

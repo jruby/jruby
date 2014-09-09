@@ -35,6 +35,10 @@ public class BoxingNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean seenDouble = false;
     @CompilerDirectives.CompilationFinal private boolean seenBigInteger = false;
 
+    public BoxingNode(RubyContext context, SourceSection sourceSection) {
+        this(context, sourceSection, null);
+    }
+
     public BoxingNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;

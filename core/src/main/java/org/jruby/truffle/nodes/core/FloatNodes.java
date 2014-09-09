@@ -435,6 +435,24 @@ public abstract class FloatNodes {
 
     }
 
+    @CoreMethod(names = "nan?", maxArgs = 0)
+    public abstract static class NaNNode extends CoreMethodNode {
+
+        public NaNNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NaNNode(NaNNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean nan(double value) {
+            return Double.isNaN(value);
+        }
+
+    }
+
     @CoreMethod(names = "nonzero?", maxArgs = 0)
     public abstract static class NonZeroNode extends CoreMethodNode {
 

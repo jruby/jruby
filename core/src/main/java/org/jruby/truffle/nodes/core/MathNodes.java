@@ -12,9 +12,16 @@ package org.jruby.truffle.nodes.core;
 import java.math.*;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
+import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @CoreClass(name = "Math")
 public abstract class MathNodes {
@@ -194,16 +201,28 @@ public abstract class MathNodes {
     @CoreMethod(names = "sin", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class SinNode extends CoreMethodNode {
 
+        @Child protected BoxingNode box;
+        @Child protected DispatchHeadNode floatNode;
+
         public SinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            box = new BoxingNode(context, sourceSection);
+            floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
         public SinNode(SinNode prev) {
             super(prev);
+            box = prev.box;
+            floatNode = prev.floatNode;
         }
 
         @Specialization
         public double sin(int a) {
+            return Math.sin(a);
+        }
+
+        @Specialization
+        public double sin(long a) {
             return Math.sin(a);
         }
 
@@ -215,6 +234,29 @@ public abstract class MathNodes {
         @Specialization
         public double sin(double a) {
             return Math.sin(a);
+        }
+
+        @Fallback
+        public double sin(VirtualFrame frame, Object a) {
+            final RubyBasicObject boxed = box.box(a);
+
+            if (boxed.isNumeric()) {
+                try {
+                    return Math.sin(floatNode.callFloat(frame, box.box(a), "to_f", null));
+                } catch (UseMethodMissingException e) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                            box.box(a).getRubyClass().getName(),
+                            getContext().getCoreLibrary().getFloatClass().getName(),
+                            this));
+                }
+            } else {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                        box.box(a).getRubyClass().getName(),
+                        getContext().getCoreLibrary().getFloatClass().getName(),
+                        this));
+            }
         }
 
     }

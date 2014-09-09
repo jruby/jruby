@@ -320,16 +320,6 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 
-        bignumClass.getSingletonClass(null).undefMethod(null, "new");
-        falseClass.getSingletonClass(null).undefMethod(null, "new");
-        fixnumClass.getSingletonClass(null).undefMethod(null, "new");
-        floatClass.getSingletonClass(null).undefMethod(null, "new");
-        integerClass.getSingletonClass(null).undefMethod(null, "new");
-        nilClass.getSingletonClass(null).undefMethod(null, "new");
-        numericClass.getSingletonClass(null).undefMethod(null, "new");
-        trueClass.getSingletonClass(null).undefMethod(null, "new");
-        encodingClass.getSingletonClass(null).undefMethod(null, "new");
-
         if (Options.TRUFFLE_LOAD_CORE.load()) {
             final String[] files = new String[]{
                     "jruby/truffle/core/kernel.rb"
@@ -411,7 +401,7 @@ public class CoreLibrary {
     }
 
     public RubyException runtimeError(String message, Node currentNode) {
-        return new RubyException(runtimeErrorClass, context.makeString(String.format("RuntimeError: %s", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(runtimeErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException frozenError(String className, Node currentNode) {
@@ -419,19 +409,15 @@ public class CoreLibrary {
     }
 
     public RubyException argumentError(String message, Node currentNode) {
-        return new RubyException(argumentErrorClass, context.makeString(String.format("ArgumentError: %s", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(argumentErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException argumentError(int passed, int required, Node currentNode) {
-        return argumentError(String.format("ArgumentError: wrong number of arguments (%d for %d)", passed, required), currentNode);
-    }
-
-    public RubyException argumentErrorUncaughtThrow(Object tag, Node currentNode) {
-        return argumentError(String.format("ArgumentError: uncaught throw `%s'", tag), currentNode);
+        return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
     public RubyException localJumpError(String message, Node currentNode) {
-        return new RubyException(localJumpErrorClass, context.makeString(String.format("LocalJumpError: %s", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(localJumpErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException unexpectedReturn(Node currentNode) {
@@ -443,47 +429,39 @@ public class CoreLibrary {
     }
 
     public RubyException typeError(String message, Node currentNode) {
-        return new RubyException(typeErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(typeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
-        return typeError(String.format("TypeError: %s#%s should return %s", object, method, expectedType), currentNode);
+        return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
-    public RubyException typeError(String from, String to, Node currentNode) {
-        return typeError(String.format("TypeError: can't convert %s to %s", from, to), currentNode);
+    public RubyException typeErrorCantConvertTo(String from, String to, Node currentNode) {
+        return typeError(String.format("can't convert %s to %s", from, to), currentNode);
+    }
+
+    public RubyException typeErrorCantConvertInto(String from, String to, Node currentNode) {
+        return typeError(String.format("can't convert %s into %s", from, to), currentNode);
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {
-        return typeError(String.format("TypeError: %s is not a %s", value, expectedType), currentNode);
-    }
-
-    public RubyException typeErrorNeedsToBe(String name, String expectedType, Node currentNode) {
-        return typeError(String.format("TypeError: %s needs to be %s", name, expectedType), currentNode);
-    }
-
-    public RubyException rangeError(String message, Node currentNode) {
-        return new RubyException(rangeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+        return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
     }
 
     public RubyException nameError(String message, Node currentNode) {
-        return new RubyException(nameErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException nameErrorUninitializedConstant(String name, Node currentNode) {
-        return nameError(String.format("NameError: uninitialized constant %s", name), currentNode);
+        return nameError(String.format("uninitialized constant %s", name), currentNode);
     }
 
     public RubyException nameErrorNoMethod(String name, String object, Node currentNode) {
-        return nameError(String.format("NameError: undefined local variable or method `%s' for %s", name, object), currentNode);
+        return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
     }
 
     public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
         return nameError(String.format("`%s' is not allowable as an instance variable name", name), currentNode);
-    }
-
-    public RubyException nameErrorUncaughtThrow(Object tag, Node currentNode) {
-        return nameError(String.format("NameError: uncaught throw `%s'", tag), currentNode);
     }
 
     public RubyException noMethodError(String message, Node currentNode) {
@@ -491,11 +469,11 @@ public class CoreLibrary {
     }
 
     public RubyException noMethodError(String name, String object, Node currentNode) {
-        return noMethodError(String.format("NameError: undefined method `%s' for %s", name, object), currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, object), currentNode);
     }
 
     public RubyException privateNoMethodError(String name, String object, Node currentNode) {
-        return noMethodError(String.format("NoMethodError: private Method method `%s' called for %s", name, object), currentNode);
+        return noMethodError(String.format("private Method method `%s' called for %s", name, object), currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {
@@ -503,7 +481,7 @@ public class CoreLibrary {
     }
 
     public RubyException loadErrorCannotLoad(String name, Node currentNode) {
-        return loadError(String.format("LoadError: cannot load such file -- %s", name), currentNode);
+        return loadError(String.format("cannot load such file -- %s", name), currentNode);
     }
 
     public RubyException zeroDivisionError(Node currentNode) {
@@ -511,7 +489,7 @@ public class CoreLibrary {
     }
 
     public RubyException syntaxError(String message, Node currentNode) {
-        return new RubyException(syntaxErrorClass, context.makeString(String.format("SyntaxError: %s ", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(syntaxErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {
@@ -696,4 +674,7 @@ public class CoreLibrary {
         return arrayMaxBlock;
     }
 
+    public RubyClass getNumericClass() {
+        return numericClass;
+    }
 }
