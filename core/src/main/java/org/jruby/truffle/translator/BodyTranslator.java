@@ -42,6 +42,7 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.cli.Options;
 
 import java.util.*;
 
@@ -816,6 +817,11 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFCallNode(org.jruby.ast.FCallNode node) {
+        if (Options.TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT.load() && node.getName().equals("truffle_assert_constant")) {
+            SourceSection sourceSection = translate(node.getPosition());
+            return AssertCompilationConstantNodeFactory.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
+        }
+
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
 

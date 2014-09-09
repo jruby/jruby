@@ -150,6 +150,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
     public static final Option<Integer> TRUFFLE_DISPATCH_MEGAMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.megamorphic.max", 255, "Maximum size of a megamorphic call site cache.");
     public static final Option<Boolean> TRUFFLE_LOAD_PRINT = bool(TRUFFLE, "truffle.load.print", false, "Print the name of files as they're loaded.");
+    public static final Option<Boolean> TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT = bool(TRUFFLE, "truffle.debug.enable_assert_constant", false, "Enable special 'truffle_assert_constant' form.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
@@ -305,4 +306,37 @@ public class Options {
         // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
         return false;
     }
+
+    private static enum SearchMode {
+        PREFIX,
+        CONTAINS
+    }
+
+    public static void listPrefix(String prefix) {
+        list(SearchMode.PREFIX, prefix);
+    }
+
+    public static void listContains(String substring) {
+        list(SearchMode.CONTAINS, substring);
+    }
+
+    private static void list(SearchMode mode, String string) {
+        for (Option option : PROPERTIES) {
+            boolean include = false;
+
+            switch (mode) {
+                case PREFIX:
+                    include = option.shortName().startsWith(string);
+                    break;
+                case CONTAINS:
+                    include = option.shortName().contains(string);
+                    break;
+            }
+
+            if (include) {
+                System.out.printf("%s=%s\n", option.shortName(), option.load());
+            }
+        }
+    }
+
 }

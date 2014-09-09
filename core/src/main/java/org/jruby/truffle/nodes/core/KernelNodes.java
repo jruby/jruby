@@ -595,8 +595,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public NilPlaceholder print(VirtualFrame frame, Object[] args) {
-            notDesignedForCompilation();
-
             final ThreadManager threadManager = getContext().getThreadManager();
 
             final RubyThread runningThread = threadManager.leaveGlobalLock();
@@ -735,6 +733,24 @@ public abstract class KernelNodes {
             final RubyBasicObject exception = exceptionClass.newInstance(this);
             initialize.call(frame, exception, "initialize", null, message);
             throw new RaiseException(exception);
+        }
+
+    }
+
+    @CoreMethod(names = "rand", isModuleMethod = true, needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    public abstract static class RandNode extends CoreMethodNode {
+
+        public RandNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RandNode(RandNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double rand() {
+            return Math.random();
         }
 
     }
