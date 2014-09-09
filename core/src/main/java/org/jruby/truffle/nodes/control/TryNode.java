@@ -43,8 +43,6 @@ public class TryNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         while (true) {
             try {
                 final Object result = tryPart.execute(frame);
