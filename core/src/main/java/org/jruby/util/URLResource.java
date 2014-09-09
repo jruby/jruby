@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Set;
 
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 
+import org.jruby.Ruby;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
@@ -157,7 +157,7 @@ public class URLResource implements FileResource {
         return new ChannelDescriptor(openInputStream(), flags);
     }
 
-    public static FileResource createClassloaderURI(String pathname) {
+    public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
         if (pathname.contains("..")) {
             try
             {
@@ -170,9 +170,8 @@ public class URLResource implements FileResource {
         }
         URL url = Thread.currentThread().getContextClassLoader().getResource(pathname);
         // do not find anything in current directory, i.e. file URIs
-        // TODO better way to detect if pathname is found on "."
-        if( url != null && url.getProtocol().equals("file") && !pathname.contains( "/" )){
-            System.err.println( url );
+        if( url != null && url.getProtocol().equals("file") && runtime != null && 
+                url.getFile().equals(runtime.getCurrentDirectory() + "/" + pathname)) { 
             url = null;
         }
         String[] files = listClassLoaderFiles(pathname);
@@ -182,14 +181,14 @@ public class URLResource implements FileResource {
                                files);
     }
 
-    public static FileResource create(String pathname)
+    public static FileResource create(Ruby runtime, String pathname)
     {
         if (!pathname.startsWith(URI)) {
             return null;
         }
         pathname = pathname.substring(URI.length());
         if (pathname.startsWith(CLASSLOADER)) {
-            return createClassloaderURI(pathname.substring(CLASSLOADER.length()));
+            return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()));
         }
         return createRegularURI(pathname);
     }
