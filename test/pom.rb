@@ -232,4 +232,24 @@ project 'JRuby Integration Tests' do
 
   end
 
+  profile 'truffle-test-pe' do
+
+    plugin :antrun do
+      execute_goals( 'run',
+                     :id => 'rake',
+                     :phase => 'test',
+                     :configuration => [ xml(
+                      '<target>' + 
+                        '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
+                          '<arg value="-J-G:-TruffleBackgroundCompilation" />' +
+                          '<arg value="-J-G:+TruffleCompilationExceptionsAreFatal" />' +
+                          '<arg value="-X+T" />' +
+                          '<arg value="-Xtruffle.debug.enable_assert_constant=true" />' +
+                          '<arg value="test/truffle/pe/pe.rb" />' +
+                        '</exec>' +
+                      '</target>' ) ] )
+    end
+
+  end
+
 end

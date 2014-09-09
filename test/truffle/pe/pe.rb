@@ -6,9 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# Run with:
-# JAVACMD=../graalvm-jdk1.8.0/bin/java bin/jruby -J-G:-TruffleBackgroundCompilation -J-G:+TruffleCompilationExceptionsAreFatal -X+T -Xtruffle.debug.enable_assert_constant=true test/truffle/pe/pe.rb
-
 # This file relies on some implementation details of JRuby+Truffle and Truffle,
 # so be careful as you edit. Every block that you pass to example must be
 # unique - so you can't always build up examples by running in a loop or using
