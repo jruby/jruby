@@ -92,7 +92,7 @@ class JarFileStat implements FileStat {
 
     @Override
     public boolean isFile() {
-        return !resource.isDirectory();
+        return resource.isFile();
     }
 
     @Override

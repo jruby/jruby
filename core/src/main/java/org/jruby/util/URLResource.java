@@ -149,6 +149,9 @@ public class URLResource implements FileResource {
 
     @Override
     public ChannelDescriptor openDescriptor(ModeFlags flags, int perm) throws ResourceException {
+        if (!exists()) {
+            throw new ResourceException.NotFound(absolutePath());
+        }
         return new ChannelDescriptor(openInputStream(), flags);
     }
 
