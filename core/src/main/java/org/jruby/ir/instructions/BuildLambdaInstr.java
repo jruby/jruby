@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyProc;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -12,6 +13,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import org.jruby.ir.IRFlags;
 
 import java.util.Map;
 
@@ -49,6 +52,12 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     @Override
     public void updateResult(Variable v) {
         this.result = v;
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.BINDING_HAS_ESCAPED);
+        return true;
     }
 
     @Override
