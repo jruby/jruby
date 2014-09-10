@@ -673,7 +673,9 @@ public class IRRuntimeHelpers {
                     } else if (inBindingEval) {
                         // Binding evals are special!
                         return ds.getStaticScope().getModule();
-                    } else if (scopeType.isMethod()) {
+                    } else if (scopeType == IRScopeType.CLASS_METHOD) {
+                        return (RubyModule)self;
+                    } else if (scopeType == IRScopeType.INSTANCE_METHOD) {
                         return self.getMetaClass();
                     } else {
                         switch (scopeType) {
