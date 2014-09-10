@@ -1,10 +1,10 @@
-describe "GH-1961: Array#product" do
+describe "GH-1962: Kernel::Array" do
   it "coerces Array-like objects that only define method_missing" do
     o = Object.new
     def o.method_missing(name, *args)
-      [2]
+      []
     end
 
-    expect([1].product(o)).to eq([[1,2]])
+    expect(Array(o)).to eq([])
   end
 end
