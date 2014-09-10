@@ -146,10 +146,12 @@ class TestDir < Test::Unit::TestCase
     jar_file = jar_file_with_spaces
 
     ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
-      assert $__glob_value.include?(f), "#{f} not found in #{$__glob_value.inspect}"
+      ff = f.sub(/^.*:/, "").gsub(/ /, '%20')
+      assert $__glob_value.collect{ |e| e.sub(/^.*:/, "").gsub(/ /, '%20')}.include?(ff), "#{ff} not found in #{$__glob_value.inspect}"
     end
     ["#{jar_file}/abc", "#{jar_file}/abc/foo.rb", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
-      assert $__glob_value2.include?(f)
+      ff = f.sub(/^.*:/, "").gsub(/ /, '%20')
+      assert $__glob_value2.collect{ |e| e.sub(/^.*:/, "").gsub(/ /, '%20')}.include?(ff), "#{ff} not found in #{$__glob_value2.inspect}"
     end
     assert_equal ["#{jar_file}/abc"], Dir["#{jar_file}/abc"]
   end
