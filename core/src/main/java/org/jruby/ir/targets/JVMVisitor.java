@@ -1600,6 +1600,14 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
+            case IS_DEFINED_CALL:
+                jvmMethod().loadContext();
+                jvmMethod().loadSelf();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedCall", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             default:
                 throw new RuntimeException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
