@@ -26,8 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -43,7 +41,6 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingService;
 
 public class TypeConverter {
     /**
