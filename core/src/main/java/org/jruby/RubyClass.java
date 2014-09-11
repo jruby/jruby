@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ivars.VariableAccessor;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -624,30 +625,72 @@ public class RubyClass extends RubyModule {
     }
 
     public IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
-        DynamicMethod method = searchMethod(name);
-        if(method.isUndefined()) {
-            DynamicMethod methodMissing = searchMethod("method_missing");
-            if(methodMissing.isUndefined() || methodMissing.equals(context.runtime.getDefaultMethodMissing())) {
-                return null;
-            }
+        RubyClass klass = self.getMetaClass();
+        DynamicMethod me;
+        if (!checkFuncallRespondTo(context, self.getMetaClass(), self, name))
+            return null;
 
-            try {
-                return Helpers.callMethodMissing(context, self, method.getVisibility(), name, CallType.FUNCTIONAL, Block.NULL_BLOCK);
-            } catch(RaiseException e) {
-                if(context.runtime.getNoMethodError().isInstance(e.getException())) {
-                    if(self.respondsTo(name)) {
-                        throw e;
-                    } else {
-                        // we swallow, so we also must clear $!
-                        context.setErrorInfo(context.nil);
-                        return null;
-                    }
-                } else {
-                    throw e;
-                }
+        me = searchMethod(name);
+        if (!checkFuncallCallable(context, me)) {
+            return checkFuncallMissing(context, klass, self, name);
+        }
+        return me.call(context, self, klass, name);
+    }
+
+    // MRI: check_funcall_exec
+    private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = context.runtime.newSymbol(name);
+        return self.callMethod(context, "method_missing", newArgs);
+    }
+
+    // MRI: check_funcall_failed
+    private static IRubyObject checkFuncallFailed(ThreadContext context, IRubyObject self, String name, RubyClass expClass, IRubyObject... args) {
+        if (self.respondsTo(name)) {
+            throw context.runtime.newRaiseException(expClass, name);
+        }
+        return null;
+    }
+
+    // MRI: check_funcall_respond_to
+    private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
+        Ruby runtime = context.runtime;
+        RubyClass defined_class;
+        DynamicMethod me = klass.searchMethod("respond_to?");
+
+        if (me != null && !me.isUndefined()) {
+            Arity arity = me.getArity();
+
+            if (arity.getValue() > 2)
+                throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arity + ")");
+
+            IRubyObject result = me.call(context, recv, klass, "respond_to?", runtime.newString(mid), runtime.getTrue());
+            if (!result.isTrue()) {
+                return false;
             }
         }
-        return method.call(context, self, this, name);
+        return true;
+    }
+
+    // MRI: check_funcall_callable
+    public static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method) {
+        // FIXME: MRI actually checks protectedness here too
+        return !method.getVisibility().isPrivate();
+    }
+
+    private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
+        Ruby runtime = context.runtime;
+        if (klass.isMethodBuiltin("method_missing")) {
+            return null;
+        }
+        else {
+            try {
+                return checkFuncallExec(context, self, method, args);
+            } catch (Exception e) {
+                return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
+            }
+        }
     }
     
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
