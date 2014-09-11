@@ -279,32 +279,22 @@ class LibrarySearcher {
             try {
                 URL url;
                 if (location.startsWith(URLResource.URI)){
-                    url = runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(location));
-                    runtime.getLoadService().addPath("jar:"+ url.toString() + "!/");
-                    url = null;
+                    url = URLResource.getResourceURL(runtime, location);
                 }
                 else {
                     // the JRubyClassLoaderResource
-                    url = runtime.getJRubyClassLoader().getResource(location);
-                    if (url == null) {
-                        File f = new File(location);
-                        if (f.exists() || location.contains( "!")){
-                            url = f.toURI().toURL();
-                            if ( location.contains( "!") ) {
-                                url = new URL( "jar:" + url );
-                            }
-                        }
-                        else {
-                            url = new URL(location);
+                    File f = new File(location);
+                    if (f.exists() || location.contains( "!")){
+                        url = f.toURI().toURL();
+                        if ( location.contains( "!") ) {
+                            url = new URL( "jar:" + url );
                         }
                     }
+                    else {
+                        url = new URL(location);
+                    }
                 }
-                if ( url != null ) {
-                    // TODO share this code with RubyClassPathVariable
-                    url = runtime.getJRubyClassLoader().addURLNoIndex(url);
-                    String path = (url.getProtocol() == "jar" ? url.toString() : "jar:" + url.toString()) + "!/";
-                    runtime.getLoadService().addPath(path);
-                }
+                url = runtime.getJRubyClassLoader().addURLNoIndex(runtime, url);
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);
             }

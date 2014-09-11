@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.jruby.CompatVersion;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInstanceConfig.CompileMode;
@@ -44,6 +45,7 @@ import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.PropertyName;
 import org.jruby.embed.ScriptingContainer;
+import org.jruby.ext.nkf.Options;
 import org.jruby.util.SafePropertyAccessor;
 
 import static org.jruby.util.URLUtil.getPath;
@@ -201,10 +203,15 @@ public class SystemPropertyCatcher {
             return jrubyhome;
         } else if ((jrubyhome = SafePropertyAccessor.getProperty("jruby.home")) != null) {
             return jrubyhome;
-        } else if ((jrubyhome = findFromJar(instance)) != null) {
-            return jrubyhome;
         } else {
-            return null;
+            if (org.jruby.util.cli.Options.LEGACY_LOAD_SERVICE.load()) {
+                if ((jrubyhome = findFromJar(instance)) != null) {
+                    return jrubyhome;
+                } else {
+                    return null;
+                }
+            }
+            return "uri:classloader:/META-INF/jruby.home";
         }
     }
 
@@ -249,6 +256,10 @@ public class SystemPropertyCatcher {
     public static List<String> findLoadPaths() {
         String paths = SafePropertyAccessor.getProperty(PropertyName.CLASSPATH.toString());
         List<String> loadPaths = new ArrayList<String>();
+        // do not add any jars to LOAD_PATH unless configured to do so
+        if (!org.jruby.util.cli.Options.ADD_JARS_TO_LOAD_PATH.load()) {
+            return loadPaths;
+        }
         if (paths == null) {
             paths = SafePropertyAccessor.getProperty("java.class.path");
         }

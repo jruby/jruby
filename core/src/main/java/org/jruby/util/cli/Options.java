@@ -147,6 +147,8 @@ public class Options {
     public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", false, "Attempt to expand instance vars into Java fields");
     public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", true, "Prefer IPv4 network stack");
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
+    public static final Option<Boolean> ADD_JARS_TO_LOAD_PATH = bool(MISCELLANEOUS, "add.jars.toLoadPath", true, "Add required to LOAD_PATH for the embdded ruby scripts");
+    public static final Option<Boolean> LEGACY_LOAD_SERVICE = bool(MISCELLANEOUS, "legacy.loadService", false, "Use legacy LoadService to find resources on classpath");
 
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");

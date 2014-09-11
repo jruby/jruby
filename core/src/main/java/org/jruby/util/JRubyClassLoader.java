@@ -50,6 +50,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -77,7 +79,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         super(new URL[0], parent);
     }
 
-    public URL addURLNoIndex(URL url) {
+    public URL addURLNoIndex(Ruby runtime, URL url) {
         // if we have such embedded jar within a jar, we copy it to temp file and use the
         // the temp file with the super URLClassLoader
         if ( url.toString().contains( "!/" )) {
@@ -104,7 +106,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
             }
             finally {
                 // make sure we close everything
-                if ( out != null ) {
+                if (out != null) {
                     try
                     {
                         out.close();
@@ -113,7 +115,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
                     {
                     }
                 }
-                if ( in != null ) {
+                if (in != null) {
                     try
                     {
                         in.close();
@@ -124,7 +126,11 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
                 }
             }
         }
-        super.addURL( url );
+        super.addURL(url);
+        if (!RubyInstanceConfig.LEGACY_LOAD_SERVICE && runtime.getInstanceConfig().isAddJarsToLoadPath()) {
+            String p = (url.getProtocol() == "jar" ? url.toString() : "jar:" + url.toString()) + "!";
+            runtime.getLoadService().addPaths(p);
+        }
         return url;
     }
 

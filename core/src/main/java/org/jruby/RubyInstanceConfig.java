@@ -905,6 +905,20 @@ public class RubyInstanceConfig {
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
+
+    /**
+     * @see Options#CLI_DEBUG
+     */
+    public boolean isAddJarsToLoadPath() {
+        return addJarsToLoadPath;
+    }
+
+    /**
+     * @see Options#CLI_DEBUG
+     */
+    public void setAddJarsToLoadPath(boolean addJarsToLoadPath) {
+        this.addJarsToLoadPath = addJarsToLoadPath;
+    }
     
     /**
      * @see Options#CLI_PARSER_DEBUG
@@ -1478,8 +1492,8 @@ public class RubyInstanceConfig {
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
     private String profilingService;
     
-    private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
-    private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
+    private ClassLoader thisLoader = RubyInstanceConfig.class.getClassLoader();
+    private ClassLoader loader = thisLoader == null ? Thread.currentThread().getContextClassLoader() : thisLoader;
 
     private ClassCache<Script> classCache;
 
@@ -1498,6 +1512,7 @@ public class RubyInstanceConfig {
     private boolean split = Options.CLI_AUTOSPLIT.load();
     private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();
     private boolean debug = Options.CLI_DEBUG.load();
+    private boolean addJarsToLoadPath = Options.ADD_JARS_TO_LOAD_PATH.load();
     private boolean showVersion = Options.CLI_VERSION.load();
     private boolean showBytecode = Options.CLI_BYTECODE.load();
     private boolean showCopyright = Options.CLI_COPYRIGHT.load();
@@ -1810,7 +1825,9 @@ public class RubyInstanceConfig {
     public static final boolean JIT_LOADING_DEBUG = Options.JIT_DEBUG.load();
 
     public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
-    
+
+    public static final boolean LEGACY_LOAD_SERVICE = Options.LEGACY_LOAD_SERVICE.load();
+
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
     public static final boolean LOG_BACKTRACES = Options.LOG_BACKTRACES.load();
