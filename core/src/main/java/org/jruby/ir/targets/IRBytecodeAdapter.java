@@ -110,6 +110,18 @@ public class IRBytecodeAdapter {
         adapter.aload(3);
     }
 
+    public void loadBlock() {
+        adapter.aload(4);
+    }
+
+    public void loadSuperName() {
+        adapter.aload(5);
+    }
+
+    public void loadBlockType() {
+        adapter.aload(6);
+    }
+
     public void storeLocal(int i) {
         adapter.astore(i);
     }
