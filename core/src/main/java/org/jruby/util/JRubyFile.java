@@ -75,25 +75,18 @@ public class JRubyFile extends JavaSecuredFile {
         FileResource emptyResource = EmptyFileResource.create(pathname);
         if (emptyResource != null) return emptyResource;
 
+        if (pathname.startsWith("uri:")) return URLResource.create(runtime, pathname);
+
         // This will work against anything potentially containing a '!' in it and does not require a scheme.
         // (see test/test_java_on_load_path.rb: $LOAD_PATH << "test/test_jruby_1332.jar!"; require 'test_jruby_1332.rb'
         FileResource jarResource = JarResource.create(pathname);
         if (jarResource != null) return jarResource;
 
-        if (pathname.contains(":")) { // scheme-oriented resources
-            if (pathname.startsWith("uri:")) return URLResource.create(runtime, pathname);
+        if (pathname.startsWith("file:")) {
+            pathname = pathname.substring(5);
 
-            if (pathname.startsWith("file:")) {
-                pathname = pathname.substring(5);
-
-                if ("".equals(pathname)) return EmptyFileResource.create(pathname);
-            }
+            if ("".equals(pathname)) return EmptyFileResource.create(pathname);
         }
-
-//        if (runtime != null) {
-//            FileResource jrubyClassloaderResource = JRubyClassloaderResource.create(runtime, pathname);
-//            if (jrubyClassloaderResource != null) return jrubyClassloaderResource;
-//        }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
         return new RegularFileResource(posix, create(cwd, pathname));
