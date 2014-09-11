@@ -47,30 +47,29 @@ import org.jruby.runtime.encoding.EncodingService;
 
 public class TypeConverter {
     /**
-     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
+     * Converts this object to type 'target' using 'convertMethod' method (MRI: convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethodIndex the fast index to use for calling the method
      * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
+     * @param raise will throw an Error if conversion does not work
      * @return the converted value
      */
     @Deprecated
     public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
         if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
-        
+
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
     }
 
     /**
-     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
+     * Converts this object to type 'target' using 'convertMethod' method (MRI: convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
+     * @param raise will throw an Error if conversion does not work
      * @return the converted value
      */
     public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
@@ -80,13 +79,12 @@ public class TypeConverter {
     }
 
     /**
-     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type 1.9).
+     * Converts this object to type 'target' using 'convertMethod' method (MRI: convert_type 1.9).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
+     * @param raise will throw an Error if conversion does not work
      * @return the converted value
      */
     public static final IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
@@ -96,10 +94,10 @@ public class TypeConverter {
     }
 
     /**
-     * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type).
+     * Converts this object to type 'target' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethodIndex the fast index to use for calling the method
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
@@ -113,10 +111,10 @@ public class TypeConverter {
     }
 
     /**
-     * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type).
+     * Converts this object to type 'target' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
@@ -128,10 +126,10 @@ public class TypeConverter {
     }
 
     /**
-     * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type in 1.9).
+     * Converts this object to type 'target' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type in 1.9).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
@@ -195,7 +193,7 @@ public class TypeConverter {
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethodIndex the fast index to use for calling the method
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
@@ -214,8 +212,7 @@ public class TypeConverter {
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
@@ -232,8 +229,7 @@ public class TypeConverter {
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
@@ -250,7 +246,7 @@ public class TypeConverter {
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
