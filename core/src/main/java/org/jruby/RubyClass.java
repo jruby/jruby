@@ -659,7 +659,9 @@ public class RubyClass extends RubyModule {
         RubyClass defined_class;
         DynamicMethod me = klass.searchMethod("respond_to?");
 
-        if (me != null && !me.isUndefined()) {
+        // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
+        //       respond_to_missing? Same effect, I believe.
+        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
             Arity arity = me.getArity();
 
             if (arity.getValue() > 2)
@@ -675,8 +677,8 @@ public class RubyClass extends RubyModule {
 
     // MRI: check_funcall_callable
     public static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method) {
-        // FIXME: MRI actually checks protectedness here too
-        return !method.getVisibility().isPrivate();
+        // FIXME: MRI actually checks protectedness here too and has more complex private logic
+        return method != null && !method.isUndefined() && !method.getVisibility().isPrivate();
     }
 
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
