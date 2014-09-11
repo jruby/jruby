@@ -1810,7 +1810,25 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Backref(Backref backref) {
-        super.Backref(backref);    //To change body of overridden methods use File | Settings | File Templates.
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "getBackRef", sig(IRubyObject.class));
+
+        switch (backref.type) {
+            case '&':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "last_match", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '`':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_pre", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '\'':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_post", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            case '+':
+                jvmAdapter().invokestatic(p(RubyRegexp.class), "match_last", sig(IRubyObject.class, IRubyObject.class));
+                break;
+            default:
+                assert false: "backref with invalid type";
+        }
     }
 
     @Override
