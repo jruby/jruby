@@ -28,6 +28,7 @@ package org.jruby.util;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -247,6 +248,11 @@ public class TypeConverter {
         return (RubyIO)convertToType(obj, runtime.getIO(), "to_io");
     }
 
+    // MRI: rb_check_array_type
+    public static IRubyObject checkArrayType(IRubyObject self) {
+        return TypeConverter.convertToTypeWithCheck19(self, self.getRuntime().getArray(), "to_ary");
+    }
+
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
         if (raise) throw obj.getRuntime().newTypeError("can't convert " + typeAsString(obj) + " into " + target);
 
@@ -312,6 +318,24 @@ public class TypeConverter {
             return val.convertToInteger("to_i");
         }
         return tmp;
+    }
+
+    // MRI: rb_Array
+    public static RubyArray rb_Array(ThreadContext context, IRubyObject val) {
+        IRubyObject tmp = checkArrayType(val);
+
+        if (tmp.isNil()) {
+            tmp = convertToTypeWithCheck19(val, context.runtime.getArray(), "to_a");
+            if (tmp.isNil()) {
+                return context.runtime.newArray(val);
+            }
+        }
+        return (RubyArray)tmp;
+    }
+
+    // MRI: to_ary
+    public static RubyArray to_ary(ThreadContext context, IRubyObject ary) {
+        return (RubyArray)convertToType19(ary, context.runtime.getArray(), "to_ary");
     }
 
     private static void raiseIntegerBaseError(ThreadContext context) {
