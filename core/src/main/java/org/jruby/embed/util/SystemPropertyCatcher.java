@@ -259,12 +259,12 @@ public class SystemPropertyCatcher {
             int startIndex = i;
             for (int j=0; j < prefixes.length; j++) {
                 if (prefixes[j].equals(possiblePaths[i]) && i < possiblePaths.length - 1) {
-                    loadPaths.add(possiblePaths[i] + ":" + possiblePaths[++i]);
+                    loadPaths.add(possiblePaths[i] + ":" + possiblePaths[++i] + (possiblePaths[i].endsWith(".jar")? "!" : ""));
                     break;
                 }
             }
             if (startIndex == i) {
-                loadPaths.add(possiblePaths[i]);
+                loadPaths.add(possiblePaths[i] + (possiblePaths[i].endsWith(".jar")? "!" : ""));
             }
         }
         return loadPaths;

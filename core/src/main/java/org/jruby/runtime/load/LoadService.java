@@ -245,11 +245,11 @@ public class LoadService {
         String jrubyHome = runtime.getJRubyHome();
         loadedFeatures = new StringArraySet(runtime);
 
-        // add the URI to the root of the main classloader to the load paths
-        addClassloaderRootURI();
-
         // add all startup load paths to the list first
         addPaths(prependDirectories);
+
+        // add the URI to the root of the main classloader to the load paths
+        addClassloaderRootURI();
 
         // add $RUBYLIB paths
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
