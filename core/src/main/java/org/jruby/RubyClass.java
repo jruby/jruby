@@ -689,7 +689,9 @@ public class RubyClass extends RubyModule {
         else {
             try {
                 return checkFuncallExec(context, self, method, args);
-            } catch (Exception e) {
+            } catch (RaiseException e) {
+                // clear $!
+                context.setErrorInfo(context.nil);
                 return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
             }
         }
