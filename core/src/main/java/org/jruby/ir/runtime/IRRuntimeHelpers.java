@@ -56,6 +56,7 @@ public class IRRuntimeHelpers {
     public static void initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, IRubyObject returnValue) {
         IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
         IRScopeType scopeType = scope.getScopeType();
+        boolean inDefineMethod = false;
         while (dynScope != null) {
             IRStaticScope ss = (IRStaticScope)dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -65,8 +66,13 @@ public class IRRuntimeHelpers {
             //
             // To be investigated.
             IRScopeType ssType = ss.getScopeType();
-            if (ssType != null && ssType.isMethodType()) {
-                break;
+            if (ssType != null) {
+                if (ssType.isMethodType()) {
+                    break;
+                } else if (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) {
+                    inDefineMethod = true;
+                    break;
+                }
             }
             dynScope = dynScope.getNextCapturedScope();
         }
@@ -77,7 +83,7 @@ public class IRRuntimeHelpers {
         // Ruby code: lambda { Thread.new { return }.join }.call
         //
         // To be investigated.
-        if (   (scopeType == null || (scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
+        if (   (scopeType == null || (!inDefineMethod && scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
             && (maybeLambda || !context.scopeExistsOnCallStack(dynScope)))
         {
             // Cannot return from the call that we have long since exited.
