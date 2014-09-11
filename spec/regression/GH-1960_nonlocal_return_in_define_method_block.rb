@@ -1,4 +1,4 @@
-# https://github.com/jruby/jruby/issues/1690
+# https://github.com/jruby/jruby/issues/1960
 
 def yielder; yield; end
 
