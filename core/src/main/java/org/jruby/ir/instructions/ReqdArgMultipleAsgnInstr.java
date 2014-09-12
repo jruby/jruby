@@ -67,8 +67,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
-        int i = Helpers.irReqdArgMultipleAsgnIndex(rubyArray.getLength(), preArgsCount, index, postArgsCount);
-        return i == -1 ? context.nil : rubyArray.entry(i);
+        return Helpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);
     }
 
     @Override
