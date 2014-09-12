@@ -1,14 +1,12 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyHash;
-import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -45,16 +43,11 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = IRRuntimeHelpers.extractKwargsHash(args, required, acceptsKeywordArgument);
+        return IRRuntimeHelpers.receiveKeywordArg(context, args, required, argName, acceptsKeywordArgument);
+    }
 
-        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
-
-        RubySymbol keywordName = context.getRuntime().newSymbol(argName);
-
-        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
-
-        // SSS FIXME: Can we use an internal delete here?
-        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
-        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceiveKeywordArgInstr(this);
     }
 }

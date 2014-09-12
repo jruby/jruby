@@ -3,6 +3,7 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Signature;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -68,8 +69,8 @@ public class JVM {
         return clsData().method();
     }
 
-    public void pushmethod(String name, Signature signature) {
-        clsData().pushmethod(name, signature);
+    public void pushmethod(String name, IRScope scope, Signature signature) {
+        clsData().pushmethod(name, scope, signature);
         method().startMethod();
     }
 

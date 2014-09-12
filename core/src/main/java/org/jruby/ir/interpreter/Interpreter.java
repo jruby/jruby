@@ -261,10 +261,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
+
         switch(operation) {
         case RECV_PRE_REQD_ARG:
             int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
-            result = argIndex < args.length ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
+            result = IRRuntimeHelpers.getPreArgSafe(context, args, argIndex);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_CLOSURE:

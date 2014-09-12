@@ -63,12 +63,7 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
     }
 
     public IRubyObject receivePostReqdArg(IRubyObject[] args, boolean acceptsKeywordArgument) {
-        boolean kwargs = IRRuntimeHelpers.extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
-        int n = kwargs ? args.length - 1 : args.length;
-        int remaining = n - preReqdArgsCount;
-        if (remaining <= argIndex) return null;  // For blocks!
-
-        return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
+        return IRRuntimeHelpers.receivePostReqdArg(args, preReqdArgsCount, postReqdArgsCount, argIndex, acceptsKeywordArgument);
     }
 
     @Override

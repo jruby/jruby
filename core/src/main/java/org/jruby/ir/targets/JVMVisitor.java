@@ -118,7 +118,7 @@ public class JVMVisitor extends IRVisitor {
 
         emitClosures(scope);
 
-        jvm.pushmethod(name, signature);
+        jvm.pushmethod(name, scope, signature);
 
         // UGLY hack for blocks and scripts, which still have their scopes pushed before invocation
         // Scope management for blocks and scripts needs to be figured out
@@ -1313,6 +1313,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) {
         visit(optargmultipleasgninstr.getArrayArg());
+        jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().ldc(optargmultipleasgninstr.getMinArgsLength());
         jvmAdapter().ldc(optargmultipleasgninstr.getIndex());
         jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "extractOptionalArgument", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
@@ -1445,47 +1446,67 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
-        int index = getJVMLocalVarIndex(instr.getResult());
-        jvmMethod().loadArgs(); // index of arg array
-        jvmAdapter().ldc(instr.getArgIndex());
-        jvmAdapter().aaload();
-        jvmMethod().storeLocal(index);
+    public void ReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadArgs();
+        jvmAdapter().pushInt(instr.required);
+        jvmAdapter().ldc(instr.argName);
+        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
+        jvmMethod().invokeIRHelper("receiveKeywordArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, String.class, boolean.class));
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void ReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadArgs();
+        jvmAdapter().pushInt(instr.required);
+        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
+        jvmMethod().invokeIRHelper("receiveKeywordRestArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, boolean.class));
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
     public void ReceiveOptArgInstr(ReceiveOptArgInstr instr) {
-        // FIXME: Only works when args is in an array rather than being flattened out
-        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
-        jvmAdapter().pushInt(instr.getArgIndex() + instr.requiredArgs); // MIN reqd args
-        jvmAdapter().pushInt(instr.getArgIndex() + instr.preArgs); // args array offset
+        jvmMethod().loadContext();
         jvmMethod().loadArgs();
-        jvmMethod().invokeHelper("irLoadOptArg", IRubyObject.class, int.class, int.class, IRubyObject[].class);
+        jvmAdapter().pushInt(instr.requiredArgs);
+        jvmAdapter().pushInt(instr.preArgs);
+        jvmAdapter().pushInt(instr.getArgIndex());
+        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
+        jvmMethod().invokeIRHelper("receiveOptArg", sig(IRubyObject.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadArgs();
+        jvmAdapter().pushInt(instr.getArgIndex());
+        jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class));
         jvmStoreLocal(instr.getResult());
     }
 
     @Override
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
-        // FIXME: Only works when args is in an array rather than being flattened out
-        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
         jvmMethod().loadContext();
-        jvmAdapter().pushInt(instr.getArgIndex());
+        jvmMethod().loadArgs();
         jvmAdapter().pushInt(instr.preReqdArgsCount);
         jvmAdapter().pushInt(instr.postReqdArgsCount);
-        jvmMethod().loadArgs();
-        jvmMethod().invokeHelper("irLoadPostReqdArg", IRubyObject.class, int.class, int.class, int.class, IRubyObject[].class);
+        jvmAdapter().pushInt(instr.getArgIndex());
+        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
+        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
         jvmStoreLocal(instr.getResult());
     }
 
     @Override
     public void ReceiveRestArgInstr(ReceiveRestArgInstr instr) {
-        // FIXME: Only works when args is in an array rather than being flattened out
-        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
         jvmMethod().loadContext();
-        jvmAdapter().pushInt(instr.required); // MIN reqd args
-        jvmAdapter().pushInt(instr.getArgIndex()); // args array offset
         jvmMethod().loadArgs();
-        jvmMethod().invokeHelper("irLoadRestArg", IRubyObject.class, ThreadContext.class, int.class, int.class, IRubyObject[].class);
+        jvmAdapter().pushInt(instr.required);
+        jvmAdapter().pushInt(instr.getArgIndex());
+        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
+        jvmMethod().invokeIRHelper("receiveRestArg", sig(IRubyObject.class, ThreadContext.class, Object[].class, int.class, int.class, boolean.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1504,7 +1525,7 @@ public class JVMVisitor extends IRVisitor {
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) {
         jvmMethod().loadContext();
         visit(reqdargmultipleasgninstr.getArrayArg());
-        jvmAdapter().checkcast("org/jruby/RubyArray");
+        jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getPreArgsCount());
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getIndex());
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getPostArgsCount());
@@ -1529,6 +1550,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().pushInt(restargmultipleasgninstr.getPreArgsCount());
         jvmAdapter().pushInt(restargmultipleasgninstr.getPostArgsCount());
         jvmAdapter().invokestatic(p(Helpers.class), "viewArgsArray", sig(RubyArray.class, ThreadContext.class, RubyArray.class, int.class, int.class));
+        jvmStoreLocal(restargmultipleasgninstr.getResult());
     }
 
     @Override

@@ -706,4 +706,66 @@ public class IRRuntimeHelpers {
         Block b = (Block)blk;
         return context.runtime.newBoolean(b.isGiven());
     }
+
+    public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArguments);
+        return constructRestArg(context, args, keywordArguments, required, argIndex);
+    }
+
+    public static IRubyObject constructRestArg(ThreadContext context, Object[] args, RubyHash keywordArguments, int required, int argIndex) {
+        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+        int remainingArguments = argsLength - required;
+
+        if (remainingArguments <= 0) return context.runtime.newArray(IRubyObject.NULL_ARRAY);
+
+        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
+        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
+
+        return context.runtime.newArray(restArgs);
+    }
+
+    public static IRubyObject receivePostReqdArg(IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
+        boolean kwargs = extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
+        int n = kwargs ? args.length - 1 : args.length;
+        int remaining = n - preReqdArgsCount;
+        if (remaining <= argIndex) return null;  // For blocks!
+
+        return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
+    }
+
+    public static IRubyObject receiveOptArg(IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
+        int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
+        RubyHash keywordArguments = extractKwargsHash(args, requiredArgs, acceptsKeywordArgument);
+        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+
+        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
+
+        return args[preArgs + optArgIndex];
+    }
+
+    public static IRubyObject getPreArgSafe(ThreadContext context, IRubyObject[] args, int argIndex) {
+        IRubyObject result;
+        result = argIndex < args.length ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
+        return result;
+    }
+
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String argName, boolean acceptsKeywordArgument) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
+
+        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
+
+        RubySymbol keywordName = context.getRuntime().newSymbol(argName);
+
+        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
+
+        // SSS FIXME: Can we use an internal delete here?
+        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
+        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, keywordArgumentSupplied);
+
+        return keywordArguments == null ? RubyHash.newSmallHash(context.getRuntime()) : keywordArguments;
+    }
 }
