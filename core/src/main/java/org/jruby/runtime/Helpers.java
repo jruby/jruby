@@ -518,6 +518,15 @@ public class Helpers {
         return scope.getModule();
     }
 
+    public static RubyArray viewArgsArray(ThreadContext context, RubyArray rubyArray, int preArgsCount, int postArgsCount) {
+        int n = rubyArray.getLength();
+        if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
+            return RubyArray.newEmptyArray(context.runtime);
+        } else {
+            return (RubyArray)rubyArray.subseqLight(preArgsCount, n - preArgsCount - postArgsCount);
+        }
+    }
+
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;

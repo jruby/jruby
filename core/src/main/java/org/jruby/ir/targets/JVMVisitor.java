@@ -1523,7 +1523,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) {
-        super.RestArgMultipleAsgnInstr(restargmultipleasgninstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvmMethod().loadContext();
+        visit(restargmultipleasgninstr.getArrayArg());
+        jvmAdapter().checkcast(p(RubyArray.class));
+        jvmAdapter().pushInt(restargmultipleasgninstr.getPreArgsCount());
+        jvmAdapter().pushInt(restargmultipleasgninstr.getPostArgsCount());
+        jvmAdapter().invokestatic(p(Helpers.class), "viewArgsArray", sig(RubyArray.class, ThreadContext.class, RubyArray.class, int.class, int.class));
     }
 
     @Override

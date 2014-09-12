@@ -9,6 +9,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -53,15 +54,8 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
-        Object val;
 
-        int n = rubyArray.getLength();
-        if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
-            return RubyArray.newEmptyArray(context.runtime);
-        } else {
-            // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
-            return RubyArray.newArrayNoCopy(context.runtime, rubyArray.toJavaArray(), preArgsCount, (n - preArgsCount - postArgsCount));
-        }
+        return Helpers.viewArgsArray(context, rubyArray, preArgsCount, postArgsCount);
     }
 
     @Override
