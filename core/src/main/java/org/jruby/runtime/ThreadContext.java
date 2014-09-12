@@ -838,13 +838,13 @@ public final class ThreadContext {
         pushCallFrame(implClass, name, self, block);
     }
 
-    public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 
+    public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
             StaticScope staticScope) {
         pushCallFrame(clazz, name, self, block);
         pushScope(DynamicScope.newDynamicScope(staticScope));
     }
     
-    public void preMethodFrameAndDummyScope(RubyModule clazz, String name, IRubyObject self, Block block, 
+    public void preMethodFrameAndDummyScope(RubyModule clazz, String name, IRubyObject self, Block block,
             StaticScope staticScope) {
         pushCallFrame(clazz, name, self, block);
         pushScope(staticScope.getDummyScope());

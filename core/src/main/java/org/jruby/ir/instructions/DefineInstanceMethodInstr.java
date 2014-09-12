@@ -57,10 +57,6 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
         Ruby runtime = context.runtime;
         RubyModule clazz = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
 
-        //if (clazz != context.getRubyClass()) {
-        //    System.out.println("*** DING DING DING! *** For " + this + "; clazz: " + clazz + "; ruby module: " + context.getRubyClass());
-        //}
-
         String     name  = method.getName();
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, name, currVisibility);

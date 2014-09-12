@@ -1249,7 +1249,7 @@ public class Helpers {
     }
     
     public static RubyModule findImplementerIfNecessary(RubyModule clazz, RubyModule implementationClass) {
-        if (implementationClass != null && implementationClass.needsImplementer()) {
+        if (implementationClass.needsImplementer()) {
             // modules are included with a shim class; we must find that shim to handle super() appropriately
             return clazz.findImplementer(implementationClass);
         } else {
