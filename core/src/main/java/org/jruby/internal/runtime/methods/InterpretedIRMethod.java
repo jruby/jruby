@@ -173,8 +173,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
                 try {
                     Class compiled = JVMVisitor.compile(runtime, method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
-                    Method scriptMethod = compiled.getMethod("__script__", ThreadContext.class,
-                            StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
+                    Method scriptMethod = compiled.getMethod(
+                            "__script__",
+                            ThreadContext.class,
+                            StaticScope.class,
+                            IRubyObject.class,
+                            IRubyObject[].class,
+                            Block.class,
+                            RubyModule.class);
                     MethodHandle handle = MethodHandles.publicLookup().unreflect(scriptMethod);
                     box.actualMethod = new CompiledIRMethod(handle, getName(), getFile(), getLine(), method.getStaticScope(), getVisibility(), getImplementationClass(), Helpers.encodeParameterList(getParameterList()), method.hasExplicitCallProtocol());
 
