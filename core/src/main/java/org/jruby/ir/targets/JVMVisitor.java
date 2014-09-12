@@ -674,39 +674,24 @@ public class JVMVisitor extends IRVisitor {
         SkinnyMethodAdapter a = m.adapter;
 
         RegexpOptions options = instr.getOptions();
-        if (!options.isOnce()) {
-            m.loadRuntime();
-            { // negotiate RubyString pattern from parts
-                m.loadRuntime();
-                { // build RubyString[]
-                    List<Operand> operands = instr.getPieces();
-                    a.ldc(operands.size());
-                    a.anewarray(p(RubyString.class));
-                    for (int i = 0; i < operands.size(); i++) {
-                        Operand operand = operands.get(i);
-                        a.dup();
-                        a.ldc(i);
-                        visit(operand);
-                        a.aastore();
-                    }
-                }
-                a.ldc(options.toEmbeddedOptions());
-                a.invokestatic(p(RubyRegexp.class), "preprocessDRegexp", sig(RubyString.class, Ruby.class, RubyString[].class, int.class));
-            }
-            a.ldc(options.toEmbeddedOptions());
-            a.invokestatic(p(RubyRegexp.class), "newDRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
-            a.dup();
-            a.invokevirtual(p(RubyRegexp.class), "setLiteral", sig(void.class));
-        } else {
-            // FIXME: need to check this on cached path
-            // context.runtime.getKCode() != rubyRegexp.getKCode()) {
-            m.loadContext();
-            // SSS FIXME: How does this cached thing work again?
-            // We don't have access to the instr in compiled code.
-            // So, not sure what is going on ...
-            // instr.getRegexp();
-            m.pushRegexp(options.toEmbeddedOptions());
+        List<Operand> operands = instr.getPieces();
+
+        m.loadContext();
+        for (int i = 0; i < operands.size(); i++) {
+            Operand operand = operands.get(i);
+            visit(operand);
         }
+
+        a.invokedynamic(
+                "dregexp",
+                sig(RubyRegexp.class,
+                        params(ThreadContext.class,
+                                RubyString.class,
+                                operands.size())),
+                Bootstrap.regexp(),
+                options.toEmbeddedOptions());
+
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override

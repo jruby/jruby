@@ -66,11 +66,35 @@ public class Bootstrap {
 
     public static CallSite regexp(Lookup lookup, String name, MethodType type, int options) {
         MutableCallSite site = new MutableCallSite(type);
-        MethodHandle handle = Binder
-                .from(type)
-                .append(MutableCallSite.class, site)
-                .append(int.class, options)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "regexp");
+        RegexpOptions o = RegexpOptions.fromEmbeddedOptions(options);
+        MethodHandle handle;
+
+        if (name.equals("dregexp")) {
+            String[] argNames = new String[type.parameterCount()];
+            Class[] argTypes = new Class[argNames.length];
+
+            argNames[0] = "context";
+            argTypes[0] = ThreadContext.class;
+
+            for (int i = 1; i < argNames.length; i++) {
+                argNames[i] = "part" + i;
+                argTypes[i] = RubyString.class;
+            }
+
+            handle = SmartBinder
+                    .from(lookup, RubyRegexp.class, argNames, argTypes)
+                    .collect("parts", "part.*")
+                    .append("site", site)
+                    .append("options", o)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "dregexp").handle();
+        } else {
+            handle = Binder
+                    .from(lookup, type)
+                    .append(MutableCallSite.class, site)
+                    .append(o)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "regexp");
+        }
+
         site.setTarget(handle);
         return site;
     }
@@ -381,14 +405,30 @@ public class Bootstrap {
         return hash;
     }
 
-    public static RubyRegexp regexp(ThreadContext context, RubyString pattern, MutableCallSite site, int options) {
-        RubyRegexp regexp = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
+    public static RubyRegexp regexp(ThreadContext context, RubyString pattern, MutableCallSite site, RegexpOptions options) {
+        RubyRegexp regexp = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), options);
         regexp.setLiteral();
+
         site.setTarget(
                 Binder.from(RubyRegexp.class, ThreadContext.class, RubyString.class)
                         .drop(0, 2)
                         .constant(regexp));
         return regexp;
+    }
+
+    public static RubyRegexp dregexp(ThreadContext context, RubyString[] pieces, MutableCallSite site, RegexpOptions options) {
+        RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        if (options.isOnce()) {
+            site.setTarget(
+                    Binder.from(site.type())
+                            .drop(0, site.type().parameterCount())
+                            .constant(re));
+        }
+
+        return re;
     }
 
     public static RubyBignum bignum(ThreadContext context, String value, MutableCallSite site) {
