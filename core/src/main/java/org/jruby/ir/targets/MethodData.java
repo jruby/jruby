@@ -4,6 +4,7 @@
  */
 package org.jruby.ir.targets;
 
+import com.headius.invokebinder.Signature;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Variable;
@@ -18,8 +19,16 @@ import java.util.Map;
  */
 public class MethodData {
 
-    public MethodData(SkinnyMethodAdapter method, int arity) {
-        this.method = new IRBytecodeAdapter(method, arity);
+    public MethodData(SkinnyMethodAdapter method, Signature signature) {
+        this.method = new IRBytecodeAdapter(method, signature);
+
+        // incoming arguments
+        for (int i = 0; i < signature.argCount(); i++) {
+            local("$" + signature.argName(i), Type.getType(signature.argType(i)));
+        }
+
+        // TODO: this should go into the PushBinding instruction
+        int dscope = local("$dynamicScope");
     }
 
     public int local(Variable variable, Type type) {

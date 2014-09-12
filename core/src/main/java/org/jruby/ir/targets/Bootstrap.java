@@ -32,6 +32,7 @@ import java.lang.invoke.*;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -726,7 +727,9 @@ public class Bootstrap {
                     binder = binder.append("block", Block.class, Block.NULL_BLOCK);
                 }
 
-                binder = binder.insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope());
+                binder = binder
+                        .insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope())
+                        .append("class", RubyModule.class, compiledIRMethod.getImplementationClass());
 
                 mh = binder.invoke(mh).handle();
             }

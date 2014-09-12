@@ -4,6 +4,7 @@
  */
 package org.jruby.ir.targets;
 
+import com.headius.invokebinder.Signature;
 import org.jruby.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
@@ -31,10 +32,9 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public class IRBytecodeAdapter {
-    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, int arity, String... params) {
+    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, Signature signature) {
         this.adapter = adapter;
-        this.arity = arity;
-        this.params = params;
+        this.signature = signature;
     }
 
     public void startMethod() {
@@ -54,17 +54,17 @@ public class IRBytecodeAdapter {
     }
 
     public void pushFixnum(Long l) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
     }
 
     public void pushFloat(Double d) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.flote(), d);
     }
 
     public void pushString(ByteList bl) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
     }
 
@@ -81,12 +81,12 @@ public class IRBytecodeAdapter {
      * @param sym the symbol's string identifier
      */
     public void pushSymbol(String sym) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.symbol(), sym);
     }
 
     public void loadRuntime() {
-        adapter.aload(0);
+        loadContext();
         adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
     }
 
@@ -114,10 +114,17 @@ public class IRBytecodeAdapter {
         adapter.aload(4);
     }
 
+    // NON-BLOCKS ONLY
+    public void loadFrameClass() {
+        adapter.aload(5);
+    }
+
+    // BLOCKS ONLY
     public void loadSuperName() {
         adapter.aload(5);
     }
 
+    // BLOCKS ONLY
     public void loadBlockType() {
         adapter.aload(6);
     }
@@ -227,19 +234,19 @@ public class IRBytecodeAdapter {
     }
 
     public void poll() {
-        adapter.aload(0);
+        loadContext();
         adapter.invokevirtual(p(ThreadContext.class), "pollThreadEvents", sig(void.class));
     }
 
     public void pushNil() {
         // FIXME: avoid traversing context
-        adapter.aload(0);
+        loadContext();
         adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
     }
 
     public void pushBoolean(boolean b) {
         // FIXME: avoid traversing runtime
-        adapter.aload(0);
+        loadContext();
         adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
         if (b) {
             adapter.invokevirtual(p(Ruby.class), "getTrue", sig(RubyBoolean.class));
@@ -322,6 +329,5 @@ public class IRBytecodeAdapter {
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
-    private int arity;
-    private String[] params;
+    private final Signature signature;
 }

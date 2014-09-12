@@ -835,40 +835,22 @@ public final class ThreadContext {
     }
 
     public void preMethodFrameAndClass(RubyModule implClass, String name, IRubyObject self, Block block, StaticScope staticScope) {
-        RubyModule ssModule = staticScope.getModule();
-        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
-        if (ssModule == null) ssModule = implClass;
         pushCallFrame(implClass, name, self, block);
     }
 
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 
             StaticScope staticScope) {
-        RubyModule implementationClass = staticScope.getModule();
-        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
-        if (implementationClass == null) {
-            implementationClass = clazz;
-        }
         pushCallFrame(clazz, name, self, block);
         pushScope(DynamicScope.newDynamicScope(staticScope));
     }
     
     public void preMethodFrameAndDummyScope(RubyModule clazz, String name, IRubyObject self, Block block, 
             StaticScope staticScope) {
-        RubyModule implementationClass = staticScope.getModule();
-        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
-        if (implementationClass == null) {
-            implementationClass = clazz;
-        }
         pushCallFrame(clazz, name, self, block);
         pushScope(staticScope.getDummyScope());
     }
 
     public void preMethodNoFrameAndDummyScope(RubyModule clazz, StaticScope staticScope) {
-        RubyModule implementationClass = staticScope.getModule();
-        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
-        if (implementationClass == null) {
-            implementationClass = clazz;
-        }
         pushScope(staticScope.getDummyScope());
     }
     
@@ -886,11 +868,6 @@ public final class ThreadContext {
     }
     
     public void preMethodScopeOnly(RubyModule clazz, StaticScope staticScope) {
-        RubyModule implementationClass = staticScope.getModule();
-        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
-        if (implementationClass == null) {
-            implementationClass = clazz;
-        }
         pushScope(DynamicScope.newDynamicScope(staticScope));
     }
     
@@ -910,11 +887,6 @@ public final class ThreadContext {
     }
 
     public void preMethodBacktraceDummyScope(RubyModule clazz, String name, StaticScope staticScope) {
-        RubyModule implementationClass = staticScope.getModule();
-        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
-        if (implementationClass == null) {
-            implementationClass = clazz;
-        }
         pushScope(staticScope.getDummyScope());
     }
     

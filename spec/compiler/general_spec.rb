@@ -30,7 +30,8 @@ module CompilerTestUtils
         oj.parser.StaticScope.java_class,
         oj.runtime.builtin.IRubyObject.java_class,
         oj.runtime.builtin.IRubyObject[].java_class,
-        oj.runtime.Block.java_class);
+        oj.runtime.Block.java_class,
+        oj.RubyModule.java_class);
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod);
 
     return oj.internal.runtime.methods.CompiledIRMethod.new(

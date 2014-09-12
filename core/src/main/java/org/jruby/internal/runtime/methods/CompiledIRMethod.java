@@ -89,7 +89,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
                 // See also PushFrame instruction in org.jruby.ir.targets.JVMVisitor
                 context.setCurrentVisibility(Visibility.PUBLIC);
             }
-            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, args, block);
+            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, args, block, implementationClass);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached

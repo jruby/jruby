@@ -70,29 +70,9 @@ class ClassData {
         return types;
     }
 
-    public void pushmethod(String name, int arity) {
-        Method m;
-        switch (arity) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-                m = new Method(name, JVM.OBJECT_TYPE, ARGS[arity]);
-                break;
-            default:
-                throw new RuntimeException("Unsupported arity " + arity + " for " + name);
-        }
-        methodStack.push(new MethodData(new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null), arity));
-    }
-
-    public void pushmethodVarargs(String name) {
-        Method m = new Method(name, JVM.OBJECT_TYPE, VARARGS);
-        methodStack.push(new MethodData(new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null), -1));
-    }
-
     public void pushmethod(String name, Signature signature) {
         Method m = new Method(name, Type.getType(signature.type().returnType()), typesFromSignature(signature));
-        methodStack.push(new MethodData(new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null), -1));
+        methodStack.push(new MethodData(new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null), signature));
     }
 
     public void popmethod() {

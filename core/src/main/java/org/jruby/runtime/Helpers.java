@@ -3176,6 +3176,10 @@ public class Helpers {
         return sb.toString();
     }
 
+    public static <T> T[] arrayOf(T... values) {
+        return values;
+    }
+
     @Deprecated
     public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
         return decodeScope(context, null, scopeString);
