@@ -73,12 +73,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void codegenScope(IRScope scope) {
-        if (scope.usesEval()) {
-            // Methods that contain evals don't have interpreted parent context in JIT,
-            // so we disable JIT here. FIXME: fix this some day?
-            throw new RuntimeException("JIT does not support methods with eval");
-        }
-
         if (scope instanceof IRScriptBody) {
             codegenScriptBody((IRScriptBody)scope);
         } else if (scope instanceof IRMethod) {
