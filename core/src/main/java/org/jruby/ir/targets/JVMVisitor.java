@@ -899,8 +899,11 @@ public class JVMVisitor extends IRVisitor {
         // no arguments
         a.ldc("");
 
+        // frame/scope
+        a.ldc(defineclassinstr.getNewIRClassBody().hasExplicitCallProtocol());
+
         // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;)V");
+        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;Z)V");
 
         // store
         jvmStoreLocal(defineclassinstr.getResult());
@@ -1013,8 +1016,11 @@ public class JVMVisitor extends IRVisitor {
         // no arguments
         a.ldc("");
 
+        // frame/scope
+        a.ldc(definemetaclassinstr.getMetaClassBody().hasExplicitCallProtocol());
+
         // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;)V");
+        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;Z)V");
 
         // store
         jvmStoreLocal(definemetaclassinstr.getResult());
@@ -1070,8 +1076,11 @@ public class JVMVisitor extends IRVisitor {
         // no arguments
         a.ldc("");
 
+        // frame/scope
+        a.ldc(definemoduleinstr.getNewIRModuleBody().hasExplicitCallProtocol());
+
         // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;)V");
+        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;Z)V");
 
         // store
         jvmStoreLocal(definemoduleinstr.getResult());
