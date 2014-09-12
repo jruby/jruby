@@ -507,6 +507,17 @@ public class Helpers {
         return null;
     }
 
+    public static RubyModule getNthScopeModule(StaticScope scope, int depth) {
+        int n = depth;
+        while (n > 0) {
+            scope = scope.getEnclosingScope();
+            if (scope.getScopeType() != null) {
+                n--;
+            }
+        }
+        return scope.getModule();
+    }
+
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;

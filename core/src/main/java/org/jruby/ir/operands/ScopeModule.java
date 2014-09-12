@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -57,15 +58,7 @@ public class ScopeModule extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        StaticScope scope = currScope;
-        int n = scopeModuleDepth;
-        while (n > 0) {
-            scope = scope.getEnclosingScope();
-            if (scope.getScopeType() != null) {
-                n--;
-            }
-        }
-        return scope.getModule();
+        return Helpers.getNthScopeModule(currScope, scopeModuleDepth);
     }
 
     @Override

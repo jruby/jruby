@@ -1984,10 +1984,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ScopeModule(ScopeModule scopemodule) {
-        // FIXME: Disabling until #1792 is addressed
-        super.ScopeModule(scopemodule);
         jvmMethod().loadStaticScope();
-        jvmAdapter().invokevirtual(p(StaticScope.class), "getModule", sig(RubyModule.class));
+        jvmAdapter().pushInt(scopemodule.getScopeModuleDepth());
+        jvmAdapter().invokestatic(p(Helpers.class), "getNthScopeModule", sig(RubyModule.class, StaticScope.class, int.class));
     }
 
     @Override
