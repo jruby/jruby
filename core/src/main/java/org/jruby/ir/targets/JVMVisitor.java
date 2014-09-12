@@ -1690,6 +1690,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void SetCapturedVarInstr(SetCapturedVarInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getMatch2Result());
+        jvmAdapter().ldc(instr.getVarName());
+        jvmMethod().invokeIRHelper("setCapturedVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
+    }
+
+    @Override
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) {
         IRBytecodeAdapter m = jvmMethod();
         jvmLoadLocal(DYNAMIC_SCOPE);

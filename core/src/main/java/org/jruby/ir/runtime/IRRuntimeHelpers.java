@@ -768,4 +768,17 @@ public class IRRuntimeHelpers {
 
         return keywordArguments == null ? RubyHash.newSmallHash(context.getRuntime()) : keywordArguments;
     }
+
+    public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String varName) {
+        IRubyObject val;
+        if (matchRes.isNil()) {
+            val = context.nil;
+        } else {
+            IRubyObject backref = context.getBackRef();
+            int n = ((RubyMatchData)backref).getNameToBackrefNumber(varName);
+            val = RubyRegexp.nth_match(n, backref);
+        }
+
+        return val;
+    }
 }
