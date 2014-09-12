@@ -601,20 +601,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BreakInstr(BreakInstr breakInstr) {
-        super.BreakInstr(breakInstr);
-        // this is all wrong
-//        IRBytecodeAdapter   m = jvm.method();
-//        SkinnyMethodAdapter a = m.adapter;
-//        jvmMethod().loadArgs();
-//        jvmMethod().loadStaticScope();
-//        // FIXME: This can also be done in the helper itself
-//        m.invokeVirtual(Type.getType(IRScope.class), Method.getMethod("org.jruby.ir.IRScope getIRScope()"));
-//        a.ldc(breakInstr.getScopeIdToReturnTo().getScopeId());
-//        visit(breakInstr.getReturnValue());
-//        // FIXME: emit block-type for the scope that is currently executing
-//        // For now, it is null
-//        m.pushNil();
-//        a.invokestatic(p(IRubyObject.class), "initiateBreak", sig(ThreadContext.class, IRScope.class, IRScope.class, IRubyObject.class, Block.Type.class));
+        jvmMethod().loadContext();
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        visit(breakInstr.getReturnValue());
+        jvmMethod().loadBlockType();
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "initiateBreak", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, IRubyObject.class, Block.Type.class));
     }
 
     @Override
