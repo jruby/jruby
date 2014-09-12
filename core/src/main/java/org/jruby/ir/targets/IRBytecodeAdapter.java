@@ -114,19 +114,20 @@ public class IRBytecodeAdapter {
         adapter.aload(4);
     }
 
-    // NON-BLOCKS ONLY
     public void loadFrameClass() {
         adapter.aload(5);
     }
 
-    // BLOCKS ONLY
     public void loadSuperName() {
         adapter.aload(5);
     }
 
-    // BLOCKS ONLY
     public void loadBlockType() {
-        adapter.aload(6);
+        if (signature.argOffset("type") == -1) {
+            adapter.aconst_null();
+        } else {
+            adapter.aload(6);
+        }
     }
 
     public void storeLocal(int i) {
