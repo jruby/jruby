@@ -3021,7 +3021,7 @@ public class Helpers {
                 throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
             }
 
-            return (RubyArray)newValue;
+            return newValue;
         }
     }
 
