@@ -94,7 +94,7 @@ public class IRRuntimeHelpers {
         throw IRReturnJump.create(dynScope, returnValue);
     }
 
-    public static IRubyObject handleNonlocalReturn(IRStaticScope scope, StaticScope currScope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(StaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null;
@@ -102,7 +102,7 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == dynScope)) return (IRubyObject) rj.returnValue;
+            if (inNonMethodBodyLambda((IRStaticScope)scope, blockType) || (rj.methodToReturnFrom == dynScope)) return (IRubyObject) rj.returnValue;
 
             // - If not, Just pass it along!
             throw rj;
@@ -139,7 +139,7 @@ public class IRRuntimeHelpers {
             // We just unwound all the way up because of a non-local break
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         } else if (exc instanceof IRReturnJump) {
-            return handleNonlocalReturn(scope, scope, dynScope, exc, blockType);
+            return handleNonlocalReturn(scope, dynScope, exc, blockType);
         } else {
             // Propagate
             Helpers.throwException((Throwable)exc);
