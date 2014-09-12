@@ -367,20 +367,16 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
-        jvmMethod().loadContext();
-        jvmMethod().loadSelf();
-        visit(attrAssignInstr.getReceiver());
-        for (Operand operand : attrAssignInstr.getCallArgs()) {
-            visit(operand);
-        }
-
-        // FIXME: This should probably live in IR somewhere
-        if (attrAssignInstr.getReceiver() instanceof Self) {
-            jvmMethod().invokeSelf(attrAssignInstr.getMethodAddr().getName(), attrAssignInstr.getCallArgs().length, false);
-        } else {
-            jvmMethod().invokeOther(attrAssignInstr.getMethodAddr().getName(), attrAssignInstr.getCallArgs().length, false);
-        }
-        jvmAdapter().pop();
+        compileCallCommon(
+                jvmMethod(),
+                attrAssignInstr.getMethodAddr().getName(),
+                attrAssignInstr.getCallArgs(),
+                attrAssignInstr.getReceiver(),
+                attrAssignInstr.getCallArgs().length,
+                null,
+                false,
+                attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
+                null);
     }
 
     @Override
