@@ -191,14 +191,14 @@ public class CodegenUtils {
     
     public static Class[] params(Class cls1, Class clsFill, int times) {
         Class[] classes = new Class[times + 1];
-        Arrays.fill(classes, clsFill);
+        Arrays.fill(classes, 1, 1 + times, clsFill);
         classes[0] = cls1;
         return classes;
     }
     
     public static Class[] params(Class cls1, Class cls2, Class clsFill, int times) {
         Class[] classes = new Class[times + 2];
-        Arrays.fill(classes, clsFill);
+        Arrays.fill(classes, 2, 2 + times, clsFill);
         classes[0] = cls1;
         classes[1] = cls2;
         return classes;
@@ -206,18 +206,58 @@ public class CodegenUtils {
 
     public static Class[] params(Class cls1, Class cls2, Class cls3, Class clsFill, int times) {
         Class[] classes = new Class[times + 3];
-        Arrays.fill(classes, clsFill);
+        Arrays.fill(classes, 3, 3 + times, clsFill);
         classes[0] = cls1;
         classes[1] = cls2;
         classes[2] = cls3;
         return classes;
     }
 
+    public static Class[] params(Class cls1, Class cls2, Class cls3, Class cls4, Class clsFill, int times) {
+        Class[] classes = new Class[times + 4];
+        Arrays.fill(classes, 4, 4 + times, clsFill);
+        classes[0] = cls1;
+        classes[1] = cls2;
+        classes[2] = cls3;
+        classes[3] = cls4;
+        return classes;
+    }
+
     public static Class[] params(Class cls1, Class clsFill, int times, Class clsTail) {
         Class[] classes = new Class[times + 2];
-        Arrays.fill(classes, clsFill);
+        Arrays.fill(classes, 1, 1 + times, clsFill);
         classes[0] = cls1;
         classes[times + 1] = clsTail;
+        return classes;
+    }
+
+    public static Class[] params(Class cls1, Class cls2, Class clsFill, int times, Class clsTail) {
+        Class[] classes = new Class[times + 3];
+        Arrays.fill(classes, 2, 2 + times, clsFill);
+        classes[0] = cls1;
+        classes[1] = cls2;
+        classes[times + 2] = clsTail;
+        return classes;
+    }
+
+    public static Class[] params(Class cls1, Class cls2, Class cls3, Class clsFill, int times, Class clsTail) {
+        Class[] classes = new Class[times + 4];
+        Arrays.fill(classes, 3, 3 + times, clsFill);
+        classes[0] = cls1;
+        classes[1] = cls2;
+        classes[2] = cls3;
+        classes[times + 3] = clsTail;
+        return classes;
+    }
+
+    public static Class[] params(Class cls1, Class cls2, Class cls3, Class cls4, Class clsFill, int times, Class clsTail) {
+        Class[] classes = new Class[times + 5];
+        Arrays.fill(classes, 4, 4 + times, clsFill);
+        classes[0] = cls1;
+        classes[1] = cls2;
+        classes[2] = cls3;
+        classes[3] = cls4;
+        classes[times + 4] = clsTail;
         return classes;
     }
 

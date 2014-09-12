@@ -116,48 +116,61 @@ public class Bootstrap {
         final Signature fullSignature;
         final int arity;
 
-        public InvokeSite(MethodType type, String name) {
+        public InvokeSite(MethodType type, String name, CallType callType) {
             super(type);
             this.name = name;
+            this.callType = callType;
 
-            // all signatures have (context, caller, self), so length, block, and arg before block indicates signature
-            int arity;
-            if (type.parameterType(type.parameterCount() - 1) == Block.class) {
-                arity = type.parameterCount() - 4;
+            Signature startSig;
+            int argOffset;
 
-                Signature sig = JRubyCallSite.STANDARD_SITE_SIG;
-                if (arity == 1 && type.parameterType(3) == IRubyObject[].class) {
-                    sig = sig.appendArg("args", IRubyObject[].class);
-                } else {
-                    for (int i = 0; i < arity; i++) {
-                        sig = sig.appendArg("arg" + i, IRubyObject.class);
-                    }
-                }
-                sig = sig.appendArg("block", Block.class);
-                fullSignature = signature = sig;
+            if (callType == CallType.SUPER) {
+                // super calls receive current class argument, so offsets and signature are different
+                startSig = JRubyCallSite.STANDARD_SUPER_SIG;
+                argOffset = 4;
             } else {
-                arity = type.parameterCount() - 3;
-
-                Signature sig = JRubyCallSite.STANDARD_SITE_SIG;
-                if (arity == 1 && type.parameterType(3) == IRubyObject[].class) {
-                    sig = sig.appendArg("args", IRubyObject[].class);
-                } else {
-                    for (int i = 0; i < arity; i++) {
-                        sig = sig.appendArg("arg" + i, IRubyObject.class);
-                    }
-                }
-                signature = sig;
-                fullSignature = sig.appendArg("block", Block.class);
+                startSig = JRubyCallSite.STANDARD_SITE_SIG;
+                argOffset = 3;
             }
 
-            this.arity = JRubyCallSite.getSiteCount(type.parameterArray());
+            int arity;
+            if (type.parameterType(type.parameterCount() - 1) == Block.class) {
+                arity = type.parameterCount() - (argOffset + 1);
+
+                if (arity == 1 && type.parameterType(argOffset) == IRubyObject[].class) {
+                    arity = -1;
+                    startSig = startSig.appendArg("args", IRubyObject[].class);
+                } else {
+                    for (int i = 0; i < arity; i++) {
+                        startSig = startSig.appendArg("arg" + i, IRubyObject.class);
+                    }
+                }
+                startSig = startSig.appendArg("block", Block.class);
+                fullSignature = signature = startSig;
+            } else {
+                arity = type.parameterCount() - argOffset;
+
+                if (arity == 1 && type.parameterType(argOffset) == IRubyObject[].class) {
+                    arity = -1;
+                    startSig = startSig.appendArg("args", IRubyObject[].class);
+                } else {
+                    for (int i = 0; i < arity; i++) {
+                        startSig = startSig.appendArg("arg" + i, IRubyObject.class);
+                    }
+                }
+                signature = startSig;
+                fullSignature = startSig.appendArg("block", Block.class);
+            }
+
+            this.arity = arity;
         }
 
         public final String name;
+        public final CallType callType;
     }
 
     public static CallSite invoke(Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]), CallType.NORMAL);
         MethodHandle handle;
 
         SmartBinder binder = SmartBinder.from(site.signature)
@@ -175,7 +188,7 @@ public class Bootstrap {
     }
 
     public static CallSite attrAssign(Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]), CallType.NORMAL);
         MethodHandle handle =
                 insertArguments(
                         findStatic(
@@ -190,7 +203,7 @@ public class Bootstrap {
     }
 
     public static CallSite invokeSelf(Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]), CallType.NORMAL);
         MethodHandle handle;
 
         SmartBinder binder = SmartBinder.from(site.signature)
@@ -216,13 +229,28 @@ public class Bootstrap {
         return new ConstantCallSite(handle);
     }
 
-    public static CallSite invokeInstanceSuper(Lookup lookup, String name, MethodType type) {
-        MethodHandle handle = insertArguments(
-                findStatic(lookup, Bootstrap.class, "invokeInstanceSuper", type.insertParameterTypes(0, String.class)),
-                0,
-                JavaNameMangler.demangleMethodName(name.split(":")[1]));
+    public static CallSite invokeInstanceSuper(Lookup lookup, String name, MethodType type, int hasUnusedResult) {
+        String superName = JavaNameMangler.demangleMethodName(name.split(":")[1]);
+        InvokeSite site = new InvokeSite(type, name, CallType.SUPER);
+        MethodHandle handle;
 
-        return new ConstantCallSite(handle);
+        SmartBinder binder = SmartBinder.from(site.signature)
+                .insert(
+                        0,
+                        arrayOf("site",           "name",       "unusedResult"),
+                        arrayOf(InvokeSite.class, String.class, boolean.class),
+                                site,             superName,    hasUnusedResult == 0 ? false : true);
+
+        if (site.arity > 0) {
+            binder = binder
+                    .collect("args", "arg[0-9]+");
+        }
+
+        handle = binder.invokeStaticQuiet(lookup, Bootstrap.class, "invokeInstanceSuper").handle();
+
+        site.setTarget(handle);
+
+        return site;
     }
 
     public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
@@ -313,7 +341,7 @@ public class Bootstrap {
     }
 
     public static Handle invokeInstanceSuper() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeInstanceSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeInstanceSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
     public static Handle invokeFixnumOp() {
@@ -591,14 +619,22 @@ public class Bootstrap {
         return (IRubyObject)rVal;
     }
 
-    public static IRubyObject invokeInstanceSuper(String methodName, ThreadContext context, IRubyObject self, IRubyObject definingModule, IRubyObject[] args, Block block) throws Throwable {
-        RubyClass superClass = ((RubyModule)definingModule).getSuperClass();
+    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        // TODO: get rid of caller
+        RubyClass superClass = definingModule.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-
-        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
+        return hasUnusedResult ? null : rVal;
+    }
 
-        return (IRubyObject)rVal;
+    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+        // TODO: get rid of caller
+        RubyClass superClass = definingModule.getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
+                : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
+        return hasUnusedResult ? null : rVal;
     }
 
     public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
@@ -707,8 +743,9 @@ public class Bootstrap {
                 compiledIRMethod = ((InterpretedIRMethod)method).getCompiledIRMethod();
             }
 
-            // CON FIXME: frame/scope/visibility are not alway done in IR, so we have this ugly check and bailout
-            if (compiledIRMethod != null && compiledIRMethod.hasExplicitCallProtocol()) {
+            if (compiledIRMethod != null) {
+                assert compiledIRMethod.hasExplicitCallProtocol() : "all jitted methods must have call protocol";
+
                 mh = (MethodHandle)compiledIRMethod.getHandle();
 
                 binder = SmartBinder.from(site.signature)
