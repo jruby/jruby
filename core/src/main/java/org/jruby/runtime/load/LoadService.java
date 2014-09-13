@@ -249,7 +249,7 @@ public class LoadService {
         addPaths(prependDirectories);
 
         // add the URI to the root of the main classloader to the load paths
-        addClassloaderRootURI();
+        addPath("uri:classloader:");
 
         // add $RUBYLIB paths
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
@@ -291,18 +291,6 @@ public class LoadService {
         if (!runtime.is1_9()) {
             addPath(".");
         }
-    }
-
-    private void addClassloaderRootURI() {
-        String uri = "uri:classloader:";
-        URL url = Thread.currentThread().getContextClassLoader().getResource( "META-INF/jruby.home/.jrubydir" );
-        if (url == null && LoadService.class.getClassLoader() != null) {
-            url = LoadService.class.getClassLoader().getResource("/META-INF/jruby.home/.jrubydir");
-            if (url != null) {
-                uri = "uri:" + url.toString().replace("/META-INF/jruby.home/.jrubydir", "");
-            }
-        }
-        addPath(uri);
     }
 
     /**

@@ -165,10 +165,14 @@ public class URLResource implements FileResource {
             }
             catch (IOException e) {}
         }
+        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader
+        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader().getParent() : URLResource.class.getClassLoader();
+        if (cl == null ) {
+            cl = Thread.currentThread().getContextClassLoader();
+        }
         if (pathname.startsWith("/")) {
             pathname = pathname.substring(1);
         }
-        ClassLoader cl = runtime == null ? Thread.currentThread().getContextClassLoader() : runtime.getJRubyClassLoader().getParent();
         URL url = cl.getResource(pathname);
         String[] files;
         // do not find anything in current directory, i.e. file URIs
@@ -177,7 +181,7 @@ public class URLResource implements FileResource {
             url = null;
             files = null;
         }
-        // TODO remove this once we do not bundle yaml ruby scripts in jruby.jar anymore
+        // TODO remove this once we do not bundle yaml ruby scripts in jruby-core.jar anymore
         else if (url != null && pathname.startsWith( "yaml")) {
             url = null;
             files = null;
@@ -289,6 +293,7 @@ public class URLResource implements FileResource {
     private static String[] listFiles(String pathname) {
         try
         {
+            // TODO remove this replace
             return listFilesFromInputStream(new URL(pathname.replace("file://", "file:/") + "/.jrubydir").openStream());
         }
         catch (IOException e)

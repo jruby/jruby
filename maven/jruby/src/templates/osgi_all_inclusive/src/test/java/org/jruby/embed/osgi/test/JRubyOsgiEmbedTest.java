@@ -66,12 +66,15 @@ public class JRubyOsgiEmbedTest {
         System.err.println();
         System.err.println();
 
-	// System.setProperty( "jruby.debug.loadService", "true" );
+	//	System.setProperty( "jruby.debug.loadService", "true" );
 	IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
 
         // run a script from LOAD_PATH
         String hello = (String) jruby.runScriptlet( "require 'hello'; Hello.say" );
         assertEquals( hello, "world" );
+
+	String loadPath = (String) jruby.runScriptlet( "$LOAD_PATH.inspect" );
+        assertEquals( loadPath, "[\"uri:classloader:\", \"uri:classloader:/META-INF/jruby.home/lib/ruby/1.9/site_ruby\", \"uri:classloader:/META-INF/jruby.home/lib/ruby/shared\", \"uri:classloader:/META-INF/jruby.home/lib/ruby/1.9\"]" );
 
         System.err.println();
         System.err.println();
@@ -92,8 +95,7 @@ public class JRubyOsgiEmbedTest {
         assertEquals(true, loaded);
 
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
-        gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
+        assertEquals( gemPath, "[\"uri:classloader:/specifications\", \"uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
 
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\", \"jruby-openssl\"]");
