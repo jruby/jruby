@@ -470,6 +470,18 @@
         </exec>
     </target>
 
+    <target name="osgi" description="run osgi tests">
+        <exec executable="mvn" failonerror="true">
+          <arg line="-Posgi"/>
+        </exec>
+    </target>
+
+    <target name="j2ee" description="run j2ee tests">
+        <exec executable="mvn" failonerror="true">
+          <arg line="-Pj2ee"/>
+        </exec>
+    </target>
+
     <target name="complete" description="Create the jruby-complete.jar">
         <exec executable="mvn" failonerror="true">
           <arg line="-Pcomplete"/>

@@ -119,6 +119,8 @@
             <configuration>
               <pomExcludes>
                 <pomExclude>osgi_all_inclusive_felix-3.2/pom.xml</pomExclude>
+                <pomExclude>${its.j2ee}</pomExclude>
+                <pomExclude>${its.osgi}</pomExclude>
               </pomExcludes>
             </configuration>
           </plugin>

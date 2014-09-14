@@ -23,14 +23,14 @@ project 'JRuby Artifacts' do
   end
 
   # module to profile map
-  map = { 'jruby' => [ :release, :main ],
-    'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars' ],
-    'jruby-complete' => [ :release, :complete ],
+  map = { 'jruby' => [ :release, :main, :osgi, :j2ee ],
+    'jruby-noasm' => [ :release, :main ],
+    'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars', :osgi, :j2ee ],
+    'jruby-complete' => [ :release, :complete, :osgi ],
     'jruby-dist' => [ :release, :dist ],
     'jruby-jars' => [ :release, 'jruby-jars' ],
     'jruby-rake-plugin' => [ :release, 'jruby-rake-plugin']
   }
-  map[ 'jruby-noasm' ] = map[ 'jruby' ]
 
   profile :all do
     modules map.keys

@@ -53,6 +53,8 @@
   </organization>
 
   <properties>
+    <its.j2ee>j2ee*/pom.xml</its.j2ee>
+    <its.osgi>osgi*/pom.xml</its.osgi>
     <invoker.skip>true</invoker.skip>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby.plugins.version>1.0.7-SNAPSHOT</jruby.plugins.version>
@@ -358,6 +360,10 @@
             <postBuildHookScript>verify.bsh</postBuildHookScript>
             <streamLogs>true</streamLogs>
 	    <goals><goal>install</goal></goals>
+	    <pomExcludes>
+	      <pomExclude>${its.j2ee}</pomExclude>
+	      <pomExclude>${its.osgi}</pomExclude>
+	    </pomExcludes>
           </configuration>
         </plugin>
 
