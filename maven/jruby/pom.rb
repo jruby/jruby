@@ -64,7 +64,7 @@ project 'JRuby Main Maven Artifact' do
     activation do
       jdk '1.6'
     end
-    plugin :invoker, :pomExcludes => ['jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml']
+    plugin :invoker, :pomExcludes => ['jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
 
   profile :id => :wlp do
