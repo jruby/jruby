@@ -506,6 +506,10 @@ public class CoreLibrary {
         return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException internalError(String message, Node currentNode) {
+        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), context.makeString("internal implementation error - " + message), RubyCallStack.getBacktrace(currentNode));
+    }
+
     public RubyContext getContext() {
         return context;
     }

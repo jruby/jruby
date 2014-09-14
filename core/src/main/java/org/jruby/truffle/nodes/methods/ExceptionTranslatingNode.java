@@ -41,23 +41,23 @@ public class ExceptionTranslatingNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         try {
             return child.execute(frame);
-        } catch (ControlFlowException e) {
+        } catch (ControlFlowException exception) {
             controlProfile.enter();
-            throw e;
-        } catch (RaiseException e) {
+            throw exception;
+        } catch (RaiseException exception) {
             rethrowProfile.enter();
-            throw e;
-        } catch (TruffleFatalException e) {
-            throw e;
-        } catch (ArithmeticException e) {
+            throw exception;
+        } catch (TruffleFatalException exception) {
+            throw exception;
+        } catch (ArithmeticException exception) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(translate(e));
-        } catch (UnsupportedSpecializationException e) {
+            throw new RaiseException(translate(exception));
+        } catch (UnsupportedSpecializationException exception) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(translate(e));
-        } catch (Exception e) {
+            throw new RaiseException(translate(exception));
+        } catch (Throwable translate) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(translate(e));
+            throw new RaiseException(translate(translate));
         }
     }
 
@@ -114,25 +114,15 @@ public class ExceptionTranslatingNode extends RubyNode {
             }
         }
 
-        builder.append(" - this is either a feature we haven't implemented for Truffle yet, or it might be disallowed in Ruby anyway");
-
-        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(builder.toString()), RubyCallStack.getBacktrace(this));
+        return getContext().getCoreLibrary().internalError(builder.toString(), this);
     }
 
-    public RubyBasicObject translate(Exception exception) {
+    public RubyBasicObject translate(Throwable throwable) {
         if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
-            exception.printStackTrace();
+            throwable.printStackTrace();
         }
 
-        String message;
-
-        if (exception.getMessage() == null) {
-            message = exception.getClass().getSimpleName();
-        } else {
-            message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
-        }
-
-        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(message), RubyCallStack.getBacktrace(this));
+        return getContext().getCoreLibrary().internalError(throwable.getClass().getSimpleName(), this);
     }
 
 }
