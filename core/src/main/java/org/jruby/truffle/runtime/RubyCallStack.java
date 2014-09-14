@@ -122,8 +122,13 @@ public abstract class RubyCallStack {
 
                 @Override
                 public RubyMethod visitFrame(FrameInstance frameInstance) {
-                    activations.add(new Activation(frameInstance.getCallNode(),
-                            frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                    // Multiple top level methods (require) introduce null call nodes - ignore them
+                    
+                    if (frameInstance.getCallNode() != null) {
+                        activations.add(new Activation(frameInstance.getCallNode(),
+                                frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                    }
+
                     return null;
                 }
 
