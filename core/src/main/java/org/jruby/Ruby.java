@@ -155,7 +155,6 @@ import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
