@@ -636,7 +636,7 @@ public final class Ruby {
         if (compile) {
             try {
                 script = tryCompile(scriptNode);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
                     e.printStackTrace();
                 }
