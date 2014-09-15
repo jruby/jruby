@@ -253,8 +253,10 @@ public class Bootstrap {
         return new ConstantCallSite(handle);
     }
 
-    public static CallSite invokeInstanceSuper(Lookup lookup, String name, MethodType type, int hasUnusedResult) {
-        String superName = JavaNameMangler.demangleMethodName(name.split(":")[1]);
+    public static CallSite invokeSuper(Lookup lookup, String name, MethodType type, int hasUnusedResult) {
+        String[] targetAndMethod = name.split(":");
+        String superName = JavaNameMangler.demangleMethodName(targetAndMethod[1]);
+
         InvokeSite site = new InvokeSite(type, name, CallType.SUPER);
         MethodHandle handle;
 
@@ -270,7 +272,7 @@ public class Bootstrap {
                     .collect("args", "arg[0-9]+");
         }
 
-        handle = binder.invokeStaticQuiet(lookup, Bootstrap.class, "invokeInstanceSuper").handle();
+        handle = binder.invokeStaticQuiet(lookup, Bootstrap.class, targetAndMethod[0]).handle();
 
         site.setTarget(handle);
 
@@ -364,8 +366,8 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeClassSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static Handle invokeInstanceSuper() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeInstanceSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
+    public static Handle invokeSuper() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
     public static Handle invokeFixnumOp() {
@@ -661,6 +663,7 @@ public class Bootstrap {
 
     public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
+        // TODO: caching
         RubyClass superClass = definingModule.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
@@ -670,7 +673,28 @@ public class Bootstrap {
 
     public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
         // TODO: get rid of caller
+        // TODO: caching
         RubyClass superClass = definingModule.getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
+                : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
+        return hasUnusedResult ? null : rVal;
+    }
+
+    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        // TODO: get rid of caller
+        // TODO: caching
+        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
+        return hasUnusedResult ? null : rVal;
+    }
+
+    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+        // TODO: get rid of caller
+        // TODO: caching
+        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
                 : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);

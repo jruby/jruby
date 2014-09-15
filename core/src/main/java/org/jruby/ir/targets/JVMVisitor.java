@@ -773,16 +773,18 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
-        // disable for now
-        super.ClassSuperInstr(classsuperinstr);
-
+        // TODO: Nearly identical to InstanceSuperInstr
         IRBytecodeAdapter m = jvmMethod();
         String name = classsuperinstr.getMethodAddr().getName();
         Operand[] args = classsuperinstr.getCallArgs();
 
         m.loadContext();
+        m.loadSelf(); // TODO: get rid of caller
         m.loadSelf();
         visit(classsuperinstr.getDefiningModule());
+
+        // TODO: CON: is this safe?
+        jvmAdapter().checkcast(p(RubyClass.class));
 
         for (int i = 0; i < args.length; i++) {
             Operand operand = args[i];
@@ -799,7 +801,7 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.invokeClassSuper(name, args.length, hasClosure);
+        m.invokeClassSuper(name, classsuperinstr.hasUnusedResult(), args.length, hasClosure);
 
         jvmStoreLocal(classsuperinstr.getResult());
     }

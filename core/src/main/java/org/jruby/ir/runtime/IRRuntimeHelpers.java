@@ -784,4 +784,12 @@ public class IRRuntimeHelpers {
 
         return val;
     }
+
+    public static Object classSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, RubyModule definingModule) {
+        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                                           : method.call(context, self, superClass, methodName, args, block);
+        return rVal;
+    }
 }
