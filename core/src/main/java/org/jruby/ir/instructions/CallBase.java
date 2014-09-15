@@ -360,7 +360,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     public boolean targetRequiresCallersFrame() {
         if (!flagsComputed) computeFlags();
 
-        return targetRequiresCallersBinding;
+        return targetRequiresCallersFrame;
     }
 
     @Override
