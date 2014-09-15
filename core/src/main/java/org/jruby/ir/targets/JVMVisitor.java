@@ -51,7 +51,7 @@ public class JVMVisitor extends IRVisitor {
         this.jvm = new JVM();
     }
 
-    public static Class compile(Ruby ruby, IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
+    public static Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
         // run compiler
         JVMVisitor target = new JVMVisitor();
 

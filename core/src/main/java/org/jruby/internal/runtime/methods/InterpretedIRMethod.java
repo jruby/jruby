@@ -172,7 +172,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                 ensureInstrsReady();
 
                 try {
-                    Class compiled = JVMVisitor.compile(runtime, method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
+                    Class compiled = JVMVisitor.compile(method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
                     Method scriptMethod = compiled.getMethod(
                             "__script__",
                             ThreadContext.class,

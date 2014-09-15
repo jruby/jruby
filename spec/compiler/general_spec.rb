@@ -23,7 +23,7 @@ module CompilerTestUtils
       scope.setModule(currModule)
     end
 
-    compiled = oj.ir.targets.JVMVisitor.compile(JRuby.runtime, method, oj.util.ClassCache::OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
+    compiled = oj.ir.targets.JVMVisitor.compile(method, oj.util.ClassCache::OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod(
         "__script__",
         oj.runtime.ThreadContext.java_class,
