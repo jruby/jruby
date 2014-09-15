@@ -158,7 +158,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
 
         // don't JIT during runtime boot
-        if (context.runtime.isBootingRuntime()) return false;
+        if (context.runtime.isBooting()) return false;
 
         if (box.callCount == -1) return false;
 
