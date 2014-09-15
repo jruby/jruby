@@ -403,11 +403,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case NONLOCAL_RETURN: {
             NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
             IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-            // If not in a lambda, check if this was a non-local return
-            if (!IRRuntimeHelpers.inLambda(blockType)) {
-                IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, ri.maybeLambda, rv);
-            }
-            return rv;
+            return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, ri.maybeLambda, rv);
         }
         }
         return null;

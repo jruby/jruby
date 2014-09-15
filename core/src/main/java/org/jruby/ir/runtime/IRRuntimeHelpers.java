@@ -53,7 +53,10 @@ public class IRRuntimeHelpers {
     /*
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
-    public static void initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, IRubyObject returnValue) {
+    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, boolean maybeLambda, IRubyObject returnValue) {
+        // If not in a lambda, check if this was a non-local return
+        if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
+
         IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
         IRScopeType scopeType = scope.getScopeType();
         boolean inDefineMethod = false;

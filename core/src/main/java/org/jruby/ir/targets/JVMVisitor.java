@@ -1657,21 +1657,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void NonlocalReturnInstr(NonlocalReturnInstr returninstr) {
-        // disable for now
-        super.NonlocalReturnInstr(returninstr);
+        jvmMethod().loadContext();
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        jvmMethod().loadBlockType();
+        jvmAdapter().ldc(returninstr.maybeLambda);
+        visit(returninstr.getReturnValue());
 
-        if (this.currentScope instanceof IRClosure) {
-            /* generate run-time call to check non-local-return, errors, etc */
-            SkinnyMethodAdapter a = jvmAdapter();
-            jvmMethod().loadContext(); // 1. ThreadContext
-            jvmMethod().loadStaticScope(); // 2. current scope
-            // 3. ref. to returnInstr.methodIdToReturnFrom
-            visit(returninstr.getReturnValue()); // 4. return value
-            // boolean about whether we are in a closure or not
-            // call to handle non-local return
-        } else {
-            /* throw IR-return-jump */
-        }
+        jvmMethod().invokeIRHelper("initiateNonLocalReturn", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, Block.Type.class, boolean.class, IRubyObject.class));
+        jvmMethod().returnValue();
     }
 
     @Override
