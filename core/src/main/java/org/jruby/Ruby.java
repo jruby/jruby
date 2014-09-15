@@ -1272,7 +1272,7 @@ public final class Ruby {
         }
 
         // out of base boot mode
-        booting = false;
+        bootingCore = false;
 
         // init Ruby-based kernel
         if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
@@ -1299,6 +1299,9 @@ public final class Ruby {
         }
         
         setNetworkStack();
+
+        // Done booting JRuby runtime
+        bootingRuntime = false;
         
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
@@ -4559,8 +4562,12 @@ public final class Ruby {
         return floatReopened;
     }
     
+    public boolean isBootingCore() {
+        return bootingCore;
+    }
+
     public boolean isBooting() {
-        return booting;
+        return bootingRuntime;
     }
     
     public CoverageData getCoverageData() {
@@ -4924,7 +4931,8 @@ public final class Ruby {
             floatInvalidator = OptoFactory.newGlobalInvalidator(0);
     private boolean fixnumReopened, floatReopened;
     
-    private volatile boolean booting = true;
+    private volatile boolean bootingCore = true;
+    private volatile boolean bootingRuntime = true;
     
     private RubyHash envObject;
     

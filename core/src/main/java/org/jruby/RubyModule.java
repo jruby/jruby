@@ -1167,7 +1167,7 @@ public class RubyModule extends RubyObject {
     }
     
     protected void invalidateCoreClasses() {
-        if (!getRuntime().isBooting()) {
+        if (!getRuntime().isBootingCore()) {
             if (this == getRuntime().getFixnum()) {
                 getRuntime().reopenFixnum();
             } else if (this == getRuntime().getFloat()) {

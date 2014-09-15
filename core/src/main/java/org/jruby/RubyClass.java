@@ -1033,7 +1033,7 @@ public class RubyClass extends RubyModule {
         invalidators.add(methodInvalidator);
         
         // if we're not at boot time, don't bother fully clearing caches
-        if (!runtime.isBooting()) cachedMethods.clear();
+        if (!runtime.isBootingCore()) cachedMethods.clear();
 
         // no subclasses, don't bother with lock and iteration
         if (subclasses == null || subclasses.isEmpty()) return;
