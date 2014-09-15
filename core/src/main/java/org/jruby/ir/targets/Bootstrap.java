@@ -303,23 +303,7 @@ public class Bootstrap {
                 .from(lookup, type)
                 .append(site, constName.intern())
                 .append(noPrivateConsts == 0 ? false : true)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "searchConst");
-
-        site.setTarget(handle);
-
-        return site;
-    }
-
-    public static CallSite inheritanceSearchConst(Lookup lookup, String name, MethodType type, int noPrivateConsts) {
-        MutableCallSite site = new MutableCallSite(type);
-        String[] bits = name.split(":");
-        String constName = bits[1];
-
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .append(site, constName.intern())
-                .append(noPrivateConsts == 0 ? false : true)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, bits[0]);
 
         site.setTarget(handle);
 
@@ -384,10 +368,6 @@ public class Bootstrap {
 
     public static Handle searchConst() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
-    }
-
-    public static Handle inheritanceSearchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
     public static RubyString string(ByteList value, ThreadContext context) {
@@ -1315,8 +1295,30 @@ public class Bootstrap {
         return constant;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // COMPLETED WORK BELOW
+    public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
+        Ruby runtime = context.runtime;
+
+        IRubyObject constant = scope.getConstantInner(constName);
+
+        if (constant == null) {
+            constant = UndefinedValue.UNDEFINED;
+        }
+
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
+
+        // bind constant until invalidated
+        MethodHandle target = Binder.from(site.type())
+                .drop(0, 2)
+                .constant(constant);
+        MethodHandle fallback = Binder.from(site.type())
+                .append(site, constName)
+                .append(noPrivateConsts)
+                .invokeStatic(LOOKUP, Bootstrap.class, "lexicalSearchConst");
+
+        site.setTarget(switchPoint.guardWithTest(target, fallback));
+
+        return constant;
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Symbol binding

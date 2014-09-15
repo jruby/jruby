@@ -1206,7 +1206,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LexicalSearchConstInstr(LexicalSearchConstInstr lexicalsearchconstinstr) {
-        super.LexicalSearchConstInstr(lexicalsearchconstinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvmMethod().loadContext();
+        visit(lexicalsearchconstinstr.getDefiningScope());
+
+        jvmMethod().lexicalSearchConst(lexicalsearchconstinstr.getConstName());
+
+        jvmStoreLocal(lexicalsearchconstinstr.getResult());
     }
 
     @Override
