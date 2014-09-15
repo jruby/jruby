@@ -422,13 +422,13 @@ public abstract class KernelNodes {
             final StringBuilder builder = new StringBuilder();
 
             while (true) {
-                final char c = (char) context.getRuntime().getInstanceConfig().getInput().read();
+                final int c = context.getRuntime().getInstanceConfig().getInput().read();
 
-                if (c == '\r' || c == '\n') {
+                if (c == -1 || c == '\r' || c == '\n') {
                     break;
                 }
 
-                builder.append(c);
+                builder.append((char) c);
             }
 
             return builder.toString();
