@@ -635,9 +635,15 @@ public final class Ruby {
         if (compile) {
             try {
                 script = tryCompile(scriptNode);
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.info("Successfully compiled: " + scriptNode.getPosition().getFile());
+                }
             } catch (Throwable e) {
-                if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    e.printStackTrace();
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.error("Failed to compile: " + scriptNode.getPosition().getFile());
+                    if (Options.JIT_LOGGING_VERBOSE.load()) {
+                        LOG.error(e);
+                    }
                 }
             }
             if (compile && script == null) {
