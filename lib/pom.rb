@@ -45,7 +45,7 @@ default_gems =
    ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
    ImportedGem.new( 'ffi', '1.9.3', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.0', true )
+   ImportedGem.new( 'jar-dependencies', '0.1.1', true )
   ]
 
 project 'JRuby Lib Setup' do
