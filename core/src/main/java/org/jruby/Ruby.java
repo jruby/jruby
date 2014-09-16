@@ -155,7 +155,6 @@ import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
@@ -636,9 +635,15 @@ public final class Ruby {
         if (compile) {
             try {
                 script = tryCompile(scriptNode);
-            } catch (Exception e) {
-                if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    e.printStackTrace();
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.info("Successfully compiled: " + scriptNode.getPosition().getFile());
+                }
+            } catch (Throwable e) {
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.error("Failed to compile: " + scriptNode.getPosition().getFile());
+                    if (Options.JIT_LOGGING_VERBOSE.load()) {
+                        LOG.error(e);
+                    }
                 }
             }
             if (compile && script == null) {
@@ -1272,7 +1277,7 @@ public final class Ruby {
         }
 
         // out of base boot mode
-        booting = false;
+        bootingCore = false;
 
         // init Ruby-based kernel
         if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
@@ -1299,6 +1304,9 @@ public final class Ruby {
         }
         
         setNetworkStack();
+
+        // Done booting JRuby runtime
+        bootingRuntime = false;
         
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
@@ -1730,7 +1738,7 @@ public final class Ruby {
         addLazyBuiltin("tempfile.jar", "tempfile", "org.jruby.ext.tempfile.TempfileLibrary");
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
         addLazyBuiltin("yecht.jar", "yecht", "YechtService");
-        addLazyBuiltin("pathname_ext.jar", "pathname_ext", "org.jruby.ext.pathname.PathnameLibrary");
+        addLazyBuiltin("pathname.jar", "pathname", "org.jruby.ext.pathname.PathnameLibrary");
         addLazyBuiltin("truffelize.jar", "truffelize", "org.jruby.ext.truffelize.TruffelizeLibrary");
 
         addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
@@ -4559,8 +4567,12 @@ public final class Ruby {
         return floatReopened;
     }
     
+    public boolean isBootingCore() {
+        return bootingCore;
+    }
+
     public boolean isBooting() {
-        return booting;
+        return bootingRuntime;
     }
     
     public CoverageData getCoverageData() {
@@ -4924,7 +4936,8 @@ public final class Ruby {
             floatInvalidator = OptoFactory.newGlobalInvalidator(0);
     private boolean fixnumReopened, floatReopened;
     
-    private volatile boolean booting = true;
+    private volatile boolean bootingCore = true;
+    private volatile boolean bootingRuntime = true;
     
     private RubyHash envObject;
     

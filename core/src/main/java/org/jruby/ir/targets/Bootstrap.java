@@ -32,6 +32,7 @@ import java.lang.invoke.*;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -65,11 +66,35 @@ public class Bootstrap {
 
     public static CallSite regexp(Lookup lookup, String name, MethodType type, int options) {
         MutableCallSite site = new MutableCallSite(type);
-        MethodHandle handle = Binder
-                .from(type)
-                .append(MutableCallSite.class, site)
-                .append(int.class, options)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "regexp");
+        RegexpOptions o = RegexpOptions.fromEmbeddedOptions(options);
+        MethodHandle handle;
+
+        if (name.equals("dregexp")) {
+            String[] argNames = new String[type.parameterCount()];
+            Class[] argTypes = new Class[argNames.length];
+
+            argNames[0] = "context";
+            argTypes[0] = ThreadContext.class;
+
+            for (int i = 1; i < argNames.length; i++) {
+                argNames[i] = "part" + i;
+                argTypes[i] = RubyString.class;
+            }
+
+            handle = SmartBinder
+                    .from(lookup, RubyRegexp.class, argNames, argTypes)
+                    .collect("parts", "part.*")
+                    .append("site", site)
+                    .append("options", o)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "dregexp").handle();
+        } else {
+            handle = Binder
+                    .from(lookup, type)
+                    .append(MutableCallSite.class, site)
+                    .append(o)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "regexp");
+        }
+
         site.setTarget(handle);
         return site;
     }
@@ -115,48 +140,61 @@ public class Bootstrap {
         final Signature fullSignature;
         final int arity;
 
-        public InvokeSite(MethodType type, String name) {
+        public InvokeSite(MethodType type, String name, CallType callType) {
             super(type);
             this.name = name;
+            this.callType = callType;
 
-            // all signatures have (context, caller, self), so length, block, and arg before block indicates signature
-            int arity;
-            if (type.parameterType(type.parameterCount() - 1) == Block.class) {
-                arity = type.parameterCount() - 4;
+            Signature startSig;
+            int argOffset;
 
-                Signature sig = JRubyCallSite.STANDARD_SITE_SIG;
-                if (arity == 1 && type.parameterType(3) == IRubyObject[].class) {
-                    sig = sig.appendArg("args", IRubyObject[].class);
-                } else {
-                    for (int i = 0; i < arity; i++) {
-                        sig = sig.appendArg("arg" + i, IRubyObject.class);
-                    }
-                }
-                sig = sig.appendArg("block", Block.class);
-                fullSignature = signature = sig;
+            if (callType == CallType.SUPER) {
+                // super calls receive current class argument, so offsets and signature are different
+                startSig = JRubyCallSite.STANDARD_SUPER_SIG;
+                argOffset = 4;
             } else {
-                arity = type.parameterCount() - 3;
-
-                Signature sig = JRubyCallSite.STANDARD_SITE_SIG;
-                if (arity == 1 && type.parameterType(3) == IRubyObject[].class) {
-                    sig = sig.appendArg("args", IRubyObject[].class);
-                } else {
-                    for (int i = 0; i < arity; i++) {
-                        sig = sig.appendArg("arg" + i, IRubyObject.class);
-                    }
-                }
-                signature = sig;
-                fullSignature = sig.appendArg("block", Block.class);
+                startSig = JRubyCallSite.STANDARD_SITE_SIG;
+                argOffset = 3;
             }
 
-            this.arity = JRubyCallSite.getSiteCount(type.parameterArray());
+            int arity;
+            if (type.parameterType(type.parameterCount() - 1) == Block.class) {
+                arity = type.parameterCount() - (argOffset + 1);
+
+                if (arity == 1 && type.parameterType(argOffset) == IRubyObject[].class) {
+                    arity = -1;
+                    startSig = startSig.appendArg("args", IRubyObject[].class);
+                } else {
+                    for (int i = 0; i < arity; i++) {
+                        startSig = startSig.appendArg("arg" + i, IRubyObject.class);
+                    }
+                }
+                startSig = startSig.appendArg("block", Block.class);
+                fullSignature = signature = startSig;
+            } else {
+                arity = type.parameterCount() - argOffset;
+
+                if (arity == 1 && type.parameterType(argOffset) == IRubyObject[].class) {
+                    arity = -1;
+                    startSig = startSig.appendArg("args", IRubyObject[].class);
+                } else {
+                    for (int i = 0; i < arity; i++) {
+                        startSig = startSig.appendArg("arg" + i, IRubyObject.class);
+                    }
+                }
+                signature = startSig;
+                fullSignature = startSig.appendArg("block", Block.class);
+            }
+
+            this.arity = arity;
         }
 
         public final String name;
+        public final CallType callType;
     }
 
     public static CallSite invoke(Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]), CallType.NORMAL);
         MethodHandle handle;
 
         SmartBinder binder = SmartBinder.from(site.signature)
@@ -174,7 +212,7 @@ public class Bootstrap {
     }
 
     public static CallSite attrAssign(Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]), CallType.NORMAL);
         MethodHandle handle =
                 insertArguments(
                         findStatic(
@@ -189,7 +227,7 @@ public class Bootstrap {
     }
 
     public static CallSite invokeSelf(Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]), CallType.NORMAL);
         MethodHandle handle;
 
         SmartBinder binder = SmartBinder.from(site.signature)
@@ -215,13 +253,30 @@ public class Bootstrap {
         return new ConstantCallSite(handle);
     }
 
-    public static CallSite invokeInstanceSuper(Lookup lookup, String name, MethodType type) {
-        MethodHandle handle = insertArguments(
-                findStatic(lookup, Bootstrap.class, "invokeInstanceSuper", type.insertParameterTypes(0, String.class)),
-                0,
-                JavaNameMangler.demangleMethodName(name.split(":")[1]));
+    public static CallSite invokeSuper(Lookup lookup, String name, MethodType type, int hasUnusedResult) {
+        String[] targetAndMethod = name.split(":");
+        String superName = JavaNameMangler.demangleMethodName(targetAndMethod[1]);
 
-        return new ConstantCallSite(handle);
+        InvokeSite site = new InvokeSite(type, name, CallType.SUPER);
+        MethodHandle handle;
+
+        SmartBinder binder = SmartBinder.from(site.signature)
+                .insert(
+                        0,
+                        arrayOf("site",           "name",       "unusedResult"),
+                        arrayOf(InvokeSite.class, String.class, boolean.class),
+                                site,             superName,    hasUnusedResult == 0 ? false : true);
+
+        if (site.arity > 0) {
+            binder = binder
+                    .collect("args", "arg[0-9]+");
+        }
+
+        handle = binder.invokeStaticQuiet(lookup, Bootstrap.class, targetAndMethod[0]).handle();
+
+        site.setTarget(handle);
+
+        return site;
     }
 
     public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
@@ -248,23 +303,7 @@ public class Bootstrap {
                 .from(lookup, type)
                 .append(site, constName.intern())
                 .append(noPrivateConsts == 0 ? false : true)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "searchConst");
-
-        site.setTarget(handle);
-
-        return site;
-    }
-
-    public static CallSite inheritanceSearchConst(Lookup lookup, String name, MethodType type, int noPrivateConsts) {
-        MutableCallSite site = new MutableCallSite(type);
-        String[] bits = name.split(":");
-        String constName = bits[1];
-
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .append(site, constName.intern())
-                .append(noPrivateConsts == 0 ? false : true)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, bits[0]);
 
         site.setTarget(handle);
 
@@ -311,8 +350,8 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeClassSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static Handle invokeInstanceSuper() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeInstanceSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    public static Handle invokeSuper() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
     public static Handle invokeFixnumOp() {
@@ -331,16 +370,42 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
-    public static Handle inheritanceSearchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
-    }
-
     public static RubyString string(ByteList value, ThreadContext context) {
         return RubyString.newStringShared(context.runtime, value);
     }
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
         return RubyArray.newArrayNoCopy(context.runtime, elts);
+    }
+
+    public static Handle contextValue() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "contextValue", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static CallSite contextValue(Lookup lookup, String name, MethodType type) {
+        MutableCallSite site = new MutableCallSite(type);
+        site.setTarget(Binder.from(type).append(site).invokeStaticQuiet(lookup, Bootstrap.class, name));
+        return site;
+    }
+
+    public static IRubyObject nil(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(IRubyObject.class, context.nil), 0, ThreadContext.class));
+        return context.nil;
+    }
+
+    public static IRubyObject True(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(IRubyObject.class, context.runtime.getTrue()), 0, ThreadContext.class));
+        return context.runtime.getTrue();
+    }
+
+    public static IRubyObject False(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(IRubyObject.class, context.runtime.getFalse()), 0, ThreadContext.class));
+        return context.runtime.getFalse();
+    }
+
+    public static Ruby runtime(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(Ruby.class, context.runtime), 0, ThreadContext.class));
+        return context.runtime;
     }
 
     public static IRubyObject hash(ThreadContext context, IRubyObject[] pairs) {
@@ -352,14 +417,30 @@ public class Bootstrap {
         return hash;
     }
 
-    public static RubyRegexp regexp(ThreadContext context, RubyString pattern, MutableCallSite site, int options) {
-        RubyRegexp regexp = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
+    public static RubyRegexp regexp(ThreadContext context, RubyString pattern, MutableCallSite site, RegexpOptions options) {
+        RubyRegexp regexp = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), options);
         regexp.setLiteral();
+
         site.setTarget(
                 Binder.from(RubyRegexp.class, ThreadContext.class, RubyString.class)
                         .drop(0, 2)
                         .constant(regexp));
         return regexp;
+    }
+
+    public static RubyRegexp dregexp(ThreadContext context, RubyString[] pieces, MutableCallSite site, RegexpOptions options) {
+        RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        if (options.isOnce()) {
+            site.setTarget(
+                    Binder.from(site.type())
+                            .drop(0, site.type().parameterCount())
+                            .constant(re));
+        }
+
+        return re;
     }
 
     public static RubyBignum bignum(ThreadContext context, String value, MutableCallSite site) {
@@ -590,14 +671,44 @@ public class Bootstrap {
         return (IRubyObject)rVal;
     }
 
-    public static IRubyObject invokeInstanceSuper(String methodName, ThreadContext context, IRubyObject self, IRubyObject definingModule, IRubyObject[] args, Block block) throws Throwable {
-        RubyClass superClass = ((RubyModule)definingModule).getSuperClass();
+    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        // TODO: get rid of caller
+        // TODO: caching
+        RubyClass superClass = definingModule.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-
-        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
+        return hasUnusedResult ? null : rVal;
+    }
 
-        return (IRubyObject)rVal;
+    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+        // TODO: get rid of caller
+        // TODO: caching
+        RubyClass superClass = definingModule.getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
+                : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
+        return hasUnusedResult ? null : rVal;
+    }
+
+    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        // TODO: get rid of caller
+        // TODO: caching
+        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
+        return hasUnusedResult ? null : rVal;
+    }
+
+    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+        // TODO: get rid of caller
+        // TODO: caching
+        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
+                : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
+        return hasUnusedResult ? null : rVal;
     }
 
     public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
@@ -706,8 +817,9 @@ public class Bootstrap {
                 compiledIRMethod = ((InterpretedIRMethod)method).getCompiledIRMethod();
             }
 
-            // CON FIXME: frame/scope/visibility are not alway done in IR, so we have this ugly check and bailout
-            if (compiledIRMethod != null && compiledIRMethod.hasExplicitCallProtocol()) {
+            if (compiledIRMethod != null) {
+                assert compiledIRMethod.hasExplicitCallProtocol() : "all jitted methods must have call protocol";
+
                 mh = (MethodHandle)compiledIRMethod.getHandle();
 
                 binder = SmartBinder.from(site.signature)
@@ -726,7 +838,9 @@ public class Bootstrap {
                     binder = binder.append("block", Block.class, Block.NULL_BLOCK);
                 }
 
-                binder = binder.insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope());
+                binder = binder
+                        .insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope())
+                        .append("class", RubyModule.class, compiledIRMethod.getImplementationClass());
 
                 mh = binder.invoke(mh).handle();
             }
@@ -1211,8 +1325,30 @@ public class Bootstrap {
         return constant;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // COMPLETED WORK BELOW
+    public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
+        Ruby runtime = context.runtime;
+
+        IRubyObject constant = scope.getConstantInner(constName);
+
+        if (constant == null) {
+            constant = UndefinedValue.UNDEFINED;
+        }
+
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
+
+        // bind constant until invalidated
+        MethodHandle target = Binder.from(site.type())
+                .drop(0, 2)
+                .constant(constant);
+        MethodHandle fallback = Binder.from(site.type())
+                .append(site, constName)
+                .append(noPrivateConsts)
+                .invokeStatic(LOOKUP, Bootstrap.class, "lexicalSearchConst");
+
+        site.setTarget(switchPoint.guardWithTest(target, fallback));
+
+        return constant;
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Symbol binding

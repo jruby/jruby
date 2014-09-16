@@ -53,9 +53,13 @@ public class IRRuntimeHelpers {
     /*
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
-    public static void initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, IRubyObject returnValue) {
+    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, boolean maybeLambda, IRubyObject returnValue) {
+        // If not in a lambda, check if this was a non-local return
+        if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
+
         IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
         IRScopeType scopeType = scope.getScopeType();
+        boolean inDefineMethod = false;
         while (dynScope != null) {
             IRStaticScope ss = (IRStaticScope)dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -65,8 +69,13 @@ public class IRRuntimeHelpers {
             //
             // To be investigated.
             IRScopeType ssType = ss.getScopeType();
-            if (ssType != null && ssType.isMethodType()) {
-                break;
+            if (ssType != null) {
+                if (ssType.isMethodType()) {
+                    break;
+                } else if (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) {
+                    inDefineMethod = true;
+                    break;
+                }
             }
             dynScope = dynScope.getNextCapturedScope();
         }
@@ -77,7 +86,7 @@ public class IRRuntimeHelpers {
         // Ruby code: lambda { Thread.new { return }.join }.call
         //
         // To be investigated.
-        if (   (scopeType == null || (scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
+        if (   (scopeType == null || (!inDefineMethod && scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
             && (maybeLambda || !context.scopeExistsOnCallStack(dynScope)))
         {
             // Cannot return from the call that we have long since exited.
@@ -88,7 +97,7 @@ public class IRRuntimeHelpers {
         throw IRReturnJump.create(dynScope, returnValue);
     }
 
-    public static IRubyObject handleNonlocalReturn(IRStaticScope scope, StaticScope currScope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(StaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null;
@@ -96,7 +105,7 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == dynScope)) return (IRubyObject) rj.returnValue;
+            if (inNonMethodBodyLambda((IRStaticScope)scope, blockType) || (rj.methodToReturnFrom == dynScope)) return (IRubyObject) rj.returnValue;
 
             // - If not, Just pass it along!
             throw rj;
@@ -133,7 +142,7 @@ public class IRRuntimeHelpers {
             // We just unwound all the way up because of a non-local break
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         } else if (exc instanceof IRReturnJump) {
-            return handleNonlocalReturn(scope, scope, dynScope, exc, blockType);
+            return handleNonlocalReturn(scope, dynScope, exc, blockType);
         } else {
             // Propagate
             Helpers.throwException((Throwable)exc);
@@ -673,7 +682,9 @@ public class IRRuntimeHelpers {
                     } else if (inBindingEval) {
                         // Binding evals are special!
                         return ds.getStaticScope().getModule();
-                    } else if (scopeType.isMethod()) {
+                    } else if (scopeType == IRScopeType.CLASS_METHOD) {
+                        return (RubyModule)self;
+                    } else if (scopeType == IRScopeType.INSTANCE_METHOD) {
                         return self.getMetaClass();
                     } else {
                         switch (scopeType) {
@@ -697,5 +708,88 @@ public class IRRuntimeHelpers {
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
         return context.runtime.newBoolean(b.isGiven());
+    }
+
+    public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArguments);
+        return constructRestArg(context, args, keywordArguments, required, argIndex);
+    }
+
+    public static IRubyObject constructRestArg(ThreadContext context, Object[] args, RubyHash keywordArguments, int required, int argIndex) {
+        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+        int remainingArguments = argsLength - required;
+
+        if (remainingArguments <= 0) return context.runtime.newArray(IRubyObject.NULL_ARRAY);
+
+        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
+        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
+
+        return context.runtime.newArray(restArgs);
+    }
+
+    public static IRubyObject receivePostReqdArg(IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
+        boolean kwargs = extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
+        int n = kwargs ? args.length - 1 : args.length;
+        int remaining = n - preReqdArgsCount;
+        if (remaining <= argIndex) return null;  // For blocks!
+
+        return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
+    }
+
+    public static IRubyObject receiveOptArg(IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
+        int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
+        RubyHash keywordArguments = extractKwargsHash(args, requiredArgs, acceptsKeywordArgument);
+        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+
+        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
+
+        return args[preArgs + optArgIndex];
+    }
+
+    public static IRubyObject getPreArgSafe(ThreadContext context, IRubyObject[] args, int argIndex) {
+        IRubyObject result;
+        result = argIndex < args.length ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
+        return result;
+    }
+
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String argName, boolean acceptsKeywordArgument) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
+
+        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
+
+        RubySymbol keywordName = context.getRuntime().newSymbol(argName);
+
+        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
+
+        // SSS FIXME: Can we use an internal delete here?
+        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
+        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, keywordArgumentSupplied);
+
+        return keywordArguments == null ? RubyHash.newSmallHash(context.getRuntime()) : keywordArguments;
+    }
+
+    public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String varName) {
+        IRubyObject val;
+        if (matchRes.isNil()) {
+            val = context.nil;
+        } else {
+            IRubyObject backref = context.getBackRef();
+            int n = ((RubyMatchData)backref).getNameToBackrefNumber(varName);
+            val = RubyRegexp.nth_match(n, backref);
+        }
+
+        return val;
+    }
+
+    public static Object classSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, RubyModule definingModule) {
+        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                                           : method.call(context, self, superClass, methodName, args, block);
+        return rVal;
     }
 }

@@ -4,6 +4,7 @@
  */
 package org.jruby.ir.targets;
 
+import com.headius.invokebinder.Signature;
 import org.jruby.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
@@ -31,10 +32,9 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public class IRBytecodeAdapter {
-    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, int arity, String... params) {
+    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, Signature signature) {
         this.adapter = adapter;
-        this.arity = arity;
-        this.params = params;
+        this.signature = signature;
     }
 
     public void startMethod() {
@@ -54,17 +54,17 @@ public class IRBytecodeAdapter {
     }
 
     public void pushFixnum(Long l) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
     }
 
     public void pushFloat(Double d) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.flote(), d);
     }
 
     public void pushString(ByteList bl) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
     }
 
@@ -81,13 +81,13 @@ public class IRBytecodeAdapter {
      * @param sym the symbol's string identifier
      */
     public void pushSymbol(String sym) {
-        adapter.aload(0);
+        loadContext();
         adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.symbol(), sym);
     }
 
     public void loadRuntime() {
-        adapter.aload(0);
-        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        loadContext();
+        adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void loadLocal(int i) {
@@ -108,6 +108,26 @@ public class IRBytecodeAdapter {
 
     public void loadArgs() {
         adapter.aload(3);
+    }
+
+    public void loadBlock() {
+        adapter.aload(4);
+    }
+
+    public void loadFrameClass() {
+        adapter.aload(5);
+    }
+
+    public void loadSuperName() {
+        adapter.aload(5);
+    }
+
+    public void loadBlockType() {
+        if (signature.argOffset("type") == -1) {
+            adapter.aconst_null();
+        } else {
+            adapter.aload(6);
+        }
     }
 
     public void storeLocal(int i) {
@@ -146,19 +166,19 @@ public class IRBytecodeAdapter {
         }
     }
 
-    public void invokeClassSuper(String name, int arity, boolean hasClosure) {
+    public void invokeInstanceSuper(String name, boolean hasUnusedResult, int arity, boolean hasClosure) {
         if (hasClosure) {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), Bootstrap.invokeSelf());
+            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
         } else {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), Bootstrap.invokeSelf());
+            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
         }
     }
 
-    public void invokeInstanceSuper(String name, int arity, boolean hasClosure) {
+    public void invokeClassSuper(String name, boolean hasUnusedResult, int arity, boolean hasClosure) {
         if (hasClosure) {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), Bootstrap.invokeSelf());
+            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
         } else {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), Bootstrap.invokeSelf());
+            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
         }
     }
 
@@ -191,7 +211,11 @@ public class IRBytecodeAdapter {
     }
 
     public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.inheritanceSearchConst(), noPrivateConsts?1:0);
+        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
+    }
+
+    public void lexicalSearchConst(String name) {
+        adapter.invokedynamic("lexicalSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), 0);
     }
 
     public void goTo(org.objectweb.asm.Label label) {
@@ -215,25 +239,18 @@ public class IRBytecodeAdapter {
     }
 
     public void poll() {
-        adapter.aload(0);
+        loadContext();
         adapter.invokevirtual(p(ThreadContext.class), "pollThreadEvents", sig(void.class));
     }
 
     public void pushNil() {
-        // FIXME: avoid traversing context
-        adapter.aload(0);
-        adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
+        loadContext();
+        adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void pushBoolean(boolean b) {
-        // FIXME: avoid traversing runtime
-        adapter.aload(0);
-        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
-        if (b) {
-            adapter.invokevirtual(p(Ruby.class), "getTrue", sig(RubyBoolean.class));
-        } else {
-            adapter.invokevirtual(p(Ruby.class), "getFalse", sig(RubyBoolean.class));
-        }
+        loadContext();
+        adapter.invokedynamic(b ? "True" : "False", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void pushObjectClass() {
@@ -310,6 +327,5 @@ public class IRBytecodeAdapter {
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
-    private int arity;
-    private String[] params;
+    private final Signature signature;
 }

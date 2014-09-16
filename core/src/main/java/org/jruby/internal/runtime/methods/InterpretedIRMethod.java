@@ -11,9 +11,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.ast.executable.Script;
 import org.jruby.ir.*;
-import org.jruby.ir.Compiler;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -54,12 +52,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
         this.pushScope = true;
-
-        if (method.usesEval()) {
-            // Methods that contain evals don't have interpreted parent context in JIT,
-            // so we disable JIT here. FIXME: fix this some day?
-            box.callCount = -1;
-        }
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
@@ -159,6 +151,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             return true;
         }
 
+        // don't JIT during runtime boot
+        if (context.runtime.isBooting()) return false;
+
         if (box.callCount == -1) return false;
 
         if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
@@ -172,9 +167,15 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                 ensureInstrsReady();
 
                 try {
-                    Class compiled = JVMVisitor.compile(runtime, method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
-                    Method scriptMethod = compiled.getMethod("__script__", ThreadContext.class,
-                            StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
+                    Class compiled = JVMVisitor.compile(method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
+                    Method scriptMethod = compiled.getMethod(
+                            "__script__",
+                            ThreadContext.class,
+                            StaticScope.class,
+                            IRubyObject.class,
+                            IRubyObject[].class,
+                            Block.class,
+                            RubyModule.class);
                     MethodHandle handle = MethodHandles.publicLookup().unreflect(scriptMethod);
                     box.actualMethod = new CompiledIRMethod(handle, getName(), getFile(), getLine(), method.getStaticScope(), getVisibility(), getImplementationClass(), Helpers.encodeParameterList(getParameterList()), method.hasExplicitCallProtocol());
 

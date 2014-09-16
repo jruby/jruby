@@ -230,7 +230,8 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         // ENEBO: This could be made into a recursive two-method thing so then: send(:send, :send, :send, :send, :eval, "Hosed") works
         String mname = getMethodAddr().getName();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
-        if (mname.equals("call") || mname.equals("eval") || mname.equals("module_eval") || mname.equals("class_eval") || mname.equals("instance_eval")) return true;
+        // CON: Removed "call" check because we didn't do it in 1.7 and it deopts all callers of Method or Proc objects.
+        if (/*mname.equals("call") ||*/ mname.equals("eval") || mname.equals("module_eval") || mname.equals("class_eval") || mname.equals("instance_eval")) return true;
 
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
         if (mname.equals("send") || mname.equals("__send__")) {
@@ -360,7 +361,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     public boolean targetRequiresCallersFrame() {
         if (!flagsComputed) computeFlags();
 
-        return targetRequiresCallersBinding;
+        return targetRequiresCallersFrame;
     }
 
     @Override

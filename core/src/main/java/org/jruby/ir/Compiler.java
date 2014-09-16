@@ -5,6 +5,7 @@
 package org.jruby.ir;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
@@ -35,7 +36,7 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
 
     @Override
     protected Script execute(final Ruby runtime, final IRScope scope, JRubyClassLoader classLoader) {
-        final Class compiled = JVMVisitor.compile(runtime, scope, classLoader);
+        final Class compiled = JVMVisitor.compile(scope, classLoader);
         final StaticScope staticScope = scope.getStaticScope();
         final IRubyObject runtimeTopSelf = runtime.getTopSelf();
         staticScope.setModule(runtimeTopSelf.getMetaClass());
@@ -43,7 +44,7 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
         Method _compiledMethod;
         try {
             _compiledMethod = compiled.getMethod("__script__", ThreadContext.class,
-                    StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
+                    StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -54,7 +55,7 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
                     return (IRubyObject) compiledMethod.invoke(null,
-                            runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, IRubyObject.NULL_ARRAY, block);
+                            runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, IRubyObject.NULL_ARRAY, block, runtimeTopSelf.getMetaClass());
                 } catch (InvocationTargetException ite) {
                     if (ite.getCause() instanceof JumpException) {
                         throw (JumpException) ite.getCause();

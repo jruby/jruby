@@ -13,6 +13,14 @@ namespace :spec do
   desc "Run rubyspecs expected to pass in precompiled mode"
   task :'ruby:aot' => :ci_precompiled
 
+  desc "Run fast specs that do not spawn many subprocesses"
+  task :'ruby:fast' do
+    mspec :compile_mode => "OFF",
+          :format => 'd',
+          :spec_target => ":fast",
+          :jruby_opts => "--dev"
+  end
+
   desc "Run rubyspecs expected to pass"
   task :ci => ['spec:tagged']
 

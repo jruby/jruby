@@ -12,6 +12,7 @@ import java.nio.channels.Channel;
  */
 public interface FileResource {
     String absolutePath();
+    String canonicalPath();
 
     boolean exists();
     boolean isDirectory();

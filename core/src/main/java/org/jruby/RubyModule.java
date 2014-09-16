@@ -40,7 +40,6 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
-import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
@@ -103,7 +102,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1167,7 +1165,7 @@ public class RubyModule extends RubyObject {
     }
     
     protected void invalidateCoreClasses() {
-        if (!getRuntime().isBooting()) {
+        if (!getRuntime().isBootingCore()) {
             if (this == getRuntime().getFixnum()) {
                 getRuntime().reopenFixnum();
             } else if (this == getRuntime().getFloat()) {

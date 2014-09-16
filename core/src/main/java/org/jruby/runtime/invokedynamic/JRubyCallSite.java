@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.jruby.RubyClass;
 import org.jruby.runtime.Block;
 
 import org.jruby.runtime.CallType;
@@ -268,4 +270,11 @@ public class JRubyCallSite extends MutableCallSite {
         STANDARD_SITE_SIG_3ARG_BLOCK,
         STANDARD_SITE_SIG_NARG_BLOCK,
     };
+
+    public static final Signature STANDARD_SUPER_SIG = Signature
+            .returning(IRubyObject.class)
+            .appendArg("context", ThreadContext.class)
+            .appendArg("caller", IRubyObject.class)
+            .appendArg("self", IRubyObject.class)
+            .appendArg("class", RubyClass.class);
 }

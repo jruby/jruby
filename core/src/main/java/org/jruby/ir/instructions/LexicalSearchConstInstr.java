@@ -13,6 +13,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
@@ -28,9 +29,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr, Fixed
     private Variable result;
 
     // Constant caching
-    private volatile transient Object cachedConstant = null;
-    private Object generation = -1;
-    private Invalidator invalidator;
+    private volatile transient ConstantCache cache;
 
     public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
         super(Operation.LEXICAL_SEARCH_CONST);
@@ -80,44 +79,34 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr, Fixed
         return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope.cloneForInlining(ii), constName);
     }
 
-    private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {
+    private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currScope, currDynScope, temp);
-        RubyModule object = runtime.getObject();
-        // SSS FIXME: IRManager objects dont have a static-scope yet, so this hack of looking up the module right away
-        // This IR needs fixing!
-        constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+
+        // CON FIXME: Removed SSS hack for IRManager objects not having a static scope, so we can find and fix
+
+        IRubyObject constant = staticScope.getConstantInner(constName);
+
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            generation = invalidator(runtime).getData();
-            cachedConstant = constant;
+            Invalidator invalidator = context.runtime.getConstantInvalidator(constName);
+            cache = new ConstantCache(constant, invalidator.getData(), invalidator);
         }
-        return constant;
-    }
 
-    private boolean isCached(Ruby runtime, Object value) {
-        return value != null && generation == invalidator(runtime).getData();
+        return constant;
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Ruby runtime = context.runtime;
-        Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(runtime, constant)) constant = cache(context, currScope, currDynScope, self, temp, runtime, constant);
+        ConstantCache cache = this.cache; // Store to temp so it does null out on us mid-stream
+        if (!ConstantCache.isCached(cache)) return cache(context, currScope, currDynScope, self, temp);
 
-        return constant;
+        return cache.value;
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.LexicalSearchConstInstr(this);
-    }
-
-    private Invalidator invalidator(Ruby runtime) {
-        if (invalidator == null) {
-            invalidator = runtime.getConstantInvalidator(constName);
-        }
-        return invalidator;
     }
 }

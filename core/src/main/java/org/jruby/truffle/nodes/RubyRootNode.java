@@ -64,6 +64,12 @@ public class RubyRootNode extends RootNode {
 
                 @Override
                 public Object visitFrame(FrameInstance frameInstance) {
+                    // The call node for the top level is null and should be ignored
+
+                    if (frameInstance.getCallNode() == null) {
+                        return null;
+                    }
+
                     final RootNode rootNode = frameInstance.getCallNode().getRootNode();
 
                     if (!(rootNode instanceof RubyRootNode)) {

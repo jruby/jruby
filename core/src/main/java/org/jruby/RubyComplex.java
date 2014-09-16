@@ -910,6 +910,14 @@ public class RubyComplex extends RubyNumeric {
         return this;
     }
 
+    /** nucomp_to_c
+     *
+     */
+    @JRubyMethod(name = "to_c")
+    public IRubyObject to_c(ThreadContext context) {
+        return this;
+    }
+
     /** nucomp_to_i
      * 
      */

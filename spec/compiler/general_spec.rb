@@ -23,14 +23,15 @@ module CompilerTestUtils
       scope.setModule(currModule)
     end
 
-    compiled = oj.ir.targets.JVMVisitor.compile(JRuby.runtime, method, oj.util.ClassCache::OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
+    compiled = oj.ir.targets.JVMVisitor.compile(method, oj.util.ClassCache::OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod(
         "__script__",
         oj.runtime.ThreadContext.java_class,
         oj.parser.StaticScope.java_class,
         oj.runtime.builtin.IRubyObject.java_class,
         oj.runtime.builtin.IRubyObject[].java_class,
-        oj.runtime.Block.java_class);
+        oj.runtime.Block.java_class,
+        oj.RubyModule.java_class);
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod);
 
     return oj.internal.runtime.methods.CompiledIRMethod.new(
@@ -373,8 +374,9 @@ describe "JRuby's bytecode compiler" do
     # non-local flow control with while loops
     expect(compile_and_run("a = 0; 1.times { a += 1; redo if a < 2 }; a")).to eq 2
     expect(compile_and_run("def foo(&b); while true; b.call; end; end; foo { break 3 }")).to eq 3
-    # this one doesn't work normally, so I wouldn't expect it to work here yet
-    #compile_and_run("a = 0; 1.times { a += 1; eval 'redo' if a < 2 }; a").should == 2
+  end
+
+  it "compiles loops with non-local flow control inside an eval" do
     expect(compile_and_run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }")).to  eq 3
   end
   

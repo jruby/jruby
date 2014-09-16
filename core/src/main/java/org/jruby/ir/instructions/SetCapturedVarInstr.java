@@ -1,13 +1,12 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyMatchData;
-import org.jruby.RubyRegexp;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -34,6 +33,14 @@ public class SetCapturedVarInstr extends Instr implements ResultInstr, FixedArit
     @Override
     public Operand[] getOperands() {
         return new Operand[] { match2Result, new StringLiteral(varName) };
+    }
+
+    public Operand getMatch2Result() {
+        return match2Result;
+    }
+
+    public String getVarName() {
+        return varName;
     }
 
     @Override
@@ -65,16 +72,7 @@ public class SetCapturedVarInstr extends Instr implements ResultInstr, FixedArit
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject matchRes = (IRubyObject)match2Result.retrieve(context, self, currScope, currDynScope, temp);
-        Object val;
-        if (matchRes.isNil()) {
-            val = context.nil;
-        } else {
-            IRubyObject backref = context.getBackRef();
-            int n = ((RubyMatchData)backref).getNameToBackrefNumber(varName);
-            val = RubyRegexp.nth_match(n, backref);
-        }
-
-        return val;
+        return IRRuntimeHelpers.setCapturedVar(context, matchRes, varName);
     }
 
     @Override

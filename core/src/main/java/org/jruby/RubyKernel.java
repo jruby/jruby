@@ -359,9 +359,10 @@ public class RubyKernel {
         return runtime.getNil(); // not reached
     }
 
+    // MRI: rb_f_array
     @JRubyMethod(name = "Array", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_array(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return Helpers.asArray18(context, object);
+        return TypeConverter.rb_Array(context, object);
     }
 
     @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)

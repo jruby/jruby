@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
@@ -49,20 +48,9 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
         }
     }
 
-    private IRubyObject[] NO_PARAMS = new IRubyObject[0];
-
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args,  boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = IRRuntimeHelpers.extractKwargsHash(args, required, acceptsKeywordArguments);
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
-        int remainingArguments = argsLength - required;
-
-        if (remainingArguments <= 0) return context.runtime.newArray(NO_PARAMS);
-
-        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
-        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
-
-        return context.runtime.newArray(restArgs);
+        return IRRuntimeHelpers.receiveRestArg(context, args, required, argIndex, acceptsKeywordArguments);
     }
 
     @Override

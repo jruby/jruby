@@ -162,19 +162,16 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
 
                     // Only those variables that are defined in the closure, and are in the required loads set
                     // will need to be loaded from the binding after the call!  Rest can wait ..
-                    //
-                    // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
-                    Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
                     it.next();
-                    for (LocalVariable v : reqdLoads) {
+                    for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
+                        LocalVariable v = iter.next();
                         if (cl.definesLocalVariable(v)) {
                             it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
                             it.previous();
-                            newReqdLoads.remove(v);
+                            iter.remove();
                         }
                     }
                     it.previous();
-                    reqdLoads = newReqdLoads;
                 }
 
                 // In this case, we are going to blindly load everything
@@ -190,19 +187,16 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     // All variables not defined in the current scope have to be always loaded
                     // because of multi-threading scenarios where some other scope
                     // could update this variable concurrently.
-                    //
-                    // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
-                    Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
                     it.next();
-                    for (LocalVariable v: reqdLoads) {
+                    for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
+                        LocalVariable v = iter.next();
                         if (!scope.definesLocalVariable(v)) {
                             it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
                             it.previous();
-                            newReqdLoads.remove(v);
+                            iter.remove();
                         }
                     }
                     it.previous();
-                    reqdLoads = newReqdLoads;
                 }
             } else if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
                 // global-var tracing can execute closures set up in previous trace-var calls

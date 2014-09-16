@@ -66,6 +66,8 @@ import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
 import org.jruby.runtime.Arity;
+
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 
@@ -1758,10 +1760,6 @@ public class InvocationLinker {
 
     public static IRubyObject handleRedo(JumpException.RedoJump rj, ThreadContext context) {
         throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, context.runtime.getNil(), "unexpected redo");
-    }
-    
-    private static <T> T[] arrayOf(T... values) {
-        return values;
     }
 
     public static MethodHandle getFramePre(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name, StaticScope scope) {

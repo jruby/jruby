@@ -5,9 +5,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import jnr.posix.POSIXFactory;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -18,6 +16,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 
 import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.RubyFile;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.PosixShim;
 
@@ -37,18 +36,20 @@ class RegularFileResource implements FileResource {
         this.posix = posix;
     }
 
-    // TODO(ratnikov): This should likely be renamed to rubyPath, otherwise it's easy to get
-    // confused between java's absolute path (no symlink resolution) and ruby absolute path (which
-    // does symlink resolution).
     @Override
     public String absolutePath() {
+        return RubyFile.canonicalize(file.getAbsolutePath());
+    }
+
+    @Override
+    public String canonicalPath() {
         // Seems like for Ruby absolute path implies resolving system links,
         // so canonicalization is in order.
         try {
-          return file.getCanonicalPath();
+            return file.getCanonicalPath();
         } catch (IOException ioError) {
-          // I guess absolute path is next best thing?
-          return file.getAbsolutePath();
+            // I guess absolute path is next best thing?
+            return file.getAbsolutePath();
         }
     }
 
@@ -65,7 +66,8 @@ class RegularFileResource implements FileResource {
     @Override
     public boolean exists() {
         // MRI behavior: Even broken symlinks should return true.
-        return file.exists() || isSymLink();
+        // FIXME: Where is the above statement true?  For RubyFile{,Test} it does not seem to be.
+        return file.exists(); // || isSymLink();
     }
 
     @Override
@@ -114,12 +116,16 @@ class RegularFileResource implements FileResource {
 
     @Override
     public FileStat stat() {
-        return posix.stat(absolutePath());
+        FileStat stat = posix.allocateStat();
+
+        return posix.stat(file.getAbsolutePath(), stat) < 0 ? null : stat;
     }
 
     @Override
     public FileStat lstat() {
-        return posix.lstat(file.getAbsolutePath());
+        FileStat stat = posix.allocateStat();
+
+        return posix.lstat(file.getAbsolutePath(), stat) < 0 ? null : stat;
     }
 
     @Override

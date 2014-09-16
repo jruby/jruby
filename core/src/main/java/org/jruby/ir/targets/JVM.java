@@ -2,6 +2,8 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
+import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -49,12 +51,6 @@ public class JVM {
         return clsData().methodData();
     }
 
-    public void pushclass(String clsName) {
-        PrintWriter pw = new PrintWriter(System.out);
-        clsStack.push(new ClassData(clsName, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS)));
-        pw.flush();
-    }
-
     public void pushscript(String clsName, String filename) {
         PrintWriter pw = new PrintWriter(System.out);
         writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
@@ -73,50 +69,9 @@ public class JVM {
         return clsData().method();
     }
 
-    public void pushmethod(String name, Signature signature) {
-        clsData().pushmethod(name, signature);
+    public void pushmethod(String name, IRScope scope, Signature signature) {
+        clsData().pushmethod(name, scope, signature);
         method().startMethod();
-
-        // locals for ThreadContext and self
-        for (int i = 0; i < signature.argCount(); i++) {
-            methodData().local("$" + signature.argName(i), Type.getType(signature.argType(i)));
-        }
-
-        // TODO: this should go into the PushBinding instruction
-        methodData().local("$dynamicScope");
-    }
-
-    public void pushmethodVarargs(String name) {
-        clsData().pushmethodVarargs(name);
-        method().startMethod();
-
-        // locals for ThreadContext and self
-        methodData().local("$context", JVM.THREADCONTEXT_TYPE);
-        methodData().local("$scope", JVM.STATICSCOPE_TYPE);
-        methodData().local("$self");//, JVM.OBJECT_TYPE);
-        methodData().local("$arguments", JVM.OBJECT_ARRAY_TYPE);
-        methodData().local("$block", Type.getType(Block.class));
-
-        // TODO: this should go into the PushBinding instruction
-        methodData().local("$dynamicScope");
-    }
-
-    public void pushmethod(String name, int arity) {
-        clsData().pushmethod(name, arity);
-        method().startMethod();
-
-        // locals for ThreadContext and self
-        methodData().local("$context", JVM.THREADCONTEXT_TYPE);
-        methodData().local("$scope", JVM.STATICSCOPE_TYPE);
-        methodData().local("$self");//, JVM.OBJECT_TYPE);
-        for (int i = 0; i < arity; i++) {
-            // incoming arguments
-            methodData().local("$argument" + i);
-        }
-        methodData().local("$block", Type.getType(Block.class));
-
-        // TODO: this should go into the PushBinding instruction
-        methodData().local("$dynamicScope");
     }
 
     public void popmethod() {
@@ -131,18 +86,12 @@ public class JVM {
         }
     }
 
-    public void declareField(String field) {
-        if (!clsData().fieldSet.contains(field)) {
-            cls().visitField(ACC_PROTECTED, field, ci(Object.class), null, null);
-            clsData().fieldSet.add(field);
-        }
-    }
-
     public static final Class OBJECT = IRubyObject.class;
     public static final Class OBJECT_ARRAY = IRubyObject[].class;
     public static final Class BLOCK = Block.class;
     public static final Class THREADCONTEXT = ThreadContext.class;
     public static final Class STATICSCOPE = StaticScope.class;
+    public static final Class RUBY_MODULE = RubyModule.class;
     public static final Type OBJECT_TYPE = Type.getType(OBJECT);
     public static final Type OBJECT_ARRAY_TYPE = Type.getType(OBJECT_ARRAY);
     public static final Type BOOLEAN_TYPE = Type.BOOLEAN_TYPE;
@@ -151,4 +100,5 @@ public class JVM {
     public static final Type BLOCK_TYPE = Type.getType(BLOCK);
     public static final Type THREADCONTEXT_TYPE = Type.getType(THREADCONTEXT);
     public static final Type STATICSCOPE_TYPE = Type.getType(STATICSCOPE);
+    public static final Type RUBY_MODULE_TYPE = Type.getType(RUBY_MODULE);
 }

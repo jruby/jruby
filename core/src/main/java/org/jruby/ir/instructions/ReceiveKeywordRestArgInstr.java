@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyHash;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -43,8 +42,7 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
-        RubyHash keywordArguments = IRRuntimeHelpers.extractKwargsHash(args, required, keywordArgumentSupplied);
-
-        return keywordArguments == null ? RubyHash.newSmallHash(context.getRuntime()) : keywordArguments;
+        return IRRuntimeHelpers.receiveKeywordRestArg(context, args, required, keywordArgumentSupplied);
     }
+
 }

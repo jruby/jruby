@@ -208,7 +208,7 @@ public class CFG {
         addEdge(geb, getExitBB(), EdgeType.EXIT);
 
         for (BasicBlock b: getBasicBlocks()) {
-            if (b != geb && !bbIsProtected(b)) {
+            if (b != geb && !bbIsProtected(b) && b != getEntryBB()) {
                 addEdge(b, geb, EdgeType.EXCEPTION);
                 setRescuerBB(b, geb);
             }

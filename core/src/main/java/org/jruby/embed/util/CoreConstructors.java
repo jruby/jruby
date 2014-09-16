@@ -18,7 +18,7 @@ public class CoreConstructors {
 
     public static RubyHash createHash(Ruby runtime, IRubyObject key1, IRubyObject value1,
                                       IRubyObject key2, IRubyObject value2) {
-        RubyHash hash = createHash(runtime, key1, key2);
+        RubyHash hash = createHash(runtime, key1, value1);
 
         hash.fastASet(key2, value2);
 

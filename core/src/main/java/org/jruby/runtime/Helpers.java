@@ -507,6 +507,26 @@ public class Helpers {
         return null;
     }
 
+    public static RubyModule getNthScopeModule(StaticScope scope, int depth) {
+        int n = depth;
+        while (n > 0) {
+            scope = scope.getEnclosingScope();
+            if (scope.getScopeType() != null) {
+                n--;
+            }
+        }
+        return scope.getModule();
+    }
+
+    public static RubyArray viewArgsArray(ThreadContext context, RubyArray rubyArray, int preArgsCount, int postArgsCount) {
+        int n = rubyArray.getLength();
+        if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
+            return RubyArray.newEmptyArray(context.runtime);
+        } else {
+            return (RubyArray)rubyArray.subseqLight(preArgsCount, n - preArgsCount - postArgsCount);
+        }
+    }
+
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;
@@ -1229,7 +1249,7 @@ public class Helpers {
     }
     
     public static RubyModule findImplementerIfNecessary(RubyModule clazz, RubyModule implementationClass) {
-        if (implementationClass != null && implementationClass.needsImplementer()) {
+        if (implementationClass.needsImplementer()) {
             // modules are included with a shim class; we must find that shim to handle super() appropriately
             return clazz.findImplementer(implementationClass);
         } else {
@@ -1941,16 +1961,7 @@ public class Helpers {
     // mri: rb_Array
     // FIXME: Replace arrayValue/asArray18 with this on 9k (currently dead -- respond_to? logic broken further down the line -- fix that first)
     public static RubyArray asArray(ThreadContext context, IRubyObject value) {
-        RubyClass array = context.runtime.getArray();
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_ary");
-        
-        if (tmp.isNil()) {
-            tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_a");
-
-            if (tmp.isNil()) return context.runtime.newEmptyArray();
-        }
-        
-        return (RubyArray) tmp; // converters will guarantee it is RubyArray or raise.
+        return TypeConverter.rb_Array(context, value);
     }
     
     public static IRubyObject aryToAry(IRubyObject value) {
@@ -2944,13 +2955,10 @@ public class Helpers {
 
         RubyClass sc = null;
 
-
         if (superClass == UndefinedValue.UNDEFINED) {
-            sc = context.runtime.getObject();
+            sc = null;
         } else if (superClass != null) {
-            if (!(superClass instanceof RubyClass)) {
-                throw context.runtime.newTypeError("superclass must be Class (" + superClass + " given)");
-            }
+            RubyClass.checkInheritable((IRubyObject)superClass);
 
             sc = (RubyClass) superClass;
         }
@@ -3010,7 +3018,7 @@ public class Helpers {
                 throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
             }
 
-            return (RubyArray)newValue;
+            return newValue;
         }
     }
 
@@ -3034,43 +3042,6 @@ public class Helpers {
 
     public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
         return context.runtime.newBoolean(!(obj.isTrue()));
-    }
-
-    public static IRubyObject irLoadOptArg(int minReqd, int argIndex, IRubyObject[] args) {
-        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
-        int kwArgHashCount = 0;
-        if (minReqd + kwArgHashCount < args.length) {
-            return args[argIndex];
-        } else {
-            return UndefinedValue.UNDEFINED;
-        }
-    }
-
-    public static IRubyObject irLoadPostReqdArg(int argIndex, int preReqdArgsCount, int postReqdArgsCount, IRubyObject[] args) {
-        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
-        int kwArgHashCount = 0;
-        int n = args.length;
-        int remaining = n - preReqdArgsCount - kwArgHashCount;
-        if (remaining <= argIndex) {
-            return null;  // For blocks!
-        } else {
-            return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount - kwArgHashCount + argIndex] : args[preReqdArgsCount + argIndex];
-        }
-    }
-
-    private static IRubyObject[] NO_PARAMS = new IRubyObject[0];
-    public static IRubyObject irLoadRestArg(ThreadContext context, int minReqd, int argIndex, IRubyObject[] args) {
-        // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
-        int kwArgHashCount = 0;
-        IRubyObject[] ret;
-        int numAvailable = args.length - minReqd - kwArgHashCount;
-        if (numAvailable <= 0) {
-            ret = NO_PARAMS;
-        } else {
-            ret = new IRubyObject[numAvailable];
-            System.arraycopy(args, argIndex, ret, 0, numAvailable);
-        }
-        return context.getRuntime().newArray(ret);
     }
 
     @Deprecated
@@ -3183,6 +3154,10 @@ public class Helpers {
                     .append(strings[i]);
         }
         return sb.toString();
+    }
+
+    public static <T> T[] arrayOf(T... values) {
+        return values;
     }
 
     @Deprecated

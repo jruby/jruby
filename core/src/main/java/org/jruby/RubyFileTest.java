@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -61,16 +62,16 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "blockdev?", required = 1, module = true)
     public static IRubyObject blockdev_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isBlockDev());
+        return recv.getRuntime().newBoolean(stat != null && stat.isBlockDev());
     }
 
     @JRubyMethod(name = "chardev?", required = 1, module = true)
     public static IRubyObject chardev_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isCharDev());
+        return recv.getRuntime().newBoolean(stat != null && stat.isCharDev());
     }
 
     public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
@@ -87,31 +88,25 @@ public class RubyFileTest {
     }
 
     public static IRubyObject directory_p(ThreadContext context, IRubyObject filename) {
-        Ruby runtime = context.runtime;
-        if (!(filename instanceof RubyFile || filename instanceof RubyIO)) {
-            if (filename.respondsTo("to_io")) {
-                filename = (RubyIO) TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
-            } else {
-                filename = get_path(context, filename);
-            }
+        if (!(filename instanceof RubyIO) && filename.respondsTo("to_io")) {
+            filename = TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
         }
 
-        FileResource file = fileResource(filename);
-        return runtime.newBoolean(file.exists() && file.isDirectory());
+        return context.runtime.newBoolean(fileResource(context, filename).isDirectory());
     }
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
     public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isExecutable());
+        return recv.getRuntime().newBoolean(stat != null && stat.isExecutable());
     }
 
     @JRubyMethod(name = "executable_real?", required = 1, module = true)
     public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isExecutableReal());
+        return recv.getRuntime().newBoolean(stat != null && stat.isExecutableReal());
     }
 
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
@@ -120,21 +115,11 @@ public class RubyFileTest {
 
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.runtime;
-        if (!(filename instanceof RubyFile)) {
-            filename = get_path(context, filename);
-        }
-        
-        if (existsOnClasspath(filename)) {
-            return runtime.getTrue();
-        }
+        // We get_path here to prevent doing it both existsOnClasspath and fileResource (Only call to_path once).
+        RubyString path = get_path(context, filename);
 
-        if (Ruby.isSecurityRestricted()) {
-            return runtime.getFalse();
-        }
-
-
-        return runtime.newBoolean(fileResource(filename).exists());
+        return context.runtime.newBoolean(existsOnClasspath(path) ||
+                !Ruby.isSecurityRestricted() && fileResource(context, path).exists());
     }
 
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
@@ -143,26 +128,20 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "file?", required = 1, module = true)
     public static RubyBoolean file_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.runtime;
-        if (!(filename instanceof RubyFile)) {
-            filename = get_path(context, filename);
-        }
+        FileStat stat = fileResource(filename).stat();
 
-        FileResource file = fileResource(filename);
-        return runtime.newBoolean(file.exists() && file.isFile());
+        return context.runtime.newBoolean(stat != null && stat.isFile());
     }
 
     @JRubyMethod(name = "grpowned?", required = 1, module = true)
     public static IRubyObject grpowned_p(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
         // JRUBY-4446, grpowned? always returns false on Windows
-        if (Platform.IS_WINDOWS) {
-            return runtime.getFalse();
-        }
+        if (Platform.IS_WINDOWS) return runtime.getFalse();
         
-        return runtime.newBoolean(file.exists() && file.stat().isGroupOwned());
+        return runtime.newBoolean(stat != null && stat.isGroupOwned());
     }
 
     @JRubyMethod(name = "identical?", required = 2, module = true)
@@ -188,21 +167,24 @@ public class RubyFileTest {
             }
         }
 
-        return runtime.newBoolean(file1.exists() && file2.exists() && file1.stat().isIdentical(file2.stat()));
+        FileStat stat1 = file1.stat();
+        FileStat stat2 = file2.stat();
+
+        return runtime.newBoolean(stat1 != null && stat2 != null && stat1.isIdentical(stat2));
     }
 
     @JRubyMethod(name = "owned?", required = 1, module = true)
     public static IRubyObject owned_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isOwned());
+        return recv.getRuntime().newBoolean(stat != null && stat.isOwned());
     }
 
     @JRubyMethod(name = "pipe?", required = 1, module = true)
     public static IRubyObject pipe_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isNamedPipe());
+        return recv.getRuntime().newBoolean(stat != null && stat.isNamedPipe());
     }
 
     public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
@@ -217,29 +199,29 @@ public class RubyFileTest {
             filename = get_path(context, filename);
         }
 
-        FileResource file = fileResource(filename);
-        return runtime.newBoolean(file.exists() && file.canRead());
+        FileStat stat = fileResource(filename).stat();
+        return runtime.newBoolean(stat != null && stat.isReadable());
     }
 
     // Not exposed by filetest, but so similiar in nature that it is stored here
     public static IRubyObject rowned_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isROwned());
+        return recv.getRuntime().newBoolean(stat != null && stat.isROwned());
     }
 
     @JRubyMethod(name = "setgid?", required = 1, module = true)
     public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSetgid());
+        return recv.getRuntime().newBoolean(stat != null && stat.isSetgid());
     }
 
     @JRubyMethod(name = "setuid?", required = 1, module = true)
     public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSetuid());
+        return recv.getRuntime().newBoolean(stat != null && stat.isSetuid());
     }
 
     public static IRubyObject size(IRubyObject recv, IRubyObject filename) {
@@ -248,22 +230,15 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "size", required = 1, module = true)
     public static IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
-        if (!(filename instanceof RubyFile)) {
-            if (filename.respondsTo("to_io")) {
-                filename = (RubyIO) TypeConverter.convertToType(filename, runtime.getIO(), "to_io");
-            } else {
-                filename = get_path(context, filename);
-            }
+        if (!(filename instanceof RubyFile) && filename.respondsTo("to_io")) {
+             filename = TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
         }
 
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        if (!file.exists()) {
-            noFileError(filename);
-        }
+        if (stat == null) noFileError(filename);
 
-        return runtime.newFixnum(file.length());
+        return context.runtime.newFixnum(stat.st_size());
     }
 
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
@@ -273,40 +248,30 @@ public class RubyFileTest {
     @JRubyMethod(name = "size?", required = 1, module = true)
     public static IRubyObject size_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        if (!(filename instanceof RubyFile)) {
-            if (filename.respondsTo("to_io")) {
-                filename = (RubyIO) TypeConverter.convertToType(filename, runtime.getIO(), "to_io");
-            } else {
-                filename = get_path(context, filename);
-            }
+        if (!(filename instanceof RubyFile) && filename.respondsTo("to_io")) {
+            filename = TypeConverter.convertToType(filename, runtime.getIO(), "to_io");
         }
 
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        if (!file.exists()) {
-            return runtime.getNil();
-        }
+        if (stat == null) return runtime.getNil();
 
-        long length = file.length();
-        if (length > 0) {
-            return runtime.newFixnum(length);
-        } else {
-            return runtime.getNil();
-        }
+        long length = stat.st_size();
+        return length > 0 ? runtime.newFixnum(length) : runtime.getNil();
     }
 
     @JRubyMethod(name = "socket?", required = 1, module = true)
     public static IRubyObject socket_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSocket());
+        return recv.getRuntime().newBoolean(stat != null && stat.isSocket());
     }
 
     @JRubyMethod(name = "sticky?", required = 1, module = true)
     public static IRubyObject sticky_p(IRubyObject recv, IRubyObject filename) {
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(file.exists() && file.stat().isSticky());
+        return recv.getRuntime().newBoolean(stat != null && stat.isSticky());
     }
 
     @JRubyMethod(name = "symlink?", required = 1, module = true)
@@ -321,7 +286,9 @@ public class RubyFileTest {
             // but broken symlink. So, we try without the existence check,
             // but in the try-catch block.
             // MRI behavior: symlink? on broken symlink should return true.
-            return runtime.newBoolean(file.lstat().isSymlink());
+            FileStat stat = fileResource(filename).lstat();
+
+            return runtime.newBoolean(stat != null && stat.isSymlink());
         } catch (SecurityException re) {
             return runtime.getFalse();
         } catch (RaiseException re) {
@@ -344,42 +311,28 @@ public class RubyFileTest {
     @JRubyMethod(name = "zero?", required = 1, module = true)
     public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        if (!(filename instanceof RubyFile)) {
-            filename = get_path(context, filename);
-        }
 
-        FileResource file = fileResource(filename);
+        FileStat stat = fileResource(context, filename).stat();
 
-        if (file.exists()) {
-            if (file.isDirectory()) {
-                // MRI behavior, enforced by RubySpecs.
-                return runtime.newBoolean(Platform.IS_WINDOWS);
-            } else {
-                return runtime.newBoolean(file.length() == 0L);
-            }
-        } else {
-            return runtime.getFalse();
-        }
+        if (stat == null) return runtime.getFalse();
+        // MRI behavior, enforced by RubySpecs.
+        if (stat.isDirectory()) return runtime.newBoolean(Platform.IS_WINDOWS);
+
+        return runtime.newBoolean(stat.st_size() == 0L);
     }
 
     @JRubyMethod(name = "world_readable?", required = 1, module = true)
     public static IRubyObject worldReadable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        RubyFileStat stat = getFileStat(context, filename);
-        if (stat == null) {
-            return context.runtime.getNil();
-        }
+        RubyFileStat stat = getRubyFileStat(context, filename);
 
-        return stat.worldReadable(context);
+        return stat == null ? context.runtime.getNil() : stat.worldReadable(context);
     }
 
     @JRubyMethod(name = "world_writable?", required = 1, module = true)
     public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        RubyFileStat stat = getFileStat(context, filename);
-        if (stat == null) {
-            return context.runtime.getNil();
-        }
+        RubyFileStat stat = getRubyFileStat(context, filename);
 
-        return stat.worldWritable(context);
+        return stat == null ? context.runtime.getNil() : stat.worldWritable(context);
     }
 
     /**
@@ -508,7 +461,7 @@ public class RubyFileTest {
         }
     }
 
-    private static RubyFileStat getFileStat(ThreadContext context, IRubyObject filename) {
+    private static RubyFileStat getRubyFileStat(ThreadContext context, IRubyObject filename) {
         Ruby runtime = context.runtime;
 
         RubyFileStat stat = null;

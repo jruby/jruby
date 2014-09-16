@@ -3379,7 +3379,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int counters[] = new int[n];
 
         arrays[0] = this;
-        for (int i = 1; i < n; i++) arrays[i] = args[i - 1].convertToArray();
+        for (int i = 1; i < n; i++) arrays[i] = TypeConverter.to_ary(context, args[i - 1]);
 
         int resultLen = 1;
         for (int i = 0; i < n; i++) {

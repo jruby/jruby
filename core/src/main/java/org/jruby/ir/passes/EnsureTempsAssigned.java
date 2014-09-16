@@ -7,6 +7,7 @@ import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -28,9 +29,14 @@ public class EnsureTempsAssigned extends CompilerPass {
 
     @Override
     public Object execute(IRScope scope, Object... data) {
-        Set<TemporaryVariable> names = new HashSet<TemporaryVariable>();
+        processCFG(scope.getCFG());
 
-        for (BasicBlock b : scope.getCFG().getBasicBlocks()) {
+        return null;
+    }
+
+    private void processCFG(CFG cfg) {
+        Set<TemporaryVariable> names = new HashSet<TemporaryVariable>();
+        for (BasicBlock b : cfg.getBasicBlocks()) {
             for (Instr i : b.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
                     if (v instanceof TemporaryVariable) {
@@ -40,12 +46,15 @@ public class EnsureTempsAssigned extends CompilerPass {
             }
         }
 
-        BasicBlock bb = scope.getCFG().getEntryBB();
+        BasicBlock bb = cfg.getEntryBB();
         for (TemporaryVariable name : names) {
             bb.getInstrs().add(0, new CopyInstr(name, new Nil()));
         }
 
-        return null;
+        // recurse
+        for (IRScope childScope : cfg.getScope().getClosures()) {
+            processCFG(childScope.cfg());
+        }
     }
 
     @Override

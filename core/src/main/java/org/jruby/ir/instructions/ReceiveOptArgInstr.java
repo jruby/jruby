@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
@@ -67,13 +66,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
-        RubyHash keywordArguments = IRRuntimeHelpers.extractKwargsHash(args, requiredArgs, acceptsKeywordArgument);
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
-
-        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
-
-        return args[preArgs + optArgIndex];
+        return IRRuntimeHelpers.receiveOptArg(args, requiredArgs, preArgs, argIndex, acceptsKeywordArgument);
     }
 
     @Override

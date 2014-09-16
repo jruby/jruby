@@ -4,7 +4,9 @@
  */
 package org.jruby.ir.targets;
 
+import com.headius.invokebinder.Signature;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Variable;
 import org.objectweb.asm.Type;
@@ -18,8 +20,17 @@ import java.util.Map;
  */
 public class MethodData {
 
-    public MethodData(SkinnyMethodAdapter method, int arity) {
-        this.method = new IRBytecodeAdapter(method, arity);
+    public MethodData(SkinnyMethodAdapter method, IRScope scope, Signature signature) {
+        this.method = new IRBytecodeAdapter(method, signature);
+        this.scope = scope;
+
+        // incoming arguments
+        for (int i = 0; i < signature.argCount(); i++) {
+            local("$" + signature.argName(i), Type.getType(signature.argType(i)));
+        }
+
+        // TODO: this should go into the PushBinding instruction
+        local("$dynamicScope");
     }
 
     public int local(Variable variable, Type type) {
@@ -53,8 +64,9 @@ public class MethodData {
         return asmLabel;
     }
 
-    public IRBytecodeAdapter method;
-    public Map<String, Integer> varMap = new HashMap<String, Integer>();
-    public Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
+    public final IRBytecodeAdapter method;
+    public final IRScope scope;
+    public final Map<String, Integer> varMap = new HashMap<String, Integer>();
+    public final Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
 
 }

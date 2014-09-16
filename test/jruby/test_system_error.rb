@@ -98,4 +98,39 @@ class TestSystemError < Test::Unit::TestCase
       end
     end if RbConfig::CONFIG['host_os'].downcase =~ /windows|mswin|darwin|linux/
   end
+
+  def test_no_duplicated_msg_enoent
+    no_such_file = __FILE__ + '.nosuchfile'
+    begin
+      File.open(no_such_file, 'r') {}
+      fail
+    rescue Errno::ENOENT => e
+      # jruby 1.4 has duplicated error msg such as
+      # 'No such file or directory - File not found - path'
+      assert_equal 'No such file or directory - ' + no_such_file, e.message
+    end
+  end
+
+  def test_no_duplicated_msg_eacces
+    require 'tempfile'
+    t = Tempfile.new('tmp' + File.basename(__FILE__))
+    t.close
+    File.open(t.path, 'w') {}
+    File.chmod(0555, t.path)
+    expected_msg = "Permission denied - #{t.path}"
+    begin
+      File.open(t.path, 'w') {}
+      fail
+    rescue Errno::EACCES => e
+      # jruby 1.4 has duplicated error msg as well
+      assert_equal expected_msg, e.message
+    end
+    #
+    begin
+      File.open(t.path, File::WRONLY) {}
+      fail
+    rescue Errno::EACCES => e
+      assert_equal expected_msg, e.message
+    end
+  end
 end

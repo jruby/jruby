@@ -90,7 +90,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
                 return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope,
                         args[0].retrieve(context, self, currScope, currDynScope, temp), blockType);
             case HANDLE_NONLOCAL_RETURN:
-                return IRRuntimeHelpers.handleNonlocalReturn(scope, currScope, currDynScope,
+                return IRRuntimeHelpers.handleNonlocalReturn(scope, currDynScope,
                         args[0].retrieve(context, self, currScope, currDynScope, temp), blockType);
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
                 return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, currDynScope,

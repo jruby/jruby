@@ -2621,8 +2621,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull")
         public RubyArray pushEmptyObjects(RubyArray array, Object... values) {
-            CompilerDirectives.transferToInterpreter();
-
             array.setStore(values, values.length);
             return array;
         }

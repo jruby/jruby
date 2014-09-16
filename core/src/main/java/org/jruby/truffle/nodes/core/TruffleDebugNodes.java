@@ -64,6 +64,25 @@ public abstract class TruffleDebugNodes {
 
     }
 
+    @CoreMethod(names = "flush_stdout", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class FlushStdoutNode extends CoreMethodNode {
+
+        public FlushStdoutNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FlushStdoutNode(PanicNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder flush() {
+            getContext().getRuntime().getOut().flush();
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
     @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class FullTreeNode extends CoreMethodNode {
 
