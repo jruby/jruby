@@ -1,14 +1,13 @@
 # https://github.com/jruby/jruby/issues/1969
 
-def yielder; yield; end
-
-def foo; yield 1,2,3,4,5,6,7; end
-
 describe 'Blocks with duplicate _ args' do
   it 'should not crash' do
-    foo do |x,_,_,_,a,b,c|
-      yielder {}
+    o = Object.new
+    def o.foo; yield 1,2,3,4,5,6,7; end
+    def o.bar; yield; end
+    expect(o.foo do |x,_,_,_,a,b,c|
+      o.bar {}
       [x,_,a,b,c]
-    end.should_be [1,2,5,6,7]
+    end).to eq([1,2,5,6,7])
   end
 end
