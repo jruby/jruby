@@ -70,7 +70,7 @@
           <instructions>
             <Export-Package>org.jruby.*;version=${project.version}</Export-Package>
             <Import-Package>!org.jruby.*, *;resolution:=optional</Import-Package>
-            <DynamicImport-Package>*</DynamicImport-Package>
+            <DynamicImport-Package>javax.*</DynamicImport-Package>
             <Embed-Dependency>*;type=jar;scope=compile|runtime;inline=true</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Private-Package>*,.</Private-Package>

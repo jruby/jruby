@@ -34,7 +34,7 @@ project 'JRuby Complete' do
           :instructions => { 
             'Export-Package' => 'org.jruby.*;version=${project.version}',
             'Import-Package' => '!org.jruby.*, *;resolution:=optional',
-            'DynamicImport-Package' => '*',
+            'DynamicImport-Package' => 'javax.*',
             'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=true',
             'Embed-Transitive' => true,
             'Private-Package' => '*,.',
