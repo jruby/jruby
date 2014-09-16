@@ -29,6 +29,27 @@ class MSpecScript
     '^' + SPEC_DIR + '/core/encoding/converter'
   ]
 
+  set :fast, [
+    *get(:language),
+    *get(:core),
+
+    # These all spawn sub-rubies, making them very slow to run
+    '^' + SPEC_DIR + '/core/process',
+    '^' + SPEC_DIR + '/core/kernel/exec',
+    '^' + SPEC_DIR + '/core/kernel/spawn',
+    '^' + SPEC_DIR + '/core/io/popen',
+    '^' + SPEC_DIR + '/core/argf/gets_spec.rb',
+    '^' + SPEC_DIR + '/core/argf/read_spec.rb',
+    '^' + SPEC_DIR + '/core/argf/readline_spec.rb',
+    '^' + SPEC_DIR + '/core/encoding/default_external_spec.rb',
+    '^' + SPEC_DIR + '/core/encoding/default_internal_spec.rb',
+    '^' + SPEC_DIR + '/core/io/pid_spec.rb',
+    '^' + SPEC_DIR + '/core/kernel/at_exit_spec.rb',
+    '^' + SPEC_DIR + '/language/encoding_spec.rb',
+    '^' + SPEC_DIR + '/language/predefined_spec.rb',
+    '^' + SPEC_DIR + '/language/predefined/data_spec.rb',
+  ]
+
   # Filter out ObjectSpace specs if ObjectSpace is disabled
   unless JRuby.objectspace
     get(:core) << '^' + SPEC_DIR + '/core/objectspace/_id2ref'

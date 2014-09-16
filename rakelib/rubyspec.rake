@@ -53,6 +53,14 @@ namespace :spec do
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
   task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_18']
 
+  desc "Run fast specs that do not spawn many subprocesses"
+  task :'ruby:fast' do
+    mspec :compile_mode => "OFF",
+          :format => 'd',
+          :spec_target => ":fast",
+          :jruby_opts => "--dev"
+  end
+
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
   task :ci_latest_19 => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_19']
 
