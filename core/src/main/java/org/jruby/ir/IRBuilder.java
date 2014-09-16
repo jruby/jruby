@@ -1692,7 +1692,8 @@ public class IRBuilder {
                 String argName = a.getName();
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
                 // SSS FIXME: _$0 feels fragile?
-                // Ignore duplicate "_" args in blocks.
+                // Ignore duplicate "_" args in blocks
+                // (duplicate _ args are named "_$0")
                 if (!argName.equals("_$0")) {
                     addArgReceiveInstr(s, s.getNewLocalVariable(argName, 0), argIndex, post, numPreReqd, numPostRead);
                 }
