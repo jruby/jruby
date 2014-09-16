@@ -87,7 +87,7 @@ public class IRBytecodeAdapter {
 
     public void loadRuntime() {
         loadContext();
-        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void loadLocal(int i) {
@@ -244,20 +244,13 @@ public class IRBytecodeAdapter {
     }
 
     public void pushNil() {
-        // FIXME: avoid traversing context
         loadContext();
-        adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
+        adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void pushBoolean(boolean b) {
-        // FIXME: avoid traversing runtime
         loadContext();
-        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
-        if (b) {
-            adapter.invokevirtual(p(Ruby.class), "getTrue", sig(RubyBoolean.class));
-        } else {
-            adapter.invokevirtual(p(Ruby.class), "getFalse", sig(RubyBoolean.class));
-        }
+        adapter.invokedynamic(b ? "True" : "False", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void pushObjectClass() {

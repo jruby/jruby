@@ -378,6 +378,36 @@ public class Bootstrap {
         return RubyArray.newArrayNoCopy(context.runtime, elts);
     }
 
+    public static Handle contextValue() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "contextValue", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static CallSite contextValue(Lookup lookup, String name, MethodType type) {
+        MutableCallSite site = new MutableCallSite(type);
+        site.setTarget(Binder.from(type).append(site).invokeStaticQuiet(lookup, Bootstrap.class, name));
+        return site;
+    }
+
+    public static IRubyObject nil(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(IRubyObject.class, context.nil), 0, ThreadContext.class));
+        return context.nil;
+    }
+
+    public static IRubyObject True(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(IRubyObject.class, context.runtime.getTrue()), 0, ThreadContext.class));
+        return context.runtime.getTrue();
+    }
+
+    public static IRubyObject False(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(IRubyObject.class, context.runtime.getFalse()), 0, ThreadContext.class));
+        return context.runtime.getFalse();
+    }
+
+    public static Ruby runtime(ThreadContext context, MutableCallSite site) {
+        site.setTarget(dropArguments(constant(Ruby.class, context.runtime), 0, ThreadContext.class));
+        return context.runtime;
+    }
+
     public static IRubyObject hash(ThreadContext context, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = RubyHash.newHash(runtime);
