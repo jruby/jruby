@@ -89,11 +89,11 @@ class Gem::Specification
     end
 
     def add_dir dir
-      new_dirs = [ dir ] + (@@dirs||[]).collect { |d| d.sub /.specifications/, '' }
+      new_dirs = [ dir ] + (@@dirs||[]).collect { |d| d.sub(/.specifications/, '') }
       self.reset
 
       # ugh
-      @@dirs = new_dirs.map { |dir| File.join dir, "specifications" }
+      @@dirs = new_dirs.map { |d| File.join d, "specifications" }
     end
 
     # Replace existing dirs=
