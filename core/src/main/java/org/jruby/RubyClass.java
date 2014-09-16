@@ -622,7 +622,7 @@ public class RubyClass extends RubyModule {
             return null;
 
         me = searchMethod(name);
-        if (!checkFuncallCallable(context, me)) {
+        if (!checkFuncallCallable(context, me, CallType.FUNCTIONAL, self)) {
             return checkFuncallMissing(context, klass, self, name);
         }
         return me.call(context, self, klass, name);
@@ -665,9 +665,14 @@ public class RubyClass extends RubyModule {
     }
 
     // MRI: check_funcall_callable
-    public static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method) {
-        // FIXME: MRI actually checks protectedness here too
-        return !method.getVisibility().isPrivate();
+    public static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
+        return rbMethodCallStatus(context, method, callType, self);
+    }
+
+    // MRI: rb_method_call_status
+    // FIXME: Partial impl because we don't have these "NOEX" flags
+    public static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
+        return !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
