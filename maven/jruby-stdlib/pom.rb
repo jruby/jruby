@@ -9,7 +9,7 @@ project 'JRuby Stdlib' do
   model_version '4.0.0'
   id "org.jruby:jruby-stdlib:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
-  packaging 'bundle'
+  packaging 'jar'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readOnly' => true,
@@ -22,15 +22,7 @@ project 'JRuby Stdlib' do
               'gem.home' => '${jruby.basedir}/lib/ruby/gems/shared',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
-  plugin( 'org.apache.felix:maven-bundle-plugin',
-          :instructions => { 
-            'Bundle-Name' => 'JRuby Stdlib ${project.version}',
-            'Bundle-Description' => 'JRuby Stdlib ${project.version} OSGi bundle',
-            'Bundle-SymbolicName' => 'org.jruby.jruby-stdlib'
-          } ) do
-    # TODO fix DSL
-    @current.extensions = true
-  end
+  plugin( :jar, :archive => { :manifestFile => '${project.build.outputDirectory}/META-INF/MANIFEST.MF' } )
 
   plugin( :source,
           'skipSource' =>  'true' )
@@ -100,6 +92,11 @@ project 'JRuby Stdlib' do
       includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/1.8/**', 'lib/ruby/1.9/**', 'lib/ruby/2.0/**', 'lib/ruby/shared/**'
       excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*', 'lib/ruby/shared/rubygems/defaults/jruby_native.rb'
       target_path '${jruby.complete.home}'
+    end
+
+    resource do
+      directory '${basedir}/src/main/resources'
+      filtering true
     end
   end
 

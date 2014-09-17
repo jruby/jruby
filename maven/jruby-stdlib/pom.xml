@@ -8,7 +8,6 @@
     <version>1.7.16-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
-  <packaging>bundle</packaging>
   <name>JRuby Stdlib</name>
   <properties>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
@@ -61,18 +60,18 @@
           <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
         </excludes>
       </resource>
+      <resource>
+        <filtering>true</filtering>
+        <directory>${basedir}/src/main/resources</directory>
+      </resource>
     </resources>
     <plugins>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
+        <artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <instructions>
-            <Bundle-Name>JRuby Stdlib ${project.version}</Bundle-Name>
-            <Bundle-Description>JRuby Stdlib ${project.version} OSGi bundle</Bundle-Description>
-            <Bundle-SymbolicName>org.jruby.jruby-stdlib</Bundle-SymbolicName>
-          </instructions>
+          <archive>
+            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
