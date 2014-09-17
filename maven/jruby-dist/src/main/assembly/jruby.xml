@@ -19,6 +19,7 @@
       <directory>${project.build.directory}/rubygems</directory>
       <outputDirectory>/lib/ruby/gems/shared</outputDirectory>
       <includes>
+        <include>cache/*</include>
         <include>specifications/*</include>
         <include>gems/**/*</include>
       </includes>
