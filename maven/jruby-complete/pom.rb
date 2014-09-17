@@ -20,8 +20,10 @@ project 'JRuby Complete' do
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
-  jar 'org.jruby:jruby-core:${project.version}'
-  jar 'org.jruby:jruby-stdlib:${project.version}'
+  scope :provided do
+    jar 'org.jruby:jruby-core:${project.version}'
+    jar 'org.jruby:jruby-stdlib:${project.version}'
+  end
 
   plugin( 'org.apache.felix:maven-bundle-plugin',
           'archive' => {
@@ -33,7 +35,7 @@ project 'JRuby Complete' do
             'Export-Package' => 'org.jruby.*;version=${project.version}',
             'Import-Package' => '!org.jruby.*, *;resolution:=optional',
             'DynamicImport-Package' => 'javax.*',
-            'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=true',
+            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true',
             'Embed-Transitive' => true,
             'Private-Package' => '*,.',
             'Bundle-Name' => 'JRuby ${project.version}',

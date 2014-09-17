@@ -23,11 +23,13 @@
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <pluginRepositories>
@@ -61,7 +63,7 @@
             <Export-Package>org.jruby.*;version=${project.version}</Export-Package>
             <Import-Package>!org.jruby.*, *;resolution:=optional</Import-Package>
             <DynamicImport-Package>javax.*</DynamicImport-Package>
-            <Embed-Dependency>*;type=jar;scope=compile|runtime;inline=true</Embed-Dependency>
+            <Embed-Dependency>*;type=jar;scope=provided;inline=true</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Private-Package>*,.</Private-Package>
             <Bundle-Name>JRuby ${project.version}</Bundle-Name>
