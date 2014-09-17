@@ -108,11 +108,11 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
 
         // Keep reference to current context to prevent it being collected.
         ThreadContext threadContext = runtime.getCurrentContext();
+        if (sharing_variables) {
+            vars.inject(scope, 0, null);
+            threadContext.pushScope(scope);
+        }
         try {
-            if (sharing_variables) {
-                vars.inject(scope, 0, null);
-                threadContext.pushScope(scope);
-            }
             IRubyObject ret;
             CompileMode mode = runtime.getInstanceConfig().getCompileMode();
             if (mode == CompileMode.FORCE) {

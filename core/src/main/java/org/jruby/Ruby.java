@@ -441,8 +441,9 @@ public final class Ruby {
         ThreadContext context = getCurrentContext();
         Node rootNode = parseEval(script, "<script>", scope, 0);
 
+        context.preEvalScriptlet(scope);
+
         try {
-            context.preEvalScriptlet(scope);
             return Interpreter.getInstance().execute(this, rootNode, context.getFrameSelf());
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");

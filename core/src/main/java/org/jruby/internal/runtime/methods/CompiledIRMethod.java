@@ -80,15 +80,16 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
             LOG.info("Executing '" + realName + "'");
         }
 
+        if (!hasExplicitCallProtocol) {
+            // update call stacks (push: frame, class, scope, etc.)
+            RubyModule implementationClass = getImplementationClass();
+            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
+            // FIXME: does not seem right to use this method's visibility as current!!!
+            // See also PushFrame instruction in org.jruby.ir.targets.JVMVisitor
+            context.setCurrentVisibility(Visibility.PUBLIC);
+        }
+
         try {
-            if (!hasExplicitCallProtocol) {
-                // update call stacks (push: frame, class, scope, etc.)
-                RubyModule implementationClass = getImplementationClass();
-                context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
-                // FIXME: does not seem right to use this method's visibility as current!!!
-                // See also PushFrame instruction in org.jruby.ir.targets.JVMVisitor
-                context.setCurrentVisibility(Visibility.PUBLIC);
-            }
             return (IRubyObject)this.method.invokeWithArguments(context, scope, self, args, block, implementationClass);
         } catch (Throwable t) {
             Helpers.throwException(t);

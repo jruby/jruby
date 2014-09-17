@@ -110,15 +110,15 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
         context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
     }
-    
+
     protected final void preFrameAndDummyScope(ThreadContext context, IRubyObject self, String name, Block block) {
         context.preMethodFrameAndDummyScope(implementationClass, name, self, block, staticScope);
     }
-    
+
     protected final void preFrameOnly(ThreadContext context, IRubyObject self, String name, Block block) {
         context.preMethodFrameOnly(implementationClass, name, self, block);
     }
-    
+
     protected final void preScopeOnly(ThreadContext context) {
         context.preMethodScopeOnly(implementationClass, staticScope);
     }
@@ -126,7 +126,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected final void preNoFrameDummyScope(ThreadContext context) {
         context.preMethodNoFrameAndDummyScope(implementationClass, staticScope);
     }
-    
+
     protected final void preBacktraceOnly(ThreadContext context, String name) {
         context.preMethodBacktraceOnly(name);
     }
@@ -134,21 +134,21 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected final void preBacktraceDummyScope(ThreadContext context, String name) {
         context.preMethodBacktraceDummyScope(implementationClass, name, staticScope);
     }
-    
+
     protected final void preBacktraceAndScope(ThreadContext context, String name) {
         context.preMethodBacktraceAndScope(name, implementationClass, staticScope);
     }
 
     protected final void preNoop() {}
-    
+
     protected final static void postFrameAndScope(ThreadContext context) {
         context.postMethodFrameAndScope();
     }
-    
+
     protected final static void postFrameOnly(ThreadContext context) {
         context.postMethodFrameOnly();
     }
-    
+
     protected final static void postScopeOnly(ThreadContext context) {
         context.postMethodScopeOnly();
     }
@@ -156,7 +156,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected final static void postNoFrameDummyScope(ThreadContext context) {
         context.postMethodScopeOnly();
     }
-    
+
     protected final static void postBacktraceOnly(ThreadContext context) {
         context.postMethodBacktraceOnly();
     }
@@ -164,17 +164,17 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected final static void postBacktraceDummyScope(ThreadContext context) {
         context.postMethodBacktraceDummyScope();
     }
-    
+
     protected final static void postBacktraceAndScope(ThreadContext context) {
         context.postMethodBacktraceAndScope();
     }
 
     protected final static void postNoop(ThreadContext context) {}
-    
+
     protected final void callTrace(ThreadContext context, boolean enabled, String name) {
         if (enabled) context.trace(RubyEvent.C_CALL, name, getImplementationClass());
     }
-    
+
     protected final void returnTrace(ThreadContext context, boolean enabled, String name) {
         if (enabled) context.trace(RubyEvent.C_RETURN, name, getImplementationClass());
     }

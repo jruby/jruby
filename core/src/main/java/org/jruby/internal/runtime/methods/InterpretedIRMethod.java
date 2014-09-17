@@ -102,9 +102,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         if (method.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
 
-        try {
-            pre(context, self, name, block);
+        pre(context, self, name, block);
 
+        try {
             return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
         } finally {
             post(context);

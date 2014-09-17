@@ -84,11 +84,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         IRubyObject rv = null;
         DynamicScope s = null;
-        try {
-            s = rootNode.getScope();
-            s.setEvalType(evalType);
-            context.pushScope(s);
 
+        s = rootNode.getScope();
+        s.setEvalType(evalType);
+        context.pushScope(s);
+
+        try {
             // Since IR introduces additional local vars, we may need to grow the dynamic scope.
             // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
             // Since the same static scope (the scope within which the eval string showed up)

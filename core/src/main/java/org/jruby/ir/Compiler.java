@@ -69,8 +69,8 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
 
             @Override
             public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
+                Helpers.preLoadCommon(context, staticScope, false);
                 try {
-                    Helpers.preLoadCommon(context, staticScope, false);
                     return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                 } finally {
                     Helpers.postLoad(context);

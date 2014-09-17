@@ -102,11 +102,12 @@ public class IRScriptBody extends IRScope {
         }
 
         IRubyObject retVal;
-        try {
-            scope.setModule(currModule);
-            context.preMethodScopeOnly(currModule, scope);
-            context.setCurrentVisibility(Visibility.PRIVATE);
 
+        scope.setModule(currModule);
+        context.preMethodScopeOnly(currModule, scope);
+        context.setCurrentVisibility(Visibility.PRIVATE);
+
+        try {
             Interpreter.runBeginEndBlocks(getBeginBlocks(), context, self, scope, null);
             retVal = Interpreter.INTERPRET_ROOT(context, self, this, currModule, name);
             Interpreter.runBeginEndBlocks(getEndBlocks(), context, self, scope, null);
