@@ -152,9 +152,7 @@ public class RubyProc extends RubyObject implements DataType {
 
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
-            StaticScope newScope = getRuntime().getStaticScopeFactory().newBlockScope(oldScope.getEnclosingScope(), oldScope.getVariables());
-            newScope.setPreviousCRefScope(oldScope.getPreviousCRefScope());
-            newScope.setModule(oldScope.getModule());
+            StaticScope newScope = oldScope.duplicate();
             block.getBody().setStaticScope(newScope);
         } else {
             // just use as is

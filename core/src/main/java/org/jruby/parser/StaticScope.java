@@ -556,4 +556,14 @@ public class StaticScope implements Serializable {
     public Type getType() {
         return type;
     }
+
+    public StaticScope duplicate() {
+        StaticScope dupe = new StaticScope(type, enclosingScope, variableNames == null ? NO_NAMES : variableNames);
+        dupe.setIRScope(irScope);
+        dupe.setScopeType(scopeType);
+        dupe.setPreviousCRefScope(previousCRefScope);
+        dupe.setModule(cref);
+
+        return dupe;
+    }
 }
