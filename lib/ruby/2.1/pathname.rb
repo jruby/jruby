@@ -1,6 +1,3 @@
-## Merged from jruby-ruby_2_1_0 branch, file ext/pathname/lib/pathname.rb.
-## This is similar to MRI, our native part is implemented in RubyPathname.
-## The rest of this file is kept identical to the MRI version.
 #
 # = pathname.rb
 #

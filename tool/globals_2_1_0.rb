@@ -38,7 +38,6 @@ STDLIB_FILES = %w[
   optparse
   optparse.rb
   ostruct.rb
-  pathname.rb
   pp.rb
   prettyprint.rb
   prime.rb
@@ -95,5 +94,6 @@ EXT_FILES = {
   'ext/ripper/lib/ripper' => 'ripper',
   'ext/socket/lib/socket.rb' => 'socket.rb',
   'ext/psych/lib/psych.rb' => 'psych.rb',
-  'ext/psych/lib/psych' => 'psych'
+  'ext/psych/lib/psych' => 'psych',
+  'ext/pathname/lib/pathname.rb' => 'pathname.rb'
 }
