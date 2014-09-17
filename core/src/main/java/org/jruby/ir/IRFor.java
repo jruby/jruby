@@ -1,8 +1,8 @@
 package org.jruby.ir;
 
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Arity;
 
 /**
@@ -10,11 +10,11 @@ import org.jruby.runtime.Arity;
  */
 public class IRFor extends IRClosure {
     public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String labelPrefix) {
-        super(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, labelPrefix, labelPrefix == "_BEGIN_");
+        super(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, labelPrefix, labelPrefix == "_BEGIN_");
     }
 
     public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
-        this(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, "_FOR_LOOP_");
+        this(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, "_FOR_LOOP_");
     }
 
     /** Used by cloning code */

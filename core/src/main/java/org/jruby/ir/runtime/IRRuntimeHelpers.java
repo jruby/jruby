@@ -11,7 +11,7 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -33,7 +33,7 @@ public class IRRuntimeHelpers {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
-    public static boolean inNonMethodBodyLambda(IRStaticScope scope, Block.Type blockType) {
+    public static boolean inNonMethodBodyLambda(StaticScope scope, Block.Type blockType) {
         // SSS FIXME: Hack! AST interpreter and JIT compiler marks a proc's static scope as
         // an argument scope if it is used to define a method's body via :define_method.
         // Since that is exactly what we want to figure out here, am just using that flag here.
@@ -57,11 +57,11 @@ public class IRRuntimeHelpers {
         // If not in a lambda, check if this was a non-local return
         if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
 
-        IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
+        StaticScope scope = dynScope.getStaticScope();
         IRScopeType scopeType = scope.getScopeType();
         boolean inDefineMethod = false;
         while (dynScope != null) {
-            IRStaticScope ss = (IRStaticScope)dynScope.getStaticScope();
+            StaticScope ss = dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
             // was not associated with the AST scope that got converted to IR.
             //
@@ -105,7 +105,7 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-            if (inNonMethodBodyLambda((IRStaticScope)scope, blockType) || (rj.methodToReturnFrom == dynScope)) {
+            if (inNonMethodBodyLambda((StaticScope)scope, blockType) || (rj.methodToReturnFrom == dynScope)) {
                 if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
                 return (IRubyObject) rj.returnValue;
             }
@@ -122,7 +122,7 @@ public class IRRuntimeHelpers {
             // the break as a regular return from the closure.
             return breakValue;
         } else {
-            IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
+            StaticScope scope = dynScope.getStaticScope();
             IRScopeType scopeType = scope.getScopeType();
             if (!scopeType.isClosureType()) {
                 // Error -- breaks can only be initiated in closures
@@ -140,7 +140,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, IRStaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
@@ -163,7 +163,7 @@ public class IRRuntimeHelpers {
         IRBreakJump bj = (IRBreakJump)bjExc;
         if (bj.breakInEval) {
             // If the break was in an eval, we pretend as if it was in the containing scope
-            IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
+            StaticScope scope = dynScope.getStaticScope();
             IRScopeType scopeType = scope.getScopeType();
             if (!scopeType.isClosureType()) {
                 // Error -- breaks can only be initiated in closures

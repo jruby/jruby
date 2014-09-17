@@ -5,7 +5,6 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -98,7 +97,7 @@ public class IRClosure extends IRScope {
         } else {
             this.body = new InterpretedIRBlockBody(this, arity, argumentType);
             if (staticScope != null && !isBeginEndBlock) {
-                ((IRStaticScope)staticScope).setIRScope(this);
+                staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());
             }
         }

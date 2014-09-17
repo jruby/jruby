@@ -6,7 +6,6 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -29,7 +28,7 @@ public class IRScriptBody extends IRScope {
     public IRScriptBody(IRManager manager, String className, String sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
         if (!getManager().isDryRun() && staticScope != null) {
-            ((IRStaticScope)staticScope).setIRScope(this);
+            staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
         }
     }

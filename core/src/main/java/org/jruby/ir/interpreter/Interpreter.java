@@ -14,7 +14,6 @@ import org.jruby.ir.instructions.specialized.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,9 +68,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // The unwrapping is based on the binding that is used for the eval.
         // If the binding came from an instance/module eval, we need to unpeel 3 layers.
         // If the binding came from a non-module eval, we need to unpeel 2 layers.
-        IRScope s = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
+        IRScope s = evalScope.getEnclosingScope().getIRScope();
         if (s == null) {
-            s = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
+            s = evalScope.getEnclosingScope().getEnclosingScope().getIRScope();
         }
         return s;
     }
@@ -96,7 +95,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
             // forget about it.  We need to set this right before we are ready to grow the
             // dynamic scope local var space.
-            ((IRStaticScope)evalScript.getStaticScope()).setIRScope(evalScript);
+            evalScript.getStaticScope().setIRScope(evalScript);
             s.growIfNeeded();
 
             runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null); // FIXME: No temp vars yet right?

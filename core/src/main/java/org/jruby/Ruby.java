@@ -90,7 +90,6 @@ import org.jruby.management.BeanManagerFactory;
 import org.jruby.management.ClassCache;
 import org.jruby.management.Config;
 import org.jruby.management.ParserStats;
-import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScope;
@@ -226,7 +225,7 @@ public final class Ruby {
         
         getJRubyClassLoader(); // force JRubyClassLoader to init if possible
 
-        this.staticScopeFactory = new IRStaticScopeFactory(this);
+        this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
@@ -278,7 +277,7 @@ public final class Ruby {
 
     void reinitialize(boolean reinitCore) {
         this.doNotReverseLookupEnabled = true;
-        this.staticScopeFactory = new IRStaticScopeFactory(this);
+        this.staticScopeFactory = new StaticScopeFactory(this);
         this.in                 = config.getInput();
         this.out                = config.getOutput();
         this.err                = config.getError();

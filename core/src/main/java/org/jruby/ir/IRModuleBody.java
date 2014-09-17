@@ -1,6 +1,5 @@
 package org.jruby.ir;
 
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 
 public class IRModuleBody extends IRScope {
@@ -17,7 +16,7 @@ public class IRModuleBody extends IRScope {
         if (!getManager().isDryRun()) {
             updateVersion();
             if (staticScope != null) {
-                ((IRStaticScope)staticScope).setIRScope(this);
+                staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());
             }
         }

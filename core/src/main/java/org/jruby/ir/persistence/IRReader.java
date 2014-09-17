@@ -11,8 +11,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Arity;
 
 import java.io.IOException;
@@ -102,7 +102,7 @@ public class IRReader {
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
-        StaticScope scope = IRStaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray());
+        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray());
 
         scope.setRequiredArgs(decoder.decodeInt()); // requiredArgs has no constructor ...
 

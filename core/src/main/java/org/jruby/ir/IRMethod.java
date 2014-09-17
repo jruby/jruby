@@ -6,7 +6,6 @@ import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ public class IRMethod extends IRScope {
         this.argDesc = new ArrayList<String[]>();
 
         if (!getManager().isDryRun() && staticScope != null) {
-            ((IRStaticScope)staticScope).setIRScope(this);
+            staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
         }
     }
