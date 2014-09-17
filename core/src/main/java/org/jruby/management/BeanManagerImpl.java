@@ -44,10 +44,6 @@ public class BeanManagerImpl implements BeanManager {
         if (managementEnabled) register(base + "service=MethodCache", methodCache);
     }
     
-    public void register(ClassCacheMBean classCache) {
-        if (managementEnabled) register(base + "service=ClassCache", classCache);
-    }
-    
     public void register(Runtime runtime) {
         if (managementEnabled) register(base + "service=Runtime", runtime);
     }
@@ -60,9 +56,6 @@ public class BeanManagerImpl implements BeanManager {
     }
     public void unregisterParserStats() {
         if (managementEnabled) unregister(base + "service=ParserStats");
-    }
-    public void unregisterClassCache() {
-        if (managementEnabled) unregister(base + "service=ClassCache");
     }
     public void unregisterMethodCache() {
         if (managementEnabled) unregister(base + "service=MethodCache");

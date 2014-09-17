@@ -43,7 +43,6 @@ import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.Options;
 import org.junit.After;
@@ -1996,46 +1995,6 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setHomeDirectory(home);
         assertEquals(System.getProperty("user.dir"), instance.getHomeDirectory());
-
-        instance = null;
-    }
-
-    /**
-     * Test of getClassCache method, of class ScriptingContainer.
-     */
-    @Test
-    public void testGetClassCache() {
-        logger1.info("getClassCache");
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        ClassCache result = instance.getClassCache();
-        assertTrue(result.getMax() == instance.getJitMax());
-
-        instance = null;
-    }
-
-    /**
-     * Test of setClassCache method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetClassCache() {
-        logger1.info("setClassCache");
-        ClassCache cache = null;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setClassCache(cache);
-        assertEquals(cache, instance.getClassCache());
-
-        cache = new ClassCache(instance.getProvider().getRuntime().getJRubyClassLoader(), 30);
-        instance.setClassCache(cache);
-        assertEquals(cache, instance.getClassCache());
-        assertTrue(instance.getClassCache().getMax() == 30);
 
         instance = null;
     }

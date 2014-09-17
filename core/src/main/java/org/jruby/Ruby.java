@@ -53,10 +53,7 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.executable.Script;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
-import org.jruby.compiler.ASTCompiler;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.JITCompiler;
-import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
@@ -87,12 +84,10 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
-import org.jruby.management.ClassCache;
 import org.jruby.management.Config;
 import org.jruby.management.ParserStats;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
@@ -132,7 +127,6 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
@@ -248,7 +242,6 @@ public final class Ruby {
         }
 
         this.configBean = new Config(this);
-        this.classCacheBean = new ClassCache(this);
         this.runtimeBean = new org.jruby.management.Runtime(this);
 
         registerMBeans();
@@ -271,7 +264,6 @@ public final class Ruby {
         this.beanManager.register(jitCompiler);
         this.beanManager.register(configBean);
         this.beanManager.register(parserStats);
-        this.beanManager.register(classCacheBean);
         this.beanManager.register(runtimeBean);
     }
 
@@ -725,7 +717,7 @@ public final class Ruby {
             // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
             // FIXME: restore error once JIT should handle everything
             try {
-                script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
+                script = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()));
             } catch (Exception e) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
                     e.printStackTrace();
@@ -756,22 +748,7 @@ public final class Ruby {
      * @return an instance of the successfully-compiled Script, or null.
      */
     public Script tryCompile(Node node) {
-        return tryCompile(node, null, new JRubyClassLoader(getJRubyClassLoader()), false);
-    }
-
-    /**
-     * Try to compile the code associated with the given Node, returning an
-     * instance of the successfully-compiled Script or null if the script could
-     * not be compiled. This version accepts an ASTInspector instance assumed to
-     * have appropriate flags set for compile optimizations, such as to turn
-     * on heap-based local variables to share an existing scope.
-     *
-     * @param node The node to attempt to compiled
-     * @param inspector The ASTInspector to use for making optimization decisions
-     * @return an instance of the successfully-compiled Script, or null.
-     */
-    public Script tryCompile(Node node, ASTInspector inspector) {
-        return tryCompile(node, null, new JRubyClassLoader(getJRubyClassLoader()), inspector, false);
+        return tryCompile(node, new JRubyClassLoader(getJRubyClassLoader()));
     }
 
     private void failForcedCompile(Node scriptNode) throws RaiseException {
@@ -787,46 +764,8 @@ public final class Ruby {
         }
     }
 
-    private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
+    private Script tryCompile(Node node, JRubyClassLoader classLoader) {
         return Compiler.getInstance().execute(this, node, classLoader);
-    }
-
-    private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, ASTInspector inspector, boolean dump) {
-        Script script = null;
-        try {
-            String filename = node.getPosition().getFile();
-            String classname = JavaNameMangler.mangledFilenameForStartupClasspath(filename);
-
-            StandardASMCompiler asmCompiler = null;
-            if (RubyInstanceConfig.JIT_CODE_CACHE != null && cachedClassName != null) {
-                asmCompiler = new StandardASMCompiler(cachedClassName.replace('.', '/'), filename);
-            } else {
-                asmCompiler = new StandardASMCompiler(classname, filename);
-            }
-            ASTCompiler compiler = config.newCompiler();
-            if (dump) {
-                compiler.compileRoot(node, asmCompiler, inspector, false, false);
-                asmCompiler.dumpClass(System.out);
-            } else {
-                compiler.compileRoot(node, asmCompiler, inspector, true, false);
-            }
-
-            script = (Script)asmCompiler.loadClass(classLoader).newInstance();
-
-            // __file__ method expects its scope at 0, so prepare that here
-            // this is only needed for the "gets loop" which skips calling load
-            StaticScope rootScope = ((RootNode)node).getStaticScope();
-            if (rootScope.getModule() == null) rootScope.setModule(objectClass);
-            script.setRootScope(rootScope);
-
-            if (config.isJitLogging()) {
-                LOG.info("compiled: " + node.getPosition().getFile());
-            }
-        } catch (Throwable t) {
-            handeCompileError(node, t);
-        }
-        
-        return script;
     }
     
     public IRubyObject runScript(Script script) {
@@ -913,6 +852,10 @@ public final class Ruby {
     
     public BeanManager getBeanManager() {
         return beanManager;
+    }
+
+    public JITCompiler getJITCompiler() {
+        return jitCompiler;
     }
     
     public synchronized TruffleBridge getTruffleBridge() {
@@ -2938,7 +2881,7 @@ public final class Ruby {
             // script was not found in cache above, so proceed to compile
             Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                script = tryCompile(scriptNode, className, new JRubyClassLoader(jrubyClassLoader), false);
+                script = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader));
             }
 
             if (script == null) {
@@ -3228,7 +3171,6 @@ public final class Ruby {
         getBeanManager().unregisterCompiler();
         getBeanManager().unregisterConfig();
         getBeanManager().unregisterParserStats();
-        getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
         getBeanManager().unregisterRuntime();
 
@@ -4329,10 +4271,6 @@ public final class Ruby {
         return recordSeparatorVar;
     }
     
-    public Set<Script> getJittedMethods() {
-        return jittedMethods;
-    }
-    
     public ExecutorService getExecutor() {
         return executor;
     }
@@ -4732,8 +4670,6 @@ public final class Ruby {
     private volatile boolean objectSpaceEnabled;
     private boolean siphashEnabled;
     
-    private final Set<Script> jittedMethods = Collections.synchronizedSet(new WeakHashSet<Script>());
-    
     private long globalState = 1;
 
     // Default objects
@@ -5010,7 +4946,6 @@ public final class Ruby {
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
 
     private final Config configBean;
-    private final ClassCache classCacheBean;
     private final org.jruby.management.Runtime runtimeBean;
 
     private final FilenoUtil filenoUtil = new FilenoUtil();

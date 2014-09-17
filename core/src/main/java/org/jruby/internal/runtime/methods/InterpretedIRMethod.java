@@ -11,6 +11,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.compiler.JITCompiler;
 import org.jruby.ir.*;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.interpreter.Interpreter;
@@ -25,7 +26,7 @@ import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassCache;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -65,6 +66,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public CompiledIRMethod getCompiledIRMethod() {
         return box.actualMethod;
+    }
+
+    public void setCallCount(int callCount) {
+        box.callCount = callCount;
+    }
+
+    public StaticScope getStaticScope() {
+        return method.getStaticScope();
     }
 
     public List<String[]> getParameterList() {
@@ -137,7 +146,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         return box.actualMethod.call(context, self, clazz, name, args, block);
     }
 
-    private void ensureInstrsReady() {
+    public void ensureInstrsReady() {
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
         if (method.getInstrsForInterpretation() == null) {
@@ -146,10 +155,28 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
+    public DynamicMethod getMethodForCaching() {
+        DynamicMethod method = box.actualMethod;
+        if (method instanceof CompiledIRMethod) {
+            return method;
+        }
+        return this;
+    }
+
+    public void switchToJitted(CompiledIRMethod newMethod) {
+        this.box.actualMethod = newMethod;
+        this.box.actualMethod.serialNumber = this.serialNumber;
+        this.box.callCount = -1;
+        getImplementationClass().invalidateCacheDescendants();
+    }
+
+
     private boolean tryCompile(ThreadContext context) {
         if (box.actualMethod != null) {
             return true;
         }
+
+        context.runtime.getJITCompiler().jitThresholdReached(this, context.runtime.getInstanceConfig(), context, getImplementationClass().getName(), getName());
 
         // don't JIT during runtime boot
         if (context.runtime.isBooting()) return false;
@@ -167,7 +194,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                 ensureInstrsReady();
 
                 try {
-                    Class compiled = JVMVisitor.compile(method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
+                    Class compiled = JVMVisitor.compile(method, new OneShotClassLoader(context.runtime.getJRubyClassLoader()));
                     Method scriptMethod = compiled.getMethod(
                             "__script__",
                             ThreadContext.class,
@@ -198,6 +225,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             }
         }
         return false;
+    }
+
+    public void setActualMethod(CompiledIRMethod method) {
+        this.box.actualMethod = method;
     }
 
     protected void dupBox(InterpretedIRMethod orig) {

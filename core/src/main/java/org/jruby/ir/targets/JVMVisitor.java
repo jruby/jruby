@@ -51,6 +51,10 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public static Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
+        return defineFromBytecode(scope, compileToBytecode(scope), jrubyClassLoader);
+    }
+
+    public static byte[] compileToBytecode(IRScope scope) {
         // run compiler
         JVMVisitor target = new JVMVisitor();
 
@@ -64,7 +68,11 @@ public class JVMVisitor extends IRVisitor {
 //            e.printStackTrace();
 //        }
 
-        return jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getFileName())), target.code());
+        return target.code();
+    }
+
+    public static Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
+        return jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getFileName())), code);
     }
 
     public byte[] code() {

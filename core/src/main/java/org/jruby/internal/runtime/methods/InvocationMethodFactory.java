@@ -32,10 +32,12 @@ import java.io.PrintWriter;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Helpers;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
@@ -44,7 +46,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -310,9 +311,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         Class[] params;
         if (arity.isFixed() && scope.getRequiredArgs() < 4) {
-            params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
+            params = Helpers.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
         } else {
-            params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
+            params = Helpers.getStaticMethodParams(scriptClass, 4);
         }
         compiledMethod.setNativeCall(scriptClass, javaName, IRubyObject.class, params, true);
 
@@ -528,10 +529,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.aload(ARGS_INDEX + i);
                 }
                 mv.aload(ARGS_INDEX + scope.getRequiredArgs());
-                mv.invokestatic(className, method, StandardASMCompiler.getStaticMethodSignature(className, scope.getRequiredArgs()));
+                mv.invokestatic(className, method, Helpers.getStaticMethodSignature(className, scope.getRequiredArgs()));
             } else {
                 mv.aloadMany(ARGS_INDEX, BLOCK_INDEX);
-                mv.invokestatic(className, method, StandardASMCompiler.getStaticMethodSignature(className, 4));
+                mv.invokestatic(className, method, Helpers.getStaticMethodSignature(className, 4));
             }
         }
         if (framed || heapScoped) {

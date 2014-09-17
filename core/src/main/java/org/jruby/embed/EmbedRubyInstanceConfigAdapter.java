@@ -39,7 +39,6 @@ import org.jruby.CompatVersion;
 import org.jruby.Profile;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
-import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
 
 /**
@@ -238,22 +237,6 @@ public interface EmbedRubyInstanceConfigAdapter {
      * @param home a name of new JRuby home directory.
      */
     public void setHomeDirectory(String home);
-
-    /**
-     * Returns a ClassCache object that is tied to a class loader. The default ClassCache
-     * object is tied to a current thread' context loader if it exists. Otherwise, it is
-     * tied to the class loader that loaded RubyInstanceConfig.
-     *
-     * @return a ClassCache object.
-     */
-    public ClassCache getClassCache();
-
-    /**
-     * Changes a ClassCache object to a given one.
-     * 
-     * @param cache a new ClassCache object to be set.
-     */
-    public void setClassCache(ClassCache cache);
 
     /**
      * Returns a class loader object that is currently used. This loader loads

@@ -29,12 +29,10 @@
  */
 package org.jruby.embed.internal;
 
-import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.util.ClassCache;
 
 /**
  * LocalContextProvider provides an instance of {@link org.jruby.embed.internal.LocalContext} from
@@ -45,22 +43,6 @@ import org.jruby.util.ClassCache;
  * @author Yoko Harada
  */
 public interface LocalContextProvider {
-    /**
-     * Sets a scripts' loading path to a Ruby runtime.
-     *
-     * @param loadPaths is a list of paths to load scritps
-     */
-	@Deprecated
-    void setLoadPaths(List loadPaths);
-
-    /**
-     * Sets a class cash option to a Ruby runtime.
-     * 
-     * @param classCache is a class cache option
-     */
-	@Deprecated
-    void setClassCache(ClassCache classCache);
-
     /**
      * Gets an instance of {@link org.jruby.RubyInstanceConfig}.
      *

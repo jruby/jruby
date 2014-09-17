@@ -890,10 +890,7 @@ public class Bootstrap {
         // if non-Java, must:
         // * exactly match arities or both are [] boxed
         // * 3 or fewer arguments
-        int nativeArgCount = (method instanceof CompiledMethod || method instanceof JittedMethod)
-                ? getRubyArgCount(nativeCall.getNativeSignature())
-                : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
-        return nativeArgCount;
+        return getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
     }
 
     private static int getArgCount(Class[] args, boolean isStatic) {

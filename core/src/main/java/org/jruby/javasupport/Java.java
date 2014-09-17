@@ -101,7 +101,7 @@ import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
-import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 
 @JRubyModule(name = "Java")

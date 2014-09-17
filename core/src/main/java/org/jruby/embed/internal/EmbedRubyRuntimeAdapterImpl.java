@@ -34,17 +34,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.Writer;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyRuntimeAdapter;
@@ -180,11 +177,8 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.FORCE) {
-                // we pass in an ASTInspector that will force heap variables, so
-                // it uses our shared scope
-                ASTInspector inspector = new ASTInspector();
-                inspector.setFlag(ASTInspector.SCOPE_AWARE);
-                Script script = runtime.tryCompile(node, inspector);
+                // CON FIXME: We may need to force heap variables here so the compiled script uses our provided scope
+                Script script = runtime.tryCompile(node);
                 if (script != null) {
                     return new EmbedEvalUnitImpl(container, node, scope, script);
                 } else {

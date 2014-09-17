@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.jruby.Ruby;
 import org.jruby.ast.executable.Script;
-import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassReader;
 

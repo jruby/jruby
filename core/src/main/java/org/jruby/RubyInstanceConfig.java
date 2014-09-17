@@ -29,15 +29,12 @@
 package org.jruby;
 
 import jnr.posix.util.Platform;
-import org.jruby.ast.executable.Script;
-import org.jruby.compiler.ASTCompiler;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
-import org.jruby.util.ClassCache;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
@@ -111,8 +108,6 @@ public class RubyInstanceConfig {
             jitMaxSize = Options.JIT_MAXSIZE.load();
         }
 
-        // default ClassCache using jitMax as a soft upper bound
-        classCache = new ClassCache<Script>(loader, jitMax);
         threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
         
         try {
@@ -140,8 +135,6 @@ public class RubyInstanceConfig {
 
         profilingService = parentConfig.profilingService;
         profilingMode = parentConfig.profilingMode;
-
-        classCache = new ClassCache<Script>(loader, jitMax);
 
         try {
             environment = System.getenv();
@@ -465,10 +458,6 @@ public class RubyInstanceConfig {
             return getScriptFileName();
         }
     }
-
-    public ASTCompiler newCompiler() {
-        return new ASTCompiler();
-    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Static utilities and global state management methods.
@@ -695,10 +684,6 @@ public class RubyInstanceConfig {
     }
 
     public void setLoader(ClassLoader loader) {
-        // Setting the loader needs to reset the class cache
-        if(this.loader != loader) {
-            this.classCache = new ClassCache<Script>(loader, this.classCache.getMax());
-        }
         this.loader = loader;
     }
 
@@ -1053,10 +1038,6 @@ public class RubyInstanceConfig {
     public int getSafeLevel() {
         return 0;
     }
-
-    public ClassCache getClassCache() {
-        return classCache;
-    }
     
     /**
      * @see Options#CLI_BACKUP_EXTENSION
@@ -1070,10 +1051,6 @@ public class RubyInstanceConfig {
      */
     public String getInPlaceBackupExtension() {
         return inPlaceBackupExtension;
-    }
-
-    public void setClassCache(ClassCache classCache) {
-        this.classCache = classCache;
     }
 
     public Map getOptionGlobals() {
@@ -1439,8 +1416,6 @@ public class RubyInstanceConfig {
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
 
-    private ClassCache<Script> classCache;
-
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
     private Set<String> excludedMethods = new HashSet<String>();
@@ -1805,6 +1780,13 @@ public class RubyInstanceConfig {
             throw new RuntimeException("unsupported Java version: " + specVersion);
         }
     }
+    public void setTruffleHooks(TruffleHooksStub truffleHooks) {
+        this.truffleHooks = truffleHooks;
+    }
+
+    public TruffleHooksStub getTruffleHooks() {
+        return truffleHooks;
+    }
 
     @Deprecated
     public void setSafeLevel(int safeLevel) {
@@ -1974,11 +1956,4 @@ public class RubyInstanceConfig {
     @Deprecated public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
     @Deprecated public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
 
-    public void setTruffleHooks(TruffleHooksStub truffleHooks) {
-        this.truffleHooks = truffleHooks;
-    }
-
-    public TruffleHooksStub getTruffleHooks() {
-        return truffleHooks;
-    }
 }
