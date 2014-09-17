@@ -9,7 +9,7 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
   model_version '4.0.0'
   id "org.jruby:jruby-noasm:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
-  packaging 'jar'
+  packaging 'bundle'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readOnly' => true,
@@ -23,6 +23,16 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
                         'org.ow2.asm:asm-analysis',
                         'org.ow2.asm:asm-util' ] )
   jar 'org.jruby:jruby-stdlib:${project.version}'
+
+  plugin( 'org.apache.felix:maven-bundle-plugin',
+          :instructions => { 
+            'Bundle-Name' => 'JRuby ${project.version}',
+            'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
+            'Bundle-SymbolicName' => 'org.jruby.jruby'
+          } ) do
+    # TODO fix DSL
+    @current.extensions = true
+  end
 
   plugin( :source,
           'skipSource' =>  'true' )

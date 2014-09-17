@@ -21,9 +21,7 @@ project 'JRuby Complete' do
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
   jar 'org.jruby:jruby-core:${project.version}'
-  jar( 'org.jruby:jruby-stdlib:${project.version}',
-       :exclusions => [ 'org.bouncycastle:bcpkix-jdk15on',
-                        'org.bouncycastle:bcprov-jdk15on' ] )
+  jar 'org.jruby:jruby-stdlib:${project.version}'
 
   plugin( 'org.apache.felix:maven-bundle-plugin',
           'archive' => {

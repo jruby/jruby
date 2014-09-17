@@ -9,7 +9,7 @@ project 'JRuby Stdlib' do
   model_version '4.0.0'
   id "org.jruby:jruby-stdlib:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
-  packaging 'jar'
+  packaging 'bundle'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readOnly' => true,
@@ -21,6 +21,16 @@ project 'JRuby Stdlib' do
               'main.basedir' => '${project.parent.parent.basedir}',
               'gem.home' => '${jruby.basedir}/lib/ruby/gems/shared',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
+
+  plugin( 'org.apache.felix:maven-bundle-plugin',
+          :instructions => { 
+            'Bundle-Name' => 'JRuby Stdlib ${project.version}',
+            'Bundle-Description' => 'JRuby Stdlib ${project.version} OSGi bundle',
+            'Bundle-SymbolicName' => 'org.jruby.jruby-stdlib'
+          } ) do
+    # TODO fix DSL
+    @current.extensions = true
+  end
 
   plugin( :source,
           'skipSource' =>  'true' )

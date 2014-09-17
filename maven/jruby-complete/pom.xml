@@ -28,16 +28,6 @@
       <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>bcpkix-jdk15on</artifactId>
-          <groupId>org.bouncycastle</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>bcprov-jdk15on</artifactId>
-          <groupId>org.bouncycastle</groupId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
   <pluginRepositories>
