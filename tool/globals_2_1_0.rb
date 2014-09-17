@@ -38,7 +38,6 @@ STDLIB_FILES = %w[
   optparse
   optparse.rb
   ostruct.rb
-  pathname.rb
   pp.rb
   prettyprint.rb
   prime.rb
@@ -83,17 +82,18 @@ STDLIB_FILES = %w[
 
 EXT_FILES = {
   'ext/bigdecimal/lib/bigdecimal' => 'bigdecimal',
-  'ext/dl/lib/dl.rb' => 'dl.rb',
-  'ext/dl/lib/dl' => 'dl',
-  'ext/pty/lib/expect.rb' => 'expect.rb',
-  'ext/nkf/lib/kconv.rb' => 'kconv.rb',
   'ext/digest/lib/digest' => 'digest',
   'ext/digest/lib/digest.rb' => 'digest.rb',
   'ext/digest/sha2/lib/sha2.rb' => 'digest/sha2.rb',
-  'ext/win32/lib/win32' => 'win32',
-  'ext/ripper/lib/ripper.rb' => 'ripper.rb',
-  'ext/ripper/lib/ripper' => 'ripper',
-  'ext/socket/lib/socket.rb' => 'socket.rb',
+  'ext/dl/lib/dl' => 'dl',
+  'ext/dl/lib/dl.rb' => 'dl.rb',
+  'ext/nkf/lib/kconv.rb' => 'kconv.rb',
+  'ext/pathname/lib/pathname.rb' => 'pathname.rb',
+  'ext/psych/lib/psych' => 'psych',
   'ext/psych/lib/psych.rb' => 'psych.rb',
-  'ext/psych/lib/psych' => 'psych'
+  'ext/pty/lib/expect.rb' => 'expect.rb',
+  'ext/ripper/lib/ripper' => 'ripper',
+  'ext/ripper/lib/ripper.rb' => 'ripper.rb',
+  'ext/socket/lib/socket.rb' => 'socket.rb',
+  'ext/win32/lib/win32' => 'win32'
 }

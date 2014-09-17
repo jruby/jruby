@@ -12,11 +12,7 @@ public interface BeanManager {
 
     void register(MethodCacheMBean methodCache);
 
-    void register(ClassCacheMBean classCache);
-
     void register(Runtime runtime);
-
-    void unregisterClassCache();
 
     void unregisterCompiler();
 

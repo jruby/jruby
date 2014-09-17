@@ -47,6 +47,7 @@ import org.jruby.ast.UndefNode;
 import org.jruby.ast.VAliasNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.XStrNode;
+import org.jruby.ir.IRScope;
 import org.jruby.util.ConvertBytes;
 
 public class SexpMaker {
@@ -177,6 +178,25 @@ public class SexpMaker {
         processMethod(sb, methodName, argsNode, body);
 
         return sb.toString();
+    }
+
+    public static String sha1(IRScope scope) {
+        MessageDigest sha1;
+        try {
+            sha1 = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new RuntimeException(nsae);
+        }
+
+        DigestBuilder db = new DigestBuilder(sha1);
+
+        db.append(scope.getName());
+        db.append('\n');
+        db.append(scope.toStringInstrs());
+
+        byte[] digest = db.d.digest();
+
+        return new String(ConvertBytes.twosComplementToHexBytes(digest, false));
     }
 
     public static String sha1(String methodName, Node argsNode, Node body) {

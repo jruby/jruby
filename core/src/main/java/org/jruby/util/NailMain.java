@@ -34,11 +34,6 @@ import org.jruby.ast.executable.Script;
 import org.jruby.runtime.Constants;
 
 public class NailMain {
-    public static final ClassCache<Script> classCache;
-
-    static {
-         classCache = new ClassCache<Script>(NailMain.class.getClassLoader(), Constants.JIT_MAX_METHODS_LIMIT);
-    }
     public static void nailMain(NGContext context) {
         NailMain main = new NailMain();
         int status = main.run(context);
@@ -57,9 +52,6 @@ public class NailMain {
         
         config.setCurrentDirectory(context.getWorkingDirectory());
         config.setEnvironment(context.getEnv());
-
-        // reuse one cache of compiled bodies
-        config.setClassCache(classCache);
 
         return main.run(context.getArgs()).getStatus();
     }

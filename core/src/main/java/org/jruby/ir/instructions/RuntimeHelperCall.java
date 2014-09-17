@@ -7,7 +7,7 @@ import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -83,7 +83,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
     }
 
     public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
-        IRStaticScope scope = (IRStaticScope) currDynScope.getStaticScope();
+        StaticScope scope = currDynScope.getStaticScope();
 
         switch (helperMethod) {
             case HANDLE_PROPAGATE_BREAK:

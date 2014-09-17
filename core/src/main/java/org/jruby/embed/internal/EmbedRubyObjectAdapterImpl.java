@@ -295,14 +295,16 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
             sharing_variables = false;
         }
+
+        if (sharing_variables) {
+            ManyVarsDynamicScope scope;
+            if (unit != null && unit.getScope() != null) scope = unit.getScope();
+            else scope = EmbedRubyRuntimeAdapterImpl.getManyVarsDynamicScope(container, 0);
+            container.getVarMap().inject(scope, 0, rubyReceiver);
+            runtime.getCurrentContext().pushScope(scope);
+        }
+
         try {
-            if (sharing_variables) {
-                ManyVarsDynamicScope scope;
-                if (unit != null && unit.getScope() != null) scope = unit.getScope();
-                else scope = EmbedRubyRuntimeAdapterImpl.getManyVarsDynamicScope(container, 0);
-                container.getVarMap().inject(scope, 0, rubyReceiver);
-                runtime.getCurrentContext().pushScope(scope);
-            }
             IRubyObject result = callEachType(type, rubyReceiver, methodName, block, args);
             if (sharing_variables) {
                 container.getVarMap().retrieve(rubyReceiver);

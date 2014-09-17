@@ -12,12 +12,10 @@ import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -52,6 +50,8 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
+import static org.jruby.util.CodegenUtils.sig;
+
 import org.jruby.util.JavaNameMangler;
 
 /**
@@ -163,42 +163,6 @@ public class Helpers {
         MethodFactory factory = MethodFactory.createFactory(Helpers.class.getClassLoader());
 
         return factory.getBlockCallback19Offline(closureMethod, file, line, classPath);
-    }
-
-    public static String buildBlockDescriptor19(
-            String closureMethod,
-            int arity,
-            String file,
-            int line,
-            boolean hasMultipleArgsHead,
-            NodeType argsNodeId,
-            String parameterList,
-            ASTInspector inspector) {
-        return buildBlockDescriptor(closureMethod, arity, file, line, hasMultipleArgsHead, argsNodeId, inspector) +
-                ":" + parameterList;
-    }
-
-    public static String buildBlockDescriptor(
-            String closureMethod,
-            int arity,
-            String file,
-            int line,
-            boolean hasMultipleArgsHead,
-            NodeType argsNodeId,
-            ASTInspector inspector) {
-
-        // We use : to delimit since mangleMethodName mangles it (i.e. it will
-        // never appear in the resulting mangled string)
-        String descriptor =
-                JavaNameMangler.mangleMethodName(closureMethod) + ':' +
-                arity + ':' +
-                hasMultipleArgsHead + ':' +
-                BlockBody.asArgumentType(argsNodeId) + ':' +
-                JavaNameMangler.mangleMethodName(file) + ':' +
-                line + ':' +
-                !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
-
-        return descriptor;
     }
     
     public static String[] parseBlockDescriptor(String descriptor) {
@@ -524,6 +488,40 @@ public class Helpers {
             return RubyArray.newEmptyArray(context.runtime);
         } else {
             return (RubyArray)rubyArray.subseqLight(preArgsCount, n - preArgsCount - postArgsCount);
+        }
+    }
+
+    public static Class[] getStaticMethodParams(Class target, int args) {
+        switch (args) {
+        case 0:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, Block.class};
+        case 1:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 2:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 3:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 4:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
+        default:
+            throw new RuntimeException("unsupported arity: " + args);
+        }
+    }
+
+    public static String getStaticMethodSignature(String classname, int args) {
+        switch (args) {
+        case 0:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, Block.class);
+        case 1:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 2:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 3:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 4:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
+        default:
+            throw new RuntimeException("unsupported arity: " + args);
         }
     }
 

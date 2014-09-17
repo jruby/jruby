@@ -16,7 +16,6 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,6 +51,10 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public static Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
+        return defineFromBytecode(scope, compileToBytecode(scope), jrubyClassLoader);
+    }
+
+    public static byte[] compileToBytecode(IRScope scope) {
         // run compiler
         JVMVisitor target = new JVMVisitor();
 
@@ -65,7 +68,11 @@ public class JVMVisitor extends IRVisitor {
 //            e.printStackTrace();
 //        }
 
-        return jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getFileName())), target.code());
+        return target.code();
+    }
+
+    public static Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
+        return jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getFileName())), code);
     }
 
     public byte[] code() {
@@ -1582,11 +1589,10 @@ public class JVMVisitor extends IRVisitor {
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
                 jvmMethod().loadContext();
                 jvmMethod().loadStaticScope();
-                jvmAdapter().checkcast(p(IRStaticScope.class));
                 jvmLoadLocal(DYNAMIC_SCOPE);
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmMethod().loadBlockType();
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleBreakAndReturnsInLambdas", sig(IRubyObject.class, ThreadContext.class, IRStaticScope.class, DynamicScope.class, Object.class, Block.Type.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleBreakAndReturnsInLambdas", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, DynamicScope.class, Object.class, Block.Type.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_BACKREF:

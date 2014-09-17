@@ -12,10 +12,10 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.runtime.*;
@@ -71,7 +71,7 @@ public class TranslatorDriver {
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
 
-        final org.jruby.parser.LocalStaticScope staticScope = new org.jruby.parser.LocalStaticScope(null);
+        final StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
 
         if (parentFrame != null) {
             /*

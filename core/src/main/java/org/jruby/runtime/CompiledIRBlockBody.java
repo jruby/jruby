@@ -35,10 +35,12 @@ public class CompiledIRBlockBody extends IRBlockBody {
         if (self == null || this.evalType == EvalType.BINDING_EVAL) {
             self = useBindingSelf(binding);
         }
+
+        DynamicScope prevScope = binding.getDynamicScope();
+        DynamicScope newScope  = sharedScope ? prevScope : DynamicScope.newDynamicScope(getStaticScope(), prevScope);
+        context.pushScope(newScope);
+
         try {
-            DynamicScope prevScope = binding.getDynamicScope();
-            DynamicScope newScope  = sharedScope ? prevScope : DynamicScope.newDynamicScope(getStaticScope(), prevScope);
-            context.pushScope(newScope);
             return (IRubyObject)handle.invokeWithArguments(context, getStaticScope(), self, args, block, binding.getMethod(), type);
         } catch (Throwable t) {
             Helpers.throwException(t);

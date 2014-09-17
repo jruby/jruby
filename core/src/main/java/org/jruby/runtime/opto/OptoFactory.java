@@ -27,15 +27,6 @@
 package org.jruby.runtime.opto;
 
 import org.jruby.RubyModule;
-import org.jruby.compiler.CacheCompiler;
-import org.jruby.compiler.InvocationCompiler;
-import org.jruby.compiler.impl.BaseBodyCompiler;
-import org.jruby.compiler.impl.InheritedCacheCompiler;
-import org.jruby.compiler.impl.InvokeDynamicCacheCompiler;
-import org.jruby.compiler.impl.InvokeDynamicInvocationCompiler;
-import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.compiler.impl.StandardASMCompiler;
-import org.jruby.compiler.impl.StandardInvocationCompiler;
 import org.jruby.util.cli.Options;
 
 /**
@@ -43,34 +34,6 @@ import org.jruby.util.cli.Options;
  * cache invalidation, and so on.
  */
 public class OptoFactory {
-    public static InvocationCompiler newInvocationCompiler(BaseBodyCompiler bodyCompiler, SkinnyMethodAdapter method) {
-        if (indyEnabled()) {
-            try {
-                return new InvokeDynamicInvocationCompiler(bodyCompiler, method);
-            } catch (Error e) {
-                disableIndy();
-                throw e;
-            } catch (Throwable t) {
-                disableIndy();
-            }
-        }
-        return new StandardInvocationCompiler(bodyCompiler, method);
-    }
-    
-    public static CacheCompiler newCacheCompiler(StandardASMCompiler scriptCompiler) {
-        if (indyEnabled()) {
-            try {
-                return new InvokeDynamicCacheCompiler(scriptCompiler);
-            } catch (Error e) {
-                disableIndy();
-                throw e;
-            } catch (Throwable t) {
-                disableIndy();
-            }
-        }
-        return new InheritedCacheCompiler(scriptCompiler);
-    }
-    
     public static Invalidator newConstantInvalidator() {
         if (indyEnabled() && indyConstants()) {
             try {

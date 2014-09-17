@@ -457,10 +457,7 @@ public class InvocationLinker {
         // if non-Java, must:
         // * exactly match arities or both are [] boxed
         // * 3 or fewer arguments
-        int nativeArgCount = (method instanceof CompiledMethod || method instanceof JittedMethod)
-                ? getRubyArgCount(nativeCall.getNativeSignature())
-                : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
-        return nativeArgCount;
+        return getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
     }
 
     public static DynamicMethod unwrapMethod(DynamicMethod method, String[] realName) throws IndirectBindingException {
@@ -476,12 +473,12 @@ public class InvocationLinker {
         if (method instanceof ProfilingDynamicMethod) {
             throw new IndirectBindingException("profiling active");
         }
-        if (method instanceof DefaultMethod) {
-            DefaultMethod defaultMethod = (DefaultMethod) method;
-            if (defaultMethod.getMethodForCaching() instanceof JittedMethod) {
-                method = defaultMethod.getMethodForCaching();
-            }
-        }
+//        if (method instanceof DefaultMethod) {
+//            DefaultMethod defaultMethod = (DefaultMethod) method;
+//            if (defaultMethod.getMethodForCaching() instanceof JittedMethod) {
+//                method = defaultMethod.getMethodForCaching();
+//            }
+//        }
         return method;
     }
     
@@ -692,36 +689,36 @@ public class InvocationLinker {
         
     }
     
-    public static class RubyCallGenerator implements HandleGenerator {
-
-        @Override
-        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
-            NativeCall nativeCall = method.getNativeCall();
-            
-            if (method instanceof CompiledMethod || method instanceof JittedMethod) {
-                if (nativeCall != null) {
-                    int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
-                    
-                    // arity must match or both be [] args
-                    if (nativeArgCount != site.arity()) {
-                        throw new IndirectBindingException("arity mismatch or varargs at call site: " + nativeArgCount + " != " + site.arity());
-                    }
-
-                    return true;
-                }
-            }
-            
-            return false;
-        }
-
-        @Override
-        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
-            // Ruby to Ruby
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tbound to Ruby method " + logMethod(method) + ": " + method.getNativeCall());
-            return postProcessNativeHandle(createRubyHandle(site, method, realName), site, method, true, false);
-        }
-        
-    }
+//    public static class RubyCallGenerator implements HandleGenerator {
+//
+//        @Override
+//        public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+//            NativeCall nativeCall = method.getNativeCall();
+//
+//            if (method instanceof CompiledMethod || method instanceof JittedMethod) {
+//                if (nativeCall != null) {
+//                    int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
+//
+//                    // arity must match or both be [] args
+//                    if (nativeArgCount != site.arity()) {
+//                        throw new IndirectBindingException("arity mismatch or varargs at call site: " + nativeArgCount + " != " + site.arity());
+//                    }
+//
+//                    return true;
+//                }
+//            }
+//
+//            return false;
+//        }
+//
+//        @Override
+//        public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
+//            // Ruby to Ruby
+//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tbound to Ruby method " + logMethod(method) + ": " + method.getNativeCall());
+//            return postProcessNativeHandle(createRubyHandle(site, method, realName), site, method, true, false);
+//        }
+//
+//    }
     
     public static class CoreCallGenerator implements HandleGenerator {
 
@@ -758,7 +755,7 @@ public class InvocationLinker {
             new AttrWriterGenerator(),
             new FFIGenerator(),
             new JavaCallGenerator(),
-            new RubyCallGenerator(),
+//            new RubyCallGenerator(),
             new CoreCallGenerator()
             );
 
@@ -1659,42 +1656,42 @@ public class InvocationLinker {
     // Dispatch via direct handle to Ruby method
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createRubyHandle(JRubyCallSite site, DynamicMethod method, String name) {
-        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
-        if (nativeTarget != null) return nativeTarget;
-        
-        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-        
-        try {
-            Object scriptObject;
-            StaticScope scope = null;
-            if (method instanceof CompiledMethod) {
-                scriptObject = ((CompiledMethod)method).getScriptObject();
-                scope = ((CompiledMethod)method).getStaticScope();
-            } else if (method instanceof JittedMethod) {
-                scriptObject = ((JittedMethod)method).getScriptObject();
-                scope = ((JittedMethod)method).getStaticScope();
-            } else {
-                throw new RuntimeException("invalid method for ruby handle: " + method);
-            }
-
-            int argCount = getRubyArgCount(nativeCall.getNativeSignature());
-
-            Signature fullSig = site.fullSignature();
-            nativeTarget = Binder
-                    .from(fullSig.type())
-                    .permute(fullSig.to("context", "self", "arg*", "block"))
-                    .insert(0, scriptObject)
-                    .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
-
-            nativeTarget = wrapWithFraming(fullSig, method.getCallConfig(), method.getImplementationClass(), name, nativeTarget, scope);
-            
-            method.setHandle(nativeTarget);
-            return nativeTarget;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    private static MethodHandle createRubyHandle(JRubyCallSite site, DynamicMethod method, String name) {
+//        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
+//        if (nativeTarget != null) return nativeTarget;
+//
+//        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
+//
+//        try {
+//            Object scriptObject;
+//            StaticScope scope = null;
+//            if (method instanceof CompiledMethod) {
+//                scriptObject = ((CompiledMethod)method).getScriptObject();
+//                scope = ((CompiledMethod)method).getStaticScope();
+//            } else if (method instanceof JittedMethod) {
+//                scriptObject = ((JittedMethod)method).getScriptObject();
+//                scope = ((JittedMethod)method).getStaticScope();
+//            } else {
+//                throw new RuntimeException("invalid method for ruby handle: " + method);
+//            }
+//
+//            int argCount = getRubyArgCount(nativeCall.getNativeSignature());
+//
+//            Signature fullSig = site.fullSignature();
+//            nativeTarget = Binder
+//                    .from(fullSig.type())
+//                    .permute(fullSig.to("context", "self", "arg*", "block"))
+//                    .insert(0, scriptObject)
+//                    .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
+//
+//            nativeTarget = wrapWithFraming(fullSig, method.getCallConfig(), method.getImplementationClass(), name, nativeTarget, scope);
+//
+//            method.setHandle(nativeTarget);
+//            return nativeTarget;
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     public static MethodHandle wrapWithFraming(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name, MethodHandle nativeTarget, StaticScope scope) {
         MethodHandle framePre = getFramePre(signature, callConfig, implClass, name, scope);

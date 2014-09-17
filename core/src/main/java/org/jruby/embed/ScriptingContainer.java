@@ -65,7 +65,6 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
-import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.cli.Options;
@@ -609,32 +608,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Returns a ClassCache object that is tied to a class loader. The default ClassCache
-     * object is tied to a current thread' context loader if it exists. Otherwise, it is
-     * tied to the class loader that loaded RubyInstanceConfig.
-     *
-     * @since JRuby 1.5.0.
-     *
-     * @return a ClassCache object.
-     */
-    public ClassCache getClassCache() {
-        return provider.getRubyInstanceConfig().getClassCache();
-    }
-
-    /**
-     * Changes a ClassCache object to a given one.
-     * Call this method before you use put/get, runScriptlet, and parse methods so that
-     * the given class cache will be used.
-     *
-     * @since JRuby 1.5.0.
-     *
-     * @param cache a new ClassCache object to be set.
-     */
-    public void setClassCache(ClassCache cache) {
-        provider.getRubyInstanceConfig().setClassCache(cache);
-    }
-
-    /**
      * Returns a class loader object that is currently used. This loader loads
      * Ruby files and libraries.
      *
@@ -1034,8 +1007,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Returns a provider instance of {@link LocalContextProvider}. When users 
      * want to configure Ruby runtime, they can do by setting class loading paths,
-     * {@link org.jruby.RubyInstanceConfig} or {@link org.jruby.util.ClassCache}
-     * to the provider before they get Ruby runtime.
+     * {@link org.jruby.RubyInstanceConfig} to the provider before they get Ruby
+     * runtime.
      * 
      * @return a provider of {@link LocalContextProvider}
      */

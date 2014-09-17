@@ -6,7 +6,6 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -29,7 +28,7 @@ public class IRScriptBody extends IRScope {
     public IRScriptBody(IRManager manager, String className, String sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
         if (!getManager().isDryRun() && staticScope != null) {
-            ((IRStaticScope)staticScope).setIRScope(this);
+            staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
         }
     }
@@ -103,11 +102,12 @@ public class IRScriptBody extends IRScope {
         }
 
         IRubyObject retVal;
-        try {
-            scope.setModule(currModule);
-            context.preMethodScopeOnly(currModule, scope);
-            context.setCurrentVisibility(Visibility.PRIVATE);
 
+        scope.setModule(currModule);
+        context.preMethodScopeOnly(currModule, scope);
+        context.setCurrentVisibility(Visibility.PRIVATE);
+
+        try {
             Interpreter.runBeginEndBlocks(getBeginBlocks(), context, self, scope, null);
             retVal = Interpreter.INTERPRET_ROOT(context, self, this, currModule, name);
             Interpreter.runBeginEndBlocks(getEndBlocks(), context, self, scope, null);

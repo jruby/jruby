@@ -33,17 +33,20 @@ public class InterpretedIRBlockBody extends IRBlockBody {
         if (self == null || this.evalType == EvalType.BINDING_EVAL) {
             self = useBindingSelf(binding);
         }
+
         DynamicScope newScope = null;
+        DynamicScope prevScope = binding.getDynamicScope();
+
+        // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
+        // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
+        // is just wasteful allocation since the scope is not used at all.
+        newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope);
+        // Pass on eval state info to the dynamic scope and clear it on the block-body
+        newScope.setEvalType(this.evalType);
+        this.evalType = EvalType.NONE;
+        context.pushScope(newScope);
+
         try {
-            DynamicScope prevScope = binding.getDynamicScope();
-            // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
-            // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
-            // is just wasteful allocation since the scope is not used at all.
-            newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope);
-            // Pass on eval state info to the dynamic scope and clear it on the block-body
-            newScope.setEvalType(this.evalType);
-            this.evalType = EvalType.NONE;
-            context.pushScope(newScope);
             return Interpreter.INTERPRET_BLOCK(context, self, closure, args, binding.getMethod(), block, type);
         }
         finally {

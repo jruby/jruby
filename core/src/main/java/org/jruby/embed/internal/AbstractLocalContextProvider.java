@@ -29,10 +29,8 @@
  */
 package org.jruby.embed.internal;
 
-import java.util.List;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.util.ClassCache;
 
 /**
  *
@@ -42,21 +40,6 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
     protected RubyInstanceConfig config = new RubyInstanceConfig();
     protected LocalVariableBehavior behavior = LocalVariableBehavior.TRANSIENT;
     protected boolean lazy = true;
-
-    @Deprecated
-    public void setLoadPaths(List loadPaths) {
-        if (config != null) {
-            config.setLoadPaths(loadPaths);
-        }
-        
-    }
-
-    @Deprecated
-    public void setClassCache(ClassCache classCache) {
-        if (config != null) {
-            config.setClassCache(classCache);
-        }
-    }
 
     public RubyInstanceConfig getRubyInstanceConfig() {
         return config;
