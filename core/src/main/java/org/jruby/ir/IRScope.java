@@ -583,7 +583,19 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
         // Build CFG and run compiler passes, if necessary
+        boolean runPasses = false;
         if (getCFG() == null) {
+            buildCFG();
+            runPasses = true;
+        }
+
+        if (isLambda) {
+            // Add a global ensure block to catch uncaught breaks
+            // and throw a LocalJumpError.
+            ((IRClosure)this).addGEBForUncaughtBreaks();
+        }
+
+        if (runPasses) {
             runCompilerPasses(getManager().getCompilerPasses(this));
 
             if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
@@ -591,14 +603,6 @@ public abstract class IRScope implements ParseResult {
                 // But, if we have been passed in a list of passes to run
                 // on the commandline, skip this opt.
                 runDeadCodeAndVarLoadStorePasses();
-            }
-        }
-
-        if (isLambda) {
-            // Add a global ensure block to catch uncaught breaks
-            // and throw a LocalJumpError.
-            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
-                this.relinearizeCFG = true;
             }
         }
 
@@ -614,7 +618,24 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
+        boolean runPasses = false;
         if (getCFG() == null) {
+            buildCFG();
+            runPasses = true;
+        }
+
+        // Add this always since we dont re-JIT a previously
+        // JIT-ted closure.  But, check if there are other
+        // smarts available to us and eliminate adding this
+        // code to every closure there is.
+        //
+        // Add a global ensure block to catch uncaught breaks
+        // and throw a LocalJumpError.
+        if (this instanceof IRClosure) {
+            ((IRClosure)this).addGEBForUncaughtBreaks();
+        }
+
+        if (runPasses) {
             runCompilerPasses(getManager().getJITPasses(this));
 
             if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
@@ -625,17 +646,6 @@ public abstract class IRScope implements ParseResult {
                 // no DCE for now to stress-test JIT
                 //runDeadCodeAndVarLoadStorePasses();
             }
-        }
-
-        // Add this always since we dont re-JIT a previously
-        // JIT-ted closure.  But, check if there are other
-        // smarts available to us and eliminate adding this
-        // code to every closure there is.
-        //
-        // Add a global ensure block to catch uncaught breaks
-        // and throw a LocalJumpError.
-        if (this instanceof IRClosure && ((IRClosure)this).addGEBForUncaughtBreaks()) {
-            this.relinearizeCFG = true;
         }
 
         checkRelinearization();
