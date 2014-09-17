@@ -105,7 +105,10 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-            if (inNonMethodBodyLambda((IRStaticScope)scope, blockType) || (rj.methodToReturnFrom == dynScope)) return (IRubyObject) rj.returnValue;
+            if (inNonMethodBodyLambda((IRStaticScope)scope, blockType) || (rj.methodToReturnFrom == dynScope)) {
+                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
+                return (IRubyObject) rj.returnValue;
+            }
 
             // - If not, Just pass it along!
             throw rj;
@@ -171,6 +174,7 @@ public class IRRuntimeHelpers {
             }
         } else if (bj.scopeToReturnTo == dynScope) {
             // Done!! Hurray!
+            if (isDebug()) System.out.println("---> Break reached target in scope: " + dynScope);
             return bj.breakValue;
 /* ---------------------------------------------------------------
  * FIXME: Puzzled .. Why is this not needed?
