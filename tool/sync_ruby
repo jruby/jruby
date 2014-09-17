@@ -101,35 +101,32 @@ end
 
 if $0 == __FILE__
   if ARGV.size != 4
-    puts "usage: sync_ruby <tests|stdlib|rubygems|all> <version(1_8_7|1_9_3|2_0_0|2_1_0)> <jruby ruby(gems) fork clone> <jruby dir>"
-    exit 1
+    abort "usage: sync_ruby <tests|stdlib|rubygems|all> <version(1_8_7|1_9_3|2_0_0|2_1_0)> <jruby ruby(gems) fork clone> <jruby dir>"
   end
 
-  if !%w{tests stdlib rubygems all}.include? ARGV[0]
-    puts "invalid source to sync: #{ARGV[0]}"
-    exit 1
+  what, version, source, target = ARGV
+
+  if !%w{tests stdlib rubygems all}.include? what
+    abort "invalid source to sync: #{what}"
   end
 
-  if !(ARGV[1] =~ /\d+_\d+_\d+/)
-    puts "invalid version number: #{ARGV[1]}"
-    exit 1
+  if !(version =~ /^\d_\d_\d$/)
+    abort "invalid version number: #{version}"
   end
 
-  if !File.exist?(ARGV[2]) || !File.directory?(ARGV[2])
-    puts "invalid source dir: #{ARGV[2]}"
-    exit 1
+  if !File.exist?(source) || !File.directory?(source)
+    abort "invalid source dir: #{source}"
   end
 
-  if !File.exist?(ARGV[3]) || !File.directory?(ARGV[2])
-    puts "invalid target dir: #{ARGV[2]}"
-    exit 1
+  if !File.exist?(target) || !File.directory?(target)
+    abort "invalid target dir: #{target}"
   end
 
-  sync = Sync.new(*ARGV)
-  if ARGV[0] == 'all'
+  sync = Sync.new(what, version, source, target)
+  if what == 'all'
     sync.sync_tests
     sync.sync_stdlib
   else
-    sync.send(:"sync_#{ARGV[0]}")
+    sync.send(:"sync_#{what}")
   end
 end
