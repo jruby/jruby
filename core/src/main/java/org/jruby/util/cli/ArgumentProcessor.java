@@ -667,13 +667,15 @@ public class ArgumentProcessor {
     }
 
     public static void checkGraalVersion() {
-        final String graalVersion = System.getProperty("graal.version", "unknown");
-        final String expectedGraalVersion = "0.4";
+        if (Options.TRUFFLE_RUNTIME_VERSION_CHECK.load()) {
+            final String graalVersion = System.getProperty("graal.version", "unknown");
+            final String expectedGraalVersion = "0.4";
 
-        if (graalVersion.equals("unknown")) {
-            return;
-        } else if (!graalVersion.equals(expectedGraalVersion)) {
-            throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion + " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
+            if (graalVersion.equals("unknown")) {
+                return;
+            } else if (!graalVersion.equals(expectedGraalVersion)) {
+                throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion + " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
+            }
         }
     }
 
