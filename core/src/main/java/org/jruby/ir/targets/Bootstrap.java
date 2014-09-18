@@ -814,7 +814,10 @@ public class Bootstrap {
             if (method instanceof CompiledIRMethod) {
                 compiledIRMethod = (CompiledIRMethod)method;
             } else if (method instanceof InterpretedIRMethod) {
-                compiledIRMethod = ((InterpretedIRMethod)method).getCompiledIRMethod();
+                DynamicMethod actualMethod = ((InterpretedIRMethod)method).getActualMethod();
+                if (actualMethod instanceof CompiledIRMethod) {
+                    compiledIRMethod = (CompiledIRMethod)actualMethod;
+                }
             }
 
             if (compiledIRMethod != null) {

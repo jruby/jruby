@@ -720,8 +720,11 @@ public final class Ruby {
             try {
                 script = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()));
             } catch (Exception e) {
-                if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    e.printStackTrace();
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");
+                    if (Options.JIT_LOGGING_VERBOSE.load()) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

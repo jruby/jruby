@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgumentNode;
@@ -51,6 +52,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.util.ConvertBytes;
 
 public class SexpMaker {
+    private static final AtomicLong JITTED_METHOD_NUMBER = new AtomicLong();
     private interface Builder {
         public Builder append(String str);
         public Builder append(char ch);
@@ -192,7 +194,8 @@ public class SexpMaker {
 
         db.append(scope.getName());
         db.append('\n');
-        db.append(scope.toStringInstrs());
+        // CON FIXME: We need a better way to uniquely identify this...right?
+        db.append(JITTED_METHOD_NUMBER.getAndIncrement());
 
         byte[] digest = db.d.digest();
 

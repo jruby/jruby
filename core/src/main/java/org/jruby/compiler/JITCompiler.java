@@ -153,8 +153,6 @@ public class JITCompiler implements JITCompilerMBean {
     public void jitThresholdReached(final InterpretedIRMethod method, final RubyInstanceConfig config, ThreadContext context, final String className, final String methodName) {
         // Disable any other jit tasks from entering queue
         method.setCallCount(-1);
-
-        final Ruby runtime = context.runtime;
         
         Runnable jitTask = new JITTask(className, method, methodName);
 
@@ -259,11 +257,11 @@ public class JITCompiler implements JITCompilerMBean {
 
                 return;
             } catch (Throwable t) {
-                if (runtime.getDebug().isTrue()) {
-                    t.printStackTrace();
-                }
-                if (config.isJitLoggingVerbose()) {
+                if (config.isJitLogging()) {
                     log(method, className + "." + methodName, "could not compile", t.getMessage());
+                    if (config.isJitLoggingVerbose()) {
+                        t.printStackTrace();
+                    }
                 }
 
                 counts.failCount.incrementAndGet();
@@ -288,37 +286,6 @@ public class JITCompiler implements JITCompilerMBean {
             return builder.toString().toUpperCase(Locale.ENGLISH);
         } catch (NoSuchAlgorithmException nsae) {
             throw new RuntimeException(nsae);
-        }
-    }
-
-    public static void saveToCodeCache(Ruby ruby, byte[] bytecode, String packageName, File cachedClassFile) {
-        String codeCache = RubyInstanceConfig.JIT_CODE_CACHE;
-        File codeCacheDir = new File(codeCache);
-        if (!codeCacheDir.exists()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " does not exist");
-        } else if (!codeCacheDir.isDirectory()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not a directory");
-        } else if (!codeCacheDir.canWrite()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not writable");
-        } else {
-            if (!new File(codeCache, packageName).isDirectory()) {
-                boolean createdDirs = new File(codeCache, packageName).mkdirs();
-                if (!createdDirs) {
-                    ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
-                }
-            }
-            // write to bytecode cache
-            FileOutputStream fos = null;
-            try {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.info("writing jitted bytecode to to " + cachedClassFile);
-                fos = new FileOutputStream(cachedClassFile);
-                fos.write(bytecode);
-            } catch (Exception e) {
-                e.printStackTrace();
-                // ignore
-            } finally {
-                try {fos.close();} catch (Exception e) {}
-            }
         }
     }
     
@@ -357,9 +324,7 @@ public class JITCompiler implements JITCompilerMBean {
 
             method.ensureInstrsReady();
 
-            if (config.isJitLogging()) {
-                LOG.info("done jitting: " + method);
-            }
+            bytecode = JVMVisitor.compileToBytecode(method.getIRMethod());
             
             counts.compiledCount.incrementAndGet();
             counts.compileTime.addAndGet(System.nanoTime() - start);
