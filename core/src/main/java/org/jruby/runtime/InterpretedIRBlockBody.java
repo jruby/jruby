@@ -30,7 +30,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
         Frame prevFrame = context.preYieldNoScope(binding);
 
         // SSS FIXME: Why is self null in non-binding-eval contexts?
-        if (self == null || this.evalType == EvalType.BINDING_EVAL) {
+        if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
             self = useBindingSelf(binding);
         }
 
@@ -40,10 +40,10 @@ public class InterpretedIRBlockBody extends IRBlockBody {
         // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
         // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
         // is just wasteful allocation since the scope is not used at all.
-        newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope);
+
         // Pass on eval state info to the dynamic scope and clear it on the block-body
-        newScope.setEvalType(this.evalType);
-        this.evalType = EvalType.NONE;
+        newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope, this.evalType.get());
+        this.evalType.set(EvalType.NONE);
         context.pushScope(newScope);
 
         try {

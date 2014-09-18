@@ -81,6 +81,12 @@ public abstract class DynamicScope {
         }
     }
 
+    public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent, EvalType evalType) {
+        DynamicScope newScope = newDynamicScope(staticScope, parent);
+        newScope.setEvalType(evalType);
+        return newScope;
+    }
+
     public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
         return new DummyDynamicScope(staticScope, parent);
     }
@@ -398,7 +404,7 @@ public abstract class DynamicScope {
     }
 
     public void setEvalType(EvalType evalType) {
-        this.evalType = evalType;
+        this.evalType = evalType == null ? EvalType.NONE : evalType;
     }
 
     public EvalType getEvalType() {

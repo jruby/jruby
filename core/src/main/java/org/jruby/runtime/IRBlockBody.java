@@ -13,18 +13,19 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected String[] parameterList;
     protected final String fileName;
     protected final int lineNumber;
-    protected EvalType evalType;
+    protected ThreadLocal<EvalType> evalType;
 
     public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Arity arity) {
         super(staticScope, arity, -1);
         this.parameterList = parameterList;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
-        this.evalType = EvalType.NONE;
+        this.evalType = new ThreadLocal();
+        this.evalType.set(EvalType.NONE);
     }
 
     public void setEvalType(EvalType evalType) {
-        this.evalType = evalType;
+        this.evalType.set(evalType);
     }
 
     @Override

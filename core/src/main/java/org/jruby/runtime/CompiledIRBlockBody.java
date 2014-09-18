@@ -32,7 +32,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding);
         // SSS FIXME: Why is self null in non-binding-eval contexts?
-        if (self == null || this.evalType == EvalType.BINDING_EVAL) {
+        if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
             self = useBindingSelf(binding);
         }
 
