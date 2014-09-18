@@ -624,6 +624,8 @@ public class JVMVisitor extends IRVisitor {
         visit(breakInstr.getReturnValue());
         jvmMethod().loadBlockType();
         jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "initiateBreak", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, IRubyObject.class, Block.Type.class));
+        jvmMethod().returnValue();
+
     }
 
     @Override
