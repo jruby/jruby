@@ -31,13 +31,23 @@ public class CompiledIRBlockBody extends IRBlockBody {
         // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding);
+
         // SSS FIXME: Why is self null in non-binding-eval contexts?
         if (self == null || this.evalType.get() == EvalType.BINDING_EVAL) {
             self = useBindingSelf(binding);
         }
 
+        DynamicScope newScope = null;
         DynamicScope prevScope = binding.getDynamicScope();
-        DynamicScope newScope  = sharedScope ? prevScope : DynamicScope.newDynamicScope(getStaticScope(), prevScope);
+
+        // CON FIXME: This is copied from InterpretedIRBlockBody, and obviously means all blocks allocate a scope; we must fix that
+        // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
+        // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
+        // is just wasteful allocation since the scope is not used at all.
+
+        // Pass on eval state info to the dynamic scope and clear it on the block-body
+        newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope, this.evalType.get());
+        this.evalType.set(EvalType.NONE);
         context.pushScope(newScope);
 
         try {
