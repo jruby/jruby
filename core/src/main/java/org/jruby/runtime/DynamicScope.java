@@ -252,9 +252,8 @@ public abstract class DynamicScope {
     /**
      * setValue for depth zero
      *
-     * @param offset zero-indexed value that represents where variable lives
      * @param value to set
-     * @param depth how many captured scopes down this variable should be set
+     * @param offset zero-indexed value that represents where variable lives
      */
     public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
 
