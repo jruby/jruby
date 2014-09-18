@@ -33,7 +33,10 @@
 	    <phase>package</phase>
 	    <goals><goal>exec</goal></goals>
             <configuration>
-              <executable>irb.sh</executable> 
+              <executable>sh</executable>
+	      <arguments>
+		<argument>irb.sh</argument>
+	      </arguments>
 	    </configuration>
 	  </execution>
 	</executions>
