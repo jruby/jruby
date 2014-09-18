@@ -565,11 +565,11 @@ public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
     }
 
     public void local(int index, String name, Class type) {
-        method.visitLocalVariable(name, ci(type), null, start, end, index);
+        getMethodVisitor().visitLocalVariable(name, ci(type), null, start, end, index);
     }
 
     public void local(int index, String name, Type type) {
-        method.visitLocalVariable(name, type.getDescriptor(), null, start, end, index);
+        getMethodVisitor().visitLocalVariable(name, type.getDescriptor(), null, start, end, index);
     }
 
     public void line(int line) {
