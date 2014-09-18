@@ -190,6 +190,15 @@ public final class Block {
         return newBlock;
     }
 
+    public Block cloneBlockForEval(IRubyObject self) {
+        Block block = cloneBlock();
+
+        block.getBinding().setSelf(self);
+        block.getBinding().getFrame().setSelf(self);
+
+        return block;
+    }
+
     /**
      * What is the arity of this block?
      * 

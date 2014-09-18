@@ -52,9 +52,4 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
         return context.preForBlock(binding, klass);
     }
-    
-    @Override
-    public Block cloneBlock(Binding binding) {
-        return new Block(this, binding);
-    }
 }

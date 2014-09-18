@@ -40,12 +40,4 @@ public abstract class ContextAwareBlockBody extends BlockBody {
     public Arity arity() {
         return arity;
     }
-
-    public Block cloneBlock(Binding binding) {
-        // We clone dynamic scope because this will be a new instance of a block.  Any previously
-        // captured instances of this block may still be around and we do not want to start
-        // overwriting those values when we create a new one.
-        // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        return new Block(this, binding.clone());
-    }
 }

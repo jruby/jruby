@@ -98,11 +98,6 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     }
 
     @Override
-    public Block cloneBlock(Binding binding) {
-        return new Block(this, binding);
-    }
-
-    @Override
     public Arity arity() {
         return arity;
     }
