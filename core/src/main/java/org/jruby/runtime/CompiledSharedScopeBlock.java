@@ -51,9 +51,4 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
     protected Frame pre(ThreadContext context, Binding binding) {
         return context.preForBlock(binding);
     }
-    
-    @Override
-    public Block cloneBlock(Binding binding) {
-        return new Block(this, binding);
-    }
 }

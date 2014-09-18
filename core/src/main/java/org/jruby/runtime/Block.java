@@ -183,6 +183,16 @@ public final class Block {
         return newBlock;
     }
 
+    public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
+        Block block = cloneBlock();
+
+        block.getBinding().setSelf(self);
+        block.getBinding().getFrame().setSelf(self);
+        block.setEvalType(evalType);
+
+        return block;
+    }
+
     /**
      * What is the arity of this block?
      * 

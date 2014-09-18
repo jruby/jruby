@@ -428,11 +428,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             }
 
             @Override
-            public Block cloneBlock(Binding binding) {
-                return new Block(this, binding);
-            }
-
-            @Override
             public String getFile() {
                 return symbol;
             }

@@ -67,11 +67,6 @@ public class NullBlockBody extends BlockBody {
     }
 
     @Override
-    public Block cloneBlock(Binding binding) {
-        return null;
-    }
-
-    @Override
     public Arity arity() {
         return null;
     }
