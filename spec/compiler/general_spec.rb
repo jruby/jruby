@@ -23,7 +23,7 @@ module CompilerTestUtils
       scope.setModule(currModule)
     end
 
-    compiled = oj.ir.targets.JVMVisitor.compile(method, oj.util.ClassCache::OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
+    compiled = oj.ir.targets.JVMVisitor.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod(
         "__script__",
         oj.runtime.ThreadContext.java_class,
@@ -75,9 +75,6 @@ end
 describe "JRuby's bytecode compiler" do
   include CompilerTestUtils
 
-  StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-  ASTCompiler = org.jruby.compiler.ASTCompiler
-  ASTInspector = org.jruby.compiler.ASTInspector
   Block = org.jruby.runtime.Block
   IRubyObject = org.jruby.runtime.builtin.IRubyObject
 

@@ -617,11 +617,14 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
+        // Reset linearization, since we will add JIT-specific flow and instrs
+        resetLinearizationData();
+
         // Build CFG and run compiler passes, if necessary
-        boolean runPasses = false;
+//        boolean runPasses = false;
         if (getCFG() == null) {
             buildCFG();
-            runPasses = true;
+//            runPasses = true;
         }
 
         // Add this always since we dont re-JIT a previously
@@ -635,7 +638,7 @@ public abstract class IRScope implements ParseResult {
             ((IRClosure)this).addGEBForUncaughtBreaks();
         }
 
-        if (runPasses) {
+//        if (runPasses) {
             runCompilerPasses(getManager().getJITPasses(this));
 
             if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
@@ -646,7 +649,7 @@ public abstract class IRScope implements ParseResult {
                 // no DCE for now to stress-test JIT
                 //runDeadCodeAndVarLoadStorePasses();
             }
-        }
+//        }
 
         checkRelinearization();
 
