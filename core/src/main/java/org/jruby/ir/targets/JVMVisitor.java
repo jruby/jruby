@@ -367,8 +367,11 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
         m.loadSelf();
         jvmLoadLocal(DYNAMIC_SCOPE);
-        m.adapter.ldc(((StringLiteral)aliasInstr.getNewName()).string);
-        m.adapter.ldc(((StringLiteral)aliasInstr.getOldName()).string);
+        // CON FIXME: Ideally this would not have to pass through RubyString and toString
+        visit(aliasInstr.getNewName());
+        jvmAdapter().invokevirtual(p(Object.class), "toString", sig(String.class));
+        visit(aliasInstr.getOldName());
+        jvmAdapter().invokevirtual(p(Object.class), "toString", sig(String.class));
         m.invokeIRHelper("defineAlias", sig(void.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, String.class, String.class));
     }
 

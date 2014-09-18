@@ -8,7 +8,6 @@ module CompilerTestUtils
     node = JRuby.parse(src, filename || "testCompiler#{next_src_id}", false)
     filename = node.position.file
     oj = org.jruby
-    classname = oj.util.JavaNameMangler.mangleFilenameForClasspath(filename)
 
     # This logic is a mix of logic from InterpretedIRMethod's JIT, o.j.Ruby's script compilation, and IRScriptBody's
     # interpret. We need to figure out a cleaner path.
