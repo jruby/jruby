@@ -222,6 +222,18 @@ public class IRBuilder {
 
         public void cloneIntoHostScope(IRBuilder b, IRScope s) {
             InlinerInfo ii = new InlinerInfo(null, s, CloneMode.ENSURE_BLOCK_CLONE);
+
+            // Clone required labels.
+            // During normal cloning below, labels not found in the rename map
+            // are not cloned.
+            ii.renameLabel(start);
+            for (Instr i: instrs) {
+                if (i instanceof LabelInstr) {
+                    ii.renameLabel(((LabelInstr)i).label);
+                }
+            }
+
+            // Clone instructions now
             b.addInstr(s, new LabelInstr(ii.getRenamedLabel(start)));
             b.addInstr(s, new ExceptionRegionStartMarkerInstr(bodyRescuer));
             for (Instr i: instrs) {
