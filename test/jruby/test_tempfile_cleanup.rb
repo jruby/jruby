@@ -6,7 +6,7 @@ require 'fileutils'
 class TestTempfilesCleanUp < Test::Unit::TestCase
 
   def setup
-    @tmpdir = "tmp_#{$$}"
+    @tmpdir = "tmp/#{$$}"
     FileUtils.rm_f @tmpdir rescue nil
     Dir.mkdir @tmpdir rescue nil
   end
