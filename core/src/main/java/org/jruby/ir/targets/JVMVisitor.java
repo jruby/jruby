@@ -1734,6 +1734,7 @@ public class JVMVisitor extends IRVisitor {
         visit(instr.getMatch2Result());
         jvmAdapter().ldc(instr.getVarName());
         jvmMethod().invokeIRHelper("setCapturedVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
