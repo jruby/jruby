@@ -366,11 +366,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     ENV['RUBYOPT'] = rubyopt_org
   end
 
-  def test_inproc_execute_with_globs
-    args = %{-Xlaunch.inproc=true -e 'system %{jruby -e "p ARGV.sort" test/dir{1,2}/target*}'}
-    assert_equal %{["test/dir1/target.rb", "test/dir2/target.class"]\n}, jruby(args)
-  end
-
   # JRUBY-5517
   def test_rubyopts_benchmark_cleared_in_child
     rubyopt_org = ENV['RUBYOPT']
@@ -378,9 +373,16 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
     # first subprocess will be "real", second should launch in-process
     # this will test whether in-process child is getting proper env for RUBYOPT
-    args = %{-Xlaunch.inproc=true -e "p defined?(Benchmark) != nil; ENV[%{RUBYOPT}] = nil; system %{bin/jruby -e 'p defined?(Benchmark) != nil'}"}
-
-    assert_equal "true\nfalse\n", jruby(args)
+    script = <<-EOS
+      p defined?(Benchmark) != nil
+      ENV[%{RUBYOPT}] = nil
+      system %{bin/jruby -e 'p defined?(Benchmark) != nil'}
+    EOS
+    with_jruby_shell_spawning do
+      with_temp_script(script) do |s|
+        assert_equal "true\nfalse\n", jruby("#{s.path}")
+      end
+    end
   ensure
     ENV['RUBYOPT'] = rubyopt_org
   end
@@ -402,5 +404,10 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   ensure
     ENV['RUBYOPT'] = rubyopt
+  end
+
+  def test_inproc_execute_with_globs
+    args = %{-Xlaunch.inproc=true -e 'system %{jruby -e "p ARGV.sort" test/dir{1,2}/target*}'}
+    assert_equal %{["test/dir1/target.rb", "test/dir2/target.class"]\n}, jruby(args)
   end
 end
