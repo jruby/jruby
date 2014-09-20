@@ -224,5 +224,10 @@ EOS
     # we do not want rubygems_plugin.rb within jruby
     f = File.join( ruby_dir, 'shared', 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
+
+    # fix file permissions of installed gems
+    ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
+      File.chmod( 0644, f ) rescue nil if File.file?( f )
+    end
   end
 end
