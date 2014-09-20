@@ -14,6 +14,7 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -598,7 +599,35 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BacktickInstr(BacktickInstr instr) {
-        super.BacktickInstr(instr);    //To change body of overridden methods use File | Settings | File Templates.
+        // prepare for call to "`" below
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf(); // TODO: remove caller
+        jvmMethod().loadSelf();
+
+        ByteList csByteList = new ByteList();
+        jvmMethod().pushString(csByteList);
+
+        for (Operand p : instr.getPieces()) {
+            // visit piece and ensure it's a string
+            visit(p);
+            jvmAdapter().dup();
+            org.objectweb.asm.Label after = new org.objectweb.asm.Label();
+            jvmAdapter().instance_of(p(RubyString.class));
+            jvmAdapter().iftrue(after);
+            jvmAdapter().invokevirtual(p(IRubyObject.class), "anyToString", sig(IRubyObject.class));
+
+            jvmAdapter().label(after);
+            jvmAdapter().invokevirtual(p(RubyString.class), "append", sig(RubyString.class, IRubyObject.class));
+        }
+
+        // freeze the string
+        jvmAdapter().dup();
+        jvmAdapter().ldc(true);
+        jvmAdapter().invokeinterface(p(IRubyObject.class), "setFrozen", sig(void.class, boolean.class));
+
+        // invoke the "`" method on self
+        jvmMethod().invokeSelf("`", 1, false);
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -2062,7 +2091,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void SValue(SValue svalue) {
-        super.SValue(svalue);    //To change body of overridden methods use File | Settings | File Templates.
+        visit(svalue.getArray());
+        jvmAdapter().dup();
+        jvmAdapter().instance_of(p(RubyArray.class));
+        org.objectweb.asm.Label after = new org.objectweb.asm.Label();
+        jvmAdapter().iftrue(after);
+        jvmAdapter().pop();
+        jvmMethod().pushNil();
+        jvmAdapter().label(after);
     }
 
     @Override

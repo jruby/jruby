@@ -43,6 +43,10 @@ public class BacktickInstr extends Instr implements ResultInstr {
         return result;
     }
 
+    public List<Operand> getPieces() {
+        return pieces;
+    }
+
     @Override
     public void updateResult(Variable v) {
         this.result = v;
@@ -81,6 +85,8 @@ public class BacktickInstr extends Instr implements ResultInstr {
             RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currScope, currDynScope, temp);
             newString.append((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
         }
+
+        newString.setFrozen(true);
 
         return self.callMethod(context, "`", newString);
     }

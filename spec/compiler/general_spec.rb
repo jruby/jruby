@@ -827,4 +827,30 @@ ary
     x = compile_and_run '::JRUBY4925_BLAH, a = 1, 2'
     expect(JRUBY4925_BLAH).to eq 1
   end
+
+  it "compiles backquotes (backtick)" do
+    x = compile_and_run 'o = Object.new; def o.`(str); str; end; def o.go; `hello`; end; o.go'
+
+    expect(x).to eq 'hello'
+  end
+
+  it "creates frozen strings for backquotes (backtick)" do
+    x = compile_and_run 'o = Object.new; def o.`(str); str; end; def o.go; `hello`; end; o.go'
+
+    expect(x).to be_frozen
+  end
+
+  it "compiles rest args passed to return, break, and next (svalue)" do
+    x = compile_and_run 'a = [1,2,3]; 1.times { break *a }'
+
+    expect(x).to eq [1,2,3]
+
+    x = compile_and_run 'a = [1,2,3]; lambda { return *a }.call'
+
+    expect(x).to eq [1,2,3]
+
+    x = compile_and_run 'a = [1,2,3]; def foo; yield; end; foo { next *a }'
+
+    expect(x).to eq [1,2,3]
+  end
 end
