@@ -366,6 +366,11 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     ENV['RUBYOPT'] = rubyopt_org
   end
 
+  def test_inproc_execute_with_globs
+    args = %{-Xlaunch.inproc=true -e 'system %{jruby -e "p ARGV.sort" test/dir{1,2}/target*}'}
+    assert_equal %{["test/dir1/target.rb", "test/dir2/target.class"]\n}, jruby(args)
+  end
+
   # JRUBY-5517
   def test_rubyopts_benchmark_cleared_in_child
     rubyopt_org = ENV['RUBYOPT']
