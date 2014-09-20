@@ -969,10 +969,8 @@ public class JVMVisitor extends IRVisitor {
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRClassMethod",
-                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, java.lang.invoke.MethodHandle.class, String.class,
+                sig(void.class, ThreadContext.class, IRubyObject.class, java.lang.invoke.MethodHandle.class, String.class,
                         StaticScope.class, String.class, String.class, int.class, String.class, boolean.class));
-
-        a.pop();
     }
 
     // SSS FIXME: Needs an update to reflect instr. change
@@ -1000,10 +998,8 @@ public class JVMVisitor extends IRVisitor {
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRMethod",
-                sig(IRubyObject.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
                         DynamicScope.class, IRubyObject.class, String.class, String.class, int.class, String.class, boolean.class));
-
-        a.pop();
     }
 
     @Override

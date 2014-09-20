@@ -187,7 +187,8 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, String scopeDesc,
+    // Used by JIT
+    public static void defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, String scopeDesc,
                                   String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
         StaticScope parentScope = currDynScope.getStaticScope();
@@ -200,10 +201,11 @@ public class IRRuntimeHelpers {
 
         DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
 
-        return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
-    public static IRubyObject defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
+    // Used by JIT
+    public static void defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
                                                   String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
 
@@ -215,16 +217,16 @@ public class IRRuntimeHelpers {
 
         RubyClass containingClass = obj.getSingletonClass();
 
-        Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
-
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
 
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, Visibility.PUBLIC, containingClass, parameterDesc, hasExplicitCallProtocol);
 
-        return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+        containingClass.addMethod(rubyName, method);
+
+        obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(rubyName));
     }
 
+    // Used by JIT
     public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
         String name = (nameArg instanceof String) ?
