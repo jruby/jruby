@@ -207,7 +207,7 @@ public abstract class CoreMethodNodeManager {
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, block);
 
-        return new RubyRootNode(sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
+        return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }
 
     public static class MethodDetails {

@@ -63,7 +63,7 @@ class ModuleTranslator extends BodyTranslator {
 
         body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
-        final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         return new MethodDefinitionNode(context, sourceSection, environment.getSharedMethodInfo().getName(), environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, false);
     }

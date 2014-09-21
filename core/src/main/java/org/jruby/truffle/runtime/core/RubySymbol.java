@@ -52,7 +52,7 @@ public class RubySymbol extends RubyObject {
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, true, null);
 
-        final RubyRootNode rootNode = new RubyRootNode(sourceSection, new FrameDescriptor(), sharedMethodInfo,
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, new FrameDescriptor(), sharedMethodInfo,
                 new SymbolProcNode(context, sourceSection, symbol));
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);

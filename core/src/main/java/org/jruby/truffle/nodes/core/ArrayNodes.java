@@ -2292,7 +2292,8 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, "max", false, null);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
+                    context, sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
                             ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
@@ -2404,7 +2405,8 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, "min", false, null);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
+                    context, sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
                             ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
