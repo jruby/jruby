@@ -4,6 +4,8 @@
 # want to package com.oracle.truffle in complete. This script removes those
 # packages from a build of complete.
 
+# You will want to run mvn -Pcomplete first.
+
 # Takes no arguments. Modifies a copy of
 # maven/jruby-complete/target/jruby-complete-9000.dev.jar to create
 # maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev.jar.
@@ -11,4 +13,4 @@
 # Chris Seaton, 5 Aug 14
 
 cp maven/jruby-complete/target/jruby-complete-9000.dev.jar maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev.jar
-zip -d maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev.jar com/oracle/truffle/*
+zip -d maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev.jar com/oracle/nfi/* com/oracle/truffle/*
