@@ -1,7 +1,9 @@
 #-*- mode: ruby -*-
 gemspec
 
-inherit "org.jruby:jruby-artifacts:#{model.version.sub( /.dev$/, '-SNAPSHOT' )}"
+ruby_version = model.version
+
+inherit "org.jruby:jruby-artifacts:#{ruby_version.sub( /.dev$/, '-SNAPSHOT' )}"
 
 model.version = nil
 
@@ -29,8 +31,12 @@ jruby_plugin!( :gem,
   execute_goals :id => 'default-push', :skip => true
 end
 
-plugin :install, :skip => true
+build do
+  final_name "${project.artifactId}-#{ruby_version}"
+end
 
+# TODO remove once gem-maven-plugin honors the final_name
+plugin :install, :skip => true
 execute 'rename gem file', :verify do |ctx|
   require 'fileutils'
   FileUtils.rm_rf(Dir["#{ctx.project.build.directory}/*.gem"])
