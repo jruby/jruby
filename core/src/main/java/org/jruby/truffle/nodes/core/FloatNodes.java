@@ -170,22 +170,22 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double mul(double a, int b) {
+        public double pow(double a, int b) {
             return Math.pow(a, b);
         }
 
         @Specialization
-        public double mul(double a, long b) {
+        public double pow(double a, long b) {
             return Math.pow(a, b);
         }
 
         @Specialization
-        public double mul(double a, double b) {
+        public double pow(double a, double b) {
             return Math.pow(a, b);
         }
 
         @Specialization
-        public double mul(double a, BigInteger b) {
+        public double pow(double a, BigInteger b) {
             return Math.pow(a, SlowPathBigInteger.doubleValue(b));
         }
 
