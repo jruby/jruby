@@ -853,4 +853,10 @@ ary
 
     expect(x).to eq [1,2,3]
   end
+
+  it "compiles optional arguments in a method with toplevel rescue" do
+    x = compile_and_run 'def foo(a = false); raise; rescue; a; end; foo'
+
+    expect(x).to eq false
+  end
 end

@@ -1512,7 +1512,6 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveOptArgInstr(ReceiveOptArgInstr instr) {
-        jvmMethod().loadContext();
         jvmMethod().loadArgs();
         jvmAdapter().pushInt(instr.requiredArgs);
         jvmAdapter().pushInt(instr.preArgs);
