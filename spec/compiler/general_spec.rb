@@ -12,15 +12,16 @@ module CompilerTestUtils
     # This logic is a mix of logic from InterpretedIRMethod's JIT, o.j.Ruby's script compilation, and IRScriptBody's
     # interpret. We need to figure out a cleaner path.
 
+    scope = node.getStaticScope
+    currModule = scope.getModule
+    if currModule == nil
+      currModule = JRuby.runtime.top_self.class
+      scope.setModule(currModule)
+    end
+
     method = oj.ir.IRBuilder.createIRBuilder(JRuby.runtime, JRuby.runtime.getIRManager()).buildRoot(node)
 
     method.prepareForInterpretation(false)
-    scope = method.getStaticScope
-    currModule = scope.getModule
-    if currModule == nil
-      currModule = Object
-      scope.setModule(currModule)
-    end
 
     compiled = oj.ir.targets.JVMVisitor.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod(
@@ -40,7 +41,7 @@ module CompilerTestUtils
         lineno,
         method.getStaticScope(),
         oj.runtime.Visibility::PUBLIC,
-        Class.new,
+        JRuby.runtime.top_self.class,
         "",
         method.hasExplicitCallProtocol())
   end
