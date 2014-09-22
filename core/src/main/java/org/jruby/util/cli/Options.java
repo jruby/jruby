@@ -34,8 +34,8 @@ import java.util.Collections;
 import java.util.List;
 
 import com.headius.options.Option;
+import org.jruby.TruffleBridge;
 import org.jruby.runtime.Constants;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.cli.Category.*;
@@ -142,10 +142,10 @@ public class Options {
     public static final Option<Integer> TRUFFLE_HASHES_SMALL = integer(TRUFFLE, "truffle.hashes.small", 3, "Maximum size of a Hash to consider small for optimisations.");
     public static final Option<Boolean> TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS = bool(TRUFFLE, "truffle.compiler.pass_loops_through_blocks", false, "Pass loop counts through blocks to the method that is calling the block.");
     public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
-    public static final Option<Backtrace.Formatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", Backtrace.Formatter.class, Backtrace.Formatter.MRI, "How to format backtraces displayed to the user.");
-    public static final Option<Backtrace.Formatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", Backtrace.Formatter.class, Backtrace.Formatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");
-    public static final Option<Backtrace.Formatter> TRUFFLE_BACKTRACE_EXCEPTION_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.exception_format", Backtrace.Formatter.class, Backtrace.Formatter.MRI, "How to format backtraces in Exception objects.");
-    public static final Option<Backtrace.Formatter> TRUFFLE_BACKTRACE_PANIC_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.panic_format", Backtrace.Formatter.class, Backtrace.Formatter.IMPL_DEBUG, "How to format backtraces in panics.");
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces displayed to the user.");
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_EXCEPTION_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.exception_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces in Exception objects.");
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_PANIC_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.panic_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.IMPL_DEBUG, "How to format backtraces in panics.");
     public static final Option<Integer> TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH = integer(TRUFFLE, "truffle.backtrace.max_value_length", 20, "Max length for values when displayed in a backtrace.");
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
     public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");

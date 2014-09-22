@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
+import org.jruby.TruffleBridge;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -16,12 +17,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class Backtrace {
-
-    public static enum Formatter {
-        MRI,
-        DEBUG,
-        IMPL_DEBUG
-    }
 
     public static final BacktraceFormatter DISPLAY_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DISPLAY_FORMAT.load());
     public static final BacktraceFormatter EXCEPTION_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_EXCEPTION_FORMAT.load());
@@ -38,7 +33,7 @@ public class Backtrace {
         return Collections.unmodifiableList(Arrays.asList(activations));
     }
 
-    private static BacktraceFormatter getFormatter(Formatter formatter) {
+    private static BacktraceFormatter getFormatter(TruffleBridge.BacktraceFormatter formatter) {
         switch (formatter) {
             case MRI:
                 return new MRIBacktraceFormatter();
