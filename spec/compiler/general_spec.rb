@@ -3,9 +3,9 @@ require 'java'
 require 'rspec'
 
 module CompilerTestUtils
-  def compile_to_method(src, filename = nil)
+  def compile_to_method(src, filename = nil, lineno = 0)
     next_src_id = next_id
-    node = JRuby.parse(src, filename || "testCompiler#{next_src_id}", false)
+    node = JRuby.parse(src, filename || "testCompiler#{next_src_id}", false, lineno)
     filename = node.position.file
     oj = org.jruby
 
@@ -37,7 +37,7 @@ module CompilerTestUtils
         handle,
         "script",
         filename,
-        0,
+        lineno,
         method.getStaticScope(),
         oj.runtime.Visibility::PUBLIC,
         Class.new,
@@ -58,9 +58,9 @@ module CompilerTestUtils
     $VERBOSE = verb
   end
   
-  def compile_and_run(src, filename = nil)
-    cls = compile_to_method(src, filename)
-  
+  def compile_and_run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    cls = compile_to_method(src, filename, line)
+
     cls.call(
         JRuby.runtime.current_context,
         JRuby.runtime.top_self,
