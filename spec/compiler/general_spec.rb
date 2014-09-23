@@ -23,7 +23,8 @@ module CompilerTestUtils
 
     method.prepareForInterpretation(false)
 
-    compiled = oj.ir.targets.JVMVisitor.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
+    compiler = oj.ir.targets.JVMVisitor.new
+    compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod(
         "__script__",
         oj.runtime.ThreadContext.java_class,

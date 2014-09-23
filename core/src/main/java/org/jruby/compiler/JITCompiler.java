@@ -206,11 +206,12 @@ public class JITCompiler implements JITCompilerMBean {
                 }
 
                 String key = SexpMaker.sha1(method.getIRMethod());
-                JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts);
+                JVMVisitor visitor = new JVMVisitor();
+                JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts, visitor);
 
                 generator.compile();
 
-                Class sourceClass = JVMVisitor.defineFromBytecode(method.getIRMethod(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
+                Class sourceClass = visitor.defineFromBytecode(method.getIRMethod(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
 
                 if (sourceClass == null) {
                     // class could not be found nor generated; give up on JIT and bail out
@@ -290,7 +291,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
     
     public static class JITClassGenerator {
-        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, InterpretedIRMethod method, JITCounts counts) {
+        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, InterpretedIRMethod method, JITCounts counts, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
@@ -310,6 +311,7 @@ public class JITCompiler implements JITCompilerMBean {
             this.ruby = ruby;
             this.counts = counts;
             this.method = method;
+            this.visitor = visitor;
         }
         
         @SuppressWarnings("unchecked")
@@ -324,7 +326,7 @@ public class JITCompiler implements JITCompilerMBean {
 
             method.ensureInstrsReady();
 
-            bytecode = JVMVisitor.compileToBytecode(method.getIRMethod());
+            bytecode = visitor.compileToBytecode(method.getIRMethod());
             
             counts.compiledCount.incrementAndGet();
             counts.compileTime.addAndGet(System.nanoTime() - start);
@@ -362,6 +364,7 @@ public class JITCompiler implements JITCompilerMBean {
         private final JITCounts counts;
         private final String digestString;
         private final InterpretedIRMethod method;
+        private final JVMVisitor visitor;
 
         private byte[] bytecode;
         private String name;

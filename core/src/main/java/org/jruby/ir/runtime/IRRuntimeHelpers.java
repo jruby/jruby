@@ -7,6 +7,7 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.UndefinedValue;
@@ -188,7 +189,7 @@ public class IRRuntimeHelpers {
     }
 
     // Used by JIT
-    public static void defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, String scopeDesc,
+    public static void defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, IRScope irScope, String scopeDesc,
                                   String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
         StaticScope parentScope = currDynScope.getStaticScope();
@@ -198,6 +199,7 @@ public class IRRuntimeHelpers {
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
+        scope.setIRScope(irScope);
 
         DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
 
@@ -205,7 +207,7 @@ public class IRRuntimeHelpers {
     }
 
     // Used by JIT
-    public static void defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
+    public static void defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, IRScope irScope, String scopeDesc,
                                                   String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
 
@@ -218,6 +220,7 @@ public class IRRuntimeHelpers {
         RubyClass containingClass = obj.getSingletonClass();
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
+        scope.setIRScope(irScope);
 
         DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, Visibility.PUBLIC, containingClass, parameterDesc, hasExplicitCallProtocol);
 
