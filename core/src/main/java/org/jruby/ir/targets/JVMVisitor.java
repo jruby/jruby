@@ -1864,23 +1864,50 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetErrorInfoInstr(GetErrorInfoInstr geterrorinfoinstr) {
-        super.GetErrorInfoInstr(geterrorinfoinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "getErrorInfo", sig(IRubyObject.class));
+        jvmStoreLocal(geterrorinfoinstr.getResult());
     }
 
     @Override
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) {
-        super.RestoreErrorInfoInstr(restoreerrorinfoinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvmMethod().loadContext();
+        visit(restoreerrorinfoinstr.getArg());
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+        jvmAdapter().pop();
     }
 
     // ruby 1.9 specific
     @Override
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) {
-        super.BuildLambdaInstr(buildlambdainstr);    //To change body of overridden methods use File | Settings | File Templates.
+        // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
+        //
+        // JRUBY-5686: do this before executing so first time sets cref module
+//        getLambdaBody().getClosure().getStaticScope().determineModule();
+
+        jvmMethod().loadRuntime();
+
+        IRClosure body = buildlambdainstr.getLambdaBody().getClosure();
+        if (body == null) {
+            jvmMethod().pushNil();
+        } else {
+            visit(buildlambdainstr.getLambdaBody());
+        }
+
+        jvmAdapter().getstatic(p(Block.Type.class), "LAMBDA", ci(Block.Type.class));
+        jvmAdapter().ldc(buildlambdainstr.getPosition().getFile());
+        jvmAdapter().pushInt(buildlambdainstr.getPosition().getLine());
+
+        jvmAdapter().invokestatic(p(RubyProc.class), "newProc", sig(RubyProc.class, Ruby.class, Block.class, Block.Type.class, String.class, int.class));
+
+        jvmStoreLocal(buildlambdainstr.getResult());
     }
 
     @Override
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) {
-        super.GetEncodingInstr(getencodinginstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvmMethod().loadContext();
+        jvmMethod().pushEncoding(getencodinginstr.getEncoding());
+        jvmStoreLocal(getencodinginstr.getResult());
     }
 
     // operands

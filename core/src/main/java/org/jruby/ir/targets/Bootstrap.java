@@ -382,9 +382,19 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "contextValue", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
+    public static Handle contextValueString() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "contextValueString", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class));
+    }
+
     public static CallSite contextValue(Lookup lookup, String name, MethodType type) {
         MutableCallSite site = new MutableCallSite(type);
         site.setTarget(Binder.from(type).append(site).invokeStaticQuiet(lookup, Bootstrap.class, name));
+        return site;
+    }
+
+    public static CallSite contextValueString(Lookup lookup, String name, MethodType type, String str) {
+        MutableCallSite site = new MutableCallSite(type);
+        site.setTarget(Binder.from(type).append(site, str).invokeStaticQuiet(lookup, Bootstrap.class, name));
         return site;
     }
 
@@ -406,6 +416,13 @@ public class Bootstrap {
     public static Ruby runtime(ThreadContext context, MutableCallSite site) {
         site.setTarget(dropArguments(constant(Ruby.class, context.runtime), 0, ThreadContext.class));
         return context.runtime;
+    }
+
+    public static RubyEncoding encoding(ThreadContext context, MutableCallSite site, String name) {
+        Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
+        RubyEncoding rubyEncoding = context.runtime.getEncodingService().getEncoding(encoding);
+        site.setTarget(dropArguments(constant(RubyEncoding.class, rubyEncoding), 0, ThreadContext.class));
+        return rubyEncoding;
     }
 
     public static IRubyObject hash(ThreadContext context, IRubyObject[] pairs) {

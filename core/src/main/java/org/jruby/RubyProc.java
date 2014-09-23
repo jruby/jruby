@@ -38,6 +38,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -73,6 +74,10 @@ public class RubyProc extends RubyObject implements DataType {
         this.sourcePosition = sourcePosition;
     }
 
+    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, String file, int line) {
+        this(runtime, rubyClass, type, new SimpleSourcePosition(file, line));
+    }
+
     public static RubyClass createProcClass(Ruby runtime) {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setProc(procClass);
@@ -102,6 +107,13 @@ public class RubyProc extends RubyObject implements DataType {
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
+        proc.setup(block);
+
+        return proc;
+    }
+
+    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, String file, int line) {
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, file, line);
         proc.setup(block);
 
         return proc;

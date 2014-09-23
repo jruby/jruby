@@ -5,6 +5,7 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
+import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
@@ -132,6 +133,11 @@ public class IRBytecodeAdapter {
 
     public void storeLocal(int i) {
         adapter.astore(i);
+    }
+
+    public void pushEncoding(Encoding encoding) {
+        loadContext();
+        adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
     public void invokeOther(String name, int arity, boolean hasClosure) {
