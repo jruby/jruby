@@ -1007,11 +1007,11 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
-        return self.getMetaClass().invoke(context, self, site.name, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, site.name, block);
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self) {
-        return self.getMetaClass().invoke(context, self, site.name, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, site.name);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
@@ -1032,7 +1032,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) {
-        return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, site.name, arg0);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
@@ -1053,7 +1053,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, site.name, arg0, arg1);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
@@ -1074,7 +1074,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, arg2, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, site.name, arg0, arg1, arg2);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) throws Throwable {
@@ -1096,7 +1096,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) {
-        return self.getMetaClass().invoke(context, self, site.name, args, CallType.FUNCTIONAL);
+        return self.getMetaClass().finvoke(context, self, site.name, args);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
@@ -1119,7 +1119,7 @@ public class Bootstrap {
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, site.name, arg0, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
@@ -1142,7 +1142,7 @@ public class Bootstrap {
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, site.name, arg0, arg1, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
@@ -1165,7 +1165,7 @@ public class Bootstrap {
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, arg2, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, site.name, arg0, arg1, arg2, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
@@ -1189,7 +1189,7 @@ public class Bootstrap {
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, site.name, args, CallType.FUNCTIONAL, block);
+        return self.getMetaClass().finvoke(context, self, site.name, args, block);
     }
 
     public static IRubyObject ivarGet(VariableSite site, IRubyObject self) throws Throwable {
