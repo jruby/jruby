@@ -10,6 +10,8 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.IRException;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
@@ -800,5 +802,54 @@ public class IRRuntimeHelpers {
         Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                                            : method.call(context, self, superClass, methodName, args, block);
         return rVal;
+    }
+
+    public static IRubyObject[] splatArguments(IRubyObject[] args, boolean[] splatMap) {
+        if (splatMap != null && splatMap.length > 0) {
+            int count = 0;
+            for (int i = 0; i < splatMap.length; i++) {
+                count += splatMap[i] ? ((RubyArray)args[i]).size() : 1;
+            }
+
+            IRubyObject[] newArgs = new IRubyObject[count];
+            int actualOffset = 0;
+            for (int i = 0; i < splatMap.length; i++) {
+                if (splatMap[i]) {
+                    RubyArray ary = (RubyArray) args[i];
+                    for (int j = 0; j < ary.size(); j++) {
+                        newArgs[actualOffset++] = ary.eltOk(j);
+                    }
+                } else {
+                    newArgs[actualOffset++] = args[i];
+                }
+            }
+
+            args = newArgs;
+        }
+        return args;
+    }
+
+    public static String encodeSplatmap(boolean[] splatmap) {
+        if (splatmap == null) return "";
+        StringBuilder builder = new StringBuilder();
+        for (boolean b : splatmap) {
+            builder.append(b ? '1' : '0');
+        }
+        return builder.toString();
+    }
+
+    public static boolean[] buildSplatMap(Operand[] args, boolean containsArgSplat) {
+        boolean[] splatMap = new boolean[args.length];
+
+        if (containsArgSplat) {
+            for (int i = 0; i < args.length; i++) {
+                Operand operand = args[i];
+                if (operand instanceof Splat) {
+                    splatMap[i] = true;
+                }
+            }
+        }
+
+        return splatMap;
     }
 }

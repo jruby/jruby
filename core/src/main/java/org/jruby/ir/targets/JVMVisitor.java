@@ -35,7 +35,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import java.lang.invoke.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -828,6 +827,9 @@ public class JVMVisitor extends IRVisitor {
             visit(operand);
         }
 
+        // if there's splats, provide a map and let the call site sort it out
+        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, classsuperinstr.containsArgSplat());
+
         Operand closure = classsuperinstr.getClosureArg(null);
         boolean hasClosure = closure != null;
         if (hasClosure) {
@@ -838,7 +840,7 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.invokeClassSuper(name, classsuperinstr.hasUnusedResult(), args.length, hasClosure);
+        m.invokeClassSuper(name, args.length, hasClosure, splatMap);
 
         jvmStoreLocal(classsuperinstr.getResult());
     }
@@ -1222,10 +1224,14 @@ public class JVMVisitor extends IRVisitor {
         // TODO: CON: is this safe?
         jvmAdapter().checkcast(p(RubyClass.class));
 
+        // process args
         for (int i = 0; i < args.length; i++) {
             Operand operand = args[i];
             visit(operand);
         }
+
+        // if there's splats, provide a map and let the call site sort it out
+        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, instancesuperinstr.containsArgSplat());
 
         Operand closure = instancesuperinstr.getClosureArg(null);
         boolean hasClosure = closure != null;
@@ -1237,7 +1243,7 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.invokeInstanceSuper(name, instancesuperinstr.hasUnusedResult(), args.length, hasClosure);
+        m.invokeInstanceSuper(name, args.length, hasClosure, splatMap);
 
         jvmStoreLocal(instancesuperinstr.getResult());
     }
@@ -1822,31 +1828,40 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
-        // disable for now
-        super.UnresolvedSuperInstr(unresolvedsuperinstr);
 
         IRBytecodeAdapter m = jvmMethod();
-        m.loadContext(); // tc
-        m.loadSelf();
+        String name = unresolvedsuperinstr.getMethodAddr().getName();
+        Operand[] args = unresolvedsuperinstr.getCallArgs();
 
-        if (unresolvedsuperinstr.getCallArgs().length > 0) {
-            for (Operand operand : unresolvedsuperinstr.getCallArgs()) {
-                visit(operand);
-            }
-            m.objectArray(unresolvedsuperinstr.getCallArgs().length);
-        } else {
-            m.adapter.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+        m.loadContext();
+        m.loadSelf(); // TODO: get rid of caller
+        m.loadSelf();
+        // this would be getDefiningModule but that is not used for unresolved super
+//        visit(unresolvedsuperinstr.getDefiningModule());
+        jvmAdapter().aconst_null();
+
+//        // TODO: CON: is this safe?
+//        jvmAdapter().checkcast(p(RubyClass.class));
+
+        for (int i = 0; i < args.length; i++) {
+            Operand operand = args[i];
+            visit(operand);
         }
+
+        // if there's splats, provide a map and let the call site sort it out
+        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, unresolvedsuperinstr.containsArgSplat());
 
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
         boolean hasClosure = closure != null;
         if (hasClosure) {
-            jvmMethod().loadContext();
+            m.loadContext();
             visit(closure);
-            jvmMethod().invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+        } else {
+            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.adapter.invokestatic(p(IRRuntimeHelpers.class), "unresolvedSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+        m.invokeUnresolvedSuper(name, args.length, hasClosure, splatMap);
 
         jvmStoreLocal(unresolvedsuperinstr.getResult());
     }

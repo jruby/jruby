@@ -245,28 +245,21 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite invokeClassSuper(Lookup lookup, String name, MethodType type) {
-        MethodHandle handle = insertArguments(
-                findStatic(lookup, Bootstrap.class, "invokeClassSuper", type.insertParameterTypes(0, String.class)),
-                0,
-                JavaNameMangler.demangleMethodName(name.split(":")[1]));
-
-        return new ConstantCallSite(handle);
-    }
-
-    public static CallSite invokeSuper(Lookup lookup, String name, MethodType type, int hasUnusedResult) {
+    public static CallSite invokeSuper(Lookup lookup, String name, MethodType type, String splatmapString) {
         String[] targetAndMethod = name.split(":");
         String superName = JavaNameMangler.demangleMethodName(targetAndMethod[1]);
 
         InvokeSite site = new InvokeSite(type, name, CallType.SUPER);
         MethodHandle handle;
 
+        boolean[] splatMap = decodeSplatmap(splatmapString);
+
         SmartBinder binder = SmartBinder.from(site.signature)
                 .insert(
                         0,
-                        arrayOf("site",           "name",       "unusedResult"),
-                        arrayOf(InvokeSite.class, String.class, boolean.class),
-                                site,             superName,    hasUnusedResult == 0 ? false : true);
+                        arrayOf("site",           "name",       "splatMap"),
+                        arrayOf(InvokeSite.class, String.class, boolean[].class),
+                                site,             superName,    splatMap);
 
         if (site.arity > 0) {
             binder = binder
@@ -278,6 +271,22 @@ public class Bootstrap {
         site.setTarget(handle);
 
         return site;
+    }
+
+    public static boolean[] decodeSplatmap(String splatmapString) {
+        boolean[] splatMap;
+        if (splatmapString.length() > 0) {
+            splatMap = new boolean[splatmapString.length()];
+
+            for (int i = 0; i < splatmapString.length(); i++) {
+                if (splatmapString.charAt(i) == '1') {
+                    splatMap[i] = true;
+                }
+            }
+        } else {
+            splatMap = new boolean[0];
+        }
+        return splatMap;
     }
 
     public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
@@ -347,12 +356,8 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSelf", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static Handle invokeClassSuper() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeClassSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
-    }
-
     public static Handle invokeSuper() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class));
     }
 
     public static Handle invokeFixnumOp() {
@@ -689,44 +694,55 @@ public class Bootstrap {
         return (IRubyObject)rVal;
     }
 
-    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
+        args = IRRuntimeHelpers.splatArguments(args, splatMap);
         RubyClass superClass = definingModule.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
-        return hasUnusedResult ? null : rVal;
+        return rVal;
     }
 
-    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+    public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
         RubyClass superClass = definingModule.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
                 : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
-        return hasUnusedResult ? null : rVal;
+        return rVal;
     }
 
-    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
+        args = IRRuntimeHelpers.splatArguments(args, splatMap);
         RubyClass superClass = definingModule.getMetaClass().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
-        return hasUnusedResult ? null : rVal;
+        return rVal;
     }
 
-    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean hasUnusedResult, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+    public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
         RubyClass superClass = definingModule.getMetaClass().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
                 : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
-        return hasUnusedResult ? null : rVal;
+        return rVal;
+    }
+
+    public static IRubyObject invokeUnresolvedSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        args = IRRuntimeHelpers.splatArguments(args, splatMap);
+        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+    }
+
+    public static IRubyObject invokeUnresolvedSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+        return IRRuntimeHelpers.unresolvedSuper(context, self, IRubyObject.NULL_ARRAY, block);
     }
 
     public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {

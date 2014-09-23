@@ -90,6 +90,10 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return callType;
     }
 
+    public boolean containsArgSplat() {
+        return containsArgSplat;
+    }
+
     public void blockInlining() {
         dontInline = true;
     }
