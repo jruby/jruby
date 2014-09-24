@@ -80,7 +80,7 @@ public class IRRuntimeHelpers {
                     break;
                 }
             }
-            dynScope = dynScope.getNextCapturedScope();
+            dynScope = dynScope.getParentScope();
         }
 
         // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -132,7 +132,7 @@ public class IRRuntimeHelpers {
                 throw IRException.BREAK_LocalJumpError.getException(context.runtime);
             }
 
-            IRBreakJump bj = IRBreakJump.create(dynScope.getNextCapturedScope(), breakValue);
+            IRBreakJump bj = IRBreakJump.create(dynScope.getParentScope(), breakValue);
             if (scopeType == IRScopeType.EVAL_SCRIPT) {
                 // If we are in an eval, record it so we can account for it
                 bj.breakInEval = true;
@@ -674,27 +674,23 @@ public class IRRuntimeHelpers {
     public static RubyModule findInstanceMethodContainer(ThreadContext context, DynamicScope currDynScope, IRubyObject self) {
         boolean inBindingEval = currDynScope.inBindingEval();
 
-        if (!inBindingEval && self == context.runtime.getTopSelf()) {
-            // Top-level-scripts are special
-            // but, not if binding-evals are in force!
-            return self.getType();
-        }
+        // Top-level-scripts are special but, not if binding-evals are in force!
+        if (!inBindingEval && self == context.runtime.getTopSelf()) return self.getType();
 
-        DynamicScope ds = currDynScope;
-        while (ds != null) {
+        for (DynamicScope ds = currDynScope; ds != null; ) {
             IRScopeType scopeType = ds.getStaticScope().getScopeType();
             switch (ds.getEvalType()) {
-                case MODULE_EVAL  : return (RubyModule)self;
+                case MODULE_EVAL  : return (RubyModule) self;
                 case INSTANCE_EVAL: return self.getSingletonClass();
-                case BINDING_EVAL : ds = ds.getNextCapturedScope(); break;
+                case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
                     if (scopeType == null || scopeType.isClosureType()) {
-                        ds = ds.getNextCapturedScope();
+                        ds = ds.getParentScope();
                     } else if (inBindingEval) {
                         // Binding evals are special!
                         return ds.getStaticScope().getModule();
                     } else if (scopeType == IRScopeType.CLASS_METHOD) {
-                        return (RubyModule)self;
+                        return (RubyModule) self;
                     } else if (scopeType == IRScopeType.INSTANCE_METHOD) {
                         return self.getMetaClass();
                     } else {
@@ -702,7 +698,7 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
-                                return (RubyModule)self;
+                                return (RubyModule) self;
 
                             default:
                                 throw new RuntimeException("Should not get here!");
@@ -711,6 +707,7 @@ public class IRRuntimeHelpers {
                     break;
             }
         }
+
         throw new RuntimeException("Should not get here!");
     }
 

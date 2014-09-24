@@ -92,6 +92,15 @@ public abstract class DynamicScope {
     }
 
     /**
+     * Get parent (capturing) scope.  This is used by eval and closures to
+     * walk up to hard lexical boundary.
+     *
+     */
+    public final DynamicScope getParentScope() {
+        return parent;
+    }
+
+    /**
      * Returns the n-th parent scope of this scope.
      * May return <code>null</code>.
      * @param n - number of levels above to look.
@@ -100,11 +109,8 @@ public abstract class DynamicScope {
     public DynamicScope getNthParentScope(int n) {
         DynamicScope scope = this;
         for (int i = 0; i < n; i++) {
-            if (scope != null) {
-                scope = scope.getNextCapturedScope();
-            } else {
-                break;
-            }
+            if (scope == null) break;
+            scope = scope.getParentScope();
         }
         return scope;
     }
@@ -133,7 +139,7 @@ public abstract class DynamicScope {
             // If the next scope out has the same binding scope as this scope it means
             // we are evaling within an eval and in that case we should be sharing the same
             // binding scope.
-            DynamicScope parent = getNextCapturedScope();
+            DynamicScope parent = getParentScope();
             if (parent != null && parent.getEvalScope(runtime) == this) {
                 evalScope = this;
             } else {
@@ -157,16 +163,6 @@ public abstract class DynamicScope {
         } else {
             return parent.getFlipScope();
         }
-    }
-
-    /**
-     * Get next 'captured' scope.
-     *
-     * @return the scope captured by this scope for implementing closures
-     *
-     */
-    public final DynamicScope getNextCapturedScope() {
-        return parent;
     }
 
     /**
