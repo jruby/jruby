@@ -954,22 +954,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject readlink(ThreadContext context, IRubyObject recv, IRubyObject path) {
         Ruby runtime = context.runtime;
         JRubyFile link = file(path);
-        
+
         try {
             String realPath = runtime.getPosix().readlink(link.toString());
-        
-            if (!RubyFileTest.exist_p(recv, path).isTrue()) {
-                throw runtime.newErrnoENOENTError(path.toString());
-            }
-        
-            if (!RubyFileTest.symlink_p(recv, path).isTrue()) {
-                // Can not check earlier, File.exist? might return false yet the symlink be there
-                if (!RubyFileTest.exist_p(recv, path).isTrue()) {
-                    throw runtime.newErrnoENOENTError(path.toString());
-                }
-                throw runtime.newErrnoEINVALError(path.toString());
-            }
-        
+
             if (realPath == null) {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             }
