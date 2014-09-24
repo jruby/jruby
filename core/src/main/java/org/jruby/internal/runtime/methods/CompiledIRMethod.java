@@ -90,7 +90,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
         }
 
         try {
-            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, args, block, implementationClass);
+            return (IRubyObject)this.method.invokeExact(context, scope, self, args, block, implementationClass);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached

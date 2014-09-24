@@ -51,7 +51,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         context.pushScope(newScope);
 
         try {
-            return (IRubyObject)handle.invokeWithArguments(context, getStaticScope(), self, args, block, binding.getMethod(), type);
+            return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, block, binding.getMethod(), type);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
