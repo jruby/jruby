@@ -298,55 +298,7 @@ public class RubyProc extends RubyObject implements DataType {
             newBlock.getBinding().setSelf(self);
         }
         
-        int jumpTarget = newBlock.getBinding().getFrame().getJumpTarget();
-        
-        try {
-            return newBlock.call(context, args, passedBlock);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(getRuntime(), newBlock, bj, jumpTarget);
-        } catch (JumpException.ReturnJump rj) {
-            return handleReturnJump(context, rj, jumpTarget);
-        } catch (JumpException.RetryJump rj) {
-            return handleRetryJump(getRuntime(), rj);
-        }
-    }
-
-    private IRubyObject handleBreakJump(Ruby runtime, Block newBlock, JumpException.BreakJump bj, int jumpTarget) {
-        switch(newBlock.type) {
-            case LAMBDA: 
-                if (bj.getTarget() == jumpTarget) return (IRubyObject) bj.getValue();
-                
-                throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
-            case PROC:
-                if (newBlock.isEscaped()) throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "break from proc-closure");
-        }
-        
-        throw bj;
-    }
-
-    private IRubyObject handleReturnJump(ThreadContext context, JumpException.ReturnJump rj, int jumpTarget) {
-        int target = rj.getTarget();
-
-        // lambda always just returns the value
-        if (target == jumpTarget && isLambda()) return (IRubyObject) rj.getValue();
-
-        // returns can't propagate out of threads. rethrow to let thread handle it
-        if (isThread()) throw rj;
-
-        // If the block-receiving method is not still active and the original
-        // enclosing frame is no longer on the stack, it's a bad return.
-        // FIXME: this is not very efficient for cases where it won't error
-        if (target == jumpTarget && !context.isJumpTargetAlive(target, 0)) {
-            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN,
-                    (IRubyObject) rj.getValue(), "unexpected return");
-        }
-
-        // otherwise, let it propagate
-        throw rj;
-    }
-
-    private IRubyObject handleRetryJump(Ruby runtime, JumpException.RetryJump rj) {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, (IRubyObject)rj.getValue(), "retry not supported outside rescue");
+        return newBlock.call(context, args, passedBlock);
     }
 
     @JRubyMethod(name = "arity")

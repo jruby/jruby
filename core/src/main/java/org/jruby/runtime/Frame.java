@@ -81,9 +81,6 @@ public final class Frame {
     /** The current visibility for anything defined under this frame */
     private Visibility visibility = Visibility.PUBLIC;
     
-    /** The target for non-local jumps, like return from a block */
-    private int jumpTarget;
-    
     /** backref **/
     private IRubyObject backRef;
     
@@ -112,15 +109,11 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
-        this.jumpTarget = frame.jumpTarget;
     }
 
     /**
      * Update the frame with just filename and line, used for top-level frames
      * and method.
-     * 
-     * @param fileName The file where the calling method is located
-     * @param line The line number in the calling method where the call is made
      */
     public void updateFrame() {
         updateFrame(null, null, null, Block.NULL_BLOCK, 0);
@@ -131,8 +124,6 @@ public final class Frame {
      * show up correctly in call stacks.
      * 
      * @param name The name of the method being called
-     * @param fileName The file of the calling method
-     * @param line The line number of the call to this method
      */
     public void updateFrame(String name) {
         this.name = name;
@@ -152,7 +143,6 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
-        this.jumpTarget = frame.jumpTarget;
     }
 
     /**
@@ -162,8 +152,6 @@ public final class Frame {
      * @param self The 'self' for the method
      * @param name The name under which the method is being invoked
      * @param block The block passed to the method
-     * @param fileName The filename of the calling method
-     * @param line The line number where the call is being made
      * @param jumpTarget The target for non-local jumps (return in block)
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
@@ -175,25 +163,18 @@ public final class Frame {
         this.klazz = klazz;
         this.block = block;
         this.visibility = Visibility.PUBLIC;
-        this.jumpTarget = jumpTarget;
     }
 
     /**
      * Update the frame based on the given values.
      * 
-     * @param klazz The class against which the method is being called
      * @param self The 'self' for the method
-     * @param name The name under which the method is being invoked
-     * @param block The block passed to the method
-     * @param fileName The filename of the calling method
-     * @param line The line number where the call is being made
      * @param jumpTarget The target for non-local jumps (return in block)
      */
     public void updateFrameForEval(IRubyObject self, int jumpTarget) {
         this.self = self;
         this.name = null;
         this.visibility = Visibility.PRIVATE;
-        this.jumpTarget = jumpTarget;
     }
 
     /**
@@ -229,15 +210,6 @@ public final class Frame {
         Frame backtraceFrame = new Frame();
         backtraceFrame.name = name;
         return backtraceFrame;
-    }
-
-    /**
-     * Get the jump target for non-local returns in this frame.
-     * 
-     * @return The jump target for non-local returns
-     */
-    public int getJumpTarget() {
-        return jumpTarget;
     }
 
     /** 

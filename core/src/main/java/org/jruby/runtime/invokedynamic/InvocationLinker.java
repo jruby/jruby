@@ -219,10 +219,6 @@ public class InvocationLinker {
         if (methodMissing(entry, site.callType(), method, caller)) {
             try {
                 return callMethodMissing(entry, site.callType(), context, self, method, block);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                return retryJumpError(context);
             } finally {
                 if (site.isIterator()) block.escape();
             }
@@ -243,10 +239,6 @@ public class InvocationLinker {
         if (methodMissing(entry, site.callType(), method, caller)) {
             try {
                 return callMethodMissing(entry, site.callType(), context, self, method, arg0, block);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                return retryJumpError(context);
             } finally {
                 if (site.isIterator()) block.escape();
             }
@@ -267,10 +259,6 @@ public class InvocationLinker {
         if (methodMissing(entry, site.callType(), method, caller)) {
             try {
                 return callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1, block);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                return retryJumpError(context);
             } finally {
                 if (site.isIterator()) block.escape();
             }
@@ -291,10 +279,6 @@ public class InvocationLinker {
         if (methodMissing(entry, site.callType(), method, caller)) {
             try {
                 return callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1, arg2, block);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                return retryJumpError(context);
             } finally {
                 if (site.isIterator()) block.escape();
             }
@@ -315,10 +299,6 @@ public class InvocationLinker {
         if (methodMissing(entry, site.callType(), method, caller)) {
             try {
                 return callMethodMissing(entry, site.callType(), context, self, method, args, block);
-            } catch (JumpException.BreakJump bj) {
-                return handleBreakJump(context, bj);
-            } catch (JumpException.RetryJump rj) {
-                return retryJumpError(context);
             } finally {
                 if (site.isIterator()) block.escape();
             }
@@ -1136,10 +1116,6 @@ public class InvocationLinker {
                 site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, block);
             }
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            return retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -1160,10 +1136,6 @@ public class InvocationLinker {
                 site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, arg0, block);
             }
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            return retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -1184,10 +1156,6 @@ public class InvocationLinker {
                 site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
             }
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            return retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -1208,10 +1176,6 @@ public class InvocationLinker {
                 site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
             }
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            return retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -1232,10 +1196,6 @@ public class InvocationLinker {
                 site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, args, block);
             }
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            return retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -1745,14 +1705,6 @@ public class InvocationLinker {
         }
 
         return nativeTarget;
-    }
-
-    public static IRubyObject handleReturn(JumpException.ReturnJump rj, ThreadContext context) {
-        if (rj.getTarget() == context.getFrameJumpTarget()) {
-            return (IRubyObject)rj.getValue();
-        }
-
-        throw rj;
     }
 
     public static IRubyObject handleRedo(JumpException.RedoJump rj, ThreadContext context) {
