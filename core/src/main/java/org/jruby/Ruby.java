@@ -719,6 +719,9 @@ public final class Ruby {
             // FIXME: restore error once JIT should handle everything
             try {
                 script = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()));
+                if (Options.JIT_LOGGING.load()) {
+                    LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
+                }
             } catch (Exception e) {
                 if (Options.JIT_LOGGING.load()) {
                     LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");

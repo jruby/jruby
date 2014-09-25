@@ -50,7 +50,7 @@ public class JVMVisitor extends IRVisitor {
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
 
     public JVMVisitor() {
-        this.jvm = new JVM();
+        _reset();
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
@@ -83,6 +83,21 @@ public class JVMVisitor extends IRVisitor {
         }
 
         return result;
+    }
+
+    public void reset() {
+        _reset();
+    }
+
+    private void _reset() {
+        this.jvm = new JVM();
+        this.methodIndex = 0;
+        this.scopeMap = new HashMap();
+        this.prepare = true;
+    }
+
+    public void setPrepare(boolean prepare) {
+        this.prepare = prepare;
     }
 
     public byte[] code() {
@@ -126,9 +141,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void emitScope(IRScope scope, String name, Signature signature) {
-        this.currentScope = scope;
-
-        List <BasicBlock> bbs = scope.prepareForCompilation();
+        List <BasicBlock> bbs;
+        if (prepare) {
+            bbs = scope.prepareForCompilation();
+        } else {
+            scope.prepareForInterpretation(false);
+            bbs = scope.buildLinearization();
+        }
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
         if (Options.IR_COMPILER_DEBUG.load()) logScope(scope);
@@ -1993,7 +2012,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) {
-        super.ClosureLocalVariable(closurelocalvariable);    //To change body of overridden methods use File | Settings | File Templates.
+        LocalVariable(closurelocalvariable);
     }
 
     @Override
@@ -2047,6 +2066,16 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void IRException(IRException irexception) {
         super.IRException(irexception);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void LocalVariable(LocalVariable localvariable) {
+        // CON FIXME: This isn't as efficient as it could be, but we should not see these in optimized JIT scopes
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        jvmAdapter().ldc(localvariable.getOffset());
+        jvmAdapter().ldc(localvariable.getScopeDepth());
+        jvmMethod().pushNil();
+        jvmAdapter().invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
     }
 
     @Override
@@ -2244,8 +2273,8 @@ public class JVMVisitor extends IRVisitor {
         return jvm.method();
     }
 
-    private final JVM jvm;
-    private IRScope currentScope;
-    private int methodIndex = 0;
-    private final Map<String, IRScope> scopeMap = new HashMap();
+    private JVM jvm;
+    private int methodIndex;
+    private Map<String, IRScope> scopeMap;
+    private boolean prepare;
 }

@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.Options;
 
 public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
@@ -43,6 +44,18 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         this.method = method;
 
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+        /*
+         * The splitter/inliner since Truffle 0.5 has a bug where it isn't splitting/inlining this call site - it should
+         * be fixed in 0.6, but until then we'll force it. Turn off (to test) with
+         * -Xtruffle.call.force_split_inline_missing = false.
+         */
+
+        if (Options.TRUFFLE_CALL_FORCE_SPLIT_INLINE_MISSING.load()) {
+            insert(callNode);
+            callNode.split();
+            callNode.forceInlining();
+        }
     }
 
     public CachedBoxedMethodMissingDispatchNode(CachedBoxedMethodMissingDispatchNode prev) {

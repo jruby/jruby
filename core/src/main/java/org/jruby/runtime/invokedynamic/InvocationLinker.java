@@ -871,44 +871,42 @@ public class InvocationLinker {
     public static void blockEscape(Block block) {
         block.escape();
     }
-    
-    private static final MethodHandle HANDLE_BREAK_JUMP = findStatic(InvokeDynamicSupport.class, "handleBreakJump", methodType(IRubyObject.class, JumpException.BreakJump.class, ThreadContext.class));
-//    
+//
 //    private static IRubyObject handleRetryJump(JumpException.RetryJump bj, ThreadContext context) {
 //        block.escape();
 //        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.getRuntime().getNil(), "retry outside of rescue not supported");
 //    }
 //    private static final MethodHandle HANDLE_RETRY_JUMP = findStatic(InvokeDynamicSupport.class, "handleRetryJump", methodType(IRubyObject.class, JumpException.BreakJump.class, ThreadContext.class));
-    
+
     private static MethodHandle postProcess(JRubyCallSite site, MethodHandle target) {
-        if (site.isIterator()) {
-            // wrap with iter logic for break, retry, and block escape
-            MethodHandle breakHandler = permuteArguments(
-                    HANDLE_BREAK_JUMP,
-                    site.type().insertParameterTypes(0, JumpException.BreakJump.class),
-                    new int[] {0, 1});
+//        if (site.isIterator()) {
+//            // wrap with iter logic for break, retry, and block escape
+//            MethodHandle breakHandler = permuteArguments(
+//                    HANDLE_BREAK_JUMP,
+//                    site.type().insertParameterTypes(0, JumpException.BreakJump.class),
+//                    new int[] {0, 1});
+//
+//            target = catchException(target, JumpException.BreakJump.class, breakHandler);
+//
+//            target = Binder
+//                    .from(target.type())
+//                    .tryFinally(permuteArguments(BLOCK_ESCAPE, site.type().changeReturnType(void.class), site.type().parameterCount() - 1))
+//                    .invoke(target);
+//        }
 
-            target = catchException(target, JumpException.BreakJump.class, breakHandler);
-
-            target = Binder
-                    .from(target.type())
-                    .tryFinally(permuteArguments(BLOCK_ESCAPE, site.type().changeReturnType(void.class), site.type().parameterCount() - 1))
-                    .invoke(target);
-        }
-        
         // if it's an attr assignment as an expression, need to return n-1th argument
         if (site.isAttrAssign() && site.isExpression()) {
             // return given argument
             MethodHandle newTarget = identity(IRubyObject.class);
-            
+
             // if args are IRubyObject[].class, yank out n-1th
             if (site.type().parameterArray()[site.type().parameterCount() - 1] == IRubyObject[].class) {
-                newTarget = filterArguments(newTarget, 0, findStatic(InvocationLinker.class, "getLast", methodType(IRubyObject.class, IRubyObject[].class))); 
+                newTarget = filterArguments(newTarget, 0, findStatic(InvocationLinker.class, "getLast", methodType(IRubyObject.class, IRubyObject[].class)));
             }
-            
+
             // drop standard preamble args plus extra args
             newTarget = dropArguments(newTarget, 0, IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
-            
+
             // drop extra arguments, if any
             MethodType dropped = target.type().dropParameterTypes(0, 3);
             if (dropped.parameterCount() > 1) {
@@ -916,11 +914,11 @@ public class InvocationLinker {
                 Arrays.fill(drops, IRubyObject.class);
                 newTarget = dropArguments(newTarget, 4, drops);
             }
-            
+
             // fold using target
             target = foldArguments(newTarget, target);
         }
-        
+
         return target;
     }
     
