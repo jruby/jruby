@@ -241,8 +241,9 @@ project 'JRuby Integration Tests' do
                      :configuration => [ xml(
                       '<target>' + 
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
+                          '<arg value="-J-server" />' +
                           '<arg value="-J-G:-TruffleBackgroundCompilation" />' +
-                          '<arg value="-J-G:+TruffleCompilationExceptionsAreFatal" />' +
+                          '<arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />' +
                           '<arg value="-X+T" />' +
                           '<arg value="-Xtruffle.debug.enable_assert_constant=true" />' +
                           '<arg value="test/truffle/pe/pe.rb" />' +

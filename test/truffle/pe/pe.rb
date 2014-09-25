@@ -12,13 +12,36 @@
 # helper method. truffle_assert_constant looks like a method but is replaced
 # in the parser with a specific node.
 
+$failures = 0
+
 def example
   1_000_000.times do
     yield
   end
 
   print "."
+rescue RubyTruffleError
+  $failures += 1
+  print "E"
 end
+
+def counter_example
+  1_000_000.times do
+    yield
+  end
+
+  $failures += 1
+  print "E"
+rescue RubyTruffleError
+  print "."
+end
+
+# Two simple tests to check we're working
+
+example { truffle_assert_constant 14 }
+#counter_example { truffle_assert_constant rand }
+
+# Tests organised by class
 
 $: << File.expand_path('..', __FILE__)
 
@@ -28,3 +51,5 @@ require "core/float_pe.rb"
 require "core/symbol_pe.rb"
 
 print "\n"
+
+exit 1 unless $failures.zero?

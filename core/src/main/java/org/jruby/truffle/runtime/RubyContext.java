@@ -113,27 +113,17 @@ public class RubyContext extends ExecutionContext {
     }
 
     private void loadFileAbsolute(String fileName, RubyNode currentNode) {
-        // TODO(CS): we have trouble working out where unicode characters are
-
-        final byte[] utf8Bytes;
+        final byte[] bytes;
 
         try {
-            utf8Bytes = Files.readAllBytes(Paths.get(fileName));
+            bytes = Files.readAllBytes(Paths.get(fileName));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        final String utf8String = new String(utf8Bytes, StandardCharsets.UTF_8);
+        // Assume UTF-8 for the moment
 
-        final byte[] asciiBytes = utf8String.getBytes(StandardCharsets.US_ASCII);
-
-        final String asciiString = new String(asciiBytes, StandardCharsets.US_ASCII);
-
-        if (!utf8String.equals(asciiString)) {
-            warnings.warn("%s converted  to ASCII", fileName);
-        }
-
-        final Source source = Source.fromText(asciiString, fileName);
+        final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
 
         coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
