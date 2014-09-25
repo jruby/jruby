@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
@@ -43,6 +44,11 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
         return IRRuntimeHelpers.receiveKeywordRestArg(context, args, required, keywordArgumentSupplied);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceiveKeywordRestArgInstr(this);
     }
 
 }
