@@ -300,31 +300,13 @@ public abstract class StringNodes {
         public RubyArray bytes(RubyString string) {
             final byte[] bytes = string.getBytes().bytes();
 
-            if (RubyContext.ARRAYS_INT) {
-                final int[] store = new int[bytes.length];
+            final int[] store = new int[bytes.length];
 
-                for (int n = 0; n < store.length; n++) {
-                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
-                }
-
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
-            } else if (RubyContext.ARRAYS_LONG) {
-                final long[] store = new long[bytes.length];
-
-                for (int n = 0; n < store.length; n++) {
-                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
-                }
-
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
-            } else {
-                final Object[] store = new Object[bytes.length];
-
-                for (int n = 0; n < store.length; n++) {
-                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
-                }
-
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
+            for (int n = 0; n < store.length; n++) {
+                store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
             }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
         }
     }
 

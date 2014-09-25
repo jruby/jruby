@@ -78,21 +78,17 @@ public final class RubyArray extends RubyObject {
 
         final Object store;
 
-        if (object instanceof Integer && RubyContext.ARRAYS_INT) {
+        if (object instanceof Integer) {
             store = new int[]{(int) object};
-        } else if (object instanceof Integer && RubyContext.ARRAYS_LONG) {
-            store = new long[]{(long) (int) object};
-        } else if (object instanceof RubyFixnum.IntegerFixnum && RubyContext.ARRAYS_INT) {
+        } else if (object instanceof RubyFixnum.IntegerFixnum) {
             store = new int[]{((RubyFixnum.IntegerFixnum) object).getValue()};
-        } else if (object instanceof RubyFixnum.IntegerFixnum && RubyContext.ARRAYS_LONG) {
-            store = new long[]{(long) ((RubyFixnum.IntegerFixnum) object).getValue()};
-        } else if (object instanceof Long && RubyContext.ARRAYS_LONG) {
+        } else if (object instanceof Long) {
             store = new long[]{(long) object};
-        } else if (object instanceof RubyFixnum.LongFixnum && RubyContext.ARRAYS_LONG) {
+        } else if (object instanceof RubyFixnum.LongFixnum) {
             store = new long[]{((RubyFixnum.LongFixnum) object).getValue()};
-        } else if (object instanceof Double && RubyContext.ARRAYS_DOUBLE) {
+        } else if (object instanceof Double) {
             store = new double[]{(double) object};
-        } else if (object instanceof RubyFloat && RubyContext.ARRAYS_DOUBLE) {
+        } else if (object instanceof RubyFloat) {
             store = new double[]{((RubyFloat) object).getValue()};
         } else {
             store = new Object[]{object};
@@ -112,9 +108,9 @@ public final class RubyArray extends RubyObject {
             return fromObject(arrayClass, objects[0]);
         }
 
-        boolean canUseInteger = RubyContext.ARRAYS_INT;
-        boolean canUseLong = RubyContext.ARRAYS_LONG;
-        boolean canUseDouble = RubyContext.ARRAYS_DOUBLE;
+        boolean canUseInteger = true;
+        boolean canUseLong = true;
+        boolean canUseDouble = true;
 
         for (Object object : objects) {
             if (object instanceof Integer) {
@@ -249,9 +245,6 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
-        assert !(store instanceof int[]) || RubyContext.ARRAYS_INT;
-        assert !(store instanceof long[]) || RubyContext.ARRAYS_LONG;
-        assert !(store instanceof double[]) || RubyContext.ARRAYS_DOUBLE;
 
         // TODO: assert that an object array doesn't contain all primitives - performance warning?
     }

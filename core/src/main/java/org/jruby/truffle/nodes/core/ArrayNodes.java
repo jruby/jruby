@@ -639,13 +639,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isNull")
         public Object setNullIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             if (index == 0) {
-                if (RubyContext.ARRAYS_INT) {
-                    array.setStore(new int[]{value}, 1);
-                } else if (RubyContext.ARRAYS_LONG) {
-                    array.setStore(new long[]{value}, 1);
-                } else {
-                    array.setStore(new Object[]{value}, 1);
-                }
+                array.setStore(new int[]{value}, 1);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -657,11 +651,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isNull")
         public Object setNullLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             if (index == 0) {
-                if (RubyContext.ARRAYS_LONG) {
-                    array.setStore(new long[]{value}, 1);
-                } else {
-                    array.setStore(new Object[]{value}, 1);
-                }
+                array.setStore(new long[]{value}, 1);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -1798,7 +1788,7 @@ public abstract class ArrayNodes {
             return initialize(array, size, NilPlaceholder.INSTANCE);
         }
 
-        @Specialization(guards = "areIntArraysEnabled")
+        @Specialization
         public RubyArray initialize(RubyArray array, int size, int defaultValue) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
@@ -2599,25 +2589,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNull", "isSingleIntegerFixnum"})
         public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
-            if (RubyContext.ARRAYS_INT) {
-                array.setStore(new int[]{(int) values[0]}, 1);
-            } else if (RubyContext.ARRAYS_LONG) {
-                array.setStore(new long[]{(long) values[0]}, 1);
-            } else {
-                array.setStore(new Object[]{values[0]}, 1);
-            }
-
+            array.setStore(new int[]{(int) values[0]}, 1);
             return array;
         }
 
         @Specialization(guards = {"isNull", "isSingleLongFixnum"})
         public RubyArray pushEmptySingleIntegerLong(RubyArray array, Object... values) {
-            if (RubyContext.ARRAYS_LONG) {
-                array.setStore(new long[]{(long) values[0]}, 1);
-            } else {
-                array.setStore(new Object[]{values[0]}, 1);
-            }
-
+            array.setStore(new long[]{(long) values[0]}, 1);
             return array;
         }
 
