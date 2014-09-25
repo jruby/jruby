@@ -357,24 +357,12 @@ public final class StringSupport {
     }
 
     @SuppressWarnings("deprecation")
-    public static int utf8Nth(byte[]bytes, int p, int end, int n) {
-        if (UNSAFE != null) {
-            if (n > LONG_SIZE * 2) {
-                int ep = ~LOWBITS & (p + LOWBITS);
-                while (p < ep) {
-                    if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) n--;
-                }
-                Unsafe us = (Unsafe)UNSAFE;
-                int eend = ~LOWBITS & end;
-                do {
-                    n -= countUtf8LeadBytes(us.getLong(bytes, (long)(OFFSET + p)));
-                    p += LONG_SIZE;
-                } while (p < eend && n >= LONG_SIZE);
-            }
-        }
-        while (p < end) {
+    public static int utf8Nth(byte[]bytes, int p, int e, int nth) {
+        // FIXME: Missing our UNSAFE impl because it was doing the wrong thing: See GH #1986
+        while (p < e) {
             if ((bytes[p] & 0xc0 /*utf8 lead byte*/) != 0x80) {
-                if (n-- == 0) break;
+                if (nth == 0) break;
+                nth--;
             }
             p++;
         }
