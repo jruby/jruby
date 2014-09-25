@@ -131,14 +131,29 @@ public class InlinerInfo {
         return hostScope;
     }
 
+    // Unconditional renaming of labels -- used to initialize ensure region cloning
+    public void renameLabel(Label l) {
+        Label newLbl = getInlineHostScope().getNewLabel();
+        this.lblRenameMap.put(l, newLbl);
+    }
+
     public Label getRenamedLabel(Label l) {
         // Special case -- is there a way to avoid this?
         if (Label.UNRESCUED_REGION_LABEL.equals(l)) return l;
 
         Label newLbl = this.lblRenameMap.get(l);
         if (newLbl == null) {
-           newLbl = cloneMode == CloneMode.NORMAL_CLONE ? l.clone() : getInlineHostScope().getNewLabel();
-           this.lblRenameMap.put(l, newLbl);
+            if (cloneMode == CloneMode.ENSURE_BLOCK_CLONE) {
+                // In ensure-block-clone mode, no cloning of labels not already pre-renamed and initialized
+                // FIXME: IRScope.java:prepareInstructionsForInterpretation/Compilation assumes that
+                // multiple labels with the same name are identical java objects. So, reuse the object here.
+                newLbl = l;
+            } else if (cloneMode == CloneMode.NORMAL_CLONE) {
+                newLbl = l.clone();
+            } else {
+                newLbl = getInlineHostScope().getNewLabel();
+            }
+            this.lblRenameMap.put(l, newLbl);
         }
         return newLbl;
     }

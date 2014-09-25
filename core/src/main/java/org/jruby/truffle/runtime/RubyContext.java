@@ -50,11 +50,7 @@ public class RubyContext extends ExecutionContext {
     public static final boolean TRACE = Options.TRUFFLE_TRACE.load();
     public static final boolean OBJECTSPACE = Options.TRUFFLE_OBJECTSPACE.load();
     public static final boolean EXCEPTIONS_PRINT_JAVA = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
-    public static final boolean LITERALS_INT = Options.TRUFFLE_LITERALS_INT.load();
     public static final int ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();
-    public static final boolean ARRAYS_INT = Options.TRUFFLE_ARRAYS_INT.load();
-    public static final boolean ARRAYS_LONG = Options.TRUFFLE_ARRAYS_LONG.load();
-    public static final boolean ARRAYS_DOUBLE = Options.TRUFFLE_ARRAYS_DOUBLE.load();
     public static final boolean ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
     public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();

@@ -3,27 +3,28 @@ require 'java'
 require 'rspec'
 
 module CompilerTestUtils
-  def compile_to_method(src, filename = nil)
+  def compile_to_method(src, filename = nil, lineno = 0)
     next_src_id = next_id
-    node = JRuby.parse(src, filename || "testCompiler#{next_src_id}", false)
+    node = JRuby.parse(src, filename || "testCompiler#{next_src_id}", false, lineno)
     filename = node.position.file
     oj = org.jruby
-    classname = oj.util.JavaNameMangler.mangleFilenameForClasspath(filename)
 
     # This logic is a mix of logic from InterpretedIRMethod's JIT, o.j.Ruby's script compilation, and IRScriptBody's
     # interpret. We need to figure out a cleaner path.
 
-    method = oj.ir.IRBuilder.createIRBuilder(JRuby.runtime, JRuby.runtime.getIRManager()).buildRoot(node)
-
-    method.prepareForInterpretation(false)
-    scope = method.getStaticScope
+    scope = node.getStaticScope
     currModule = scope.getModule
     if currModule == nil
-      currModule = Object
+      currModule = JRuby.runtime.top_self.class
       scope.setModule(currModule)
     end
 
-    compiled = oj.ir.targets.JVMVisitor.compile(method, oj.util.ClassCache::OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
+    method = oj.ir.IRBuilder.createIRBuilder(JRuby.runtime, JRuby.runtime.getIRManager()).buildRoot(node)
+
+    method.prepareForInterpretation(false)
+
+    compiler = oj.ir.targets.JVMVisitor.new
+    compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod(
         "__script__",
         oj.runtime.ThreadContext.java_class,
@@ -38,10 +39,10 @@ module CompilerTestUtils
         handle,
         "script",
         filename,
-        0,
+        lineno,
         method.getStaticScope(),
         oj.runtime.Visibility::PUBLIC,
-        Class.new,
+        JRuby.runtime.top_self.class,
         "",
         method.hasExplicitCallProtocol())
   end
@@ -59,9 +60,9 @@ module CompilerTestUtils
     $VERBOSE = verb
   end
   
-  def compile_and_run(src, filename = nil)
-    cls = compile_to_method(src, filename)
-  
+  def compile_and_run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    cls = compile_to_method(src, filename, line)
+
     cls.call(
         JRuby.runtime.current_context,
         JRuby.runtime.top_self,
@@ -75,9 +76,6 @@ end
 describe "JRuby's bytecode compiler" do
   include CompilerTestUtils
 
-  StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-  ASTCompiler = org.jruby.compiler.ASTCompiler
-  ASTInspector = org.jruby.compiler.ASTInspector
   Block = org.jruby.runtime.Block
   IRubyObject = org.jruby.runtime.builtin.IRubyObject
 
@@ -830,5 +828,37 @@ ary
     expect(JRUBY4925::BLAH).to eq 1
     x = compile_and_run '::JRUBY4925_BLAH, a = 1, 2'
     expect(JRUBY4925_BLAH).to eq 1
+  end
+
+  it "compiles backquotes (backtick)" do
+    x = compile_and_run 'o = Object.new; def o.`(str); str; end; def o.go; `hello`; end; o.go'
+
+    expect(x).to eq 'hello'
+  end
+
+  it "creates frozen strings for backquotes (backtick)" do
+    x = compile_and_run 'o = Object.new; def o.`(str); str; end; def o.go; `hello`; end; o.go'
+
+    expect(x).to be_frozen
+  end
+
+  it "compiles rest args passed to return, break, and next (svalue)" do
+    x = compile_and_run 'a = [1,2,3]; 1.times { break *a }'
+
+    expect(x).to eq [1,2,3]
+
+    x = compile_and_run 'a = [1,2,3]; lambda { return *a }.call'
+
+    expect(x).to eq [1,2,3]
+
+    x = compile_and_run 'a = [1,2,3]; def foo; yield; end; foo { next *a }'
+
+    expect(x).to eq [1,2,3]
+  end
+
+  it "compiles optional arguments in a method with toplevel rescue" do
+    x = compile_and_run 'def foo(a = false); raise; rescue; a; end; foo'
+
+    expect(x).to eq false
   end
 end

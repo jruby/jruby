@@ -7,8 +7,11 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.IRException;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
@@ -77,7 +80,7 @@ public class IRRuntimeHelpers {
                     break;
                 }
             }
-            dynScope = dynScope.getNextCapturedScope();
+            dynScope = dynScope.getParentScope();
         }
 
         // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -129,7 +132,7 @@ public class IRRuntimeHelpers {
                 throw IRException.BREAK_LocalJumpError.getException(context.runtime);
             }
 
-            IRBreakJump bj = IRBreakJump.create(dynScope.getNextCapturedScope(), breakValue);
+            IRBreakJump bj = IRBreakJump.create(dynScope.getParentScope(), breakValue);
             if (scopeType == IRScopeType.EVAL_SCRIPT) {
                 // If we are in an eval, record it so we can account for it
                 bj.breakInEval = true;
@@ -187,7 +190,8 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, String scopeDesc,
+    // Used by JIT
+    public static void defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, IRScope irScope, String scopeDesc,
                                   String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
         StaticScope parentScope = currDynScope.getStaticScope();
@@ -197,13 +201,15 @@ public class IRRuntimeHelpers {
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
+        scope.setIRScope(irScope);
 
         DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
 
-        return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
-    public static IRubyObject defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
+    // Used by JIT
+    public static void defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, IRScope irScope, String scopeDesc,
                                                   String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
 
@@ -215,16 +221,17 @@ public class IRRuntimeHelpers {
 
         RubyClass containingClass = obj.getSingletonClass();
 
-        Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
-
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
+        scope.setIRScope(irScope);
 
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, Visibility.PUBLIC, containingClass, parameterDesc, hasExplicitCallProtocol);
 
-        return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+        containingClass.addMethod(rubyName, method);
+
+        obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(rubyName));
     }
 
+    // Used by JIT
     public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
         String name = (nameArg instanceof String) ?
@@ -667,27 +674,23 @@ public class IRRuntimeHelpers {
     public static RubyModule findInstanceMethodContainer(ThreadContext context, DynamicScope currDynScope, IRubyObject self) {
         boolean inBindingEval = currDynScope.inBindingEval();
 
-        if (!inBindingEval && self == context.runtime.getTopSelf()) {
-            // Top-level-scripts are special
-            // but, not if binding-evals are in force!
-            return self.getType();
-        }
+        // Top-level-scripts are special but, not if binding-evals are in force!
+        if (!inBindingEval && self == context.runtime.getTopSelf()) return self.getType();
 
-        DynamicScope ds = currDynScope;
-        while (ds != null) {
+        for (DynamicScope ds = currDynScope; ds != null; ) {
             IRScopeType scopeType = ds.getStaticScope().getScopeType();
             switch (ds.getEvalType()) {
-                case MODULE_EVAL  : return (RubyModule)self;
+                case MODULE_EVAL  : return (RubyModule) self;
                 case INSTANCE_EVAL: return self.getSingletonClass();
-                case BINDING_EVAL : ds = ds.getNextCapturedScope(); break;
+                case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
                     if (scopeType == null || scopeType.isClosureType()) {
-                        ds = ds.getNextCapturedScope();
+                        ds = ds.getParentScope();
                     } else if (inBindingEval) {
                         // Binding evals are special!
                         return ds.getStaticScope().getModule();
                     } else if (scopeType == IRScopeType.CLASS_METHOD) {
-                        return (RubyModule)self;
+                        return (RubyModule) self;
                     } else if (scopeType == IRScopeType.INSTANCE_METHOD) {
                         return self.getMetaClass();
                     } else {
@@ -695,7 +698,7 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
-                                return (RubyModule)self;
+                                return (RubyModule) self;
 
                             default:
                                 throw new RuntimeException("Should not get here!");
@@ -704,6 +707,7 @@ public class IRRuntimeHelpers {
                     break;
             }
         }
+
         throw new RuntimeException("Should not get here!");
     }
 
@@ -795,5 +799,54 @@ public class IRRuntimeHelpers {
         Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                                            : method.call(context, self, superClass, methodName, args, block);
         return rVal;
+    }
+
+    public static IRubyObject[] splatArguments(IRubyObject[] args, boolean[] splatMap) {
+        if (splatMap != null && splatMap.length > 0) {
+            int count = 0;
+            for (int i = 0; i < splatMap.length; i++) {
+                count += splatMap[i] ? ((RubyArray)args[i]).size() : 1;
+            }
+
+            IRubyObject[] newArgs = new IRubyObject[count];
+            int actualOffset = 0;
+            for (int i = 0; i < splatMap.length; i++) {
+                if (splatMap[i]) {
+                    RubyArray ary = (RubyArray) args[i];
+                    for (int j = 0; j < ary.size(); j++) {
+                        newArgs[actualOffset++] = ary.eltOk(j);
+                    }
+                } else {
+                    newArgs[actualOffset++] = args[i];
+                }
+            }
+
+            args = newArgs;
+        }
+        return args;
+    }
+
+    public static String encodeSplatmap(boolean[] splatmap) {
+        if (splatmap == null) return "";
+        StringBuilder builder = new StringBuilder();
+        for (boolean b : splatmap) {
+            builder.append(b ? '1' : '0');
+        }
+        return builder.toString();
+    }
+
+    public static boolean[] buildSplatMap(Operand[] args, boolean containsArgSplat) {
+        boolean[] splatMap = new boolean[args.length];
+
+        if (containsArgSplat) {
+            for (int i = 0; i < args.length; i++) {
+                Operand operand = args[i];
+                if (operand instanceof Splat) {
+                    splatMap[i] = true;
+                }
+            }
+        }
+
+        return splatMap;
     }
 }

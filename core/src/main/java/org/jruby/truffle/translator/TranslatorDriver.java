@@ -181,7 +181,7 @@ public class TranslatorDriver {
             truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
         }
 
-        final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
+        final RootNode root = new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
         return new RubyParserResult(root);
     }
 

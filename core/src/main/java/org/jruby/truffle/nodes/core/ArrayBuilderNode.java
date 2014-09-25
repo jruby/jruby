@@ -43,9 +43,9 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
-        private boolean couldUseInteger = RubyContext.ARRAYS_INT;
-        private boolean couldUseLong = RubyContext.ARRAYS_LONG;
-        private boolean couldUseDouble = RubyContext.ARRAYS_DOUBLE;
+        private boolean couldUseInteger = true;
+        private boolean couldUseLong = true;
+        private boolean couldUseDouble = true;
 
         public UninitializedArrayBuilderNode(RubyContext context) {
             super(context);

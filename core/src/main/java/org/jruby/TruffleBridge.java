@@ -18,6 +18,13 @@ import org.jruby.truffle.TruffleMethod;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 public interface TruffleBridge {
+
+    enum BacktraceFormatter {
+        MRI,
+        DEBUG,
+        IMPL_DEBUG
+    }
+
     void init();
 
     TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode);
@@ -29,4 +36,5 @@ public interface TruffleBridge {
     Object toTruffle(IRubyObject object);
 
     void shutdown();
+    
 }

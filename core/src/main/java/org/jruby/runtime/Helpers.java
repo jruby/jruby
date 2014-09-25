@@ -830,29 +830,6 @@ public class Helpers {
         }
     }
     
-    /**
-     * If it's Redo, Next, or Break, rethrow it as a normal exception for while to handle
-     * @param re
-     * @param context
-     */
-    public static Throwable unwrapRedoNextBreakOrJustLocalJump(RaiseException re, ThreadContext context) {
-        RubyException exception = re.getException();
-        if (context.runtime.getLocalJumpError().isInstance(exception)) {
-            RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
-
-            switch (jumpError.getReason()) {
-            case REDO:
-                return JumpException.REDO_JUMP;
-            case NEXT:
-                if (jumpError.exit_value().isNil()) throw JumpException.NEXT_JUMP;
-                return new JumpException.NextJump(jumpError.exit_value());
-            case BREAK:
-                return new JumpException.BreakJump(context.getFrameJumpTarget(), jumpError.exit_value());
-            }
-        }
-        return re;
-    }
-    
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
         Ruby runtime = exception.getRuntime();
@@ -978,27 +955,6 @@ public class Helpers {
         System.arraycopy(array, 0, newArray, 0, array.length);
         newArray[array.length] = add;
         return newArray;
-    }
-    
-    public static JumpException.ReturnJump returnJump(IRubyObject result, ThreadContext context) {
-        return context.returnJump(result);
-    }
-    
-    public static IRubyObject throwReturnJump(IRubyObject result, ThreadContext context) {
-        throw context.returnJump(result);
-    }
-    
-    public static IRubyObject breakJumpInWhile(JumpException.BreakJump bj, ThreadContext context) {
-        // JRUBY-530, while case
-        if (bj.getTarget() == context.getFrameJumpTarget()) {
-            return (IRubyObject) bj.getValue();
-        }
-
-        throw bj;
-    }
-    
-    public static IRubyObject breakJump(ThreadContext context, IRubyObject value) {
-        throw new JumpException.BreakJump(context.getFrameJumpTarget(), value);
     }
     
     public static IRubyObject breakLocalJumpError(Ruby runtime, IRubyObject value) {

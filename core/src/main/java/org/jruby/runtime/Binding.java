@@ -34,7 +34,6 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.backtrace.BacktraceElement;
-import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -239,7 +238,7 @@ public class Binding {
             // If the next scope out has the same binding scope as this scope it means
             // we are evaling within an eval and in that case we should be sharing the same
             // binding scope.
-            DynamicScope parent = dynamicScope.getNextCapturedScope();
+            DynamicScope parent = dynamicScope.getParentScope();
             
             if (parent != null && parent.getEvalScope(runtime) == dynamicScope) {
                 evalScopeBinding.evalScope = dynamicScope;

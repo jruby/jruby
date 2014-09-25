@@ -22,21 +22,22 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
  */
 public class RubyRootNode extends RootNode {
 
+    private final RubyContext context;
     private final SharedMethodInfo sharedMethodInfo;
     @Child protected RubyNode body;
     private final RubyNode uninitializedBody;
 
-
-    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
+    public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
         super(sourceSection, frameDescriptor);
         assert body != null;
+        this.context = context;
         this.body = body;
         this.sharedMethodInfo = sharedMethodInfo;
         uninitializedBody = NodeUtil.cloneNode(body);
     }
 
     public RubyRootNode cloneRubyRootNode() {
-        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody));
+        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody));
     }
 
     @Override

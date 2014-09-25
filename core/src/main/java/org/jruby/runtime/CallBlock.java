@@ -94,10 +94,6 @@ public class CallBlock extends BlockBody {
         // ignore
     }
 
-    public Block cloneBlock(Binding binding) {
-        return new Block(this, binding.clone());
-    }
-
     public Arity arity() {
         return arity;
     }

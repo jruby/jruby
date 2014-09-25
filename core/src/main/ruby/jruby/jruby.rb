@@ -45,7 +45,7 @@ module JRuby
     end
 
     # Parse the given block or the provided content, returning a JRuby AST node.
-    def parse(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
+    def parse(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, lineno = 0, &block)
       if block
         block_r = reference0(block)
         body = block_r.body
@@ -59,7 +59,7 @@ module JRuby
         content = content.to_str
         filename = filename.to_str unless default_filename
 
-        runtime.parse(reference0(content).byte_list, filename, nil, 0, extra_position_info)
+        runtime.parse(reference0(content).byte_list, filename, nil, lineno, extra_position_info)
       end
     end
     alias ast_for parse

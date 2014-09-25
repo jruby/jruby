@@ -153,8 +153,6 @@ public class JITCompiler implements JITCompilerMBean {
     public void jitThresholdReached(final InterpretedIRMethod method, final RubyInstanceConfig config, ThreadContext context, final String className, final String methodName) {
         // Disable any other jit tasks from entering queue
         method.setCallCount(-1);
-
-        final Ruby runtime = context.runtime;
         
         Runnable jitTask = new JITTask(className, method, methodName);
 
@@ -208,11 +206,12 @@ public class JITCompiler implements JITCompilerMBean {
                 }
 
                 String key = SexpMaker.sha1(method.getIRMethod());
-                JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts);
+                JVMVisitor visitor = new JVMVisitor();
+                JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts, visitor);
 
                 generator.compile();
 
-                Class sourceClass = JVMVisitor.defineFromBytecode(method.getIRMethod(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
+                Class sourceClass = visitor.defineFromBytecode(method.getIRMethod(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
 
                 if (sourceClass == null) {
                     // class could not be found nor generated; give up on JIT and bail out
@@ -259,11 +258,11 @@ public class JITCompiler implements JITCompilerMBean {
 
                 return;
             } catch (Throwable t) {
-                if (runtime.getDebug().isTrue()) {
-                    t.printStackTrace();
-                }
-                if (config.isJitLoggingVerbose()) {
+                if (config.isJitLogging()) {
                     log(method, className + "." + methodName, "could not compile", t.getMessage());
+                    if (config.isJitLoggingVerbose()) {
+                        t.printStackTrace();
+                    }
                 }
 
                 counts.failCount.incrementAndGet();
@@ -290,40 +289,9 @@ public class JITCompiler implements JITCompilerMBean {
             throw new RuntimeException(nsae);
         }
     }
-
-    public static void saveToCodeCache(Ruby ruby, byte[] bytecode, String packageName, File cachedClassFile) {
-        String codeCache = RubyInstanceConfig.JIT_CODE_CACHE;
-        File codeCacheDir = new File(codeCache);
-        if (!codeCacheDir.exists()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " does not exist");
-        } else if (!codeCacheDir.isDirectory()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not a directory");
-        } else if (!codeCacheDir.canWrite()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not writable");
-        } else {
-            if (!new File(codeCache, packageName).isDirectory()) {
-                boolean createdDirs = new File(codeCache, packageName).mkdirs();
-                if (!createdDirs) {
-                    ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
-                }
-            }
-            // write to bytecode cache
-            FileOutputStream fos = null;
-            try {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.info("writing jitted bytecode to to " + cachedClassFile);
-                fos = new FileOutputStream(cachedClassFile);
-                fos.write(bytecode);
-            } catch (Exception e) {
-                e.printStackTrace();
-                // ignore
-            } finally {
-                try {fos.close();} catch (Exception e) {}
-            }
-        }
-    }
     
     public static class JITClassGenerator {
-        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, InterpretedIRMethod method, JITCounts counts) {
+        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, InterpretedIRMethod method, JITCounts counts, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
@@ -343,6 +311,7 @@ public class JITCompiler implements JITCompilerMBean {
             this.ruby = ruby;
             this.counts = counts;
             this.method = method;
+            this.visitor = visitor;
         }
         
         @SuppressWarnings("unchecked")
@@ -357,9 +326,7 @@ public class JITCompiler implements JITCompilerMBean {
 
             method.ensureInstrsReady();
 
-            if (config.isJitLogging()) {
-                LOG.info("done jitting: " + method);
-            }
+            bytecode = visitor.compileToBytecode(method.getIRMethod());
             
             counts.compiledCount.incrementAndGet();
             counts.compileTime.addAndGet(System.nanoTime() - start);
@@ -397,6 +364,7 @@ public class JITCompiler implements JITCompilerMBean {
         private final JITCounts counts;
         private final String digestString;
         private final InterpretedIRMethod method;
+        private final JVMVisitor visitor;
 
         private byte[] bytecode;
         private String name;

@@ -9,7 +9,6 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;

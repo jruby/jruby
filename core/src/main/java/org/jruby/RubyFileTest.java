@@ -277,9 +277,8 @@ public class RubyFileTest {
     @JRubyMethod(name = "symlink?", required = 1, module = true)
     public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
-        FileResource file = fileResource(filename);
-
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+        
         try {
             // Note: We can't use file.exists() to check whether the symlink
             // exists or not, because that method returns false for existing

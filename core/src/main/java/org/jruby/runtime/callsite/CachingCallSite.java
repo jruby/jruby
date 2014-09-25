@@ -88,10 +88,6 @@ public abstract class CachingCallSite extends CallSite {
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         try {
             return callBlock(context, caller, self, args, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -152,10 +148,6 @@ public abstract class CachingCallSite extends CallSite {
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         try {
             return callBlock(context, caller, self, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -186,10 +178,6 @@ public abstract class CachingCallSite extends CallSite {
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         try {
             return callBlock(context, caller, self, arg1, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -220,10 +208,6 @@ public abstract class CachingCallSite extends CallSite {
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         try {
             return callBlock(context, caller, self, arg1, arg2, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -254,10 +238,6 @@ public abstract class CachingCallSite extends CallSite {
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
             return callBlock(context, caller, self, arg1, arg2, arg3, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
         } finally {
             block.escape();
         }
@@ -432,13 +412,6 @@ public abstract class CachingCallSite extends CallSite {
         // the cast in the following line is necessary due to lacking optimizations in Hotspot
         RubyClass selfType = ((RubyBasicObject)self).getMetaClass();
         return selfType;
-    }
-
-    private static IRubyObject handleBreakJump(ThreadContext context, BreakJump bj) throws BreakJump {
-        if (context.getFrameJumpTarget() == bj.getTarget()) {
-            return (IRubyObject) bj.getValue();
-        }
-        throw bj;
     }
 
     private static RaiseException retryJumpError(ThreadContext context) {

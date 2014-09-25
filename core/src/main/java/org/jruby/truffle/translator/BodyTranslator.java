@@ -837,7 +837,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitFixnumNode(org.jruby.ast.FixnumNode node) {
         final long value = node.getValue();
 
-        if (RubyFixnum.fitsIntoInteger(value) && RubyContext.LITERALS_INT) {
+        if (RubyFixnum.fitsIntoInteger(value)) {
             return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
             return new FixnumLiteralNode.LongFixnumLiteralNode(context, translate(node.getPosition()), value);

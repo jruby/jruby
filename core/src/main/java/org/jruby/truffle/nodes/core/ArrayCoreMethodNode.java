@@ -84,8 +84,4 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
         return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
     }
 
-    protected boolean areIntArraysEnabled() {
-        return RubyContext.ARRAYS_INT;
-    }
-
 }

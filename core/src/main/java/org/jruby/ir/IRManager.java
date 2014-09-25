@@ -18,8 +18,8 @@ import java.util.Set;
  */
 public class IRManager {
     public static String SAFE_COMPILER_PASSES = "LinearizeCFG";
-    public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,EnsureTempsAssigned,LinearizeCFG";
-    public static String DEFAULT_JIT_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,EnsureTempsAssigned,AddCallProtocolInstructions,LinearizeCFG";
+    public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,LinearizeCFG";
+    public static String DEFAULT_JIT_PASSES = "AddLocalVarLoadStoreInstructions,AddCallProtocolInstructions,EnsureTempsAssigned,OptimizeTempVarsPass,LocalOptimizationPass,LinearizeCFG";
     public static String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private int dummyMetaClassCount = 0;

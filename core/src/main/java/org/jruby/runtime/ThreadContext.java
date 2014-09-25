@@ -207,10 +207,6 @@ public final class ThreadContext {
         return errorInfo;
     }
     
-    public ReturnJump returnJump(IRubyObject value) {
-        return new ReturnJump(getFrameJumpTarget(), value);
-    }
-    
     /**
      * Returns the lastCallStatus.
      * @return LastCallStatus
@@ -534,22 +530,6 @@ public final class ThreadContext {
     }
 
     /**
-     * Search the frame stack for the given JumpTarget. Return true if it is
-     * found and false otherwise. Skip the given number of frames before
-     * beginning the search.
-     * 
-     * @param target The JumpTarget to search for
-     * @param skipFrames The number of frames to skip before searching
-     * @return
-     */
-    public boolean isJumpTargetAlive(int target, int skipFrames) {
-        for (int i = frameIndex - skipFrames; i >= 0; i--) {
-            if (frameStack[i].getJumpTarget() == target) return true;
-        }
-        return false;
-    }
-
-    /**
      * Check if a static scope is present on the call stack.
      * This is the IR equivalent of isJumpTargetAlive
      *
@@ -571,10 +551,6 @@ public final class ThreadContext {
     
     public IRubyObject getFrameSelf() {
         return getCurrentFrame().getSelf();
-    }
-    
-    public int getFrameJumpTarget() {
-        return getCurrentFrame().getJumpTarget();
     }
     
     public RubyModule getFrameKlazz() {

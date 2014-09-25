@@ -222,6 +222,18 @@ public class IRBuilder {
 
         public void cloneIntoHostScope(IRBuilder b, IRScope s) {
             InlinerInfo ii = new InlinerInfo(null, s, CloneMode.ENSURE_BLOCK_CLONE);
+
+            // Clone required labels.
+            // During normal cloning below, labels not found in the rename map
+            // are not cloned.
+            ii.renameLabel(start);
+            for (Instr i: instrs) {
+                if (i instanceof LabelInstr) {
+                    ii.renameLabel(((LabelInstr)i).label);
+                }
+            }
+
+            // Clone instructions now
             b.addInstr(s, new LabelInstr(ii.getRenamedLabel(start)));
             b.addInstr(s, new ExceptionRegionStartMarkerInstr(bodyRescuer));
             for (Instr i: instrs) {
@@ -2561,18 +2573,24 @@ public class IRBuilder {
         addInstr(s, new Match2Instr(result, receiver, value));
         if (matchNode instanceof Match2CaptureNode) {
             Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
-            String[] vars = s.getStaticScope().getVariables();
             for (int slot:  m2c.getScopeOffsets()) {
                 // Static scope scope offsets store both depth and offset
                 int depth = slot >> 16;
                 int offset = slot & 0xffff;
 
                 // For now, we'll continue to implicitly reference "$~"
-                String var = vars[offset];
+                String var = getVarNameFromScopeTree(s, depth, offset);
                 addInstr(s, new SetCapturedVarInstr(s.getLocalVariable(var, depth), result, var));
             }
         }
         return result;
+    }
+
+    private String getVarNameFromScopeTree(IRScope scope, int depth, int offset) {
+        if (depth == 0) {
+            return scope.getStaticScope().getVariables()[offset];
+        }
+        return getVarNameFromScopeTree(scope.getLexicalParent(), depth - 1, offset);
     }
 
     public Operand buildMatch3(Match3Node matchNode, IRScope s) {

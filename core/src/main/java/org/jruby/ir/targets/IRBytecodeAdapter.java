@@ -5,6 +5,7 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
+import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
@@ -134,6 +135,11 @@ public class IRBytecodeAdapter {
         adapter.astore(i);
     }
 
+    public void pushEncoding(Encoding encoding) {
+        loadContext();
+        adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
+    }
+
     public void invokeOther(String name, int arity, boolean hasClosure) {
         if (hasClosure) {
             if (arity == -1) {
@@ -166,19 +172,30 @@ public class IRBytecodeAdapter {
         }
     }
 
-    public void invokeInstanceSuper(String name, boolean hasUnusedResult, int arity, boolean hasClosure) {
+    public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
+            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString);
         } else {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
+            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString);
         }
     }
 
-    public void invokeClassSuper(String name, boolean hasUnusedResult, int arity, boolean hasClosure) {
+    public void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
+            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString);
         } else {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), hasUnusedResult ? 1 : 0);
+            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString);
+        }
+    }
+
+    public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
+        if (hasClosure) {
+            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString);
+        } else {
+            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString);
         }
     }
 

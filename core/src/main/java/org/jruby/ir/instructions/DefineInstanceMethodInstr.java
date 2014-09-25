@@ -6,7 +6,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;

@@ -81,8 +81,23 @@ public abstract class DynamicScope {
         }
     }
 
+    public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent, EvalType evalType) {
+        DynamicScope newScope = newDynamicScope(staticScope, parent);
+        newScope.setEvalType(evalType);
+        return newScope;
+    }
+
     public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
         return new DummyDynamicScope(staticScope, parent);
+    }
+
+    /**
+     * Get parent (capturing) scope.  This is used by eval and closures to
+     * walk up to hard lexical boundary.
+     *
+     */
+    public final DynamicScope getParentScope() {
+        return parent;
     }
 
     /**
@@ -94,11 +109,8 @@ public abstract class DynamicScope {
     public DynamicScope getNthParentScope(int n) {
         DynamicScope scope = this;
         for (int i = 0; i < n; i++) {
-            if (scope != null) {
-                scope = scope.getNextCapturedScope();
-            } else {
-                break;
-            }
+            if (scope == null) break;
+            scope = scope.getParentScope();
         }
         return scope;
     }
@@ -127,7 +139,7 @@ public abstract class DynamicScope {
             // If the next scope out has the same binding scope as this scope it means
             // we are evaling within an eval and in that case we should be sharing the same
             // binding scope.
-            DynamicScope parent = getNextCapturedScope();
+            DynamicScope parent = getParentScope();
             if (parent != null && parent.getEvalScope(runtime) == this) {
                 evalScope = this;
             } else {
@@ -151,16 +163,6 @@ public abstract class DynamicScope {
         } else {
             return parent.getFlipScope();
         }
-    }
-
-    /**
-     * Get next 'captured' scope.
-     *
-     * @return the scope captured by this scope for implementing closures
-     *
-     */
-    public final DynamicScope getNextCapturedScope() {
-        return parent;
     }
 
     /**
@@ -252,9 +254,8 @@ public abstract class DynamicScope {
     /**
      * setValue for depth zero
      *
-     * @param offset zero-indexed value that represents where variable lives
      * @param value to set
-     * @param depth how many captured scopes down this variable should be set
+     * @param offset zero-indexed value that represents where variable lives
      */
     public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
 
@@ -399,7 +400,7 @@ public abstract class DynamicScope {
     }
 
     public void setEvalType(EvalType evalType) {
-        this.evalType = evalType;
+        this.evalType = evalType == null ? EvalType.NONE : evalType;
     }
 
     public EvalType getEvalType() {

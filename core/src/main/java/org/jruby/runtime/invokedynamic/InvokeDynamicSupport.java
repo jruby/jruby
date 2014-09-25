@@ -983,27 +983,6 @@ public class InvokeDynamicSupport {
         return selfType;
     }
 
-    public static IRubyObject handleBreakJump(JumpException.BreakJump bj, ThreadContext context) throws JumpException.BreakJump {
-        if (context.getFrameJumpTarget() == bj.getTarget()) {
-            return (IRubyObject) bj.getValue();
-        }
-        throw bj;
-    }
-
-    public static IRubyObject handleBreakJump(JumpException.BreakJump bj, CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws JumpException.BreakJump {
-        if (context.getFrameJumpTarget() == bj.getTarget()) {
-            return (IRubyObject) bj.getValue();
-        }
-        throw bj;
-    }
-
-    public static IRubyObject handleBreakJump(ThreadContext context, JumpException.BreakJump bj) throws JumpException.BreakJump {
-        if (context.getFrameJumpTarget() == bj.getTarget()) {
-            return (IRubyObject) bj.getValue();
-        }
-        throw bj;
-    }
-
     public static IRubyObject retryJumpError(ThreadContext context) {
         throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.runtime.getNil(), "retry outside of rescue not supported");
     }

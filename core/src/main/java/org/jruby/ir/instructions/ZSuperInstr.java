@@ -59,9 +59,10 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         DynamicScope argsDynScope = currDynScope;
 
         // Find args that need to be passed into super
+        // CON FIXME: Does this need to be done every time?
         int i = 0, offset = 0;
         while (!argsDynScope.getStaticScope().isArgumentScope()) {
-            argsDynScope = argsDynScope.getNextCapturedScope();
+            argsDynScope = argsDynScope.getParentScope();
             offset += argCounts[i];
             i++;
         }

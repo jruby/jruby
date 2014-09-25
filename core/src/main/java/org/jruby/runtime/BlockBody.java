@@ -184,8 +184,6 @@ public abstract class BlockBody {
     public abstract StaticScope getStaticScope();
     public abstract void setStaticScope(StaticScope newScope);
 
-    public abstract Block cloneBlock(Binding binding);
-
     /**
      * What is the arity of this block?
      *

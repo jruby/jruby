@@ -1,32 +1,24 @@
 package org.jruby.internal.runtime.methods;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.compiler.JITCompiler;
 import org.jruby.ir.*;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -41,30 +33,28 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     protected final IRScope method;
 
     private static class DynamicMethodBox {
-        public CompiledIRMethod actualMethod;
+        public DynamicMethod actualMethod;
         public int callCount = 0;
     }
 
     private DynamicMethodBox box = new DynamicMethodBox();
 
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
+        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
         this.pushScope = true;
-    }
-
-    // We can probably use IRMethod callArgs for something (at least arity)
-    public InterpretedIRMethod(IRScope method, RubyModule implementationClass) {
-        this(method, Visibility.PRIVATE, implementationClass);
+        if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
+            this.box.callCount = -1;
+        }
     }
 
     public IRScope getIRMethod() {
         return method;
     }
 
-    public CompiledIRMethod getCompiledIRMethod() {
+    public DynamicMethod getActualMethod() {
         return box.actualMethod;
     }
 
@@ -94,7 +84,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (tryCompile(context)) return callJitted(context, self, clazz, name, args, block);
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod actualMethod = box.actualMethod;
+        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, args, block);
 
         ensureInstrsReady();
 
@@ -142,10 +135,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         context.setCurrentVisibility(getVisibility());
     }
 
-    private IRubyObject callJitted(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        return box.actualMethod.call(context, self, clazz, name, args, block);
-    }
-
     public void ensureInstrsReady() {
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
@@ -171,60 +160,33 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
 
-    private boolean tryCompile(ThreadContext context) {
-        if (box.actualMethod != null) {
-            return true;
-        }
-
-        context.runtime.getJITCompiler().jitThresholdReached(this, context.runtime.getInstanceConfig(), context, getImplementationClass().getName(), getName());
+    private void tryJit(ThreadContext context, DynamicMethodBox box) {
+        Ruby runtime = context.runtime;
 
         // don't JIT during runtime boot
-        if (context.runtime.isBooting()) return false;
+        if (runtime.isBooting()) return;
 
-        if (box.callCount == -1) return false;
+        String className;
+        if (implementationClass.isSingleton()) {
+            MetaClass metaClass = (MetaClass)implementationClass;
+            RubyClass realClass = metaClass.getRealClass();
+            // if real class is Class
+            if (realClass == context.runtime.getClassClass()) {
+                // use the attached class's name
+                className = ((RubyClass)metaClass.getAttached()).getName();
+            } else {
+                // use the real class name
+                className = realClass.getName();
+            }
+        } else {
+            // use the class name
+            className = implementationClass.getName();
+        }
+
 
         if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
-
-            box.callCount = -1; // disable...we get one shot
-            Ruby runtime = context.runtime;
-            RubyInstanceConfig config = runtime.getInstanceConfig();
-
-            if (config.getCompileMode().shouldJIT()) {
-
-                ensureInstrsReady();
-
-                try {
-                    Class compiled = JVMVisitor.compile(method, new OneShotClassLoader(context.runtime.getJRubyClassLoader()));
-                    Method scriptMethod = compiled.getMethod(
-                            "__script__",
-                            ThreadContext.class,
-                            StaticScope.class,
-                            IRubyObject.class,
-                            IRubyObject[].class,
-                            Block.class,
-                            RubyModule.class);
-                    MethodHandle handle = MethodHandles.publicLookup().unreflect(scriptMethod);
-                    box.actualMethod = new CompiledIRMethod(handle, getName(), getFile(), getLine(), method.getStaticScope(), getVisibility(), getImplementationClass(), Helpers.encodeParameterList(getParameterList()), method.hasExplicitCallProtocol());
-
-                    if (config.isJitLogging()) {
-                        LOG.info("done jitting: " + method);
-                    }
-
-                    return true;
-                } catch (Throwable e) {
-                    if (config.isJitLogging()) {
-                        LOG.info("failed to jit (" + e.getMessage() + "): " + method);
-                        if (config.isJitLoggingVerbose()) {
-                            StringWriter trace = new StringWriter();
-                            PrintWriter writer = new PrintWriter(trace);
-                            e.printStackTrace(writer);
-                            LOG.info(trace.toString());
-                        }
-                    }
-                }
-            }
+            context.runtime.getJITCompiler().jitThresholdReached(this, context.runtime.getInstanceConfig(), context, className, name);
         }
-        return false;
     }
 
     public void setActualMethod(CompiledIRMethod method) {

@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
   s.description = File.read('README.txt', encoding: 'UTF-8').split(/\n{2,}/)[3]
   s.rubyforge_project = 'jruby/jruby'
   s.licenses = %w(EPL-1.0 GPL-2.0 LGPL-2.1)
-  s.files = Dir['[A-Z]*'] + Dir['lib/**/*.rb'] + Dir[ "lib/**/jruby-*-#{version}*.jar" ] + Dir[ 'test/**/*']
+  s.files = Dir['[A-Z]*'] + Dir['lib/**/*.rb'] + Dir[ "lib/jruby-*-#{version}*.jar" ] + Dir[ 'test/**/*']
 end
 
 # vim: syntax=Ruby

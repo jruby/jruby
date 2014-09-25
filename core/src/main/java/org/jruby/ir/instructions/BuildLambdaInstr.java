@@ -71,7 +71,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         lambdaBody = (WrappedIRClosure) lambdaBody.getSimplifiedOperand(valueMap, force);
     }
 
-    private WrappedIRClosure getLambdaBody() {
+    public WrappedIRClosure getLambdaBody() {
         return lambdaBody;
     }
 
@@ -86,12 +86,17 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         // JRUBY-5686: do this before executing so first time sets cref module
         getLambdaBody().getClosure().getStaticScope().determineModule();
 
-        IRClosure body = getLambdaBody().getClosure();
+        // CON: This must not be happening, because nil would never cast to Block
+//        IRClosure body = getLambdaBody().getClosure();
+//        Block block = (Block) (body == null ? context.runtime.getIRManager().getNil() : getLambdaBody()).retrieve(context, self, currScope, currDynScope, temp);
+        Block block = (Block)getLambdaBody().retrieve(context, self, currScope, currDynScope, temp);
         // ENEBO: Now can live nil be passed as block reference?
         // SSS FIXME: Should we do the same %self retrieval as in the case of WrappedIRClosure? Or are lambdas special??
         return RubyProc.newProc(context.runtime,
-                (Block) (body == null ? context.runtime.getIRManager().getNil() : getLambdaBody()).retrieve(context, self, currScope, currDynScope, temp),
-                Block.Type.LAMBDA, position);
+                block,
+                Block.Type.LAMBDA,
+                position.getFile(),
+                position.getLine());
     }
 
     @Override

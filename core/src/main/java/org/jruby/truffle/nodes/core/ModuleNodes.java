@@ -231,7 +231,7 @@ public abstract class ModuleNodes {
             final String indicativeName = name + "(attr_reader)";
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
-            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
@@ -284,7 +284,7 @@ public abstract class ModuleNodes {
             final String indicativeName = name + "(attr_writer)";
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
-            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);

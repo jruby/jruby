@@ -90,6 +90,10 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return callType;
     }
 
+    public boolean containsArgSplat() {
+        return containsArgSplat;
+    }
+
     public void blockInlining() {
         dontInline = true;
     }
@@ -434,11 +438,14 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         // But when zsuper is converted to SuperInstr with known args, splats can appear anywhere
         // in the list.  So, this looping handles both these scenarios, although if we wanted to
         // optimize for CallInstr which has splats only in the first position, we could do that.
-        List<IRubyObject> argList = new ArrayList<IRubyObject>();
+        List<IRubyObject> argList = new ArrayList<IRubyObject>(args.length * 2);
         for (Operand arg : args) {
             IRubyObject rArg = (IRubyObject) arg.retrieve(context, self, currScope, currDynScope, temp);
             if (arg instanceof Splat) {
-                argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
+                RubyArray array = (RubyArray) rArg;
+                for (int i = 0; i < array.size(); i++) {
+                    argList.add(array.eltOk(i));
+                }
             } else {
                 argList.add(rArg);
             }
