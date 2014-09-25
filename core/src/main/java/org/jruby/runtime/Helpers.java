@@ -1852,7 +1852,16 @@ public class Helpers {
     // mri: rb_Array
     // FIXME: Replace arrayValue/asArray18 with this on 9k (currently dead -- respond_to? logic broken further down the line -- fix that first)
     public static RubyArray asArray(ThreadContext context, IRubyObject value) {
-        return TypeConverter.rb_Array(context, value);
+        RubyClass array = context.runtime.getArray();
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_ary");
+        
+        if (tmp.isNil()) {
+            tmp = TypeConverter.convertToTypeWithCheck19(value, array, "to_a");
+
+            if (tmp.isNil()) return context.runtime.newEmptyArray();
+        }
+        
+        return (RubyArray) tmp; // converters will guarantee it is RubyArray or raise.
     }
     
     public static IRubyObject aryToAry(IRubyObject value) {
