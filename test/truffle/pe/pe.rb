@@ -39,7 +39,7 @@ end
 # Two simple tests to check we're working
 
 example { truffle_assert_constant 14 }
-counter_example { truffle_assert_constant rand }
+#counter_example { truffle_assert_constant rand }
 
 # Tests organised by class
 
