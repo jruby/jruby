@@ -72,31 +72,19 @@ module JRuby
       else
         parse(content, filename, extra_position_info, &block)
       end
-      
-      content = content.to_str
-      filename = filename.to_str unless default_filename
 
-      if filename == "-e"
-        classname = "__dash_e__"
-      else
-        classname = filename.gsub(/\\/, '/')
-        classname.gsub!(/\.rb/, '')
-        classname.gsub!(/-/, 'dash')
-      end
+      runtime = JRuby.runtime
+      irscope = org.jruby.ir.IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).build_root(node);
 
-      inspector = org.jruby.compiler.ASTInspector.new
-      inspector.inspect(node)
-
-      generator = org.jruby.compiler.impl.StandardASMCompiler.new(classname, filename)
-
-      compiler = runtime.instance_config.new_compiler
-      compiler.compile_root(node, generator, inspector)
-
-      bytes = generator.class_byte_array
+      visitor = org.jruby.ir.targets.JVMVisitor.new
+      bytes = visitor.compile_to_bytecode(irscope);
+      static_scope = irscope.static_scope;
+      top_self = runtime.top_self
+      static_scope.module = top_self.class
 
       script = CompiledScript.new
       script.name = filename
-      script.class_name = classname
+      script.class_name = irscope.name
       script.original_script = content
       script.code = bytes
 
