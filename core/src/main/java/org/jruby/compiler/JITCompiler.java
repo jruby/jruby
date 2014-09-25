@@ -321,11 +321,19 @@ public class JITCompiler implements JITCompilerMBean {
             // Time the compilation
             long start = System.nanoTime();
 
-            Ruby runtime = ruby;
-            RubyInstanceConfig config = runtime.getInstanceConfig();
-
             method.ensureInstrsReady();
 
+            // we try twice; once with passes to see if it will succeed and once without
+            // CON FIXME: Really should clone scope before passes in any case
+            visitor.setPrepare(false);
+            bytecode = visitor.compileToBytecode(method.getIRMethod());
+
+            if (bytecode.length > Options.JIT_MAXSIZE.load()) {
+                throw new NotCompilableException("bytecode size " + bytecode.length + " too large in " + method.getIRMethod());
+            }
+
+            // reset and do the compile for real
+            visitor.reset();
             bytecode = visitor.compileToBytecode(method.getIRMethod());
             
             counts.compiledCount.incrementAndGet();
