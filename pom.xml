@@ -53,6 +53,7 @@
   </organization>
 
   <properties>
+    <invoker.skip>true</invoker.skip>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
@@ -488,9 +489,6 @@
       <modules>
         <module>maven</module>
       </modules>
-      <properties>
-        <invoker.skip>true</invoker.skip>
-      </properties>
     </profile>
     <profile>
       <id>snapshots</id>
