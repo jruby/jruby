@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'rexml/document'
 require 'rexml/xpath'
 
@@ -16,7 +17,7 @@ project 'JRuby Complete' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readOnly' => true,
-              'jruby.basedir' => '${basedir}/../../',
+              'jruby.home' => '${basedir}/../../',
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
@@ -71,15 +72,6 @@ project 'JRuby Complete' do
     end
   end
 
-  build do
-
-    resource do
-      directory '${jruby.basedir}/lib'
-      includes '**/ruby/shared/bc*.jar'
-      target_path '${jruby.complete.home}/lib'
-    end
-  end
-
   profile 'sonatype-oss-release' do
 
     plugin( :source,
@@ -94,14 +86,12 @@ project 'JRuby Complete' do
                                         'classifier' =>  'javadoc' } ] )
     end
 
-
-    build do
-
-      resource do
-        directory '${jruby.basedir}/core/target'
-        includes '*-sources.jar', '*-javadoc.jar'
-        target_path '${project.build.directory}'
-      end
+    # we need to copy them so they get the pgp signatures attached as well
+    execute :sources_and_javadoc, :phase => 'prepare-package' do |ctx|
+      from = File.join( ctx.project.properties[ 'jruby.home' ], 'core', 'target', 'jruby-core-' ) + ctx.project.version.to_s
+      target = ctx.project.build.directory.to_pathname
+      FileUtils.cp( from + '-sources.jar', target )
+      FileUtils.cp( from + '-javadoc.jar', target )
     end
 
   end
