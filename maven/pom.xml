@@ -11,44 +11,71 @@
   <packaging>pom</packaging>
   <name>JRuby Artifacts</name>
   <properties>
-    <tesla.dump.readOnly>true</tesla.dump.readOnly>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>attach-artifacts</id>
+              <phase>package</phase>
+              <goals>
+                <goal>attach-artifact</goal>
+              </goals>
+              <configuration>
+                <artifacts>
+                  <artifact>
+                    <file>${basedir}/src/empty.jar</file>
+                    <classifier>sources</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>${basedir}/src/empty.jar</file>
+                    <classifier>javadoc</classifier>
+                  </artifact>
+                </artifacts>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
   <profiles>
     <profile>
       <id>all</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
-        <module>jruby-rake-plugin</module>
-        <module>jruby-core-complete</module>
-        <module>jruby-stdlib-complete</module>
-        <module>jruby-jars</module>
         <module>jruby-dist</module>
+        <module>jruby-jars</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-noasm</module>
       </modules>
     </profile>
     <profile>
       <id>release</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
-        <module>jruby-rake-plugin</module>
-        <module>jruby-core-complete</module>
-        <module>jruby-stdlib-complete</module>
-        <module>jruby-jars</module>
         <module>jruby-dist</module>
+        <module>jruby-jars</module>
+        <module>jruby-rake-plugin</module>
+        <module>jruby-noasm</module>
       </modules>
     </profile>
     <profile>
       <id>main</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
+        <module>jruby-noasm</module>
       </modules>
     </profile>
     <profile>
@@ -59,16 +86,9 @@
       </modules>
     </profile>
     <profile>
-      <id>rake-plugin</id>
-      <modules>
-        <module>jruby-rake-plugin</module>
-      </modules>
-    </profile>
-    <profile>
       <id>dist</id>
       <modules>
         <module>jruby-stdlib</module>
-        <module>jruby-stdlib-complete</module>
         <module>jruby-dist</module>
       </modules>
     </profile>
@@ -76,9 +96,13 @@
       <id>jruby-jars</id>
       <modules>
         <module>jruby-stdlib</module>
-        <module>jruby-core-complete</module>
-        <module>jruby-stdlib-complete</module>
         <module>jruby-jars</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>jruby-rake-plugin</id>
+      <modules>
+        <module>jruby-rake-plugin</module>
       </modules>
     </profile>
   </profiles>

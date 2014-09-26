@@ -11,8 +11,8 @@
   <packaging>bundle</packaging>
   <name>JRuby Complete</name>
   <properties>
-    <jruby.home>${basedir}/../../</jruby.home>
-    <tesla.dump.readOnly>true</tesla.dump.readOnly>
+    <jruby.home>${basedir}/../..</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
@@ -54,41 +54,22 @@
             <Export-Package>org.jruby.*;version=${project.version}</Export-Package>
             <Import-Package>!org.jruby.*, *;resolution:=optional</Import-Package>
             <DynamicImport-Package>javax.*</DynamicImport-Package>
-            <Embed-Dependency>*;type=jar;scope=provided;inline=true</Embed-Dependency>
-            <Embed-Transitive>true</Embed-Transitive>
             <Private-Package>*,.</Private-Package>
             <Bundle-Name>JRuby ${project.version}</Bundle-Name>
             <Bundle-Description>JRuby ${project.version} OSGi bundle</Bundle-Description>
             <Bundle-SymbolicName>org.jruby.jruby</Bundle-SymbolicName>
+            <Embed-Dependency>*;type=jar;scope=provided;inline=true</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
           </instructions>
         </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <goals>
-              <goal>install</goal>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <properties>
-                <project.version>${project.version}</project.version>
-              </properties>
-              <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-            </configuration>
-          </execution>
-        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
         <configuration>
-          <projectsDirectory>src/it</projectsDirectory>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <preBuildHookScript>setup.bsh</preBuildHookScript>
-          <postBuildHookScript>verify.bsh</postBuildHookScript>
-          <goals>
-            <goal>install</goal>
-          </goals>
+          <skipSource>true</skipSource>
         </configuration>
       </plugin>
       <plugin>
@@ -124,17 +105,43 @@
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-source-plugin</artifactId>
-            <configuration>
-              <skipSource>true</skipSource>
-            </configuration>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy javadocs and sources from jruby-core</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>copy</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>${project.groupId}</groupId>
+                      <artifactId>jruby-core</artifactId>
+                      <version>${project.version}</version>
+                      <classifier>sources</classifier>
+                      <overWrite>false</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>${project.groupId}</groupId>
+                      <artifactId>jruby-core</artifactId>
+                      <version>${project.version}</version>
+                      <classifier>javadoc</classifier>
+                      <overWrite>false</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>attach-artifacts</id>
+                <id>attach javadocs and sources artifacts</id>
                 <phase>package</phase>
                 <goals>
                   <goal>attach-artifact</goal>
@@ -153,31 +160,6 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>io.tesla.polyglot</groupId>
-            <artifactId>tesla-polyglot-maven-plugin</artifactId>
-            <version>${tesla.version}</version>
-            <executions>
-              <execution>
-                <id>sources_and_javadoc</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <taskId>sources_and_javadoc</taskId>
-                  <nativePom>pom.rb</nativePom>
-                </configuration>
-              </execution>
-            </executions>
-            <dependencies>
-              <dependency>
-                <groupId>io.tesla.polyglot</groupId>
-                <artifactId>tesla-polyglot-ruby</artifactId>
-                <version>${tesla.version}</version>
-              </dependency>
-            </dependencies>
           </plugin>
         </plugins>
       </build>

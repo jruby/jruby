@@ -1,16 +1,19 @@
 #-*- mode: ruby -*-
+require 'fileutils'
+
 gemspec
 
-ruby_version = model.version
+version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
-inherit "org.jruby:jruby-artifacts:#{ruby_version.sub( /.dev$/, '-SNAPSHOT' )}"
+inherit "org.jruby:jruby-artifacts:#{version}"
+
+ruby_version = model.version
 
 model.version = nil
 
 name "JRuby Jars Gem"
 
-jar 'org.jruby:jruby-core-complete', '${project.parent.version}'
-jar 'org.jruby:jruby-stdlib-complete', '${project.parent.version}'
+jar 'org.jruby:jruby-stdlib', '${project.parent.version}'
 
 plugin( :clean, '2.5' ) do
   execute_goals( :clean,
@@ -22,11 +25,27 @@ plugin( :clean, '2.5' ) do
 end
 
 properties( 'tesla.dump.pom' => 'pom.xml',
-            'tesla.dump.readOnly' => true,
+            'tesla.dump.readonly' => true,
+            'jruby.plugins.version' => '1.0.7-SNAPSHOT',
+            # we share the already installed gems
+            'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
             'jruby.home' => '${basedir}/../../' )
 
+execute 'copy jruby.jar', 'prepare-package' do |ctx|
+  FileUtils.cp( File.join( ctx.project.properties[ 'jruby.home' ],
+                           'lib',
+                           'jruby.jar' ),
+                File.join( ctx.project.basedir.to_s, 
+                           'lib',
+                           "jruby-core-#{ctx.project.version}.jar" ) )
+end
+
+# do not push the gem during deploy phase
+# the bang reuses the plugin declaration which is already in place and
+# adds the extra execute_goal to it
 jruby_plugin!( :gem,
                :gemspec => 'jruby-jars.gemspec',
+               # tell maven to include the jar files into gem
                :includeDependencies => true ) do
   execute_goals :id => 'default-push', :skip => true
 end
@@ -35,21 +54,6 @@ build do
   final_name "${project.artifactId}-#{ruby_version}"
 end
 
-# TODO remove once gem-maven-plugin honors the final_name
-plugin :install, :skip => true
-execute 'rename gem file', :verify do |ctx|
-  require 'fileutils'
-  FileUtils.rm_rf(Dir["#{ctx.project.build.directory}/*.gem"])
-  FileUtils.mv(Dir["#{ctx.project.basedir}/*.gem"], ctx.project.build.directory)
-end
+plugin :invoker, :properties => { 'ruby.version' => ruby_version, 'gem.home' => '${project.build.directory}/rubygems', 'gem.path' => '${project.build.directory}/rubygems' }
 
-plugin( :invoker,
-        :projectsDirectory => 'src/it',
-        :cloneProjectsTo => '${project.build.directory}/it',
-        :postBuildHookScript => 'verify.bsh',
-        :streamLogs => true ) do
-  execute_goals( :install, :run )
-#  :settingsFile => '${basedir}/src/it/settings.xml', 
-#  :localRepositoryPath => '${project.build.directory}/local-repo' )
-end
 # vim: syntax=Ruby

@@ -1,21 +1,21 @@
-require 'rexml/document'
-require 'rexml/xpath'
-
-doc = REXML::Document.new File.new(File.join(File.dirname(__FILE__),'..', '..', 'pom.xml'))
-version = REXML::XPath.first(doc, "//project/version").text
-
 project 'JRuby Main Maven Artifact With ASM Relocated' do
+
+  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-noasm:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
+  # keep it a jar even without sources - easier to add in project
   packaging 'bundle'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readOnly' => true,
-              'jruby.basedir' => '${basedir}/../../',
+              'tesla.dump.readonly' => true,
+              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
+  # the jar with classifier 'noasm' still has the dependencies
+  # of the regular artifact and we need to exclude those which
+  # are shaded into the 'noasm' artifact
   jar( 'org.jruby:jruby-core:${project.version}:noasm',
        :exclusions => [ 'com.github.jnr:jnr-ffi',
                         'org.ow2.asm:asm',
@@ -24,8 +24,17 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
                         'org.ow2.asm:asm-util' ] )
   jar 'org.jruby:jruby-stdlib:${project.version}'
 
+  # we have no sources and attach an empty jar later in the build to
+  # satisfy oss.sonatype.org upload
+  plugin( :source, 'skipSource' =>  'true' )
+
+  # this plugin is configured to attach empty jars for sources and javadocs
+  plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
+
+  plugin( :invoker )
+
   plugin( 'org.apache.felix:maven-bundle-plugin',
-          :instructions => { 
+          :instructions => {
             'Bundle-Name' => 'JRuby ${project.version}',
             'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
             'Bundle-SymbolicName' => 'org.jruby.jruby'
@@ -33,28 +42,4 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
     # TODO fix DSL
     @current.extensions = true
   end
-
-  plugin( :source,
-          'skipSource' =>  'true' )
-  plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
-    execute_goals( 'attach-artifact',
-                   :id => 'attach-artifacts',
-                   :phase => 'package',
-                   'artifacts' => [ { 'file' =>  '${basedir}/src/empty.jar',
-                                      'classifier' =>  'sources' },
-                                    { 'file' =>  '${basedir}/src/empty.jar',
-                                      'classifier' =>  'javadoc' } ] )
-  end
-
-  plugin( :invoker,
-          'projectsDirectory' =>  'src/it',
-          'cloneProjectsTo' =>  '${project.build.directory}/it',
-          'preBuildHookScript' =>  'setup.bsh',
-          'postBuildHookScript' =>  'verify.bsh' ) do
-    execute_goals( 'install', 'run',
-                   :id => 'integration-test',
-                   'settingsFile' =>  '${basedir}/src/it/settings.xml',
-                   'localRepositoryPath' =>  '${project.build.directory}/local-repo' )
-  end
-
 end

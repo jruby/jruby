@@ -38,8 +38,9 @@ freezing to) a specific jruby-complete jar version.</description>
   </scm>
   <properties>
     <jruby.home>${basedir}/../../</jruby.home>
-    <tesla.dump.readOnly>true</tesla.dump.readOnly>
-    <jruby.plugins.version>1.0.3</jruby.plugins.version>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
+    <jruby.plugins.version>1.0.7-SNAPSHOT</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.version>0.1.1</tesla.version>
@@ -47,12 +48,7 @@ freezing to) a specific jruby-complete jar version.</description>
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-core-complete</artifactId>
-      <version>${project.parent.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib-complete</artifactId>
+      <artifactId>jruby-stdlib</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
   </dependencies>
@@ -115,26 +111,13 @@ freezing to) a specific jruby-complete jar version.</description>
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>install</goal>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
-          <projectsDirectory>src/it</projectsDirectory>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <postBuildHookScript>verify.bsh</postBuildHookScript>
-          <streamLogs>true</streamLogs>
+          <properties>
+            <ruby.version>1.7.17.dev</ruby.version>
+            <gem.home>${project.build.directory}/rubygems</gem.home>
+            <gem.path>${project.build.directory}/rubygems</gem.path>
+          </properties>
         </configuration>
       </plugin>
       <plugin>
@@ -143,13 +126,13 @@ freezing to) a specific jruby-complete jar version.</description>
         <version>${tesla.version}</version>
         <executions>
           <execution>
-            <id>rename gem file</id>
-            <phase>verify</phase>
+            <id>copy jruby.jar</id>
+            <phase>prepare-package</phase>
             <goals>
               <goal>execute</goal>
             </goals>
             <configuration>
-              <taskId>rename gem file</taskId>
+              <taskId>copy jruby.jar</taskId>
               <nativePom>Mavenfile</nativePom>
             </configuration>
           </execution>

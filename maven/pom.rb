@@ -1,10 +1,6 @@
-require 'rexml/document'
-require 'rexml/xpath'
-
-doc = REXML::Document.new File.new(File.join(File.dirname(__FILE__), '..', 'pom.xml'))
-version = REXML::XPath.first(doc, "//project/version").text
-
 project 'JRuby Artifacts' do
+
+  version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-artifacts:#{version}"
@@ -12,72 +8,44 @@ project 'JRuby Artifacts' do
   packaging 'pom'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readOnly' => true )
+              'tesla.dump.readonly' => true )
 
-  profile 'all' do
-
-    modules [ 'jruby',
-            'jruby-noasm',
-            'jruby-stdlib',
-            'jruby-complete',
-            'jruby-rake-plugin',
-            'jruby-core-complete',
-            'jruby-stdlib-complete',
-            'jruby-jars',
-            'jruby-dist' ]
-
+  plugin_management do
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+      execute_goals( 'attach-artifact',
+                     :id => 'attach-artifacts',
+                     :phase => 'package',
+                     'artifacts' => [ { 'file' =>  '${basedir}/src/empty.jar',
+                                        'classifier' =>  'sources' },
+                                      { 'file' =>  '${basedir}/src/empty.jar',
+                                        'classifier' =>  'javadoc' } ] )
+    end
   end
 
-  profile 'release' do
+  # module to profile map
+  map = { 'jruby' => [ :release, :main ],
+    'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars' ],
+    'jruby-complete' => [ :release, :complete ],
+    'jruby-dist' => [ :release, :dist ],
+    'jruby-jars' => [ :release, 'jruby-jars' ],
+    'jruby-rake-plugin' => [ :release, 'jruby-rake-plugin']
+  }
+  map[ 'jruby-noasm' ] = map[ 'jruby' ]
 
-    modules [ 'jruby',
-            'jruby-noasm',
-            'jruby-stdlib',
-            'jruby-complete',
-            'jruby-rake-plugin',
-            'jruby-core-complete',
-            'jruby-stdlib-complete',
-            'jruby-jars',
-            'jruby-dist' ]
-
+  profile :all do
+    modules map.keys
   end
 
-  profile 'main' do
-
-    modules [ 'jruby',
-            'jruby-noasm',
-            'jruby-stdlib' ]
-
+  # TODO once ruby-maven has profile! we can do this in one loop
+  invert = {}
+  map.each do |m, pp|
+    pp.each do |p|
+      ( invert[ p ] ||= [] ) << m
+    end
   end
-
-  profile 'complete' do
-
-    modules [ 'jruby-stdlib',
-            'jruby-complete' ]
-
+  invert.each do |p, m|
+    profile p do
+      modules m
+    end
   end
-
-  profile 'rake-plugin' do
-
-    modules [ 'jruby-rake-plugin' ]
-
-  end
-
-  profile 'dist' do
-
-    modules [ 'jruby-stdlib',
-            'jruby-stdlib-complete',
-            'jruby-dist' ]
-
-  end
-
-  profile 'jruby-jars' do
-
-    modules [ 'jruby-stdlib',
-            'jruby-core-complete',
-            'jruby-stdlib-complete',
-            'jruby-jars' ]
-
-  end
-
 end

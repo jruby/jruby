@@ -55,7 +55,7 @@
   <properties>
     <invoker.skip>true</invoker.skip>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
+    <jruby.plugins.version>1.0.7-SNAPSHOT</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
     <rspec-core.version>2.14.2</rspec-core.version>
@@ -191,7 +191,6 @@
     </site>
   </distributionManagement>
 
-<!--
   <pluginRepositories>
     <pluginRepository>
       <id>sonatype snapshots</id>
@@ -205,7 +204,6 @@
           </snapshots>
     </pluginRepository>
   </pluginRepositories>
--->
 
   <build>
     <defaultGoal>package</defaultGoal>
@@ -336,9 +334,26 @@
         <plugin>
           <artifactId>maven-invoker-plugin</artifactId>
           <version>1.8</version>
+          <executions>
+            <execution>
+              <id>integration-test</id>
+              <goals>
+                <goal>install</goal>
+                <goal>run</goal>
+              </goals>
+            </execution>
+          </executions>
           <configuration>
-	    <skip>true</skip>
-	    <streamLogs>true</streamLogs>
+            <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
+            <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            <pomIncludes>
+              <pomInclude>*/pom.xml</pomInclude>
+            </pomIncludes>
+            <projectsDirectory>src/it</projectsDirectory>
+            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+            <preBuildHookScript>setup.bsh</preBuildHookScript>
+            <postBuildHookScript>verify.bsh</postBuildHookScript>
+            <streamLogs>true</streamLogs>
           </configuration>
         </plugin>
 

@@ -1,10 +1,6 @@
-require 'rexml/document'
-require 'rexml/xpath'
-
-doc = REXML::Document.new File.new(File.join(File.dirname(__FILE__),'..', '..', 'pom.xml'))
-version = REXML::XPath.first(doc, "//project/version").text
-
 project 'JRuby Dist' do
+
+  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-dist:#{version}"
@@ -16,12 +12,13 @@ project 'JRuby Dist' do
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
+  # pre-installed gems - not default gems !
   gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'
 
   # add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
   profile 'gem proxy' do
-    
+
     activation do
       file( :exists => '../jruby' )
     end
@@ -40,18 +37,18 @@ project 'JRuby Dist' do
                      :id => 'unpack jruby-stdlib',
                      'stripVersion' =>  'true',
                      'artifactItems' => [ { 'groupId' =>  'org.jruby',
-                                            'artifactId' =>  'jruby-stdlib-complete',
+                                            'artifactId' =>  'jruby-stdlib',
                                             'version' =>  '${project.version}',
                                             'type' =>  'jar',
                                             'overWrite' =>  'false',
                                             'outputDirectory' =>  '${project.build.directory}' } ] )
     end
-    
+
     execute :fix_executable_bits do |ctx|
       Dir[ File.join( ctx.project.build.directory.to_pathname,
-                      'META-INF', 
-                      'jruby.home', 
-                      'bin', 
+                      'META-INF',
+                      'jruby.home',
+                      'bin',
                       '*' ) ].each do |f|
         unless f.match /.(bat|exe|dll)$/
           puts f
@@ -77,22 +74,11 @@ project 'JRuby Dist' do
     end
   end
 
-  # TODO move into plugin-management of root pom
-  plugin( :invoker,
-          'projectsDirectory' =>  'src/it',
-          'cloneProjectsTo' =>  '${project.build.directory}/it',
-          'preBuildHookScript' =>  'setup.bsh',
-          'postBuildHookScript' =>  'verify.bsh',
-          'streamLogs' =>  'true' ) do
-    execute_goals( 'install', 'run',
-                   :id => 'integration-test',
-                   'settingsFile' =>  '${basedir}/src/it/settings.xml',
-                   'localRepositoryPath' =>  '${project.build.directory}/local-repo' )
-  end
+  plugin( :invoker )
 
   # since the source packages are done from the git repository we need
   # to be inside a git controlled directory. for example the source packages
-  # itself does not contain the git repository and can not pack 
+  # itself does not contain the git repository and can not pack
   # the source packages itself !!
 
   profile 'source dist' do

@@ -1,10 +1,6 @@
-require 'rexml/document'
-require 'rexml/xpath'
-
-doc = REXML::Document.new File.new(File.join(File.dirname(__FILE__),'..', '..', 'pom.xml'))
-version = REXML::XPath.first(doc, "//project/version").text
-
 project 'JRuby Rake Plugin' do
+
+  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby.plugins:jruby-rake-plugin:#{version}"
@@ -12,7 +8,7 @@ project 'JRuby Rake Plugin' do
   packaging 'maven-plugin'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readOnly' => true,
+              'tesla.dump.readonly' => true,
               'main.basedir' => '${project.parent.parent.basedir}' )
 
   jar 'org.apache.maven:maven-plugin-api:2.2.1'

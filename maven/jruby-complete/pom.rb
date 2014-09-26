@@ -1,11 +1,8 @@
 require 'fileutils'
-require 'rexml/document'
-require 'rexml/xpath'
-
-doc = REXML::Document.new File.new(File.join(File.dirname(__FILE__),'..', '..', 'pom.xml'))
-version = REXML::XPath.first(doc, "//project/version").text
 
 project 'JRuby Complete' do
+
+  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-complete:#{version}"
@@ -16,8 +13,8 @@ project 'JRuby Complete' do
                      :url => 'http://rubygems-proxy.torquebox.org/releases' )
 
   properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readOnly' => true,
-              'jruby.home' => '${basedir}/../../',
+              'tesla.dump.readonly' => true,
+              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
@@ -27,38 +24,31 @@ project 'JRuby Complete' do
   end
 
   plugin( 'org.apache.felix:maven-bundle-plugin',
-          'archive' => {
-            'manifest' => {
-              'mainClass' =>  'org.jruby.Main'
+          :archive => {
+            :manifest => {
+              :mainClass =>  'org.jruby.Main'
             }
           },
           :instructions => { 
             'Export-Package' => 'org.jruby.*;version=${project.version}',
             'Import-Package' => '!org.jruby.*, *;resolution:=optional',
             'DynamicImport-Package' => 'javax.*',
-            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true',
-            'Embed-Transitive' => true,
             'Private-Package' => '*,.',
             'Bundle-Name' => 'JRuby ${project.version}',
             'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
-            'Bundle-SymbolicName' => 'org.jruby.jruby'
+            'Bundle-SymbolicName' => 'org.jruby.jruby',
+            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true',
+            'Embed-Transitive' => true
           } ) do
     # TODO fix DSL
     @current.extensions = true
   end
 
-  plugin( :invoker,
-          'projectsDirectory' =>  'src/it',
-          'cloneProjectsTo' =>  '${project.build.directory}/it',
-          'preBuildHookScript' =>  'setup.bsh',
-          'postBuildHookScript' =>  'verify.bsh',
-          'goals' => ['install'] ) do
-    execute_goals( 'install', 'run',
-                   :id => 'integration-test',
-                   'properties' => {'project.version' => '${project.version}'},
-                   'settingsFile' =>  '${basedir}/src/it/settings.xml',
-                   'localRepositoryPath' =>  '${project.build.directory}/local-repo' )
-  end
+  plugin( :invoker )
+
+  # we have no sources and attach the sources and javadocs from jruby-core 
+  # later in the build so IDE can use them
+  plugin( :source, 'skipSource' =>  'true' )
 
   execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
     require 'fileutils'
@@ -74,26 +64,31 @@ project 'JRuby Complete' do
 
   profile 'sonatype-oss-release' do
 
-    plugin( :source,
-            'skipSource' =>  'true' )
-    plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
-      execute_goals( 'attach-artifact',
-                     :id => 'attach-artifacts',
-                     :phase => 'package',
-                     'artifacts' => [ { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-sources.jar',
-                                        'classifier' =>  'sources' },
-                                      { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-javadoc.jar',
-                                        'classifier' =>  'javadoc' } ] )
-    end
+    # use the javadocs and sources from jruby-core !!!
+    phase :package do
+      plugin :dependency do
+        items = [ 'sources', 'javadoc' ].collect do |classifier|
+          { 'groupId' =>  '${project.groupId}',
+            'artifactId' =>  'jruby-core',
+            'version' =>  '${project.version}',
+            'classifier' =>  classifier,
+            'overWrite' =>  'false',
+            'outputDirectory' =>  '${project.build.directory}' }
+        end
+        execute_goals( 'copy',
+                       :id => 'copy javadocs and sources from jruby-core',
+                       'artifactItems' => items )
+      end
 
-    # we need to copy them so they get the pgp signatures attached as well
-    execute :sources_and_javadoc, :phase => 'prepare-package' do |ctx|
-      from = File.join( ctx.project.properties[ 'jruby.home' ], 'core', 'target', 'jruby-core-' ) + ctx.project.version.to_s
-      target = ctx.project.build.directory.to_pathname
-      FileUtils.cp( from + '-sources.jar', target )
-      FileUtils.cp( from + '-javadoc.jar', target )
+      plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+        execute_goals( 'attach-artifact',
+                       :id => 'attach javadocs and sources artifacts',
+                       'artifacts' => [ { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-sources.jar',
+                                          'classifier' =>  'sources' },
+                                        { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-javadoc.jar',
+                                          'classifier' =>  'javadoc' } ] )
+      end
     end
-
   end
 
   profile :id => :jdk8 do

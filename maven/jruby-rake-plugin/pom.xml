@@ -12,7 +12,7 @@
   <packaging>maven-plugin</packaging>
   <name>JRuby Rake Plugin</name>
   <properties>
-    <tesla.dump.readOnly>true</tesla.dump.readOnly>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>

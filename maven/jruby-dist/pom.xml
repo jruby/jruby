@@ -55,7 +55,7 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.jruby</groupId>
-                  <artifactId>jruby-stdlib-complete</artifactId>
+                  <artifactId>jruby-stdlib</artifactId>
                   <version>${project.version}</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>
@@ -87,26 +87,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <goals>
-              <goal>install</goal>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-            </configuration>
-          </execution>
-        </executions>
-        <configuration>
-          <projectsDirectory>src/it</projectsDirectory>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <preBuildHookScript>setup.bsh</preBuildHookScript>
-          <postBuildHookScript>verify.bsh</postBuildHookScript>
-          <streamLogs>true</streamLogs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
