@@ -16,7 +16,7 @@ project 'JRuby Dist' do
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
-  gem 'ruby-maven', '3.1.1.0.8'
+  gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'
 
   # add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
@@ -48,7 +48,7 @@ project 'JRuby Dist' do
     end
     
     execute :fix_executable_bits do |ctx|
-      Dir[ File.join( ctx.project.build.directory,
+      Dir[ File.join( ctx.project.build.directory.to_pathname,
                       'META-INF', 
                       'jruby.home', 
                       'bin', 
@@ -59,7 +59,15 @@ project 'JRuby Dist' do
         end
       end
     end
+
+    execute :fix_permissions do |ctx|
+      gems = File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
+      ( Dir[ File.join( gems, '**/*' ) ] + Dir[ File.join( gems, '**/.*' ) ] ).each do |f|
+        File.chmod( 0644, f ) rescue nil if File.file?( f )
+      end
+    end
   end
+
   phase :package do
     plugin( :assembly, '2.4',
             'finalName' => "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}",
