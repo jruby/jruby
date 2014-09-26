@@ -5,6 +5,22 @@
 
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 describe "Library" do
+  describe ".enum_value" do
+    m = Module.new do
+      extend FFI::Library
+      enum :something, [:one, :two]
+    end
+
+    it "should return a value for a valid key" do
+      m.enum_value(:one).should == 0
+      m.enum_value(:two).should == 1
+    end
+
+    it "should return nil for an invalid key" do
+      m.enum_value(:three).should == nil
+    end
+  end
+
   describe "#ffi_convention" do
     it "defaults to :default" do
       m = Module.new do
