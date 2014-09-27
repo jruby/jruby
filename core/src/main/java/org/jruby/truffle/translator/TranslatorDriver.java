@@ -177,10 +177,6 @@ public class TranslatorDriver {
 
         // Shell result
 
-        if (parserContext == TranslatorDriver.ParserContext.SHELL) {
-            truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
-        }
-
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
     }
 

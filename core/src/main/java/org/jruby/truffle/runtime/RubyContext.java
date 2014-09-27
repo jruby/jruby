@@ -159,42 +159,6 @@ public class RubyContext extends ExecutionContext {
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);
     }
 
-    public void runShell(Node node, MaterializedFrame frame) {
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-        MaterializedFrame existingLocals = frame;
-
-        String prompt = "Ruby> ";
-        if (node != null) {
-            final SourceSection src = node.getSourceSection();
-            if (src != null) {
-                prompt = (src.getSource().getName() + ":" + src.getStartLine() + "> ");
-            }
-        }
-
-        while (true) {
-            try {
-                System.out.print(prompt);
-                final String line = reader.readLine();
-
-                final ShellResult result = evalShell(line, existingLocals);
-
-                System.out.println("=> " + result.getResult());
-
-                existingLocals = result.getFrame();
-            } catch (BreakShellException e) {
-                return;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public ShellResult evalShell(String code, MaterializedFrame existingLocals) {
-        final Source source = Source.fromText(code, "shell");
-        return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals, null);
-    }
-
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
         final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
