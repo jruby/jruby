@@ -915,15 +915,13 @@ public class IRBuilder {
         addInstr(s, new LabelInstr(rEndLabel));
     }
 
-    // Wrap call in a rescue handler that catches the IRBreakJump
-    private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr, int linenumber) {
+    private Operand receiveBreakException(IRScope s, Operand block, CodeBlock codeBlock, int linenumber) {
         // Check if we have to handle a break
         if (block == null ||
             !(block instanceof WrappedIRClosure) ||
             !(((WrappedIRClosure)block).getClosure()).flags.contains(IRFlags.HAS_BREAK_INSTRS)) {
             // No protection needed -- add the call and return
-            addInstr(s, callInstr);
-            return;
+            return codeBlock.run();
         }
 
         Label rBeginLabel = s.getNewLabel();
@@ -933,7 +931,7 @@ public class IRBuilder {
         // Protected region
         addInstr(s, new LabelInstr(rBeginLabel));
         addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
-        addInstr(s, callInstr);
+        Variable callResult = (Variable)codeBlock.run();
         addInstr(s, new JumpInstr(rEndLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
 
@@ -944,10 +942,17 @@ public class IRBuilder {
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
-        addInstr(s, new RuntimeHelperCall(callInstr.getResult(), HANDLE_PROPAGATE_BREAK, new Operand[]{exc} ));
+        addInstr(s, new RuntimeHelperCall(callResult, HANDLE_PROPAGATE_BREAK, new Operand[]{exc} ));
 
         // End
         addInstr(s, new LabelInstr(rEndLabel));
+
+        return callResult;
+    }
+
+    // Wrap call in a rescue handler that catches the IRBreakJump
+    private void receiveBreakException(final IRScope s, Operand block, final CallInstr callInstr, int linenumber) {
+        receiveBreakException(s, block, new CodeBlock() { public Operand run() { addInstr(s, callInstr); return callInstr.getResult(); } }, linenumber);
     }
 
     public Operand buildCall(CallNode callNode, IRScope s) {
@@ -3258,7 +3263,6 @@ public class IRBuilder {
             // to 'define_method'.
             superInstr = new UnresolvedSuperInstr(ret, s.getSelf(), args, block);
         }
-
         receiveBreakException(s, block, superInstr, linenumber);
         return ret;
     }
@@ -3395,6 +3399,65 @@ public class IRBuilder {
        return copyAndReturnValue(s, new Array());
     }
 
+    private Operand buildZSuperIfNest(final IRScope s, final Operand block, final int linenumber) {
+        // If we are in a block, we cannot make any assumptions about what args
+        // the super instr is going to get -- if there were no 'define_method'
+        // for defining methods, we could guarantee that the super is going to
+        // receive args from the nearest method the block is embedded in.  But,
+        // in the presence of 'define_method' (and eval and aliasing), all bets
+        // are off because, any of the intervening block scopes could be a method
+        // via a define_method call.
+        //
+        // Instead, we can actually collect all arguments of all scopes from here
+        // till the nearest method scope and select the right set at runtime based
+        // on which one happened to be a method scope. This has the additional
+        // advantage of making explicit all used arguments.
+        CodeBlock zsuperBuilder = new CodeBlock() {
+            public Operand run() {
+                Variable scopeDepth = s.createTemporaryVariable();
+                addInstr(s, new ArgScopeDepthInstr(scopeDepth));
+
+                Label allDoneLabel = s.getNewLabel();
+
+                IRScope superScope = s;
+                int depthFromSuper = 0;
+                Label next = null;
+
+                // Loop and generate a block for each possible value of depthFromSuper
+                Variable zsuperResult = s.createTemporaryVariable();
+                while (superScope instanceof IRClosure) {
+                    // Generate the next set of instructions
+                    if (next != null) addInstr(s, new LabelInstr(next));
+                    next = s.getNewLabel();
+                    addInstr(s, BNEInstr.create(new Fixnum(depthFromSuper), scopeDepth, next));
+                    Operand[] args = adjustVariableDepth(((IRClosure)superScope).getBlockArgs(), depthFromSuper);
+                    addInstr(s, new ZSuperInstr(zsuperResult, s.getSelf(), args,  block));
+                    addInstr(s, new JumpInstr(allDoneLabel));
+
+                    // Move on
+                    superScope = superScope.getLexicalParent();
+                    depthFromSuper++;
+                }
+
+                addInstr(s, new LabelInstr(next));
+
+                // If we hit a method, this is known to always succeed
+                if (superScope instanceof IRMethod) {
+                    Operand[] args = adjustVariableDepth(((IRMethod)superScope).getCallArgs(), depthFromSuper);
+                    addInstr(s, new ZSuperInstr(zsuperResult, s.getSelf(), args, block));
+                } else {
+                    /* Control should never get here in the runtime */
+                    /* Should we add an exception throw here just in case? */
+                }
+
+                addInstr(s, new LabelInstr(allDoneLabel));
+                return zsuperResult;
+            }
+        };
+
+        return receiveBreakException(s, block, zsuperBuilder, linenumber);
+    }
+
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
 
@@ -3409,47 +3472,7 @@ public class IRBuilder {
             Operand[] args = ((IRMethod)s).getCallArgs();
             return buildSuperInstr(s, block, args, linenumber);
         } else {
-            // If we are in a block, we cannot make any assumptions about what args
-            // the super instr is going to get -- if there were no 'define_method'
-            // for defining methods, we could guarantee that the super is going to
-            // receive args from the nearest method the block is embedded in.  But,
-            // in the presence of 'define_method' (and eval and aliasing), all bets
-            // are off because, any of the intervening block scopes could be a method
-            // via a define_method call.
-            //
-            // Instead, we can actually collect all arguments of all scopes from here
-            // till the nearest method scope and select the right set at runtime based
-            // on which one happened to be a method scope. This has the additional
-            // advantage of making explicit all used arguments.
-            Variable ret = s.createTemporaryVariable();
-            List<Integer> argsCount = new ArrayList<Integer>();
-            List<Operand> allPossibleArgs = new ArrayList<Operand>();
-            IRScope superScope = s;
-            int depthFromSuper = 0;
-            while (superScope instanceof IRClosure) {
-                Operand[] args = ((IRClosure)superScope).getBlockArgs();
-
-                // Accummulate the closure's args
-                Collections.addAll(allPossibleArgs, adjustVariableDepth(args, depthFromSuper));
-                // Record args count of the closure
-                argsCount.add(args.length);
-                superScope = superScope.getLexicalParent();
-                depthFromSuper++;
-            }
-
-            if (superScope instanceof IRMethod) {
-                Operand[] args = ((IRMethod)superScope).getCallArgs();
-
-                // Accummulate the method's args
-                Collections.addAll(allPossibleArgs, adjustVariableDepth(args, depthFromSuper));
-                // Record args count of the method
-                argsCount.add(args.length);
-            }
-
-            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block,
-                    allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]),
-                    argsCount.toArray(new Integer[argsCount.size()])), linenumber);
-            return ret;
+            return buildZSuperIfNest(s, block, linenumber);
         }
     }
 
