@@ -27,6 +27,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -195,8 +196,8 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
-        final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame, currentNode);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
+        final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
     }
 
