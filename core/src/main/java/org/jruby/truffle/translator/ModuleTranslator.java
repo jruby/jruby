@@ -83,7 +83,7 @@ class ModuleTranslator extends BodyTranslator {
 
         final SelfNode selfNode = new SelfNode(context, sourceSection);
 
-        return new ReadConstantNode(context, sourceSection, node.getName(), selfNode);
+        return new ReadConstantHeadNode(context, sourceSection, node.getName(), selfNode);
     }
 
     @Override

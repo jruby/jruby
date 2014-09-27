@@ -15,7 +15,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 
-public class UninitializedReadConstantNode extends ReadConstantChainNode {
+public class UninitializedReadConstantNode extends ReadConstantNode {
 
     private final String name;
 

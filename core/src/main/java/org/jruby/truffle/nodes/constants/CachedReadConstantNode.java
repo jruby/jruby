@@ -10,9 +10,7 @@
 package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -20,7 +18,7 @@ import org.jruby.truffle.runtime.core.*;
  * was read from is unmodified. If that assumption does not hold the read is uninitialized. If the
  * class of the receiver changes we also uninitialize.
  */
-public class CachedReadConstantNode extends ReadConstantChainNode {
+public class CachedReadConstantNode extends ReadConstantNode {
 
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
@@ -39,18 +37,13 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
     private final boolean hasFloat;
     private final double floatValue;
 
-    @Child protected ReadConstantChainNode next;
+    @Child protected ReadConstantNode next;
 
-    public CachedReadConstantNode(RubyClass expectedClass, Object value, ReadConstantChainNode next) {
+    public CachedReadConstantNode(RubyClass expectedClass, Object value, ReadConstantNode next) {
         this.expectedClass = expectedClass;
         unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
 
         this.value = value;
-
-        /*
-         * We could do this lazily as needed, but I'm sure the compiler will appreciate the fact
-         * that these fields are all final.
-         */
 
         if (value instanceof Boolean) {
             hasBoolean = true;
@@ -163,7 +156,7 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
     @Override
     public double executeFloat(RubyBasicObject receiver) throws UnexpectedResultException {
         if (hasFloat && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
-            return integerFixnumValue;
+            return floatValue;
         } else {
             return next.executeFloat(receiver);
         }
