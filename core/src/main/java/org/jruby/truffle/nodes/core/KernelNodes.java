@@ -267,7 +267,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV").value;
+            final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV").getValue();
 
             // TODO(CS): cast
             for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {

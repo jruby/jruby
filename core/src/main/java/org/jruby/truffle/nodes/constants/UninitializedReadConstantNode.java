@@ -10,10 +10,7 @@
 package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -59,7 +56,7 @@ public class UninitializedReadConstantNode extends ReadConstantChainNode {
 
         final RubyContext context = receiver.getRubyClass().getContext();
 
-        RubyModule.RubyConstant constant;
+        RubyConstant constant;
 
         constant = receiver.getLookupNode().lookupConstant(name);
 
@@ -77,11 +74,11 @@ public class UninitializedReadConstantNode extends ReadConstantChainNode {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(name, this));
         }
 
-        replace(new CachedReadConstantNode(receiver.getRubyClass(), constant.value, this));
+        replace(new CachedReadConstantNode(receiver.getRubyClass(), constant.getValue(), this));
 
-        assert RubyContext.shouldObjectBeVisible(constant.value);
+        assert RubyContext.shouldObjectBeVisible(constant.getValue());
 
-        return constant.value;
+        return constant.getValue();
     }
 
 }
