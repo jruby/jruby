@@ -21,9 +21,4 @@ public final class NilPlaceholder {
     private NilPlaceholder() {
     }
 
-    @Override
-    public String toString() {
-        return "";
-    }
-
 }
