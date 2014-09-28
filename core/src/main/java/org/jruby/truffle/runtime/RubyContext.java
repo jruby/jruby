@@ -38,6 +38,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.runtime.util.Supplier;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
@@ -297,6 +298,14 @@ public class RubyContext extends ExecutionContext {
 
     public ThreadManager getThreadManager() {
         return threadManager;
+    }
+
+    public void outsideGlobalLock(Runnable runnable) {
+        threadManager.outsideGlobalLock(runnable);
+    }
+
+    public <T> T outsideGlobalLock(Supplier<T> supplier) {
+        return threadManager.outsideGlobalLock(supplier);
     }
 
     public TranslatorDriver getTranslator() {

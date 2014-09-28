@@ -103,20 +103,21 @@ public class RubyThread extends RubyObject {
     }
 
     public void join() {
-        final RubyThread runningThread = getRubyClass().getContext().getThreadManager().leaveGlobalLock();
+        getRubyClass().getContext().outsideGlobalLock(new Runnable() {
 
-        try {
-            while (true) {
-                try {
-                    finished.await();
-                    break;
-                } catch (InterruptedException e) {
-                    // Await again
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        finished.await();
+                        break;
+                    } catch (InterruptedException e) {
+                        // Await again
+                    }
                 }
             }
-        } finally {
-            runningThread.manager.enterGlobalLock(runningThread);
-        }
+
+        });
 
         if (exception != null) {
             throw new RaiseException(exception);
