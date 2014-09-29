@@ -127,6 +127,8 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object binding(Object self) {
+            // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
+
             final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
