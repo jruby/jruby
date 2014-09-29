@@ -81,7 +81,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         CompilerAsserts.compilationConstant(dispatchAction);
 
-        if (dispatchAction.isCall()) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode(), methodName);
 
             if (entry == null) {
@@ -95,7 +95,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                             dispatchAction);
 
                     if (missingMethod == null) {
-                        if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+                        if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                             // TODO(CS): we should methodCache the fact that we would throw an exception - this will miss each time
                             getContext().getRuntime().getWarnings().warn(
                                     IRubyWarnings.ID.TRUFFLE,
@@ -123,7 +123,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 }
             }
 
-            if (dispatchAction == Dispatch.DispatchAction.CALL) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
                 final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
 
                 final Object[] argumentsToUse;
@@ -175,7 +175,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                                 receiverObject,
                                 CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                                 argumentsToUse));
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                 if (hasAnyMethodsMissing) {
                     return !entry.isMethodMissing();
                 } else {
@@ -184,7 +184,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
             } else {
                 throw new UnsupportedOperationException();
             }
-        } else {
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             ConstantCacheEntry entry = lookupInConstantCache(receiverObject.getLookupNode(), methodName);
 
             if (entry == null) {
@@ -260,6 +260,8 @@ public abstract class GenericDispatchNode extends DispatchNode {
             } else {
                 throw new UnsupportedOperationException();
             }
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 

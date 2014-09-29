@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
@@ -113,7 +112,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                     "class modified");
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
             // When calling #method_missing we need to prepend the symbol
 
             final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
@@ -128,7 +127,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                             receiverObject,
                             CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                             modifiedArgumentsObjects));
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             return false;
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             return callNode.call(

@@ -99,7 +99,7 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                     "class modified");
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
             return callNode.call(
                     frame,
                     RubyArguments.pack(
@@ -108,7 +108,7 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                             receiverObject,
                             CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                             CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             return true;
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             return value;

@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -86,9 +85,9 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
                     "class modified");
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
             return Dispatch.MISSING;
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             return false;
         } else {
             throw new UnsupportedOperationException();

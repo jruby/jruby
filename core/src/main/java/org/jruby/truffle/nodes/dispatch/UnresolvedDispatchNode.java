@@ -92,7 +92,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(callingSelf);
         final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
 
-        if (dispatchAction.isCall()) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -147,7 +147,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName,
                         blockObject, argumentsObjects, dispatchAction);
             }
-        } else {
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             final RubyConstant constant = lookupConstant(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -202,6 +202,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName,
                         blockObject, argumentsObjects, dispatchAction);
             }
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -218,7 +220,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(callingSelf);
         final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
 
-        if (dispatchAction.isCall()) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -242,7 +244,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
-        } else {
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             final RubyConstant constant = lookupConstant(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -266,6 +268,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 

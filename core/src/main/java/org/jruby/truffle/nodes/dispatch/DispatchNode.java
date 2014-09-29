@@ -10,8 +10,6 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -106,9 +104,9 @@ public abstract class DispatchNode extends RubyNode {
         }
 
         if (!ignoreVisibility && !method.isVisibleTo(this, callingSelf, receiver)) {
-            if (dispatchAction == Dispatch.DispatchAction.CALL) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                 return null;
             } else {
                 throw new UnsupportedOperationException();

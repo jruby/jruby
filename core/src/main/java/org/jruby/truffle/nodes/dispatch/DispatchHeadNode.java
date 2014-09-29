@@ -53,7 +53,7 @@ public class DispatchHeadNode extends Node {
                 methodName,
                 blockObject,
                 argumentsObjects,
-                Dispatch.DispatchAction.CALL);
+                Dispatch.DispatchAction.CALL_METHOD);
     }
 
     public double callFloat(
@@ -138,7 +138,7 @@ public class DispatchHeadNode extends Node {
                 methodName,
                 null,
                 null,
-                Dispatch.DispatchAction.RESPOND);
+                Dispatch.DispatchAction.RESPOND_TO_METHOD);
     }
 
     public Object dispatch(
