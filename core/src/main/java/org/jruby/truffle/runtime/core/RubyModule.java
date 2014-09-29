@@ -19,6 +19,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.lookup.LookupFork;
@@ -284,7 +285,7 @@ public class RubyModule extends RubyObject implements LookupNode {
         checkFrozen(currentNode);
 
         if (rubyConstant != null) {
-            rubyConstant.isPrivate = isPrivate;
+            rubyConstant.setPrivate(isPrivate);
         } else {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString(), currentNode));
         }
@@ -349,7 +350,7 @@ public class RubyModule extends RubyObject implements LookupNode {
 
         for (Map.Entry<String, RubyConstant> constantEntry : getConstants().entrySet()) {
             final String constantName = constantEntry.getKey();
-            final Object constantValue = constantEntry.getValue().value;
+            final Object constantValue = constantEntry.getValue().getValue();
             other.setModuleConstant(currentNode, constantName, constantValue);
         }
 
@@ -482,21 +483,10 @@ public class RubyModule extends RubyObject implements LookupNode {
         return methods;
     }
 
-    public static class RubyConstant {
-        public final Object value;
-        public boolean isPrivate;
-
-        public RubyConstant(Object value, boolean isPrivate) {
-            this.value = value;
-            this.isPrivate = isPrivate;
-        }
-
-    }
-
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (RubyConstant constant : constants.values()) {
-            getRubyClass().getContext().getCoreLibrary().box(constant.value).visitObjectGraph(visitor);
+            getRubyClass().getContext().getCoreLibrary().box(constant.getValue()).visitObjectGraph(visitor);
         }
 
         for (RubyMethod method : methods.values()) {

@@ -66,7 +66,7 @@ public class TranslatorDriver {
         return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false);
     }
 
-    public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode) {
+    public RubyRootNode parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
@@ -115,7 +115,7 @@ public class TranslatorDriver {
         return parse(currentNode, context, source, parserContext, parentFrame, node);
     }
 
-    public RubyParserResult parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
+    public RubyRootNode parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "<main>", false, rootNode);
 
@@ -177,12 +177,7 @@ public class TranslatorDriver {
 
         // Shell result
 
-        if (parserContext == TranslatorDriver.ParserContext.SHELL) {
-            truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
-        }
-
-        final RootNode root = new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
-        return new RubyParserResult(root);
+        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
     }
 
     private Object getData(RubyContext context) {

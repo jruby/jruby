@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -17,12 +18,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @NodeChildren({
@@ -53,12 +52,37 @@ public abstract class DispatchNode extends RubyNode {
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction);
 
+    protected RubyConstant lookupConstant(
+            RubyBasicObject callingSelf,
+            RubyBasicObject receiver,
+            String name,
+            boolean ignoreVisibility,
+            Dispatch.DispatchAction dispatchAction) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        RubyConstant constant;
+
+        constant = receiver.getLookupNode().lookupConstant(name);
+
+        if (constant == null && receiver instanceof RubyModule) {
+            /*
+             * FIXME(CS): I'm obviously doing something wrong with constant lookup in nested modules
+             * here, but explicitly looking in the Module itself, not its lookup node, seems to fix
+             * it for now.
+             */
+
+            constant = ((RubyModule) receiver).lookupConstant(name);
+        }
+
+        return constant;
+    }
+
     protected RubyMethod lookup(
             RubyBasicObject callingSelf,
             RubyBasicObject receiver,
             String name,
             boolean ignoreVisibility,
-            Dispatch.DispatchAction dispatchAction) throws UseMethodMissingException {
+            Dispatch.DispatchAction dispatchAction) {
         CompilerAsserts.neverPartOfCompilation();
 
         RubyMethod method = receiver.getLookupNode().lookupMethod(name);
@@ -66,7 +90,7 @@ public abstract class DispatchNode extends RubyNode {
         // If no method was found, use #method_missing
 
         if (method == null) {
-            throw new UseMethodMissingException();
+            return null;
         }
 
         // Check for methods that are explicitly undefined
@@ -85,7 +109,7 @@ public abstract class DispatchNode extends RubyNode {
             if (dispatchAction == Dispatch.DispatchAction.CALL) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
-                throw new UseMethodMissingException();
+                return null;
             } else {
                 throw new UnsupportedOperationException();
             }

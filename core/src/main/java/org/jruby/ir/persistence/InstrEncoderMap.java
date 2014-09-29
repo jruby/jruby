@@ -520,11 +520,6 @@ public class InstrEncoderMap {
         for (Operand arg: instr.getCallArgs()) {
             e.encode(arg);
         }
-
-        e.encode(instr.getArgCounts().length);
-        for (Integer i: instr.getArgCounts()) {
-            e.encode(i);
-        }
     }
 
     private void encodeTwoOperandBranchInstr(TwoOperandBranchInstr instr) {

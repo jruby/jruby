@@ -27,6 +27,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -37,6 +38,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.runtime.util.Supplier;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
@@ -158,45 +160,9 @@ public class RubyContext extends ExecutionContext {
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);
     }
 
-    public void runShell(Node node, MaterializedFrame frame) {
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-        MaterializedFrame existingLocals = frame;
-
-        String prompt = "Ruby> ";
-        if (node != null) {
-            final SourceSection src = node.getSourceSection();
-            if (src != null) {
-                prompt = (src.getSource().getName() + ":" + src.getStartLine() + "> ");
-            }
-        }
-
-        while (true) {
-            try {
-                System.out.print(prompt);
-                final String line = reader.readLine();
-
-                final ShellResult result = evalShell(line, existingLocals);
-
-                System.out.println("=> " + result.getResult());
-
-                existingLocals = result.getFrame();
-            } catch (BreakShellException e) {
-                return;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public ShellResult evalShell(String code, MaterializedFrame existingLocals) {
-        final Source source = Source.fromText(code, "shell");
-        return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals, null);
-    }
-
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
-        final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame, currentNode);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
+        final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
     }
 
@@ -332,6 +298,14 @@ public class RubyContext extends ExecutionContext {
 
     public ThreadManager getThreadManager() {
         return threadManager;
+    }
+
+    public void outsideGlobalLock(Runnable runnable) {
+        threadManager.outsideGlobalLock(runnable);
+    }
+
+    public <T> T outsideGlobalLock(Supplier<T> supplier) {
+        return threadManager.outsideGlobalLock(supplier);
     }
 
     public TranslatorDriver getTranslator() {

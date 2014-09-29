@@ -17,12 +17,12 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.TruffleBridge;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.RubyParserResult;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -115,8 +115,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
             }
 
-            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
+            final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
             return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
         } catch (RaiseException e) {
             // TODO(CS): what's this cast about?

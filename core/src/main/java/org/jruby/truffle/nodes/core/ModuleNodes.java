@@ -35,6 +35,7 @@ import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @CoreClass(name = "Module")
@@ -465,6 +466,74 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             return module.lookupConstant(name.toString()) != null;
+        }
+
+    }
+
+    @CoreMethod(names = "const_missing", needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class ConstMissingNode extends CoreMethodNode {
+
+        public ConstMissingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ConstMissingNode(ConstMissingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object methodMissing(RubySymbol name) {
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(name.toString(), this));
+        }
+
+    }
+
+    @CoreMethod(names = "const_set", minArgs = 2, maxArgs = 2)
+    public abstract static class ConstSetNode extends CoreMethodNode {
+
+        public ConstSetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ConstSetNode(ConstSetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
+            notDesignedForCompilation();
+
+            module.setConstant(this, name.toString(), object);
+            return module;
+        }
+
+    }
+
+    @CoreMethod(names = "class_variable_get", minArgs = 1, maxArgs = 1)
+    public abstract static class ClassVariableGetNode extends CoreMethodNode {
+
+        public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClassVariableGetNode(ClassVariableGetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubyString name) {
+            notDesignedForCompilation();
+            return getClassVariable(module, name.toString());
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+            return getClassVariable(module, name.toString());
+        }
+
+        public Object getClassVariable(RubyModule module, String name){
+            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name, this));
         }
 
     }
@@ -1169,56 +1238,6 @@ public abstract class ModuleNodes {
             }
             module.undefMethod(this, method);
             return module;
-        }
-
-    }
-
-    @CoreMethod(names = "const_set", minArgs = 2, maxArgs = 2)
-    public abstract static class ConstSetNode extends CoreMethodNode {
-
-        public ConstSetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ConstSetNode(ConstSetNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
-            notDesignedForCompilation();
-
-            module.setConstant(this, name.toString(), object);
-            return module;
-        }
-
-    }
-
-    @CoreMethod(names = "class_variable_get", minArgs = 1, maxArgs = 1)
-    public abstract static class ClassVariableGetNode extends CoreMethodNode {
-
-        public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ClassVariableGetNode(ClassVariableGetNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object getClassVariable(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-            return getClassVariable(module, name.toString());
-        }
-
-        @Specialization
-        public Object getClassVariable(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
-            return getClassVariable(module, name.toString());
-        }
-
-        public Object getClassVariable(RubyModule module, String name){
-            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name, this));
         }
 
     }

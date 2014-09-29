@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -50,7 +49,7 @@ public class DefineOrGetClassNode extends RubyNode {
 
         // Look for a current definition of the class, or create a new one
 
-        final RubyModule.RubyConstant constant = parentModuleObject.getConstants().get(name);
+        final RubyConstant constant = parentModuleObject.getConstants().get(name);
 
         RubyClass definingClass;
         RubyClass superClassObject = getRubySuperClass(frame, context);
@@ -67,12 +66,12 @@ public class DefineOrGetClassNode extends RubyNode {
             parentModuleObject.setConstant(this, name, definingClass);
             parentModuleObject.getSingletonClass(this).setConstant(this, name, definingClass);
         } else {
-            if (constant.value instanceof RubyClass) {
-                definingClass = (RubyClass) constant.value;
+            if (constant.getValue() instanceof RubyClass) {
+                definingClass = (RubyClass) constant.getValue();
                 checkSuperClassCompatibility(context, superClassObject, definingClass);
 
             } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class", this));
+                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.getValue().toString(), "class", this));
             }
         }
 

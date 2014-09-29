@@ -15,6 +15,7 @@ import java.util.concurrent.locks.*;
 
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.util.Supplier;
 
 /**
  * Manages Ruby {@code Thread} objects.
@@ -59,6 +60,28 @@ public class ThreadManager {
         final RubyThread result = currentThread;
         globalLock.unlock();
         return result;
+    }
+
+    public void outsideGlobalLock(final Runnable runnable) {
+        outsideGlobalLock(new Supplier<Void>() {
+
+            @Override
+            public Void get() {
+                runnable.run();
+                return null;
+            }
+
+        });
+    }
+
+    public <T> T outsideGlobalLock(Supplier<T> supplier) {
+        final RubyThread runningThread = leaveGlobalLock();
+
+        try {
+            return supplier.get();
+        } finally {
+            enterGlobalLock(runningThread);
+        }
     }
 
     public RubyThread getCurrentThread() {

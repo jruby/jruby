@@ -13,12 +13,24 @@ public class Dispatch {
 
     public static enum MissingBehavior {
         RETURN_MISSING,
+        CALL_CONST_MISSING,
         CALL_METHOD_MISSING
     }
 
     public static enum DispatchAction {
-        CALL,
-        RESPOND
+        READ_CONSTANT(false),
+        CALL(true),
+        RESPOND(true);
+
+        private final boolean isCall;
+
+        private DispatchAction(boolean isCall) {
+            this.isCall = isCall;
+        }
+
+        public boolean isCall() {
+            return isCall;
+        }
     }
 
     public static final Object MISSING = new Object();

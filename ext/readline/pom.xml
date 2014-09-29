@@ -5,7 +5,11 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
+<<<<<<< HEAD
     <version>9000.dev-SNAPSHOT</version>
+=======
+    <version>1.7.17-SNAPSHOT</version>
+>>>>>>> jruby-1_7
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-readline</artifactId>

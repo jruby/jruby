@@ -12,10 +12,9 @@ package org.jruby.truffle.runtime.lookup;
 import java.util.*;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.methods.*;
 
 /**
@@ -40,8 +39,8 @@ public class LookupFork implements LookupNode {
     }
 
     @Override
-    public RubyModule.RubyConstant lookupConstant(String constantName) {
-        final RubyModule.RubyConstant firstResult = first.lookupConstant(constantName);
+    public RubyConstant lookupConstant(String constantName) {
+        final RubyConstant firstResult = first.lookupConstant(constantName);
 
         if (firstResult != null) {
             return firstResult;

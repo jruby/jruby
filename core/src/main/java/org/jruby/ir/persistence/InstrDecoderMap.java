@@ -322,7 +322,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
 
-        public Instr decodeZSuperInstr() {
+    public Instr decodeZSuperInstr() {
         Variable result = d.decodeVariable();
         Operand receiver = d.decodeOperand();
         boolean hasClosure = d.decodeBoolean();
@@ -335,13 +335,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             args[i] = d.decodeOperand();
         }
 
-        argsLength = d.decodeInt();
-        // if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosure);
-        Integer[] argCounts = new Integer[argsLength];
-        for (int i = 0; i < argsLength; i++) {
-            argCounts[i] = d.decodeInt();
-        }
-
-        return new ZSuperInstr(result, receiver, closure, args, argCounts);
+        return new ZSuperInstr(result, receiver, args, closure);
     }
  }

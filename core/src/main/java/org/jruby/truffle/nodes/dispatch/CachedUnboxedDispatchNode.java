@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -28,25 +29,31 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
     private final Class expectedClass;
     private final Assumption unmodifiedAssumption;
-    private final RubyMethod method;
 
+    private final Object value;
+
+    private final RubyMethod method;
     @Child protected DirectCallNode callNode;
 
     public CachedUnboxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                     Class expectedClass, Assumption unmodifiedAssumption, RubyMethod method) {
+                                     Class expectedClass, Assumption unmodifiedAssumption, Object value,
+                                     RubyMethod method) {
         super(context, cachedName, next);
-
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
+        this.value = value;
         this.method = method;
 
-        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        if (method != null) {
+            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        }
     }
 
     public CachedUnboxedDispatchNode(CachedUnboxedDispatchNode prev) {
         super(prev);
         expectedClass = prev.expectedClass;
         unmodifiedAssumption = prev.unmodifiedAssumption;
+        value = prev.value;
         method = prev.method;
         callNode = prev.callNode;
     }
@@ -61,6 +68,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
+        CompilerAsserts.compilationConstant(dispatchAction);
+
         // Check the class is what we expect
 
         if (receiverObject.getClass() != expectedClass) {
@@ -102,6 +111,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
                             CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
         } else  if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return true;
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+            return value;
         } else {
             throw new UnsupportedOperationException();
         }

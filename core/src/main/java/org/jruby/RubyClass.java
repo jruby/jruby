@@ -60,6 +60,7 @@ import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
@@ -650,7 +651,9 @@ public class RubyClass extends RubyModule {
         RubyClass defined_class;
         DynamicMethod me = klass.searchMethod("respond_to?");
 
-        if (me != null && !me.isUndefined()) {
+        // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
+        //       respond_to_missing? Same effect, I believe.
+        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
             Arity arity = me.getArity();
 
             if (arity.getValue() > 2)
@@ -683,7 +686,9 @@ public class RubyClass extends RubyModule {
         else {
             try {
                 return checkFuncallExec(context, self, method, args);
-            } catch (Exception e) {
+            } catch (RaiseException e) {
+                // clear $!
+                context.setErrorInfo(context.nil);
                 return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
             }
         }

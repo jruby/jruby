@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -29,34 +30,48 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     private final Assumption falseUnmodifiedAssumption;
     private final RubyMethod falseMethod;
     private final BranchProfile falseProfile = new BranchProfile();
+
+    private final Object falseValue;
     @Child protected DirectCallNode falseCall;
 
     private final Assumption trueUnmodifiedAssumption;
     private final RubyMethod trueMethod;
     private final BranchProfile trueProfile = new BranchProfile();
+
+    private final Object trueValue;
     @Child protected DirectCallNode trueCall;
 
     public CachedBooleanDispatchNode(
             RubyContext context, Object cachedName, DispatchNode next,
-            Assumption falseUnmodifiedAssumption, RubyMethod falseMethod,
-            Assumption trueUnmodifiedAssumption, RubyMethod trueMethod) {
+            Assumption falseUnmodifiedAssumption, Object falseValue, RubyMethod falseMethod,
+            Assumption trueUnmodifiedAssumption, Object trueValue, RubyMethod trueMethod) {
         super(context, cachedName, next);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
-        falseCall = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
+        this.falseValue = falseValue;
+
+        if (falseMethod != null) {
+            falseCall = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
+        }
 
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
         this.trueMethod = trueMethod;
-        trueCall = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
+        this.trueValue = trueValue;
+
+        if (trueMethod != null) {
+            trueCall = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
+        }
     }
 
     public CachedBooleanDispatchNode(CachedBooleanDispatchNode prev) {
         super(prev);
         falseUnmodifiedAssumption = prev.falseUnmodifiedAssumption;
         falseMethod = prev.falseMethod;
+        falseValue = prev.falseValue;
         falseCall = prev.falseCall;
         trueUnmodifiedAssumption = prev.trueUnmodifiedAssumption;
+        trueValue = prev.trueValue;
         trueMethod = prev.trueMethod;
         trueCall = prev.trueCall;
     }
@@ -71,6 +86,8 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
+        CompilerAsserts.compilationConstant(dispatchAction);
+
         if (receiverObject) {
             trueProfile.enter();
 
@@ -100,6 +117,8 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                                 CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
+            } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+                return trueValue;
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -132,6 +151,8 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                                 CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
                 return true;
+            } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+                return falseValue;
             } else {
                 throw new UnsupportedOperationException();
             }

@@ -152,6 +152,9 @@ public class URLResource implements FileResource {
 
     @Override
     public Channel openChannel( ModeFlags flags, int perm ) throws ResourceException {
+        if (!exists()) {
+            throw new ResourceException.NotFound(absolutePath());
+        }
         return Channels.newChannel(openInputStream());
     }
 

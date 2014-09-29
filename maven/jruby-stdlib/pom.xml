@@ -11,10 +11,11 @@
   <name>JRuby Stdlib</name>
   <properties>
     <jruby.home>${basedir}/../..</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <tesla.version>0.1.1</tesla.version>
   </properties>
@@ -54,6 +55,10 @@
           <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
         </excludes>
       </resource>
+      <resource>
+        <filtering>true</filtering>
+        <directory>${basedir}/src/main/resources</directory>
+      </resource>
     </resources>
     <plugins>
       <plugin>
@@ -75,17 +80,6 @@
         <version>${tesla.version}</version>
         <executions>
           <execution>
-            <id>create .jrubydir files</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>create .jrubydir files</taskId>
-              <nativePom>pom.rb</nativePom>
-            </configuration>
-          </execution>
-          <execution>
             <id>fix shebang on gem bin files and add *.bat files</id>
             <phase>initialize</phase>
             <goals>
@@ -104,6 +98,17 @@
             </goals>
             <configuration>
               <taskId>copy bin/jruby.bash to bin/jruby</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jrubydir</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>jrubydir</taskId>
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>

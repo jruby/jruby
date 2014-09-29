@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -63,7 +64,10 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         expectedLookupNode = prev.expectedLookupNode;
         unmodifiedAssumption = prev.unmodifiedAssumption;
         method = prev.method;
-        callNode = prev.callNode;
+
+        if (method != null) {
+            callNode = prev.callNode;
+        }
     }
 
     @Specialization(guards = "guardName")
@@ -76,6 +80,8 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
+        CompilerAsserts.compilationConstant(dispatchAction);
+
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {
@@ -124,6 +130,15 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                             modifiedArgumentsObjects));
         } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return false;
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+            return callNode.call(
+                    frame,
+                    RubyArguments.pack(
+                            method,
+                            method.getDeclarationFrame(),
+                            receiverObject,
+                            CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                            new Object[]{getCachedNameAsSymbol()}));
         } else {
             throw new UnsupportedOperationException();
         }

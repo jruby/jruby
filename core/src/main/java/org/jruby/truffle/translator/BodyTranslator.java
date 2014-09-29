@@ -23,9 +23,8 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
-import org.jruby.truffle.nodes.constants.ReadConstantNode;
-import org.jruby.truffle.nodes.constants.WriteConstantNode;
+import org.jruby.truffle.nodes.ReadConstantNode;
+import org.jruby.truffle.nodes.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
@@ -38,7 +37,6 @@ import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -800,7 +798,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
-        return new EncodingPseudoVariableNode(context, sourceSection);
+        return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getDefaultEncoding());
     }
 
     @Override

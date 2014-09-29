@@ -14,12 +14,10 @@ import java.net.*;
 import java.util.Arrays;
 
 import com.oracle.truffle.api.source.Source;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.util.cli.Options;
 
 /**
@@ -36,7 +34,7 @@ public class FeatureManager {
     }
 
     public boolean require(String feature, RubyNode currentNode) throws IOException {
-        final RubyModule.RubyConstant dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
+        final RubyConstant dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
 
         try {
             // Some features are handled specially
@@ -97,7 +95,7 @@ public class FeatureManager {
             if (dataConstantBefore == null) {
                 context.getCoreLibrary().getObjectClass().removeConstant(currentNode, "DATA");
             } else {
-                context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", dataConstantBefore.value);
+                context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }

@@ -38,8 +38,9 @@ freezing to) a specific jruby-complete jar version.</description>
   </scm>
   <properties>
     <jruby.home>${basedir}/../../</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
-    <jruby.plugins.version>1.0.3</jruby.plugins.version>
+    <jruby.plugins.version>1.0.7-SNAPSHOT</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.version>0.1.1</tesla.version>
@@ -66,6 +67,7 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
+    <finalName>${project.artifactId}-9000.dev</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -113,8 +115,8 @@ freezing to) a specific jruby-complete jar version.</description>
         <configuration>
           <properties>
             <ruby.version>9000.dev</ruby.version>
-            <gem.home>${project.build.directory}</gem.home>
-            <gem.path>${project.build.directory}</gem.path>
+            <gem.home>${project.build.directory}/rubygems</gem.home>
+            <gem.path>${project.build.directory}/rubygems</gem.path>
           </properties>
         </configuration>
       </plugin>
@@ -131,17 +133,6 @@ freezing to) a specific jruby-complete jar version.</description>
             </goals>
             <configuration>
               <taskId>copy jruby.jar</taskId>
-              <nativePom>Mavenfile</nativePom>
-            </configuration>
-          </execution>
-          <execution>
-            <id>rename gem file</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>rename gem file</taskId>
               <nativePom>Mavenfile</nativePom>
             </configuration>
           </execution>

@@ -238,7 +238,7 @@ and those files will be installed in you maven local-repository ready to use wit
 mvn -Pjruby-jars
 ```
 
-the gem will be in ./maven/jruby-jars/target
+the gem will be in ./maven/jruby-jars/pkg
 
 <<<<<<< HEAD
 ### building ALL packages ###

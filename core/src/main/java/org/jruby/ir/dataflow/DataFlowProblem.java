@@ -137,6 +137,14 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         flowGraphNodes = new LinkedList<U>();
         basicBlockToFlowGraph = new HashMap<BasicBlock, U>();
 
+        // SSS FIXME: We need to do more work on our dependency setup.
+        // Since LVA runs analyses on nested closures, and dependencies aren't
+        // checked on nested scopes, it can happen that for closures,
+        // the cfg hasn't been built yet.
+        if (scope.cfg() == null) {
+            scope.buildCFG();
+        }
+
         for (BasicBlock bb: scope.cfg().getBasicBlocks()) {
             U fgNode = buildFlowGraphNode(bb);
             fgNode.init();

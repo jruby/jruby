@@ -12,7 +12,6 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.source.*;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.constants.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.*;

@@ -90,6 +90,8 @@ public class ObjectSpaceManager {
         // If there is no finalizer thread, start one
 
         if (finalizerThread == null) {
+            // TODO(CS): should we be running this in a real Ruby thread?
+
             finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
 
             finalizerThread.initialize(new Runnable() {
@@ -213,31 +215,34 @@ public class ObjectSpaceManager {
         try {
             notStoppingAssumption.check();
         } catch (InvalidAssumptionException e) {
-            final RubyThread thread = context.getThreadManager().leaveGlobalLock();
+            context.outsideGlobalLock(new Runnable() {
 
-            while (true) {
-                try {
-                    stoppedBarrier.await();
-                    break;
-                } catch (InterruptedException | BrokenBarrierException e2) {
+                @Override
+                public void run() {
+                    while (true) {
+                        try {
+                            stoppedBarrier.await();
+                            break;
+                        } catch (InterruptedException | BrokenBarrierException e2) {
+                        }
+                    }
+
+                    synchronized (liveObjects) {
+                        visitCallStack(visitor);
+                    }
+
+                    while (true) {
+                        try {
+                            markedBarrier.await();
+                            break;
+                        } catch (InterruptedException | BrokenBarrierException e2) {
+                        }
+                    }
+
+                    // TODO(CS): error recovery
                 }
-            }
 
-            synchronized (liveObjects) {
-                visitCallStack(visitor);
-            }
-
-            while (true) {
-                try {
-                    markedBarrier.await();
-                    break;
-                } catch (InterruptedException | BrokenBarrierException e2) {
-                }
-            }
-
-            // TODO(CS): error recovery
-
-            context.getThreadManager().enterGlobalLock(thread);
+            });
         }
     }
 
@@ -245,52 +250,55 @@ public class ObjectSpaceManager {
         RubyNode.notDesignedForCompilation();
 
         synchronized (context.getThreadManager()) {
-            final RubyThread thread = context.getThreadManager().leaveGlobalLock();
-
-            liveObjects = new HashMap<Long, RubyBasicObject>();
-
-            visitor = new ObjectGraphVisitor() {
+            context.outsideGlobalLock(new Runnable() {
 
                 @Override
-                public boolean visit(RubyBasicObject object) {
-                    return liveObjects.put(object.getObjectID(), object) == null;
+                public void run() {
+                    liveObjects = new HashMap<>();
+
+                    visitor = new ObjectGraphVisitor() {
+
+                        @Override
+                        public boolean visit(RubyBasicObject object) {
+                            return liveObjects.put(object.getObjectID(), object) == null;
+                        }
+
+                    };
+
+                    stoppedBarrier = new CyclicBarrier(2);
+                    markedBarrier = new CyclicBarrier(2);
+
+                    notStoppingAssumption.invalidate();
+
+                    while (true) {
+                        try {
+                            stoppedBarrier.await();
+                            break;
+                        } catch (InterruptedException | BrokenBarrierException e) {
+                        }
+                    }
+
+                    synchronized (liveObjects) {
+                        context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
+                        context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
+                        context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
+                        visitCallStack(visitor);
+                    }
+
+                    notStoppingAssumption = Truffle.getRuntime().createAssumption();
+
+                    while (true) {
+                        try {
+                            markedBarrier.await();
+                            break;
+                        } catch (InterruptedException | BrokenBarrierException e) {
+                        }
+                    }
+
+                    // TODO(CS): error recovery
                 }
 
-            };
-
-            stoppedBarrier = new CyclicBarrier(2);
-            markedBarrier = new CyclicBarrier(2);
-
-            notStoppingAssumption.invalidate();
-
-            while (true) {
-                try {
-                    stoppedBarrier.await();
-                    break;
-                } catch (InterruptedException | BrokenBarrierException e){
-                }
-            }
-
-            synchronized (liveObjects) {
-                context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
-                context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
-                context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
-                visitCallStack(visitor);
-            }
-
-            notStoppingAssumption = Truffle.getRuntime().createAssumption();
-
-            while (true) {
-                try {
-                    markedBarrier.await();
-                    break;
-                } catch (InterruptedException | BrokenBarrierException e){
-                }
-            }
-
-            // TODO(CS): error recovery
-
-            context.getThreadManager().enterGlobalLock(thread);
+            });
 
             return Collections.unmodifiableMap(liveObjects);
         }

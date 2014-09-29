@@ -176,7 +176,6 @@ public abstract class BasicObjectNodes {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name.toString(), self.toString(), this));
         }
 
-
     }
 
     @CoreMethod(names = {"send", "__send__"}, needsBlock = true, minArgs = 1, isSplatted = true)

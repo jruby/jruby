@@ -135,13 +135,14 @@ public abstract class ObjectSpaceNodes {
         private NilPlaceholder doGC() {
             notDesignedForCompilation();
 
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+            getContext().outsideGlobalLock(new Runnable() {
 
-            try {
-                System.gc();
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
-            }
+                @Override
+                public void run() {
+                    System.gc();
+                }
+
+            });
 
             return NilPlaceholder.INSTANCE;
         }

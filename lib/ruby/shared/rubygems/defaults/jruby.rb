@@ -101,7 +101,7 @@ class Gem::Specification
       self.reset
 
       # ugh
-      @@dirs = Array(dirs).map { |dir| File.join dir, "specifications" } + spec_directories_from_classpath
+      @@dirs = Array(dirs).map { |d| File.join d, "specifications" } + spec_directories_from_classpath
     end
 
     def spec_directories_from_classpath

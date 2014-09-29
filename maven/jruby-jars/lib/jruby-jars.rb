@@ -4,10 +4,10 @@ module JRubyJars
   PATH = File.expand_path(File.dirname(__FILE__))
 
   def self.core_jar_path
-    Dir[ PATH + "/jruby-core-complete-#{JRubyJars::MAVEN_VERSION}.jar" ].first
+    "#{PATH}/jruby-core-#{JRubyJars::MAVEN_VERSION}.jar"
   end
 
   def self.stdlib_jar_path
-    Dir[ PATH + "/jruby-stdlib-#{JRubyJars::MAVEN_VERSION}.jar" ].first
+    "#{PATH }/jruby-stdlib-#{JRubyJars::MAVEN_VERSION}.jar"
   end
 end

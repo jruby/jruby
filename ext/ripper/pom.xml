@@ -5,12 +5,21 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
+<<<<<<< HEAD
     <version>9000.dev-SNAPSHOT</version>
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-ripper</artifactId>
   <version>2.1.0.dev-SNAPSHOT</version>
   <packaging>gem</packaging>
+=======
+    <version>1.7.17-SNAPSHOT</version>
+  </parent>
+  <artifactId>ripper</artifactId>
+  <version>1.7.17-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+>>>>>>> jruby-1_7
   <name>JRuby Ripper</name>
   <description>ripper extension for JRuby</description>
   <url>https://github.com/jruby/jruby</url>

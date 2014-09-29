@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -27,22 +28,27 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
     private final Assumption unmodifiedAssumption;
-    private final RubyMethod method;
 
+    private final Object value;
+
+    private final RubyMethod method;
     @Child protected DirectCallNode callNode;
 
-    public CachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, DispatchNode next, RubyMethod method) {
+    public CachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, DispatchNode next, Object value, RubyMethod method) {
         super(context, cachedName, next);
-
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
+        this.value = value;
         this.method = method;
 
-        callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        if (method != null) {
+            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        }
     }
 
     public CachedBoxedSymbolDispatchNode(CachedBoxedSymbolDispatchNode prev) {
         super(prev);
         unmodifiedAssumption = prev.unmodifiedAssumption;
+        value = prev.value;
         method = prev.method;
         callNode = prev.callNode;
     }
@@ -57,6 +63,8 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
+        CompilerAsserts.compilationConstant(dispatchAction);
+
         // Check no symbols have had their lookup modified
 
         try {
@@ -102,6 +110,8 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                             CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
         } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return true;
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+            return value;
         } else {
             throw new UnsupportedOperationException();
         }
