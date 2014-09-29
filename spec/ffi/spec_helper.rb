@@ -53,9 +53,9 @@ def compile_library(path, lib)
   dir = File.expand_path(path, File.dirname(__FILE__))
   lib = "#{dir}/#{lib}"
   if !File.exists?(lib)
-    ldshared  = RbConfig::CONFIG["LDSHARED"]
+    ldshared  = RbConfig::CONFIG["LDSHARED"] || "clang -dynamic -bundle"
     libs      = RbConfig::CONFIG["LIBS"]
-    dldflags  = RbConfig::CONFIG["DLDFLAGS"]
+    dldflags  = RbConfig::CONFIG["DLDFLAGS"] || "-Wl,-undefined,dynamic_lookup -Wl,-multiply_defined,suppress"
 
     puts Dir.pwd, dir, File.dirname(__FILE__)
 

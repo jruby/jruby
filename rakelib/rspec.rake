@@ -48,7 +48,7 @@ namespace :spec do
 
     permute_specs "ffi#{version_suffix}", compile_flags do |t|
       t.ruby_opts = [version_arg]
-      t.pattern = 'spec/ruby/optional/ffi/**/*_spec.rb'
+      t.pattern = 'spec/ffi/**/*_spec.rb'
     end
 
     permute_specs "java_signature_parser#{version_suffix}", compile_flags do |t|
