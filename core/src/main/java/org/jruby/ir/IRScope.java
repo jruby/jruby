@@ -10,6 +10,7 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
+import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.UnboxingPass;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
@@ -457,7 +458,7 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private synchronized Instr[] prepareInstructionsForInterpretation() {
+    private synchronized Instr[] prepareInstructions() {
         checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
@@ -547,15 +548,17 @@ public abstract class IRScope implements ParseResult {
 
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
-        // worth the effort. It is simpler to just go fully safe in scopes influenced
-        // by their presence.
+        // worth the effort. It is simpler to just go fully safe in scopes
+        // influenced by their presence.
         if (unsafeScope) {
             passes = getManager().getSafePasses(this);
         }
 
         CompilerPassScheduler scheduler = getManager().schedulePasses(passes);
         for (CompilerPass pass: scheduler) {
-            pass.run(this);
+            if (pass.previouslyRun(this) == null) {
+                pass.run(this);
+            }
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
@@ -565,14 +568,13 @@ public abstract class IRScope implements ParseResult {
 
     private void runDeadCodeAndVarLoadStorePasses() {
         // For methods that don't require a dynamic scope,
-        // inline add lvar loads/store to tmp-var loads/stores.
+        // inline-add lvar loads/store to tmp-var loads/stores.
         if (!flags.contains(HAS_END_BLOCKS) && !flags.contains(REQUIRES_DYNSCOPE)) {
             CompilerPass pass;
-            // FIXME: disable DCE because it's eliminating too much (#1786)
-//            pass = new DeadCodeElimination();
-//            if (pass.previouslyRun(this) == null) {
-//                pass.run(this);
-//            }
+            pass = new DeadCodeElimination();
+            if (pass.previouslyRun(this) == null) {
+                pass.run(this);
+            }
             pass = new AddLocalVarLoadStoreInstructions();
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
@@ -583,10 +585,8 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
         // Build CFG and run compiler passes, if necessary
-        boolean runPasses = false;
         if (getCFG() == null) {
             buildCFG();
-            runPasses = true;
         }
 
         if (isLambda) {
@@ -595,15 +595,13 @@ public abstract class IRScope implements ParseResult {
             ((IRClosure)this).addGEBForUncaughtBreaks();
         }
 
-        if (runPasses) {
-            runCompilerPasses(getManager().getCompilerPasses(this));
+        runCompilerPasses(getManager().getCompilerPasses(this));
 
-            if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
-                // Run DCE and var load/store passes where applicable
-                // But, if we have been passed in a list of passes to run
-                // on the commandline, skip this opt.
-                runDeadCodeAndVarLoadStorePasses();
-            }
+        if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
+            // Run DCE and var load/store passes where applicable
+            // But, if we have been passed in a list of passes to run
+            // on the commandline, skip this opt.
+            runDeadCodeAndVarLoadStorePasses();
         }
 
         checkRelinearization();
@@ -611,7 +609,7 @@ public abstract class IRScope implements ParseResult {
         if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // Linearize CFG, etc.
-        return prepareInstructionsForInterpretation();
+        return prepareInstructions();
     }
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
@@ -621,10 +619,8 @@ public abstract class IRScope implements ParseResult {
         resetLinearizationData();
 
         // Build CFG and run compiler passes, if necessary
-//        boolean runPasses = false;
         if (getCFG() == null) {
             buildCFG();
-//            runPasses = true;
         }
 
         // Add this always since we dont re-JIT a previously
@@ -638,22 +634,11 @@ public abstract class IRScope implements ParseResult {
             ((IRClosure)this).addGEBForUncaughtBreaks();
         }
 
-//        if (runPasses) {
-            runCompilerPasses(getManager().getJITPasses(this));
-
-            if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
-                // Run DCE and var load/store passes where applicable
-                // But, if we have been passed in a list of passes to run
-                // on the commandline, skip this opt.
-                //
-                // no DCE for now to stress-test JIT
-                //runDeadCodeAndVarLoadStorePasses();
-            }
-//        }
+        runCompilerPasses(getManager().getJITPasses(this));
 
         checkRelinearization();
 
-        prepareInstructionsForInterpretation();
+        prepareInstructions();
 
         return buildLinearization();
     }
