@@ -30,9 +30,6 @@ public class RubySymbol extends RubyObject {
     private final String symbol;
     private final ByteList symbolBytes;
 
-    // See CachedBoxedSymbolDispatchNode
-    public static final Assumption globalSymbolLookupNodeAssumption = Truffle.getRuntime().createAssumption();
-
     private RubySymbol(RubyClass symbolClass, String symbol, ByteList byteList) {
         super(symbolClass);
         this.symbol = symbol;
@@ -141,11 +138,6 @@ public class RubySymbol extends RubyObject {
         public ConcurrentHashMap<ByteList, RubySymbol> getSymbolsTable(){
             return symbolsTable;
         }
-    }
-
-    public void lookupNodeChanged() {
-        getContext().getRuntime().getWarnings().warning(IRubyWarnings.ID.TRUFFLE, "switching to slow path dispatch on symbols as they've been fiddled with!");
-        globalSymbolLookupNodeAssumption.invalidate();
     }
 
 }

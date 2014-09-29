@@ -85,7 +85,6 @@ public class RubyBasicObject extends ObjectStorage {
             } else {
                 rubySingletonClass = new RubyClass(currentNode, rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:0x%x>>", rubyClass.getName(), getObjectID()), true);
                 lookupNode = new LookupFork(rubySingletonClass, rubyClass);
-                lookupNodeChanged();
             }
         }
 
@@ -158,9 +157,6 @@ public class RubyBasicObject extends ObjectStorage {
 
     public boolean isTrue() {
         return true;
-    }
-
-    public void lookupNodeChanged() {
     }
 
     public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {

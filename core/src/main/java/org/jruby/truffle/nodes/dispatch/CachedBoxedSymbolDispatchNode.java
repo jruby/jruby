@@ -65,23 +65,6 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         CompilerAsserts.compilationConstant(dispatchAction);
 
-        // Check no symbols have had their lookup modified
-
-        try {
-            RubySymbol.globalSymbolLookupNodeAssumption.check();
-        } catch (InvalidAssumptionException e) {
-            return resetAndDispatch(
-                    frame,
-                    methodReceiverObject,
-                    callingSelf,
-                    receiverObject,
-                    methodName,
-                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                    argumentsObjects,
-                    dispatchAction,
-                    "symbol lookup modified");
-        }
-
         // Check the class has not been modified
 
         try {

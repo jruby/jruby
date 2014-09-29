@@ -233,7 +233,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             final DispatchNode newDispatch;
 
-            if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
+            if (receiverObject instanceof RubySymbol) {
                 newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, null, method, null,
                         null, null, null, null, null, null);
             } else {
@@ -257,7 +257,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             final DispatchNode newDispatch;
 
-            if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
+            if (receiverObject instanceof RubySymbol) {
                 newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, constant.getValue(), null, null,
                         null, null, null, null, null, null);
             } else {
