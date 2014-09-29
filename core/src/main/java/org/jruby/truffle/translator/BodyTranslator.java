@@ -23,8 +23,8 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.nodes.constants.ReadConstantHeadNode;
-import org.jruby.truffle.nodes.constants.WriteConstantNode;
+import org.jruby.truffle.nodes.ReadConstantNode;
+import org.jruby.truffle.nodes.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
@@ -625,7 +625,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitColon2Node(org.jruby.ast.Colon2Node node) {
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        return new ReadConstantHeadNode(context, translate(node.getPosition()), node.getName(), lhs);
+        return new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs);
     }
 
     @Override
@@ -636,7 +636,7 @@ public class BodyTranslator extends Translator {
 
         final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject());
 
-        return new ReadConstantHeadNode(context, sourceSection, node.getName(), root);
+        return new ReadConstantNode(context, sourceSection, node.getName(), root);
     }
 
     @Override
@@ -652,7 +652,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        return new ReadConstantHeadNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
+        return new ReadConstantNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
     }
 
     @Override

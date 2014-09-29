@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -29,26 +30,32 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     private final LookupNode expectedLookupNode;
     private final Assumption unmodifiedAssumption;
-    private final RubyMethod method;
 
+    private final Object value;
+
+    private final RubyMethod method;
     @Child protected DirectCallNode callNode;
 
     public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                   LookupNode expectedLookupNode, RubyMethod method) {
+                                   LookupNode expectedLookupNode, Object value, RubyMethod method) {
         super(context, cachedName, next);
 
         this.expectedLookupNode = expectedLookupNode;
         this.unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
-        this.method = method;
         this.next = next;
+        this.value = value;
+        this.method = method;
 
-        callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        if (method != null) {
+            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        }
     }
 
     public CachedBoxedDispatchNode(CachedBoxedDispatchNode prev) {
         super(prev);
         expectedLookupNode = prev.expectedLookupNode;
         unmodifiedAssumption = prev.unmodifiedAssumption;
+        value = prev.value;
         method = prev.method;
         callNode = prev.callNode;
     }
@@ -63,6 +70,8 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
+        CompilerAsserts.compilationConstant(dispatchAction);
+
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {
@@ -105,6 +114,8 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
                             CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
         } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
             return true;
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+            return value;
         } else {
             throw new UnsupportedOperationException();
         }

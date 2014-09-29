@@ -7,47 +7,44 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.constants;
+package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
-public class ReadConstantHeadNode extends RubyNode {
+public class ReadConstantNode extends RubyNode {
 
     protected final String name;
     @Child protected BoxingNode receiver;
-    @Child protected ReadConstantNode first;
 
-    public ReadConstantHeadNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
+    @Child protected DispatchHeadNode dispatch;
+
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.name = name;
         this.receiver = new BoxingNode(context, sourceSection, receiver);
-        first = new UninitializedReadConstantNode(name);
+        dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return first.execute(receiver.executeRubyBasicObject(frame));
-    }
-
-    @Override
-    public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-        return first.executeBoolean(receiver.executeRubyBasicObject(frame));
-    }
-
-    @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return first.executeIntegerFixnum(receiver.executeRubyBasicObject(frame));
-    }
-
-    @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
-        return first.executeFloat(receiver.executeRubyBasicObject(frame));
+        return dispatch.dispatch(
+                frame,
+                NilPlaceholder.INSTANCE,
+                RubyArguments.getSelf(frame.getArguments()),
+                receiver.executeRubyBasicObject(frame),
+                name,
+                null,
+                new Object[]{},
+                Dispatch.DispatchAction.READ_CONSTANT);
     }
 
     @Override

@@ -16,3 +16,4 @@ fails(inherited):Class methods of a singleton class for a singleton class includ
 fails:Instantiating a singleton class raises a TypeError when new is called
 fails:Instantiating a singleton class raises a TypeError when allocate is called
 fails:A constant on a singleton class is not preserved when the object is duped
+fails:A constant on a singleton class is not defined in the singleton class opener's scope

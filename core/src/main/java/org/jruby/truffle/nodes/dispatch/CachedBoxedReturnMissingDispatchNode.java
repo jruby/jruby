@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -52,6 +53,8 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
+        CompilerAsserts.compilationConstant(dispatchAction);
+
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.Truffle;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -34,11 +36,14 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
 
+    private final Map<MethodCacheKey, ConstantCacheEntry> constantCache;
+    @CompilerDirectives.CompilationFinal private boolean hasAnyConstantsMissing = false;
+
+    private final Map<MethodCacheKey, MethodCacheEntry> methodCache;
+    @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
+
     @Child protected IndirectCallNode callNode;
     @Child protected BoxingNode box;
-
-    private final Map<MethodCacheKey, MethodCacheEntry> cache;
-    @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
 
     @CompilerDirectives.CompilationFinal private boolean hasSeenSymbolAsMethodName = false;
     @CompilerDirectives.CompilationFinal private boolean hasSeenRubyStringAsMethodName = false;
@@ -47,7 +52,8 @@ public abstract class GenericDispatchNode extends DispatchNode {
     public GenericDispatchNode(RubyContext context, boolean ignoreVisibility) {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
-        cache = new HashMap<>();
+        constantCache = new HashMap<>();
+        methodCache = new HashMap<>();
         callNode = Truffle.getRuntime().createIndirectCallNode();
         box = new BoxingNode(context, null, null);
     }
@@ -55,7 +61,9 @@ public abstract class GenericDispatchNode extends DispatchNode {
     public GenericDispatchNode(GenericDispatchNode prev) {
         super(prev);
         ignoreVisibility = prev.ignoreVisibility;
-        cache = prev.cache;
+        constantCache = prev.constantCache;
+        hasAnyConstantsMissing = prev.hasAnyConstantsMissing;
+        methodCache = prev.methodCache;
         hasAnyMethodsMissing = prev.hasAnyMethodsMissing;
         callNode = prev.callNode;
         box = prev.box;
@@ -71,103 +79,187 @@ public abstract class GenericDispatchNode extends DispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode(), methodName);
+        CompilerAsserts.compilationConstant(dispatchAction);
 
-        if (entry == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
+        if (dispatchAction.isCall()) {
+            MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode(), methodName);
 
-            try {
+            if (entry == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+
                 final RubyMethod method = lookup(callingSelf, receiverObject, methodName.toString(),
                         ignoreVisibility, dispatchAction);
-                entry = new MethodCacheEntry(method, false);
-            } catch (UseMethodMissingException e) {
-                try {
-                    final RubyMethod method = lookup(callingSelf, receiverObject, "method_missing", ignoreVisibility,
+
+                if (method == null) {
+                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "method_missing", ignoreVisibility,
                             dispatchAction);
-                    entry = new MethodCacheEntry(method, true);
-                } catch (UseMethodMissingException e2) {
-                    if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
-                        // TODO(CS): we should cache the fact that we would throw an exception - this will miss each time
-                        getContext().getRuntime().getWarnings().warn(
-                                IRubyWarnings.ID.TRUFFLE,
-                                getEncapsulatingSourceSection().getSource().getName(),
-                                getEncapsulatingSourceSection().getStartLine(),
-                                "Lack of method_missing isn't cached and is being used for respond");
-                        return false;
-                    } else {
-                        throw new RaiseException(getContext().getCoreLibrary().runtimeError(
-                                receiverObject.toString() + " didn't have a #method_missing", this));
+
+                    if (missingMethod == null) {
+                        if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+                            // TODO(CS): we should methodCache the fact that we would throw an exception - this will miss each time
+                            getContext().getRuntime().getWarnings().warn(
+                                    IRubyWarnings.ID.TRUFFLE,
+                                    getEncapsulatingSourceSection().getSource().getName(),
+                                    getEncapsulatingSourceSection().getStartLine(),
+                                    "Lack of method_missing isn't cached and is being used for respond");
+                            return false;
+                        } else {
+                            throw new RaiseException(getContext().getCoreLibrary().runtimeError(
+                                    receiverObject.toString() + " didn't have a #method_missing", this));
+                        }
                     }
+
+                    entry = new MethodCacheEntry(missingMethod, true);
+                } else {
+                    entry = new MethodCacheEntry(method, false);
+                }
+
+                if (entry.isMethodMissing()) {
+                    hasAnyMethodsMissing = true;
+                }
+
+                if (methodCache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
+                    methodCache.put(new MethodCacheKey(receiverObject.getLookupNode(), methodName), entry);
                 }
             }
 
-            if (entry.isMethodMissing()) {
-                hasAnyMethodsMissing = true;
-            }
+            if (dispatchAction == Dispatch.DispatchAction.CALL) {
+                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
 
-            if (cache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
-                cache.put(new MethodCacheKey(receiverObject.getLookupNode(), methodName), entry);
-            }
-        }
+                final Object[] argumentsToUse;
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL) {
-            final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+                // TODO(CS): where is the assumption check?!
 
-            final Object[] argumentsToUse;
+                if (hasAnyMethodsMissing && entry.isMethodMissing()) {
+                    final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
 
-            if (hasAnyMethodsMissing && entry.isMethodMissing()) {
-                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
+                    final RubySymbol methodNameAsSymbol;
 
-                final RubySymbol methodNameAsSymbol;
-
-                if (hasSeenSymbolAsMethodName && methodName instanceof RubySymbol) {
-                    methodNameAsSymbol = (RubySymbol) methodName;
-                } else if (hasSeenRubyStringAsMethodName && methodName instanceof RubyString) {
-                    methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
-                } else if (hasSeenJavaStringAsMethodName && methodName instanceof String) {
-                    methodNameAsSymbol = getContext().newSymbol((String) methodName);
-                } else {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                    if (methodName instanceof RubySymbol) {
-                        hasSeenSymbolAsMethodName = true;
+                    if (hasSeenSymbolAsMethodName && methodName instanceof RubySymbol) {
                         methodNameAsSymbol = (RubySymbol) methodName;
-                    } else if (methodName instanceof RubyString) {
-                        hasSeenRubyStringAsMethodName = true;
+                    } else if (hasSeenRubyStringAsMethodName && methodName instanceof RubyString) {
                         methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
-                    } else if (methodName instanceof String) {
-                        hasSeenJavaStringAsMethodName = true;
+                    } else if (hasSeenJavaStringAsMethodName && methodName instanceof String) {
                         methodNameAsSymbol = getContext().newSymbol((String) methodName);
                     } else {
-                        throw new UnsupportedOperationException();
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                        if (methodName instanceof RubySymbol) {
+                            hasSeenSymbolAsMethodName = true;
+                            methodNameAsSymbol = (RubySymbol) methodName;
+                        } else if (methodName instanceof RubyString) {
+                            hasSeenRubyStringAsMethodName = true;
+                            methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
+                        } else if (methodName instanceof String) {
+                            hasSeenJavaStringAsMethodName = true;
+                            methodNameAsSymbol = getContext().newSymbol((String) methodName);
+                        } else {
+                            throw new UnsupportedOperationException();
+                        }
                     }
+
+                    modifiedArgumentsObjects[0] = methodNameAsSymbol;
+
+                    System.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+                    argumentsToUse = modifiedArgumentsObjects;
+                } else {
+                    argumentsToUse = argumentsObjectsArray;
                 }
 
-                modifiedArgumentsObjects[0] = methodNameAsSymbol;
-
-                System.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
-                argumentsToUse = modifiedArgumentsObjects;
+                return callNode.call(
+                        frame,
+                        entry.getMethod().getCallTarget(),
+                        RubyArguments.pack(
+                                entry.getMethod(),
+                                entry.getMethod().getDeclarationFrame(),
+                                receiverObject,
+                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                argumentsToUse));
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+                if (hasAnyMethodsMissing) {
+                    return !entry.isMethodMissing();
+                } else {
+                    return true;
+                }
             } else {
-                argumentsToUse = argumentsObjectsArray;
-            }
-
-            return callNode.call(
-                    frame,
-                    entry.getMethod().getCallTarget(),
-                    RubyArguments.pack(
-                            entry.getMethod(),
-                            entry.getMethod().getDeclarationFrame(),
-                            receiverObject,
-                            CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                            argumentsToUse));
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
-            if (hasAnyMethodsMissing) {
-                return !entry.isMethodMissing();
-            } else {
-                return true;
+                throw new UnsupportedOperationException();
             }
         } else {
-            throw new UnsupportedOperationException();
+            ConstantCacheEntry entry = lookupInConstantCache(receiverObject.getLookupNode(), methodName);
+
+            if (entry == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                final RubyConstant constant = lookupConstant(callingSelf, receiverObject, methodName.toString(),
+                        ignoreVisibility, dispatchAction);
+
+                if (constant == null) {
+                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "const_missing", ignoreVisibility,
+                            dispatchAction);
+
+                    if (missingMethod == null) {
+                        throw new RaiseException(getContext().getCoreLibrary().runtimeError(
+                                receiverObject.toString() + " didn't have a #const_missing", this));
+                    }
+
+                    entry = new ConstantCacheEntry(null, missingMethod, true);
+                } else {
+                    entry = new ConstantCacheEntry(constant.getValue(), null, false);
+                }
+
+                if (entry.isConstantMissing()) {
+                    hasAnyConstantsMissing = true;
+                }
+
+                if (constantCache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
+                    constantCache.put(new MethodCacheKey(receiverObject.getLookupNode(), methodName), entry);
+                }
+            }
+            
+            // TODO(CS): where is the assumption check?!
+
+            if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+                if (hasAnyConstantsMissing && entry.isConstantMissing()) {
+                    final RubySymbol methodNameAsSymbol;
+
+                    if (hasSeenSymbolAsMethodName && methodName instanceof RubySymbol) {
+                        methodNameAsSymbol = (RubySymbol) methodName;
+                    } else if (hasSeenRubyStringAsMethodName && methodName instanceof RubyString) {
+                        methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
+                    } else if (hasSeenJavaStringAsMethodName && methodName instanceof String) {
+                        methodNameAsSymbol = getContext().newSymbol((String) methodName);
+                    } else {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                        if (methodName instanceof RubySymbol) {
+                            hasSeenSymbolAsMethodName = true;
+                            methodNameAsSymbol = (RubySymbol) methodName;
+                        } else if (methodName instanceof RubyString) {
+                            hasSeenRubyStringAsMethodName = true;
+                            methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
+                        } else if (methodName instanceof String) {
+                            hasSeenJavaStringAsMethodName = true;
+                            methodNameAsSymbol = getContext().newSymbol((String) methodName);
+                        } else {
+                            throw new UnsupportedOperationException();
+                        }
+                    }
+
+                    return callNode.call(
+                            frame,
+                            entry.getMethod().getCallTarget(),
+                            RubyArguments.pack(
+                                    entry.getMethod(),
+                                    entry.getMethod().getDeclarationFrame(),
+                                    receiverObject,
+                                    null,
+                                    new Object[]{methodNameAsSymbol}));
+                } else {
+                    return entry.getValue();
+                }
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
     }
 
@@ -193,11 +285,16 @@ public abstract class GenericDispatchNode extends DispatchNode {
     }
 
     @CompilerDirectives.SlowPath
-    public MethodCacheEntry lookupInCache(LookupNode lookupNode, Object methodName) {
-        return cache.get(new MethodCacheKey(lookupNode, methodName));
+    public ConstantCacheEntry lookupInConstantCache(LookupNode lookupNode, Object methodName) {
+        return constantCache.get(new MethodCacheKey(lookupNode, methodName));
     }
 
-    private class MethodCacheKey {
+    @CompilerDirectives.SlowPath
+    public MethodCacheEntry lookupInCache(LookupNode lookupNode, Object methodName) {
+        return methodCache.get(new MethodCacheKey(lookupNode, methodName));
+    }
+
+    private static class MethodCacheKey {
 
         private final LookupNode lookupNode;
         private final Object methodName;
@@ -229,7 +326,33 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     }
 
-    private class MethodCacheEntry {
+    private static class ConstantCacheEntry {
+
+        private final Object value;
+        private final RubyMethod method;
+        private final boolean constantMissing;
+
+        private ConstantCacheEntry(Object value, RubyMethod method, boolean constantMissing) {
+            this.value = value;
+            this.method = method;
+            this.constantMissing = constantMissing;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public RubyMethod getMethod() {
+            return method;
+        }
+
+        public boolean isConstantMissing() {
+            return constantMissing;
+        }
+
+    }
+
+    private static class MethodCacheEntry {
 
         private final RubyMethod method;
         private final boolean methodMissing;
