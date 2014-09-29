@@ -127,8 +127,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object binding(Object self) {
-            notDesignedForCompilation();
-
             final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
