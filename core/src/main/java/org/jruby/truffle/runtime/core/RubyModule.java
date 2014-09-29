@@ -243,7 +243,7 @@ public class RubyModule extends RubyObject implements LookupNode {
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(oldName, getName(), currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(oldName, getName(), currentNode));
         }
 
         addMethod(currentNode, method.withNewName(newName));
@@ -472,7 +472,7 @@ public class RubyModule extends RubyObject implements LookupNode {
     public void moduleEval(RubyNode currentNode, String source) {
         RubyNode.notDesignedForCompilation();
 
-        getRubyClass().getContext().eval(source, this, currentNode);
+        getContext().eval(source, this, currentNode);
     }
 
     public Map<String, RubyConstant> getConstants() {
@@ -486,12 +486,12 @@ public class RubyModule extends RubyObject implements LookupNode {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (RubyConstant constant : constants.values()) {
-            getRubyClass().getContext().getCoreLibrary().box(constant.getValue()).visitObjectGraph(visitor);
+            getContext().getCoreLibrary().box(constant.getValue()).visitObjectGraph(visitor);
         }
 
         for (RubyMethod method : methods.values()) {
             if (method.getDeclarationFrame() != null) {
-                getRubyClass().getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
+                getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
             }
         }
     }

@@ -74,7 +74,7 @@ public class RubyBasicObject extends ObjectStorage {
         RubyNode.notDesignedForCompilation();
 
         if (rubySingletonClass == null) {
-            final CoreLibrary coreLibrary = getRubyClass().getContext().getCoreLibrary();
+            final CoreLibrary coreLibrary = getContext().getCoreLibrary();
 
             // TODO(CS): some of these reference comparisons should probably check for subclasses as well
 
@@ -172,7 +172,7 @@ public class RubyBasicObject extends ObjectStorage {
             }
 
             for (Object instanceVariable : getFields().values()) {
-                getRubyClass().getContext().getCoreLibrary().box(instanceVariable).visitObjectGraph(visitor);
+                getContext().getCoreLibrary().box(instanceVariable).visitObjectGraph(visitor);
             }
 
             visitObjectGraphChildren(visitor);
@@ -183,7 +183,11 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public boolean isNumeric() {
-        return getRubyClass().assignableTo(getRubyClass().getContext().getCoreLibrary().getNumericClass());
+        return getRubyClass().assignableTo(getContext().getCoreLibrary().getNumericClass());
+    }
+
+    public RubyContext getContext() {
+        return rubyClass.getContext();
     }
 
 }

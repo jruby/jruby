@@ -276,7 +276,7 @@ public final class RubyArray extends RubyObject {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (Object object : slowToArray()) {
-            getRubyClass().getContext().getCoreLibrary().box(object).visitObjectGraph(visitor);
+            getContext().getCoreLibrary().box(object).visitObjectGraph(visitor);
         }
     }
 

@@ -325,7 +325,7 @@ public abstract class StringNodes {
         public RubyString chomp(RubyString string) {
             notDesignedForCompilation();
 
-            return string.getRubyClass().getContext().makeString(string.toString().trim());
+            return string.getContext().makeString(string.toString().trim());
         }
     }
 
@@ -364,7 +364,7 @@ public abstract class StringNodes {
         public RubyString downcase(RubyString string) {
             notDesignedForCompilation();
 
-            return string.getRubyClass().getContext().makeString(string.toString().toLowerCase());
+            return string.getContext().makeString(string.toString().toLowerCase());
         }
     }
 

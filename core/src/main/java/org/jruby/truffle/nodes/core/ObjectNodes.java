@@ -687,7 +687,7 @@ public abstract class ObjectNodes {
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
             final Map<String, RubyMethod> methods = new HashMap<>();
 
@@ -695,7 +695,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
-                    array.slowPush(self.getRubyClass().getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
             }
 
@@ -767,7 +767,7 @@ public abstract class ObjectNodes {
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
             final Map<String, RubyMethod> methods = new HashMap<>();
 
@@ -775,7 +775,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC) {
-                    array.slowPush(self.getRubyClass().getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
             }
 
@@ -891,7 +891,7 @@ public abstract class ObjectNodes {
         public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
             final Collection<RubyMethod> methods;
 
@@ -902,7 +902,7 @@ public abstract class ObjectNodes {
             }
 
             for (RubyMethod method : methods) {
-                array.slowPush(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
+                array.slowPush(RubySymbol.newSymbol(self.getContext(), method.getName()));
             }
 
             return array;
