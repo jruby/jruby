@@ -281,7 +281,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 Integer dv = problem.getDFVar(v);
 
                 // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
-                // System.out.println("df var for " + v + " is " + dv.getId());
+                // System.out.println("df var for " + v + " is " + dv);
                 if (living.get(dv)) {
                     living.clear(dv);
                     // System.out.println("NO! LIVE result:" + v);

@@ -592,7 +592,10 @@ public abstract class IRScope implements ParseResult {
         if (isLambda) {
             // Add a global ensure block to catch uncaught breaks
             // and throw a LocalJumpError.
-            ((IRClosure)this).addGEBForUncaughtBreaks();
+            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
+                resetState();
+                computeScopeFlags();
+            }
         }
 
         runCompilerPasses(getManager().getCompilerPasses(this));
@@ -631,7 +634,10 @@ public abstract class IRScope implements ParseResult {
         // Add a global ensure block to catch uncaught breaks
         // and throw a LocalJumpError.
         if (this instanceof IRClosure) {
-            ((IRClosure)this).addGEBForUncaughtBreaks();
+            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
+                resetState();
+                computeScopeFlags();
+            }
         }
 
         runCompilerPasses(getManager().getJITPasses(this));
