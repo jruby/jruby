@@ -126,10 +126,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object binding(VirtualFrame frame, Object self) {
+        public Object binding(Object self) {
             notDesignedForCompilation();
 
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
+            final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
+                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
+
+            return new RubyBinding(
+                    getContext().getCoreLibrary().getBindingClass(),
+                    self,
+                    callerFrame);
         }
     }
 
