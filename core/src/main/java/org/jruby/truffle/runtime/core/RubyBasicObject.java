@@ -182,18 +182,6 @@ public class RubyBasicObject extends ObjectStorage {
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
     }
 
-    public Object debugSend(String methodName, RubyProc block, Object... arguments) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final RubyMethod method = this.getLookupNode().lookupMethod(methodName);
-        
-        if (method == null) {
-            return null;
-        }
-
-        return method.getCallTarget().call(RubyArguments.pack(method, method.getDeclarationFrame(), this, block, arguments));
-    }
-
     public boolean isNumeric() {
         return getRubyClass().assignableTo(getRubyClass().getContext().getCoreLibrary().getNumericClass());
     }
