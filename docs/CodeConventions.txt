@@ -10,7 +10,7 @@ each one to understand new and existing code more quickly and thoroughly.
 Rule of Thumb: 
 
  If not said otherwise below, as long as you keep in mind Sun's Java Code
- Conventions (http://java.sun.com/docs/codeconv/) you're doing well.
+ Conventions (http://www.oracle.com/technetwork/java/codeconvtoc-136057.html) you're doing well.
 
 
 File Organization:
