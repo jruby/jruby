@@ -13,7 +13,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -252,7 +251,7 @@ public class Bootstrap {
         InvokeSite site = new InvokeSite(type, name, CallType.SUPER);
         MethodHandle handle;
 
-        boolean[] splatMap = decodeSplatmap(splatmapString);
+        boolean[] splatMap = IRRuntimeHelpers.decodeSplatmap(splatmapString);
 
         SmartBinder binder = SmartBinder.from(site.signature)
                 .insert(
@@ -271,22 +270,6 @@ public class Bootstrap {
         site.setTarget(handle);
 
         return site;
-    }
-
-    public static boolean[] decodeSplatmap(String splatmapString) {
-        boolean[] splatMap;
-        if (splatmapString.length() > 0) {
-            splatMap = new boolean[splatmapString.length()];
-
-            for (int i = 0; i < splatmapString.length(); i++) {
-                if (splatmapString.charAt(i) == '1') {
-                    splatMap[i] = true;
-                }
-            }
-        } else {
-            splatMap = new boolean[0];
-        }
-        return splatMap;
     }
 
     public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
@@ -425,8 +408,7 @@ public class Bootstrap {
     }
 
     public static RubyEncoding encoding(ThreadContext context, MutableCallSite site, String name) {
-        Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
-        RubyEncoding rubyEncoding = context.runtime.getEncodingService().getEncoding(encoding);
+        RubyEncoding rubyEncoding = IRRuntimeHelpers.retrieveEncoding(context, name);
         site.setTarget(dropArguments(constant(RubyEncoding.class, rubyEncoding), 0, ThreadContext.class));
         return rubyEncoding;
     }
@@ -441,7 +423,7 @@ public class Bootstrap {
     }
 
     public static RubyRegexp regexp(ThreadContext context, RubyString pattern, MutableCallSite site, RegexpOptions options) {
-        RubyRegexp regexp = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), options);
+        RubyRegexp regexp = IRRuntimeHelpers.constructRubyRegexp(context, pattern, options);
         regexp.setLiteral();
 
         site.setTarget(
@@ -666,82 +648,45 @@ public class Bootstrap {
         return method.call(context, self, selfClass, methodName, args, block);
     }
 
-    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
-        // TODO: literal block handling of break, etc
-        RubyClass selfClass = self.getMetaClass();
-        String methodName = site.name;
-        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
-        CacheEntry entry = selfClass.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
-
-        if (methodMissing(entry, CallType.FUNCTIONAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, block);
-        }
-
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
-
-        site.setTarget(mh);
-        return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
-    }
-
-    public static IRubyObject invokeClassSuper(String methodName, ThreadContext context, IRubyObject self, IRubyObject definingModule, IRubyObject[] args, Block block) throws Throwable {
-        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-
-        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
-                : method.call(context, self, superClass, methodName, args, block);
-
-        return (IRubyObject)rVal;
-    }
-
     public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
-        args = IRRuntimeHelpers.splatArguments(args, splatMap);
-        RubyClass superClass = definingModule.getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
-                : method.call(context, self, superClass, methodName, args, block);
-        return rVal;
+        return IRRuntimeHelpers.instanceSuperSplatArgs(context, self, methodName, definingModule, args, block, splatMap);
     }
 
     public static IRubyObject invokeInstanceSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
-        RubyClass superClass = definingModule.getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
-                : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
-        return rVal;
+        return IRRuntimeHelpers.instanceSuperSplatArgs(context, self, methodName, definingModule, IRubyObject.NULL_ARRAY, block, splatMap);
     }
 
     public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
-        args = IRRuntimeHelpers.splatArguments(args, splatMap);
-        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
-                : method.call(context, self, superClass, methodName, args, block);
-        return rVal;
+        return IRRuntimeHelpers.classSuperSplatArgs(context, self, methodName, definingModule.getMetaClass(), args, block, splatMap);
     }
 
     public static IRubyObject invokeClassSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
-        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, IRubyObject.NULL_ARRAY, block)
-                : method.call(context, self, superClass, methodName, IRubyObject.NULL_ARRAY, block);
-        return rVal;
+        return IRRuntimeHelpers.classSuperSplatArgs(context, self, methodName, definingModule.getMetaClass(), IRubyObject.NULL_ARRAY, block, splatMap);
     }
 
     public static IRubyObject invokeUnresolvedSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        args = IRRuntimeHelpers.splatArguments(args, splatMap);
-        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+        return IRRuntimeHelpers.unresolvedSuperSplatArgs(context, self, args, block, splatMap);
     }
 
     public static IRubyObject invokeUnresolvedSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+        return IRRuntimeHelpers.unresolvedSuper(context, self, IRubyObject.NULL_ARRAY, block);
+    }
+
+    public static IRubyObject invokeZSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        if (block == null || !block.isGiven()) block = context.getFrameBlock();
+        return IRRuntimeHelpers.unresolvedSuperSplatArgs(context, self, args, block, splatMap);
+    }
+
+    public static IRubyObject invokeZSuper(InvokeSite site, String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, Block block) throws Throwable {
+        if (block == null || !block.isGiven()) block = context.getFrameBlock();
         return IRRuntimeHelpers.unresolvedSuper(context, self, IRubyObject.NULL_ARRAY, block);
     }
 
@@ -1006,10 +951,6 @@ public class Bootstrap {
         return length;
     }
 
-    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
-        return self.getMetaClass().finvoke(context, self, site.name, block);
-    }
-
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self) {
         return self.getMetaClass().finvoke(context, self, site.name);
     }
@@ -1097,6 +1038,29 @@ public class Bootstrap {
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) {
         return self.getMetaClass().finvoke(context, self, site.name, args);
+    }
+
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.FUNCTIONAL, methodName, caller)) {
+            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
+        }
+
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
+    }
+
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        return self.getMetaClass().finvoke(context, self, site.name, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {

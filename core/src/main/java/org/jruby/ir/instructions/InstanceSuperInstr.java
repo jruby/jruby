@@ -1,14 +1,12 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
@@ -46,11 +44,7 @@ public class InstanceSuperInstr extends CallInstr {
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
         String methodName = methAddr.getName();
-        RubyClass superClass = definingModule.getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
-                                           : method.call(context, self, superClass, methodName, args, block);
-        return hasUnusedResult() ? null : rVal;
+        return IRRuntimeHelpers.instanceSuper(context, self, methodName, definingModule, args, block);
     }
 
     @Override

@@ -108,7 +108,6 @@ public class Options {
     public static final Option<Boolean> JIT_DUMPING = bool(JIT, "jit.dumping", false, "Enable stdout dumping of JITed bytecode.");
     public static final Option<Integer> JIT_LOGEVERY = integer(JIT, "jit.logEvery", 0, "Log a message every n methods JIT compiled.");
     public static final Option<String> JIT_EXCLUDE = string(JIT, "jit.exclude", new String[]{"ClsOrMod","ClsOrMod::method_name","-::method_name"}, "", "Exclude methods from JIT. Comma delimited.");
-    public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "Cache jitted method in-memory bodies across runtimes and loads.");
     public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", true, "Run the JIT compiler in a background thread.");
@@ -239,13 +238,6 @@ public class Options {
     public static final Option<Boolean> CLI_RUBYOPT_ENABLE = bool(CLI, "cli.rubyopt.enable", true, "Enable/disable RUBYOPT processing at start.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
-
-    static {
-        // FIXME: JIT only on when invokedynamic would be one...need non-indy JIT
-        if (!COMPILE_INVOKEDYNAMIC.load()) {
-            COMPILE_MODE.force("OFF");
-        }
-    }
     
     public static String dump() {
         return "# JRuby configuration options with current values\n" +
@@ -257,6 +249,8 @@ public class Options {
     // After PROPERTIES so it doesn't show up in --properties
     @Deprecated
     public static final Option<Boolean> CEXT_ENABLED = bool(NATIVE, "cext.enabled", false, "Enable or disable C extension support.");
+    @Deprecated
+    public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");
     
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
         Option<String> option = Option.string("jruby", name, category, options, defval, description);

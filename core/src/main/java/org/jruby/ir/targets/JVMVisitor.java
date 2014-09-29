@@ -90,7 +90,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void _reset() {
-        this.jvm = new JVM();
+        this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
         this.methodIndex = 0;
         this.scopeMap = new HashMap();
         this.prepare = true;
@@ -765,15 +765,9 @@ public class JVMVisitor extends IRVisitor {
         m.loadSelf(); // caller
         visit(receiver);
 
-        if (numArgs == 1 && args[0] instanceof Splat) {
-            visit(args[0]);
-            // need to unwrap for call path (FIXME: more efficient!)
-            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
-            numArgs = -1;
-        } else if (CallBase.containsArgSplat(args)) {
-            // splat, but not in first position; bail out for now
-            // FIXME: handle compiling splat in non-first-position
-            throw new RuntimeException("splat in non-initial unsupported by JIT");
+        if (numArgs == 1 && args[0] instanceof Splat
+                || CallBase.containsArgSplat(args)) {
+            throw new RuntimeException("splat in non-initial argument for normal call is unexpected in JIT");
         } else {
             for (Operand operand : args) {
                 visit(operand);
@@ -1814,11 +1808,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) {
-        jvmMethod().loadContext();
-        jvmAdapter().invokedynamic(
-                "checkpoint",
-                sig(void.class, ThreadContext.class),
-                InvokeDynamicSupport.checkpointHandle());
+        jvmMethod().checkpoint();
     }
 
     @Override
@@ -1903,7 +1893,40 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
-        super.ZSuperInstr(zsuperinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        // TODO: Nearly identical to InstanceSuperInstr
+        IRBytecodeAdapter m = jvmMethod();
+        String name = zsuperinstr.getMethodAddr().getName(); // ignored on the other side since it is unresolved
+        Operand[] args = zsuperinstr.getCallArgs();
+
+        m.loadContext();
+        m.loadSelf(); // TODO: get rid of caller
+        m.loadSelf();
+        jvmAdapter().aconst_null(); // no defining class
+
+        // TODO: CON: is this safe?
+        jvmAdapter().checkcast(p(RubyClass.class));
+
+        for (int i = 0; i < args.length; i++) {
+            Operand operand = args[i];
+            visit(operand);
+        }
+
+        // if there's splats, provide a map and let the call site sort it out
+        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, zsuperinstr.containsArgSplat());
+
+        Operand closure = zsuperinstr.getClosureArg(null);
+        boolean hasClosure = closure != null;
+        if (hasClosure) {
+            m.loadContext();
+            visit(closure);
+            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+        } else {
+            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+        }
+
+        m.invokeZSuper(name, args.length, hasClosure, splatMap);
+
+        jvmStoreLocal(zsuperinstr.getResult());
     }
 
     @Override

@@ -32,10 +32,15 @@ import static org.jruby.util.CodegenUtils.*;
  *
  * @author headius
  */
-public class IRBytecodeAdapter {
-    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, Signature signature) {
+public abstract class IRBytecodeAdapter {
+    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, Signature signature, ClassData classData) {
         this.adapter = adapter;
         this.signature = signature;
+        this.classData = classData;
+    }
+
+    public ClassData getClassData() {
+        return classData;
     }
 
     public void startMethod() {
@@ -52,43 +57,6 @@ public class IRBytecodeAdapter {
                 }
             }
         });
-    }
-
-    public void pushFixnum(Long l) {
-        loadContext();
-        adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
-    }
-
-    public void pushFloat(Double d) {
-        loadContext();
-        adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.flote(), d);
-    }
-
-    public void pushString(ByteList bl) {
-        loadContext();
-        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
-    }
-
-    public void pushByteList(ByteList bl) {
-        adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
-    }
-
-    public void pushRegexp(int options) {
-        adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class, RubyString.class), Bootstrap.regexp(), options);
-    }
-
-    /**
-     * Push a symbol on the stack
-     * @param sym the symbol's string identifier
-     */
-    public void pushSymbol(String sym) {
-        loadContext();
-        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.symbol(), sym);
-    }
-
-    public void loadRuntime() {
-        loadContext();
-        adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void loadLocal(int i) {
@@ -135,74 +103,6 @@ public class IRBytecodeAdapter {
         adapter.astore(i);
     }
 
-    public void pushEncoding(Encoding encoding) {
-        loadContext();
-        adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
-    }
-
-    public void invokeOther(String name, int arity, boolean hasClosure) {
-        if (hasClosure) {
-            if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), Bootstrap.invoke());
-            } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), Bootstrap.invoke());
-            }
-        } else {
-            if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), Bootstrap.invoke());
-            } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), Bootstrap.invoke());
-            }
-        }
-    }
-
-    public void invokeSelf(String name, int arity, boolean hasClosure) {
-        if (hasClosure) {
-            if (arity == -1) {
-                adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), Bootstrap.invokeSelf());
-            } else {
-                adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), Bootstrap.invokeSelf());
-            }
-        } else {
-            if (arity == -1) {
-                adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), Bootstrap.invokeSelf());
-            } else {
-                adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), Bootstrap.invokeSelf());
-            }
-        }
-    }
-
-    public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
-        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
-        if (hasClosure) {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString);
-        } else {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString);
-        }
-    }
-
-    public void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
-        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
-        if (hasClosure) {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString);
-        } else {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString);
-        }
-    }
-
-    public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
-        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
-        if (hasClosure) {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString);
-        } else {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString);
-        }
-    }
-
-    public void attrAssign(String name) {
-        adapter.invokedynamic("attrAssign:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, ThreadContext.class, JVM.OBJECT, JVM.OBJECT), Bootstrap.attrAssign());
-    }
-
     public void invokeVirtual(Type type, Method method) {
         adapter.invokevirtual(type.getInternalName(), method.getName(), method.getDescriptor());
     }
@@ -211,28 +111,16 @@ public class IRBytecodeAdapter {
         adapter.invokestatic(type.getInternalName(), method.getName(), method.getDescriptor());
     }
 
-    public void invokeHelper(String name, Class... sig) {
-        adapter.invokestatic(p(Helpers.class), name, sig(sig));
-    }
-
     public void invokeHelper(String name, String sig) {
         adapter.invokestatic(p(Helpers.class), name, sig);
     }
 
+    public void invokeHelper(String name, Class... x) {
+        adapter.invokestatic(p(Helpers.class), name, sig(x));
+    }
+
     public void invokeIRHelper(String name, String sig) {
         adapter.invokestatic(p(IRRuntimeHelpers.class), name, sig);
-    }
-
-    public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
-    }
-
-    public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.searchConst(), noPrivateConsts?1:0);
-    }
-
-    public void lexicalSearchConst(String name) {
-        adapter.invokedynamic("lexicalSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst(), 0);
     }
 
     public void goTo(org.objectweb.asm.Label label) {
@@ -260,16 +148,6 @@ public class IRBytecodeAdapter {
         adapter.invokevirtual(p(ThreadContext.class), "pollThreadEvents", sig(void.class));
     }
 
-    public void pushNil() {
-        loadContext();
-        adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
-    }
-
-    public void pushBoolean(boolean b) {
-        loadContext();
-        adapter.invokedynamic(b ? "True" : "False", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
-    }
-
     public void pushObjectClass() {
         loadRuntime();
         adapter.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
@@ -283,48 +161,12 @@ public class IRBytecodeAdapter {
         adapter.getMethodVisitor().visitLdcInsn(handle);
     }
 
-    public void pushHandle(String className, String methodName, int arity) {
-        adapter.getMethodVisitor().visitLdcInsn(new Handle(Opcodes.H_INVOKESTATIC, className, methodName, ClassData.SIGS[arity]));
-    }
-
-    public void pushHandleVarargs(String className, String methodName) {
-        adapter.getMethodVisitor().visitLdcInsn(new Handle(Opcodes.H_INVOKESTATIC, className, methodName, ClassData.VARARGS_SIG));
-    }
-
-    public void pushBignum(BigInteger bigint) {
-        String bigintStr = bigint.toString();
-
-        loadContext();
-
-        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), Bootstrap.bignum(), bigintStr);
-    }
-
     public void mark(org.objectweb.asm.Label label) {
         adapter.label(label);
     }
 
-    public void putField(String name) {
-        adapter.invokedynamic("ivarSet:" + JavaNameMangler.mangleMethodName(name), sig(void.class, IRubyObject.class, IRubyObject.class), Bootstrap.ivar());
-    }
-
-    public void getField(String name) {
-        adapter.invokedynamic("ivarGet:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, IRubyObject.class), Bootstrap.ivar());
-    }
-
     public void returnValue() {
         adapter.areturn();
-    }
-
-    public void array(int length) {
-        adapter.invokedynamic("array", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length)), Bootstrap.array());
-    }
-
-    public void hash(int length) {
-        adapter.invokedynamic("hash", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2)), Bootstrap.hash());
-    }
-
-    public void objectArray(int length) {
-        adapter.invokedynamic("objectArray", sig(JVM.OBJECT_ARRAY, params(JVM.OBJECT, length)), Bootstrap.objectArray());
     }
 
     public int newLocal(String name, Type type) {
@@ -340,9 +182,199 @@ public class IRBytecodeAdapter {
     public org.objectweb.asm.Label newLabel() {
         return new org.objectweb.asm.Label();
     }
+
+    /**
+     * Stack required: none
+     *
+     * @param l long value to push as a Fixnum
+     */
+    public abstract void pushFixnum(Long l);
+
+    /**
+     * Stack required: none
+     *
+     * @param d double value to push as a Float
+     */
+    public abstract void pushFloat(Double d);
+
+    /**
+     * Stack required: none
+     *
+     * @param bl ByteList for the String to push
+     */
+    public abstract void pushString(ByteList bl);
+
+    /**
+     * Stack required: none
+     *
+     * @param bl ByteList to push
+     */
+    public abstract void pushByteList(ByteList bl);
+
+    /**
+     * Stack required: ThreadContext, RubyString.
+     *
+     * @param options options for the regexp
+     */
+    public abstract void pushRegexp(int options);
+
+    /**
+     * Push a symbol on the stack.
+     *
+     * Stack required: none
+     *
+     * @param sym the symbol's string identifier
+     */
+    public abstract void pushSymbol(String sym);
+
+    /**
+     * Push the JRuby runtime on the stack.
+     *
+     * Stack required: none
+     */
+    public abstract void loadRuntime();
+
+    /**
+     * Push an encoding on the stack.
+     *
+     * Stack required: none
+     *
+     * @param encoding the encoding to push
+     */
+    public abstract void pushEncoding(Encoding encoding);
+
+    /**
+     * Invoke a method on an object other than self.
+     *
+     * Stack required: context, self, all arguments, optional block
+     *
+     * @param name name of the method to invoke
+     * @param arity arity of the call
+     * @param hasClosure whether a closure will be on the stack for passing
+     */
+    public abstract void invokeOther(String name, int arity, boolean hasClosure);
+
+
+    /**
+     * Invoke a method on self.
+     *
+     * Stack required: context, caller, self, all arguments, optional block
+     *
+     * @param name name of the method to invoke
+     * @param arity arity of the call
+     * @param hasClosure whether a closure will be on the stack for passing
+     */
+    public abstract void invokeSelf(String name, int arity, boolean hasClosure);
+
+    public abstract void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+
+    public abstract void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+
+    public abstract void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+
+    public abstract void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
+
+    /**
+     * Lookup a constant from current context.
+     *
+     * Stack required: context, static scope
+     *
+     * @param name name of the constant
+     * @param noPrivateConsts whether to ignore private constants
+     */
+    public abstract void searchConst(String name, boolean noPrivateConsts);
+
+    /**
+     * Lookup a constant from a given class or module.
+     *
+     * Stack required: context, module
+     *
+     * @param name name of the constant
+     * @param noPrivateConsts whether to ignore private constants
+     */
+    public abstract void inheritanceSearchConst(String name, boolean noPrivateConsts);
+
+    /**
+     * Lookup a constant from a lexical scope.
+     *
+     * Stack required: context, static scope
+     *
+     * @param name name of the constant
+     */
+    public abstract void lexicalSearchConst(String name);
+
+    /**
+     * Load nil onto the stack.
+     *
+     * Stack required: none
+     */
+    public abstract void pushNil();
+
+    /**
+     * Load a boolean onto the stack.
+     *
+     * Stack required: none
+     *
+     * @param b the boolean to push
+     */
+    public abstract void pushBoolean(boolean b);
+
+    /**
+     * Load a Bignum onto the stack.
+     *
+     * Stack required: none
+     *
+     * @param bigint the value of the Bignum to push
+     */
+    public abstract void pushBignum(BigInteger bigint);
+
+    /**
+     * Store instance variable into self.
+     *
+     * Stack required: self, value
+     *
+     * @param name name of variable to store
+     */
+    public abstract void putField(String name);
+
+    /**
+     * Load instance variable from self.
+     *
+     * Stack required: self
+     *
+     * @param name name of variable to load
+     */
+    public abstract void getField(String name);
+
+    /**
+     * Construct an Array from elements on stack.
+     *
+     * Stack required: all elements of array
+     *
+     * @param length number of elements
+     */
+    public abstract void array(int length);
+
+    /**
+     * Construct a Hash from elements on stack.
+     *
+     * Stack required: all elements of hash
+     *
+     * @param length number of element pairs
+     */
+    public abstract void hash(int length);
+
+    /**
+     * Perform a thread event checkpoint.
+     *
+     * Stack required: none
+     */
+    public abstract void checkpoint();
+
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
     private final Signature signature;
+    private final ClassData classData;
 }

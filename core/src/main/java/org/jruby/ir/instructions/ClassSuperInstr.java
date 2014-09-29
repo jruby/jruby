@@ -44,7 +44,7 @@ public class ClassSuperInstr extends CallInstr {
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         String methodName = methAddr.getName();
         RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.classSuper(context, self, args, block, methodName, definingModule);
+        return IRRuntimeHelpers.classSuper(context, self, methodName, definingModule, args, block);
     }
 
     @Override

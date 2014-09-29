@@ -1,5 +1,7 @@
 package org.jruby.ir.runtime;
 
+import com.headius.invokebinder.Signature;
+import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -18,10 +20,13 @@ import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.Type;
 
 import java.lang.invoke.MethodHandle;
 
@@ -524,23 +529,6 @@ public class IRRuntimeHelpers {
         return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
     }
 
-    public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-
-        // We have to rely on the frame stack to find the implementation class
-        RubyModule klazz = context.getFrameKlazz();
-        String methodName = context.getCurrentFrame().getName();
-
-        checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
-        RubyClass superClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-
-        // TODO tduehr 7/2014 There has to be a better way to break the recursion
-        IRubyObject rVal = (method.isUndefined() || (superClass.isPrepended() && (method.getImplementationClass() == self.getType()))) ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
-                : method.call(context, self, superClass, methodName, args, block);
-
-        return rVal;
-    }
-
     public static IRubyObject isDefinedBackref(ThreadContext context) {
         return RubyMatchData.class.isInstance(context.getBackRef()) ?
                 context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : context.nil;
@@ -793,12 +781,53 @@ public class IRRuntimeHelpers {
         return val;
     }
 
-    public static Object classSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, RubyModule definingModule) {
+    public static IRubyObject instanceSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyClass definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return instanceSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
+    public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
+        RubyClass superClass = definingModule.getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
+        return rVal;
+    }
+
+    public static IRubyObject classSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyClass definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return classSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
+    public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
         RubyClass superClass = definingModule.getMetaClass().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
-                                           : method.call(context, self, superClass, methodName, args, block);
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
         return rVal;
+    }
+
+    public static IRubyObject unresolvedSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return unresolvedSuper(context, self, splatArguments(args, splatMap), block);
+    }
+
+    public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        // We have to rely on the frame stack to find the implementation class
+        RubyModule klazz = context.getFrameKlazz();
+        String methodName = context.getCurrentFrame().getName();
+
+        checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+        RubyClass superClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+
+        // TODO tduehr 7/2014 There has to be a better way to break the recursion
+        IRubyObject rVal = (method.isUndefined() || (superClass.isPrepended() && (method.getImplementationClass() == self.getType()))) ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
+
+        return rVal;
+    }
+
+    public static IRubyObject zSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
+        if (block == null || !block.isGiven()) block = context.getFrameBlock();
+        return unresolvedSuperSplatArgs(context, self, args, block, splatMap);
     }
 
     public static IRubyObject[] splatArguments(IRubyObject[] args, boolean[] splatMap) {
@@ -835,6 +864,22 @@ public class IRRuntimeHelpers {
         return builder.toString();
     }
 
+    public static boolean[] decodeSplatmap(String splatmapString) {
+        boolean[] splatMap;
+        if (splatmapString.length() > 0) {
+            splatMap = new boolean[splatmapString.length()];
+
+            for (int i = 0; i < splatmapString.length(); i++) {
+                if (splatmapString.charAt(i) == '1') {
+                    splatMap[i] = true;
+                }
+            }
+        } else {
+            splatMap = new boolean[0];
+        }
+        return splatMap;
+    }
+
     public static boolean[] buildSplatMap(Operand[] args, boolean containsArgSplat) {
         boolean[] splatMap = new boolean[args.length];
 
@@ -848,5 +893,103 @@ public class IRRuntimeHelpers {
         }
 
         return splatMap;
+    }
+
+    public static final Type[] typesFromSignature(Signature signature) {
+        Type[] types = new Type[signature.argCount()];
+        for (int i = 0; i < signature.argCount(); i++) {
+            types[i] = Type.getType(signature.argType(i));
+        }
+        return types;
+    }
+
+    // Used by JIT
+    public static RubyString newStringFromRaw(Ruby runtime, String str, String encoding) {
+        return new RubyString(runtime, runtime.getString(), newByteListFromRaw(runtime, str, encoding));
+    }
+
+    // Used by JIT
+    public static final ByteList newByteListFromRaw(Ruby runtime, String str, String encoding) {
+        return new ByteList(str.getBytes(RubyEncoding.ISO), runtime.getEncodingService().getEncodingFromString(encoding), false);
+    }
+
+    public static RubyRegexp constructRubyRegexp(ThreadContext context, RubyString pattern, RegexpOptions options) {
+        return RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), options);
+    }
+
+    // Used by JIT
+    public static RubyRegexp constructRubyRegexp(ThreadContext context, RubyString pattern, int options) {
+        return RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
+    }
+
+    // Used by JIT
+    public static RubyEncoding retrieveEncoding(ThreadContext context, String name) {
+        Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
+        return context.runtime.getEncodingService().getEncoding(encoding);
+    }
+
+    // Used by JIT
+    public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        for (int i = 0; i < pairs.length / 2; i++) {
+            hash.fastASet(runtime, pairs[i], pairs[i + 1], true);
+        }
+        return hash;
+    }
+
+    // Used by JIT
+    public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
+        Ruby runtime = context.getRuntime();
+        RubyModule object = runtime.getObject();
+        IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+
+        // Inheritance lookup
+        RubyModule module = null;
+        if (constant == null) {
+            // SSS FIXME: Is this null check case correct?
+            module = staticScope == null ? object : staticScope.getModule();
+            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        }
+
+        // Call const_missing or cache
+        if (constant == null) {
+            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
+        }
+
+        return constant;
+    }
+
+    // Used by JIT
+    public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
+        Ruby runtime = context.runtime;
+        RubyModule module;
+        if (cmVal instanceof RubyModule) {
+            module = (RubyModule) cmVal;
+        } else {
+            throw runtime.newTypeError(cmVal + " is not a type/class");
+        }
+
+        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+
+        if (constant == null) {
+            constant = UndefinedValue.UNDEFINED;
+        }
+
+        return constant;
+    }
+
+    // Used by JIT
+    public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope staticScope, String constName) {
+        IRubyObject constant = staticScope.getConstantInner(constName);
+
+        if (constant == null) {
+            constant = UndefinedValue.UNDEFINED;
+        }
+
+        return constant;
+    }
+
+    public static IRubyObject setInstanceVariable(IRubyObject self, IRubyObject value, String name) {
+        return self.getInstanceVariables().setInstanceVariable(name, value);
     }
 }
