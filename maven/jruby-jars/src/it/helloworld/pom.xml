@@ -33,7 +33,7 @@
 	  <executable>java</executable> 
           <arguments>
 	    <argument>-classpath</argument>
-	    <argument>${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-core-complete-@project.version@.jar${path.separator}${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+	    <argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
 	    <argument>org.jruby.Main</argument>
             <argument>-e</argument>
             <!-- make sure openssl loads -->

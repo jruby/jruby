@@ -44,10 +44,12 @@ import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -1078,31 +1080,24 @@ public class ShellLauncher {
             // and end of each command word and don't run in process if we find them.
             for (int i = 0; i < args.length; i++) {
                 String c = args[i];
-                if (c.trim().length() == 0) {
-                    continue;
-                }
+                if (c.trim().length() == 0) continue;
+
                 char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
                 for (int j = 0; j < firstLast.length; j++) {
                     switch (firstLast[j]) {
-                    case '<': case '>': case '|': case ';':
-                    case '*': case '?': case '{': case '}':
-                    case '[': case ']': case '(': case ')':
-                    case '~': case '&': case '$': case '"':
-                    case '`': case '\n': case '\\': case '\'':
+                    case '<': case '>': case '|': case ';': case '(': case ')':
+                    case '~': case '&': case '$': case '"': case '`': case '\n':
+                    case '\\': case '\'':
                         return false;
                     case '2':
-                        if(c.length() > 1 && c.charAt(1) == '>') {
-                            return false;
-                        }
+                        if(c.length() > 1 && c.charAt(1) == '>') return false;
                     }
                 }
             }
 
             String command = args[0];
 
-            if (Platform.IS_WINDOWS) {
-                command = command.toLowerCase();
-            }
+            if (Platform.IS_WINDOWS) command = command.toLowerCase();
 
             // handle both slash types, \ and /.
             String[] slashDelimitedTokens = command.split("[/\\\\]");
@@ -1112,25 +1107,20 @@ public class ShellLauncher {
                     || finalToken.endsWith(".rb")
                     || finalToken.endsWith("irb"));
 
-            if (!inProc) {
-                return false;
-            } else {
-                if (args.length > 1) {
-                    for (int i = 1; i < args.length; i++) {
-                        checkGlobChar(args[i]);
-                    }
-                }
-                // snip off ruby or jruby command from list of arguments
-                // leave alone if the command is the name of a script
-                int startIndex = command.endsWith(".rb") ? 0 : 1;
-                if (command.trim().endsWith("irb")) {
-                    startIndex = 0;
-                    args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
-                }
-                execArgs = new String[args.length - startIndex];
-                System.arraycopy(args, startIndex, execArgs, 0, execArgs.length);
-                return true;
+            if (!inProc) return false;
+
+            // snip off ruby or jruby command from list of arguments
+            // leave alone if the command is the name of a script
+            int startIndex = command.endsWith(".rb") ? 0 : 1;
+            if (command.trim().endsWith("irb")) {
+                startIndex = 0;
+                args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
             }
+
+            execArgs = new String[args.length - startIndex];
+            System.arraycopy(args, startIndex, execArgs, 0, execArgs.length);
+
+            return true;
         }
 
         /**
@@ -1313,17 +1303,6 @@ public class ShellLauncher {
             }
             return verifyPathExecutable;
         }
-        
-        private void checkGlobChar(String word) {
-            if (Options.LAUNCH_INPROC.load() &&
-                    (word.contains("*")
-                    || word.contains("?")
-                    || word.contains("[")
-                    || word.contains("{"))) {
-                runtime.getErr().println("Warning: treating '" + word + "' literally."
-                        + " Consider passing -J-Djruby.launch.inproc=false.");
-            }
-        }
 
         private Ruby runtime;
         private boolean doExecutableSearch;
@@ -1341,16 +1320,42 @@ public class ShellLauncher {
         return run(runtime, rawArgs, doExecutableSearch, false);
     }
 
+    private static boolean hasGlobCharacter(String word) {
+        return word.contains("*") || word.contains("?") || word.contains("[") || word.contains("{");
+    }
+
+    private static String[] expandGlobs(Ruby runtime, String[] originalArgs) {
+        List<String> expandedList = new ArrayList<String>(originalArgs.length);
+        for (int i = 0; i < originalArgs.length; i++) {
+            if (hasGlobCharacter(originalArgs[i])) {
+                // FIXME: Encoding lost here
+                List<ByteList> globs = Dir.push_glob(runtime.getPosix(), runtime.getCurrentDirectory(),
+                        new ByteList(originalArgs[i].getBytes()), 0);
+
+                for (ByteList glob: globs) {
+                    expandedList.add(glob.toString());
+                }
+            } else {
+                expandedList.add(originalArgs[i]);
+            }
+        }
+
+        String[] args = new String[expandedList.size()];
+        expandedList.toArray(args);
+
+        return args;
+    }
+
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
-        Process aProcess = null;
+        Process aProcess;
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
             if (!forceExternalProcess && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
-                ScriptThreadProcess ipScript = new ScriptThreadProcess(
-                        runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
+                ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime,
+                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime), pwd);
                 ipScript.start();
                 return ipScript;
             } else {

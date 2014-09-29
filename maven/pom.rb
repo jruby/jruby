@@ -7,7 +7,7 @@ project 'JRuby Artifacts' do
   inherit "org.jruby:jruby-parent:#{version}"
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true )
 
   plugin_management do
@@ -25,7 +25,7 @@ project 'JRuby Artifacts' do
   map = { 'jruby' => ['release', 'main' ],
     'jruby-noasm' => ['release', 'main' ],
     'jruby-stdlib' => ['release', 'main', 'complete', 'dist', 'jruby-jars' ],
-    'jruby-complete' => ['release', 'complete', 'dist', 'jruby-jars' ],
+    'jruby-complete' => ['release', 'complete', 'dist' ],
     'jruby-jars' => ['release', 'jruby-jars' ],
     'jruby-dist' => ['release', 'dist']
   }
@@ -46,5 +46,4 @@ project 'JRuby Artifacts' do
       modules m
     end
   end
-
 end

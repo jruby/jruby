@@ -9,8 +9,9 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
   # keep it a jar even without sources - easier to add to a project
   packaging 'jar'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
-              'jruby.basedir' => '${basedir}/../../',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true,
+              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
   # the jar with classifier 'noasm' still has the dependencies
@@ -32,5 +33,4 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
   plugin( :invoker )
-
 end

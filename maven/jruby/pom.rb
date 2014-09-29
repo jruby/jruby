@@ -9,7 +9,8 @@ project 'JRuby Main Maven Artifact' do
   # keep it a jar even without sources - easier to add to a project
   packaging 'jar'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true,
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
 
@@ -23,7 +24,7 @@ project 'JRuby Main Maven Artifact' do
   # this plugin is configured to attach empty jars for sources and javadocs
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
-  plugin( :invoker, :pomExcludes => [ '*jetty/pom.xml' ] )
+  plugin( :invoker )
 
   execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
     felix = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive' )
@@ -36,7 +37,8 @@ project 'JRuby Main Maven Artifact' do
       end
     end
   end
-profile :id => :jdk8 do
+
+  profile :id => :jdk8 do
     activation do
       jdk '1.8'
     end

@@ -70,7 +70,7 @@ class LibrarySearcher {
         FoundLibrary lib = findLibrary(state.searchFile, state.suffixType);
         if (lib != null) {
             state.library = lib;
-            state.loadName = lib.getLoadName();
+            state.setLoadName(lib.getLoadName());
         }
         return lib;
     }

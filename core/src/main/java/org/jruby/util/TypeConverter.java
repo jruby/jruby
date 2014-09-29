@@ -186,7 +186,10 @@ public class TypeConverter {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType19(obj, target, convertMethod, false);
         if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        if (!target.isInstance(val)) {
+            String cname = obj.getMetaClass().getName();
+            throw obj.getRuntime().newTypeError("can't convert " + cname + " to " + target.getName() + " (" + cname + "#" + convertMethod + " gives " + val.getMetaClass().getName() + ")");
+        }
         return val;
     }
 

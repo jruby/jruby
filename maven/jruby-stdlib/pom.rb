@@ -1,3 +1,5 @@
+require 'fileutils'
+
 project 'JRuby Stdlib' do
 
   version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
@@ -7,7 +9,8 @@ project 'JRuby Stdlib' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'jar'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true,
               'jruby.home' => '${basedir}/../..',
               'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
               'main.basedir' => '${project.parent.parent.basedir}',
@@ -15,23 +18,6 @@ project 'JRuby Stdlib' do
               # so the jar plugin just packs it - see build/resources below
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home',
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
-
-  execute( 'create .jrubydir files', 'process-resources' ) do |ctx|
-    def process( dir, root = false )
-      File.open( dir + '/.jrubydir', 'w' ) do |f|
-        f.puts ".." unless root
-        f.puts "."
-        Dir[ dir + '/*'].entries.each do |e|
-          f.print File.basename( e )
-          if File.directory?( e )
-            process( e )
-          end
-          f.puts
-        end
-      end
-    end
-    process( File.join( ctx.project.build.output_directory.to_pathname, 'META-INF', 'jruby.home' ), true )
-  end
 
   execute( 'fix shebang on gem bin files and add *.bat files',
            'initialize' ) do |ctx|
@@ -71,6 +57,11 @@ project 'JRuby Stdlib' do
                   File.join( jruby_complete, 'bin', 'jruby' ) )
   end
 
+  execute 'jrubydir', 'prepare-package' do |ctx|
+    require( ctx.project.properties['jruby.home'].to_pathname + '/core/src/main/ruby/jruby/commands.rb' )
+    JRuby::Commands.generate_dir_info( ctx.project.build.output_directory.to_pathname + '/META-INF/jruby.home' )
+  end
+
   # we have no sources and attach an empty jar later in the build to
   # satisfy oss.sonatype.org upload
 
@@ -96,6 +87,11 @@ project 'JRuby Stdlib' do
       includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/2.1/**', 'lib/ruby/shared/**'
       excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*', 'lib/ruby/shared/rubygems/defaults/jruby_native.rb'
       target_path '${jruby.complete.home}'
+    end
+
+    resource do
+      directory '${basedir}/src/main/resources'
+      filtering true
     end
   end
 end

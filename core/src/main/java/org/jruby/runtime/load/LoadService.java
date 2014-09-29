@@ -352,7 +352,7 @@ public class LoadService {
             Library library = null;
             LoadServiceResource resource = getClassPathResource(classLoader, file);
             if (resource != null) {
-                state.loadName = resolveLoadName(resource, file);
+                state.setLoadName(resolveLoadName(resource, file));
                 library = createLibrary(state, resource);
             }
             if (library == null) {
@@ -873,6 +873,10 @@ public class LoadService {
             }
         }
 
+        public void setLoadName(String loadName) {
+            this.loadName = loadName;
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -988,7 +992,7 @@ public class LoadService {
             String namePlusSuffix = baseName + suffix;
             debugLogTry( "builtinLib",  namePlusSuffix );
             if (builtinLibraries.containsKey(namePlusSuffix)) {
-                state.loadName = namePlusSuffix;
+                state.setLoadName(namePlusSuffix);
                 Library lib = builtinLibraries.get(namePlusSuffix);
                 debugLogFound( "builtinLib", namePlusSuffix );
                 return lib;
@@ -1033,7 +1037,7 @@ public class LoadService {
             String file = baseName + suffix;
             LoadServiceResource resource = findFileInClasspath(file);
             if (resource != null) {
-                state.loadName = resolveLoadName(resource, file);
+                state.setLoadName(resolveLoadName(resource, file));
                 return createLibrary(state, resource);
             }
         }
@@ -1077,7 +1081,7 @@ public class LoadService {
                     boolean absolute = true;
                     foundResource = new LoadServiceResource(file, getFileName(file, namePlusSuffix), absolute);
                     debugLogFound(foundResource);
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     break;
                 }
             } catch (IllegalArgumentException illArgEx) {
@@ -1128,7 +1132,7 @@ public class LoadService {
                 if (file.isFile() && file.isAbsolute() && file.canRead()) {
                     boolean absolute = true;
 
-                    state.loadName = file.getPath();
+                    state.setLoadName(file.getPath());
                     foundResource = new LoadServiceResource(file, state.loadName, absolute);
                     debugLogFound(foundResource);
                     break;
@@ -1167,7 +1171,7 @@ public class LoadService {
                     throw runtime.newIOErrorFromException(e);
                 }
                 if (foundResource != null) {
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     break; // end suffix iteration
                 }
             }
@@ -1191,7 +1195,7 @@ public class LoadService {
                     throw runtime.newIOErrorFromException(e);
                 } catch(Exception e) {}
                 if (foundResource != null) {
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     break; // end suffix iteration
                 }
             }
@@ -1209,7 +1213,7 @@ public class LoadService {
             foundResource = tryResourceFromDotSlash(state, baseName, suffixType);
 
             if (foundResource != null) {
-                state.loadName = resolveLoadName(foundResource, foundResource.getName());
+                state.setLoadName(resolveLoadName(foundResource, foundResource.getName()));
             }
 
             // not found, don't bother with load path
@@ -1221,7 +1225,7 @@ public class LoadService {
             foundResource = tryResourceFromHome(state, baseName, suffixType);
 
             if (foundResource != null) {
-                state.loadName = resolveLoadName(foundResource, foundResource.getName());
+                state.setLoadName(resolveLoadName(foundResource, foundResource.getName()));
             }
 
             // not found, don't bother with load path
@@ -1235,7 +1239,7 @@ public class LoadService {
                 foundResource = tryResourceAsIs(namePlusSuffix);
 
                 if (foundResource != null) {
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     return foundResource;
                 }
             }
@@ -1256,7 +1260,7 @@ public class LoadService {
                     if(ss.startsWith("./")) {
                         ss = ss.substring(2);
                     }
-                    state.loadName = resolveLoadName(foundResource, ss);
+                    state.setLoadName(resolveLoadName(foundResource, ss));
                     break Outer;
                 }
             } else {
@@ -1278,7 +1282,7 @@ public class LoadService {
                         if(ss.startsWith("./")) {
                             ss = ss.substring(2);
                         }
-                        state.loadName = resolveLoadName(foundResource, ss);
+                        state.setLoadName(resolveLoadName(foundResource, ss));
                         break Outer; // end suffix iteration
                     }
                 }

@@ -1838,7 +1838,8 @@ public class RipperLexer {
         case '<':       /* $<: reading filename */
         case '>':       /* $>: default output handle */
         case '\"':      /* $": already loaded files */
-            yaccValue = new Token("$" + (char) c, Tokens.tGVAR);
+            identValue = "$" + (char) c;
+            yaccValue = new Token(identValue, Tokens.tGVAR);
             return Tokens.tGVAR;
 
         case '-':
@@ -1851,7 +1852,8 @@ public class RipperLexer {
             } else {
                 pushback(c);
             }
-            yaccValue = new Token(tokenBuffer.toString(), Tokens.tGVAR);
+            identValue = tokenBuffer.toString();
+            yaccValue = new Token(identValue, Tokens.tGVAR);
             /* xxx shouldn't check if valid option variable */
             return Tokens.tGVAR;
 
@@ -1860,7 +1862,8 @@ public class RipperLexer {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            yaccValue = new Token("$" + (char) c);
+            identValue = "$" + (char) c;
+            yaccValue = new Token(identValue);
             if (last_state == LexState.EXPR_FNAME) return Tokens.tGVAR;
 
             return Tokens.tBACK_REF;
@@ -1874,11 +1877,13 @@ public class RipperLexer {
             } while (Character.isDigit(c));
             pushback(c);
             if (last_state == LexState.EXPR_FNAME) {
-                yaccValue = new Token(tokenBuffer.toString(), Tokens.tGVAR);
+                identValue = tokenBuffer.toString();
+                yaccValue = new Token(identValue, Tokens.tGVAR);
                 return Tokens.tGVAR;
             }
-            
-            yaccValue = new Token(tokenBuffer.toString());
+
+            identValue = tokenBuffer.toString();
+            yaccValue = new Token(identValue);
             return Tokens.tNTH_REF;
         case '0':
             setState(LexState.EXPR_END);
@@ -2009,7 +2014,8 @@ public class RipperLexer {
             int c2 = nextc();
             if (c2 == ':' && !peek(':')) {
                 setState(LexState.EXPR_BEG);
-                yaccValue = new Token(tempVal + ':');
+                identValue = tempVal + ':';
+                yaccValue = new Token(identValue);
                 return Tokens.tLABEL;
             }
             pushback(c2);
@@ -2027,7 +2033,8 @@ public class RipperLexer {
                     setState(keyword.state);
                 }
                 if (state == LexState.EXPR_FNAME) {
-                    yaccValue = new Token(keyword.name);
+                    identValue = keyword.name;
+                    yaccValue = new Token(identValue);
                 } else {
                     yaccValue = new Token(tempVal);
                     if (keyword.id0 == Tokens.kDO) return doKeyword(state);
