@@ -88,4 +88,8 @@ public class ReadConstantNode extends RubyNode {
         }
     }
 
+    public String getName() {
+        return name;
+    }
+
 }

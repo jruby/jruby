@@ -1,2 +1,0 @@
-fails:Struct#members returns an array of attribute names
-fails:Struct#members does not override the instance accessor method

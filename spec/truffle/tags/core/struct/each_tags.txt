@@ -1,4 +1,0 @@
-fails:Struct#each passes each value to the given block
-fails:Struct#each returns self if passed a block
-fails:Struct#each returns an Enumerator if not passed a block
-fails:Struct#each does not override the instance accessor method

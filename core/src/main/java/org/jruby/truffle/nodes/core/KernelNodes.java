@@ -957,7 +957,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public TruffelizedNode(ThrowNode prev) {
+        public TruffelizedNode(TruffelizedNode prev) {
             super(prev);
         }
 
@@ -968,4 +968,44 @@ public abstract class KernelNodes {
 
     }
 
+    // Rubinius API
+    @CoreMethod(names = "undefined", isModuleMethod = true, needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    public abstract static class UndefinedNode extends CoreMethodNode {
+
+        public UndefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UndefinedNode(UndefinedNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public UndefinedPlaceholder undefined() {
+            return UndefinedPlaceholder.INSTANCE;
+        }
+
+    }
+
+    // Rubinius API
+    @CoreMethod(names = "StringValue", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class StringValueNode extends CoreMethodNode {
+        @Child
+        protected DispatchHeadNode argToStringNode;
+
+        public StringValueNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            argToStringNode = new DispatchHeadNode(context);
+        }
+
+        public StringValueNode(StringValueNode prev) {
+            super(prev);
+            argToStringNode = prev.argToStringNode;
+        }
+
+        @Specialization
+        public RubyString StringValue(VirtualFrame frame, Object arg) {
+            return (RubyString) argToStringNode.call(frame, arg, "to_s", null);
+        }
+    }
 }

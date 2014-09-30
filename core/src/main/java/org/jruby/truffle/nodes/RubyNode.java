@@ -28,6 +28,8 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
+import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
 
 import java.math.BigInteger;
 
@@ -187,6 +189,14 @@ public abstract class RubyNode extends Node {
 
     public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectUndefinedPlaceholder(execute(frame));
+    }
+
+    public RubiniusByteArray executeRubiniusByteArray(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubiniusByteArray(execute(frame));
+    }
+
+    public RubiniusChannel executeRubiniusChannel(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubiniusChannel(execute(frame));
     }
 
     public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) {

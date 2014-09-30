@@ -24,14 +24,13 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
@@ -106,6 +105,8 @@ public class CoreLibrary {
 
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
+
+    @CompilerDirectives.CompilationFinal private RubiniusLibrary rubiniusLibrary;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -341,6 +342,8 @@ public class CoreLibrary {
                 loadRubyCore(file);
             }
         }
+
+        rubiniusLibrary = new RubiniusLibrary(this);
     }
 
     public void loadRubyCore(String fileName) {
@@ -536,6 +539,8 @@ public class CoreLibrary {
         return continuationClass;
     }
 
+    public RubyClass getExceptionClass() { return exceptionClass; }
+
     public RubyClass getFalseClass() {
         return falseClass;
     }
@@ -700,5 +705,9 @@ public class CoreLibrary {
 
     public RubyClass getIntegerClass() {
         return integerClass;
+    }
+
+    public RubiniusLibrary getRubiniusLibrary() {
+        return rubiniusLibrary;
     }
 }

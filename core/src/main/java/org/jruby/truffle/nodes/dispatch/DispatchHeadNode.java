@@ -20,22 +20,28 @@ public class DispatchHeadNode extends Node {
 
     private final RubyContext context;
     private final boolean ignoreVisibility;
+    private final boolean rubiniusPrimitive;
     private final Dispatch.MissingBehavior missingBehavior;
 
     @Child protected DispatchNode first;
 
     public DispatchHeadNode(RubyContext context) {
-        this(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        this(context, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
-        this(context, false, missingBehavior);
+        this(context, false, false, missingBehavior);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
+        this(context, ignoreVisibility, false, missingBehavior);
+    }
+
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean rubiniusPrimitive, Dispatch.MissingBehavior missingBehavior) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
+        this.rubiniusPrimitive = rubiniusPrimitive;
         first = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
     }
 
@@ -150,6 +156,17 @@ public class DispatchHeadNode extends Node {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
+        if (rubiniusPrimitive) {
+            return first.executeDispatch(
+                    frame,
+                    methodReceiverObject,
+                    callingSelf,
+                    callingSelf,
+                    methodName,
+                    blockObject,
+                    RubyArguments.concatUserArguments(argumentsObjects, frame.getArguments()),
+                    dispatchAction);
+        }
         return first.executeDispatch(
                 frame,
                 methodReceiverObject,

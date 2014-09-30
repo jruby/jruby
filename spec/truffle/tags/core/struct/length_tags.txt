@@ -1,2 +1,0 @@
-fails:Struct#length returns the number of attributes
-fails:Struct#length does not override the instance accessor method

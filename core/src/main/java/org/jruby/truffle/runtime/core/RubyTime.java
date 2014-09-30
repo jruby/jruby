@@ -11,12 +11,15 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
 
-import java.util.*;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
 /**
  * Represents the Ruby {@code Time} class. This is a very rough implementation and is only really
  * enough to run benchmark harnesses.
  */
+
 public class RubyTime extends RubyObject {
 
     /**
@@ -32,29 +35,53 @@ public class RubyTime extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyTime(this, milisecondsToNanoseconds(System.currentTimeMillis()));
+            return new RubyTime(this, milisecondsToSeconds(System.currentTimeMillis()), milisecondsToNanoseconds(System.currentTimeMillis()));
         }
 
     }
 
-    public final long nanoseconds;
+    private long seconds;
+    private long nanoseconds;
+    private boolean isdst;
 
-    public RubyTime(RubyClass timeClass, long nanoseconds) {
+    public RubyTime(RubyClass timeClass, long seconds, long nanoseconds) {
         super(timeClass);
+        this.seconds = seconds;
         this.nanoseconds = nanoseconds;
     }
 
-
-    public Date toDate() {
-        return new Date(nanosecondsToMiliseconds(nanoseconds));
+    public long getSeconds() {
+        return seconds;
     }
 
     public static RubyTime fromDate(RubyClass timeClass, long timeMiliseconds) {
-        return new RubyTime(timeClass, milisecondsToNanoseconds(timeMiliseconds));
+        return new RubyTime(timeClass, milisecondsToSeconds(timeMiliseconds), milisecondsToNanoseconds(timeMiliseconds));
+    }
+
+    public static RubyTime fromArray(RubyClass timeClass,
+                                     int second,
+                                     int minute,
+                                     int hour,
+                                     int dayOfMonth,
+                                     int month,
+                                     int year,
+                                     int nanoOfSecond,
+                                     boolean isdst,
+                                     RubyString zone) {
+        ZonedDateTime zdt = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, nanoOfSecond, ZoneId.of(zone.toString()));
+        return new RubyTime(timeClass, zdt.toEpochSecond(), nanoOfSecond);
+    }
+
+    public Date toDate() {
+        return new Date(secondsToMiliseconds(seconds) + nanosecondsToMiliseconds(nanoseconds));
+    }
+
+    private static long milisecondsToSeconds(long miliseconds) {
+        return miliseconds / 1000;
     }
 
     private static long milisecondsToNanoseconds(long miliseconds) {
-        return miliseconds * 1000000;
+        return (miliseconds % 1000) * 1000000;
     }
 
     private static long nanosecondsToMiliseconds(long nanoseconds) {
@@ -63,6 +90,10 @@ public class RubyTime extends RubyObject {
 
     public static double nanosecondsToSecond(long nanoseconds) {
         return nanoseconds / 1e9;
+    }
+
+    public static long secondsToMiliseconds(long seconds) {
+        return seconds * 1000;
     }
 
 }

@@ -186,7 +186,9 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getMethodAnnotation().isSplatted()) {
             argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
         } else {
-            assert arity.getMaximum() != Arity.NO_MAXIMUM;
+            if (arity.getMaximum() == Arity.NO_MAXIMUM) {
+                throw new UnsupportedOperationException("if a core method isn't splatted, you need to specify a maximum");
+            }
 
             for (int n = 0; n < arity.getMaximum(); n++) {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);

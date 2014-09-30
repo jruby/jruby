@@ -1,2 +1,0 @@
-fails:Struct#instance_variables returns an empty array if only attributes are defined
-fails:Struct#instance_variables returns an array with one name if an instance variable is added

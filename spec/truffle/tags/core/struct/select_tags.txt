@@ -1,5 +1,0 @@
-fails:Struct#select raises an ArgumentError if given any non-block arguments
-fails:Struct#select returns a new array of elements for which block is true
-fails:Struct#select returns an instance of Array
-fails:Struct#select does not override the instance accessor method
-fails:Struct#select without block returns an instance of Enumerator
