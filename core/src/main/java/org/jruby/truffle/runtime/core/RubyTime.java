@@ -11,8 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Date;
 
 /**
@@ -68,8 +66,9 @@ public class RubyTime extends RubyObject {
                                      int nanoOfSecond,
                                      boolean isdst,
                                      RubyString zone) {
-        ZonedDateTime zdt = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, nanoOfSecond, ZoneId.of(zone.toString()));
-        return new RubyTime(timeClass, zdt.toEpochSecond(), nanoOfSecond);
+        throw new UnsupportedOperationException();
+        //ZonedDateTime zdt = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, nanoOfSecond, ZoneId.of(zone.toString()));
+        //return new RubyTime(timeClass, zdt.toEpochSecond(), nanoOfSecond);
     }
 
     public Date toDate() {
