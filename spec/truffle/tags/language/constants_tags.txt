@@ -29,3 +29,6 @@ fails:Literal (A::X) constant resolution with statically assigned constants sear
 fails:Literal (A::X) constant resolution with statically assigned constants searches the superclass chain
 fails:Constant resolution within methods with statically assigned constants does not search the lexical scope of qualifying modules
 fails:Constant resolution within methods with dynamically assigned constants does not search the lexical scope of qualifying modules
+fails:Constant resolution within methods with statically assigned constants searches Object as a lexical scope only if Object is explicitly opened
+fails:Module#public_constant marked constants in a module is defined? with A::B form
+fails:Module#public_constant marked constants in a class is defined? with A::B form

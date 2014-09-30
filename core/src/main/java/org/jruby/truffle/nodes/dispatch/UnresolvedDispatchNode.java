@@ -139,7 +139,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             } else {
                 final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
                         methodName, first, receiverObject.getClass(),
-                        boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), null, method, null, null, null, null,
+                        boxedReceiverObject.getLogicalClass().getUnmodifiedAssumption(), null, method, null, null, null, null,
                         null, null, null);
 
                 first.replace(newDispatch);
@@ -194,7 +194,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             } else {
                 final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
                         methodName, first, receiverObject.getClass(),
-                        boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), constant.getValue(), null, null, null, null, null,
+                        boxedReceiverObject.getLogicalClass().getUnmodifiedAssumption(), constant.getValue(), null, null, null, null, null,
                         null, null, null);
 
                 first.replace(newDispatch);
@@ -238,7 +238,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         null, null, null, null, null, null);
             } else {
                 newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        boxedReceiverObject.getLookupNode(), null, method, null, null, null, null, null, null, null);
+                        boxedReceiverObject.getMetaClass(), null, method, null, null, null, null, null, null, null);
             }
 
             first.replace(newDispatch);
@@ -262,7 +262,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         null, null, null, null, null, null);
             } else {
                 newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        boxedReceiverObject.getLookupNode(), constant.getValue(), null, null, null, null, null, null, null, null);
+                        boxedReceiverObject.getMetaClass(), constant.getValue(), null, null, null, null, null, null, null, null);
             }
 
             first.replace(newDispatch);
@@ -283,7 +283,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(CachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), null, null, null, null, null, null, null));
             }
 
             case CALL_CONST_MISSING: {
@@ -295,7 +295,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), method, null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), method, null, null, null, null, null, null, null));
             }
 
             default: {
@@ -314,7 +314,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(CachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), null, null, null, null, null, null, null));
             }
 
             case CALL_METHOD_MISSING: {
@@ -326,7 +326,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), method, null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), method, null, null, null, null, null, null, null));
             }
 
             default: {

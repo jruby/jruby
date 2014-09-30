@@ -32,7 +32,7 @@ public class ClassNode extends RubyNode {
 
     @Override
     public RubyClass executeRubyClass(VirtualFrame frame) {
-        return child.executeRubyBasicObject(frame).getRubyClass();
+        return child.executeRubyBasicObject(frame).getLogicalClass();
     }
 
     @Override

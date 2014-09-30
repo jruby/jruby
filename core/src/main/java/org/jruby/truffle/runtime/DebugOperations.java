@@ -31,7 +31,7 @@ public abstract class DebugOperations {
 
         final RubyBasicObject rubyObject = context.getCoreLibrary().box(object);
 
-        final RubyMethod method = rubyObject.getLookupNode().lookupMethod(methodName);
+        final RubyMethod method = ModuleOperations.lookupMethod(rubyObject.getMetaClass(), methodName);
 
         if (method == null) {
             return null;

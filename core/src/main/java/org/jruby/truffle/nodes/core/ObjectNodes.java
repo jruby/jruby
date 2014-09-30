@@ -302,7 +302,7 @@ public abstract class ObjectNodes {
 
         @Specialization
         public RubyClass getClass(RubyBasicObject self) {
-            return self.getRubyClass();
+            return self.getLogicalClass();
         }
 
     }
@@ -326,7 +326,7 @@ public abstract class ObjectNodes {
         public Object dup(VirtualFrame frame, RubyModule self) {
             notDesignedForCompilation();
 
-            final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
+            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
@@ -336,7 +336,7 @@ public abstract class ObjectNodes {
         public Object dup(VirtualFrame frame, RubyObject self) {
             notDesignedForCompilation();
 
-            final RubyObject newObject = new RubyObject(self.getRubyClass());
+            final RubyObject newObject = new RubyObject(self.getLogicalClass());
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
@@ -656,7 +656,7 @@ public abstract class ObjectNodes {
             notDesignedForCompilation();
 
             // TODO(CS): fast path
-            return getContext().getCoreLibrary().box(self).getRubyClass().assignableTo(rubyClass);
+            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getLogicalClass(), rubyClass);
         }
 
     }
@@ -689,9 +689,7 @@ public abstract class ObjectNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            final Map<String, RubyMethod> methods = new HashMap<>();
-
-            self.getLookupNode().getMethods(methods);
+            final Map<String, RubyMethod> methods = ModuleOperations.getAllMethods(self.getMetaClass());
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
@@ -769,9 +767,7 @@ public abstract class ObjectNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            final Map<String, RubyMethod> methods = new HashMap<>();
-
-            self.getLookupNode().getMethods(methods);
+            final Map<String, RubyMethod> methods = self.getMetaClass().getMethods();
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC) {
@@ -896,9 +892,9 @@ public abstract class ObjectNodes {
             final Collection<RubyMethod> methods;
 
             if (includeInherited) {
-                methods = self.getSingletonClass(this).getAllMethods();
+                methods = ModuleOperations.getAllMethods(self.getSingletonClass(this)).values();
             } else {
-                methods = self.getSingletonClass(this).getDeclaredMethods();
+                methods = self.getSingletonClass(this).getMethods().values();
             }
 
             for (RubyMethod method : methods) {
@@ -930,7 +926,7 @@ public abstract class ObjectNodes {
         public RubyString toS(RubyBasicObject self) {
             notDesignedForCompilation();
 
-            return getContext().makeString("#<" + self.getRubyClass().getName() + ":0x" + Long.toHexString(self.getObjectID()) + ">");
+            return getContext().makeString("#<" + self.getLogicalClass().getName() + ":0x" + Long.toHexString(self.getObjectID()) + ">");
         }
 
     }

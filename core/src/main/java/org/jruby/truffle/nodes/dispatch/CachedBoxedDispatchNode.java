@@ -18,17 +18,17 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
-    private final LookupNode expectedLookupNode;
+    private final ModuleChain expectedClass;
     private final Assumption unmodifiedAssumption;
 
     private final Object value;
@@ -37,11 +37,11 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
     @Child protected DirectCallNode callNode;
 
     public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                   LookupNode expectedLookupNode, Object value, RubyMethod method) {
+                                   ModuleChain expectedClass, Object value, RubyMethod method) {
         super(context, cachedName, next);
 
-        this.expectedLookupNode = expectedLookupNode;
-        this.unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
+        this.expectedClass = expectedClass;
+        this.unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
         this.next = next;
         this.value = value;
         this.method = method;
@@ -53,7 +53,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     public CachedBoxedDispatchNode(CachedBoxedDispatchNode prev) {
         super(prev);
-        expectedLookupNode = prev.expectedLookupNode;
+        expectedClass = prev.expectedClass;
         unmodifiedAssumption = prev.unmodifiedAssumption;
         value = prev.value;
         method = prev.method;
@@ -74,7 +74,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
         // Check the lookup node is what we expect
 
-        if (receiverObject.getLookupNode() != expectedLookupNode) {
+        if (receiverObject.getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
                     methodReceiverObject,

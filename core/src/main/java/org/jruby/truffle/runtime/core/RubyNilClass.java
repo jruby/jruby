@@ -57,4 +57,9 @@ public class RubyNilClass extends RubyObject {
         return false;
     }
 
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
 }

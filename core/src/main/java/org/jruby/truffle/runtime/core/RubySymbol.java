@@ -140,4 +140,9 @@ public class RubySymbol extends RubyObject {
         }
     }
 
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
 }

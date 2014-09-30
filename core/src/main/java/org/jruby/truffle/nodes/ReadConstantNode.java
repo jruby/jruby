@@ -67,14 +67,14 @@ public class ReadConstantNode extends RubyNode {
         Object value;
 
         try {
-            value = context.getCoreLibrary().box(receiver.execute(frame)).getLookupNode().lookupConstant(name);
+            value = ModuleOperations.lookupConstant(context.getCoreLibrary().box(receiver.execute(frame)).getMetaClass(), name);
         } catch (RaiseException e) {
             /*
              * If we are looking up a constant in a constant that is itself undefined, we return Nil
              * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2)
              */
 
-            if (e.getRubyException().getRubyClass() == context.getCoreLibrary().getNameErrorClass()) {
+            if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
                 return NilPlaceholder.INSTANCE;
             }
 

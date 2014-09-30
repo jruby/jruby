@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -60,7 +61,7 @@ public abstract class DispatchNode extends RubyNode {
 
         RubyConstant constant;
 
-        constant = receiver.getLookupNode().lookupConstant(name);
+        constant = ModuleOperations.lookupConstant(receiver.getMetaClass(), name);
 
         if (constant == null && receiver instanceof RubyModule) {
             /*
@@ -69,7 +70,7 @@ public abstract class DispatchNode extends RubyNode {
              * it for now.
              */
 
-            constant = ((RubyModule) receiver).lookupConstant(name);
+            constant =  ModuleOperations.lookupConstant((RubyModule) receiver, name);
         }
 
         return constant;
@@ -83,7 +84,7 @@ public abstract class DispatchNode extends RubyNode {
             Dispatch.DispatchAction dispatchAction) {
         CompilerAsserts.neverPartOfCompilation();
 
-        RubyMethod method = receiver.getLookupNode().lookupMethod(name);
+        RubyMethod method = ModuleOperations.lookupMethod(receiver.getMetaClass(), name);
 
         // If no method was found, use #method_missing
 
@@ -99,7 +100,7 @@ public abstract class DispatchNode extends RubyNode {
 
         // Check visibility
 
-        if (callingSelf == receiver.getRubyClass()){
+        if (callingSelf == receiver.getLogicalClass()){
             return method;
         }
 

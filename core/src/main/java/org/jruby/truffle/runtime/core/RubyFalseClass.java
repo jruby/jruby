@@ -41,4 +41,9 @@ public class RubyFalseClass extends RubyObject implements Unboxable {
         return false;
     }
 
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
 }

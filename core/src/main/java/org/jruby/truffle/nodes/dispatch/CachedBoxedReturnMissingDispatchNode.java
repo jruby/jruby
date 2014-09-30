@@ -16,29 +16,29 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.lookup.LookupNode;
 
 public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final LookupNode expectedLookupNode;
+    private final ModuleChain expectedClass;
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                LookupNode expectedLookupNode) {
+                                                ModuleChain expectedClass) {
         super(context, cachedName, next);
-        assert expectedLookupNode != null;
-        this.expectedLookupNode = expectedLookupNode;
-        unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
+        assert expectedClass != null;
+        this.expectedClass = expectedClass;
+        unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
         this.next = next;
     }
 
     public CachedBoxedReturnMissingDispatchNode(CachedBoxedReturnMissingDispatchNode prev) {
         super(prev);
-        expectedLookupNode = prev.expectedLookupNode;
+        expectedClass = prev.expectedClass;
         unmodifiedAssumption = prev.unmodifiedAssumption;
     }
 
@@ -56,7 +56,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
 
         // Check the lookup node is what we expect
 
-        if (receiverObject.getLookupNode() != expectedLookupNode) {
+        if (receiverObject.getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
                     methodReceiverObject,

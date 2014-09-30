@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -128,7 +129,7 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getClassAnnotation().name().equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
         } else {
-            module = (RubyModule) rubyObjectClass.lookupConstant(methodDetails.getClassAnnotation().name()).getValue();
+            module = (RubyModule) ModuleOperations.lookupConstant(rubyObjectClass, methodDetails.getClassAnnotation().name()).getValue();
         }
 
         assert module != null : methodDetails.getClassAnnotation().name();

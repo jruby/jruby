@@ -882,7 +882,7 @@ public abstract class StringNodes {
         public RubyString reverse(RubyString string) {
             notDesignedForCompilation();
 
-            return RubyString.fromJavaString(string.getRubyClass(), new StringBuilder(string.toString()).reverse().toString());
+            return RubyString.fromJavaString(string.getLogicalClass(), new StringBuilder(string.toString()).reverse().toString());
         }
     }
 

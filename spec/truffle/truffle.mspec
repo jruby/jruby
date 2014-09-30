@@ -2,7 +2,8 @@ class MSpecScript
 
   set :language, [
     "spec/ruby/language",
-    "^spec/ruby/language/regexp/anchors_spec.rb"
+    "^spec/ruby/language/regexp/anchors_spec.rb",
+    "^spec/ruby/language/super_spec.rb"
   ]
 
   set :core, [
@@ -44,6 +45,10 @@ class MSpecScript
 
     # Can't load these - so tags aren't enough to exclude them
 
+    "^spec/ruby/core/class/dup_spec.rb",
+    "^spec/ruby/core/class/inherited_spec.rb",
+    "^spec/ruby/core/class/new_spec.rb",
+    "^spec/ruby/core/class/superclass_spec.rb",
     "^spec/ruby/core/dir/chroot_spec.rb",
     "^spec/ruby/core/dir/element_reference_spec.rb",
     "^spec/ruby/core/dir/glob_spec.rb",

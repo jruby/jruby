@@ -20,6 +20,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.nodes.core.MathNodes;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -120,10 +121,10 @@ public class CoreLibrary {
 
         // Close the cycles
 
-        moduleClass.unsafeSetRubyClass(classClass);
+        moduleClass.unsafeSetLogicalClass(classClass);
         classClass.unsafeSetSuperclass(null, moduleClass);
         moduleClass.unsafeSetSuperclass(null, objectClass);
-        classClass.unsafeSetRubyClass(classClass);
+        classClass.unsafeSetLogicalClass(classClass);
 
         // Create all other classes and modules
 
@@ -321,8 +322,8 @@ public class CoreLibrary {
         // Just create a dummy object for $stdout - we can use Kernel#print and a special method TruffleDebug#flush_stdout
 
         final RubyBasicObject stdout = new RubyBasicObject(objectClass);
-        stdout.getSingletonClass(null).addMethod(null, stdout.getLookupNode().lookupMethod("print").withNewVisibility(Visibility.PUBLIC));
-        stdout.getSingletonClass(null).addMethod(null, truffleDebugModule.getLookupNode().lookupMethod("flush_stdout").withNewName("flush"));
+        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withNewVisibility(Visibility.PUBLIC));
+        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(truffleDebugModule, "flush_stdout").withNewName("flush"));
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
         objectClass.setConstant(null, "STDIN", new RubyBasicObject(objectClass));

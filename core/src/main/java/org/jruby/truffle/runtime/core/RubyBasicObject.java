@@ -9,53 +9,58 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.*;
-import java.util.Map.Entry;
-
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.lookup.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
-import org.jruby.truffle.runtime.objectstorage.StorageLocation;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
-import org.jruby.util.cli.Options;
+
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Represents the Ruby {@code BasicObject} class - the root of the Ruby class hierarchy.
  */
 public class RubyBasicObject extends ObjectStorage {
 
-    @CompilationFinal protected RubyClass rubyClass;
-    protected RubyClass rubySingletonClass;
-
-    protected LookupNode lookupNode;
-
+    @CompilationFinal protected RubyClass logicalClass;
+    @CompilationFinal protected RubyClass metaClass;
     protected long objectID = -1;
-
     public boolean hasPrivateLayout = false;
 
     public RubyBasicObject(RubyClass rubyClass) {
         super(rubyClass != null ? rubyClass.getObjectLayoutForInstances() : ObjectLayout.EMPTY);
 
         if (rubyClass != null) {
-            unsafeSetRubyClass(rubyClass);
+            unsafeSetLogicalClass(rubyClass);
         }
     }
 
-    public LookupNode getLookupNode() {
-        return lookupNode;
+    public boolean isImmediate() {
+        return false;
     }
 
-    public RubyClass getRubyClass() {
-        assert rubyClass != null;
-        return rubyClass;
+    public RubyClass getMetaClass() {
+        return metaClass;
+    }
+
+    public RubyClass getSingletonClass(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        if (isImmediate() || metaClass.isSingleton()) {
+            return metaClass;
+        }
+
+        final RubyClass logicalClass = metaClass;
+
+        metaClass = new RubyClass(currentNode, logicalClass.getLexicalParentModule(), logicalClass,
+                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()), true);
+
+        return metaClass;
     }
 
     public void setInstanceVariable(String name, Object value) {
@@ -65,37 +70,16 @@ public class RubyBasicObject extends ObjectStorage {
 
         setField(name, value);
 
-        if (rubyClass.getObjectLayoutForInstances() != objectLayout) {
-            rubyClass.setObjectLayoutForInstances(objectLayout);
+        if (logicalClass.getObjectLayoutForInstances() != objectLayout) {
+            logicalClass.setObjectLayoutForInstances(objectLayout);
         }
-    }
-
-    public RubyClass getSingletonClass(Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-
-        if (rubySingletonClass == null) {
-            final CoreLibrary coreLibrary = getContext().getCoreLibrary();
-
-            // TODO(CS): some of these reference comparisons should probably check for subclasses as well
-
-            if (getRubyClass() == coreLibrary.getNilClass() || getRubyClass() == coreLibrary.getTrueClass() || getRubyClass() == coreLibrary.getFalseClass()) {
-                rubySingletonClass = getRubyClass();
-            } else if (getRubyClass() == coreLibrary.getFixnumClass() || getRubyClass() == coreLibrary.getFloatClass() || getRubyClass() == coreLibrary.getSymbolClass()) {
-                throw new RaiseException(coreLibrary.typeError("can't define singleton", currentNode));
-            } else {
-                rubySingletonClass = new RubyClass(currentNode, rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:0x%x>>", rubyClass.getName(), getObjectID()), true);
-                lookupNode = new LookupFork(rubySingletonClass, rubyClass);
-            }
-        }
-
-        return rubySingletonClass;
     }
 
     public long getObjectID() {
         RubyNode.notDesignedForCompilation();
 
         if (objectID == -1) {
-            objectID = rubyClass.getContext().getNextObjectID();
+            objectID = getContext().getNextObjectID();
         }
 
         return objectID;
@@ -112,8 +96,8 @@ public class RubyBasicObject extends ObjectStorage {
     public void updateLayoutToMatchClass() {
         RubyNode.notDesignedForCompilation();
 
-        if (objectLayout != rubyClass.getObjectLayoutForInstances()) {
-            changeLayout(rubyClass.getObjectLayoutForInstances());
+        if (objectLayout != logicalClass.getObjectLayoutForInstances()) {
+            changeLayout(logicalClass.getObjectLayoutForInstances());
         }
     }
 
@@ -138,12 +122,16 @@ public class RubyBasicObject extends ObjectStorage {
         getSingletonClass(currentNode).include(currentNode, module);
     }
 
-    public void unsafeSetRubyClass(RubyClass newRubyClass) {
-        assert rubyClass == null;
-
-        rubyClass = newRubyClass;
-        lookupNode = rubyClass;
+    public void unsafeSetLogicalClass(RubyClass newLogicalClass) {
+        assert logicalClass == null;
+        logicalClass = newLogicalClass;
+        metaClass = newLogicalClass;
     }
+
+    //public void unsafeSetMetaClass(RubyClass newMetaClass) {
+    //    assert metaClass == null;
+    //    metaClass = newMetaClass;
+    //}
 
     public Object getInstanceVariable(String name) {
         RubyNode.notDesignedForCompilation();
@@ -161,11 +149,7 @@ public class RubyBasicObject extends ObjectStorage {
 
     public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
-            rubyClass.visitObjectGraph(visitor);
-
-            if (rubySingletonClass != null) {
-                rubySingletonClass.visitObjectGraph(visitor);
-            }
+            metaClass.visitObjectGraph(visitor);
 
             for (Object instanceVariable : getFields().values()) {
                 getContext().getCoreLibrary().box(instanceVariable).visitObjectGraph(visitor);
@@ -179,11 +163,15 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public boolean isNumeric() {
-        return getRubyClass().assignableTo(getContext().getCoreLibrary().getNumericClass());
+        return ModuleOperations.assignableTo(this.getMetaClass(), getContext().getCoreLibrary().getNumericClass());
     }
 
     public RubyContext getContext() {
-        return rubyClass.getContext();
+        return logicalClass.getContext();
+    }
+
+    public RubyClass getLogicalClass() {
+        return logicalClass;
     }
 
 }

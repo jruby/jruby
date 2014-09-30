@@ -79,12 +79,12 @@ public class DispatchHeadNode extends Node {
 
         final String message = String.format("%s (%s#%s gives %s)",
                 context.getCoreLibrary().getFloatClass().getName(),
-                receiverBoxed.getRubyClass().getName(),
+                receiverBoxed.getLogicalClass().getName(),
                 methodName,
-                valueBoxed.getRubyClass().getName());
+                valueBoxed.getLogicalClass().getName());
 
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverBoxed.getRubyClass().getName(),
+                receiverBoxed.getLogicalClass().getName(),
                 message,
                 this));
     }
@@ -116,12 +116,12 @@ public class DispatchHeadNode extends Node {
 
         final String message = String.format("%s (%s#%s gives %s)",
                 context.getCoreLibrary().getFloatClass().getName(),
-                receiverBoxed.getRubyClass().getName(),
+                receiverBoxed.getLogicalClass().getName(),
                 methodName,
-                valueBoxed.getRubyClass().getName());
+                valueBoxed.getLogicalClass().getName());
 
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverBoxed.getRubyClass().getName(),
+                receiverBoxed.getLogicalClass().getName(),
                 message,
                 this));
     }

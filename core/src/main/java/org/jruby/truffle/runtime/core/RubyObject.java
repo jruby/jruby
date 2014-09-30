@@ -30,7 +30,7 @@ public class RubyObject extends RubyBasicObject {
     public void checkFrozen(Node currentNode) {
         if (frozen) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getRubyClass().getName().toLowerCase(), currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName().toLowerCase(), currentNode));
         }
     }
 
