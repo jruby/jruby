@@ -99,7 +99,7 @@ public class RubyClass extends RubyModule {
             singletonSuperclass = getSuperClass().getSingletonClass(currentNode);
         }
 
-        metaClass = new RubyClass(currentNode, getParentModule(), singletonSuperclass, String.format("#<Class:%s>", getName()), true);
+        metaClass = new RubyClass(currentNode, getLexicalParentModule(), singletonSuperclass, String.format("#<Class:%s>", getName()), true);
 
         return metaClass;
     }
