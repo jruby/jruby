@@ -451,7 +451,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void setCFG(CFG cfg) {
-       this.cfg = cfg;
+        this.cfg = cfg;
     }
 
     public CFG getCFG() {
@@ -517,19 +517,7 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void runCompilerPasses(List<CompilerPass> passes) {
-        // SSS FIXME: Why is this again?  Document this weirdness!
-        // Forcibly clear out the shared eval-scope variable allocator each time this method executes
-        initEvalScopeVariableAllocator(true);
-
-        // SSS FIXME: We should configure different optimization levels
-        // and run different kinds of analysis depending on time budget.
-        // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
-        // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
-        // while another thread is using it.  This may need to happen on a clone()
-        // and we may need to update the method to return the new method.  Also,
-        // if this scope is held in multiple locations how do we update all references?
-
+    private boolean isUnsafeScope() {
         boolean unsafeScope = false;
         if (flags.contains(HAS_END_BLOCKS) || this.isBeginEndBlock()) {
             unsafeScope = true;
@@ -545,12 +533,27 @@ public abstract class IRScope implements ParseResult {
                 unsafeScope = true;
             }
         }
+        return unsafeScope;
+    }
+
+    private void runCompilerPasses(List<CompilerPass> passes) {
+        // SSS FIXME: Why is this again?  Document this weirdness!
+        // Forcibly clear out the shared eval-scope variable allocator each time this method executes
+        initEvalScopeVariableAllocator(true);
+
+        // SSS FIXME: We should configure different optimization levels
+        // and run different kinds of analysis depending on time budget.
+        // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
+        // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
+        // while another thread is using it.  This may need to happen on a clone()
+        // and we may need to update the method to return the new method.  Also,
+        // if this scope is held in multiple locations how do we update all references?
 
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
         // worth the effort. It is simpler to just go fully safe in scopes
         // influenced by their presence.
-        if (unsafeScope) {
+        if (isUnsafeScope()) {
             passes = getManager().getSafePasses(this);
         }
 
@@ -569,7 +572,16 @@ public abstract class IRScope implements ParseResult {
     private void runDeadCodeAndVarLoadStorePasses() {
         // For methods that don't require a dynamic scope,
         // inline-add lvar loads/store to tmp-var loads/stores.
-        if (!flags.contains(HAS_END_BLOCKS) && !flags.contains(REQUIRES_DYNSCOPE)) {
+        //
+        // We cannot run LVA and DCE on individual closures.
+        // By extension, we cannot run ALVLSI on individual closures
+        // either since it requires LVA information (unless we run
+        // the simplified form of ALVLSI pass which doesn't do a
+        // dataflow analysis).
+        //
+        // => They can only be started on IRMethod scopes and run
+        // on all (recursively) nested closures in that method context.
+        if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE) && !(this instanceof IRClosure)) {
             CompilerPass pass;
             pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
@@ -730,7 +742,7 @@ public abstract class IRScope implements ParseResult {
         }
 
         // Compute flags for nested closures (recursively) and set derived flags.
-        for (IRClosure cl : getClosures()) {
+        for (IRClosure cl: getClosures()) {
             cl.computeScopeFlags();
             if (cl.usesEval()) {
                 flags.add(CAN_RECEIVE_BREAKS);
@@ -749,8 +761,7 @@ public abstract class IRScope implements ParseResult {
             }
         }
 
-        if (!(this instanceof IRMethod)
-            || flags.contains(CAN_RECEIVE_BREAKS)
+        if (flags.contains(CAN_RECEIVE_BREAKS)
             || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
             || flags.contains(BINDING_HAS_ESCAPED)
                // SSS FIXME: checkArity for keyword args

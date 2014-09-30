@@ -39,7 +39,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     public Object execute(IRScope s, Object... data) {
         StoreLocalVarPlacementProblem slvp = new StoreLocalVarPlacementProblem();
         Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
-        if (s.bindingHasEscaped() || s instanceof IRClosure) {
+        if (s.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE) || s instanceof IRClosure) {
             // 1. Figure out required stores
             // 2. Add stores
             // 3. Figure out required loads
@@ -72,13 +72,16 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
                         Variable v = ((ResultInstr) i).getResult();
                         // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
                         if (v instanceof LocalVariable && !v.isSelf()) {
+                            LocalVariable lv = (LocalVariable)v;
                             // Make sure there is a replacement tmp-var allocated for lv
-                            setupLocalVarReplacement((LocalVariable)v, s, varRenameMap);
+                            setupLocalVarReplacement(lv, s, varRenameMap);
                         }
                     }
                     for (Variable v : i.getUsedVariables()) {
                         if (v instanceof LocalVariable && !v.isSelf()) {
-                            setupLocalVarReplacement((LocalVariable)v, s, varRenameMap);
+                            LocalVariable lv = (LocalVariable)v;
+                            // Make sure there is a replacement tmp-var allocated for lv
+                            setupLocalVarReplacement(lv, s, varRenameMap);
                         }
                     }
                 }
