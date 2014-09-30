@@ -1,8 +1,7 @@
 class MSpecScript
 
   set :language, [
-    "spec/ruby/language",
-    "^spec/ruby/language/regexp/anchors_spec.rb"
+    "spec/ruby/language"
   ]
 
   set :core, [
