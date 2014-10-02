@@ -27,10 +27,18 @@ public class DeadCodeElimination extends CompilerPass {
             run(cl, true);
         }
 
+        scope.setDataFlowSolution("DCE", scope.getDataFlowSolution(LiveVariablesProblem.NAME));
+
         return true;
     }
 
+    @Override
+    public Object previouslyRun(IRScope scope) {
+        return scope.getDataFlowSolution("DCE");
+    }
+
+    @Override
     public void invalidate(IRScope scope) {
-        // FIXME: Can we reset this?
+        scope.setDataFlowSolution("DCE", null);
     }
 }
