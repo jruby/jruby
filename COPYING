@@ -106,7 +106,7 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  under the MIT license.
 
  The Rubinius API implementation in core/src/main/ruby/jruby/truffle/core/rubinius/api
- and core/main/jara/org/jruby/truffle/runtime/rubinius is copyright (c) 2011,
+ and core/src/main/java/org/jruby/truffle/runtime/rubinius is copyright (c) 2011,
  Evan Phoenix, and released under the 3-clause BSD license.
 
  The Rubinius core library implementation in core/src/main/ruby/jruby/truffle/core/rubinius/kernel
