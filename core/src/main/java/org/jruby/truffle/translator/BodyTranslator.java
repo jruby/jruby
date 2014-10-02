@@ -633,7 +633,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitColon2Node(org.jruby.ast.Colon2Node node) {
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        return new ReadConstantNode(context, translate(node.getPosition()), true, node.getName(), lhs);
+        return new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs);
     }
 
     @Override
@@ -642,9 +642,9 @@ public class BodyTranslator extends Translator {
 
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
+        final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject());
 
-        return new ReadConstantNode(context, sourceSection, false, node.getName(), root);
+        return new ReadConstantNode(context, sourceSection, node.getName(), root);
     }
 
     @Override
@@ -660,7 +660,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        return new ReadConstantNode(context, sourceSection, false, node.getName(), new SelfNode(context, sourceSection));
+        return new ReadConstantNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
     }
 
     @Override

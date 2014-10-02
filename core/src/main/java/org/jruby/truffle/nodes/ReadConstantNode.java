@@ -20,37 +20,28 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 public class ReadConstantNode extends RubyNode {
 
-    private final boolean isLiteral;
-    private final String name;
-    @Child protected RubyNode receiver;
+    protected final String name;
+    @Child protected BoxingNode receiver;
+
     @Child protected DispatchHeadNode dispatch;
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, boolean isLiteral, String name, RubyNode receiver) {
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
-        this.isLiteral = isLiteral;
         this.name = name;
-        this.receiver = receiver;
+        this.receiver = new BoxingNode(context, sourceSection, receiver);
         dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object receiverObject = receiver.execute(frame);
-
-        if (isLiteral && !(receiverObject instanceof RubyModule)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
-        }
-
         return dispatch.dispatch(
                 frame,
                 NilPlaceholder.INSTANCE,
                 RubyArguments.getSelf(frame.getArguments()),
-                receiverObject,
+                receiver.executeRubyBasicObject(frame),
                 name,
                 null,
                 new Object[]{},
