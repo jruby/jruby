@@ -1,1 +1,0 @@
-fails:The 'case'-construct evaluates the body of the when clause in left-to-right order if it's an array expression

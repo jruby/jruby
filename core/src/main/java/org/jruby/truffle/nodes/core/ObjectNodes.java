@@ -82,6 +82,11 @@ public abstract class ObjectNodes {
             return a == b;
         }
 
+        @Specialization
+        public boolean equal(RubyBasicObject a, boolean b) {
+            return false;
+        }
+
     }
 
     @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)
