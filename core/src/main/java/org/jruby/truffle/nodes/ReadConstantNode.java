@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -41,6 +42,7 @@ public class ReadConstantNode extends RubyNode {
         final Object receiverObject = receiver.execute(frame);
 
         if (isLiteral && !(receiverObject instanceof RubyModule)) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
 
