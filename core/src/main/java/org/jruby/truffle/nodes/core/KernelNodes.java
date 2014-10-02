@@ -696,7 +696,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTarget(), block.getDeclarationFrame(),
+                    block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
                     block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
