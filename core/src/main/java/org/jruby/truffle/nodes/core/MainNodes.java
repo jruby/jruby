@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -19,15 +20,14 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "main")
 public abstract class MainNodes {
 
-    @CoreMethod(names = "include", isSplatted = true, minArgs = 1)
+    @CoreMethod(names = "include", isSplatted = true, needsSelf = false, minArgs = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode includeNode;
+        @Child protected ModuleNodes.IncludeNode includeNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            includeNode = new DispatchHeadNode(context);
-
+            includeNode = ModuleNodesFactory.IncludeNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -38,11 +38,8 @@ public abstract class MainNodes {
         @Specialization
         public NilPlaceholder include(VirtualFrame frame, Object[] args) {
             notDesignedForCompilation();
-
-            RubyClass object = getContext().getCoreLibrary().getObjectClass();
-
-            // TODO: MRI does this call statically
-            return (NilPlaceholder) includeNode.call(frame, object, "include", null, args);
+            final RubyClass object = getContext().getCoreLibrary().getObjectClass();
+            return includeNode.executeInclude(frame, object, args);
         }
     }
 

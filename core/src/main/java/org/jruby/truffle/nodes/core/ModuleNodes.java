@@ -654,6 +654,8 @@ public abstract class ModuleNodes {
             appendFeaturesNode = prev.appendFeaturesNode;
         }
 
+        public abstract NilPlaceholder executeInclude(VirtualFrame frame, RubyModule module, Object[] args);
+
         @Specialization
         public NilPlaceholder include(VirtualFrame frame, RubyModule module, Object[] args) {
             notDesignedForCompilation();

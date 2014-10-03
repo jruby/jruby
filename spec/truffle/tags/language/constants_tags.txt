@@ -31,3 +31,6 @@ fails:Constant resolution within methods with dynamically assigned constants doe
 fails:Module#public_constant marked constants in a module is defined? with A::B form
 fails:Module#public_constant marked constants in a class is defined? with A::B form
 fails:Literal (A::X) constant resolution with statically assigned constants searches Object if a toplevel qualifier (::X) is given
+fails:Literal (A::X) constant resolution with statically assigned constants searches a module included in the superclass
+fails:Constant resolution within methods with statically assigned constants searches a module included in the superclass
+fails:Constant resolution within methods with statically assigned constants searches Object as a lexical scope only if Object is explicitly opened
