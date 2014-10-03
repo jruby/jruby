@@ -103,6 +103,12 @@
                 <include>*</include>
               </includes>
             </fileset>
+            <fileset>
+              <directory>${basedir}/ruby/shared</directory>
+              <includes>
+                <include>**/*.jar</include>
+              </includes>
+            </fileset>
           </filesets>
         </configuration>
       </plugin>

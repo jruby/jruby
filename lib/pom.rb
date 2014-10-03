@@ -81,7 +81,9 @@ project 'JRuby Lib Setup' do
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
-                           :includes => [ '*' ] } ] )
+                           :includes => [ '*' ] },
+                         { :directory => '${basedir}/ruby/shared',
+                           :includes => [ '**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
