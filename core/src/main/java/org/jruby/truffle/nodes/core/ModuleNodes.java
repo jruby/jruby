@@ -168,6 +168,37 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "ancestors", maxArgs = 0)
+    public abstract static class AncestorsNode extends CoreMethodNode {
+
+        public AncestorsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AncestorsNode(AncestorsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray ancestors(RubyModule self) {
+            notDesignedForCompilation();
+
+            ModuleOperations.debugModuleChain(self);
+
+            final List<ModuleChain> ancestors = new ArrayList<>();
+
+            for (ModuleChain module = self; module != null; module = module.getParentModule()) {
+                if (module instanceof IncludedModule) {
+                    ancestors.add(((IncludedModule) module).getIncludedModule());
+                } else {
+                    ancestors.add(module);
+                }
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
+        }
+    }
+
     @CoreMethod(names = "append_features", minArgs = 1, maxArgs = 1)
     public abstract static class AppendFeaturesNode extends CoreMethodNode {
 
@@ -1167,7 +1198,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
