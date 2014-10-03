@@ -346,6 +346,9 @@
           <configuration>
             <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
             <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            <properties>
+              <project.version>${project.version}</project.version>
+            </properties>
             <pomIncludes>
               <pomInclude>*/pom.xml</pomInclude>
             </pomIncludes>
@@ -354,6 +357,7 @@
             <preBuildHookScript>setup.bsh</preBuildHookScript>
             <postBuildHookScript>verify.bsh</postBuildHookScript>
             <streamLogs>true</streamLogs>
+	    <goals><goal>install</goal></goals>
           </configuration>
         </plugin>
 

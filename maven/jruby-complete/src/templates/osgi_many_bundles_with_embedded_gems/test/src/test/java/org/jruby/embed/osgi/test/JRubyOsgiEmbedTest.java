@@ -31,9 +31,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 
 import java.io.File;
 import java.net.URL;
+
+import javax.inject.Inject;
 
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
@@ -47,6 +51,10 @@ import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.BundleContext;
+
+import org.jruby.osgi.gems.Gems;
+import org.jruby.osgi.scripts.Scripts;
 
 /**
  * @author ajuckel
@@ -56,19 +64,24 @@ public class JRubyOsgiEmbedTest {
 
     @Configuration
     public Option[] config() {
-        File f = new File("target/osgi-test.jar");
-        return options(junitBundles(), bundle(f.toURI().toString()));
+	return options(junitBundles(),
+		       systemProperty("org.ops4j.pax.url.mvn.localRepository").value(System.getProperty( "maven.repo.local" )),
+		       mavenBundle("org.jruby", "jruby-complete", System.getProperty("project.version")),
+		       mavenBundle("org.jruby.osgi", "gems-bundle", "1.0"),
+		       mavenBundle("org.jruby.osgi", "scripts-bundle", "1.0"));
     }
 
     @Test
-    public void testJRubyCreate() throws InterruptedException {
+    public void testJRubyCreate() throws Exception {
 
         System.err.println();
         System.err.println();
 
 	// System.setProperty( "jruby.debug.loadService", "true" );
 	IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
-
+	jruby.addLoadPath( Scripts.class.getClassLoader() );
+	jruby.addGemPath( Gems.class.getClassLoader() );
+	
         // run a script from LOAD_PATH
         String hello = (String) jruby.runScriptlet( "require 'hello'; Hello.say" );
         assertEquals( hello, "world" );
@@ -83,8 +96,8 @@ public class JRubyOsgiEmbedTest {
         String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\"]");
 
-        // ensure we can load openssl (with its bouncy-castle jars)
-        loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
+        // ensure we can load openssl (with its bouncy-castle jars) and krypt
+        loaded = (Boolean) jruby.runScriptlet( "require 'openssl';require 'krypt'" );
         assertEquals(true, loaded);
 
         // ensure we can load ffi
@@ -93,16 +106,16 @@ public class JRubyOsgiEmbedTest {
 
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
+        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
 
-        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\"]");
+	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
+        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"krypt\", \"krypt-core\", \"krypt-provider-jdk\"]");
 
         // ensure we can load can load embedded gems
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
 	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
+        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"krypt\", \"krypt-core\", \"krypt-provider-jdk\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
     }
 }
