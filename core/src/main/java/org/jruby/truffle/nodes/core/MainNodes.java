@@ -22,38 +22,27 @@ public abstract class MainNodes {
     @CoreMethod(names = "include", isSplatted = true, minArgs = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode appendFeaturesNode;
+        @Child protected DispatchHeadNode includeNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context);
+            includeNode = new DispatchHeadNode(context);
+
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
-            appendFeaturesNode = prev.appendFeaturesNode;
+            includeNode = prev.includeNode;
         }
 
         @Specialization
-        public NilPlaceholder include(VirtualFrame frame, RubyObject main, Object[] args) {
+        public NilPlaceholder include(VirtualFrame frame, Object[] args) {
             notDesignedForCompilation();
 
-            // TODO(cs): copied from Module - but where does this method really come from?
+            RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
-            // Note that we traverse the arguments backwards
-
-            for (int n = args.length - 1; n >= 0; n--) {
-                if (args[n] instanceof RubyModule) {
-                    final RubyModule included = (RubyModule) args[n];
-
-                    // Note that we do appear to do full method lookup here
-                    appendFeaturesNode.call(frame, included, "append_features", null, main.getSingletonClass(this));
-
-                    // TODO(cs): call included hook
-                }
-            }
-
-            return NilPlaceholder.INSTANCE;
+            // TODO: MRI does this call statically
+            return (NilPlaceholder) includeNode.call(frame, object, "include", null, args);
         }
     }
 
