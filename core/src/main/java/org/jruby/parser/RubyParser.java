@@ -44,6 +44,7 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -146,7 +147,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 150 "-"
+					// line 151 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -4048,8 +4049,16 @@ states[420] = new ParserState() {
                     if (((Node)yyVals[-1+yyTop]) instanceof BlockAcceptingNode && ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
                         throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
-                    if (((Node)yyVals[-1+yyTop]) instanceof NonLocalControlFlowNode) {
-                      yyVal = ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    if (yyVal instanceof IterNode
+                            && ((Node)yyVals[-1+yyTop]) instanceof ReturnNode
+                            && ((ReturnNode)yyVals[-1+yyTop]).getValueNode() instanceof BlockAcceptingNode) {
+                        final IterNode iterNode = ((IterNode)yyVal);
+                        final ReturnNode returnNode = ((ReturnNode)yyVals[-1+yyTop]);
+                        final BlockAcceptingNode blockAcceptingNode = (BlockAcceptingNode) returnNode.getValueNode();
+                        blockAcceptingNode.setIterNode(iterNode);
+                        yyVal = returnNode;
+                    } else if (((Node)yyVals[-1+yyTop]) instanceof NonLocalControlFlowNode) {
+                        yyVal = ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop]));
                     } else {
                         yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
                     }
@@ -5198,7 +5207,7 @@ states[631] = new ParserState() {
   }
 };
 }
-					// line 2480 "RubyParser.y"
+					// line 2489 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5217,4 +5226,4 @@ states[631] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 9614 "-"
+					// line 9623 "-"

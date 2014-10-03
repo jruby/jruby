@@ -1,1 +1,2 @@
 fails:The alias keyword operates on the object's metaclass when used in instance_eval
+fails:The alias keyword adds the new method to the list of public methods

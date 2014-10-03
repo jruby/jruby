@@ -17,6 +17,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -25,7 +26,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
@@ -81,8 +81,8 @@ public abstract class GenericDispatchNode extends DispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         CompilerAsserts.compilationConstant(dispatchAction);
 
-        if (dispatchAction.isCall()) {
-            MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode(), methodName);
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+            MethodCacheEntry entry = lookupInCache(receiverObject.getMetaClass(), methodName);
 
             if (entry == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -95,7 +95,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                             dispatchAction);
 
                     if (missingMethod == null) {
-                        if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+                        if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                             // TODO(CS): we should methodCache the fact that we would throw an exception - this will miss each time
                             getContext().getRuntime().getWarnings().warn(
                                     IRubyWarnings.ID.TRUFFLE,
@@ -119,11 +119,11 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 }
 
                 if (methodCache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
-                    methodCache.put(new MethodCacheKey(receiverObject.getLookupNode(), methodName), entry);
+                    methodCache.put(new MethodCacheKey(receiverObject.getMetaClass(), methodName), entry);
                 }
             }
 
-            if (dispatchAction == Dispatch.DispatchAction.CALL) {
+            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
                 final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
 
                 final Object[] argumentsToUse;
@@ -175,7 +175,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                                 receiverObject,
                                 CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                                 argumentsToUse));
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                 if (hasAnyMethodsMissing) {
                     return !entry.isMethodMissing();
                 } else {
@@ -184,8 +184,8 @@ public abstract class GenericDispatchNode extends DispatchNode {
             } else {
                 throw new UnsupportedOperationException();
             }
-        } else {
-            ConstantCacheEntry entry = lookupInConstantCache(receiverObject.getLookupNode(), methodName);
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+            ConstantCacheEntry entry = lookupInConstantCache(receiverObject.getMetaClass(), methodName);
 
             if (entry == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -212,7 +212,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 }
 
                 if (constantCache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
-                    constantCache.put(new MethodCacheKey(receiverObject.getLookupNode(), methodName), entry);
+                    constantCache.put(new MethodCacheKey(receiverObject.getMetaClass(), methodName), entry);
                 }
             }
             
@@ -260,6 +260,8 @@ public abstract class GenericDispatchNode extends DispatchNode {
             } else {
                 throw new UnsupportedOperationException();
             }
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -285,22 +287,22 @@ public abstract class GenericDispatchNode extends DispatchNode {
     }
 
     @CompilerDirectives.SlowPath
-    public ConstantCacheEntry lookupInConstantCache(LookupNode lookupNode, Object methodName) {
-        return constantCache.get(new MethodCacheKey(lookupNode, methodName));
+    public ConstantCacheEntry lookupInConstantCache(ModuleChain metaClass, Object methodName) {
+        return constantCache.get(new MethodCacheKey(metaClass, methodName));
     }
 
     @CompilerDirectives.SlowPath
-    public MethodCacheEntry lookupInCache(LookupNode lookupNode, Object methodName) {
-        return methodCache.get(new MethodCacheKey(lookupNode, methodName));
+    public MethodCacheEntry lookupInCache(ModuleChain metaClass, Object methodName) {
+        return methodCache.get(new MethodCacheKey(metaClass, methodName));
     }
 
     private static class MethodCacheKey {
 
-        private final LookupNode lookupNode;
+        private final ModuleChain metaClass;
         private final Object methodName;
 
-        private MethodCacheKey(LookupNode lookupNode, Object methodName) {
-            this.lookupNode = lookupNode;
+        private MethodCacheKey(ModuleChain metaClass, Object methodName) {
+            this.metaClass = metaClass;
             this.methodName = methodName;
         }
 
@@ -311,7 +313,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
             MethodCacheKey that = (MethodCacheKey) o;
 
-            if (!lookupNode.equals(that.lookupNode)) return false;
+            if (!metaClass.equals(that.metaClass)) return false;
             if (!methodName.equals(that.methodName)) return false;
 
             return true;
@@ -319,7 +321,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
         @Override
         public int hashCode() {
-            int result = lookupNode.hashCode();
+            int result = metaClass.hashCode();
             result = 31 * result + methodName.hashCode();
             return result;
         }

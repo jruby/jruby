@@ -30,9 +30,6 @@ public class RubySymbol extends RubyObject {
     private final String symbol;
     private final ByteList symbolBytes;
 
-    // See CachedBoxedSymbolDispatchNode
-    public static final Assumption globalSymbolLookupNodeAssumption = Truffle.getRuntime().createAssumption();
-
     private RubySymbol(RubyClass symbolClass, String symbol, ByteList byteList) {
         super(symbolClass);
         this.symbol = symbol;
@@ -48,7 +45,7 @@ public class RubySymbol extends RubyObject {
 
         RubyNode.notDesignedForCompilation();
 
-        final RubyContext context = getRubyClass().getContext();
+        final RubyContext context = getContext();
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, true, null);
 
@@ -64,7 +61,7 @@ public class RubySymbol extends RubyObject {
     public org.jruby.RubySymbol getJRubySymbol() {
         RubyNode.notDesignedForCompilation();
 
-        return getRubyClass().getContext().getRuntime().newSymbol(symbolBytes);
+        return getContext().getRuntime().newSymbol(symbolBytes);
     }
 
     @Override
@@ -91,7 +88,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyString toRubyString() {
-         return getRubyClass().getContext().makeString(toString());
+         return getContext().makeString(toString());
     }
 
     public static final class SymbolTable {
@@ -143,9 +140,9 @@ public class RubySymbol extends RubyObject {
         }
     }
 
-    public void lookupNodeChanged() {
-        getRubyClass().getContext().getRuntime().getWarnings().warning(IRubyWarnings.ID.TRUFFLE, "switching to slow path dispatch on symbols as they've been fiddled with!");
-        globalSymbolLookupNodeAssumption.invalidate();
+    @Override
+    public boolean isImmediate() {
+        return true;
     }
 
 }

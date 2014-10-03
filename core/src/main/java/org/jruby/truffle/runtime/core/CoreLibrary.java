@@ -20,17 +20,17 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.nodes.core.MathNodes;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
@@ -106,6 +106,8 @@ public class CoreLibrary {
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
 
+    @CompilerDirectives.CompilationFinal private RubiniusLibrary rubiniusLibrary;
+
     public CoreLibrary(RubyContext context) {
         this.context = context;
     }
@@ -120,10 +122,10 @@ public class CoreLibrary {
 
         // Close the cycles
 
-        moduleClass.unsafeSetRubyClass(classClass);
+        moduleClass.unsafeSetLogicalClass(classClass);
         classClass.unsafeSetSuperclass(null, moduleClass);
         moduleClass.unsafeSetSuperclass(null, objectClass);
-        classClass.unsafeSetRubyClass(classClass);
+        classClass.unsafeSetLogicalClass(classClass);
 
         // Create all other classes and modules
 
@@ -321,8 +323,8 @@ public class CoreLibrary {
         // Just create a dummy object for $stdout - we can use Kernel#print and a special method TruffleDebug#flush_stdout
 
         final RubyBasicObject stdout = new RubyBasicObject(objectClass);
-        stdout.getSingletonClass(null).addMethod(null, stdout.getLookupNode().lookupMethod("print").withNewVisibility(Visibility.PUBLIC));
-        stdout.getSingletonClass(null).addMethod(null, truffleDebugModule.getLookupNode().lookupMethod("flush_stdout").withNewName("flush"));
+        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withNewVisibility(Visibility.PUBLIC));
+        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(truffleDebugModule, "flush_stdout").withNewName("flush"));
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
         objectClass.setConstant(null, "STDIN", new RubyBasicObject(objectClass));
@@ -340,6 +342,8 @@ public class CoreLibrary {
                 loadRubyCore(file);
             }
         }
+
+        rubiniusLibrary = new RubiniusLibrary(this);
     }
 
     public void loadRubyCore(String fileName) {
@@ -535,6 +539,8 @@ public class CoreLibrary {
         return continuationClass;
     }
 
+    public RubyClass getExceptionClass() { return exceptionClass; }
+
     public RubyClass getFalseClass() {
         return falseClass;
     }
@@ -699,5 +705,9 @@ public class CoreLibrary {
 
     public RubyClass getIntegerClass() {
         return integerClass;
+    }
+
+    public RubiniusLibrary getRubiniusLibrary() {
+        return rubiniusLibrary;
     }
 }

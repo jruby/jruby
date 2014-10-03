@@ -18,19 +18,9 @@ public class Dispatch {
     }
 
     public static enum DispatchAction {
-        READ_CONSTANT(false),
-        CALL(true),
-        RESPOND(true);
-
-        private final boolean isCall;
-
-        private DispatchAction(boolean isCall) {
-            this.isCall = isCall;
-        }
-
-        public boolean isCall() {
-            return isCall;
-        }
+        READ_CONSTANT,
+        CALL_METHOD,
+        RESPOND_TO_METHOD
     }
 
     public static final Object MISSING = new Object();

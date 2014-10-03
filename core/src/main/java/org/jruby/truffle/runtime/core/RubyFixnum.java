@@ -253,4 +253,9 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
 
     }
 
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
 }

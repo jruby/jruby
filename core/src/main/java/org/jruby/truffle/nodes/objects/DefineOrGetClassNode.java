@@ -97,7 +97,7 @@ public class DefineOrGetClassNode extends RubyNode {
 
     private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass){
         // TODO(cs): temporarily disabled as it prevents us running psd.rb benchmarks
-        if (false && !isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperclass().getObjectID() != superClassObject.getObjectID()){
+        if (false && !isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperClass().getObjectID() != superClassObject.getObjectID()){
             throw new RaiseException(context.getCoreLibrary().typeError(("superclass mismatch for class " + definingClass.getName()), this));
         }
     }

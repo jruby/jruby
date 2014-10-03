@@ -35,7 +35,7 @@ public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter
             final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
-                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
+                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
             }
 
             for (Activation activation : activations) {

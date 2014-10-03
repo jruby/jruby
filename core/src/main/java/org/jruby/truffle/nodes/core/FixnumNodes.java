@@ -1481,6 +1481,19 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
+        public RubyArray times(VirtualFrame frame, int n, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            final int[] array = new int[n];
+
+            for (int i = 0; i < n; i++) {
+                array[i] = i;
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, n);
+        }
+
+        @Specialization
         public Object times(VirtualFrame frame, long n, RubyProc block) {
             int count = 0;
 

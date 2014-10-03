@@ -39,10 +39,10 @@ public class RescueSplatNode extends RescueNode {
 
         final RubyArray handlingClasses = (RubyArray) handlingClassesArray.execute(frame);
 
-        final RubyClass exceptionRubyClass = exception.getRubyClass();
+        final RubyClass exceptionRubyClass = exception.getLogicalClass();
 
         for (Object handlingClass : handlingClasses.slowToArray()) {
-            if (exceptionRubyClass.assignableTo((RubyClass) handlingClass)) {
+            if (ModuleOperations.assignableTo(exceptionRubyClass, (RubyClass) handlingClass)) {
                 return true;
             }
         }

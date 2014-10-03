@@ -13,6 +13,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -40,14 +41,14 @@ public abstract class ClassNodes {
         public boolean containsInstance(RubyClass rubyClass, RubyBasicObject instance) {
             notDesignedForCompilation();
 
-            return instance.getRubyClass().assignableTo(rubyClass);
+            return ModuleOperations.assignableTo(instance.getLogicalClass(), rubyClass);
         }
 
         @Specialization
         public boolean containsInstance(RubyClass rubyClass, Object instance) {
             notDesignedForCompilation();
 
-            return getContext().getCoreLibrary().box(instance).getRubyClass().assignableTo(rubyClass);
+            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(instance).getLogicalClass(), rubyClass);
         }
     }
 
@@ -120,7 +121,7 @@ public abstract class ClassNodes {
 
             final RubyArray array = new RubyArray(rubyClass.getContext().getCoreLibrary().getArrayClass());
 
-            for (String variable : rubyClass.getClassVariables()) {
+            for (String variable : ModuleOperations.getAllClassVariables(rubyClass).keySet()) {
                 array.slowPush(RubySymbol.newSymbol(rubyClass.getContext(), variable));
             }
             return array;
@@ -140,7 +141,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyClass getSuperClass(RubyClass rubyClass) {
-            return rubyClass.getSuperclass();
+            return rubyClass.getSuperClass();
         }
     }
 }

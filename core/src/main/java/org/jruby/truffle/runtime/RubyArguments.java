@@ -68,6 +68,25 @@ public final class RubyArguments {
         return userArguments;
     }
 
+    public static Object[] concatUserArguments(Object o, Object[] arguments) {
+        final Object[] concatenatedArguments;
+
+        if (o instanceof Object[]) {
+            Object[] concatArray = (Object[]) o;
+            concatenatedArguments = new Object[concatArray.length + arguments.length - RUNTIME_ARGUMENT_COUNT];
+
+            System.arraycopy(concatArray, 0, concatenatedArguments, 0, concatArray.length);
+            System.arraycopy(arguments, RUNTIME_ARGUMENT_COUNT, concatenatedArguments, concatArray.length, getUserArgumentsCount(arguments));
+        } else {
+            concatenatedArguments = new Object[1 + arguments.length - RUNTIME_ARGUMENT_COUNT];
+
+            concatenatedArguments[0] = o;
+            System.arraycopy(arguments, RUNTIME_ARGUMENT_COUNT, concatenatedArguments, 1, getUserArgumentsCount(arguments));
+        }
+
+        return concatenatedArguments;
+    }
+
     public static int getUserArgumentsCount(Object[] internalArguments) {
         return internalArguments.length - RUNTIME_ARGUMENT_COUNT;
     }

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
@@ -33,7 +34,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
-                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
+                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
             }
 
             for (Activation activation : activations) {
@@ -96,7 +97,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
         }
 
         try {
-            String string = context.getCoreLibrary().box(value).debugSend("inspect", null).toString();
+            final String string = DebugOperations.inspect(context, value);
 
             if (string.length() <= Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) {
                 return string;

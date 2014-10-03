@@ -163,7 +163,7 @@ public class RubyFiber extends RubyObject {
         } else if (args.length == 1) {
             arg = args[0];
         } else {
-            arg = RubyArray.fromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
+            arg = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
         }
 
         final RubyThread runningThread = threadManager.leaveGlobalLock();

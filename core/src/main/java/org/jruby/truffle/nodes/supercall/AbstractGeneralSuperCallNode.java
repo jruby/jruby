@@ -14,10 +14,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyCallStack;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -54,7 +51,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         }
 
         assert declaringModule instanceof RubyClass;
-        method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(name);
+        method = ModuleOperations.lookupMethod(((RubyClass) declaringModule).getSuperClass(), name);
 
         if (method == null || method.isUndefined()) {
             method = null;

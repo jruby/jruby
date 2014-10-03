@@ -126,10 +126,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object binding(VirtualFrame frame, Object self) {
-            notDesignedForCompilation();
+        public Object binding(Object self) {
+            // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
+            final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
+                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
+
+            return new RubyBinding(
+                    getContext().getCoreLibrary().getBindingClass(),
+                    self,
+                    callerFrame);
         }
     }
 
@@ -268,7 +274,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV").getValue();
+            final RubyHash env = (RubyHash) ModuleOperations.lookupConstant(context.getCoreLibrary().getObjectClass(), "ENV").getValue();
 
             // TODO(CS): cast
             for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
@@ -690,7 +696,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTarget(), block.getDeclarationFrame(),
+                    block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
                     block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
@@ -951,7 +957,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public TruffelizedNode(ThrowNode prev) {
+        public TruffelizedNode(TruffelizedNode prev) {
             super(prev);
         }
 
@@ -962,4 +968,44 @@ public abstract class KernelNodes {
 
     }
 
+    // Rubinius API
+    @CoreMethod(names = "undefined", isModuleMethod = true, needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    public abstract static class UndefinedNode extends CoreMethodNode {
+
+        public UndefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UndefinedNode(UndefinedNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public UndefinedPlaceholder undefined() {
+            return UndefinedPlaceholder.INSTANCE;
+        }
+
+    }
+
+    // Rubinius API
+    @CoreMethod(names = "StringValue", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class StringValueNode extends CoreMethodNode {
+        @Child
+        protected DispatchHeadNode argToStringNode;
+
+        public StringValueNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            argToStringNode = new DispatchHeadNode(context);
+        }
+
+        public StringValueNode(StringValueNode prev) {
+            super(prev);
+            argToStringNode = prev.argToStringNode;
+        }
+
+        @Specialization
+        public RubyString StringValue(VirtualFrame frame, Object arg) {
+            return (RubyString) argToStringNode.call(frame, arg, "to_s", null);
+        }
+    }
 }

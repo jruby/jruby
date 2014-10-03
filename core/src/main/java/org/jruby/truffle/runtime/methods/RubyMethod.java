@@ -10,11 +10,10 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -88,7 +87,7 @@ public class RubyMethod implements MethodLike {
     }
 
     public boolean isVisibleTo(Node currentNode, RubyBasicObject caller, RubyBasicObject receiver) {
-        if (caller == receiver.getRubyClass()){
+        if (caller == receiver.getLogicalClass()){
             return true;
         }
 
@@ -100,23 +99,23 @@ public class RubyMethod implements MethodLike {
 
     public boolean isVisibleTo(Node currentNode, RubyBasicObject caller) {
         if (caller instanceof RubyModule) {
-            if (isVisibleTo(currentNode, (RubyModule) caller)) {
+            if (isVisibleToX(currentNode, (RubyModule) caller)) {
                 return true;
             }
         }
 
-        if (isVisibleTo(currentNode, caller.getRubyClass())) {
+        if (isVisibleToX(currentNode, caller.getLogicalClass())) {
             return true;
         }
 
-        if (isVisibleTo(currentNode, caller.getSingletonClass(currentNode))) {
+        if (isVisibleToX(currentNode, caller.getSingletonClass(currentNode))) {
             return true;
         }
 
         return false;
     }
 
-    private boolean isVisibleTo(Node currentNode, RubyModule module) {
+    private boolean isVisibleToX(Node currentNode, ModuleChain module) {
         switch (visibility) {
             case PUBLIC:
                 return true;
@@ -130,7 +129,7 @@ public class RubyMethod implements MethodLike {
                     return true;
                 }
 
-                if (module.getParentModule() != null && isVisibleTo(currentNode, module.getParentModule())) {
+                if (module.getParentModule() != null && isVisibleToX(currentNode, module.getParentModule())) {
                     return true;
                 }
 
@@ -145,7 +144,7 @@ public class RubyMethod implements MethodLike {
                     return true;
                 }
 
-                if (module.getParentModule() != null && isVisibleTo(currentNode, module.getParentModule())) {
+                if (module.getParentModule() != null && isVisibleToX(currentNode, module.getParentModule())) {
                     return true;
                 }
 

@@ -12,5 +12,5 @@
 
 # Chris Seaton, 5 Aug 14
 
-cp maven/jruby-complete/target/jruby-complete-9000.dev.jar maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev.jar
-zip -d maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev.jar com/oracle/nfi/* com/oracle/truffle/*
+cp maven/jruby-complete/target/jruby-complete-9000.dev-SNAPSHOT.jar maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev-SNAPSHOT.jar
+zip -d maven/jruby-complete/target/jruby-complete-no-truffle-9000.dev-SNAPSHOT.jar com/oracle/nfi/* com/oracle/truffle/*

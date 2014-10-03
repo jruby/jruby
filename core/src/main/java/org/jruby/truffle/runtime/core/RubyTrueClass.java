@@ -64,4 +64,9 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
         return Boolean.TRUE.hashCode();
     }
 
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
 }

@@ -64,7 +64,7 @@ public class RubyThread extends RubyObject {
                 try {
                     finalBlock.rootCall();
                 } catch (ReturnException e) {
-                    exception = getRubyClass().getContext().getCoreLibrary().unexpectedReturn(currentNode);
+                    exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
                 }
             }
 
@@ -103,7 +103,7 @@ public class RubyThread extends RubyObject {
     }
 
     public void join() {
-        getRubyClass().getContext().outsideGlobalLock(new Runnable() {
+        getContext().outsideGlobalLock(new Runnable() {
 
             @Override
             public void run() {

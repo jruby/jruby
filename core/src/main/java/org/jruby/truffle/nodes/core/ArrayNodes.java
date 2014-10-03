@@ -1838,7 +1838,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject")
-        public Object inject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+        public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
             int count = 0;
 
             final Object[] store = (Object[]) array.getStore();
@@ -1857,6 +1857,25 @@ public abstract class ArrayNodes {
                 if (CompilerDirectives.inInterpreter()) {
                     ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
+            }
+
+            return accumulator;
+        }
+
+        @Specialization
+        public Object inject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            notDesignedForCompilation();
+
+            final Object[] store = array.slowToArray();
+
+            if (store.length < 2) {
+                throw new UnsupportedOperationException();
+            }
+
+            Object accumulator = initial;
+
+            for (int n = 0; n < array.getSize(); n++) {
+                accumulator = yield(frame, block, accumulator, store[n]);
             }
 
             return accumulator;

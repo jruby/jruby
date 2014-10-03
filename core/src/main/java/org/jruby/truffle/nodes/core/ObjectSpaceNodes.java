@@ -86,7 +86,7 @@ public abstract class ObjectSpaceNodes {
             notDesignedForCompilation();
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
-                if (object.getRubyClass().assignableTo(ofClass)) {
+                if (ModuleOperations.assignableTo(object.getLogicalClass(), ofClass)) {
                     yield(frame, block, object);
                 }
             }

@@ -11,11 +11,11 @@ package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.lookup.*;
 import org.jruby.truffle.runtime.objectstorage.*;
 
 /**
@@ -25,6 +25,8 @@ import org.jruby.truffle.runtime.objectstorage.*;
 public class RubyClass extends RubyModule {
 
     private boolean isSingleton;
+    private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
+    private ObjectLayout objectLayoutForInstances = null;
 
     /**
      * The class from which we create the object that is {@code Class}. A subclass of
@@ -44,23 +46,12 @@ public class RubyClass extends RubyModule {
 
     }
 
-    @CompilationFinal private RubyClass superclass;
-
-    // We maintain a list of subclasses so we can notify them when they need to update their layout.
-    private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
-
-    /*
-     * The layout to use for instances of this class - do not confuse with objectLayout, which is
-     * the layout for this object - the class.
-     */
-    private ObjectLayout objectLayoutForInstances = null;
-
     public RubyClass(Node currentNode, RubyModule parentModule, RubyClass rubySuperclass, String name) {
         this(currentNode, parentModule, rubySuperclass, name, false);
     }
 
-    public RubyClass(Node currentNode, RubyModule parentModule, RubyClass rubySuperclass, String name, boolean isSingleton) {
-        this(currentNode, rubySuperclass.getContext(), rubySuperclass.getContext().getCoreLibrary().getClassClass(), parentModule, rubySuperclass, name);
+    public RubyClass(Node currentNode, ModuleChain lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
+        this(currentNode, superclass.getContext(), superclass.getContext().getCoreLibrary().getClassClass(), lexicalParent, superclass, name);
 
         this.isSingleton = isSingleton;
         // TODO(CS): Why am I doing this? Why does it break if I don't?
@@ -74,7 +65,7 @@ public class RubyClass extends RubyModule {
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public RubyClass(Node currentNode, RubyContext context, RubyClass classClass, RubyModule parentModule, RubyClass superclass, String name) {
+    public RubyClass(Node currentNode, RubyContext context, RubyClass classClass, ModuleChain parentModule, RubyClass superclass, String name) {
         super(context, classClass, parentModule, name);
 
         if (superclass == null) {
@@ -90,32 +81,27 @@ public class RubyClass extends RubyModule {
         assert other instanceof RubyClass;
         final RubyClass otherClass = (RubyClass) other;
         this.objectLayoutForInstances = otherClass.objectLayoutForInstances;
-        this.superclass = otherClass.superclass;
-    }
-
-    public RubyClass getSuperclass() {
-        //assert superclass != null;
-        return superclass;
     }
 
     @Override
     public RubyClass getSingletonClass(Node currentNode) {
-        RubyNode.notDesignedForCompilation();
+        CompilerAsserts.neverPartOfCompilation();
 
-        if (rubySingletonClass == null) {
-            RubyClass singletonSuperclass;
-
-            if (superclass == null) {
-                singletonSuperclass = getRubyClass();
-            } else {
-                singletonSuperclass = superclass.getSingletonClass(currentNode);
-            }
-
-            rubySingletonClass = new RubyClass(currentNode, getParentModule(), singletonSuperclass, String.format("#<Class:%s>", getName()), true);
-            lookupNode = new LookupFork(rubySingletonClass, lookupNode);
+        if (isImmediate() || metaClass.isSingleton()) {
+            return metaClass;
         }
 
-        return rubySingletonClass;
+        RubyClass singletonSuperclass;
+
+        if (getSuperClass() == null) {
+            singletonSuperclass = getLogicalClass();
+        } else {
+            singletonSuperclass = getSuperClass().getSingletonClass(currentNode);
+        }
+
+        metaClass = new RubyClass(currentNode, getLexicalParentModule(), singletonSuperclass, String.format("#<Class:%s>", getName()), true);
+
+        return metaClass;
     }
 
     /**
@@ -125,37 +111,20 @@ public class RubyClass extends RubyModule {
     public void unsafeSetSuperclass(Node currentNode, RubyClass newSuperclass) {
         RubyNode.notDesignedForCompilation();
 
-        assert superclass == null;
+        assert parentModule == null;
 
-        superclass = newSuperclass;
-        superclass.addDependent(this);
-        superclass.subClasses.add(this);
+        parentModule = newSuperclass;
+        newSuperclass.addDependent(this);
+        newSuperclass.subClasses.add(this);
 
-        include(currentNode, superclass);
+        include(currentNode, newSuperclass);
 
-        objectLayoutForInstances = new ObjectLayout(superclass.objectLayoutForInstances);
+        objectLayoutForInstances = new ObjectLayout(newSuperclass.objectLayoutForInstances);
     }
 
     @SlowPath
     public RubyBasicObject newInstance(RubyNode currentNode) {
         return new RubyObject(this);
-    }
-
-    /**
-     * Is an instance of this class assignable to some location expecting some other class?
-     */
-    public boolean assignableTo(RubyClass otherClass) {
-        RubyNode.notDesignedForCompilation();
-
-        if (this == otherClass) {
-            return true;
-        }
-
-        if (superclass == null) {
-            return false;
-        }
-
-        return superclass.assignableTo(otherClass);
     }
 
     public boolean isSingleton() {
@@ -189,11 +158,27 @@ public class RubyClass extends RubyModule {
     private void renewObjectLayoutForInstances() {
         RubyNode.notDesignedForCompilation();
 
-        objectLayoutForInstances = objectLayoutForInstances.withNewParent(superclass.objectLayoutForInstances);
+        objectLayoutForInstances = objectLayoutForInstances.withNewParent(getSuperClass().objectLayoutForInstances);
 
         for (RubyClass subClass : subClasses) {
             subClass.renewObjectLayoutForInstances();
         }
+    }
+
+    public RubyClass getSuperClass() {
+        CompilerAsserts.neverPartOfCompilation();
+
+        ModuleChain parent = parentModule;
+
+        while (parent != null) {
+            if (parent instanceof RubyClass) {
+                return (RubyClass) parent;
+            }
+
+            parent = parent.getParentModule();
+        }
+
+        return null;
     }
 
 }

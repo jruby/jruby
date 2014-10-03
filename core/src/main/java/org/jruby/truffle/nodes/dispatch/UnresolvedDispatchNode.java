@@ -92,7 +92,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(callingSelf);
         final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
 
-        if (dispatchAction.isCall()) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -139,7 +139,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             } else {
                 final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
                         methodName, first, receiverObject.getClass(),
-                        boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), null, method, null, null, null, null,
+                        boxedReceiverObject.getLogicalClass().getUnmodifiedAssumption(), null, method, null, null, null, null,
                         null, null, null);
 
                 first.replace(newDispatch);
@@ -147,7 +147,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName,
                         blockObject, argumentsObjects, dispatchAction);
             }
-        } else {
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             final RubyConstant constant = lookupConstant(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -194,7 +194,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             } else {
                 final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
                         methodName, first, receiverObject.getClass(),
-                        boxedReceiverObject.getRubyClass().getUnmodifiedAssumption(), constant.getValue(), null, null, null, null, null,
+                        boxedReceiverObject.getLogicalClass().getUnmodifiedAssumption(), constant.getValue(), null, null, null, null, null,
                         null, null, null);
 
                 first.replace(newDispatch);
@@ -202,6 +202,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 return newDispatch.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, methodName,
                         blockObject, argumentsObjects, dispatchAction);
             }
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -218,7 +220,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(callingSelf);
         final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
 
-        if (dispatchAction.isCall()) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -231,18 +233,18 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             final DispatchNode newDispatch;
 
-            if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
+            if (receiverObject instanceof RubySymbol) {
                 newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, null, method, null,
                         null, null, null, null, null, null);
             } else {
                 newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        boxedReceiverObject.getLookupNode(), null, method, null, null, null, null, null, null, null);
+                        boxedReceiverObject.getMetaClass(), null, method, null, null, null, null, null, null, null);
             }
 
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
-        } else {
+        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             final RubyConstant constant = lookupConstant(boxedCallingSelf, boxedReceiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -255,17 +257,19 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             final DispatchNode newDispatch;
 
-            if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
+            if (receiverObject instanceof RubySymbol) {
                 newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, constant.getValue(), null, null,
                         null, null, null, null, null, null);
             } else {
                 newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        boxedReceiverObject.getLookupNode(), constant.getValue(), null, null, null, null, null, null, null, null);
+                        boxedReceiverObject.getMetaClass(), constant.getValue(), null, null, null, null, null, null, null, null);
             }
 
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, boxedCallingSelf, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -279,7 +283,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(CachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), null, null, null, null, null, null, null));
             }
 
             case CALL_CONST_MISSING: {
@@ -291,7 +295,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), method, null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), method, null, null, null, null, null, null, null));
             }
 
             default: {
@@ -310,7 +314,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(CachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), null, null, null, null, null, null, null));
             }
 
             case CALL_METHOD_MISSING: {
@@ -322,7 +326,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getLookupNode(), method, null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), method, null, null, null, null, null, null, null));
             }
 
             default: {

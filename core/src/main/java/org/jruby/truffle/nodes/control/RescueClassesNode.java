@@ -34,14 +34,14 @@ public class RescueClassesNode extends RescueNode {
     public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
         notDesignedForCompilation();
 
-        final RubyClass exceptionRubyClass = exception.getRubyClass();
+        final RubyClass exceptionRubyClass = exception.getLogicalClass();
 
         for (RubyNode handlingClassNode : handlingClassNodes) {
             // TODO(CS): what if we don't get a class?
 
             final RubyClass handlingClass = (RubyClass) handlingClassNode.execute(frame);
 
-            if (exceptionRubyClass.assignableTo(handlingClass)) {
+            if (ModuleOperations.assignableTo(exceptionRubyClass, handlingClass)) {
                 return true;
             }
         }

@@ -430,7 +430,7 @@ public abstract class MathNodes {
                     return frexp(floatNode.callFloat(frame, boxed, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getRubyClass().getName(),
+                            boxed.getLogicalClass().getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -438,7 +438,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getRubyClass().getName(),
+                        boxed.getLogicalClass().getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -619,7 +619,7 @@ public abstract class MathNodes {
                             integerBNode.callLongFixnum(frame, bBoxed, "to_int", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                           aBoxed.getRubyClass().getName(),
+                           aBoxed.getLogicalClass().getName(),
                             getContext().getCoreLibrary().getIntegerClass().getName(),
                             this));
                 }
@@ -627,7 +627,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        aBoxed.getRubyClass().getName(),
+                        aBoxed.getLogicalClass().getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -693,7 +693,7 @@ public abstract class MathNodes {
                     return lgamma(floatNode.callFloat(frame, boxed, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getRubyClass().getName(),
+                            boxed.getLogicalClass().getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -701,7 +701,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getRubyClass().getName(),
+                        boxed.getLogicalClass().getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -750,7 +750,7 @@ public abstract class MathNodes {
                             floatANode.callFloat(frame, boxed, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getRubyClass().getName(),
+                            boxed.getLogicalClass().getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -758,7 +758,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getRubyClass().getName(),
+                        boxed.getLogicalClass().getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -975,7 +975,7 @@ public abstract class MathNodes {
                     return doFunction(floatNode.callFloat(frame, boxed, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getRubyClass().getName(),
+                            boxed.getLogicalClass().getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -983,7 +983,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getRubyClass().getName(),
+                        boxed.getLogicalClass().getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -1109,7 +1109,7 @@ public abstract class MathNodes {
                             floatBNode.callFloat(frame, bBoxed, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            aBoxed.getRubyClass().getName(),
+                            aBoxed.getLogicalClass().getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -1117,7 +1117,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        aBoxed.getRubyClass().getName(),
+                        aBoxed.getLogicalClass().getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }

@@ -33,7 +33,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public double sub(RubyTime a, RubyTime b) {
-            return RubyTime.nanosecondsToSecond(a.nanoseconds - b.nanoseconds);
+            return a.getSeconds() - b.getSeconds();
         }
 
     }
@@ -53,6 +53,33 @@ public abstract class TimeNodes {
         @Specialization
         public RubyTime now() {
             return RubyTime.fromDate(getContext().getCoreLibrary().getTimeClass(), System.currentTimeMillis());
+        }
+
+    }
+
+    @CoreMethod(names = {"from_array", "time_s_from_array"}, isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class FromArrayNode extends CoreMethodNode {
+
+        public FromArrayNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FromArrayNode(FromArrayNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public RubyTime fromArray(int second,
+                                  int minute,
+                                  int hour,
+                                  int dayOfMonth,
+                                  int month,
+                                  int year,
+                                  int nanoOfSecond,
+                                  boolean isdst,
+                                  RubyString zone) {
+            return RubyTime.fromArray(getContext().getCoreLibrary().getTimeClass(),second, minute, hour, dayOfMonth, month, year, nanoOfSecond, isdst, zone);
         }
 
     }
