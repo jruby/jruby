@@ -98,7 +98,7 @@ one of the gems to a newer version or clean out all installed gems.
 After changing Java code, you can recompile quickly by running:
 
 ```
-mvn compile
+mvn package
 ```
 
 ### Day to Day Testing
@@ -139,6 +139,35 @@ The complete CI test suite will take anywhere from 20 to 45 minutes to
 complete, but provides the most accurate indication of the stability of
 your local JRuby source.
 
+### maven integration tests - -Pjruby-complete or -Pmain
+
+maven integration test will use the packed maven artifact to run the tests in a forked maven instance. these maven projects are locatated in
+
+```
+maven/jruby/src/it
+maven/jruby-complete/src/it
+maven/jruby-jars/src/it
+maven/jruby-dist/src/it
+```
+
+to trigger the tests with the build:
+
+```
+mvn -Pmain -Dinvoker.skip=false
+mvn -Pcomplete -Dinvoker.skip=false
+mvn -Pdist -Dinvoker.skip=false
+mvn -Pjruby-jars -Dinvoker.skip=false
+```
+
+to pick a particular test add the name of the directory inside the respective *src/it* folder, like (wildcards are possible):
+
+
+```
+mvn -Pmain -Dinvoker.skip=false -Dinvoker.test=integrity
+mvn -Pmain -Dinvoker.skip=false -Dinvoker.test=j2ee*
+mvn -Pmain -Dinvoker.skip=false -Dinvoker.test=osgi*
+```
+
 Clean Build
 -----------
 
@@ -155,6 +184,12 @@ version of JRuby (for example, after switching git branches) to ensure
 that everything is rebuilt properly.
 
 NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar** !
+
+clean everything:
+
+```
+mvn -Pclean
+```
 
 Distribution Packages
 ---------------------
@@ -200,10 +235,13 @@ mvn -Pall
 
 ## release ##
 
-first set the new version:
+first set the new version in the file *VERSION* inside the root directory and then
 
 ```
-mvn versions:set -DnewVersion=1.7.5
+rake maven:dump_poms
+```
+or
+```
 rmvn validate -Pall
 ```
 
@@ -217,11 +255,14 @@ mvn clean deploy -Psonatype-oss-release -Prelease
 
 go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
 
-### Start development
+### Start a new version
 
-After the release set the new development version:
+After the release set the new development version in *VERSION* and generate the pom.xml files
 
 ```
-mvn versions:set -DnewVersion=1.7.6-SNAPSHOT
+rake maven:dump_poms
+```
+or
+```
 rmvn validate -Pall
 ```
