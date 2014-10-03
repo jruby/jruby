@@ -789,13 +789,14 @@ public abstract class ModuleNodes {
             final List<ModuleChain> modules = new ArrayList<>();
 
             ModuleChain module = RubyCallStack.getCallingMethod().getDeclaringModule();
+            RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
-            while (module != null) {
+            while (module != null && module != object) {
                 if (module instanceof RubyModule) {
                     modules.add(module);
                 }
 
-                module = module.getParentModule();
+                module = module.getLexicalParentModule();
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
