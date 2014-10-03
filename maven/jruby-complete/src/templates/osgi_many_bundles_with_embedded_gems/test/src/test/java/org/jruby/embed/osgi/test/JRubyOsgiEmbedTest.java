@@ -109,13 +109,13 @@ public class JRubyOsgiEmbedTest {
         assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
 
 	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"krypt\", \"krypt-core\", \"krypt-provider-jdk\"]");
+        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\"]");
 
         // ensure we can load can load embedded gems
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
 	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"krypt\", \"krypt-core\", \"krypt-provider-jdk\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
+        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
     }
 }

@@ -69,7 +69,7 @@ public class JRubyOsgiEmbedTest {
 
     @Test
     public void testSomething() throws Exception {
-	System.setProperty( "jruby.debug.loadService", "true");
+	//System.setProperty( "jruby.debug.loadService", "true");
         IsolatedScriptingContainer container = new IsolatedScriptingContainer();
 	container.addLoadPath( org.jruby.osgi.bundle.Bundle.class.getClassLoader() );
 
