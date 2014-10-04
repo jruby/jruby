@@ -1,1 +1,0 @@
-fails:Hash literal checks duplicated keys on initialization
