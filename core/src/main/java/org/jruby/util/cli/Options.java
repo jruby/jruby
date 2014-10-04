@@ -28,10 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import com.headius.options.Option;
 import org.jruby.TruffleBridge;
@@ -336,6 +333,16 @@ public class Options {
                 System.out.printf("%s=%s\n", option.shortName(), option.load());
             }
         }
+    }
+
+    public static Set<String> getPropertyNames() {
+        final Set<String> propertyNames = new HashSet<String>();
+
+        for (Option option : PROPERTIES) {
+            propertyNames.add(option.propertyName());
+        }
+
+        return Collections.unmodifiableSet(propertyNames);
     }
 
 }
