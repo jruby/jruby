@@ -55,4 +55,5 @@ public enum IRFlags {
     REQUIRES_VISIBILITY,          // callee may read/write caller's visibility
 
     DYNSCOPE_ELIMINATED,          // local var load/stores have been converted to tmp var accesses
+    REUSE_PARENT_DYNSCOPE,        // for clsoures -- reuse parent's dynscope
 }

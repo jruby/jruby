@@ -11,6 +11,8 @@ import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.UnboxingPass;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
@@ -570,26 +572,23 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void runDeadCodeAndVarLoadStorePasses() {
-        // For methods that don't require a dynamic scope,
+        // For scopes that don't require a dynamic scope,
         // inline-add lvar loads/store to tmp-var loads/stores.
-        //
-        // We cannot run LVA and DCE on individual closures.
-        // By extension, we cannot run ALVLSI on individual closures
-        // either since it requires LVA information (unless we run
-        // the simplified form of ALVLSI pass which doesn't do a
-        // dataflow analysis).
-        //
-        // => They can only be started on IRMethod scopes and run
-        // on all (recursively) nested closures in that method context.
-        if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE) && !(this instanceof IRClosure)) {
+        if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
             CompilerPass pass;
             pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
             }
+
+            // This will run the simplified version of the pass
+            // that doesn't require dataflow analysis and hence
+            // can run on closures independent of enclosing scopes.
             pass = new AddLocalVarLoadStoreInstructions();
             if (pass.previouslyRun(this) == null) {
-                pass.run(this);
+                ((AddLocalVarLoadStoreInstructions)pass).eliminateLocalVars(this);
+                setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, new StoreLocalVarPlacementProblem());
+                setDataFlowSolution(LiveVariablesProblem.NAME, null);
             }
         }
     }
@@ -762,6 +761,7 @@ public abstract class IRScope implements ParseResult {
         }
 
         if (flags.contains(CAN_RECEIVE_BREAKS)
+            || flags.contains(HAS_NONLOCAL_RETURNS)
             || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
             || flags.contains(BINDING_HAS_ESCAPED)
                // SSS FIXME: checkArity for keyword args
@@ -1098,6 +1098,7 @@ public abstract class IRScope implements ParseResult {
                 "up wrong.  Use depends(build()) not depends(build).";
     }
 
+    // SSS FIXME: Why do we have cfg() with this assertion and a getCFG() without an assertion??
     public CFG cfg() {
         assert cfg != null: "Trying to access build before build started";
         return cfg;

@@ -243,6 +243,9 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
                 if (!basicBlock.isExitBB()) {
                     LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                    if (lvp == null) {
+                        System.out.println("LVP missing for " + scope);
+                    }
                     java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                     if (liveVars != null) {
                         dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope

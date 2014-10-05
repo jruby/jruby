@@ -21,7 +21,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     /** This is the variable that is being stored into in this scope.  This variable
      * doesn't participate in the computation itself.  We just use it as a proxy for
      * its (a) name (b) offset (c) scope-depth. */
-    private final LocalVariable lvar;
+    private LocalVariable lvar;
 
     public StoreLocalVarInstr(Operand value, IRScope scope, LocalVariable lvar) {
         super(Operation.BINDING_STORE);
@@ -52,6 +52,11 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
 
     public LocalVariable getLocalVar() {
         return lvar;
+    }
+
+    // SSS FIXME: This feels dirty
+    public void decrementLVarScopeDepth() {
+        this.lvar = lvar.cloneForDepth(lvar.getScopeDepth()-1);
     }
 
     @Override

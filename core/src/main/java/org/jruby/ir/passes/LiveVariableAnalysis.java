@@ -1,6 +1,7 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
@@ -61,6 +62,14 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public Object execute(IRScope scope, Object... data) {
+        // Should never be invoked directly on IRClosures
+        // if (scope instanceof IRClosure && !(scope instanceof IREvalScript)) {
+        //     System.out.println("Hmm .. should not run lvp directly on closure scope: " + scope);
+        // }
+
+        // Make sure flags are computed
+        scope.computeScopeFlags();
+
         LiveVariablesProblem lvp = new LiveVariablesProblem(scope);
 
         if (scope instanceof IRClosure) {

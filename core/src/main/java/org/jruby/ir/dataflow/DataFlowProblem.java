@@ -141,7 +141,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         // Since LVA runs analyses on nested closures, and dependencies aren't
         // checked on nested scopes, it can happen that for closures,
         // the cfg hasn't been built yet.
-        if (scope.cfg() == null) {
+        if (scope.getCFG() == null) {
             scope.buildCFG();
         }
 

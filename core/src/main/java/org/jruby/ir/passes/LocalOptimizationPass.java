@@ -39,7 +39,9 @@ public class LocalOptimizationPass extends CompilerPass {
             runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
         }
 
-        // Only after running local opts, compute various execution scope flags
+        // SSS FIXME: What is this about? 
+        // Why 'Only after running local opts'?  Figure out and document.
+        // Only after running local opts, compute various execution scope flags.
         s.computeScopeFlags();
 
         // Mark done
