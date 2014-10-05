@@ -36,7 +36,7 @@ project 'JRuby Main Maven Artifact' do
 
   execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
     source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_all_inclusive' )
-     [ 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
+     [ 'knoplerfish', 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
       target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive_' + m )
       FileUtils.rm_rf( target )
       FileUtils.cp_r( source, target )
