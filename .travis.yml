@@ -19,6 +19,8 @@ env:
     - TARGET='jruby-jars'
     - TARGET='complete'
     - TARGET='main'
+    - TARGET='osgi'
+    - TARGET='j2ee'
 
 matrix:
   fast_finish: true
