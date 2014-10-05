@@ -620,14 +620,14 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
-            return regexp.match(string.toString());
+            return regexp.match(string);
         }
 
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
             notDesignedForCompilation();
 
-            return regexp.match(string.toString());
+            return regexp.match(string);
         }
     }
 

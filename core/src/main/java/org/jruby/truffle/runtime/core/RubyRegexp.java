@@ -154,12 +154,12 @@ public class RubyRegexp extends RubyObject {
     }
 
     @CompilerDirectives.SlowPath
-    public Object match(String string) {
+    public Object match(RubyString string) {
         final RubyContext context = getContext();
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
-        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final byte[] stringBytes = string.getBytes().bytes();
         final Matcher matcher = regex.matcher(stringBytes);
         final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
@@ -175,7 +175,7 @@ public class RubyRegexp extends RubyObject {
                 if (start == -1 || end == -1) {
                     values[n] = NilPlaceholder.INSTANCE;
                 } else {
-                    final RubyString groupString = context.makeString(string.substring(start, end));
+                    final RubyString groupString = new RubyString(context.getCoreLibrary().getStringClass(), string.getBytes().makeShared(start, end - start).dup());
                     values[n] = groupString;
                 }
             }
