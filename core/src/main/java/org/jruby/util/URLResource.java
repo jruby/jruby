@@ -229,7 +229,15 @@ public class URLResource implements FileResource {
             return new URLResource(URI + pathname, (URL)null, files);
         }
         try {
-            url.openStream().close();
+            InputStream is = url.openStream();
+            // no inputstream happens with knoplerfish OSGI and osgi tests from /maven/jruby-complete
+            if (is != null) {
+                is.close();
+            }
+            else {
+                // there is no input-stream from this url
+                url = null;
+            }
             return new URLResource(URI + pathname, url, null);
         }
         catch (IOException e)
@@ -294,7 +302,14 @@ public class URLResource implements FileResource {
         try
         {
             // TODO remove this replace
-            return listFilesFromInputStream(new URL(pathname.replace("file://", "file:/") + "/.jrubydir").openStream());
+            InputStream is = new URL(pathname.replace("file://", "file:/") + "/.jrubydir").openStream();
+            // no inputstream happens with knoplerfish OSGI and osgi tests from /maven/jruby-complete
+            if (is != null) {
+                return listFilesFromInputStream(is);
+            }
+            else {
+                return null;
+            }
         }
         catch (IOException e)
         {
