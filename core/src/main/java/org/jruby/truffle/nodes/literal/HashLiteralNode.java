@@ -98,7 +98,7 @@ public abstract class HashLiteralNode extends RubyNode {
             initializers: for (int n = 0; n < keyValues.length; n += 2) {
                 Object key = keyValues[n].execute(frame);
 
-                if (key instanceof RubyString) {
+                if (key instanceof RubyString && !((RubyString) key).isFrozen()) {
                     key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
                 }
 
