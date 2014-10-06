@@ -372,6 +372,7 @@ public abstract class IRBytecodeAdapter {
      * Store instance variable into self.
      *
      * Stack required: self, value
+     * Stack result: empty
      *
      * @param name name of variable to store
      */
@@ -381,6 +382,7 @@ public abstract class IRBytecodeAdapter {
      * Load instance variable from self.
      *
      * Stack required: self
+     * Stack result: value from self
      *
      * @param name name of variable to load
      */
