@@ -112,7 +112,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         // Make sure flags are computed
         s.computeScopeFlags();
 
-        if (!s.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE) && (data.length == 0 || data[0] == false)) {
+        if (!s.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE) && (data.length == 0 || data[0] != Boolean.TRUE)) {
             eliminateLocalVars(s);
         } else {
             Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
@@ -145,7 +145,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
             //
             // In the current implementation, nested scopes are processed independently (unlike Live Variable Analysis)
             // However, since this pass requires LVA information, in reality, we cannot run
-            for (IRClosure c: s.getClosures()) execute(c, true);
+            for (IRClosure c: s.getClosures()) execute(c, Boolean.TRUE);
         }
 
         s.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, slvp);
