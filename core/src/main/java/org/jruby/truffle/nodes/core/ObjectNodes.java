@@ -492,41 +492,6 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_eval", needsBlock = true, maxArgs = 0)
-    public abstract static class InstanceEvalNode extends CoreMethodNode {
-
-        @Child protected YieldDispatchHeadNode yield;
-
-        public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context);
-        }
-
-        public InstanceEvalNode(InstanceEvalNode prev) {
-            super(prev);
-            yield = prev.yield;
-        }
-
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyProc block) {
-            notDesignedForCompilation();
-
-            if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias", this));
-            }
-
-            return yield.dispatchWithModifiedSelf(frame, block, receiver);
-        }
-
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object self, RubyProc block) {
-            notDesignedForCompilation();
-
-            return instanceEval(frame, getContext().getCoreLibrary().box(self), block);
-        }
-
-    }
-
     @CoreMethod(names = "instance_variable_defined?", minArgs = 1, maxArgs = 1)
     public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
