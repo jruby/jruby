@@ -8,6 +8,7 @@ import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
@@ -195,11 +196,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
-        performSuper(name, arity, hasClosure, splatmap, "unresolvedSuperSplatArgs", false);
+        performSuper(name, arity, hasClosure, splatmap, "unresolvedSuperSplatArgs", true);
     }
 
     public void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
-        performSuper(name, arity, hasClosure, splatmap, "zSuperSplatArgs", false);
+        performSuper(name, arity, hasClosure, splatmap, "zSuperSplatArgs", true);
     }
 
     private void performSuper(String name, int arity, boolean hasClosure, boolean[] splatmap, String helperName, boolean unresolved) {
@@ -207,14 +208,16 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig;
         String outgoingSig;
 
-        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
-
         if (hasClosure) {
             incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class));
-            outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, JVM.OBJECT_ARRAY, Block.class));
+            outgoingSig = unresolved ?
+                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class)) :
+                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
         } else {
             incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity));
-            outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, JVM.OBJECT_ARRAY, Block.class));
+            outgoingSig = unresolved ?
+                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class)) :
+                    sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
         }
 
         String methodName = "invokeSuper" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
@@ -232,23 +235,33 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         if (!unresolved) adapter2.ldc(name);
         if (!unresolved) adapter2.aload(3);
 
+        buildArrayFromLocals(adapter2, 4, arity);
+
         if (hasClosure) {
-            buildArrayFromLocals(adapter2, 4, arity);
             adapter2.aload(4 + arity);
         } else {
-            buildArrayFromLocals(adapter2, 4, arity);
             adapter2.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        adapter2.ldc(splatmapString);
-        invokeIRHelper("decodeSplatmap", sig(boolean[].class, String.class));
+        if (splatmap != null || splatmap.length > 0 || anyTrue(splatmap)) {
+            String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
+            adapter2.ldc(splatmapString);
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), "decodeSplatmap", sig(boolean[].class, String.class));
+        } else {
+            adapter2.getstatic(p(IRRuntimeHelpers.class), "EMPTY_BOOLEAN_ARRAY", ci(boolean[].class));
+        }
 
-        invokeIRHelper(helperName, outgoingSig);
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), helperName, outgoingSig);
         adapter2.areturn();
         adapter2.end();
 
         // now call it
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
+    }
+
+    private static boolean anyTrue(boolean[] booleans) {
+        for (boolean b : booleans) if (b) return true;
+        return false;
     }
 
     public void searchConst(String name, boolean noPrivateConsts) {
