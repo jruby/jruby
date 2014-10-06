@@ -290,7 +290,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokevirtual(p(Ruby.class), b ? "getTrue" : "getFalse", sig(RubyBoolean.class));
     }
 
-    public void pushBignum(BigInteger bigint) { throw new RuntimeException("unimplemented for Java 6"); }
+    public void pushBignum(BigInteger bigint) {
+        String bigintStr = bigint.toString();
+
+        loadRuntime();
+        adapter.ldc(bigintStr);
+        adapter.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, Ruby.class, String.class));
+    }
 
     public void putField(String name) {
         adapter.ldc(name);
