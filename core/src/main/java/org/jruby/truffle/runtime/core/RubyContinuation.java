@@ -72,7 +72,7 @@ public class RubyContinuation extends RubyObject {
         } else if (args.length == 1) {
             returnValue = args[0];
         } else {
-            returnValue = RubyArray.fromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
+            returnValue = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
         }
 
         // Caught in enter

@@ -51,6 +51,10 @@ public class RubyCallNode extends RubyNode {
     @Child protected BooleanCastNode respondToMissingCast;
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
+        this(context, section, methodName, receiver, block, isSplatted, false, arguments);
+    }
+
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean rubiniusPrimitive, RubyNode... arguments) {
         super(context, section);
 
         this.methodName = methodName;
@@ -66,7 +70,7 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context);
+        dispatchHead = new DispatchHeadNode(context, false, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         respondToMissing = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
@@ -184,7 +188,7 @@ public class RubyCallNode extends RubyNode {
 
         // TODO(CS): this lookup should be cached
 
-        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(methodName);
+        final RubyMethod method = ModuleOperations.lookupMethod(receiverBasicObject.getMetaClass(), methodName);
 
         final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 

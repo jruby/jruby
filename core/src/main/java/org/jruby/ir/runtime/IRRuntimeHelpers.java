@@ -689,7 +689,7 @@ public class IRRuntimeHelpers {
                                 return (RubyModule) self;
 
                             default:
-                                throw new RuntimeException("Should not get here!");
+                                throw new RuntimeException("Should not get here! scopeType is " + scopeType);
                         }
                     }
                     break;

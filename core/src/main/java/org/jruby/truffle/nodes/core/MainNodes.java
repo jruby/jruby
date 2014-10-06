@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -19,41 +20,26 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "main")
 public abstract class MainNodes {
 
-    @CoreMethod(names = "include", isSplatted = true, minArgs = 1)
+    @CoreMethod(names = "include", isSplatted = true, needsSelf = false, minArgs = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode appendFeaturesNode;
+        @Child protected ModuleNodes.IncludeNode includeNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context);
+            includeNode = ModuleNodesFactory.IncludeNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
-            appendFeaturesNode = prev.appendFeaturesNode;
+            includeNode = prev.includeNode;
         }
 
         @Specialization
-        public NilPlaceholder include(VirtualFrame frame, RubyObject main, Object[] args) {
+        public NilPlaceholder include(VirtualFrame frame, Object[] args) {
             notDesignedForCompilation();
-
-            // TODO(cs): copied from Module - but where does this method really come from?
-
-            // Note that we traverse the arguments backwards
-
-            for (int n = args.length - 1; n >= 0; n--) {
-                if (args[n] instanceof RubyModule) {
-                    final RubyModule included = (RubyModule) args[n];
-
-                    // Note that we do appear to do full method lookup here
-                    appendFeaturesNode.call(frame, included, "append_features", null, main.getSingletonClass(this));
-
-                    // TODO(cs): call included hook
-                }
-            }
-
-            return NilPlaceholder.INSTANCE;
+            final RubyClass object = getContext().getCoreLibrary().getObjectClass();
+            return includeNode.executeInclude(frame, object, args);
         }
     }
 

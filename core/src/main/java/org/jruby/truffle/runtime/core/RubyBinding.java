@@ -40,7 +40,7 @@ public class RubyBinding extends RubyObject {
 
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        getRubyClass().getContext().getObjectSpaceManager().visitFrame(frame, visitor);
+        getContext().getObjectSpaceManager().visitFrame(frame, visitor);
     }
 
 }

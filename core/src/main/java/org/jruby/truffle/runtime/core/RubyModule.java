@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.*;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -19,12 +20,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.lookup.LookupFork;
-import org.jruby.truffle.runtime.lookup.LookupNode;
-import org.jruby.truffle.runtime.lookup.LookupTerminal;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -33,7 +30,39 @@ import java.util.*;
 /**
  * Represents the Ruby {@code Module} class.
  */
-public class RubyModule extends RubyObject implements LookupNode {
+public class RubyModule extends RubyObject implements ModuleChain {
+
+    /**
+     * The slot within a module definition method frame where we store the implicit state that is
+     * the current visibility for new methods.
+     */
+    public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
+
+    /**
+     * The slot within a module definition method frame where we store the implicit state that is
+     * the flag for whether or not new methods will be module methods (functions is the term).
+     */
+    public static final Object MODULE_FUNCTION_FLAG_FRAME_SLOT_ID = new Object();
+
+    // The context is stored here - objects can obtain it via their class (which is a module)
+    private final RubyContext context;
+
+    @CompilationFinal protected ModuleChain lexicalParentModule;
+    @CompilationFinal protected ModuleChain parentModule;
+
+    @CompilationFinal private String name;
+
+    private final Map<String, RubyMethod> methods = new HashMap<>();
+    private final Map<String, RubyConstant> constants = new HashMap<>();
+    private final Map<String, Object> classVariables = new HashMap<>();
+
+    private final CyclicAssumption unmodifiedAssumption;
+
+    /**
+     * Keep track of other modules that depend on the configuration of this module in some way. The
+     * include subclasses and modules that include this module.
+     */
+    private final Set<ModuleChain> dependents = Collections.newSetFromMap(new WeakHashMap<ModuleChain, Boolean>());
 
     /**
      * The class from which we create the object that is {@code Module}. A subclass of
@@ -53,57 +82,15 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     }
 
-    /**
-     * The slot within a module definition method frame where we store the implicit state that is
-     * the current visibility for new methods.
-     */
-    public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
-
-    /**
-     * The slot within a module definition method frame where we store the implicit state that is
-     * the flag for whether or not new methods will be module methods (functions is the term).
-     */
-    public static final Object MODULE_FUNCTION_FLAG_FRAME_SLOT_ID = new Object();
-
-    // The context is stored here - objects can obtain it via their class (which is a module)
-    private final RubyContext context;
-
-    /*
-     * The module in which this module was defined. By analogy, if superclass is the dynamic scope,
-     * the parent module is the lexical scope.
-     */
-    @CompilerDirectives.CompilationFinal
-    private RubyModule parentModule;
-
-    /*
-     * The first thing to lookup names in. Not always the class, as we also have singleton classes,
-     * included modules etc.
-     */
-    private LookupNode lookupParent = LookupTerminal.INSTANCE;
-
-    @CompilerDirectives.CompilationFinal
-    private String name;
-    private final Map<String, RubyMethod> methods = new HashMap<>();
-    private final Map<String, RubyConstant> constants = new HashMap<>();
-    private final Map<String, Object> classVariables = new HashMap<>();
-
-    private final CyclicAssumption unmodifiedAssumption;
-
-    /**
-     * Keep track of other modules that depend on the configuration of this module in some way. The
-     * include subclasses and modules that include this module.
-     */
-    private final Set<RubyModule> dependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
-
-    public RubyModule(RubyClass rubyClass, RubyModule parentModule, String name) {
-        this(rubyClass.getContext(), rubyClass, parentModule, name);
+    public RubyModule(RubyClass moduleClass, ModuleChain lexicalParentModule, String name) {
+        this(moduleClass.getContext(), moduleClass, lexicalParentModule, name);
     }
 
-    public RubyModule(RubyContext context, RubyClass rubyClass, RubyModule parentModule, String name) {
-        super(rubyClass);
+    public RubyModule(RubyContext context, RubyClass moduleClass, ModuleChain lexicalParentModule, String name) {
+        super(moduleClass);
 
         this.context = context;
-        this.parentModule = parentModule;
+        this.lexicalParentModule = lexicalParentModule;
         this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
@@ -112,22 +99,17 @@ public class RubyModule extends RubyObject implements LookupNode {
     public void initCopy(RubyModule other) {
         this.name = other.name;
         this.parentModule = other.parentModule;
+        this.lexicalParentModule = other.lexicalParentModule;
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
         this.classVariables.putAll(other.classVariables);
-        this.lookupParent = other.lookupParent;
-        this.lookupNode = other.lookupNode;
-    }
-
-    public RubyModule getParentModule() {
-        return parentModule;
     }
 
     public void include(Node currentNode, RubyModule module) {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-        lookupParent = new LookupFork(module, lookupParent);
+        parentModule = new IncludedModule(module, parentModule);
         newVersion();
         module.addDependent(this);
     }
@@ -151,37 +133,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         checkFrozen(currentNode);
         getConstants().remove(data);
         newVersion();
-    }
-
-    public void setClassVariable(RubyNode currentNode, String variableName, Object value) {
-        RubyNode.notDesignedForCompilation();
-
-        assert RubyContext.shouldObjectBeVisible(value);
-
-        checkFrozen(currentNode);
-
-        if (!setClassVariableIfAlreadySet(currentNode, variableName, value)) {
-            classVariables.put(variableName, value);
-        }
-    }
-
-    public boolean setClassVariableIfAlreadySet(RubyNode currentNode, String variableName, Object value) {
-        RubyNode.notDesignedForCompilation();
-
-        assert RubyContext.shouldObjectBeVisible(value);
-
-        checkFrozen(currentNode);
-
-        if (lookupParent.setClassVariableIfAlreadySet(currentNode, variableName, value)) {
-            return true;
-        }
-
-        if (classVariables.containsKey(variableName)) {
-            classVariables.put(variableName, value);
-            return true;
-        }
-
-        return false;
     }
 
     public void removeClassVariable(RubyNode currentNode, String variableName) {
@@ -223,11 +174,11 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     public void undefMethod(RubyNode currentNode, String methodName) {
         RubyNode.notDesignedForCompilation();
-        final RubyMethod method = lookupMethod(methodName);
+        final RubyMethod method = ModuleOperations.lookupMethod(this, methodName);
         if (method == null) {
-            undefMethod(currentNode, getLookupNode().lookupMethod(methodName));
+            throw new UnsupportedOperationException();
         } else {
-            undefMethod(currentNode, lookupMethod(methodName));
+            undefMethod(currentNode, ModuleOperations.lookupMethod(this, methodName));
         }
     }
 
@@ -239,49 +190,20 @@ public class RubyModule extends RubyObject implements LookupNode {
     public void alias(RubyNode currentNode, String newName, String oldName) {
         RubyNode.notDesignedForCompilation();
 
-        final RubyMethod method = lookupMethod(oldName);
+        final RubyMethod method = ModuleOperations.lookupMethod(this, oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(oldName, getName(), currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(oldName, getName(), currentNode));
         }
 
         addMethod(currentNode, method.withNewName(newName));
     }
 
-    @Override
-    public RubyConstant lookupConstant(String constantName) {
-        RubyNode.notDesignedForCompilation();
-
-        RubyConstant value;
-
-        // Look in this module
-
-        value = getConstants().get(constantName);
-
-        if (value instanceof RubyConstant) {
-            return ((RubyConstant) value);
-        }
-
-        // Look in the parent module
-
-        if (parentModule != null) {
-            value = parentModule.lookupConstant(constantName);
-
-            if (value != null) {
-                return value;
-            }
-        }
-
-        // Look in the lookup parent
-
-        return lookupParent.lookupConstant(constantName);
-    }
-
     public void changeConstantVisibility(RubyNode currentNode, RubySymbol constant, boolean isPrivate) {
         RubyNode.notDesignedForCompilation();
 
-        RubyConstant rubyConstant = lookupConstant(constant.toString());
+        RubyConstant rubyConstant = ModuleOperations.lookupConstant(this, constant.toString());
         checkFrozen(currentNode);
 
         if (rubyConstant != null) {
@@ -291,56 +213,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         }
 
         newVersion();
-    }
-
-    @Override
-    public Object lookupClassVariable(String variableName) {
-        RubyNode.notDesignedForCompilation();
-
-        // Look in this module
-
-        final Object value = classVariables.get(variableName);
-
-        if (value != null) {
-            return value;
-        }
-
-        // Look in the parent
-
-        return lookupParent.lookupClassVariable(variableName);
-    }
-
-    public Set<String> getClassVariables() {
-        RubyNode.notDesignedForCompilation();
-
-        final Set<String> classVariablesSet = new HashSet<>();
-
-        classVariablesSet.addAll(classVariables.keySet());
-        classVariablesSet.addAll(lookupParent.getClassVariables());
-
-        return classVariablesSet;
-    }
-
-    @Override
-    public RubyMethod lookupMethod(String methodName) {
-        RubyNode.notDesignedForCompilation();
-
-        // Look in this module
-
-        final RubyMethod method = getMethods().get(methodName);
-        if (method != null) {
-            return method;
-        }
-
-        // Look in the parent
-
-        return lookupParent.lookupMethod(methodName);
-    }
-
-    @Override
-    public boolean chainContains(LookupNode node) {
-        // TODO: (JH) we assume that the the LookupNode chain is cycle free, is this always the case?
-        return this == node || lookupParent.chainContains(node);
     }
 
     public void appendFeatures(RubyNode currentNode, RubyModule other) {
@@ -381,12 +253,14 @@ public class RubyModule extends RubyObject implements LookupNode {
 
         // Make dependents new versions
 
-        for (RubyModule dependent : dependents) {
+        for (ModuleChain dependent : dependents) {
             dependent.newVersion();
         }
+
+        // TODO(CS): is the lexical child a dependent?
     }
 
-    public void addDependent(RubyModule dependent) {
+    public void addDependent(ModuleChain dependent) {
         RubyNode.notDesignedForCompilation();
 
         dependents.add(dependent);
@@ -396,16 +270,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         RubyNode.notDesignedForCompilation();
 
         return unmodifiedAssumption.getAssumption();
-    }
-
-    public void getMethods(Map<String, RubyMethod> foundMethods) {
-        RubyNode.notDesignedForCompilation();
-
-        lookupParent.getMethods(foundMethods);
-
-        for (RubyMethod method : methods.values()) {
-            foundMethods.put(method.getName(), method);
-        }
     }
 
     public static void setCurrentVisibility(Visibility visibility) {
@@ -437,7 +301,7 @@ public class RubyModule extends RubyObject implements LookupNode {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = lookupMethod(methodName);
+                final RubyMethod method = ModuleOperations.lookupMethod(this, methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -454,25 +318,10 @@ public class RubyModule extends RubyObject implements LookupNode {
         }
     }
 
-    public List<RubyMethod> getDeclaredMethods() {
-        RubyNode.notDesignedForCompilation();
-
-        return new ArrayList<>(getMethods().values());
-    }
-
-    public Collection<RubyMethod> getAllMethods() {
-        final Map<String, RubyMethod> allMethods = new HashMap<>();
-
-        lookupParent.getMethods(allMethods);
-        allMethods.putAll(methods);
-
-        return allMethods.values();
-    }
-
     public void moduleEval(RubyNode currentNode, String source) {
         RubyNode.notDesignedForCompilation();
 
-        getRubyClass().getContext().eval(source, this, currentNode);
+        getContext().eval(source, this, currentNode);
     }
 
     public Map<String, RubyConstant> getConstants() {
@@ -484,16 +333,29 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     @Override
+    public Map<String, Object> getClassVariables() {
+        return classVariables;
+    }
+
+    @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (RubyConstant constant : constants.values()) {
-            getRubyClass().getContext().getCoreLibrary().box(constant.getValue()).visitObjectGraph(visitor);
+            getContext().getCoreLibrary().box(constant.getValue()).visitObjectGraph(visitor);
         }
 
         for (RubyMethod method : methods.values()) {
             if (method.getDeclarationFrame() != null) {
-                getRubyClass().getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
+                getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
             }
         }
+    }
+
+    public ModuleChain getLexicalParentModule() {
+        return lexicalParentModule;
+    }
+
+    public ModuleChain getParentModule() {
+        return parentModule;
     }
 
 }

@@ -18,30 +18,29 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
 public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
-    private final LookupNode expectedLookupNode;
+    private final ModuleChain expectedClass;
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
 
     @Child protected DirectCallNode callNode;
 
     public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                LookupNode expectedLookupNode, RubyMethod method) {
+                                                ModuleChain expectedClass, RubyMethod method) {
         super(context, cachedName, next);
 
-        this.expectedLookupNode = expectedLookupNode;
-        unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
+        this.expectedClass = expectedClass;
+        unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
         this.method = method;
 
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
@@ -61,7 +60,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
 
     public CachedBoxedMethodMissingDispatchNode(CachedBoxedMethodMissingDispatchNode prev) {
         super(prev);
-        expectedLookupNode = prev.expectedLookupNode;
+        expectedClass = prev.expectedClass;
         unmodifiedAssumption = prev.unmodifiedAssumption;
         method = prev.method;
 
@@ -84,7 +83,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
 
         // Check the lookup node is what we expect
 
-        if (receiverObject.getLookupNode() != expectedLookupNode) {
+        if (receiverObject.getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
                     methodReceiverObject,
@@ -113,7 +112,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                     "class modified");
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL) {
+        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
             // When calling #method_missing we need to prepend the symbol
 
             final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
@@ -128,7 +127,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                             receiverObject,
                             CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                             modifiedArgumentsObjects));
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND) {
+        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             return false;
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
             return callNode.call(

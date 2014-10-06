@@ -56,6 +56,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
     @Override
     public boolean computeScopeFlags(IRScope scope) {
         scope.getFlags().add(IRFlags.HAS_BREAK_INSTRS);
+        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
 

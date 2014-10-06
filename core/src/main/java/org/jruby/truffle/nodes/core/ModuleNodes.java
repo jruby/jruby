@@ -36,6 +36,7 @@ import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 @CoreClass(name = "Module")
@@ -56,21 +57,21 @@ public abstract class ModuleNodes {
         public Object isSubclassOf(VirtualFrame frame, RubyClass self, RubyClass other) {
             notDesignedForCompilation();
 
-            if (self == other || self.getLookupNode().chainContains(other)) {
+            if (self == other || ModuleOperations.includesModule(self, other)) {
                 return true;
             }
 
-            for (RubyClass c = self.getSuperclass(); c != null; c = c.getSuperclass()) {
+            for (ModuleChain c = self.getParentModule(); c != null; c = c.getParentModule()) {
                 if (c == other) {
                     return true;
                 }
             }
 
-            if (other.getLookupNode().chainContains(self)) {
+            if (ModuleOperations.includesModule(other, self)) {
                 return false;
             }
 
-            for (RubyClass c = other.getSuperclass(); c != null; c = c.getSuperclass()) {
+            for (ModuleChain c = other.getParentModule(); c != null; c = c.getParentModule()) {
                 if (c == self) {
                     return false;
                 }
@@ -83,11 +84,11 @@ public abstract class ModuleNodes {
         public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
             notDesignedForCompilation();
 
-            if (self == other || self.getLookupNode().chainContains(other)) {
+            if (self == other || ModuleOperations.includesModule(self, other)) {
                 return true;
             }
 
-            if (other.getLookupNode().chainContains(self)) {
+            if (ModuleOperations.includesModule(other, self)) {
                 return false;
             }
 
@@ -164,6 +165,37 @@ public abstract class ModuleNodes {
 
             module.alias(this, newName.toString(), oldName.toString());
             return module;
+        }
+    }
+
+    @CoreMethod(names = "ancestors", maxArgs = 0)
+    public abstract static class AncestorsNode extends CoreMethodNode {
+
+        public AncestorsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AncestorsNode(AncestorsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray ancestors(RubyModule self) {
+            notDesignedForCompilation();
+
+            ModuleOperations.debugModuleChain(self);
+
+            final List<ModuleChain> ancestors = new ArrayList<>();
+
+            for (ModuleChain module = self; module != null; module = module.getParentModule()) {
+                if (module instanceof IncludedModule) {
+                    ancestors.add(((IncludedModule) module).getIncludedModule());
+                } else {
+                    ancestors.add(module);
+                }
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
         }
     }
 
@@ -395,14 +427,14 @@ public abstract class ModuleNodes {
         public boolean isClassVariableDefined(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            return module.lookupClassVariable(name.toString()) != null;
+            return ModuleOperations.lookupClassVariable(module, name.toString()) != null;
         }
 
         @Specialization
         public boolean isClassVariableDefined(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            return module.lookupClassVariable(name.toString()) != null;
+            return ModuleOperations.lookupClassVariable(module, name.toString()) != null;
         }
 
     }
@@ -447,7 +479,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return module.lookupConstant(name.toString()) != null;
+            return ModuleOperations.lookupConstant(module, name.toString()) != null;
         }
 
         @Specialization
@@ -455,7 +487,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (inherit) {
-                return module.lookupConstant(name.toString()) != null;
+                return ModuleOperations.lookupConstant(module, name.toString()) != null;
             } else {
                 return module.getConstants().containsKey(name.toString());
             }
@@ -465,7 +497,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return module.lookupConstant(name.toString()) != null;
+            return ModuleOperations.lookupConstant(module, name.toString()) != null;
         }
 
     }
@@ -523,17 +555,13 @@ public abstract class ModuleNodes {
         @Specialization
         public Object getClassVariable(RubyModule module, RubyString name) {
             notDesignedForCompilation();
-            return getClassVariable(module, name.toString());
+            return ModuleOperations.lookupClassVariable(module, RubyObject.checkClassVariableName(getContext(), name.toString(), this));
         }
 
         @Specialization
         public Object getClassVariable(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
-            return getClassVariable(module, name.toString());
-        }
-
-        public Object getClassVariable(RubyModule module, String name){
-            return module.lookupClassVariable(RubyObject.checkClassVariableName(getContext(), name, this));
+            return ModuleOperations.lookupClassVariable(module, RubyObject.checkClassVariableName(getContext(), name.toString(), this));
         }
 
     }
@@ -626,6 +654,8 @@ public abstract class ModuleNodes {
             appendFeaturesNode = prev.appendFeaturesNode;
         }
 
+        public abstract NilPlaceholder executeInclude(VirtualFrame frame, RubyModule module, Object[] args);
+
         @Specialization
         public NilPlaceholder include(VirtualFrame frame, RubyModule module, Object[] args) {
             notDesignedForCompilation();
@@ -659,7 +689,9 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            return module.lookupMethod(name.toString()) != null;
+            notDesignedForCompilation();
+
+            return ModuleOperations.lookupMethod(module, name.toString()) != null;
         }
 
         @Specialization
@@ -667,7 +699,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (inherit) {
-                return module.lookupMethod(name.toString()) != null;
+                return ModuleOperations.lookupMethod(module, name.toString()) != null;
             } else {
                 return module.getMethods().containsKey(name.toString());
             }
@@ -677,7 +709,7 @@ public abstract class ModuleNodes {
         public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return module.lookupMethod(name.toString()) != null;
+            return ModuleOperations.lookupMethod(module, name.toString()) != null;
         }
     }
 
@@ -739,7 +771,7 @@ public abstract class ModuleNodes {
                         throw new UnsupportedOperationException();
                     }
 
-                    final RubyMethod method = module.lookupMethod(methodName);
+                    final RubyMethod method = ModuleOperations.lookupMethod(module, methodName);
 
                     if (method == null) {
                         throw new UnsupportedOperationException();
@@ -787,13 +819,17 @@ public abstract class ModuleNodes {
         public RubyArray nesting() {
             notDesignedForCompilation();
 
-            final List<RubyModule> modules = new ArrayList<>();
+            final List<ModuleChain> modules = new ArrayList<>();
 
-            RubyModule module = RubyCallStack.getCallingMethod().getDeclaringModule();
+            ModuleChain module = RubyCallStack.getCallingMethod().getDeclaringModule();
+            RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
-            while (module != null) {
-                modules.add(module);
-                module = module.getParentModule();
+            while (module != null && module != object) {
+                if (module instanceof RubyModule) {
+                    modules.add(module);
+                }
+
+                module = module.getLexicalParentModule();
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
@@ -846,7 +882,7 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = moduleSingleton.lookupMethod(methodName);
+                final RubyMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -905,7 +941,7 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = moduleSingleton.lookupMethod(methodName);
+                final RubyMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -939,11 +975,11 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<RubyMethod> methods = module.getDeclaredMethods();
+            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
             if (includeAncestors) {
-                RubyModule parent = module.getParentModule();
+                ModuleChain parent = module.getParentModule();
                 while(parent != null){
-                    methods.addAll(parent.getDeclaredMethods());
+                    methods.addAll(parent.getMethods().values());
                     parent = parent.getParentModule();
                 }
             }
@@ -978,11 +1014,11 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<RubyMethod> methods = module.getDeclaredMethods();
+            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
             if (includeAncestors) {
-                RubyModule parent = module.getParentModule();
+                ModuleChain parent = module.getParentModule();
                 while(parent != null){
-                    methods.addAll(parent.getDeclaredMethods());
+                    methods.addAll(parent.getMethods().values());
                     parent = parent.getParentModule();
                 }
             }
@@ -1019,11 +1055,11 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<RubyMethod> methods = module.getDeclaredMethods();
+            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
             if (includeAncestors) {
-                RubyModule parent = module.getParentModule();
+                ModuleChain parent = module.getParentModule();
                 while(parent != null){
-                    methods.addAll(parent.getDeclaredMethods());
+                    methods.addAll(parent.getMethods().values());
                     parent = parent.getParentModule();
                 }
             }
@@ -1164,7 +1200,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -1196,7 +1232,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyClass rubyClass, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = rubyClass.lookupMethod(name.toString());
+            final RubyMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
             }
@@ -1208,7 +1244,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyClass rubyClass, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = rubyClass.lookupMethod(name.toString());
+            final RubyMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
             }
@@ -1220,7 +1256,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = module.getLookupNode().lookupMethod(name.toString());
+            final RubyMethod method = ModuleOperations.lookupMethod(module, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }
@@ -1232,7 +1268,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = module.getLookupNode().lookupMethod(name.toString());
+            final RubyMethod method = ModuleOperations.lookupMethod(module, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }

@@ -122,7 +122,7 @@ public class RubyProc extends RubyObject implements MethodLike {
 
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        getRubyClass().getContext().getObjectSpaceManager().visitFrame(declarationFrame, visitor);
+        getContext().getObjectSpaceManager().visitFrame(declarationFrame, visitor);
     }
 
 }

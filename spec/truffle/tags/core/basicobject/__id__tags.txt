@@ -1,3 +1,0 @@
-fails:BasicObject#__id__ returns an integer
-fails:BasicObject#__id__ returns the same value on all calls to id for a given object
-fails:BasicObject#__id__ returns different values for different objects

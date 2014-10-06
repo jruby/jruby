@@ -104,7 +104,9 @@ public class IRScriptBody extends IRScope {
         IRubyObject retVal;
 
         scope.setModule(currModule);
-        context.preMethodScopeOnly(currModule, scope);
+        if (!this.flags.contains(IRFlags.DYNSCOPE_ELIMINATED)) {
+            context.preMethodScopeOnly(currModule, scope);
+        }
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
@@ -116,7 +118,9 @@ public class IRScriptBody extends IRScope {
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
-            context.popScope();
+            if (!this.flags.contains(IRFlags.DYNSCOPE_ELIMINATED)) {
+                context.popScope();
+            }
         }
 
         return retVal;

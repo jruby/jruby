@@ -44,7 +44,7 @@ public class RubyEncoding extends RubyObject{
         RubyNode.notDesignedForCompilation();
 
         org.jruby.RubyEncoding enc = findJRubyEncoding(name);
-        return new RubyEncoding(name.getRubyClass().getContext().getCoreLibrary().getEncodingClass(), enc);
+        return new RubyEncoding(name.getContext().getCoreLibrary().getEncodingClass(), enc);
     }
 
     public static org.jruby.RubyEncoding findJRubyEncoding(RubyString name) {

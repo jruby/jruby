@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -78,7 +79,6 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, MathNodesFactory.getFactories());
         getMethods(methods, ModuleNodesFactory.getFactories());
         getMethods(methods, NilClassNodesFactory.getFactories());
-        getMethods(methods, ObjectNodesFactory.getFactories());
         getMethods(methods, ObjectSpaceNodesFactory.getFactories());
         getMethods(methods, ProcessNodesFactory.getFactories());
         getMethods(methods, ProcNodesFactory.getFactories());
@@ -128,7 +128,7 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getClassAnnotation().name().equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
         } else {
-            module = (RubyModule) rubyObjectClass.lookupConstant(methodDetails.getClassAnnotation().name()).getValue();
+            module = (RubyModule) ModuleOperations.lookupConstant(rubyObjectClass, methodDetails.getClassAnnotation().name()).getValue();
         }
 
         assert module != null : methodDetails.getClassAnnotation().name();
@@ -185,7 +185,9 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getMethodAnnotation().isSplatted()) {
             argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
         } else {
-            assert arity.getMaximum() != Arity.NO_MAXIMUM;
+            if (arity.getMaximum() == Arity.NO_MAXIMUM) {
+                throw new UnsupportedOperationException("if a core method isn't splatted, you need to specify a maximum");
+            }
 
             for (int n = 0; n < arity.getMaximum(); n++) {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);

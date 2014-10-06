@@ -65,15 +65,15 @@ public class RubyException extends RubyObject {
     }
 
     public RubyArray asRubyStringArray() {
-        final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(getRubyClass().getContext(), this, backtrace);
+        final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(getContext(), this, backtrace);
 
         final Object[] array = new Object[lines.length];
 
         for (int n = 0;n < lines.length; n++) {
-            array[n] = getRubyClass().getContext().makeString(lines[n]);
+            array[n] = getContext().makeString(lines[n]);
         }
 
-        return RubyArray.fromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), array);
+        return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), array);
     }
 
 }

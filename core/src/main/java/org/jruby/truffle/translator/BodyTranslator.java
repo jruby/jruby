@@ -310,7 +310,15 @@ public class BodyTranslator extends Translator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());
 
-        RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
+        RubyNode translated;
+        if (node.getName().equals("primitive") && receiverTranslated instanceof ReadConstantNode && ((ReadConstantNode) receiverTranslated).getName().equals("Rubinius")) {
+            RubyNode callNode = new RubyCallNode(context, sourceSection, "send", receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), true, argumentsAndBlock.getArguments());
+            translated = new TryNode(context, sourceSection, new ExceptionTranslatingNode(context, sourceSection, new ReturnNode(context, sourceSection, environment.getReturnID(), callNode)),
+                    new RescueNode[] {new RescueAnyNode(context, sourceSection, new NilLiteralNode(context, sourceSection))},
+                    new NilLiteralNode(context, sourceSection));
+        } else {
+            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
+        }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
         return translated;
@@ -625,7 +633,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitColon2Node(org.jruby.ast.Colon2Node node) {
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        return new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs);
+        return new ReadConstantNode(context, translate(node.getPosition()), true, node.getName(), lhs);
     }
 
     @Override
@@ -634,9 +642,9 @@ public class BodyTranslator extends Translator {
 
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject());
+        final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
-        return new ReadConstantNode(context, sourceSection, node.getName(), root);
+        return new ReadConstantNode(context, sourceSection, false, node.getName(), root);
     }
 
     @Override
@@ -652,7 +660,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        return new ReadConstantNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
+        return new ReadConstantNode(context, sourceSection, false, node.getName(), new SelfNode(context, sourceSection));
     }
 
     @Override

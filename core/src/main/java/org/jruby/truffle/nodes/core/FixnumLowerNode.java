@@ -207,7 +207,7 @@ public class FixnumLowerNode extends PassthroughNode {
 
     private static RubyRange.IntegerFixnumRange lower(RubyRange.LongFixnumRange range) {
         assert canLower(range);
-        return new RubyRange.IntegerFixnumRange(range.getRubyClass().getContext().getCoreLibrary().getRangeClass(), lower(range.getBegin()), lower(range.getEnd()), range.doesExcludeEnd());
+        return new RubyRange.IntegerFixnumRange(range.getContext().getCoreLibrary().getRangeClass(), lower(range.getBegin()), lower(range.getEnd()), range.doesExcludeEnd());
     }
 
 }

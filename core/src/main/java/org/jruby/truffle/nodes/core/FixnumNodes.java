@@ -831,6 +831,11 @@ public abstract class FixnumNodes {
         public boolean equal(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
         }
+
+        @Fallback
+        public boolean equal(Object a, Object b) {
+            return false;
+        }
     }
 
     @CoreMethod(names = "<=>", minArgs = 1, maxArgs = 1)
@@ -1478,6 +1483,19 @@ public abstract class FixnumNodes {
             }
 
             return n;
+        }
+
+        @Specialization
+        public RubyArray times(VirtualFrame frame, int n, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            final int[] array = new int[n];
+
+            for (int i = 0; i < n; i++) {
+                array[i] = i;
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, n);
         }
 
         @Specialization

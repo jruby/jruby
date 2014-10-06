@@ -41,10 +41,10 @@ public class ReadClassVariableNode extends RubyNode {
         if (object instanceof RubyModule) {
             moduleObject = (RubyModule) object;
         } else {
-            moduleObject = object.getRubyClass();
+            moduleObject = object.getLogicalClass();
         }
 
-        final Object value = moduleObject.lookupClassVariable(name);
+        final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
 
         if (value == null) {
             // TODO(CS): is this right?
@@ -65,10 +65,10 @@ public class ReadClassVariableNode extends RubyNode {
         if (object instanceof RubyModule) {
             moduleObject = (RubyModule) object;
         } else {
-            moduleObject = object.getRubyClass();
+            moduleObject = object.getLogicalClass();
         }
 
-        final Object value = moduleObject.lookupClassVariable(name);
+        final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
 
         if (value == null) {
             return NilPlaceholder.INSTANCE;

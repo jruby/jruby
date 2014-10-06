@@ -56,6 +56,15 @@ public abstract class SymbolNodes {
             return a.toString().equals(Long.toString(b));
         }
 
+        @Specialization(guards = "notSymbol")
+        public boolean equal(RubySymbol a, Object b) {
+            return false;
+        }
+
+        protected boolean notSymbol(RubySymbol a, Object b) {
+            return !(b instanceof RubySymbol);
+        }
+
     }
 
     @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)

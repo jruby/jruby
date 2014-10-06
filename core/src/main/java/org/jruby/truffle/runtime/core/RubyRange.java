@@ -98,8 +98,8 @@ public abstract class RubyRange extends RubyObject {
 
         @Override
         public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-            getRubyClass().getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
-            getRubyClass().getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
+            getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
+            getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
         }
 
     }
@@ -125,8 +125,8 @@ public abstract class RubyRange extends RubyObject {
 
         @Override
         public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-            getRubyClass().getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
-            getRubyClass().getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
+            getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
+            getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
         }
 
     }

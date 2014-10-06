@@ -142,7 +142,7 @@ public class RubyString extends RubyObject {
     public String toString() {
         RubyNode.notDesignedForCompilation();
 
-        return Helpers.decodeByteList(getRubyClass().getContext().getRuntime(), bytes);
+        return Helpers.decodeByteList(getContext().getRuntime(), bytes);
     }
 
     @Override

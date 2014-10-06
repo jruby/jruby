@@ -31,7 +31,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             final ArrayList<String> lines = new ArrayList<>();
 
             if (activations.isEmpty()) {
-                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
+                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
             } else {
                 lines.add(formatInLine(activations, exception));
 
@@ -80,7 +80,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             builder.append(": ");
             builder.append(exception.getMessage());
             builder.append(" (");
-            builder.append(exception.getRubyClass().getName());
+            builder.append(exception.getLogicalClass().getName());
             builder.append(")");
         }
 

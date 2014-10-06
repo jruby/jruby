@@ -59,7 +59,7 @@ public class RubyRegexp extends RubyObject {
 
     public RubyRegexp(RubyNode currentNode, RubyClass regexpClass, String regex, int options) {
         this(regexpClass);
-        initialize(compile(currentNode, getRubyClass().getContext(), regex, options), regex);
+        initialize(compile(currentNode, getContext(), regex, options), regex);
     }
 
     public RubyRegexp(RubyClass regexpClass, Regex regex, String source) {
@@ -68,7 +68,7 @@ public class RubyRegexp extends RubyObject {
     }
 
     public void initialize(RubyNode currentNode, String setRegex) {
-        regex = compile(currentNode, getRubyClass().getContext(), setRegex, Option.DEFAULT);
+        regex = compile(currentNode, getContext(), setRegex, Option.DEFAULT);
         source = setRegex;
     }
 
@@ -87,7 +87,7 @@ public class RubyRegexp extends RubyObject {
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
-        final RubyContext context = getRubyClass().getContext();
+        final RubyContext context = getContext();
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
         final Matcher matcher = regex.matcher(stringBytes);
@@ -154,12 +154,12 @@ public class RubyRegexp extends RubyObject {
     }
 
     @CompilerDirectives.SlowPath
-    public Object match(String string) {
-        final RubyContext context = getRubyClass().getContext();
+    public Object match(RubyString string) {
+        final RubyContext context = getContext();
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
-        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final byte[] stringBytes = string.getBytes().bytes();
         final Matcher matcher = regex.matcher(stringBytes);
         final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
@@ -175,7 +175,7 @@ public class RubyRegexp extends RubyObject {
                 if (start == -1 || end == -1) {
                     values[n] = NilPlaceholder.INSTANCE;
                 } else {
-                    final RubyString groupString = context.makeString(string.substring(start, end));
+                    final RubyString groupString = new RubyString(context.getCoreLibrary().getStringClass(), string.getBytes().makeShared(start, end - start).dup());
                     values[n] = groupString;
                 }
             }
@@ -202,7 +202,7 @@ public class RubyRegexp extends RubyObject {
 
     @CompilerDirectives.SlowPath
     public RubyString gsub(String string, String replacement) {
-        final RubyContext context = getRubyClass().getContext();
+        final RubyContext context = getContext();
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
         final Matcher matcher = regex.matcher(stringBytes);
@@ -230,7 +230,7 @@ public class RubyRegexp extends RubyObject {
 
     @CompilerDirectives.SlowPath
     public RubyString[] split(String string) {
-        final RubyContext context = getRubyClass().getContext();
+        final RubyContext context = getContext();
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
         final Matcher matcher = regex.matcher(stringBytes);
@@ -257,7 +257,7 @@ public class RubyRegexp extends RubyObject {
 
     @CompilerDirectives.SlowPath
     public RubyString[] scan(RubyString string) {
-        final RubyContext context = getRubyClass().getContext();
+        final RubyContext context = getContext();
 
         final byte[] stringBytes = string.getBytes().bytes();
         final Matcher matcher = regex.matcher(stringBytes);

@@ -41,6 +41,7 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -1731,10 +1732,11 @@ block_call      : command do_block {
                         throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, $1.getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
                     if ($1 instanceof NonLocalControlFlowNode) {
-                      $$ = ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
+                        ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
                     } else {
-                        $$ = $<BlockAcceptingNode>1.setIterNode($2);
+                        $<BlockAcceptingNode>1.setIterNode($2);
                     }
+                    $$ = $1;
                     $<Node>$.setPosition($1.getPosition());
                 }
                 | block_call dot_or_colon operation2 opt_paren_args {
