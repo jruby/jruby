@@ -106,7 +106,7 @@ public abstract class DispatchNode extends RubyNode {
 
         if (!ignoreVisibility && !method.isVisibleTo(this, callingSelf, receiver)) {
             if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
+                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, receiver.toString(), this));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                 return null;
             } else {
