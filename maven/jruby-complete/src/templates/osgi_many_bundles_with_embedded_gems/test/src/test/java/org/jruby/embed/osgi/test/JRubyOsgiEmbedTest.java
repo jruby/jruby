@@ -96,8 +96,8 @@ public class JRubyOsgiEmbedTest {
         String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\"]");
 
-        // ensure we can load openssl (with its bouncy-castle jars) and krypt
-        loaded = (Boolean) jruby.runScriptlet( "require 'openssl';require 'krypt'" );
+        // ensure we can load openssl (with its bouncy-castle jars)
+        loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
         assertEquals(true, loaded);
 
         // ensure we can load ffi
@@ -108,14 +108,15 @@ public class JRubyOsgiEmbedTest {
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
         assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:classloader:/specifications\", \"uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
 
-	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\"]");
+	jruby.runScriptlet( "require 'jar-dependencies'; require 'krypt'" );
+        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
+        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\"]");
 
         // ensure we can load can load embedded gems
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
 	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
+        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
     }
 }
