@@ -79,6 +79,26 @@ public abstract class BasicObjectNodes {
 
     }
 
+    @CoreMethod(names = "__id__", needsSelf = true, maxArgs = 0)
+    public abstract static class IDNode extends CoreMethodNode {
+
+        public IDNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IDNode(IDNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public long id(RubyBasicObject object) {
+            notDesignedForCompilation();
+
+            return object.getObjectID();
+        }
+
+    }
+
     @CoreMethod(names = "equal?", minArgs = 1, maxArgs = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodNode {
 
