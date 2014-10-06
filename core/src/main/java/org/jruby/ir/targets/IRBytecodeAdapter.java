@@ -266,12 +266,52 @@ public abstract class IRBytecodeAdapter {
      */
     public abstract void invokeSelf(String name, int arity, boolean hasClosure);
 
+    /**
+     * Invoke a superclass method from an instance context.
+     *
+     * Stack required: context, caller, self, start class, arguments[, block]
+     *
+     * @param name name of the method to invoke
+     * @param arity arity of the arguments on the stack
+     * @param hasClosure whether a block is passed
+     * @param splatmap a map of arguments to be splatted back into arg list
+     */
     public abstract void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
 
+    /**
+     * Invoke a superclass method from a class context.
+     *
+     * Stack required: context, caller, self, start class, arguments[, block]
+     *
+     * @param name name of the method to invoke
+     * @param arity arity of the arguments on the stack
+     * @param hasClosure whether a block is passed
+     * @param splatmap a map of arguments to be splatted back into arg list
+     */
     public abstract void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
 
+    /**
+     * Invoke a superclass method from an unresolved context.
+     *
+     * Stack required: context, caller, self, arguments[, block]
+     *
+     * @param name name of the method to invoke
+     * @param arity arity of the arguments on the stack
+     * @param hasClosure whether a block is passed
+     * @param splatmap a map of arguments to be splatted back into arg list
+     */
     public abstract void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
 
+    /**
+     * Invoke a superclass method from a zsuper in a block.
+     *
+     * Stack required: context, caller, self, arguments[, block]
+     *
+     * @param name name of the method to invoke
+     * @param arity arity of the arguments on the stack
+     * @param hasClosure whether a block is passed
+     * @param splatmap a map of arguments to be splatted back into arg list
+     */
     public abstract void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
