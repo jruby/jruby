@@ -515,6 +515,17 @@
       </build>
     </profile>
     <profile>
+      <id>single invoker test</id>
+      <activation>
+        <property>
+          <name>invoker.test</name>
+	</property>
+      </activation>
+      <properties>
+	<invoker.skip>false</invoker.skip>
+      </properties>
+    </profile>
+    <profile>
       <id>jruby-jars</id>
       <modules>
         <module>maven</module>
