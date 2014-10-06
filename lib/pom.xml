@@ -106,7 +106,7 @@
             <fileset>
               <directory>${basedir}/ruby/shared</directory>
               <includes>
-                <include>**/*.jar</include>
+                <include>**/bouncycastle/**/*.jar</include>
               </includes>
             </fileset>
           </filesets>

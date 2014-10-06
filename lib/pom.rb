@@ -83,7 +83,7 @@ project 'JRuby Lib Setup' do
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
                            :includes => [ '*' ] },
                          { :directory => '${basedir}/ruby/shared',
-                           :includes => [ '**/*.jar' ] } ] )
+                           :includes => [ '**/bouncycastle/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
