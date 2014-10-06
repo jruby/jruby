@@ -295,10 +295,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     public void putField(String name) {
         adapter.ldc(name);
         invokeIRHelper("setInstanceVariable", sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
+        adapter.pop();
     }
 
     public void getField(String name) {
-        loadSelf();
         loadRuntime();
         adapter.ldc(name);
         invokeHelper("getInstanceVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
