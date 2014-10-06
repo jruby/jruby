@@ -854,8 +854,6 @@ public class JVMVisitor extends IRVisitor {
             m.loadContext();
             visit(closure);
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        } else {
-            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
         m.invokeClassSuper(name, args.length, hasClosure, splatMap);
@@ -1257,8 +1255,6 @@ public class JVMVisitor extends IRVisitor {
             m.loadContext();
             visit(closure);
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        } else {
-            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
         m.invokeInstanceSuper(name, args.length, hasClosure, splatMap);
@@ -1871,8 +1867,6 @@ public class JVMVisitor extends IRVisitor {
             m.loadContext();
             visit(closure);
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        } else {
-            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
         m.invokeUnresolvedSuper(name, args.length, hasClosure, splatMap);
@@ -1925,8 +1919,6 @@ public class JVMVisitor extends IRVisitor {
             m.loadContext();
             visit(closure);
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        } else {
-            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
         m.invokeZSuper(name, args.length, hasClosure, splatMap);
