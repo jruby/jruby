@@ -24,7 +24,8 @@ public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getTarget().retrieve(context, self, currScope, currDynScope, temp);
 
-        // FIXME: Why getRealClass? Document
+        // We store instance variable offsets on the real class, since instance var tables are associated with the
+        // natural type of an object.
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
