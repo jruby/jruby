@@ -764,10 +764,15 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
         m.loadSelf(); // caller
         visit(receiver);
+        int arity = numArgs;
 
-        if (numArgs == 1 && args[0] instanceof Splat
-                || CallBase.containsArgSplat(args)) {
-            throw new RuntimeException("splat in non-initial argument for normal call is unexpected in JIT");
+        if (numArgs == 1 && args[0] instanceof Splat) {
+            visit(args[0]);
+            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class));
+            arity = -1;
+        } else if (CallBase.containsArgSplat(args)) {
+            arity = -1;
+            throw new RuntimeException("splat in non-initial argument for normal call is unsupported in JIT");
         } else {
             for (Operand operand : args) {
                 visit(operand);
@@ -783,10 +788,10 @@ public class JVMVisitor extends IRVisitor {
         switch (callType) {
             case FUNCTIONAL:
             case VARIABLE:
-                m.invokeSelf(name, numArgs, hasClosure);
+                m.invokeSelf(name, arity, hasClosure);
                 break;
             case NORMAL:
-                m.invokeOther(name, numArgs, hasClosure);
+                m.invokeOther(name, arity, hasClosure);
                 break;
         }
 
