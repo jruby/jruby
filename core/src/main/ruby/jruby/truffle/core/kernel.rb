@@ -20,5 +20,6 @@ module Kernel
       end
     end
   end
+  private :puts
 
 end
