@@ -70,7 +70,7 @@ public class VariadicInvoker extends RubyObject {
         String convention = "default";
         IRubyObject enums = null;
         boolean saveError = true;
-        RubyHash typeMap = null;
+        IRubyObject typeMap = null;
 
         if (args.length == 4) {
             RubyHash options = (RubyHash) args[3];
@@ -90,7 +90,7 @@ public class VariadicInvoker extends RubyObject {
                     + enums.getMetaClass().getName() + " (expected Hash or Enums)");
 
             }
-            typeMap = (RubyHash)options.fastARef(context.runtime.newSymbol("type_map"));
+            typeMap = options.fastARef(context.runtime.newSymbol("type_map"));
             if (typeMap != null && !typeMap.isNil() && !(typeMap instanceof RubyHash)) {
                 throw context.runtime.newTypeError("wrong type for options[:type_map] "
                         + typeMap.getMetaClass().getName() + " (expected Hash)");

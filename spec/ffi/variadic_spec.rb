@@ -15,9 +15,21 @@ describe "Function with variadic arguments" do
     attach_function :pack_varargs2, [ :buffer_out, :enum_type1, :string, :varargs ], :enum_type1
   end
 
+  module LibTest2
+    extend FFI::Library
+    ffi_lib TestLibrary::PATH
+    attach_function :pack_varargs, [ :buffer_out, :string, :varargs ], :void
+    attach_function :pack_varargs2, [ :buffer_out, :int, :string, :varargs ], :int
+  end
+
   it "takes enum arguments" do
     buf = FFI::Buffer.new :long_long, 2
     LibTest.pack_varargs(buf, "ii", :int, :c3, :int, :c4)
+    expect(buf.get_int64(0)).to eq(42)
+    expect(buf.get_int64(8)).to eq(43)
+
+    buf = FFI::Buffer.new :long_long, 2
+    LibTest2.pack_varargs(buf, "ii", :int, 42, :int, 43)
     expect(buf.get_int64(0)).to eq(42)
     expect(buf.get_int64(8)).to eq(43)
   end
@@ -25,12 +37,19 @@ describe "Function with variadic arguments" do
   it "returns symbols for enums" do
     buf = FFI::Buffer.new :long_long, 2
     expect(LibTest.pack_varargs2(buf, :c1, "ii", :int, :c3, :int, :c4)).to eq(:c2)
+
+    buf = FFI::Buffer.new :long_long, 2
+    expect(LibTest2.pack_varargs2(buf, 0, "ii", :int, 42, :int, 43)).to eq(1)
   end
 
   [ 0, 127, -128, -1 ].each do |i|
     it "call variadic with (:char (#{i})) argument" do
       buf = FFI::Buffer.new :long_long
       LibTest.pack_varargs(buf, "c", :char, i)
+      expect(buf.get_int64(0)).to eq(i)
+
+      buf = FFI::Buffer.new :long_long
+      LibTest2.pack_varargs(buf, "c", :char, i)
       expect(buf.get_int64(0)).to eq(i)
     end
   end
@@ -40,6 +59,10 @@ describe "Function with variadic arguments" do
       buf = FFI::Buffer.new :long_long
       LibTest.pack_varargs(buf, "C", :uchar, i)
       expect(buf.get_int64(0)).to eq(i)
+
+      buf = FFI::Buffer.new :long_long
+      LibTest2.pack_varargs(buf, "C", :uchar, i)
+      expect(buf.get_int64(0)).to eq(i)
     end
   end
 
@@ -48,6 +71,10 @@ describe "Function with variadic arguments" do
       buf = FFI::Buffer.new :long_long
       LibTest.pack_varargs(buf, "f", :float, v.to_f)
       expect(buf.get_float64(0)).to eq(v)
+
+      buf = FFI::Buffer.new :long_long
+      LibTest2.pack_varargs(buf, "f", :float, v.to_f)
+      expect(buf.get_float64(0)).to eq(v)
     end
   end
 
@@ -55,6 +82,10 @@ describe "Function with variadic arguments" do
     it "call variadic with (:double (#{v})) argument" do
       buf = FFI::Buffer.new :long_long
       LibTest.pack_varargs(buf, "f", :double, v.to_f)
+      expect(buf.get_float64(0)).to eq(v)
+
+      buf = FFI::Buffer.new :long_long
+      LibTest2.pack_varargs(buf, "f", :double, v.to_f)
       expect(buf.get_float64(0)).to eq(v)
     end
   end
@@ -100,6 +131,12 @@ describe "Function with variadic arguments" do
               it "call(#{fmt}, #{params.join(',')})" do
                 buf = FFI::Buffer.new :long_long, 3
                 LibTest.pack_varargs(buf, fmt, *params)
+                verify(buf, 0, v1)
+                verify(buf, 8, v2)
+                verify(buf, 16, v3)
+
+                buf = FFI::Buffer.new :long_long, 3
+                LibTest2.pack_varargs(buf, fmt, *params)
                 verify(buf, 0, v1)
                 verify(buf, 8, v2)
                 verify(buf, 16, v3)
