@@ -177,7 +177,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 adapter2.aload(base + i + j);
                 j++;
             }
-            adapter2.pushInt(j);
+            adapter2.pushInt(i);
             i += j;
             adapter2.invokestatic(p(Helpers.class), "aastoreIRubyObjects", sig(IRubyObject[].class, params(IRubyObject[].class, IRubyObject.class, j, int.class)));
         }
