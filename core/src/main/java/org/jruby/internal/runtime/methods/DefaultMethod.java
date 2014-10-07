@@ -74,9 +74,14 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             String name, ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
         super(implementationClass, visibility, CallConfiguration.FrameFullScopeFull, name);
-        this.interpretedMethod = DynamicMethodFactory.newInterpretedMethod(
-                implementationClass.getRuntime(), implementationClass, staticScope,
-                body, name, argsNode, visibility, position);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            this.interpretedMethod = new TraceableInterpretedMethod(implementationClass, staticScope, body, name, argsNode,
+                    visibility, position);
+        } else {
+            this.interpretedMethod = DynamicMethodFactory.newInterpretedMethod(
+                    implementationClass.getRuntime(), implementationClass, staticScope,
+                    body, name, argsNode, visibility, position);
+        }
         this.interpretedMethod.serialNumber = this.serialNumber;
         this.box.actualMethod = interpretedMethod;
         this.argsNode = argsNode;

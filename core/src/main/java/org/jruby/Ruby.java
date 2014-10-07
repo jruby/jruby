@@ -3018,18 +3018,34 @@ public final class Ruby {
     
     private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
     
-    public void addEventHook(EventHook hook) {
+    public synchronized void addEventHook(EventHook hook) {
         if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // without full tracing, many events will not fire
             getWarnings().warn("tracing (e.g. set_trace_func) will not capture all events without --debug flag");
         }
-        eventHooks.add(hook);
+
+        EventHook[] hooks = eventHooks;
+        EventHook[] newHooks = new EventHook[hooks.length + 1];
+        newHooks[hooks.length] = hook;
+        eventHooks = newHooks;
         hasEventHooks = true;
     }
     
-    public void removeEventHook(EventHook hook) {
-        eventHooks.remove(hook);
-        hasEventHooks = !eventHooks.isEmpty();
+    public synchronized void removeEventHook(EventHook hook) {
+        EventHook[] hooks = eventHooks;
+        if (hooks.length == 0) return;
+        EventHook[] newHooks = new EventHook[hooks.length - 1];
+        boolean found = false;
+        for (int i = 0, j = 0; i < hooks.length; i++) {
+            if (!found && hooks[i] == hook && !found) { // exclude first found
+                found = true;
+                continue;
+            }
+            newHooks[j] = hooks[i];
+            j++;
+        }
+        eventHooks = newHooks;
+        hasEventHooks = newHooks.length > 0;
     }
 
     public void setTraceFunction(RubyProc traceFunction) {
@@ -4658,8 +4674,9 @@ public final class Ruby {
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
-    private final List<EventHook> eventHooks = new CopyOnWriteArrayList<EventHook>();
-    private boolean hasEventHooks;  
+    private static final EventHook[] EMPTY_HOOKS = new EventHook[0];
+    private volatile EventHook[] eventHooks = new EventHook[0];
+    private boolean hasEventHooks;
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;

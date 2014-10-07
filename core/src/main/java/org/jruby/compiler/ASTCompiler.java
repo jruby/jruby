@@ -43,6 +43,7 @@ import org.jruby.RubyMatchData;
 import org.jruby.RubyString;
 import org.jruby.ast.*;
 import org.jruby.exceptions.JumpException;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -902,7 +903,7 @@ public class ASTCompiler {
             final WhenNode whenNode = (WhenNode)node;
             CompilerCallback body = new CompilerCallback() {
                 public void call(BodyCompiler context) {
-                    if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine();
+                    if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine(whenNode.getPosition());
                     compile(whenNode.getBodyNode(), context, expr);
                 }
             };
@@ -1001,6 +1002,8 @@ public class ASTCompiler {
             superCallback = null;
         }
 
+        ISourcePosition[] lastPosition = new ISourcePosition[1];
+
         CompilerCallback bodyCallback = new CompilerCallback() {
 
                     public void call(BodyCompiler context) {
@@ -1040,7 +1043,7 @@ public class ASTCompiler {
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(classNode.getBodyNode());
 
-        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null, inspector);
+        context.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null, inspector, classNode.getPosition());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -1072,7 +1075,7 @@ public class ASTCompiler {
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(sclassNode.getBodyNode());
 
-        context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback, inspector);
+        context.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback, inspector, sclassNode.getPosition());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2714,7 +2717,7 @@ public class ASTCompiler {
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(moduleNode.getBodyNode());
 
-        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback, inspector);
+        context.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback, inspector, moduleNode.getPosition());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2864,9 +2867,9 @@ public class ASTCompiler {
 
         context.setLinePosition(node.getPosition());
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine();
-
         NewlineNode newlineNode = (NewlineNode) node;
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine(newlineNode.getPosition());
 
         compile(newlineNode.getNextNode(), context, expr);
     }

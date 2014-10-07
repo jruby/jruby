@@ -41,6 +41,8 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 
+import java.util.Arrays;
+
 public class ParserConfiguration {
     private DynamicScope existingScope = null;
     private boolean asBlock = false;
@@ -62,9 +64,9 @@ public class ParserConfiguration {
     private Encoding defaultEncoding;
     private Ruby runtime;
 
-    private Integer[] coverage = EMPTY_COVERAGE;
+    private int[] coverage = EMPTY_COVERAGE;
 
-    private static final Integer[] EMPTY_COVERAGE = new Integer[0];
+    private static final int[] EMPTY_COVERAGE = new int[0];
     
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource,
             CompatVersion version) {
@@ -231,9 +233,10 @@ public class ParserConfiguration {
 
         if (runtime.getCoverageData().isCoverageEnabled()) {
             if (coverage == null) {
-                coverage = new Integer[i + 1];
+                coverage = new int[i + 1];
             } else if (coverage.length <= i) {
-                Integer[] newCoverage = new Integer[i + 1];
+                int[] newCoverage = new int[i + 1];
+                Arrays.fill(newCoverage, -1);
                 System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
                 coverage = newCoverage;
             }
@@ -246,7 +249,7 @@ public class ParserConfiguration {
     /**
      * Get the coverage array, indicating all coverable lines
      */
-    public Integer[] getCoverage() {
+    public int[] getCoverage() {
         return coverage;
     }
 }

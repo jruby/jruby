@@ -2439,10 +2439,10 @@ public class Helpers {
         return runtime.newBoolean(res.isTrue());
     }
 
-    public static void traceLine(ThreadContext context) {
+    public static void traceLine(ThreadContext context, String file, int line) {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
-        context.runtime.callEventHooks(context, RubyEvent.LINE, context.getFile(), context.getLine(), name, type);
+        context.runtime.callEventHooks(context, RubyEvent.LINE, file, line, name, type);
     }
 
     public static void traceClass(ThreadContext context) {

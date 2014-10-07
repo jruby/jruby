@@ -2399,7 +2399,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             final CompilerCallback pathCallback,
             final CompilerCallback bodyCallback,
             final CompilerCallback receiverCallback,
-            final ASTInspector inspector) {
+            final ASTInspector inspector,
+            final ISourcePosition startPosition) {
         String classMethodName = null;
         String rubyName;
         if (receiverCallback == null) {
@@ -2476,7 +2477,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         classBody.beginMethod(null, staticScope);
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass(startPosition);
 
         classBody.method.label(start);
 
@@ -2484,7 +2485,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         classBody.method.label(end);
         // finally with no exception
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd(lastPositionLine);
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
 
@@ -2492,7 +2493,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         classBody.method.label(after);
         // finally with exception
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd(lastPositionLine);
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
         classBody.method.athrow();
@@ -2502,7 +2503,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         classBody.endBody();
     }
 
-    public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback, final ASTInspector inspector) {
+    public void defineModule(final String name,
+                             final StaticScope staticScope,
+                             final CompilerCallback pathCallback,
+                             final CompilerCallback bodyCallback,
+                             final ASTInspector inspector,
+                             final ISourcePosition startPosition) {
         String mangledName = JavaNameMangler.mangleMethodName(name);
         String moduleMethodName = "module__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
@@ -2548,7 +2554,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         classBody.beginMethod(null, staticScope);
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass(startPosition);
 
         classBody.method.label(start);
 
@@ -2558,13 +2564,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         classBody.method.go_to(noException);
 
         classBody.method.label(after);
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd(lastPositionLine);
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
         classBody.method.athrow();
 
         classBody.method.label(noException);
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd(lastPositionLine);
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
 
@@ -2658,26 +2664,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.aload(getExceptionIndex());
     }
 
-    public void setFilePosition(ISourcePosition position) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            loadThreadContext();
-            method.ldc(position.getFile());
-            invokeThreadContext("setFile", sig(void.class, params(String.class)));
-        }
-    }
-
     public void setLinePosition(ISourcePosition position) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            if (lastPositionLine == position.getStartLine()) {
-                // updating position for same line; skip
-                return;
-            } else {
-                lastPositionLine = position.getStartLine();
-                loadThreadContext();
-                method.pushInt(position.getStartLine());
-                method.invokestatic(script.getClassname(), "setPosition", sig(void.class, params(ThreadContext.class, int.class)));
-            }
-        }
+        lastPositionLine = position.getStartLine();
     }
 
     public void checkWhenWithSplat() {
@@ -2938,19 +2926,31 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         getVariableCompiler().releaseTempLocal();
     }
 
-    public void traceLine() {
+    public void traceLine(ISourcePosition position) {
         loadThreadContext();
-        invokeUtilityMethod("traceLine", sig(void.class, ThreadContext.class));
+        // load filename since we share bytecode in some scenarios
+        loadThis();
+        method.getfield(getScriptCompiler().getClassname(), "filename", ci(String.class));
+        method.pushInt(position.getStartLine());
+        invokeUtilityMethod("traceLine", sig(void.class, ThreadContext.class, String.class, int.class));
     }
 
-    public void traceClass() {
+    public void traceClass(ISourcePosition position) {
         loadThreadContext();
-        invokeUtilityMethod("traceClass", sig(void.class, ThreadContext.class));
+        // load filename since we share bytecode in some scenarios
+        loadThis();
+        method.getfield(getScriptCompiler().getClassname(), "filename", ci(String.class));
+        method.pushInt(position.getStartLine());
+        invokeUtilityMethod("traceClass", sig(void.class, ThreadContext.class, String.class, int.class));
     }
 
-    public void traceEnd() {
+    public void traceEnd(int line) {
         loadThreadContext();
-        invokeUtilityMethod("traceEnd", sig(void.class, ThreadContext.class));
+        // load filename since we share bytecode in some scenarios
+        loadThis();
+        method.getfield(getScriptCompiler().getClassname(), "filename", ci(String.class));
+        method.pushInt(line);
+        invokeUtilityMethod("traceEnd", sig(void.class, ThreadContext.class, String.class, int.class));
     }
 
     public void preMultiAssign(int head, boolean args) {

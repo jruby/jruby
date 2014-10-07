@@ -235,8 +235,6 @@ public interface BodyCompiler {
     public void createNewLiteralHash(Object elements, ArrayCallback callback, int keyCount);
     
     /**
-    * @see createNewHash
-    *
     * Create new hash running in ruby 1.9 compat version.
     */
     public void createNewHash19(Object elements, ArrayCallback callback, int keyCount);
@@ -670,8 +668,8 @@ public interface BodyCompiler {
     public void toJavaString();
     public void aliasGlobal(String newName, String oldName);
     public void undefMethod(CompilerCallback nameArg);
-    public void defineClass(String name, StaticScope staticScope, CompilerCallback superCallback, CompilerCallback pathCallback, CompilerCallback bodyCallback, CompilerCallback receiverCallback, ASTInspector inspector);
-    public void defineModule(String name, StaticScope staticScope, CompilerCallback pathCallback, CompilerCallback bodyCallback, ASTInspector inspector);
+    public void defineClass(String name, StaticScope staticScope, CompilerCallback superCallback, CompilerCallback pathCallback, CompilerCallback bodyCallback, CompilerCallback receiverCallback, ASTInspector inspector, ISourcePosition startPosition);
+    public void defineModule(String name, StaticScope staticScope, CompilerCallback pathCallback, CompilerCallback bodyCallback, ASTInspector inspector, ISourcePosition startPosition);
     public void unwrapPassedBlock();
     public void performBackref(char type);
     public void callZSuper(CompilerCallback closure);
@@ -682,7 +680,6 @@ public interface BodyCompiler {
     public void loadStandardError();
     public void unwrapRaiseException();
     public void loadException();
-    public void setFilePosition(ISourcePosition position);
     public void setLinePosition(ISourcePosition position);
     public void checkWhenWithSplat();
     public void createNewEndBlock(CompilerCallback body);
@@ -730,9 +727,9 @@ public interface BodyCompiler {
 
     public void raiseTypeError(String string);
 
-    public void traceLine();
-    public void traceClass();
-    public void traceEnd();
+    public void traceLine(ISourcePosition position);
+    public void traceClass(ISourcePosition position);
+    public void traceEnd(int line);
 
     public String getNativeMethodName();
 
