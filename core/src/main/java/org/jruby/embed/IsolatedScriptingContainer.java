@@ -1,47 +1,36 @@
 package org.jruby.embed;
 
 import java.net.URL;
+import java.util.Arrays;
 
 /**
- * the IsolatedScriptingContainer detects the whether it is used with
- * a Thread.currentThread.contextClassLoader (J2EE) or with the classloader
- * which loaded IsolatedScriptingContainer.class (OSGi case)
- * 
  * the setup of LOAD_PATH and GEM_PATH and JRUBY_HOME uses ONLY uri: or uri:classloader:
  * protocol paths. i.e. everything lives within one or more classloaders - no jars added from
  * jave.class.path or similar "magics"
  *
- * the root of the "main" classloader is add to LOAD_PATH and GEM_PATH.
+ * the root of the "main" classloader is added to LOAD_PATH and GEM_PATH.
  *
  * in the OSGi case there are helper methods to add ClassLoaders to the LOAD_PATH or GEM_PATH
- * 
- * a typical setup for the ContextClassLoader case looks likes this:
- * <li>LOAD_PATH == [ "uri:classloader:/META-INF/jruby.home/lib/ruby/1.9/site_ruby", 
+ *
+ * a typical setup for the ContextClassLoader case and OSGi case looks likes this:
+ * <li>LOAD_PATH == [ "uri:classloader:/META-INF/jruby.home/lib/ruby/1.9/site_ruby",
  *                    "uri:classloader:/META-INF/jruby.home/lib/ruby/shared",
  *                    "uri:classloader:/META-INF/jruby.home/lib/ruby/1.9",
  *                    "uri:classloader:" ]</li>
- * <li>Gem::Specification.dirs ==  [ "uri:classloader:", "uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared" ]
+ * <li>Gem::Specification.dirs ==  [ "uri:classloader:/specifications", "uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared/specifications" ]
  * here very resource is loaded via <code>Thread.currentTHread.getContextClassLoader().getResourceAsStream(...)</code>
- * 
- * a typical setup for OSGi case (one bundle with everything):
- * <li>LOAD_PATH == [ "uri:bundle://16.0:1/META-INF/jruby.home/lib/ruby/1.9/site_ruby", 
- *                    "uri:bundle://16.0:1/META-INF/jruby.home/lib/ruby/shared",
- *                    "uri:bundle://16.0:1/META-INF/jruby.home/lib/ruby/1.9",
- *                    "uri:bundle://16.0:1" ]</li>
- * <li>Gem::Specification.dirs ==  [ "uri:bundle://16.0:1", "uri:bundle://16.0:1/META-INF/jruby.home/lib/ruby/gems/shared" ]
- * other OSGi frameworks use other uris like bundleresource:/16.fwk1661197821. here very resource is loaded via 
- * <code>new URL( uri )openStream()</code>, i.e. <code>new URL(classloader.getResource().toString()).openStream()</code> has to work for
- * those classloaders. felix and equinox OSGi framework do work.
- * 
- * NOTE: <code>Gem.path</code> is base for determine the <code>Gem::Specification.dirs</code> and <code>Gem::Specification.dirs</code> is
+ *
+ * <code>new URL( uri ).openStream()</code>, i.e. <code>new URL(classloader.getResource().toString()).openStream()</code> has to work for
+ * those classloaders. felix, knoplerfish and equinox OSGi framework do work.
+ *
+ * NOTE: <code>Gem.path</code> is used to setup the <code>Gem::Specification.dirs</code> and <code>Gem::Specification.dirs</code> are
  * used to find gemspec files of the installed gems.
  */
 public class IsolatedScriptingContainer extends ScriptingContainer {
 
     private static final String JRUBYDIR = "/.jrubydir";
     private static final String JRUBY_HOME = "/META-INF/jruby.home";
-    private static final String JRUBY_HOME_DIR = JRUBY_HOME + JRUBYDIR;
-    
+
     public IsolatedScriptingContainer()
     {
         this(LocalContextScope.SINGLETON);
@@ -67,41 +56,17 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
                                        LocalVariableBehavior behavior,
                                        boolean lazy )
     {
-        super( scope, behavior, lazy );
-        boolean isContextClassLoader = true;
-        URL home = Thread.currentThread().getContextClassLoader().getResource( JRUBY_HOME_DIR.substring( 1 ) );
-        if ( home == null ) {
-            isContextClassLoader = false;
-            home = this.getClass().getClassLoader().getResource( JRUBY_HOME_DIR );
-            if ( home == null ) {
-                throw new RuntimeException( "BUG can not find " + JRUBY_HOME_DIR );
-            }
-            setClassLoader( this.getClass().getClassLoader() );
-            setHomeDirectory( "uri:" + home.toString().replaceFirst( JRUBYDIR + "$", "" ) );
-        }
-        else {
-            setHomeDirectory( "uri:classloader:" + JRUBY_HOME );
-        }
+        super(scope, behavior, lazy);
 
-        // clean up LOAD_PATH
-        runScriptlet( "$LOAD_PATH.delete_if{|p| p =~ /jar$/ };"
-                      // TODO NormalizedFile does too much - should leave uri: files as they are
-                      + "$LOAD_PATH.each{|p| p.sub!( /:\\/([^\\/])/,'://\\1' )}" );
-        
-        if ( isContextClassLoader ) {
-            runScriptlet( "Gem::Specification.reset;"
-                        + "Gem::Specification.add_dir 'uri:classloader:" + JRUBY_HOME + "/lib/ruby/gems/shared';"
-                        + "Gem::Specification.add_dir 'uri:classloader:/';"
-                        + "$LOAD_PATH << 'uri:classloader:/'; $LOAD_PATH.inspect" );
-        }
-        else {
-            runScriptlet( "Gem::Specification.reset;"
-                        + "Gem::Specification.add_dir '" + getHomeDirectory() + "/lib/ruby/gems/shared'" );
-            addLoadPath( getClassLoader(), JRUBY_HOME_DIR );
-            addGemPath( getClassLoader(), JRUBY_HOME_DIR );
-        }
+        setLoadPaths( Arrays.asList( "uri:classloader:" ) );
+
+        // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
+        runScriptlet("require 'rubygems/defaults/jruby';"
+                + "Gem::Specification.reset;"
+                + "Gem::Specification.add_dir 'uri:classloader:" + JRUBY_HOME + "/lib/ruby/gems/shared';"
+                + "Gem::Specification.add_dir 'uri:classloader:';");
     }
-    
+
     public void addLoadPath( ClassLoader cl ) {
         addLoadPath( cl, JRUBYDIR );
     }
