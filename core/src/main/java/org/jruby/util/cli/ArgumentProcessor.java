@@ -39,7 +39,11 @@ import org.jruby.util.SafePropertyAccessor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Encapsulated logic for processing JRuby's command-line arguments.

@@ -28,7 +28,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 import com.headius.options.Option;
 import org.jruby.TruffleBridge;
