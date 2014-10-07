@@ -26,7 +26,6 @@ class TestCertificate < Test::Unit::TestCase
   end
 
   def test_set_public_key
-    pkey = @cert.public_key
     newkey = OpenSSL::PKey::RSA.new(1024)
     @cert.public_key = newkey
     assert_equal(newkey.public_key.to_pem, @cert.public_key.to_pem)
@@ -57,6 +56,7 @@ nTA=
 END
 
     cert   = OpenSSL::X509::Certificate.new(pem_cert)
+    keyid = '24:D1:34:18:66:91:2A:63:76:AA:19:CE:17:20:56:56:5E:10:8F:AA'
     cert.extensions.each do |ext|
       value = ext.value
       crit = ext.critical?
@@ -69,10 +69,14 @@ END
         assert_equal "CA:TRUE", value
       when "authorityKeyIdentifier"
         assert_equal false, crit
-        assert_equal "keyid:80:14:24:D1:34:18:66:91:2A:63:76:AA:19:CE:17:20:56:56:5E:10:8F:AA", value
+        expected = "keyid:#{keyid}\n"
+        # NOTE: behavior matched against MRI 1.8.7/1.9.3/2.1.2 :
+        expected << "DirName:/C=JP/O=ctor.org/OU=Development/CN=http-access2\n"
+        expected << "serial:01\n"
+        assert_equal expected, value
       when "subjectKeyIdentifier"
         assert_equal false, crit
-        assert_equal "24:D1:34:18:66:91:2A:63:76:AA:19:CE:17:20:56:56:5E:10:8F:AA", value
+        assert_equal keyid, value
       when "nsComment"
         assert_equal false, crit
         assert_equal "Ruby/OpenSSL Generated Certificate", value
