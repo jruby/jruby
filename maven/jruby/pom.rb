@@ -27,28 +27,37 @@ project 'JRuby Main Maven Artifact' do
   plugin( :invoker )
 
   execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
-    felix = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive' )
-     [ 'equinox-3.6', 'equinox-3.7', 'felix-3.2'].each do |m|
+    source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_all_inclusive' )
+     [ 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
       target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive_' + m )
       FileUtils.rm_rf( target )
-      FileUtils.cp_r( felix, target )
+      FileUtils.cp_r( source, target )
       File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
         f.puts 'invoker.profiles = ' + m
       end
     end
   end
 
+  plugin( :clean ) do
+    execute_goals( :clean,
+                   :phase => :clean,
+                   :id => 'clean-extra-osgi-ITs',
+                   :filesets => [ { :directory => '${basedir}/src/it',
+                                    :includes => ['osgi*/**'] } ],
+                   :failOnError => false )
+  end
+
   profile :id => :jdk8 do
     activation do
       jdk '1.8'
     end
-    plugin :invoker, :pomExcludes => ['osgi_all_inclusive_felix-3.2/pom.xml']
+    plugin :invoker, :pomExcludes => ['osgi_all_inclusive_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
   profile :id => :jdk6 do
     activation do
       jdk '1.6'
     end
-    plugin :invoker, :pomExcludes => ['jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml']
+    plugin :invoker, :pomExcludes => ['jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
 
   profile :id => :wlp do

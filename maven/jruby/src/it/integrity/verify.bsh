@@ -33,3 +33,8 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
+expected = "ffi,jar-dependencies,jruby-openssl,krypt,krypt-core,krypt-provider-jdk";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
