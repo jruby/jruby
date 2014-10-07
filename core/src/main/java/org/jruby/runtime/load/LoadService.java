@@ -1003,12 +1003,17 @@ public class LoadService {
             return state.library;
         }
 
-        // TODO(ratnikov): Remove the special classpath case by introducing a classpath file resource
-        Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-        if (library != null) {
-            state.library = library;
+        // this test is needed to avoid an in org.jruby.runtime.load.LoadService.findFileInClasspath
+        // running inside felix-4.2.1 osgi framework
+        if (loadPath.size() == 0 || !loadPath.first().asJavaString().equals("uri:classloader:")) {
+            // TODO(ratnikov): Remove the special classpath case by introducing a classpath file resource
+            Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+            if (library != null) {
+                state.library = library;
+            }
+            return library;
         }
-        return library;
+        return null;
     }
 
     @Deprecated
