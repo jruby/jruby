@@ -158,7 +158,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public NilPlaceholder initiailze() {
+        public NilPlaceholder initialize() {
             return NilPlaceholder.INSTANCE;
         }
 
