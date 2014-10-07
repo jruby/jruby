@@ -11,6 +11,7 @@ import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.UnboxingPass;
@@ -597,14 +598,9 @@ public abstract class IRScope implements ParseResult {
                 pass.run(this);
             }
 
-            // This will run the simplified version of the pass
-            // that doesn't require dataflow analysis and hence
-            // can run on closures independent of enclosing scopes.
-            pass = new AddLocalVarLoadStoreInstructions();
+            pass = new OptimizeDynScopesPass();
             if (pass.previouslyRun(this) == null) {
-                ((AddLocalVarLoadStoreInstructions)pass).eliminateLocalVars(this);
-                setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, new StoreLocalVarPlacementProblem());
-                setDataFlowSolution(LiveVariablesProblem.NAME, null);
+                pass.run(this);
             }
         }
     }
