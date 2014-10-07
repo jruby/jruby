@@ -163,7 +163,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.hasExplicitCallProtocol();
+        return scope.hasExplicitCallProtocol() ? new Object() : null;
     }
 
     @Override

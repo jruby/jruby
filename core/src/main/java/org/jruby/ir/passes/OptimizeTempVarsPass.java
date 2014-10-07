@@ -30,7 +30,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.hasHasOptimizedTemporaryVariables();
+        return scope.hasHasOptimizedTemporaryVariables() ? new Object() : null;
     }
 
     @Override
