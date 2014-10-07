@@ -1153,10 +1153,6 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public void resetCFG() {
-        cfg = null;
-    }
-
     /* Record a begin block -- not all scope implementations can handle them */
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
