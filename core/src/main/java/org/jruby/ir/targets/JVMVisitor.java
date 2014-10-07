@@ -143,9 +143,9 @@ public class JVMVisitor extends IRVisitor {
     public void emitScope(IRScope scope, String name, Signature signature) {
         List <BasicBlock> bbs;
         if (prepare) {
+            scope.prepareForInterpretation(false);
             bbs = scope.prepareForCompilation();
         } else {
-            scope.prepareForInterpretation(false);
             bbs = scope.buildLinearization();
         }
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();

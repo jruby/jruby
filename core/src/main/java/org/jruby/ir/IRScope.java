@@ -640,25 +640,6 @@ public abstract class IRScope implements ParseResult {
         // Reset linearization, since we will add JIT-specific flow and instrs
         resetLinearizationData();
 
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            buildCFG();
-        }
-
-        // Add this always since we dont re-JIT a previously
-        // JIT-ted closure.  But, check if there are other
-        // smarts available to us and eliminate adding this
-        // code to every closure there is.
-        //
-        // Add a global ensure block to catch uncaught breaks
-        // and throw a LocalJumpError.
-        if (this instanceof IRClosure) {
-            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
-                resetState();
-                computeScopeFlags();
-            }
-        }
-
         runCompilerPasses(getManager().getJITPasses(this));
 
         checkRelinearization();
