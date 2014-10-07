@@ -137,11 +137,11 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
+            return a == b;
         }
 
         @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+        public boolean equal(Object a, Object b) {
             return a == b;
         }
     }
@@ -158,7 +158,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public NilPlaceholder initiailze() {
+        public NilPlaceholder initialize() {
             return NilPlaceholder.INSTANCE;
         }
 

@@ -22,7 +22,7 @@ KRYPT_VERSION = '0.0.2'
 # the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.6.dev-SNAPSHOT', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.5', true ),
    ImportedGem.new( 'jruby-readline', '1.0.dev-SNAPSHOT', false ),
    ImportedGem.new( 'jruby-ripper', '2.1.0.dev-SNAPSHOT', false, '2.1' ),
    ImportedGem.new( 'rake', 'rake.version', true ),
@@ -75,7 +75,9 @@ project 'JRuby Lib Setup' do
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
-                           :includes => [ '*' ] } ] )
+                           :includes => [ '*' ] },
+                         { :directory => '${basedir}/ruby/shared',
+                           :includes => [ '**/bouncycastle/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|

@@ -400,6 +400,14 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
+    public boolean hasHasOptimizedTemporaryVariables() {
+        return flags.contains(HAS_OPTIMIZED_TEMPORARY_VARIABLES);
+    }
+
+    public void setHasOptimizedTemporaryVariables() {
+        flags.add(HAS_OPTIMIZED_TEMPORARY_VARIABLES);
+    }
+
     public void setHasLoopsFlag() {
         flags.add(HAS_LOOPS);
     }
