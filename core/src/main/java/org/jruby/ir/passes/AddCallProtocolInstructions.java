@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.ListIterator;
 
 public class AddCallProtocolInstructions extends CompilerPass {
-    boolean addedInstrs = false;
-
     @Override
     public String getLabel() {
         return "Add Call Protocol Instructions (push/pop of dyn-scope, frame, impl-class values)";
@@ -157,9 +155,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // Run on all nested closures.
         for (IRClosure c: scope.getClosures()) execute(c);
 
-        // Mark as done
-        addedInstrs = true;
-
         // LVA information is no longer valid after the pass
         scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
 
@@ -168,7 +163,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return addedInstrs ? new Object() : null;
+        return scope.hasExplicitCallProtocol();
     }
 
     @Override
