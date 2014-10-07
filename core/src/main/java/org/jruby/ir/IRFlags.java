@@ -44,6 +44,7 @@ public enum IRFlags {
     HAS_EXPLICIT_CALL_PROTOCOL,   // contains call protocol instrs.  if so we don't need to manage bindings frame implicitly.
     HAS_LOOPS,                    // has a loop
     HAS_NONLOCAL_RETURNS,         // has a non-local return
+    HAS_OPTIMIZED_TEMPORARY_VARIABLES, // we simplified number of temp vars (before CFG was built). we can only do once.
     HAS_UNUSED_IMPLICIT_BLOCK_ARG,// Is %block implicit block arg unused?
     RECEIVES_CLOSURE_ARG,         // This scope (or parent receives a closure
     RECEIVES_KEYWORD_ARGS,        // receives keyword args

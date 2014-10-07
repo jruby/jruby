@@ -10,8 +10,6 @@ import org.jruby.ir.operands.Variable;
 import java.util.*;
 
 public class OptimizeTempVarsPass extends CompilerPass {
-    boolean optimizedTempVars = false;
-
     @Override
     public String getLabel() {
         return "Temporary Variable Reduction";
@@ -25,14 +23,14 @@ public class OptimizeTempVarsPass extends CompilerPass {
 
         optimizeTmpVars(s);
 
-        optimizedTempVars = true;
+        s.hasHasOptimizedTemporaryVariables();
 
         return null;
     }
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return optimizedTempVars ? new Object() : null;
+        return scope.hasHasOptimizedTemporaryVariables();
     }
 
     @Override
