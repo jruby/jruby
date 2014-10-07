@@ -8,6 +8,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
+import org.jruby.ast.executable.ScriptAndCode;
 import org.jruby.exceptions.JumpException;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
@@ -20,7 +21,7 @@ import org.jruby.util.JRubyClassLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
+public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
 
     // Compiler is singleton
     private Compiler() {}
@@ -35,9 +36,10 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
     }
 
     @Override
-    protected Script execute(final Ruby runtime, final IRScope scope, JRubyClassLoader classLoader) {
+    protected ScriptAndCode execute(final Ruby runtime, final IRScope scope, JRubyClassLoader classLoader) {
         final JVMVisitor visitor = new JVMVisitor();
-        final Class compiled = visitor.compile(scope, classLoader);
+        final byte[] bytecode = visitor.compileToBytecode(scope);
+        final Class compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
         final StaticScope staticScope = scope.getStaticScope();
         final IRubyObject runtimeTopSelf = runtime.getTopSelf();
         staticScope.setModule(runtimeTopSelf.getMetaClass());
@@ -51,7 +53,7 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
         }
         final Method compiledMethod = _compiledMethod;
 
-        return new AbstractScript() {
+        Script script = new AbstractScript() {
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
@@ -78,6 +80,8 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
                 }
             }
         };
+
+        return new ScriptAndCode(bytecode, script);
 
     }
 

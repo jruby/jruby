@@ -39,6 +39,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.objectweb.asm.util.TraceClassVisitor;
 import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
 import jnr.constants.platform.Errno;
@@ -51,6 +52,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.executable.Script;
+import org.jruby.ast.executable.ScriptAndCode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.JITCompiler;
@@ -136,6 +138,7 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.ClassReader;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -144,6 +147,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.net.MalformedURLException;
@@ -712,13 +716,13 @@ public final class Ruby {
      * @return The result of executing the script
      */
     public IRubyObject runNormally(Node scriptNode) {
-        Script script = null;
+        ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
             // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
             // FIXME: restore error once JIT should handle everything
             try {
-                script = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()));
+                scriptAndCode = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()));
                 if (Options.JIT_LOGGING.load()) {
                     LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
                 }
@@ -732,12 +736,15 @@ public final class Ruby {
             }
         }
 
-        if (script != null) {
+        if (scriptAndCode != null) {
             if (config.isShowBytecode()) {
+                TraceClassVisitor tracer = new TraceClassVisitor(new PrintWriter(System.err));
+                ClassReader reader = new ClassReader(scriptAndCode.bytecode());
+                reader.accept(tracer, 0);
                 return getNil();
             }
 
-            return runScript(script);
+            return runScript(scriptAndCode.script());
         } else {
             // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
 //            failForcedCompile(scriptNode);
@@ -755,7 +762,7 @@ public final class Ruby {
      * @return an instance of the successfully-compiled Script, or null.
      */
     public Script tryCompile(Node node) {
-        return tryCompile(node, new JRubyClassLoader(getJRubyClassLoader()));
+        return tryCompile(node, new JRubyClassLoader(getJRubyClassLoader())).script();
     }
 
     private void failForcedCompile(Node scriptNode) throws RaiseException {
@@ -771,7 +778,7 @@ public final class Ruby {
         }
     }
 
-    private Script tryCompile(Node node, JRubyClassLoader classLoader) {
+    private ScriptAndCode tryCompile(Node node, JRubyClassLoader classLoader) {
         return Compiler.getInstance().execute(this, node, classLoader);
     }
     
@@ -2888,7 +2895,7 @@ public final class Ruby {
             // script was not found in cache above, so proceed to compile
             Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                script = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader));
+                script = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader)).script();
             }
 
             if (script == null) {
