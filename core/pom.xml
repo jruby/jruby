@@ -522,6 +522,16 @@
                   <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                 </relocation>
               </relocations>
+              <filters>
+                <filter>
+                  <artifact>org.jruby:yecht</artifact>
+                  <excludes>
+                    <exclude>yaml/**</exclude>
+                    <exclude>okay/**</exclude>
+                    <exclude>*.rb</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <outputFile>${jruby.basedir}/lib/jruby.jar</outputFile>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
@@ -600,6 +610,16 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>org.jruby:yecht</artifact>
+                      <excludes>
+                        <exclude>yaml/**</exclude>
+                        <exclude>okay/**</exclude>
+                        <exclude>*.rb</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
@@ -657,6 +677,16 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>org.jruby:yecht</artifact>
+                      <excludes>
+                        <exclude>yaml/**</exclude>
+                        <exclude>okay/**</exclude>
+                        <exclude>*.rb</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
@@ -714,6 +744,16 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>org.jruby:yecht</artifact>
+                      <excludes>
+                        <exclude>yaml/**</exclude>
+                        <exclude>okay/**</exclude>
+                        <exclude>*.rb</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
@@ -771,6 +811,16 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>org.jruby:yecht</artifact>
+                      <excludes>
+                        <exclude>yaml/**</exclude>
+                        <exclude>okay/**</exclude>
+                        <exclude>*.rb</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
@@ -828,6 +878,16 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>org.jruby:yecht</artifact>
+                      <excludes>
+                        <exclude>yaml/**</exclude>
+                        <exclude>okay/**</exclude>
+                        <exclude>*.rb</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
@@ -885,6 +945,16 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>org.jruby:yecht</artifact>
+                      <excludes>
+                        <exclude>yaml/**</exclude>
+                        <exclude>okay/**</exclude>
+                        <exclude>*.rb</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
@@ -942,6 +1012,16 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>org.jruby:yecht</artifact>
+                      <excludes>
+                        <exclude>yaml/**</exclude>
+                        <exclude>okay/**</exclude>
+                        <exclude>*.rb</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
