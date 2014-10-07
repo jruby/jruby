@@ -487,6 +487,10 @@ public class CoreLibrary {
         return noMethodError(String.format("undefined method `%s' for %s", name, object), currentNode);
     }
 
+    public RubyException privateMethodError(String name, String object, Node currentNode) {
+        return noMethodError(String.format("private method `%s' called for %s", name, object), currentNode);
+    }
+
     public RubyException loadError(String message, Node currentNode) {
         return new RubyException(context.getCoreLibrary().getLoadErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }

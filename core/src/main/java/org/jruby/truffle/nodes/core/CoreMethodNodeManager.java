@@ -79,7 +79,6 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, MathNodesFactory.getFactories());
         getMethods(methods, ModuleNodesFactory.getFactories());
         getMethods(methods, NilClassNodesFactory.getFactories());
-        getMethods(methods, ObjectNodesFactory.getFactories());
         getMethods(methods, ObjectSpaceNodesFactory.getFactories());
         getMethods(methods, ProcessNodesFactory.getFactories());
         getMethods(methods, ProcNodesFactory.getFactories());

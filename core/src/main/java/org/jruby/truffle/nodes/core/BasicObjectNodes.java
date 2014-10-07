@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -74,6 +75,26 @@ public abstract class BasicObjectNodes {
         @Specialization
         public boolean equal(Object a, Object b) {
             return a != b;
+        }
+
+    }
+
+    @CoreMethod(names = "__id__", needsSelf = true, maxArgs = 0)
+    public abstract static class IDNode extends CoreMethodNode {
+
+        public IDNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IDNode(IDNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public long id(RubyBasicObject object) {
+            notDesignedForCompilation();
+
+            return object.getObjectID();
         }
 
     }
@@ -137,8 +158,43 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public NilPlaceholder initiailze() {
+        public NilPlaceholder initialize() {
             return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    @CoreMethod(names = "instance_eval", needsBlock = true, maxArgs = 0)
+    public abstract static class InstanceEvalNode extends CoreMethodNode {
+
+        @Child protected YieldDispatchHeadNode yield;
+
+        public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
+        }
+
+        public InstanceEvalNode(InstanceEvalNode prev) {
+            super(prev);
+            yield = prev.yield;
+        }
+
+        @Specialization
+        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyProc block) {
+            notDesignedForCompilation();
+
+            if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
+                throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias", this));
+            }
+
+            return yield.dispatchWithModifiedSelf(frame, block, receiver);
+        }
+
+        @Specialization
+        public Object instanceEval(VirtualFrame frame, Object self, RubyProc block) {
+            notDesignedForCompilation();
+
+            return instanceEval(frame, getContext().getCoreLibrary().box(self), block);
         }
 
     }

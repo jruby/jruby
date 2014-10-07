@@ -1731,19 +1731,12 @@ block_call      : command do_block {
                     if ($1 instanceof BlockAcceptingNode && $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
                         throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, $1.getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
-                    if ($$ instanceof IterNode
-                            && $1 instanceof ReturnNode
-                            && $<ReturnNode>1.getValueNode() instanceof BlockAcceptingNode) {
-                        final IterNode iterNode = $<IterNode>$;
-                        final ReturnNode returnNode = $<ReturnNode>1;
-                        final BlockAcceptingNode blockAcceptingNode = (BlockAcceptingNode) returnNode.getValueNode();
-                        blockAcceptingNode.setIterNode(iterNode);
-                        $$ = returnNode;
-                    } else if ($1 instanceof NonLocalControlFlowNode) {
-                        $$ = ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
+                    if ($1 instanceof NonLocalControlFlowNode) {
+                        ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
                     } else {
-                        $$ = $<BlockAcceptingNode>1.setIterNode($2);
+                        $<BlockAcceptingNode>1.setIterNode($2);
                     }
+                    $$ = $1;
                     $<Node>$.setPosition($1.getPosition());
                 }
                 | block_call dot_or_colon operation2 opt_paren_args {

@@ -831,6 +831,11 @@ public abstract class FixnumNodes {
         public boolean equal(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
         }
+
+        @Fallback
+        public boolean equal(Object a, Object b) {
+            return false;
+        }
     }
 
     @CoreMethod(names = "<=>", minArgs = 1, maxArgs = 1)

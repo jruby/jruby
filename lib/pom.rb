@@ -1,5 +1,5 @@
 class ImportedGem
-  attr_reader :name, :default_gem, :pom_version_key, :ruby_version, :only_spec
+  attr_reader :name, :default_gem, :pom_version_key, :ruby_version
 
   def initialize( name, pom_version_key, default_gem, ruby_version = nil )
     @name = name

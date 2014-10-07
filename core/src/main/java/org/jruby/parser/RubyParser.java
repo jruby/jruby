@@ -4049,19 +4049,12 @@ states[420] = new ParserState() {
                     if (((Node)yyVals[-1+yyTop]) instanceof BlockAcceptingNode && ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
                         throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
-                    if (yyVal instanceof IterNode
-                            && ((Node)yyVals[-1+yyTop]) instanceof ReturnNode
-                            && ((ReturnNode)yyVals[-1+yyTop]).getValueNode() instanceof BlockAcceptingNode) {
-                        final IterNode iterNode = ((IterNode)yyVal);
-                        final ReturnNode returnNode = ((ReturnNode)yyVals[-1+yyTop]);
-                        final BlockAcceptingNode blockAcceptingNode = (BlockAcceptingNode) returnNode.getValueNode();
-                        blockAcceptingNode.setIterNode(iterNode);
-                        yyVal = returnNode;
-                    } else if (((Node)yyVals[-1+yyTop]) instanceof NonLocalControlFlowNode) {
-                        yyVal = ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop]));
+                    if (((Node)yyVals[-1+yyTop]) instanceof NonLocalControlFlowNode) {
+                        ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop]));
                     } else {
-                        yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
+                        ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
                     }
+                    yyVal = ((Node)yyVals[-1+yyTop]);
                     ((Node)yyVal).setPosition(((Node)yyVals[-1+yyTop]).getPosition());
     return yyVal;
   }
@@ -5207,7 +5200,7 @@ states[631] = new ParserState() {
   }
 };
 }
-					// line 2489 "RubyParser.y"
+					// line 2482 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5226,4 +5219,4 @@ states[631] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 9623 "-"
+					// line 9616 "-"

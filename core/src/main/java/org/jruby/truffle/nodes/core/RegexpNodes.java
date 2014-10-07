@@ -173,7 +173,7 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.match(string.toString());
+            return regexp.match(string);
         }
 
     }

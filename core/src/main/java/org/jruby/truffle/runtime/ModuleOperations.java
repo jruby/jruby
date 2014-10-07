@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.CompilerAsserts;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.util.Collection;
@@ -280,11 +281,12 @@ public abstract class ModuleOperations {
         while (module != null) {
             System.err.print(module.getClass());
 
-            if (module instanceof RubyClass) {
-                System.err.print(" " + ((RubyClass) module).getName());
-            } else if (module instanceof IncludedModule) {
-                System.err.print(" " + ((IncludedModule) module).getIncludedModule().getName());
+            ModuleChain real = module;
+            if (module instanceof  IncludedModule) {
+                real = ((IncludedModule) module).getIncludedModule();
             }
+
+            System.err.print(" " + ((RubyModule) real).getName());
 
             System.err.println();
             module = module.getParentModule();

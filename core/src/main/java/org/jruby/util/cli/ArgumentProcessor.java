@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Encapsulated logic for processing JRuby's command-line arguments.
@@ -94,6 +96,8 @@ public class ArgumentProcessor {
     }
 
     public void processArguments(boolean inline) {
+        checkProperties();
+
         while (argumentIndex < arguments.size() && isInterpreterArgument(arguments.get(argumentIndex).originalValue)) {
             processArgument();
             argumentIndex++;
@@ -675,6 +679,26 @@ public class ArgumentProcessor {
                 return;
             } else if (!graalVersion.equals(expectedGraalVersion)) {
                 throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion + " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
+            }
+        }
+    }
+
+    private void checkProperties() {
+        final Set<String> propertyNames = new HashSet<>();
+        propertyNames.addAll(Options.getPropertyNames());
+        propertyNames.add("jruby.home");
+        propertyNames.add("jruby.script");
+        propertyNames.add("jruby.shell");
+        propertyNames.add("jruby.lib");
+        propertyNames.add("jruby.bindir");
+        propertyNames.add("jruby.jar");
+        propertyNames.add("jruby.compat.version");
+
+        for (String propertyName : System.getProperties().stringPropertyNames()) {
+            if (propertyName.startsWith("jruby.")) {
+                if (!propertyNames.contains(propertyName)) {
+                    System.err.println("jruby: warning: unknown property " + propertyName);
+                }
             }
         }
     }

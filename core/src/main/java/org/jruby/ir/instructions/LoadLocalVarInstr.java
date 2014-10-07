@@ -18,7 +18,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityI
     /** This is the variable that is being loaded from the scope.  This variable
      * doesn't participate in the computation itself.  We just use it as a proxy for
      * its (a) name (b) offset (c) scope-depth. */
-    private final LocalVariable lvar;
+    private LocalVariable lvar;
 
     public LoadLocalVarInstr(IRScope scope, TemporaryLocalVariable result, LocalVariable lvar) {
         super(Operation.BINDING_LOAD);
@@ -47,6 +47,11 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityI
     @Override
     public void updateResult(Variable v) {
         this.result = (TemporaryLocalVariable)v;
+    }
+
+    // SSS FIXME: This feels dirty
+    public void decrementLVarScopeDepth() {
+        this.lvar = lvar.cloneForDepth(lvar.getScopeDepth()-1);
     }
 
     @Override

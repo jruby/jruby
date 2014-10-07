@@ -11,6 +11,8 @@ import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.UnboxingPass;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
@@ -451,7 +453,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void setCFG(CFG cfg) {
-       this.cfg = cfg;
+        this.cfg = cfg;
     }
 
     public CFG getCFG() {
@@ -517,19 +519,7 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void runCompilerPasses(List<CompilerPass> passes) {
-        // SSS FIXME: Why is this again?  Document this weirdness!
-        // Forcibly clear out the shared eval-scope variable allocator each time this method executes
-        initEvalScopeVariableAllocator(true);
-
-        // SSS FIXME: We should configure different optimization levels
-        // and run different kinds of analysis depending on time budget.
-        // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
-        // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
-        // while another thread is using it.  This may need to happen on a clone()
-        // and we may need to update the method to return the new method.  Also,
-        // if this scope is held in multiple locations how do we update all references?
-
+    private boolean isUnsafeScope() {
         boolean unsafeScope = false;
         if (flags.contains(HAS_END_BLOCKS) || this.isBeginEndBlock()) {
             unsafeScope = true;
@@ -545,12 +535,27 @@ public abstract class IRScope implements ParseResult {
                 unsafeScope = true;
             }
         }
+        return unsafeScope;
+    }
+
+    private void runCompilerPasses(List<CompilerPass> passes) {
+        // SSS FIXME: Why is this again?  Document this weirdness!
+        // Forcibly clear out the shared eval-scope variable allocator each time this method executes
+        initEvalScopeVariableAllocator(true);
+
+        // SSS FIXME: We should configure different optimization levels
+        // and run different kinds of analysis depending on time budget.
+        // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
+        // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
+        // while another thread is using it.  This may need to happen on a clone()
+        // and we may need to update the method to return the new method.  Also,
+        // if this scope is held in multiple locations how do we update all references?
 
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
         // worth the effort. It is simpler to just go fully safe in scopes
         // influenced by their presence.
-        if (unsafeScope) {
+        if (isUnsafeScope()) {
             passes = getManager().getSafePasses(this);
         }
 
@@ -567,17 +572,23 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void runDeadCodeAndVarLoadStorePasses() {
-        // For methods that don't require a dynamic scope,
+        // For scopes that don't require a dynamic scope,
         // inline-add lvar loads/store to tmp-var loads/stores.
-        if (!flags.contains(HAS_END_BLOCKS) && !flags.contains(REQUIRES_DYNSCOPE)) {
+        if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
             CompilerPass pass;
             pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
             }
+
+            // This will run the simplified version of the pass
+            // that doesn't require dataflow analysis and hence
+            // can run on closures independent of enclosing scopes.
             pass = new AddLocalVarLoadStoreInstructions();
             if (pass.previouslyRun(this) == null) {
-                pass.run(this);
+                ((AddLocalVarLoadStoreInstructions)pass).eliminateLocalVars(this);
+                setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, new StoreLocalVarPlacementProblem());
+                setDataFlowSolution(LiveVariablesProblem.NAME, null);
             }
         }
     }
@@ -730,7 +741,7 @@ public abstract class IRScope implements ParseResult {
         }
 
         // Compute flags for nested closures (recursively) and set derived flags.
-        for (IRClosure cl : getClosures()) {
+        for (IRClosure cl: getClosures()) {
             cl.computeScopeFlags();
             if (cl.usesEval()) {
                 flags.add(CAN_RECEIVE_BREAKS);
@@ -749,8 +760,8 @@ public abstract class IRScope implements ParseResult {
             }
         }
 
-        if (!(this instanceof IRMethod)
-            || flags.contains(CAN_RECEIVE_BREAKS)
+        if (flags.contains(CAN_RECEIVE_BREAKS)
+            || flags.contains(HAS_NONLOCAL_RETURNS)
             || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
             || flags.contains(BINDING_HAS_ESCAPED)
                // SSS FIXME: checkArity for keyword args
@@ -1087,6 +1098,7 @@ public abstract class IRScope implements ParseResult {
                 "up wrong.  Use depends(build()) not depends(build).";
     }
 
+    // SSS FIXME: Why do we have cfg() with this assertion and a getCFG() without an assertion??
     public CFG cfg() {
         assert cfg != null: "Trying to access build before build started";
         return cfg;

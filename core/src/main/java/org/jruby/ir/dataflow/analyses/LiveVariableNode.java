@@ -108,9 +108,12 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
             if (o != null && o instanceof WrappedIRClosure) {
                 IRClosure cl = ((WrappedIRClosure)o).getClosure();
                 LiveVariablesProblem cl_lvp = (LiveVariablesProblem) cl.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                boolean needsInit = false;
                 if (cl_lvp == null) {
                     cl_lvp = new LiveVariablesProblem(cl, problem.getNonSelfLocalVars());
                     cl.setDataFlowSolution(cl_lvp.getName(), cl_lvp);
+                    cl.computeScopeFlags();
+                    needsInit = true;
                 }
 
                 // Add all living local variables.
@@ -143,6 +146,12 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 // SSS FIXME: Think through this .. Is there any way out of having
                 // to recompute the entire lva for the closure each time through?
                 cl_lvp.setVarsLiveOnScopeExit(liveVars);
+                if (needsInit) {
+                    // Init DF vars from this set
+                    for (Variable v: liveVars) {
+                        cl_lvp.addDFVar(v);
+                    }
+                }
                 cl_lvp.compute_MOP_Solution();
 
                 // Check if liveOnScopeEntry added new vars -- if so, rerun.

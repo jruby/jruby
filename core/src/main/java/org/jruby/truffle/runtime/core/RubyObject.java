@@ -27,6 +27,10 @@ public class RubyObject extends RubyBasicObject {
         super(rubyClass);
     }
 
+    public boolean isFrozen() {
+        return frozen;
+    }
+
     public void checkFrozen(Node currentNode) {
         if (frozen) {
             CompilerDirectives.transferToInterpreter();
