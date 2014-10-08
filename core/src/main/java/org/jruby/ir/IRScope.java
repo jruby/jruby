@@ -651,8 +651,6 @@ public abstract class IRScope implements ParseResult {
 
         prepareInstructions();
 
-        computeScopeFlags();
-
         return buildLinearization();
     }
 
