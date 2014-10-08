@@ -109,7 +109,7 @@ public abstract class CompilerPass {
         Object data = pass.previouslyRun(scope);
 
         if (data == null) {
-            data = pass.run(scope, childScope);
+            data = pass.run(scope, false, childScope);
         } else {
             for (CompilerPassListener listener: scope.getManager().getListeners()) {
                 listener.alreadyExecuted(pass, scope, data, childScope);
