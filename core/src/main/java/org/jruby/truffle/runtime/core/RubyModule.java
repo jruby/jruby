@@ -363,4 +363,8 @@ public class RubyModule extends RubyObject implements ModuleChain {
         return parentModule;
     }
 
+    public RubyModule getActualModule() {
+        return this;
+    }
+
 }

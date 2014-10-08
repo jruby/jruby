@@ -185,14 +185,9 @@ public abstract class ModuleNodes {
 
             ModuleOperations.debugModuleChain(self);
 
-            final List<ModuleChain> ancestors = new ArrayList<>();
-
+            final List<RubyModule> ancestors = new ArrayList<>();
             for (ModuleChain module = self; module != null; module = module.getParentModule()) {
-                if (module instanceof IncludedModule) {
-                    ancestors.add(((IncludedModule) module).getIncludedModule());
-                } else {
-                    ancestors.add(module);
-                }
+                ancestors.add(module.getActualModule());
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));

@@ -281,12 +281,8 @@ public abstract class ModuleOperations {
         while (module != null) {
             System.err.print(module.getClass());
 
-            ModuleChain real = module;
-            if (module instanceof  IncludedModule) {
-                real = ((IncludedModule) module).getIncludedModule();
-            }
-
-            System.err.print(" " + ((RubyModule) real).getName());
+            RubyModule real = module.getActualModule();
+            System.err.print(" " + real.getName());
 
             System.err.println();
             module = module.getParentModule();

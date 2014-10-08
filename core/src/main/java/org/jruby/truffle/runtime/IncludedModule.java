@@ -38,6 +38,11 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
+    public RubyModule getActualModule() {
+        return includedModule;
+    }
+
+    @Override
     public Map<String, RubyConstant> getConstants() {
         return includedModule.getConstants();
     }
@@ -78,7 +83,4 @@ public class IncludedModule implements ModuleChain {
         throw new UnsupportedOperationException();
     }
 
-    public RubyModule getIncludedModule() {
-        return includedModule;
-    }
 }
