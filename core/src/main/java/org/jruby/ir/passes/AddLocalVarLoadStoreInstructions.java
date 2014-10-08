@@ -85,8 +85,9 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     }
 
     @Override
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         super.invalidate(scope);
         scope.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, null);
+        return true;
     }
 }

@@ -126,8 +126,9 @@ public class OptimizeDynScopesPass extends CompilerPass {
     }
 
     @Override
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         // No invalidation for this right now.
         // But, if necessary, we can reverse this operation.
+        return false;
     }
 }

@@ -28,7 +28,8 @@ public class CFGBuilder extends CompilerPass {
     }
 
     @Override
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         // CFG is primal information to a scope and cannot be recreated once generated.
+        return false;
     }
 }

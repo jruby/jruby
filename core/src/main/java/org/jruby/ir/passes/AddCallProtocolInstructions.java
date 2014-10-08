@@ -162,7 +162,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
     }
 
     @Override
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         // Cannot add call protocol instructions after we've added them once.
+        return false;
     }
 }
