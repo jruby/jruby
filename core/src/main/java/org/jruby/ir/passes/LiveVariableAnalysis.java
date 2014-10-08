@@ -98,6 +98,7 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public void invalidate(IRScope scope) {
+        super.invalidate(scope);
         scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
     }
 }

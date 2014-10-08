@@ -23,19 +23,13 @@ public class OptimizeTempVarsPass extends CompilerPass {
 
         optimizeTmpVars(s);
 
-        s.hasHasOptimizedTemporaryVariables();
-
         return null;
     }
 
     @Override
-    public Object previouslyRun(IRScope scope) {
-        return scope.hasHasOptimizedTemporaryVariables() ? new Object() : null;
-    }
-
-    @Override
     public void invalidate(IRScope s) {
-        // FIXME: How do we un-optmize?
+        // This runs after IR is built and before CFG is built.
+        // Not reversible in the form it is written right now.
     }
 
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {

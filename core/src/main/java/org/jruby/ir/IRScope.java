@@ -106,6 +106,9 @@ public abstract class IRScope implements ParseResult {
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs;
 
+    /** What passes have been run on this scope? */
+    private List<CompilerPass> executedPasses;
+
     private Instr[] linearizedInstrArray;
     private List<BasicBlock> linearizedBBList;
     private Map<Integer, Integer> rescueMap;
@@ -164,6 +167,8 @@ public abstract class IRScope implements ParseResult {
         this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
 
+        this.executedPasses = new ArrayList<CompilerPass>();
+
         setupLexicalContainment();
     }
 
@@ -208,6 +213,8 @@ public abstract class IRScope implements ParseResult {
         this.localVars = new HashMap<String, LocalVariable>();
         this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
+
+        this.executedPasses = new ArrayList<CompilerPass>();
 
         setupLexicalContainment();
     }
@@ -401,22 +408,6 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
-    public boolean hasLocalOptimizations() {
-        return flags.contains(HAS_LOCAL_OPTIMIZATIONS);
-    }
-
-    public void setHasLocalOptimizations() {
-        flags.add(HAS_LOCAL_OPTIMIZATIONS);
-    }
-
-    public boolean hasHasOptimizedTemporaryVariables() {
-        return flags.contains(HAS_OPTIMIZED_TEMPORARY_VARIABLES);
-    }
-
-    public void setHasOptimizedTemporaryVariables() {
-        flags.add(HAS_OPTIMIZED_TEMPORARY_VARIABLES);
-    }
-
     public void setHasLoopsFlag() {
         flags.add(HAS_LOOPS);
     }
@@ -555,6 +546,10 @@ public abstract class IRScope implements ParseResult {
         return unsafeScope;
     }
 
+    public List<CompilerPass> getExecutedPasses() {
+        return executedPasses;
+    }
+
     private void runCompilerPasses(List<CompilerPass> passes) {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
@@ -578,9 +573,7 @@ public abstract class IRScope implements ParseResult {
 
         CompilerPassScheduler scheduler = getManager().schedulePasses(passes);
         for (CompilerPass pass: scheduler) {
-            if (pass.previouslyRun(this) == null) {
-                pass.run(this);
-            }
+            pass.run(this);
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
@@ -588,20 +581,12 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void runDeadCodeAndVarLoadStorePasses() {
-        // For scopes that don't require a dynamic scope,
+    private void optimizeSimpleScopes() {
+        // For safe scopes that don't require a dynamic scope,
         // inline-add lvar loads/store to tmp-var loads/stores.
         if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
-            CompilerPass pass;
-            pass = new DeadCodeElimination();
-            if (pass.previouslyRun(this) == null) {
-                pass.run(this);
-            }
-
-            pass = new OptimizeDynScopesPass();
-            if (pass.previouslyRun(this) == null) {
-                pass.run(this);
-            }
+            (new DeadCodeElimination()).run(this);
+            (new OptimizeDynScopesPass()).run(this);
         }
     }
 
@@ -627,12 +612,14 @@ public abstract class IRScope implements ParseResult {
             // Run DCE and var load/store passes where applicable
             // But, if we have been passed in a list of passes to run
             // on the commandline, skip this opt.
-            runDeadCodeAndVarLoadStorePasses();
+            optimizeSimpleScopes();
         }
 
         checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray;
+
+        // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
         // Linearize CFG, etc.
         return prepareInstructions();

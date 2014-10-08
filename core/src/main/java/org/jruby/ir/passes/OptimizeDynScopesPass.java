@@ -126,11 +126,6 @@ public class OptimizeDynScopesPass extends CompilerPass {
     }
 
     @Override
-    public Object previouslyRun(IRScope scope) {
-        return scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? new Object() : null;
-    }
-
-    @Override
     public void invalidate(IRScope scope) {
         // No invalidation for this right now.
         // But, if necessary, we can reverse this operation.

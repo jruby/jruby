@@ -41,19 +41,8 @@ public class LocalOptimizationPass extends CompilerPass {
         // Why 'Only after running local opts'?  Figure out and document.
         // Only after running local opts, compute various execution scope flags.
         s.computeScopeFlags();
-        s.setHasLocalOptimizations();
 
         return null;
-    }
-
-    @Override
-    public Object previouslyRun(IRScope scope) {
-        return scope.hasLocalOptimizations() ? new Object() : null;
-    }
-
-    @Override
-    public void invalidate(IRScope scope) {
-        // Can be run multiple times.
     }
 
     private static void recordSimplification(Variable res, Operand val, Map<Operand, Operand> valueMap, Map<Variable, List<Variable>> simplificationMap) {
