@@ -164,6 +164,23 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
             }
         }
 
+        // Kernel.local_variables inspects variables.
+        // and JRuby implementation uses dyn-scope to access the static-scope
+        // to output the local variables => we cannot strip dynscope in those cases.
+        // FIXME: We need to decouple static-scope and dyn-scope.
+        String mname = getMethodAddr().getName();
+        if (mname.equals("local_variables")) {
+            scope.getFlags().add(REQUIRES_DYNSCOPE);
+        } else if (mname.equals("send") || mname.equals("__send__")) {
+            Operand[] args = getCallArgs();
+            if (args.length >= 1) {
+                Operand meth = args[0];
+                if (meth instanceof StringLiteral && "local_variables".equals(((StringLiteral)meth).string)) {
+                    scope.getFlags().add(REQUIRES_DYNSCOPE);
+                }
+            }
+        }
+
         return modifiedScope;
     }
     /**

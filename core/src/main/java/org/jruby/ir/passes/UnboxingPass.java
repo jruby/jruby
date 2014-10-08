@@ -30,5 +30,6 @@ public class UnboxingPass extends CompilerPass {
 
     public void invalidate(IRScope scope) {
         // FIXME: Can we reset this?
+        // Not right now.
     }
 }

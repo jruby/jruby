@@ -27,6 +27,7 @@ public class LinearizeCFG extends CompilerPass {
 
     @Override
     public void invalidate(IRScope scope) {
+        super.invalidate(scope);
         scope.resetLinearizationData();
     }
 }

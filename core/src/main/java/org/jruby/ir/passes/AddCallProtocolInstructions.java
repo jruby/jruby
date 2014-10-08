@@ -162,11 +162,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
     }
 
     @Override
-    public Object previouslyRun(IRScope scope) {
-        return scope.hasExplicitCallProtocol() ? new Object() : null;
-    }
-
-    @Override
     public void invalidate(IRScope scope) {
         // Cannot add call protocol instructions after we've added them once.
     }
