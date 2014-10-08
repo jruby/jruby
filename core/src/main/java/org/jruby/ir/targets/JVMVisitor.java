@@ -143,7 +143,6 @@ public class JVMVisitor extends IRVisitor {
     public void emitScope(IRScope scope, String name, Signature signature) {
         List <BasicBlock> bbs;
         if (prepare) {
-            scope.prepareForInterpretation(false);
             bbs = scope.prepareForCompilation();
         } else {
             bbs = scope.buildLinearization();
