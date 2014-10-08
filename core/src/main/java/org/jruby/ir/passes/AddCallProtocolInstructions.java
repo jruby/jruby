@@ -156,13 +156,15 @@ public class AddCallProtocolInstructions extends CompilerPass {
         for (IRClosure c: scope.getClosures()) execute(c);
 
         // LVA information is no longer valid after the pass
-        scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
+        // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
+        (new LiveVariableAnalysis()).invalidate(scope);
 
         return null;
     }
 
     @Override
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         // Cannot add call protocol instructions after we've added them once.
+        return false;
     }
 }

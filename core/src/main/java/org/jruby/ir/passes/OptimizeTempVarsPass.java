@@ -27,9 +27,10 @@ public class OptimizeTempVarsPass extends CompilerPass {
     }
 
     @Override
-    public void invalidate(IRScope s) {
+    public boolean invalidate(IRScope s) {
         // This runs after IR is built and before CFG is built.
         // Not reversible in the form it is written right now.
+        return false;
     }
 
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {

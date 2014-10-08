@@ -61,9 +61,11 @@ public abstract class CompilerPass {
      * all compiler passes list their dependencies.
      *
      * @param scope is where the pass stores its data.
+     * @returns true if invalidation succeeded, false otherwise.
      */
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         scope.getExecutedPasses().remove(this);
+        return true;
     }
 
     // Run the pass on the passed in scope!
@@ -109,7 +111,7 @@ public abstract class CompilerPass {
         Object data = pass.previouslyRun(scope);
 
         if (data == null) {
-            data = pass.run(scope, childScope);
+            data = pass.run(scope, false, childScope);
         } else {
             for (CompilerPassListener listener: scope.getManager().getListeners()) {
                 listener.alreadyExecuted(pass, scope, data, childScope);

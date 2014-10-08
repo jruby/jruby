@@ -1100,11 +1100,6 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    public void resetDFProblemsState() {
-        dfProbs = new HashMap<String, DataFlowProblem>();
-        for (IRClosure c: nestedClosures) c.resetDFProblemsState();
-    }
-
     public void resetState() {
         relinearizeCFG = true;
         linearizedInstrArray = null;
@@ -1123,8 +1118,17 @@ public abstract class IRScope implements ParseResult {
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
         rescueMap = null;
 
-        // Reset dataflow problems state
-        resetDFProblemsState();
+        // Invalidate compiler pass state.
+        //
+        // SSS FIXME: This is to get around concurrent-modification issues
+        // since CompilerPass.invalidate modifies this, but some passes
+        // cannot be invalidated.
+        int i = 0;
+        while (i < executedPasses.size()) {
+            if (!executedPasses.get(i).invalidate(this)) {
+                i++;
+            }
+        }
     }
 
     public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {

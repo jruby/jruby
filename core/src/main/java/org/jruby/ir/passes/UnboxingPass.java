@@ -28,8 +28,9 @@ public class UnboxingPass extends CompilerPass {
         return true;
     }
 
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         // FIXME: Can we reset this?
         // Not right now.
+        return false;
     }
 }
