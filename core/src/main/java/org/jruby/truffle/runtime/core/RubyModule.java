@@ -47,7 +47,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
-    @CompilationFinal protected ModuleChain lexicalParentModule;
+    @CompilationFinal protected RubyModule lexicalParentModule;
     @CompilationFinal protected ModuleChain parentModule;
 
     @CompilationFinal private String name;
@@ -82,11 +82,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
     }
 
-    public RubyModule(RubyClass moduleClass, ModuleChain lexicalParentModule, String name) {
+    public RubyModule(RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
         this(moduleClass.getContext(), moduleClass, lexicalParentModule, name);
     }
 
-    public RubyModule(RubyContext context, RubyClass moduleClass, ModuleChain lexicalParentModule, String name) {
+    public RubyModule(RubyContext context, RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
         super(moduleClass);
 
         this.context = context;
@@ -109,9 +109,21 @@ public class RubyModule extends RubyObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-        parentModule = new IncludedModule(module, parentModule);
+
+        // We need to traverse the module chain in reverse order
+        Stack<RubyModule> moduleAncestors = new Stack<>();
+        ModuleChain chain = module;
+        while (chain != null) {
+            moduleAncestors.push(chain.getActualModule());
+            chain = chain.getParentModule();
+        }
+
+        while (!moduleAncestors.isEmpty()) {
+            RubyModule mod = moduleAncestors.pop();
+            parentModule = new IncludedModule(mod, parentModule);
+            mod.addDependent(this);
+        }
         newVersion();
-        module.addDependent(this);
     }
 
     /**
@@ -219,18 +231,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         // TODO(CS): check only run once
-
-        for (Map.Entry<String, RubyConstant> constantEntry : getConstants().entrySet()) {
-            final String constantName = constantEntry.getKey();
-            final Object constantValue = constantEntry.getValue().getValue();
-            other.setModuleConstant(currentNode, constantName, constantValue);
-        }
-
-        for (Map.Entry<String, RubyMethod> methodEntry : getMethods().entrySet()) {
-            final String methodName = methodEntry.getKey();
-            final RubyMethod method = methodEntry.getValue();
-            other.addMethod(currentNode, method.withNewName(methodName));
-        }
+        other.include(currentNode, this);
     }
 
     public RubyContext getContext() {
@@ -239,6 +240,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + name + ")";
     }
 
     @Override
@@ -350,12 +356,16 @@ public class RubyModule extends RubyObject implements ModuleChain {
         }
     }
 
-    public ModuleChain getLexicalParentModule() {
+    public RubyModule getLexicalParentModule() {
         return lexicalParentModule;
     }
 
     public ModuleChain getParentModule() {
         return parentModule;
+    }
+
+    public RubyModule getActualModule() {
+        return this;
     }
 
 }

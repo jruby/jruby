@@ -125,6 +125,29 @@
 	      </arguments>
 	    </configuration>
 	  </execution>
+	  <execution>
+	    <id>load default gems</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>          
+	      <executable>java</executable> 
+              <arguments>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<!-- make sure openssl loads -->
+		<argument>
+		  require 'jar-dependencies'
+		  require 'openssl'
+		  require 'krypt'
+		  puts Gem.loaded_specs.keys.sort.join(',')
+		</argument>
+              </arguments>
+            </configuration>
+	  </execution>
 	</executions>
       </plugin>
     </plugins>

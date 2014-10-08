@@ -77,6 +77,22 @@
       </modules>
     </profile>
     <profile>
+      <id>osgi</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-noasm</module>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>j2ee</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-stdlib</module>
+      </modules>
+    </profile>
+    <profile>
       <id>complete</id>
       <modules>
         <module>jruby-stdlib</module>
@@ -87,7 +103,6 @@
       <id>dist</id>
       <modules>
         <module>jruby-stdlib</module>
-        <module>jruby-complete</module>
         <module>jruby-dist</module>
       </modules>
     </profile>

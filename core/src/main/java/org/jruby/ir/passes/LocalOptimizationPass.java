@@ -14,8 +14,6 @@ import org.jruby.ir.representations.CFG;
 import java.util.*;
 
 public class LocalOptimizationPass extends CompilerPass {
-    boolean locallyOptimized = false;
-
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
 
     @Override
@@ -44,20 +42,7 @@ public class LocalOptimizationPass extends CompilerPass {
         // Only after running local opts, compute various execution scope flags.
         s.computeScopeFlags();
 
-        // Mark done
-        locallyOptimized = true;
-
         return null;
-    }
-
-    @Override
-    public Object previouslyRun(IRScope scope) {
-        return locallyOptimized ? new Object() : null;
-    }
-
-    @Override
-    public void invalidate(IRScope scope) {
-        locallyOptimized = false;
     }
 
     private static void recordSimplification(Variable res, Operand val, Map<Operand, Operand> valueMap, Map<Variable, List<Variable>> simplificationMap) {

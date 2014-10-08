@@ -10,8 +10,6 @@ import org.jruby.ir.operands.Variable;
 import java.util.*;
 
 public class OptimizeTempVarsPass extends CompilerPass {
-    boolean optimizedTempVars = false;
-
     @Override
     public String getLabel() {
         return "Temporary Variable Reduction";
@@ -25,19 +23,14 @@ public class OptimizeTempVarsPass extends CompilerPass {
 
         optimizeTmpVars(s);
 
-        optimizedTempVars = true;
-
         return null;
     }
 
     @Override
-    public Object previouslyRun(IRScope scope) {
-        return optimizedTempVars ? new Object() : null;
-    }
-
-    @Override
-    public void invalidate(IRScope s) {
-        // FIXME: How do we un-optmize?
+    public boolean invalidate(IRScope s) {
+        // This runs after IR is built and before CFG is built.
+        // Not reversible in the form it is written right now.
+        return false;
     }
 
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {

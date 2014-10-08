@@ -11,6 +11,7 @@ import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.UnboxingPass;
@@ -105,6 +106,9 @@ public abstract class IRScope implements ParseResult {
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs;
 
+    /** What passes have been run on this scope? */
+    private List<CompilerPass> executedPasses;
+
     private Instr[] linearizedInstrArray;
     private List<BasicBlock> linearizedBBList;
     private Map<Integer, Integer> rescueMap;
@@ -163,6 +167,8 @@ public abstract class IRScope implements ParseResult {
         this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
 
+        this.executedPasses = new ArrayList<CompilerPass>();
+
         setupLexicalContainment();
     }
 
@@ -207,6 +213,8 @@ public abstract class IRScope implements ParseResult {
         this.localVars = new HashMap<String, LocalVariable>();
         this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
+
+        this.executedPasses = new ArrayList<CompilerPass>();
 
         setupLexicalContainment();
     }
@@ -538,6 +546,10 @@ public abstract class IRScope implements ParseResult {
         return unsafeScope;
     }
 
+    public List<CompilerPass> getExecutedPasses() {
+        return executedPasses;
+    }
+
     private void runCompilerPasses(List<CompilerPass> passes) {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
@@ -561,9 +573,7 @@ public abstract class IRScope implements ParseResult {
 
         CompilerPassScheduler scheduler = getManager().schedulePasses(passes);
         for (CompilerPass pass: scheduler) {
-            if (pass.previouslyRun(this) == null) {
-                pass.run(this);
-            }
+            pass.run(this);
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
@@ -571,30 +581,20 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void runDeadCodeAndVarLoadStorePasses() {
-        // For scopes that don't require a dynamic scope,
-        // inline-add lvar loads/store to tmp-var loads/stores.
+    private void optimizeSimpleScopes() {
+        // For safe scopes that don't require a dynamic scope,
+        // run DCE since the analysis is less likely to be
+        // stymied by escaped bindings.
         if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
-            CompilerPass pass;
-            pass = new DeadCodeElimination();
-            if (pass.previouslyRun(this) == null) {
-                pass.run(this);
-            }
-
-            // This will run the simplified version of the pass
-            // that doesn't require dataflow analysis and hence
-            // can run on closures independent of enclosing scopes.
-            pass = new AddLocalVarLoadStoreInstructions();
-            if (pass.previouslyRun(this) == null) {
-                ((AddLocalVarLoadStoreInstructions)pass).eliminateLocalVars(this);
-                setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, new StoreLocalVarPlacementProblem());
-                setDataFlowSolution(LiveVariablesProblem.NAME, null);
-            }
+            (new DeadCodeElimination()).run(this);
+            (new OptimizeDynScopesPass()).run(this);
         }
     }
 
-    /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+    public void initScope(boolean isLambda) {
+        // Reset linearization, if any exists
+        resetLinearizationData();
+
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             buildCFG();
@@ -615,12 +615,19 @@ public abstract class IRScope implements ParseResult {
             // Run DCE and var load/store passes where applicable
             // But, if we have been passed in a list of passes to run
             // on the commandline, skip this opt.
-            runDeadCodeAndVarLoadStorePasses();
+            optimizeSimpleScopes();
         }
+    }
+
+    /** Run any necessary passes to get the IR ready for interpretation */
+    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+        initScope(isLambda);
 
         checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray;
+
+        // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
         // Linearize CFG, etc.
         return prepareInstructions();
@@ -629,27 +636,14 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
-        // Reset linearization, since we will add JIT-specific flow and instrs
-        resetLinearizationData();
-
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            buildCFG();
-        }
-
-        // Add this always since we dont re-JIT a previously
-        // JIT-ted closure.  But, check if there are other
-        // smarts available to us and eliminate adding this
-        // code to every closure there is.
+        // For lambdas, we need to add a global ensure block to catch
+        // uncaught breaks and throw a LocalJumpError.
         //
-        // Add a global ensure block to catch uncaught breaks
-        // and throw a LocalJumpError.
-        if (this instanceof IRClosure) {
-            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
-                resetState();
-                computeScopeFlags();
-            }
-        }
+        // Since we dont re-JIT a previously JIT-ted closure,
+        // mark all closures lambdas always. But, check if there are
+        // other smarts available to us and eliminate adding
+        // this code to every closure there is.
+        initScope(this instanceof IRClosure);
 
         runCompilerPasses(getManager().getJITPasses(this));
 
@@ -1104,11 +1098,6 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    public void resetDFProblemsState() {
-        dfProbs = new HashMap<String, DataFlowProblem>();
-        for (IRClosure c: nestedClosures) c.resetDFProblemsState();
-    }
-
     public void resetState() {
         relinearizeCFG = true;
         linearizedInstrArray = null;
@@ -1127,8 +1116,17 @@ public abstract class IRScope implements ParseResult {
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
         rescueMap = null;
 
-        // Reset dataflow problems state
-        resetDFProblemsState();
+        // Invalidate compiler pass state.
+        //
+        // SSS FIXME: This is to get around concurrent-modification issues
+        // since CompilerPass.invalidate modifies this, but some passes
+        // cannot be invalidated.
+        int i = 0;
+        while (i < executedPasses.size()) {
+            if (!executedPasses.get(i).invalidate(this)) {
+                i++;
+            }
+        }
     }
 
     public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
@@ -1143,10 +1141,6 @@ public abstract class IRScope implements ParseResult {
         for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
             pass.run(this);
         }
-    }
-
-    public void resetCFG() {
-        cfg = null;
     }
 
     /* Record a begin block -- not all scope implementations can handle them */

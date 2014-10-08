@@ -9,6 +9,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   description 'JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.'
 
+  organization 'JRuby', 'http://jruby.org'
+
   [ 'headius', 'enebo', 'wmeissner', 'BanzaiMan', 'mkristian' ].each do |name|
     developer name do
       name name
@@ -23,6 +25,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       archives "http://markmail.org/search/list:org.codehaus.jruby.#{id}"
     end
   end
+
+  license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
+  license 'LGPL 3', 'http://www.gnu.org/licenses/lgpl-3.0-standalone.html'
+  license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
 
   plugin_repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
@@ -50,7 +56,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
           :name => 'JRuby Site' )
   end
 
-  properties( 'minitest-excludes.version' => '1.0.2',
+  properties( 'its.j2ee' => 'j2ee*/pom.xml',
+              'its.osgi' => 'osgi*/pom.xml',
+              'minitest-excludes.version' => '1.0.2',
               'tesla.version' => '0.1.1',
               'rspec-core.version' => '2.14.2',
               'jruby.basedir' => '${project.basedir}',
@@ -188,7 +196,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  [ 'jruby-jars', 'main', 'complete', 'dist' ].each do |name|
+  [ 'osgi', 'j2ee', 'jruby-jars', 'main', 'complete', 'dist' ].each do |name|
 
     profile name do
 
@@ -205,8 +213,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   profile 'all' do
 
     modules all_modules
-
-    #snapshot_repository 'http://ci.jruby.org/snapshots/maven', :id => 'jruby-snapshots'
 
     build do
       default_goal 'install'
@@ -243,6 +249,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     build do
       default_goal :deploy
     end
+  end
+
+  profile 'single invoker test' do
+    activation do
+      property :name => 'invoker.test'
+    end
+    properties 'invoker.skip' => false
   end
 
   reporting do

@@ -96,6 +96,7 @@ public class JRubyOsgiEmbedTest {
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
         assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
 
+	jruby.runScriptlet( "require 'jar-dependencies'; require 'krypt'" );
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\"]");
 

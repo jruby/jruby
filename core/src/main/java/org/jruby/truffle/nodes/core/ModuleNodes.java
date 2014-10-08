@@ -185,14 +185,9 @@ public abstract class ModuleNodes {
 
             ModuleOperations.debugModuleChain(self);
 
-            final List<ModuleChain> ancestors = new ArrayList<>();
-
+            final List<RubyModule> ancestors = new ArrayList<>();
             for (ModuleChain module = self; module != null; module = module.getParentModule()) {
-                if (module instanceof IncludedModule) {
-                    ancestors.add(((IncludedModule) module).getIncludedModule());
-                } else {
-                    ancestors.add(module);
-                }
+                ancestors.add(module.getActualModule());
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
@@ -771,13 +766,14 @@ public abstract class ModuleNodes {
                         throw new UnsupportedOperationException();
                     }
 
+                    // TODO(cs): make this instance method private
                     final RubyMethod method = ModuleOperations.lookupMethod(module, methodName);
 
                     if (method == null) {
                         throw new UnsupportedOperationException();
                     }
 
-                    module.getSingletonClass(this).addMethod(this, method);
+                    module.getSingletonClass(this).addMethod(this, method.withNewVisibility(Visibility.PUBLIC));
                 }
             }
 

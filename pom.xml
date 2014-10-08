@@ -15,6 +15,24 @@
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>
   <url>https://github.com/jruby/jruby</url>
   <inceptionYear>2001</inceptionYear>
+  <organization>
+    <name>JRuby</name>
+    <url>http://jruby.org</url>
+  </organization>
+  <licenses>
+    <license>
+      <name>GPL 3</name>
+      <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
+    </license>
+    <license>
+      <name>LGPL 3</name>
+      <url>http://www.gnu.org/licenses/lgpl-3.0-standalone.html</url>
+    </license>
+    <license>
+      <name>EPL</name>
+      <url>http://www.eclipse.org/legal/epl-v10.html</url>
+    </license>
+  </licenses>
   <developers>
     <developer>
       <id>headius</id>
@@ -94,6 +112,7 @@
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
     <tesla.version>0.1.1</tesla.version>
     <rspec-core.version>2.14.2</rspec-core.version>
+    <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <minitest.version>5.0.7</minitest.version>
     <ant.version>1.9.2</ant.version>
@@ -104,6 +123,7 @@
     <jruby-launcher.version>1.0.19</jruby-launcher.version>
     <rspec-expectations.version>2.14.0</rspec-expectations.version>
     <asm.version>5.0.3</asm.version>
+    <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.7</base.javac.version>
     <krypt.version>0.0.2.rc1</krypt.version>
     <rdoc.version>4.1.0</rdoc.version>
@@ -561,6 +581,24 @@
       </modules>
     </profile>
     <profile>
+      <id>osgi</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
+      <modules>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>j2ee</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
+      <modules>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
       <id>jruby-jars</id>
       <build>
         <defaultGoal>install</defaultGoal>
@@ -648,6 +686,17 @@
       </distributionManagement>
       <properties>
         <snapshots.dir>/builds/snapshots</snapshots.dir>
+      </properties>
+    </profile>
+    <profile>
+      <id>single invoker test</id>
+      <activation>
+        <property>
+          <name>invoker.test</name>
+        </property>
+      </activation>
+      <properties>
+        <invoker.skip>false</invoker.skip>
       </properties>
     </profile>
   </profiles>

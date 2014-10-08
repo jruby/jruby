@@ -56,8 +56,4 @@ public class EnsureTempsAssigned extends CompilerPass {
             processCFG(childScope.cfg());
         }
     }
-
-    @Override
-    public void invalidate(IRScope scope) {
-    }
 }

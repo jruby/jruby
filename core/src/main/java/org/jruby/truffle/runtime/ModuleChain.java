@@ -11,8 +11,8 @@ package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.RubyModule;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.util.Map;
@@ -21,7 +21,9 @@ public interface ModuleChain {
 
     ModuleChain getParentModule();
 
-    ModuleChain getLexicalParentModule();
+    RubyModule getLexicalParentModule();
+
+    RubyModule getActualModule();
 
     Map<String, RubyConstant> getConstants();
 

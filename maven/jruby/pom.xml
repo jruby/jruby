@@ -44,6 +44,29 @@
         <artifactId>maven-invoker-plugin</artifactId>
       </plugin>
       <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>clean-extra-osgi-ITs</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+            <configuration>
+              <filesets>
+                <fileset>
+                  <directory>${basedir}/src/it</directory>
+                  <includes>
+                    <include>osgi*/**</include>
+                  </includes>
+                </fileset>
+              </filesets>
+              <failOnError>false</failOnError>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
         <version>${tesla.version}</version>
@@ -83,6 +106,8 @@
             <configuration>
               <pomExcludes>
                 <pomExclude>osgi_all_inclusive_felix-3.2/pom.xml</pomExclude>
+                <pomExclude>${its.j2ee}</pomExclude>
+                <pomExclude>${its.osgi}</pomExclude>
               </pomExcludes>
             </configuration>
           </plugin>
@@ -103,6 +128,8 @@
                 <pomExclude>jetty/pom.xml</pomExclude>
                 <pomExclude>j2ee_jetty/pom.xml</pomExclude>
                 <pomExclude>j2ee_wildfly/pom.xml</pomExclude>
+                <pomExclude>${its.j2ee}</pomExclude>
+                <pomExclude>${its.osgi}</pomExclude>
               </pomExcludes>
             </configuration>
           </plugin>

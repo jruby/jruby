@@ -41,3 +41,4 @@ fails:The defined? keyword for loop expressions returns 'expression' for a 'for'
 fails:The defined? keyword for a module method call scoped constant returns nil if the outer scope constant in the receiver is not defined
 fails:The defined? keyword when called with a method name without a receiver returns 'method' if the method is defined
 fails:The defined? keyword when called with a method name having a module as receiver returns 'method' if the method is defined
+fails:The defined? keyword for a simple constant returns 'constant' for a constant defined in an included module

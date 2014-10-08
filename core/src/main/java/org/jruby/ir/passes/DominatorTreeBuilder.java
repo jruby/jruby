@@ -36,8 +36,9 @@ public class DominatorTreeBuilder extends CompilerPass {
     }
 
     @Override
-    public void invalidate(IRScope scope) {
+    public boolean invalidate(IRScope scope) {
         // FIXME: We never store our dominator tree anywhere right?
+        return false;
     }
 
     public void buildDominatorTree(CFG cfg, LinkedList<BasicBlock> postOrderList, int maxNodeId) {

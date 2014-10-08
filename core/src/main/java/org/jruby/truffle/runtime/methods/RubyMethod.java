@@ -79,22 +79,15 @@ public class RubyMethod implements MethodLike {
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+        if (newVisibility == visibility) {
+            return this;
+        } else {
+            return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+        }
     }
 
     public RubyMethod undefined() {
         return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
-    }
-
-    public boolean isVisibleTo(Node currentNode, RubyBasicObject caller, RubyBasicObject receiver) {
-        if (caller == receiver.getLogicalClass()){
-            return true;
-        }
-
-        if (caller == receiver){
-            return true;
-        }
-        return isVisibleTo(currentNode, caller);
     }
 
     public boolean isVisibleTo(Node currentNode, RubyBasicObject caller) {
