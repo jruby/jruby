@@ -116,8 +116,7 @@ public class RubyClass extends RubyModule {
         parentModule = newSuperclass;
         newSuperclass.addDependent(this);
         newSuperclass.subClasses.add(this);
-
-        include(currentNode, newSuperclass);
+        newVersion();
 
         objectLayoutForInstances = new ObjectLayout(newSuperclass.objectLayoutForInstances);
     }
