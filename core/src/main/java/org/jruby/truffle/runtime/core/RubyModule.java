@@ -47,7 +47,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
-    @CompilationFinal protected ModuleChain lexicalParentModule;
+    @CompilationFinal protected RubyModule lexicalParentModule;
     @CompilationFinal protected ModuleChain parentModule;
 
     @CompilationFinal private String name;
@@ -82,11 +82,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
     }
 
-    public RubyModule(RubyClass moduleClass, ModuleChain lexicalParentModule, String name) {
+    public RubyModule(RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
         this(moduleClass.getContext(), moduleClass, lexicalParentModule, name);
     }
 
-    public RubyModule(RubyContext context, RubyClass moduleClass, ModuleChain lexicalParentModule, String name) {
+    public RubyModule(RubyContext context, RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
         super(moduleClass);
 
         this.context = context;
@@ -356,7 +356,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         }
     }
 
-    public ModuleChain getLexicalParentModule() {
+    public RubyModule getLexicalParentModule() {
         return lexicalParentModule;
     }
 

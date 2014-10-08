@@ -21,7 +21,7 @@ public interface ModuleChain {
 
     ModuleChain getParentModule();
 
-    ModuleChain getLexicalParentModule();
+    RubyModule getLexicalParentModule();
 
     RubyModule getActualModule();
 

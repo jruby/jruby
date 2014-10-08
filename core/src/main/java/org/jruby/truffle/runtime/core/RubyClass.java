@@ -46,11 +46,11 @@ public class RubyClass extends RubyModule {
 
     }
 
-    public RubyClass(Node currentNode, RubyModule lexcialParent, RubyClass rubySuperclass, String name) {
-        this(currentNode, lexcialParent, rubySuperclass, name, false);
+    public RubyClass(Node currentNode, RubyModule lexicalParent, RubyClass superclass, String name) {
+        this(currentNode, lexicalParent, superclass, name, false);
     }
 
-    public RubyClass(Node currentNode, ModuleChain lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
+    public RubyClass(Node currentNode, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
         this(currentNode, superclass.getContext(), superclass.getContext().getCoreLibrary().getClassClass(), lexicalParent, superclass, name);
 
         this.isSingleton = isSingleton;
@@ -65,7 +65,7 @@ public class RubyClass extends RubyModule {
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public RubyClass(Node currentNode, RubyContext context, RubyClass classClass, ModuleChain lexicalParent, RubyClass superclass, String name) {
+    public RubyClass(Node currentNode, RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name) {
         super(context, classClass, lexicalParent, name);
 
         if (superclass == null) {

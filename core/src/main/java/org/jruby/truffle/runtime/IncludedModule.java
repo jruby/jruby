@@ -33,7 +33,7 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
-    public ModuleChain getLexicalParentModule() {
+    public RubyModule getLexicalParentModule() {
         return includedModule.getLexicalParentModule();
     }
 
