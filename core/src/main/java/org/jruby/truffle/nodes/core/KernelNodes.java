@@ -455,6 +455,7 @@ public abstract class KernelNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            // Calls private initialize_dup on the new copy.
             initializeDupNode = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
