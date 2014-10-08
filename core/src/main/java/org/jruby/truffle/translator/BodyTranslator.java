@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
+import org.jruby.ast.CallNode;
 import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -211,7 +212,7 @@ public class BodyTranslator extends Translator {
      */
     public RubyNode visitAttrAssignNodeExtraArgument(org.jruby.ast.AttrAssignNode node, RubyNode extraArgument) {
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), node.getArgsNode(), null);
-        return visitCallNodeExtraArgument(callNode, extraArgument);
+        return visitCallNodeExtraArgument(callNode, extraArgument, false);
     }
 
     @Override
@@ -288,13 +289,13 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitCallNode(org.jruby.ast.CallNode node) {
-        return visitCallNodeExtraArgument(node, null);
+        return visitCallNodeExtraArgument(node, null, false);
     }
 
     /**
      * See translateDummyAssignment to understand what this is for.
      */
-    public RubyNode visitCallNodeExtraArgument(org.jruby.ast.CallNode node, RubyNode extraArgument) {
+    public RubyNode visitCallNodeExtraArgument(CallNode node, RubyNode extraArgument, boolean fcall) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
@@ -312,12 +313,12 @@ public class BodyTranslator extends Translator {
 
         RubyNode translated;
         if (node.getName().equals("primitive") && receiverTranslated instanceof ReadConstantNode && ((ReadConstantNode) receiverTranslated).getName().equals("Rubinius")) {
-            RubyNode callNode = new RubyCallNode(context, sourceSection, "send", receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), true, argumentsAndBlock.getArguments());
+            RubyNode callNode = new RubyCallNode(context, sourceSection, "send", receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), false, true, argumentsAndBlock.getArguments());
             translated = new TryNode(context, sourceSection, new ExceptionTranslatingNode(context, sourceSection, new ReturnNode(context, sourceSection, environment.getReturnID(), callNode)),
                     new RescueNode[] {new RescueAnyNode(context, sourceSection, new NilLiteralNode(context, sourceSection))},
                     new NilLiteralNode(context, sourceSection));
         } else {
-            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
+            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), fcall, false, argumentsAndBlock.getArguments());
         }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
@@ -829,9 +830,9 @@ public class BodyTranslator extends Translator {
         }
 
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
-        final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
+        final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
 
-        return callNode.accept(this);
+        return visitCallNodeExtraArgument(callNode, null, true);
     }
 
     @Override
