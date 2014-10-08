@@ -79,7 +79,11 @@ public class RubyMethod implements MethodLike {
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+        if (newVisibility == visibility) {
+            return this;
+        } else {
+            return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+        }
     }
 
     public RubyMethod undefined() {

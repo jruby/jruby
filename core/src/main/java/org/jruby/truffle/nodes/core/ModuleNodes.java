@@ -766,13 +766,14 @@ public abstract class ModuleNodes {
                         throw new UnsupportedOperationException();
                     }
 
+                    // TODO(cs): make this instance method private
                     final RubyMethod method = ModuleOperations.lookupMethod(module, methodName);
 
                     if (method == null) {
                         throw new UnsupportedOperationException();
                     }
 
-                    module.getSingletonClass(this).addMethod(this, method);
+                    module.getSingletonClass(this).addMethod(this, method.withNewVisibility(Visibility.PUBLIC));
                 }
             }
 

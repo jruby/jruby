@@ -133,23 +133,26 @@ public abstract class CoreMethodNodeManager {
 
         assert module != null : methodDetails.getClassAnnotation().name();
 
-        final List<String> names = Arrays.asList(methodDetails.getMethodAnnotation().names());
+        final CoreMethod anno = methodDetails.getMethodAnnotation();
+
+        final List<String> names = Arrays.asList(anno.names());
         assert names.size() >= 1;
 
         final String canonicalName = names.get(0);
         final List<String> aliases = names.subList(1, names.size());
 
-        final Visibility visibility = methodDetails.getMethodAnnotation().visibility();
+        final Visibility visibility = anno.visibility();
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
         final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
                 Truffle.getRuntime().createCallTarget(rootNode), null);
 
-        module.addMethod(null, method);
-
-        if (methodDetails.getMethodAnnotation().isModuleMethod()) {
-            module.getSingletonClass(null).addMethod(null, method);
+        if (anno.isModuleMethod()) {
+            module.addMethod(null, method.withNewVisibility(Visibility.PRIVATE));
+            module.getSingletonClass(null).addMethod(null, method.withNewVisibility(Visibility.PUBLIC));
+        } else {
+            module.addMethod(null, method);
         }
 
         for (String alias : aliases) {
@@ -157,8 +160,8 @@ public abstract class CoreMethodNodeManager {
 
             module.addMethod(null, withAlias);
 
-            if (methodDetails.getMethodAnnotation().isModuleMethod()) {
-                module.getSingletonClass(null).addMethod(null, withAlias);
+            if (anno.isModuleMethod()) {
+                module.getSingletonClass(null).addMethod(null, withAlias.withNewVisibility(Visibility.PUBLIC));
             }
         }
     }

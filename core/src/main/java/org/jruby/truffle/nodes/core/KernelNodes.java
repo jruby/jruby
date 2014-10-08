@@ -1458,7 +1458,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleMethod = true, needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "rand", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class RandNode extends CoreMethodNode {
 
         public RandNode(RubyContext context, SourceSection sourceSection) {
@@ -1837,7 +1837,7 @@ public abstract class KernelNodes {
     }
 
     // Rubinius API
-    @CoreMethod(names = "undefined", isModuleMethod = true, needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "undefined", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class UndefinedNode extends CoreMethodNode {
 
         public UndefinedNode(RubyContext context, SourceSection sourceSection) {
