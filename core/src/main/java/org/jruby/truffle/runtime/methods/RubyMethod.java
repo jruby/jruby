@@ -90,17 +90,6 @@ public class RubyMethod implements MethodLike {
         return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
-    public boolean isVisibleTo(Node currentNode, RubyBasicObject caller, RubyBasicObject receiver) {
-        if (caller == receiver.getLogicalClass()){
-            return true;
-        }
-
-        if (caller == receiver){
-            return true;
-        }
-        return isVisibleTo(currentNode, caller);
-    }
-
     public boolean isVisibleTo(Node currentNode, RubyBasicObject caller) {
         if (caller instanceof RubyModule) {
             if (isVisibleToX(currentNode, (RubyModule) caller)) {
