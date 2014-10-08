@@ -109,9 +109,21 @@ public class RubyModule extends RubyObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-        parentModule = new IncludedModule(module, parentModule);
+
+        // We need to traverse the module chain in reverse order
+        Stack<RubyModule> moduleAncestors = new Stack<>();
+        ModuleChain chain = module;
+        while (chain != null) {
+            moduleAncestors.push(chain.getActualModule());
+            chain = chain.getParentModule();
+        }
+
+        while (!moduleAncestors.isEmpty()) {
+            RubyModule mod = moduleAncestors.pop();
+            parentModule = new IncludedModule(mod, parentModule);
+            mod.addDependent(this);
+        }
         newVersion();
-        module.addDependent(this);
     }
 
     /**
@@ -219,18 +231,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         // TODO(CS): check only run once
-
-        for (Map.Entry<String, RubyConstant> constantEntry : getConstants().entrySet()) {
-            final String constantName = constantEntry.getKey();
-            final Object constantValue = constantEntry.getValue().getValue();
-            other.setModuleConstant(currentNode, constantName, constantValue);
-        }
-
-        for (Map.Entry<String, RubyMethod> methodEntry : getMethods().entrySet()) {
-            final String methodName = methodEntry.getKey();
-            final RubyMethod method = methodEntry.getValue();
-            other.addMethod(currentNode, method.withNewName(methodName));
-        }
+        other.include(currentNode, this);
     }
 
     public RubyContext getContext() {
