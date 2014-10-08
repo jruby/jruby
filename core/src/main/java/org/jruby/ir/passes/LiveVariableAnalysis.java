@@ -2,6 +2,7 @@ package org.jruby.ir.passes;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
@@ -81,7 +82,7 @@ public class LiveVariableAnalysis extends CompilerPass {
             // conservatively assume that any dirtied variables that
             // belong to an outer scope are live on exit.
             Set<LocalVariable> nlVars = new HashSet<LocalVariable>();
-            collectNonLocalDirtyVars((IRClosure)scope, nlVars, 0);
+            collectNonLocalDirtyVars((IRClosure)scope, nlVars, scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? -1 : 0);
 
             // Init DF vars from this set
             for (Variable v: nlVars) {
