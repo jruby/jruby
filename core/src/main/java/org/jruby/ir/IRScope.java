@@ -583,15 +583,18 @@ public abstract class IRScope implements ParseResult {
 
     private void optimizeSimpleScopes() {
         // For safe scopes that don't require a dynamic scope,
-        // inline-add lvar loads/store to tmp-var loads/stores.
+        // run DCE since the analysis is less likely to be
+        // stymied by escaped bindings.
         if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
             (new DeadCodeElimination()).run(this);
             (new OptimizeDynScopesPass()).run(this);
         }
     }
 
-    /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+    public void initScope(boolean isLambda) {
+        // Reset linearization, if any exists
+        resetLinearizationData();
+
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             buildCFG();
@@ -614,6 +617,11 @@ public abstract class IRScope implements ParseResult {
             // on the commandline, skip this opt.
             optimizeSimpleScopes();
         }
+    }
+
+    /** Run any necessary passes to get the IR ready for interpretation */
+    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+        initScope(isLambda);
 
         checkRelinearization();
 
@@ -628,27 +636,14 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
-        // Reset linearization, since we will add JIT-specific flow and instrs
-        resetLinearizationData();
-
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            buildCFG();
-        }
-
-        // Add this always since we dont re-JIT a previously
-        // JIT-ted closure.  But, check if there are other
-        // smarts available to us and eliminate adding this
-        // code to every closure there is.
+        // For lambdas, we need to add a global ensure block to catch
+        // uncaught breaks and throw a LocalJumpError.
         //
-        // Add a global ensure block to catch uncaught breaks
-        // and throw a LocalJumpError.
-        if (this instanceof IRClosure) {
-            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
-                resetState();
-                computeScopeFlags();
-            }
-        }
+        // Since we dont re-JIT a previously JIT-ted closure,
+        // mark all closures lambdas always. But, check if there are
+        // other smarts available to us and eliminate adding
+        // this code to every closure there is.
+        initScope(this instanceof IRClosure);
 
         runCompilerPasses(getManager().getJITPasses(this));
 
