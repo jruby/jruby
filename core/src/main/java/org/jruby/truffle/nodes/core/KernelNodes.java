@@ -886,7 +886,7 @@ public abstract class KernelNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context);
+            initializeCopyNode = DispatchHeadNode.onSelf(context);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {
@@ -1342,7 +1342,7 @@ public abstract class KernelNodes {
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context);
+            toS = DispatchHeadNode.onSelf(context);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
