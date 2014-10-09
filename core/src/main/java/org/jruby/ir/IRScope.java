@@ -761,6 +761,7 @@ public abstract class IRScope implements ParseResult {
             || flags.contains(HAS_NONLOCAL_RETURNS)
             || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
             || flags.contains(BINDING_HAS_ESCAPED)
+            || flags.contains(USES_ZSUPER)
                // SSS FIXME: checkArity for keyword args
                // looks up a keyword arg in the static scope
                // which currently requires a dynamic scope to

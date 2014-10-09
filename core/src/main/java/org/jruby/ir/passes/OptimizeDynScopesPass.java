@@ -120,9 +120,8 @@ public class OptimizeDynScopesPass extends CompilerPass {
         // Make sure flags are computed
         scope.computeScopeFlags();
 
-        // FIXME: USES_ZSUPER is probably wrong here.  zsuper use should toggle requires_dynscope?
         // Cannot run this on scopes that require dynamic scopes
-        if (scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE) || scope.getFlags().contains(IRFlags.USES_ZSUPER)) {
+        if (scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE)) {
             return null;
         }
 
