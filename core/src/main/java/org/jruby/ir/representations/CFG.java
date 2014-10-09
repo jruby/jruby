@@ -55,9 +55,9 @@ public class CFG {
 
     public CFG(IRScope scope) {
         this.scope = scope;
-        this.graph = new DirectedGraph<BasicBlock>();
-        this.bbMap = new HashMap<Label, BasicBlock>();
-        this.rescuerMap = new HashMap<BasicBlock, BasicBlock>();
+        this.graph = new DirectedGraph<>();
+        this.bbMap = new HashMap<>();
+        this.rescuerMap = new HashMap<>();
         this.nextBBId = 0;
         this.entryBB = this.exitBB = null;
         this.globalEnsureBB = null;
@@ -226,19 +226,19 @@ public class CFG {
      */
     public DirectedGraph<BasicBlock> build(List<Instr> instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label
-        Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
+        Map<Label, List<BasicBlock>> forwardRefs = new HashMap<>();
 
         // List of bbs that have a 'return' instruction
-        List<BasicBlock> returnBBs = new ArrayList<BasicBlock>();
+        List<BasicBlock> returnBBs = new ArrayList<>();
 
         // List of bbs that have a 'throw' instruction
-        List<BasicBlock> exceptionBBs = new ArrayList<BasicBlock>();
+        List<BasicBlock> exceptionBBs = new ArrayList<>();
 
         // Stack of nested rescue regions
-        Stack<ExceptionRegion> nestedExceptionRegions = new Stack<ExceptionRegion>();
+        Stack<ExceptionRegion> nestedExceptionRegions = new Stack<>();
 
         // List of all rescued regions
-        List<ExceptionRegion> allExceptionRegions = new ArrayList<ExceptionRegion>();
+        List<ExceptionRegion> allExceptionRegions = new ArrayList<>();
 
         // Dummy entry basic block (see note at end to see why)
         entryBB = createBB(nestedExceptionRegions);
@@ -328,7 +328,7 @@ public class CFG {
         }
 
         // Process all rescued regions
-        for (ExceptionRegion rr : allExceptionRegions) {
+        for (ExceptionRegion rr: allExceptionRegions) {
             // When this exception region represents an unrescued region
             // from a copied ensure block, we have a dummy label
             Label rescueLabel = rr.getFirstRescueBlockLabel();
@@ -339,7 +339,7 @@ public class CFG {
 
                 // Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
                 // Add an exception edge from every exclusive bb of the region to firstRescueBB
-                for (BasicBlock b : rr.getExclusiveBBs()) {
+                for (BasicBlock b: rr.getExclusiveBBs()) {
                     setRescuerBB(b, firstRescueBB);
                     graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
                 }
@@ -369,7 +369,7 @@ public class CFG {
         List<BasicBlock> forwardReferences = forwardRefs.get(targetLabel);
 
         if (forwardReferences == null) {
-            forwardReferences = new ArrayList<BasicBlock>();
+            forwardReferences = new ArrayList<>();
             forwardRefs.put(targetLabel, forwardReferences);
         }
 
@@ -460,6 +460,7 @@ public class CFG {
     private boolean mergeBBs(BasicBlock a, BasicBlock b) {
         BasicBlock aR = getRescuerBBFor(a);
         BasicBlock bR = getRescuerBBFor(b);
+
         // We can merge 'a' and 'b' if one of the following is true:
         // 1. 'a' and 'b' are both not empty
         //    They are protected by the same rescue block.
@@ -468,7 +469,7 @@ public class CFG {
         //    ensure blocks for the two are identical.
         // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
         //    an empty basic block cannot raise an exception, can it?
-        if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
+        if (aR == bR || a.isEmpty() || b.isEmpty()) {
             // First, remove straight-line jump, if present
             Instr lastInstr = a.getLastInstr();
             if (lastInstr instanceof JumpInstr) a.removeInstr(lastInstr);
@@ -527,15 +528,15 @@ public class CFG {
         //
         // SSS FIXME: So, we need a cfg/graph API that returns an iterator over
         // frozen data rather than live data.
-        List<BasicBlock> cfgBBs = new ArrayList<BasicBlock>();
+        List<BasicBlock> cfgBBs = new ArrayList<>();
         for (BasicBlock b: getBasicBlocks()) cfgBBs.add(b);
 
-        Set<BasicBlock> mergedBBs = new HashSet<BasicBlock>();
+        Set<BasicBlock> mergedBBs = new HashSet<>();
         for (BasicBlock b: cfgBBs) {
-            if (!mergedBBs.contains(b) && (outDegree(b) == 1)) {
+            if (!mergedBBs.contains(b) && outDegree(b) == 1) {
                 for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
                     BasicBlock outB = e.getDestination().getData();
-                    if ((e.getType() != EdgeType.EXCEPTION) && (inDegree(outB) == 1) && (mergeBBs(b, outB) == true)) {
+                    if (e.getType() != EdgeType.EXCEPTION && inDegree(outB) == 1 && mergeBBs(b, outB)) {
                         mergedBBs.add(outB);
                     }
                 }
@@ -546,7 +547,7 @@ public class CFG {
     private void optimize() {
         // SSS FIXME: Can't we not add some of these exception edges in the first place??
         // Remove exception edges from blocks that couldn't possibly thrown an exception!
-        List<Edge> toRemove = new ArrayList<Edge>();
+        List<Edge> toRemove = new ArrayList<>();
         for (BasicBlock b : graph.allData()) {
             boolean noExceptions = true;
             for (Instr i : b.getInstrs()) {
@@ -589,7 +590,7 @@ public class CFG {
             buf.append(b.toStringInstrs());
         }
         buf.append("\n\n------ Rescue block map ------\n");
-        List<BasicBlock> e = new ArrayList<BasicBlock>(rescuerMap.keySet());
+        List<BasicBlock> e = new ArrayList<>(rescuerMap.keySet());
         Collections.sort(e);
 
         for (BasicBlock bb : e) {
@@ -614,8 +615,8 @@ public class CFG {
 
     private LinkedList<BasicBlock> buildPostOrderList() {
         BasicBlock             root    = getEntryBB();
-        LinkedList<BasicBlock> list    = new LinkedList<BasicBlock>();
-        Stack<BasicBlock>      stack   = new Stack<BasicBlock>();
+        LinkedList<BasicBlock> list    = new LinkedList<>();
+        Stack<BasicBlock>      stack   = new Stack<>();
         boolean[]              visited = new boolean[1 + getMaxNodeID()];
 
         stack.push(root);
@@ -663,27 +664,23 @@ public class CFG {
     /**
      * Clone this CFG and return a new one.
      *
-     * @param clonedScope already cloned IRScope which this new CFG will belong to
      * @param info context object to perform the clone
+     * @param clonedScope already cloned IRScope which this new CFG will belong to
      * @return a newly cloned CFG
      */
-    public CFG clone(IRScope clonedScope, CloneInfo info) {
+    public CFG clone(CloneInfo info, IRScope clonedScope) {
         CFG newCFG = new CFG(clonedScope);
         Map<BasicBlock, BasicBlock> cloneBBMap = new HashMap<>();
 
-        // Pass 1: Clone all BBs and stuff in map so graph building in 2 will have all BBs available.
+        // Part 1: Clone all BBs and stuff in map so graph building in 2 will have all BBs available.
         for (BasicBlock bb: getBasicBlocks()) {                 // clone bbs
-            BasicBlock newBB = new BasicBlock(newCFG, info.getRenamedLabel(bb.getLabel()));
-            for (Instr i: bb.getInstrs()) {
-                Instr clonedInstr = i.clone(info);
-                if (clonedInstr != null) newBB.addInstr(clonedInstr);
-            }
+            BasicBlock newBB = bb.clone(info, newCFG);
             newCFG.addBasicBlock(newBB);
             cloneBBMap.put(bb, newBB);
         }
 
-        // Pass 2: Build graph
-        for (BasicBlock bb: getBasicBlocks()) {                 // clone edges
+        // Part 2: Clone graph (build new edges from new BBs made in previous phase)
+        for (BasicBlock bb: getBasicBlocks()) {
             BasicBlock newSource = cloneBBMap.get(bb);
             for (Edge<BasicBlock> edge : getOutgoingEdges(bb)) {
                 BasicBlock newDestination = cloneBBMap.get(edge.getDestination().getData());
@@ -691,11 +688,11 @@ public class CFG {
             }
         }
 
+        // Part 3: clone all non-derivable fields
         for (BasicBlock bb: rescuerMap.keySet()) {              // clone rescuer map
             newCFG.setRescuerBB(cloneBBMap.get(bb), cloneBBMap.get(rescuerMap.get(bb)));
         }
 
-        // Now clone all non-derived fields
         newCFG.entryBB = cloneBBMap.get(entryBB);               // clone entry BB
         newCFG.exitBB  = cloneBBMap.get(exitBB);                // clone exit BB
         newCFG.globalEnsureBB = cloneBBMap.get(globalEnsureBB); // clone GEB

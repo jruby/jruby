@@ -290,17 +290,10 @@ public class IRClosure extends IRScope {
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
         if (getCFG() != null) {
-            clone.setCFG(getCFG().clone(clone, clonedII));
+            clone.setCFG(getCFG().clone(clonedII, clone));
         } else {
-            // Clone the instruction list
             for (Instr i: getInstrs()) {
-                Instr clonedInstr = i.clone(clonedII);
-                if (clonedInstr instanceof CallBase) {
-                    CallBase call = (CallBase)clonedInstr;
-                    Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) clone.addClosure(((WrappedIRClosure)block).getClosure());
-                }
-                clone.addInstr(clonedInstr);
+                clone.addInstr(i.clone(clonedII));
             }
         }
 
@@ -318,6 +311,10 @@ public class IRClosure extends IRScope {
             String fullName = lexicalParent.getName() + "_CLOSURE_CLONE_" + id;
             clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
+
+        // WrappedIRClosure should always have a single unique IRClosure in them so we should
+        // not end up adding n copies of the same closure as distinct clones...
+        lexicalParent.addClosure(clonedClosure);
 
         return cloneForInlining(ii, clonedClosure);
     }

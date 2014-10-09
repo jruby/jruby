@@ -11,6 +11,7 @@ import org.jruby.ir.listeners.InstructionsListenerDecorator;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.ExplicitVertexID;
@@ -149,6 +150,25 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         this.instrs.addAll(foodBB.instrs);
     }
 
+    // FIXME: Untested in inliner (and we need to replace cloneInstrs(InlineCloneInfo) with this).
+    public BasicBlock clone(CloneInfo info, CFG newCFG) {
+        BasicBlock newBB = new BasicBlock(newCFG, info.getRenamedLabel(label));
+        boolean isClosureClone = info instanceof InlineCloneInfo && ((InlineCloneInfo) info).isClosure();
+
+        for (Instr instr: instrs) {
+            Instr newInstr = instr.clone(info);
+
+            if (newInstr != null) {  // inliner may kill off unneeded instr
+                newBB.addInstr(newInstr);
+                if (isClosureClone && newInstr instanceof YieldInstr) {
+                    ((InlineCloneInfo) info).recordYieldSite(newBB, (YieldInstr) newInstr);
+                }
+            }
+        }
+
+        return newBB;
+    }
+
     public void cloneInstrs(SimpleCloneInfo ii) {
         if (!isEmpty()) {
             List<Instr> oldInstrs = instrs;
@@ -157,11 +177,6 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
             for (Instr i: oldInstrs) {
                 Instr clonedInstr = i.clone(ii);
                 clonedInstr.setIPC(i.getIPC());
-                if (clonedInstr instanceof CallBase) {
-                    CallBase call = (CallBase)clonedInstr;
-                    Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) cfg.getScope().addClosure(((WrappedIRClosure)block).getClosure());
-                }
                 instrs.add(clonedInstr);
             }
         }
@@ -171,21 +186,13 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     public BasicBlock cloneForInlining(InlineCloneInfo ii) {
-        IRScope hostScope = ii.getHostScope();
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
 
         for (Instr i: getInstrs()) {
             Instr clonedInstr = i.clone(ii);
             if (clonedInstr != null) {
                 clonedBB.addInstr(clonedInstr);
-                if (clonedInstr instanceof YieldInstr) {
-                    ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
-                }
-                if (clonedInstr instanceof CallBase) {
-                    CallBase call = (CallBase)clonedInstr;
-                    Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) hostScope.addClosure(((WrappedIRClosure)block).getClosure());
-                }
+                if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
             }
         }
 
