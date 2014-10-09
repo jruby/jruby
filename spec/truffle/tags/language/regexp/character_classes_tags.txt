@@ -1,5 +1,0 @@
-fails:Regexp with character classes doesn't match Unicode control characters with [[:alnum:]]
-fails:Regexp with character classes doesn't match Unicode punctuation characters with [[:alnum:]]
-fails:Regexp with character classes doesn't match Unicode control characters with [[:alpha:]]
-fails:Regexp with character classes doesn't match Unicode punctuation characters with [[:alpha:]]
-fails:Regexp with character classes doesn't match Unicode digits with [[:alpha:]]
