@@ -60,8 +60,8 @@ public abstract class RubyNode extends Node {
      * 
      * @see DefinedNode
      */
-    public Object isDefined(@SuppressWarnings("unused") VirtualFrame frame) {
-        throw new UnsupportedOperationException("no definition for " + getClass().getName());
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("expression");
     }
 
     public RubyArray executeArray(VirtualFrame frame) throws UnexpectedResultException {

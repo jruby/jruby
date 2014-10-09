@@ -53,8 +53,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
     @ExplodeLoop
     @Override
     public void executeVoid(VirtualFrame frame) {
-        for (int n = 0; n < values.length; n++) {
-            values[n].executeVoid(frame);
+        for (RubyNode value : values) {
+            value.executeVoid(frame);
         }
     }
 
@@ -63,9 +63,16 @@ public abstract class ArrayLiteralNode extends RubyNode {
         return executeArray(frame);
     }
 
+    @ExplodeLoop
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("expression");
+        for (RubyNode value : values) {
+            if (value.isDefined(frame) == NilPlaceholder.INSTANCE) {
+                return NilPlaceholder.INSTANCE;
+            }
+        }
+
+        return super.isDefined(frame);
     }
 
     // TODO(CS): remove this - shouldn't be fiddling with nodes from the outside
