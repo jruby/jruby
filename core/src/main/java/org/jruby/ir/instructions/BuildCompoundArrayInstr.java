@@ -5,7 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -74,7 +74,7 @@ public class BuildCompoundArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new BuildCompoundArrayInstr(ii.getRenamedVariable(result), a1.cloneForInlining(ii), a2.cloneForInlining(ii), isArgsPush);
     }
 

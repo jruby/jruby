@@ -7,7 +7,9 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReceiveClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
@@ -43,21 +45,16 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr, FixedArit
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        switch (ii.getCloneMode()) {
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new ReceiveClosureInstr(ii.getRenamedVariable(result));
-            case METHOD_INLINE:
-            case CLOSURE_INLINE:
-                // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
-                // operand type that converts the static code block to a proc which is a closure.
-                if (ii.getCallClosure() instanceof WrappedIRClosure) return NopInstr.NOP;
-                else return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
-            default:
-                // Should not get here
-                return super.cloneForInlining(ii);
-        }
+    public Instr clone(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) return new ReceiveClosureInstr(info.getRenamedVariable(result));
+
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+
+        // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
+        // operand type that converts the static code block to a proc which is a closure.
+        if (ii.getCallClosure() instanceof WrappedIRClosure) return NopInstr.NOP;
+
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
     }
 
     @Override

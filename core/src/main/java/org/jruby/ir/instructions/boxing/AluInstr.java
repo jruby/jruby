@@ -6,9 +6,9 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import java.util.Map;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class AluInstr extends Instr implements ResultInstr {
     protected Variable result;
@@ -49,7 +49,7 @@ public class AluInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new AluInstr(getOperation(), ii.getRenamedVariable(result), a1.cloneForInlining(ii), a2.cloneForInlining(ii));
     }
 

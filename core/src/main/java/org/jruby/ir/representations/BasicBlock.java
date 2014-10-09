@@ -11,8 +11,8 @@ import org.jruby.ir.listeners.InstructionsListenerDecorator;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.transformations.inlining.CloneMode;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.ExplicitVertexID;
 
 import java.util.ArrayList;
@@ -149,13 +149,13 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         this.instrs.addAll(foodBB.instrs);
     }
 
-    public void cloneInstrs(InlinerInfo ii) {
+    public void cloneInstrs(SimpleCloneInfo ii) {
         if (!isEmpty()) {
             List<Instr> oldInstrs = instrs;
             initInstrs();
 
             for (Instr i: oldInstrs) {
-                Instr clonedInstr = i.cloneForInlining(ii);
+                Instr clonedInstr = i.clone(ii);
                 clonedInstr.setIPC(i.getIPC());
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
@@ -170,15 +170,15 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         this.label = ii.getRenamedLabel(this.label);
     }
 
-    public BasicBlock cloneForInlining(InlinerInfo ii) {
-        IRScope hostScope = ii.getInlineHostScope();
+    public BasicBlock cloneForInlining(InlineCloneInfo ii) {
+        IRScope hostScope = ii.getHostScope();
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
 
         for (Instr i: getInstrs()) {
-            Instr clonedInstr = i.cloneForInlining(ii);
+            Instr clonedInstr = i.clone(ii);
             if (clonedInstr != null) {
                 clonedBB.addInstr(clonedInstr);
-                if (clonedInstr instanceof YieldInstr && ii.getCloneMode() != CloneMode.NORMAL_CLONE) {
+                if (clonedInstr instanceof YieldInstr) {
                     ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
                 }
                 if (clonedInstr instanceof CallBase) {

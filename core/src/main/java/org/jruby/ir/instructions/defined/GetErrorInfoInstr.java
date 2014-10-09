@@ -7,7 +7,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -38,8 +38,8 @@ public class GetErrorInfoInstr extends Instr implements ResultInstr, FixedArityI
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new GetErrorInfoInstr((Variable) getResult().cloneForInlining(inlinerInfo));
+    public Instr clone(CloneInfo info) {
+        return new GetErrorInfoInstr((Variable) getResult().cloneForInlining(info));
     }
 
     @Override

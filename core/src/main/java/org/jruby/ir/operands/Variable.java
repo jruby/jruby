@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -49,10 +50,10 @@ public abstract class Variable extends Operand implements Comparable {
         l.add(this);
     }
 
-    public abstract Variable clone(InlinerInfo ii);
+    public abstract Variable clone(SimpleCloneInfo ii);
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return ii.getRenamedVariable(this);
     }
 }

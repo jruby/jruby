@@ -5,9 +5,8 @@ import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -79,7 +78,7 @@ public class BuildDynRegExpInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         List<Operand> newPieces = new ArrayList<Operand>();
         for (Operand p : pieces) {
             newPieces.add(p.cloneForInlining(ii));

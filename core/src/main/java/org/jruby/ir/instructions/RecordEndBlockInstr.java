@@ -2,7 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     private final IRScope declaringScope;
@@ -40,7 +40,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         // SSS FIXME: Correct in all situations??
         return new RecordEndBlockInstr(declaringScope, endBlockClosure);
     }

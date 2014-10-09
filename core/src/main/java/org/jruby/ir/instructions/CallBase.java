@@ -5,7 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -212,7 +212,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         callSite = getCallSiteFor(callType, methAddr);
     }
 
-    public Operand[] cloneCallArgs(InlinerInfo ii) {
+    public Operand[] cloneCallArgs(CloneInfo ii) {
         int i = 0;
         Operand[] clonedArgs = new Operand[arguments.length];
 

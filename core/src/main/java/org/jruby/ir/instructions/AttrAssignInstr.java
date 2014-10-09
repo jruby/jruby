@@ -5,7 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -22,7 +22,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new AttrAssignInstr(receiver.cloneForInlining(ii),
                 (MethAddr)getMethodAddr().cloneForInlining(ii), cloneCallArgs(ii));
     }

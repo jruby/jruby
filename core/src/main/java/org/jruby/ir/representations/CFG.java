@@ -8,7 +8,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.DirectedGraph;
 import org.jruby.ir.util.Edge;
 import org.jruby.util.log.Logger;
@@ -660,14 +660,14 @@ public class CFG {
         return list;
     }
 
-    public void cloneForCloningClosure(CFG sourceCFG, IRScope scope, InlinerInfo ii) {
+    public void cloneForCloningClosure(CFG sourceCFG, IRScope scope, SimpleCloneInfo ii) {
         Map<BasicBlock, BasicBlock> cloneBBMap = new HashMap<BasicBlock, BasicBlock>();
 
         // clone bbs
         for (BasicBlock b : sourceCFG.getBasicBlocks()) {
             BasicBlock bCloned = new BasicBlock(this, ii.getRenamedLabel(b.getLabel()));
             for (Instr i: b.getInstrs()) {
-                Instr clonedInstr = i.cloneForInlining(ii);
+                Instr clonedInstr = i.clone(ii);
                 if (clonedInstr != null) bCloned.addInstr(clonedInstr);
             }
             this.addBasicBlock(bCloned);
