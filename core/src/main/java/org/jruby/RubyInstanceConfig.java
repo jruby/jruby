@@ -302,7 +302,7 @@ public class RubyInstanceConfig {
             newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
-                newJRubyHome = SystemPropertyCatcher.findFromJar(this);
+                newJRubyHome = SystemPropertyCatcher.findJRubyHome(this);
             } catch (Exception e) {}
 
             if (newJRubyHome != null) {
