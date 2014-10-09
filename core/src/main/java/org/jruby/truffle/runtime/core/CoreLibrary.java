@@ -447,6 +447,10 @@ public class CoreLibrary {
         return new RubyException(typeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException typeErrorCantDefineSingleton(Node currentNode) {
+        return typeError("can't define singleton", currentNode);
+    }
+
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
