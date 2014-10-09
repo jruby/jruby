@@ -145,6 +145,9 @@ public class JVMVisitor extends IRVisitor {
         if (prepare) {
             bbs = scope.prepareForCompilation();
         } else {
+            if (scope.getCFG() == null) {
+                scope.buildCFG();
+            }
             bbs = scope.buildLinearization();
         }
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
