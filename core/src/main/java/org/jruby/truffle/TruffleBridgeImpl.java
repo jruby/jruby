@@ -95,37 +95,30 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
             @Override
             public Object get() {
-                return truffleContext.handlingTopLevelThrow(new Supplier<Object>() {
+                final String inputFile = rootNode.getPosition().getFile();
 
-                    @Override
-                    public Object get() {
-                        final String inputFile = rootNode.getPosition().getFile();
+                final Source source;
 
-                        final Source source;
+                if (inputFile.equals("-e")) {
+                    // Assume UTF-8 for the moment
+                    source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
+                } else {
+                    final byte[] bytes;
 
-                        if (inputFile.equals("-e")) {
-                            // Assume UTF-8 for the moment
-                            source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
-                        } else {
-                            final byte[] bytes;
-
-                            try {
-                                bytes = Files.readAllBytes(Paths.get(inputFile));
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-
-                            // Assume UTF-8 for the moment
-
-                            source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
-                        }
-
-                        final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
-                        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
-                        return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
+                    try {
+                        bytes = Files.readAllBytes(Paths.get(inputFile));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
 
-                });
+                    // Assume UTF-8 for the moment
+
+                    source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
+                }
+
+                final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
+                final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
+                return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
             }
 
         }, NilPlaceholder.INSTANCE);

@@ -80,15 +80,7 @@ public class RubyThread extends RubyObject {
                 finalThread.manager.enterGlobalLock(finalThread);
 
                 try {
-                    getContext().handlingTopLevelThrow(new Supplier<Void>() {
-
-                        @Override
-                        public Void get() {
-                            finalRunnable.run();
-                            return null;
-                        }
-
-                    });
+                    finalRunnable.run();
                 } catch (RaiseException e) {
                     exception = (RubyException) e.getRubyException();
                 } catch (ReturnException e) {

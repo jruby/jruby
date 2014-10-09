@@ -2,11 +2,10 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyProc;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -61,7 +60,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         // SSS FIXME: This is buggy. The lambda body might have to be cloned depending on cloning context.
         return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody(), position);
     }

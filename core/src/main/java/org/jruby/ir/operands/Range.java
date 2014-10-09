@@ -2,7 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyRange;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -68,7 +68,7 @@ public class Range extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return hasKnownValue() ? this : new Range(begin.cloneForInlining(ii), end.cloneForInlining(ii), exclusive);
     }
 

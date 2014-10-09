@@ -6,7 +6,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -30,6 +30,10 @@ public class LocalVariable extends Variable implements DepthCloneable {
         this.name = name;
         this.scopeDepth = scopeDepth;
         this.offset = location;
+    }
+
+    public boolean isSameDepth(LocalVariable other) {
+        return getScopeDepth() == other.getScopeDepth();
     }
 
     public int getScopeDepth() {
@@ -80,7 +84,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
+    public Variable clone(SimpleCloneInfo ii) {
         return new LocalVariable(name, scopeDepth, offset);
     }
 

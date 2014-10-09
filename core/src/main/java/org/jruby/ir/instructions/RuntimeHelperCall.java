@@ -6,8 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.parser.StaticScope;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -67,7 +66,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         // SSS FIXME: array of args cloning should be part of utility class
         Operand[] clonedArgs = new Operand[args.length];
         for (int i = 0; i < args.length; i++) {

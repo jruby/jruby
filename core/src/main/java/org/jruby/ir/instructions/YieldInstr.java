@@ -8,7 +8,7 @@ import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -34,10 +34,10 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         // FIXME: Is it necessary to clone a yield instruction in a method
         // that is being inlined, i.e. in METHOD_INLINE clone mode?
-        // Fix BasicBlock.java:cloneForInlining!!
+        // Fix BasicBlock.java:clone!!
         return new YieldInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii), yieldArg.cloneForInlining(ii), unwrapArray);
     }
 

@@ -30,14 +30,6 @@ fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
 fails:Predefined global $_ is set at the method-scoped level rather than block-scoped
 fails:Predefined global $_ is Thread-local
 fails:Execution variable $: is the same object as $LOAD_PATH and $-I
-fails:Execution variable $: is read-only
-fails:Global variable $" is read-only
-fails:Global variable $< is read-only
-fails:Global variable $FILENAME is read-only
-fails:Global variable $? is read-only
-fails:Global variable $-a is read-only
-fails:Global variable $-l is read-only
-fails:Global variable $-p is read-only
 fails:Global variable $-d is an alias of $DEBUG
 fails:Global variable $-v is an alias of $VERBOSE
 fails:Global variable $-w is an alias of $VERBOSE

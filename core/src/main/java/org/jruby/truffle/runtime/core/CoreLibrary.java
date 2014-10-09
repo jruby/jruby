@@ -479,6 +479,10 @@ public class CoreLibrary {
         return nameError(String.format("`%s' is not allowable as an instance variable name", name), currentNode);
     }
 
+    public RubyException nameErrorReadOnly(String name, Node currentNode) {
+        return nameError(String.format("%s is a read-only variable", name), currentNode);
+    }
+
     public RubyException noMethodError(String message, Node currentNode) {
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }

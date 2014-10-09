@@ -13,8 +13,7 @@ import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.transformations.inlining.CloneMode;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
@@ -221,7 +220,7 @@ public class IRBuilder {
         }
 
         public void cloneIntoHostScope(IRBuilder b, IRScope s) {
-            InlinerInfo ii = new InlinerInfo(null, s, CloneMode.ENSURE_BLOCK_CLONE);
+            SimpleCloneInfo ii = new SimpleCloneInfo(s, true);
 
             // Clone required labels.
             // During normal cloning below, labels not found in the rename map
@@ -237,7 +236,7 @@ public class IRBuilder {
             b.addInstr(s, new LabelInstr(ii.getRenamedLabel(start)));
             b.addInstr(s, new ExceptionRegionStartMarkerInstr(bodyRescuer));
             for (Instr i: instrs) {
-                Instr clonedInstr = i.cloneForInlining(ii);
+                Instr clonedInstr = i.clone(ii);
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);

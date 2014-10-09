@@ -2,7 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
  * This represents a variable used in a closure that is
@@ -36,8 +36,8 @@ public class ClosureLocalVariable extends LocalVariable {
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
-        return new ClosureLocalVariable(ii.getClonedClosure(), name, scopeDepth, offset);
+    public Variable clone(SimpleCloneInfo ii) {
+        return new ClosureLocalVariable((IRClosure) ii.getScope(), name, scopeDepth, offset);
     }
 
     // SSS FIXME: Better name than this?

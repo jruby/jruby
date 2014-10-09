@@ -29,7 +29,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
  * Represents a temporary variable for an unboxed Float operand.
@@ -50,7 +50,7 @@ public class TemporaryFixnumVariable extends TemporaryLocalVariable {
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
+    public Variable clone(SimpleCloneInfo ii) {
         return new TemporaryFixnumVariable(offset);
     }
 

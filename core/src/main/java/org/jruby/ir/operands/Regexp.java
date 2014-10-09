@@ -3,7 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -57,7 +57,7 @@ public class Regexp extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return hasKnownValue() ? this : new Regexp(regexp.cloneForInlining(ii), options);
     }
 

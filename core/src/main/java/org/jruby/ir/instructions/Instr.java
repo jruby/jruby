@@ -9,7 +9,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -163,12 +163,12 @@ public abstract class Instr {
      *
      * The implementation might vary on the cloning mode.
      *
-     * @param inlinerInfo This object manages renaming of variables and labels, handles
+     * @param info This object manages renaming of variables and labels, handles
      *                    args and return values.
      * @return a new instruction that can be used in the target scope.
      */
-    public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        throw new RuntimeException("cloneForInlining: Not implemented for: " + this.getOperation());
+    public Instr clone(CloneInfo info) {
+        throw new RuntimeException("clone: Not implemented for: " + this.getOperation());
     }
 
     /**

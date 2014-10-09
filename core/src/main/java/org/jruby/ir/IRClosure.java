@@ -4,7 +4,8 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -61,10 +62,11 @@ public class IRClosure extends IRScope {
     }
 
     /** Used by cloning code */
-    protected IRClosure(IRClosure c, IRScope lexicalParent, String prefix) {
+    /* Inlining generates a new name and id and basic cloning will reuse the originals name */
+    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, String fullName) {
         super(c, lexicalParent);
-        this.closureId = lexicalParent.getNextClosureId();
-        setName(prefix + closureId);
+        this.closureId = closureId;
+        super.setName(fullName);
         this.startLabel = getNewLabel(getName() + "_START");
         this.endLabel = getNewLabel(getName() + "_END");
         if (getManager().isDryRun()) {
@@ -281,12 +283,11 @@ public class IRClosure extends IRScope {
         return nestingDepth;
     }
 
-    protected IRClosure cloneForInlining(InlinerInfo ii, IRClosure clone) {
+    protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         clone.nestingDepth  = this.nestingDepth;
         clone.parameterList = this.parameterList;
 
-        // Create a new inliner info object
-        InlinerInfo clonedII = ii.cloneForCloningClosure(clone);
+        SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
         if (getCFG() != null) {
             // Clone the cfg
@@ -296,7 +297,7 @@ public class IRClosure extends IRScope {
         } else {
             // Clone the instruction list
             for (Instr i: getInstrs()) {
-                Instr clonedInstr = i.cloneForInlining(clonedII);
+                Instr clonedInstr = i.clone(clonedII);
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);
@@ -309,9 +310,17 @@ public class IRClosure extends IRScope {
         return clone;
     }
 
-    public IRClosure cloneForInlining(InlinerInfo ii) {
-        // FIXME: This is buggy! Is this not dependent on clone-mode??
-        IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure(), "_CLOSURE_CLONE_");
+    public IRClosure cloneForInlining(CloneInfo ii) {
+        IRClosure clonedClosure;
+        IRScope lexicalParent = ii.getScope();
+
+        if (ii instanceof SimpleCloneInfo) {
+            clonedClosure = new IRClosure(this, lexicalParent, closureId, getName());
+        } else {
+            int id = lexicalParent.getNextClosureId();
+            String fullName = lexicalParent.getName() + "_CLOSURE_CLONE_" + id;
+            clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
+        }
 
         return cloneForInlining(ii, clonedClosure);
     }
@@ -361,8 +370,7 @@ public class IRClosure extends IRScope {
     @Override
     public void setName(String name) {
         // We can distinguish closures only with parent scope name
-        String fullName = getLexicalParent().getName() + name;
-        super.setName(fullName);
+        super.setName(getLexicalParent().getName() + name);
     }
 
     public Arity getArity() {

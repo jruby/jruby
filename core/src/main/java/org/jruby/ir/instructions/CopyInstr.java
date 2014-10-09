@@ -8,9 +8,9 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import java.util.Map;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
     private Operand arg;
@@ -58,7 +58,7 @@ public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new CopyInstr(getOperation(), ii.getRenamedVariable(result), arg.cloneForInlining(ii));
     }
 

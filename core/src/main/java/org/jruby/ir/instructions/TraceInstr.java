@@ -2,7 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.RubyEvent;
 
 // FIXME: When presistence is revisited this should strip these out of code streams on save and add them in if
@@ -26,7 +26,7 @@ public class TraceInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new TraceInstr(event, name, filename, linenumber);
     }
 
