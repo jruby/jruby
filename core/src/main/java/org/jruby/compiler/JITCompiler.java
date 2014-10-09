@@ -259,7 +259,7 @@ public class JITCompiler implements JITCompilerMBean {
                 return;
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
-                    log(method, className + "." + methodName, "could not compile", t.getMessage());
+                    log(method, className + "." + methodName, "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
@@ -323,19 +323,14 @@ public class JITCompiler implements JITCompilerMBean {
 
             method.ensureInstrsReady();
 
-            // we try twice; once with passes to see if it will succeed and once without
+            // This may not be ok since we'll end up running passes specific to JIT
             // CON FIXME: Really should clone scope before passes in any case
-            visitor.setPrepare(false);
             bytecode = visitor.compileToBytecode(method.getIRMethod());
 
             if (bytecode.length > Options.JIT_MAXSIZE.load()) {
                 throw new NotCompilableException("bytecode size " + bytecode.length + " too large in " + method.getIRMethod());
             }
 
-            // reset and do the compile for real
-            visitor.reset();
-            bytecode = visitor.compileToBytecode(method.getIRMethod());
-            
             counts.compiledCount.incrementAndGet();
             counts.compileTime.addAndGet(System.nanoTime() - start);
             counts.codeSize.addAndGet(bytecode.length);
