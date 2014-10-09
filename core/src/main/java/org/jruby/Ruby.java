@@ -811,33 +811,34 @@ public final class Ruby {
     }
     
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
-       try {
-           if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-               assert parseResult instanceof RootNode;
-               getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult);
-               return getNil();
+       if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+           assert parseResult instanceof RootNode;
+           getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult);
+           return getNil();
+       } else {
+           try {
+               return Interpreter.getInstance().execute(this, parseResult, self);
+           } catch (JumpException.ReturnJump rj) {
+               return (IRubyObject) rj.getValue();
            }
-
-           return Interpreter.getInstance().execute(this, parseResult, self);
-       } catch (JumpException.ReturnJump rj) {
-           return (IRubyObject) rj.getValue();
        }
    }
 
     public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
         assert rootNode != null : "scriptNode is not null";
 
-        try {
-            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-                assert rootNode instanceof RootNode;
-                getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode);
-                return getNil();
-            }
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+            assert rootNode instanceof RootNode;
+            getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode);
+            return getNil();
+        } else {
+            try {
 
-            // FIXME: retrieve from IRManager unless lifus does it later
-            return Interpreter.getInstance().execute(this, rootNode, self);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
+                // FIXME: retrieve from IRManager unless lifus does it later
+                return Interpreter.getInstance().execute(this, rootNode, self);
+            } catch (JumpException.ReturnJump rj) {
+                return (IRubyObject) rj.getValue();
+            }
         }
     }
     

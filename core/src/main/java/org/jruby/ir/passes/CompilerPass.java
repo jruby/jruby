@@ -64,14 +64,17 @@ public abstract class CompilerPass {
      * @returns true if invalidation succeeded, false otherwise.
      */
     public boolean invalidate(IRScope scope) {
+        // System.out.println("--- INVALIDATING " + this.getLabel() + " on scope: " + scope);
         scope.getExecutedPasses().remove(this);
         return true;
     }
 
     // Run the pass on the passed in scope!
     protected Object run(IRScope scope, boolean force, boolean childScope) {
+        // System.out.println("--- RUNNING " + this.getLabel() + " on scope: " + scope);
         Object prevData = null;
         if (!force && (prevData = previouslyRun(scope)) != null) {
+            // System.out.println("--- RETURNING OLD RESULT ---");
             return prevData;
         }
 

@@ -230,6 +230,27 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), sub, i);
         }
 
+        @Specialization
+        public RubyArray sub(RubyArray a, RubyArray b) {
+            notDesignedForCompilation();
+
+            final Object[] as = a.slowToArray();
+            final Object[] bs = b.slowToArray();
+
+            final Object[] sub = new Object[a.getSize()];
+
+            int i = 0;
+
+            for (int n = 0; n < a.getSize(); n++) {
+                if (!ArrayUtils.contains(bs, b.getSize(), as[n])) {
+                    sub[i] = as[n];
+                    i++;
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), sub, i);
+        }
+
     }
 
     @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
@@ -1829,7 +1850,7 @@ public abstract class ArrayNodes {
 
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InjectNode(InjectNode prev) {

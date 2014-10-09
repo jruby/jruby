@@ -35,7 +35,6 @@ fails:Global variable $" is read-only
 fails:Global variable $< is read-only
 fails:Global variable $FILENAME is read-only
 fails:Global variable $? is read-only
-fails:Global variable $? is thread-local
 fails:Global variable $-a is read-only
 fails:Global variable $-l is read-only
 fails:Global variable $-p is read-only

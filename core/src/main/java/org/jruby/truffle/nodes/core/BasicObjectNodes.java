@@ -241,7 +241,7 @@ public abstract class BasicObjectNodes {
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatchNode = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatchNode = DispatchHeadNode.onSelf(context);
         }
 
         public SendNode(SendNode prev) {

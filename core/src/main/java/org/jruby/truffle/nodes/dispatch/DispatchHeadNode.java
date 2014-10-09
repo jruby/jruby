@@ -25,6 +25,10 @@ public class DispatchHeadNode extends Node {
 
     @Child protected DispatchNode first;
 
+    public static DispatchHeadNode onSelf(RubyContext context) {
+        return new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+    }
+
     public DispatchHeadNode(RubyContext context) {
         this(context, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
     }

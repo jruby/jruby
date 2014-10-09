@@ -33,8 +33,13 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
-    public ModuleChain getLexicalParentModule() {
+    public RubyModule getLexicalParentModule() {
         return includedModule.getLexicalParentModule();
+    }
+
+    @Override
+    public RubyModule getActualModule() {
+        return includedModule;
     }
 
     @Override
@@ -78,7 +83,4 @@ public class IncludedModule implements ModuleChain {
         throw new UnsupportedOperationException();
     }
 
-    public RubyModule getIncludedModule() {
-        return includedModule;
-    }
 }

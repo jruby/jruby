@@ -175,7 +175,7 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "atanh", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "atanh", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class ATanHNode extends SimpleMonadicMathFunction {
 
         public ATanHNode(RubyContext context, SourceSection sourceSection) {

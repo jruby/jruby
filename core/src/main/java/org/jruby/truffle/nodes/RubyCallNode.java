@@ -51,10 +51,10 @@ public class RubyCallNode extends RubyNode {
     @Child protected BooleanCastNode respondToMissingCast;
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
-        this(context, section, methodName, receiver, block, isSplatted, false, arguments);
+        this(context, section, methodName, receiver, block, isSplatted, false, false, arguments);
     }
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean rubiniusPrimitive, RubyNode... arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean fcall, boolean rubiniusPrimitive, RubyNode... arguments) {
         super(context, section);
 
         this.methodName = methodName;
@@ -70,8 +70,8 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context, false, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
+        dispatchHead = new DispatchHeadNode(context, fcall, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        respondToMissing = new DispatchHeadNode(context, fcall, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
     }
 

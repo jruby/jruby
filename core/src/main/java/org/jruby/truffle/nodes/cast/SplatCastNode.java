@@ -37,6 +37,7 @@ public abstract class SplatCastNode extends RubyNode {
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
+        // Calling private #to_a is allowed for the *splat operator.
         toA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
     }
 

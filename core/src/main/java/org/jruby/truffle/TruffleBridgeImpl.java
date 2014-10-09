@@ -23,10 +23,8 @@ import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.util.Supplier;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.io.IOException;
@@ -92,42 +90,45 @@ public class TruffleBridgeImpl implements TruffleBridge {
     }
 
     @Override
-    public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        try {
-            final String inputFile = rootNode.getPosition().getFile();
+    public Object execute(final TranslatorDriver.ParserContext parserContext, final Object self, final MaterializedFrame parentFrame, final org.jruby.ast.RootNode rootNode) {
+        return truffleContext.handlingTopLevelRaise(new Supplier<Object>() {
 
-            final Source source;
+            @Override
+            public Object get() {
+                return truffleContext.handlingTopLevelThrow(new Supplier<Object>() {
 
-            if (inputFile.equals("-e")) {
-                // Assume UTF-8 for the moment
-                source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
-            } else {
-                final byte[] bytes;
+                    @Override
+                    public Object get() {
+                        final String inputFile = rootNode.getPosition().getFile();
 
-                try {
-                    bytes = Files.readAllBytes(Paths.get(inputFile));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                        final Source source;
 
-                // Assume UTF-8 for the moment
+                        if (inputFile.equals("-e")) {
+                            // Assume UTF-8 for the moment
+                            source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
+                        } else {
+                            final byte[] bytes;
 
-                source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
+                            try {
+                                bytes = Files.readAllBytes(Paths.get(inputFile));
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+
+                            // Assume UTF-8 for the moment
+
+                            source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
+                        }
+
+                        final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
+                        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
+                        return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
+                    }
+
+                });
             }
 
-            final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
-            return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
-        } catch (RaiseException e) {
-            // TODO(CS): what's this cast about?
-            final RubyException rubyException = (RubyException) e.getRubyException();
-
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(truffleContext, rubyException, rubyException.getBacktrace())) {
-                System.err.println(line);
-            }
-
-            return NilPlaceholder.INSTANCE;
-        }
+        }, NilPlaceholder.INSTANCE);
     }
 
     @Override

@@ -29,10 +29,12 @@ import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.debug.RubyASTProber;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -374,6 +376,29 @@ public class RubyContext extends ExecutionContext {
 
     public Warnings getWarnings() {
         return warnings;
+    }
+
+    public <T> T handlingTopLevelThrow(Supplier<T> run) {
+        try {
+            return run.get();
+        } catch (ThrowException e) {
+            throw new RaiseException(new RubyException(coreLibrary.getArgumentErrorClass(), makeString(String.format("uncaught throw \"%s\"", e.getTag())), e.getBacktrace()));
+        }
+    }
+
+    public <T> T handlingTopLevelRaise(Supplier<T> run, T defaultValue) {
+        try {
+            return run.get();
+        } catch (RaiseException e) {
+            // TODO(CS): what's this cast about?
+            final RubyException rubyException = (RubyException) e.getRubyException();
+
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(this, rubyException, rubyException.getBacktrace())) {
+                System.err.println(line);
+            }
+
+            return defaultValue;
+        }
     }
 
 }

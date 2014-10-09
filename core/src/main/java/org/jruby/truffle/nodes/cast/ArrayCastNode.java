@@ -27,7 +27,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toArrayNode = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
+        toArrayNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
     }
 
     public ArrayCastNode(ArrayCastNode prev) {

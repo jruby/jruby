@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -455,6 +456,7 @@ public abstract class KernelNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            // Calls private initialize_dup on the new copy.
             initializeDupNode = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
@@ -886,7 +888,7 @@ public abstract class KernelNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context);
+            initializeCopyNode = DispatchHeadNode.onSelf(context);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {
@@ -1342,7 +1344,7 @@ public abstract class KernelNodes {
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context);
+            toS = DispatchHeadNode.onSelf(context);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
@@ -1458,7 +1460,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleMethod = true, needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "rand", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class RandNode extends CoreMethodNode {
 
         public RandNode(RubyContext context, SourceSection sourceSection) {
@@ -1790,9 +1792,9 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, NilPlaceholder.INSTANCE);
+                throw new ThrowException(tag, NilPlaceholder.INSTANCE, RubyCallStack.getBacktrace(this));
             } else {
-                throw new ThrowException(tag, value);
+                throw new ThrowException(tag, value, RubyCallStack.getBacktrace(this));
             }
         }
 
@@ -1837,7 +1839,7 @@ public abstract class KernelNodes {
     }
 
     // Rubinius API
-    @CoreMethod(names = "undefined", isModuleMethod = true, needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "undefined", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class UndefinedNode extends CoreMethodNode {
 
         public UndefinedNode(RubyContext context, SourceSection sourceSection) {
