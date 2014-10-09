@@ -290,10 +290,7 @@ public class IRClosure extends IRScope {
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
         if (getCFG() != null) {
-            // Clone the cfg
-            CFG clonedCFG = new CFG(clone);
-            clone.setCFG(clonedCFG);
-            clonedCFG.cloneForCloningClosure(getCFG(), clone, clonedII);
+            clone.setCFG(getCFG().clone(clone, clonedII));
         } else {
             // Clone the instruction list
             for (Instr i: getInstrs()) {

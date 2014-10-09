@@ -8,7 +8,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.util.DirectedGraph;
 import org.jruby.ir.util.Edge;
 import org.jruby.util.log.Logger;
@@ -660,36 +660,47 @@ public class CFG {
         return list;
     }
 
-    public void cloneForCloningClosure(CFG sourceCFG, IRScope scope, SimpleCloneInfo ii) {
-        Map<BasicBlock, BasicBlock> cloneBBMap = new HashMap<BasicBlock, BasicBlock>();
+    /**
+     * Clone this CFG and return a new one.
+     *
+     * @param clonedScope already cloned IRScope which this new CFG will belong to
+     * @param info context object to perform the clone
+     * @return a newly cloned CFG
+     */
+    public CFG clone(IRScope clonedScope, CloneInfo info) {
+        CFG newCFG = new CFG(clonedScope);
+        Map<BasicBlock, BasicBlock> cloneBBMap = new HashMap<>();
 
-        // clone bbs
-        for (BasicBlock b : sourceCFG.getBasicBlocks()) {
-            BasicBlock bCloned = new BasicBlock(this, ii.getRenamedLabel(b.getLabel()));
-            for (Instr i: b.getInstrs()) {
-                Instr clonedInstr = i.clone(ii);
-                if (clonedInstr != null) bCloned.addInstr(clonedInstr);
+        // Pass 1: Clone all BBs and stuff in map so graph building in 2 will have all BBs available.
+        for (BasicBlock bb: getBasicBlocks()) {                 // clone bbs
+            BasicBlock newBB = new BasicBlock(newCFG, info.getRenamedLabel(bb.getLabel()));
+            for (Instr i: bb.getInstrs()) {
+                Instr clonedInstr = i.clone(info);
+                if (clonedInstr != null) newBB.addInstr(clonedInstr);
             }
-            this.addBasicBlock(bCloned);
-            cloneBBMap.put(b, bCloned);
+            newCFG.addBasicBlock(newBB);
+            cloneBBMap.put(bb, newBB);
         }
 
-        // clone edges
-        for (BasicBlock x : sourceCFG.getBasicBlocks()) {
-             BasicBlock rx = cloneBBMap.get(x);
-             for (Edge<BasicBlock> e : sourceCFG.getOutgoingEdges(x)) {
-                 BasicBlock b = e.getDestination().getData();
-                 this.addEdge(rx, cloneBBMap.get(b), e.getType());
-             }
+        // Pass 2: Build graph
+        for (BasicBlock bb: getBasicBlocks()) {                 // clone edges
+            BasicBlock newSource = cloneBBMap.get(bb);
+            for (Edge<BasicBlock> edge : getOutgoingEdges(bb)) {
+                BasicBlock newDestination = cloneBBMap.get(edge.getDestination().getData());
+                newCFG.addEdge(newSource, newDestination, edge.getType());
+            }
         }
 
-        this.entryBB = cloneBBMap.get(sourceCFG.entryBB);
-        this.exitBB  = cloneBBMap.get(sourceCFG.exitBB);
-
-        // Clone rescuer map
-        for (BasicBlock b: sourceCFG.rescuerMap.keySet()) {
-            this.setRescuerBB(cloneBBMap.get(b), cloneBBMap.get(sourceCFG.rescuerMap.get(b)));
+        for (BasicBlock bb: rescuerMap.keySet()) {              // clone rescuer map
+            newCFG.setRescuerBB(cloneBBMap.get(bb), cloneBBMap.get(rescuerMap.get(bb)));
         }
+
+        // Now clone all non-derived fields
+        newCFG.entryBB = cloneBBMap.get(entryBB);               // clone entry BB
+        newCFG.exitBB  = cloneBBMap.get(exitBB);                // clone exit BB
+        newCFG.globalEnsureBB = cloneBBMap.get(globalEnsureBB); // clone GEB
+
+        return newCFG;
     }
 
     private void printError(String message) {
