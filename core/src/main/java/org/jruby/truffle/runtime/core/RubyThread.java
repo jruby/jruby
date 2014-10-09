@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.runtime.util.Supplier;
 
 /**
  * Represents the Ruby {@code Thread} class. Implemented using Java threads, but note that there is
@@ -57,21 +58,17 @@ public class RubyThread extends RubyObject {
     public void initialize(final RubyNode currentNode, RubyProc block) {
         final RubyProc finalBlock = block;
 
-        initialize(new Runnable() {
+        initialize(currentNode, new Runnable() {
 
             @Override
             public void run() {
-                try {
-                    finalBlock.rootCall();
-                } catch (ReturnException e) {
-                    exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
-                }
+                finalBlock.rootCall();
             }
 
         });
     }
 
-    public void initialize(Runnable runnable) {
+    public void initialize(final RubyNode currentNode, Runnable runnable) {
         final RubyThread finalThread = this;
         final Runnable finalRunnable = runnable;
 
@@ -83,7 +80,19 @@ public class RubyThread extends RubyObject {
                 finalThread.manager.enterGlobalLock(finalThread);
 
                 try {
-                    finalRunnable.run();
+                    getContext().handlingTopLevelThrow(new Supplier<Void>() {
+
+                        @Override
+                        public Void get() {
+                            finalRunnable.run();
+                            return null;
+                        }
+
+                    });
+                } catch (RaiseException e) {
+                    exception = (RubyException) e.getRubyException();
+                } catch (ReturnException e) {
+                    exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
                 } finally {
                     finalThread.manager.leaveGlobalLock();
                     finalThread.manager.unregisterThread(finalThread);

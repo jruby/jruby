@@ -94,7 +94,7 @@ public class ObjectSpaceManager {
 
             finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
 
-            finalizerThread.initialize(new Runnable() {
+            finalizerThread.initialize(null, new Runnable() {
 
                 @Override
                 public void run() {

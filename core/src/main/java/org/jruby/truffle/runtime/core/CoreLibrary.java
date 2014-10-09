@@ -432,7 +432,7 @@ public class CoreLibrary {
     }
 
     public RubyException localJumpError(String message, Node currentNode) {
-        return new RubyException(localJumpErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(localJumpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException unexpectedReturn(Node currentNode) {
@@ -713,5 +713,9 @@ public class CoreLibrary {
 
     public RubiniusLibrary getRubiniusLibrary() {
         return rubiniusLibrary;
+    }
+
+    public RubyClass getArgumentErrorClass() {
+        return argumentErrorClass;
     }
 }

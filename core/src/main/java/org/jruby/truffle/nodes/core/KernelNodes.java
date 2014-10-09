@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -1791,9 +1792,9 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, NilPlaceholder.INSTANCE);
+                throw new ThrowException(tag, NilPlaceholder.INSTANCE, RubyCallStack.getBacktrace(this));
             } else {
-                throw new ThrowException(tag, value);
+                throw new ThrowException(tag, value, RubyCallStack.getBacktrace(this));
             }
         }
 
