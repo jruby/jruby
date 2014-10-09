@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
+import org.jruby.truffle.nodes.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
@@ -1007,6 +1008,20 @@ public class BodyTranslator extends Translator {
         }
     }
 
+    private final Set<String> readOnlyGlobalVariables = new HashSet<String>() {{
+        add("$:");
+        add("$LOAD_PATH");
+        add("$-I");
+        add("$\"");
+        add("$LOADED_FEATURES");
+        add("$<");
+        add("$FILENAME");
+        add("$?");
+        add("$-a");
+        add("$-l");
+        add("$-p");
+    }};
+
     @Override
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
@@ -1014,12 +1029,16 @@ public class BodyTranslator extends Translator {
         final String name = node.getName();
         RubyNode rhs = node.getValueNode().accept(this);
 
-        if (name.equals("$~")) {
-            rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
-        }
+        if (readOnlyGlobalVariables.contains(name)) {
+            return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
+        } else {
+            if (name.equals("$~")) {
+                rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
+            }
 
-        final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
-        return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
+            final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
+            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
+        }
     }
 
     @Override
