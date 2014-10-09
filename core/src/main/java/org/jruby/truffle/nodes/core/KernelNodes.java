@@ -392,6 +392,8 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             try {
+                getContext().getThrowTags().add(tag);
+
                 return yield(frame, block);
             } catch (ThrowException e) {
                 if (e.getTag().equals(tag)) {
@@ -401,6 +403,8 @@ public abstract class KernelNodes {
                 } else {
                     throw e;
                 }
+            } finally {
+                getContext().getThrowTags().remove();
             }
         }
     }
@@ -1791,10 +1795,17 @@ public abstract class KernelNodes {
         public Object doThrow(Object tag, Object value) {
             notDesignedForCompilation();
 
+            if (!getContext().getThrowTags().contains(tag)) {
+                throw new RaiseException(new RubyException(
+                        getContext().getCoreLibrary().getArgumentErrorClass(),
+                        getContext().makeString(String.format("uncaught throw \"%s\"", tag)),
+                        RubyCallStack.getBacktrace(this)));
+            }
+
             if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, NilPlaceholder.INSTANCE, RubyCallStack.getBacktrace(this));
+                throw new ThrowException(tag, NilPlaceholder.INSTANCE);
             } else {
-                throw new ThrowException(tag, value, RubyCallStack.getBacktrace(this));
+                throw new ThrowException(tag, value);
             }
         }
 

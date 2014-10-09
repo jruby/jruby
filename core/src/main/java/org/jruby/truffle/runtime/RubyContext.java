@@ -14,7 +14,9 @@ import java.math.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Queue;
 import java.util.concurrent.atomic.*;
 
 import com.oracle.truffle.api.instrument.SourceCallback;
@@ -77,6 +79,15 @@ public class RubyContext extends ExecutionContext {
     private SourceCallback sourceCallback = null;
 
     private final AtomicLong nextObjectID = new AtomicLong(0);
+
+    private final ThreadLocal<Queue<Object>> throwTags = new ThreadLocal<Queue<Object>>() {
+
+        @Override
+        protected Queue<Object> initialValue() {
+            return new ArrayDeque<>();
+        }
+
+    };
 
     public RubyContext(Ruby runtime) {
         assert runtime != null;
@@ -378,14 +389,6 @@ public class RubyContext extends ExecutionContext {
         return warnings;
     }
 
-    public <T> T handlingTopLevelThrow(Supplier<T> run) {
-        try {
-            return run.get();
-        } catch (ThrowException e) {
-            throw new RaiseException(new RubyException(coreLibrary.getArgumentErrorClass(), makeString(String.format("uncaught throw \"%s\"", e.getTag())), e.getBacktrace()));
-        }
-    }
-
     public <T> T handlingTopLevelRaise(Supplier<T> run, T defaultValue) {
         try {
             return run.get();
@@ -399,6 +402,10 @@ public class RubyContext extends ExecutionContext {
 
             return defaultValue;
         }
+    }
+
+    public Queue<Object> getThrowTags() {
+        return throwTags.get();
     }
 
 }
