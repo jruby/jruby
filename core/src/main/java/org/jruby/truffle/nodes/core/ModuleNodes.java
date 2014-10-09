@@ -432,7 +432,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "constants", maxArgs = 0)
+    @CoreMethod(names = "constants", minArgs = 0, maxArgs = 1)
     public abstract static class ConstantsNode extends CoreMethodNode {
 
         public ConstantsNode(RubyContext context, SourceSection sourceSection) {
@@ -444,11 +444,17 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
+        public RubyArray constants(RubyModule module, UndefinedPlaceholder unused) {
+            return constants(module, true);
+        }
+
+        @Specialization
+        public RubyArray constants(RubyModule module, boolean inherit) {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
+            // TODO(cs): handle inherit
             for (String constant : module.getConstants().keySet()) {
                 array.slowPush(getContext().newSymbol(constant));
             }
