@@ -112,7 +112,6 @@ public abstract class IRScope implements ParseResult {
 
     private Instr[] linearizedInstrArray;
     private List<BasicBlock> linearizedBBList;
-    private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -476,7 +475,7 @@ public abstract class IRScope implements ParseResult {
 
         setupLinearization();
 
-        // Set up IPCs
+        // Pass 1. Set up IPCs for labels and instruct and build linear instr list
         List<Instr> newInstrs = new ArrayList<Instr>();
         HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
         int ipc = 0;
@@ -504,34 +503,22 @@ public abstract class IRScope implements ParseResult {
             }
         }
 
+        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);  // Exit BB ipc
+
         // System.out.println("SCOPE: " + getName());
         // System.out.println("INSTRS: " + cfg().toStringInstrs());
 
-        // Exit BB ipc
-        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
-
-        //System.out.println("CFG.original");
-        //System.out.println(cfg().toStringInstrs());
-
-        //System.out.println("CFG.new");
-        //System.out.println(cfg().clone(new SimpleCloneInfo(this, false), this).toStringInstrs());
-
-        // Set up rescue map
-        setupRescueMap();
-
-        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
-        return linearizedInstrArray;
-    }
-
-    public void setupRescueMap() {
-        this.rescueMap = new HashMap<Integer, Integer>();
+        // Pass 2: Use ipc info from before to mark all instrs rpc
         for (BasicBlock b : linearizedBBList) {
             BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
             int rescuerPC = (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
             for (Instr i : b.getInstrs()) {
-                rescueMap.put(i.getIPC(), rescuerPC);
+                i.setRPC(rescuerPC);
             }
         }
+
+        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
+        return linearizedInstrArray;
     }
 
     private boolean isUnsafeScope() {
@@ -1086,10 +1073,6 @@ public abstract class IRScope implements ParseResult {
         return linearizedBBList;
     }
 
-    public Map<Integer, Integer> getRescueMap() {
-        return this.rescueMap;
-    }
-
     public List<BasicBlock> linearization() {
         depends(cfg());
 
@@ -1125,7 +1108,6 @@ public abstract class IRScope implements ParseResult {
         flags.remove(HAS_NONLOCAL_RETURNS);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        rescueMap = null;
 
         // Invalidate compiler pass state.
         //

@@ -177,6 +177,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
             for (Instr i: oldInstrs) {
                 Instr clonedInstr = i.clone(ii);
                 clonedInstr.setIPC(i.getIPC());
+                clonedInstr.setRPC(i.getRPC());
                 instrs.add(clonedInstr);
             }
         }

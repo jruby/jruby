@@ -33,7 +33,8 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
-    private int ipc;
+    private int ipc; // Interpreter-only: instruction pointer
+    private int rpc; // Interpreter-only: rescue pointer
     private final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
@@ -43,6 +44,7 @@ public abstract class Instr {
 
     public Instr(Operation operation) {
         this.ipc = -1;
+        this.rpc = -1;
         this.operation = operation;
     }
 
@@ -59,6 +61,10 @@ public abstract class Instr {
     public int getIPC() { return ipc; }
 
     public void setIPC(int ipc) { this.ipc = ipc; }
+
+    public int getRPC() { return rpc; }
+
+    public void setRPC(int rpc) { this.rpc = rpc; }
 
     // Does this instruction have side effects as a result of its operation
     // This information is used in optimization phases to impact dead code elimination
