@@ -304,7 +304,7 @@ public class IRClosure extends IRScope {
         IRClosure clonedClosure;
         IRScope lexicalParent = ii.getScope();
 
-        if (ii instanceof SimpleCloneInfo) {
+        if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo)ii).isEnsureBlockCloneMode()) {
             clonedClosure = new IRClosure(this, lexicalParent, closureId, getName());
         } else {
             int id = lexicalParent.getNextClosureId();
