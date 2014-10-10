@@ -302,7 +302,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "binding", isModuleFunction = true, needsSelf = true, maxArgs = 0)
+    @CoreMethod(names = "binding", isModuleFunction = true, needsSelf = false, maxArgs = 0)
     public abstract static class BindingNode extends CoreMethodNode {
 
         public BindingNode(RubyContext context, SourceSection sourceSection) {
@@ -314,7 +314,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object binding(Object self) {
+        public Object binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
             final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
@@ -322,7 +322,7 @@ public abstract class KernelNodes {
 
             return new RubyBinding(
                     getContext().getCoreLibrary().getBindingClass(),
-                    self,
+                    RubyArguments.getSelf(callerFrame.getArguments()),
                     callerFrame);
         }
     }
