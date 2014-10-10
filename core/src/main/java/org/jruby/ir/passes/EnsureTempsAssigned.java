@@ -53,7 +53,7 @@ public class EnsureTempsAssigned extends CompilerPass {
 
         // recurse
         for (IRScope childScope : cfg.getScope().getClosures()) {
-            processCFG(childScope.cfg());
+            run(childScope, false, true);
         }
     }
 }

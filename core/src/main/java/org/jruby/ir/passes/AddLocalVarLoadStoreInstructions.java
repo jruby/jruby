@@ -67,7 +67,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
             // Run on all nested closures.
             //
             // In the current implementation, nested scopes are processed independently (unlike Live Variable Analysis)
-            for (IRClosure c: s.getClosures()) execute(c);
+            for (IRClosure c: s.getClosures()) run(c, false, true);
 
             // LVA information is no longer valid after this pass
             // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
