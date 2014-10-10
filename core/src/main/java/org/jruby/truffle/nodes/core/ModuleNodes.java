@@ -183,8 +183,6 @@ public abstract class ModuleNodes {
         public RubyArray ancestors(RubyModule self) {
             notDesignedForCompilation();
 
-            ModuleOperations.debugModuleChain(self);
-
             final List<RubyModule> ancestors = new ArrayList<>();
             for (ModuleChain module = self; module != null; module = module.getParentModule()) {
                 ancestors.add(module.getActualModule());
