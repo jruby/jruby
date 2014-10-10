@@ -17,6 +17,10 @@ public class SimpleCloneInfo extends CloneInfo {
         this.isEnsureBlock = isEnsureBlock;
     }
 
+    public boolean isEnsureBlockCloneMode() {
+        return this.isEnsureBlock;
+    }
+
     public Variable getRenamedVariable(Variable variable) {
         Variable renamed = super.getRenamedVariable(variable);
 

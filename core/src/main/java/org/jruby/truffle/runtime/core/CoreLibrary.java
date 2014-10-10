@@ -320,11 +320,11 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
-        // Just create a dummy object for $stdout - we can use Kernel#print and a special method TruffleDebug#flush_stdout
+        // Just create a dummy object for $stdout - we can use Kernel#print and a special method TruffleDebug.flush_stdout
 
         final RubyBasicObject stdout = new RubyBasicObject(objectClass);
         stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withNewVisibility(Visibility.PUBLIC));
-        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(truffleDebugModule, "flush_stdout").withNewName("flush"));
+        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(truffleDebugModule.getSingletonClass(null), "flush_stdout").withNewName("flush"));
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
         objectClass.setConstant(null, "STDIN", new RubyBasicObject(objectClass));
@@ -445,6 +445,10 @@ public class CoreLibrary {
 
     public RubyException typeError(String message, Node currentNode) {
         return new RubyException(typeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException typeErrorCantDefineSingleton(Node currentNode) {
+        return typeError("can't define singleton", currentNode);
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {

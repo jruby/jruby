@@ -65,7 +65,7 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
     }
 
     @Override
-    public boolean isImmediate() {
+    public boolean hasClassAsSingleton() {
         return true;
     }
 

@@ -36,11 +36,6 @@ public class IntegerFixnumLiteralNode extends RubyNode {
         return value;
     }
 
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("expression");
-    }
-
     public int getValue() {
         return value;
     }

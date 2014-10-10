@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -40,7 +41,11 @@ public class RubyBasicObject extends ObjectStorage {
         }
     }
 
-    public boolean isImmediate() {
+    public boolean hasNoSingleton() {
+        return false;
+    }
+
+    public boolean hasClassAsSingleton() {
         return false;
     }
 
@@ -51,7 +56,11 @@ public class RubyBasicObject extends ObjectStorage {
     public RubyClass getSingletonClass(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (isImmediate() || metaClass.isSingleton()) {
+        if (hasNoSingleton()) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(currentNode));
+        }
+
+        if (hasClassAsSingleton() || metaClass.isSingleton()) {
             return metaClass;
         }
 

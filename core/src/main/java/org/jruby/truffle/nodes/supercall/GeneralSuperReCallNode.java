@@ -30,8 +30,11 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, String name) {
+    private final boolean inBlock;
+
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, String name, boolean inBlock) {
         super(context, sourceSection, name);
+        this.inBlock = inBlock;
     }
 
     @ExplodeLoop
@@ -42,9 +45,15 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
             lookup();
         }
 
-        // Call the method
+        final Object[] superArguments;
 
-        return callNode.call(frame, frame.getArguments());
+        if (inBlock) {
+            superArguments = RubyArguments.getDeclarationFrame(frame.getArguments()).getArguments();
+        } else {
+            superArguments = frame.getArguments();
+        }
+
+        return callNode.call(frame, superArguments);
     }
 
 }

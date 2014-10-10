@@ -18,14 +18,8 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.nodes.DefinedNode;
-import org.jruby.truffle.nodes.ReadNode;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.WriteNode;
-import org.jruby.truffle.nodes.RubyCallNode;
+import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.nodes.ReadConstantNode;
-import org.jruby.truffle.nodes.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
@@ -79,19 +73,6 @@ public class BodyTranslator extends Translator {
         nodeDefinedNames.put(org.jruby.ast.OpAsgnNode.class, "assignment");
         nodeDefinedNames.put(org.jruby.ast.OpElementAsgnNode.class, "assignment");
         nodeDefinedNames.put(org.jruby.ast.MultipleAsgn19Node.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.StrNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.DStrNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.FixnumNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.BignumNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.FloatNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.RegexpNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.DRegexpNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.ArrayNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.HashNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.SymbolNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.DotNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.AndNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.OrNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.LocalVarNode.class, "local-variable");
         nodeDefinedNames.put(org.jruby.ast.DVarNode.class, "local-variable");
     }
@@ -296,7 +277,7 @@ public class BodyTranslator extends Translator {
     /**
      * See translateDummyAssignment to understand what this is for.
      */
-    public RubyNode visitCallNodeExtraArgument(CallNode node, RubyNode extraArgument, boolean fcall) {
+    public RubyNode visitCallNodeExtraArgument(CallNode node, RubyNode extraArgument, boolean ignoreVisibility) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
@@ -319,7 +300,7 @@ public class BodyTranslator extends Translator {
                     new RescueNode[] {new RescueAnyNode(context, sourceSection, new NilLiteralNode(context, sourceSection))},
                     new NilLiteralNode(context, sourceSection));
         } else {
-            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), fcall, false, argumentsAndBlock.getArguments());
+            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), ignoreVisibility, false, argumentsAndBlock.getArguments());
         }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
@@ -976,10 +957,10 @@ public class BodyTranslator extends Translator {
         final CallNode callNode = new CallNode(node.getPosition(), receiver, "each", null, block);
 
         translatingForStatement = true;
-        final RubyNode translated = callNode.accept(this);
+        final RubyCallNode translated = (RubyCallNode) callNode.accept(this);
         translatingForStatement = false;
 
-        return translated;
+        return new ForNode(context, translated.getSourceSection(), translated);
     }
 
     private static org.jruby.ast.Node setRHS(org.jruby.ast.Node node, org.jruby.ast.Node rhs) {
@@ -1362,13 +1343,13 @@ public class BodyTranslator extends Translator {
             for (int n = 0; n < assignedValuesCount; n++) {
                 final String tempName = environment.allocateLocalTemp("multi");
                 final RubyNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
-                final RubyNode assignTemp = ((ReadNode) readTemp).makeWriteNode(rhsValues[n]);
-                final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), readTemp);
+                final RubyNode assignTemp = ((ReadNode) NodeUtil.cloneNode(readTemp)).makeWriteNode(rhsValues[n]);
+                final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), NodeUtil.cloneNode(readTemp));
 
                 sequence[n] = assignTemp;
                 sequence[assignedValuesCount + n] = assignFinalValue;
 
-                tempValues[n] = readTemp;
+                tempValues[n] = NodeUtil.cloneNode(readTemp);
             }
 
             final RubyNode blockNode = SequenceNode.sequence(context, sourceSection, sequence);
@@ -1652,7 +1633,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
         if (node.getPosition() == ISourcePosition.INVALID_POSITION && parentSourceSection == null) {
-            throw new UnsupportedOperationException();
+            return new DeadNode(context, null);
         }
 
         return new NilLiteralNode(context, translate(node.getPosition()));

@@ -35,11 +35,6 @@ public abstract class FixnumLiteralNode {
             return value;
         }
 
-        @Override
-        public Object isDefined(VirtualFrame frame) {
-            return getContext().makeString("expression");
-        }
-
         public int getValue() {
             return value;
         }
@@ -63,11 +58,6 @@ public abstract class FixnumLiteralNode {
         @Override
         public long executeLongFixnum(VirtualFrame frame) {
             return value;
-        }
-
-        @Override
-        public Object isDefined(VirtualFrame frame) {
-            return getContext().makeString("expression");
         }
 
         public long getValue() {

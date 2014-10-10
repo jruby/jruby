@@ -218,7 +218,12 @@ class MethodTranslator extends BodyTranslator {
     public RubyNode visitZSuperNode(org.jruby.ast.ZSuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        return new GeneralSuperReCallNode(context, sourceSection, environment.getNamedMethodName());
+        if (environment.isBlock()) {
+            // We need the declaration frame to get the arguments to use
+            environment.setNeedsDeclarationFrame();
+        }
+
+        return new GeneralSuperReCallNode(context, sourceSection, environment.getNamedMethodName(), environment.isBlock());
     }
 
     @Override

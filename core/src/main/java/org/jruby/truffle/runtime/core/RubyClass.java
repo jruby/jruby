@@ -87,7 +87,7 @@ public class RubyClass extends RubyModule {
     public RubyClass getSingletonClass(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (isImmediate() || metaClass.isSingleton()) {
+        if (hasClassAsSingleton() || metaClass.isSingleton()) {
             return metaClass;
         }
 

@@ -1424,7 +1424,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "raise", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "raise", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 2)
     public abstract static class RaiseNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initialize;
@@ -1437,6 +1437,13 @@ public abstract class KernelNodes {
         public RaiseNode(RaiseNode prev) {
             super(prev);
             initialize = prev.initialize;
+        }
+
+        @Specialization
+        public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, @SuppressWarnings("unused") UndefinedPlaceholder undefined2) {
+            notDesignedForCompilation();
+
+            return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), getContext().makeString("re-raised - don't have the current exception yet!"));
         }
 
         @Specialization

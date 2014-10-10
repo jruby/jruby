@@ -30,6 +30,16 @@ public abstract class CompilerPass {
      */
     public abstract String getLabel();
 
+    @Override
+    public int hashCode() {
+        return getLabel().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return (other != null) && (other instanceof CompilerPass) && (getLabel() == ((CompilerPass)other).getLabel());
+    }
+
     /**
      * Meat of an individual pass. run will call this after dependency
      * resolution.

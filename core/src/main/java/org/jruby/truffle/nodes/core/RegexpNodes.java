@@ -88,10 +88,6 @@ public abstract class RegexpNodes {
         public Object match(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject other) {
             notDesignedForCompilation();
 
-            // TODO(CS) perhaps I shouldn't be converting match operators to simple calls - they seem to get switched around like this
-
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), getSourceSection().getStartLine(), "strange reversed match operator");
-
             return matchNode.call(frame, other, "=~", null, regexp);
         }
 

@@ -35,11 +35,6 @@ public class LongFixnumLiteralNode extends RubyNode {
         return value;
     }
 
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("expression");
-    }
-
     public long getValue() {
         return value;
     }

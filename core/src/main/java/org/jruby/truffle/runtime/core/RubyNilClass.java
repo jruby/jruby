@@ -58,7 +58,7 @@ public class RubyNilClass extends RubyObject {
     }
 
     @Override
-    public boolean isImmediate() {
+    public boolean hasClassAsSingleton() {
         return true;
     }
 
