@@ -39,7 +39,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_external", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "default_external", isModuleFunction = true, maxArgs = 0)
     public abstract static class DefaultExternalNode extends CoreMethodNode {
 
         public DefaultExternalNode(RubyContext context, SourceSection sourceSection) {
@@ -65,7 +65,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_internal", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "default_internal", isModuleFunction = true, maxArgs = 0)
     public abstract static class DefaultInternalNode extends CoreMethodNode {
 
         public DefaultInternalNode(RubyContext context, SourceSection sourceSection) {
@@ -91,7 +91,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "find", isModuleMethod = true, needsSelf = false, maxArgs = 1, minArgs = 1)
+    @CoreMethod(names = "find", isModuleFunction = true, maxArgs = 1, minArgs = 1)
     public abstract static class FindNode extends CoreMethodNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {

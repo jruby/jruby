@@ -143,12 +143,19 @@ public abstract class CoreMethodNodeManager {
 
         final Visibility visibility = anno.visibility();
 
-        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
+        if (anno.isModuleFunction() && visibility != Visibility.PUBLIC) {
+            System.err.println("WARNING: visibility ignored when isModuleFunction in " + methodDetails.getIndicativeName());
+        }
+
+        // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
+        final boolean needsSelf = !anno.isModuleFunction() && anno.needsSelf();
+
+        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails, needsSelf);
 
         final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
                 Truffle.getRuntime().createCallTarget(rootNode), null);
 
-        if (anno.isModuleMethod()) {
+        if (anno.isModuleFunction()) {
             module.addMethod(null, method.withNewVisibility(Visibility.PRIVATE));
             module.getSingletonClass(null).addMethod(null, method.withNewVisibility(Visibility.PUBLIC));
         } else {
@@ -160,13 +167,13 @@ public abstract class CoreMethodNodeManager {
 
             module.addMethod(null, withAlias);
 
-            if (anno.isModuleMethod()) {
+            if (anno.isModuleFunction()) {
                 module.getSingletonClass(null).addMethod(null, withAlias.withNewVisibility(Visibility.PUBLIC));
             }
         }
     }
 
-    private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
+    private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), false, null);
@@ -175,7 +182,7 @@ public abstract class CoreMethodNodeManager {
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
-        if (methodDetails.getMethodAnnotation().needsSelf()) {
+        if (needsSelf) {
             RubyNode readSelfNode = new SelfNode(context, sourceSection);
 
             if (methodDetails.getMethodAnnotation().lowerFixnumSelf()) {
