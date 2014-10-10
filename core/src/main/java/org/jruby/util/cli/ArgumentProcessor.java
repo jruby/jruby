@@ -550,6 +550,9 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--client")) {
                         // ignore this...can't do anything with it after boot
                         break FOR;
+                    } else if (argument.equals("--yydebug") && Options.COMPLIANCE_STRICT.load()) {
+                        disallowedInRubyOpts(argument);
+                        config.setParserDebug(true);
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
