@@ -38,7 +38,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = "now", isModuleFunction = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "now", isModuleFunction = true, maxArgs = 0)
     public abstract static class NowNode extends CoreMethodNode {
 
         public NowNode(RubyContext context, SourceSection sourceSection) {
@@ -57,7 +57,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = {"from_array", "time_s_from_array"}, isModuleFunction = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = {"from_array", "time_s_from_array"}, isModuleFunction = true, maxArgs = 0)
     public abstract static class FromArrayNode extends CoreMethodNode {
 
         public FromArrayNode(RubyContext context, SourceSection sourceSection) {

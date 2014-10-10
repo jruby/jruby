@@ -16,7 +16,7 @@ import org.jruby.truffle.runtime.*;
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
 
-    @CoreMethod(names = "pid", isModuleFunction = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "pid", isModuleFunction = true, maxArgs = 0)
     public abstract static class PidNode extends CoreMethodNode {
 
         public PidNode(RubyContext context, SourceSection sourceSection) {

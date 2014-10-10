@@ -90,7 +90,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]", isModuleFunction = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "[]", isModuleFunction = true, isSplatted = true)
     public abstract static class ConstructNode extends HashCoreMethodNode {
 
         private final BranchProfile singleObject = new BranchProfile();

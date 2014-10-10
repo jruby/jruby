@@ -62,7 +62,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(names = "yield", isModuleFunction = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "yield", isModuleFunction = true, isSplatted = true)
     public abstract static class YieldNode extends CoreMethodNode {
 
         public YieldNode(RubyContext context, SourceSection sourceSection) {

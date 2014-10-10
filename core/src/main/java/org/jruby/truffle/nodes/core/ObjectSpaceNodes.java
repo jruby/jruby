@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
 
-    @CoreMethod(names = "_id2ref", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "_id2ref", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class ID2RefNode extends CoreMethodNode {
 
         public ID2RefNode(RubyContext context, SourceSection sourceSection) {
@@ -60,7 +60,7 @@ public abstract class ObjectSpaceNodes {
 
     }
 
-    @CoreMethod(names = "each_object", isModuleFunction = true, needsSelf = false, needsBlock = true, minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "each_object", isModuleFunction = true, needsBlock = true, minArgs = 0, maxArgs = 1)
     public abstract static class EachObjectNode extends YieldingCoreMethodNode {
 
         public EachObjectNode(RubyContext context, SourceSection sourceSection) {
@@ -95,7 +95,7 @@ public abstract class ObjectSpaceNodes {
 
     }
 
-    @CoreMethod(names = "define_finalizer", isModuleFunction = true, needsSelf = false, minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "define_finalizer", isModuleFunction = true, minArgs = 2, maxArgs = 2)
     public abstract static class DefineFinalizerNode extends CoreMethodNode {
 
         public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
@@ -115,7 +115,7 @@ public abstract class ObjectSpaceNodes {
         }
     }
 
-    @CoreMethod(names = {"garbage_collect", "start"}, isModuleFunction = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = {"garbage_collect", "start"}, isModuleFunction = true, maxArgs = 0)
     public abstract static class GarbageCollectNode extends CoreMethodNode {
 
         public GarbageCollectNode(RubyContext context, SourceSection sourceSection) {
@@ -148,7 +148,7 @@ public abstract class ObjectSpaceNodes {
         }
     }
 
-    @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class UndefineFinalizerNode extends CoreMethodNode {
 
         public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {

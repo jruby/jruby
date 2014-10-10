@@ -21,8 +21,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
-
-    @CoreMethod(names = "absolute_path", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "absolute_path", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class AbsolutePathNode extends CoreMethodNode {
 
         public AbsolutePathNode(RubyContext context, SourceSection sourceSection) {
@@ -63,7 +62,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "delete", needsSelf = false, isModuleFunction = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "delete", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class DeleteNode extends CoreMethodNode {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
@@ -85,7 +84,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "directory?", isModuleFunction = true, needsSelf = false, maxArgs = 1)
+    @CoreMethod(names = "directory?", isModuleFunction = true, maxArgs = 1)
     public abstract static class DirectoryNode extends CoreMethodNode {
 
         public DirectoryNode(RubyContext context, SourceSection sourceSection) {
@@ -105,7 +104,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "dirname", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "dirname", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class DirnameNode extends CoreMethodNode {
 
         public DirnameNode(RubyContext context, SourceSection sourceSection) {
@@ -173,7 +172,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = {"exist?", "exists?"}, isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"exist?", "exists?"}, isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class ExistsNode extends CoreMethodNode {
 
         public ExistsNode(RubyContext context, SourceSection sourceSection) {
@@ -193,7 +192,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "executable?", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class ExecutableNode extends CoreMethodNode {
 
         public ExecutableNode(RubyContext context, SourceSection sourceSection) {
@@ -213,7 +212,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "expand_path", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "expand_path", isModuleFunction = true, minArgs = 1, maxArgs = 2)
     public abstract static class ExpandPathNode extends CoreMethodNode {
 
         public ExpandPathNode(RubyContext context, SourceSection sourceSection) {
@@ -238,7 +237,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "file?", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "file?", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class FileNode extends CoreMethodNode {
 
         public FileNode(RubyContext context, SourceSection sourceSection) {
@@ -258,7 +257,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "join", isModuleFunction = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "join", isModuleFunction = true, isSplatted = true)
     public abstract static class JoinNode extends CoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -296,7 +295,7 @@ public abstract class FileNodes {
         }
     }
 
-    @CoreMethod(names = "open", isModuleFunction = true, needsSelf = false, needsBlock = true, minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "open", isModuleFunction = true, needsBlock = true, minArgs = 2, maxArgs = 2)
     public abstract static class OpenNode extends YieldingCoreMethodNode {
 
         public OpenNode(RubyContext context, SourceSection sourceSection) {
@@ -393,7 +392,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "size?", minArgs = 1, maxArgs = 1, needsSelf = false, isModuleFunction = true)
+    @CoreMethod(names = "size?", minArgs = 1, maxArgs = 1, isModuleFunction = true)
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {

@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = "[]", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "[]", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class GlobNode extends CoreMethodNode {
 
         public GlobNode(RubyContext context, SourceSection sourceSection) {
@@ -96,7 +96,7 @@ public abstract class DirNodes {
 
     }
 
-    @CoreMethod(names = "chdir", isModuleFunction = true, needsSelf = false, needsBlock = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "chdir", isModuleFunction = true, needsBlock = true, minArgs = 1, maxArgs = 1)
     public abstract static class ChdirNode extends YieldingCoreMethodNode {
 
         public ChdirNode(RubyContext context, SourceSection sourceSection) {
@@ -129,7 +129,7 @@ public abstract class DirNodes {
 
     }
 
-    @CoreMethod(names = {"exist?", "exists?"}, isModuleFunction = true, needsSelf = false, maxArgs = 1)
+    @CoreMethod(names = {"exist?", "exists?"}, isModuleFunction = true, maxArgs = 1)
     public abstract static class ExistsNode extends CoreMethodNode {
 
         public ExistsNode(RubyContext context, SourceSection sourceSection) {
@@ -149,7 +149,7 @@ public abstract class DirNodes {
 
     }
 
-    @CoreMethod(names = "pwd", isModuleFunction = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "pwd", isModuleFunction = true, maxArgs = 0)
     public abstract static class PwdNode extends CoreMethodNode {
 
         public PwdNode(RubyContext context, SourceSection sourceSection) {
