@@ -1232,7 +1232,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "p", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "p", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class PNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode inspect;
@@ -1266,7 +1266,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "print", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "print", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toS;

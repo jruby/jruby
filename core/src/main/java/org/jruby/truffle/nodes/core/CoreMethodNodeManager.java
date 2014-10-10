@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -142,6 +143,10 @@ public abstract class CoreMethodNodeManager {
         final List<String> aliases = names.subList(1, names.size());
 
         final Visibility visibility = anno.visibility();
+
+        if (anno.isModuleMethod() && visibility != Visibility.PUBLIC) {
+            System.err.println("WARNING: visibility ignored when isModuleMethod in " + methodDetails.getIndicativeName());
+        }
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
