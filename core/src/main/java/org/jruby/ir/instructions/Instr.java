@@ -58,12 +58,16 @@ public abstract class Instr {
         return operation;
     }
 
+    @Interp
     public int getIPC() { return ipc; }
 
+    @Interp
     public void setIPC(int ipc) { this.ipc = ipc; }
 
+    @Interp
     public int getRPC() { return rpc; }
 
+    @Interp
     public void setRPC(int rpc) { this.rpc = rpc; }
 
     // Does this instruction have side effects as a result of its operation
