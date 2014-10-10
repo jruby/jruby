@@ -21,7 +21,6 @@ import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -144,8 +143,8 @@ public abstract class CoreMethodNodeManager {
 
         final Visibility visibility = anno.visibility();
 
-        if (anno.isModuleMethod() && visibility != Visibility.PUBLIC) {
-            System.err.println("WARNING: visibility ignored when isModuleMethod in " + methodDetails.getIndicativeName());
+        if (anno.isModuleFunction() && visibility != Visibility.PUBLIC) {
+            System.err.println("WARNING: visibility ignored when isModuleFunction in " + methodDetails.getIndicativeName());
         }
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
@@ -153,7 +152,7 @@ public abstract class CoreMethodNodeManager {
         final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
                 Truffle.getRuntime().createCallTarget(rootNode), null);
 
-        if (anno.isModuleMethod()) {
+        if (anno.isModuleFunction()) {
             module.addMethod(null, method.withNewVisibility(Visibility.PRIVATE));
             module.getSingletonClass(null).addMethod(null, method.withNewVisibility(Visibility.PUBLIC));
         } else {
@@ -165,7 +164,7 @@ public abstract class CoreMethodNodeManager {
 
             module.addMethod(null, withAlias);
 
-            if (anno.isModuleMethod()) {
+            if (anno.isModuleFunction()) {
                 module.getSingletonClass(null).addMethod(null, withAlias.withNewVisibility(Visibility.PUBLIC));
             }
         }

@@ -23,7 +23,7 @@ import sun.misc.SignalHandler;
 @CoreClass(name = "Signal")
 public abstract class SignalNodes {
 
-    @CoreMethod(names = "trap", isModuleMethod = true, needsSelf = false, needsBlock = true, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "trap", isModuleFunction = true, needsSelf = false, needsBlock = true, minArgs = 1, maxArgs = 2)
     public abstract static class SignalNode extends CoreMethodNode {
 
         public SignalNode(RubyContext context, SourceSection sourceSection) {

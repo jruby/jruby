@@ -9,11 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -113,7 +111,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "escape", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "escape", isModuleFunction = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class EscapeNode extends CoreMethodNode {
 
         public EscapeNode(RubyContext context, SourceSection sourceSection) {

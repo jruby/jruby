@@ -35,8 +35,6 @@ import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 @CoreClass(name = "Module")
@@ -804,7 +802,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "nesting", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "nesting", isModuleFunction = true, needsSelf = false, maxArgs = 0)
     public abstract static class NestingNode extends CoreMethodNode {
 
         public NestingNode(RubyContext context, SourceSection sourceSection) {

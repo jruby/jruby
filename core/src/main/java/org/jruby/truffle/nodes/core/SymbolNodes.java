@@ -67,7 +67,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "all_symbols", isModuleFunction = true, needsSelf = false, maxArgs = 0)
     public abstract static class AllSymbolsNode extends CoreMethodNode {
 
         public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {

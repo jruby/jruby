@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -17,7 +16,7 @@ import org.jruby.truffle.runtime.*;
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
 
-    @CoreMethod(names = "pid", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "pid", isModuleFunction = true, needsSelf = false, maxArgs = 0)
     public abstract static class PidNode extends CoreMethodNode {
 
         public PidNode(RubyContext context, SourceSection sourceSection) {

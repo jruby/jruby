@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.util.TypeConversionUtils;
 
 @CoreClass(name = "ByteArray")
 public abstract class ByteArrayNodes {
-    @CoreMethod(names = "allocate", isModuleMethod = true, needsSelf = false)
+    @CoreMethod(names = "allocate", isModuleFunction = true, needsSelf = false)
     public abstract static class AllocateNode extends CoreMethodNode {
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -34,7 +34,7 @@ public abstract class ByteArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"new", "allocate_sized"}, isModuleMethod = true, needsSelf = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"new", "allocate_sized"}, isModuleFunction = true, needsSelf = true, minArgs = 1, maxArgs = 1)
     public abstract static class AllocateSizedNode extends CoreMethodNode {
         @Child
         protected DispatchHeadNode bytesToIntNode;
