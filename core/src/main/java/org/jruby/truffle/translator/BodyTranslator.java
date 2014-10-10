@@ -1343,13 +1343,13 @@ public class BodyTranslator extends Translator {
             for (int n = 0; n < assignedValuesCount; n++) {
                 final String tempName = environment.allocateLocalTemp("multi");
                 final RubyNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
-                final RubyNode assignTemp = ((ReadNode) readTemp).makeWriteNode(rhsValues[n]);
-                final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), readTemp);
+                final RubyNode assignTemp = ((ReadNode) NodeUtil.cloneNode(readTemp)).makeWriteNode(rhsValues[n]);
+                final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), NodeUtil.cloneNode(readTemp));
 
                 sequence[n] = assignTemp;
                 sequence[assignedValuesCount + n] = assignFinalValue;
 
-                tempValues[n] = readTemp;
+                tempValues[n] = NodeUtil.cloneNode(readTemp);
             }
 
             final RubyNode blockNode = SequenceNode.sequence(context, sourceSection, sequence);
@@ -1633,7 +1633,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
         if (node.getPosition() == ISourcePosition.INVALID_POSITION && parentSourceSection == null) {
-            throw new UnsupportedOperationException();
+            return new DeadNode(context, null);
         }
 
         return new NilLiteralNode(context, translate(node.getPosition()));
