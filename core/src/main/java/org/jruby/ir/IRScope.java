@@ -510,11 +510,11 @@ public abstract class IRScope implements ParseResult {
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
 
-        System.out.println("CFG.original");
-        System.out.println(cfg().toStringInstrs());
+        //System.out.println("CFG.original");
+        //System.out.println(cfg().toStringInstrs());
 
-        System.out.println("CFG.new");
-        System.out.println(cfg().clone(new SimpleCloneInfo(this, false), this).toStringInstrs());
+        //System.out.println("CFG.new");
+        //System.out.println(cfg().clone(new SimpleCloneInfo(this, false), this).toStringInstrs());
 
         // Set up rescue map
         setupRescueMap();
