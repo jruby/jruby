@@ -1,7 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -46,7 +46,7 @@ public class TemporaryLocalVariable extends TemporaryVariable {
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
+    public Variable clone(SimpleCloneInfo ii) {
         return new TemporaryLocalVariable(offset);
     }
 

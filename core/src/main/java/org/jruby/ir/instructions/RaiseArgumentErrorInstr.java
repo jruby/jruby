@@ -4,7 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
@@ -53,7 +53,7 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return this;
     }
 

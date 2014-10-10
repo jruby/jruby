@@ -107,6 +107,23 @@ public abstract class NilClassNodes {
         }
     }
 
+    @CoreMethod(names = "to_a", needsSelf = false, maxArgs = 0)
+    public abstract static class ToANode extends CoreMethodNode {
+
+        public ToANode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToANode(ToANode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray toA() {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+    }
+
     @CoreMethod(names = "to_i", needsSelf = false, maxArgs = 0)
     public abstract static class ToINode extends CoreMethodNode {
 

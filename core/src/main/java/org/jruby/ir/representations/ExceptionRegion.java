@@ -1,7 +1,6 @@
 package org.jruby.ir.representations;
 
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,22 +51,6 @@ class ExceptionRegion {
 
     public Label getFirstRescueBlockLabel() {
         return firstRescueBlockLabel;
-    }
-
-    public ExceptionRegion cloneForInlining(InlinerInfo ii) {
-        ExceptionRegion newR = new ExceptionRegion(ii.getRenamedLabel(firstRescueBlockLabel),
-            ii.getRenamedBB(this.startBB));
-        newR.endBB = ii.getRenamedBB(endBB);
-
-        for (BasicBlock b: exclusiveBBs) {
-            newR.addBB(ii.getRenamedBB(b));
-        }
-
-        for (ExceptionRegion r: nestedRegions) {
-            newR.addNestedRegion(r.cloneForInlining(ii));
-        }
-
-        return newR;
     }
 
     @Override

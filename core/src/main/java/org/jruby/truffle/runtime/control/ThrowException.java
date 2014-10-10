@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.control;
 
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 
 /**
  * Controls throwing a value. Note that throwing is different to raising in Ruby, which is the

@@ -30,7 +30,7 @@ public class LocalOptimizationPass extends CompilerPass {
     public Object execute(IRScope s, Object... data) {
         // This let us compute execute scope flags for a method based on what all nested closures do
         for (IRClosure c: s.getClosures()) {
-            run(c, true);
+            run(c, false, true);
         }
 
         for (BasicBlock b: ((CFG) data[0]).getBasicBlocks()) {
@@ -41,6 +41,12 @@ public class LocalOptimizationPass extends CompilerPass {
         // Why 'Only after running local opts'?  Figure out and document.
         // Only after running local opts, compute various execution scope flags.
         s.computeScopeFlags();
+
+        // LVA information is no longer valid after this pass
+        // Currently, we don't run this after LVA, but just in case ...
+        //
+        // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
+        (new LiveVariableAnalysis()).invalidate(s);
 
         return null;
     }

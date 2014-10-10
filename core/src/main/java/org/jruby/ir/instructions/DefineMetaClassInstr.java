@@ -5,9 +5,8 @@ import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -68,7 +67,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr, FixedAri
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), metaClassBody);
     }
 

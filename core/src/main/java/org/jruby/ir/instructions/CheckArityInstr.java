@@ -5,7 +5,9 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.runtime.ThreadContext;
 
 public class CheckArityInstr extends Instr implements FixedArityInstr {
@@ -36,24 +38,21 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        switch (ii.getCloneMode()) {
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey);
-            default:
-                if (ii.canMapArgsStatically()) {
-                    // Since we know arity at a callsite, arity check passes or we have an ArgumentError
-                    int numArgs = ii.getArgsCount();
-                    if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-                        return new RaiseArgumentErrorInstr(required, opt, rest, rest);
-                    }
+    public Instr clone(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey);
 
-                    return null;
-                } else {
-                    return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
-                }
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+        if (ii.canMapArgsStatically()) { // we can error on bad arity or remove check_arity
+            int numArgs = ii.getArgsCount();
+
+            if (numArgs < required || (rest == -1 && numArgs > (required + opt))) {
+                return new RaiseArgumentErrorInstr(required, opt, rest, rest);
+            }
+
+            return null;
         }
+
+        return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
     }
 
     public void checkArity(ThreadContext context, Object[] args) {

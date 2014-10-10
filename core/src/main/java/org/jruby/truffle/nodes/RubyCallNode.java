@@ -50,6 +50,8 @@ public class RubyCallNode extends RubyNode {
     @Child protected DispatchHeadNode respondToMissing;
     @Child protected BooleanCastNode respondToMissingCast;
 
+    private final boolean fcall;
+
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         this(context, section, methodName, receiver, block, isSplatted, false, false, arguments);
     }
@@ -73,6 +75,8 @@ public class RubyCallNode extends RubyNode {
         dispatchHead = new DispatchHeadNode(context, fcall, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         respondToMissing = new DispatchHeadNode(context, fcall, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
+
+        this.fcall = fcall;
     }
 
     @Override
@@ -200,7 +204,7 @@ public class RubyCallNode extends RubyNode {
             }
         } else if (method.isUndefined()) {
             return NilPlaceholder.INSTANCE;
-        } else if (!method.isVisibleTo(this, self)) {
+        } else if (!fcall && !method.isVisibleTo(this, self)) {
             return NilPlaceholder.INSTANCE;
         }
 

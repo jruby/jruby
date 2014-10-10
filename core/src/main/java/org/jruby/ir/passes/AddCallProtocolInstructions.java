@@ -153,7 +153,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
         // FIXME: Useless for now
         // Run on all nested closures.
-        for (IRClosure c: scope.getClosures()) execute(c);
+        for (IRClosure c: scope.getClosures()) run(c, false, true);
 
         // LVA information is no longer valid after the pass
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate

@@ -5,7 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -61,7 +61,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr, F
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), currentModule.cloneForInlining(ii), constName, noPrivateConsts);
     }
 

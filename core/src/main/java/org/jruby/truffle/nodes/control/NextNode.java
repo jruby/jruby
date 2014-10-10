@@ -38,4 +38,5 @@ public class NextNode extends RubyNode {
             throw new NextException(child.execute(frame));
         }
     }
+
 }

@@ -6,7 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -37,7 +37,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), argName, required);
     }
 

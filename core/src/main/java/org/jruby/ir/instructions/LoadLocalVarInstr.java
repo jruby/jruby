@@ -5,7 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -60,7 +60,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityI
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
         return new LoadLocalVarInstr(scope, (TemporaryLocalVariable)ii.getRenamedVariable(result), (LocalVariable)ii.getRenamedVariable(lvar));
     }

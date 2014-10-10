@@ -4,7 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class LabelInstr extends Instr implements FixedArityInstr {
     public final Label label;
@@ -26,7 +26,7 @@ public class LabelInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new LabelInstr(ii.getRenamedLabel(label));
     }
 

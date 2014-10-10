@@ -134,7 +134,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_RUNTIME_VERSION_CHECK = bool(TRUFFLE, "truffle.runtime.version_check", true, "Check the version of Truffle supplied by the JVM before starting.");
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.trace", true, "Install trace probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_OBJECTSPACE = bool(TRUFFLE, "truffle.object_space", true, "Install safepoints needed for ObjectSpace.");
-    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", true, "Print Java exceptions at the point of translating them to Ruby exceptions.");
+    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");
     public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] for an Array and it has been converted to a long[], directly allocate a long[] next time.");
     public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
@@ -152,6 +152,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_LOAD_PRINT = bool(TRUFFLE, "truffle.load.print", false, "Print the name of files as they're loaded.");
     public static final Option<Boolean> TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT = bool(TRUFFLE, "truffle.debug.enable_assert_constant", false, "Enable special 'truffle_assert_constant' form.");
     public static final Option<Boolean> TRUFFLE_CALL_FORCE_SPLIT_INLINE_MISSING = bool(TRUFFLE, "truffle.call.force_split_inline_missing", true, "Force splitting/inlining of a method missing call.");
+    public static final Option<Boolean> TRUFFLE_PANIC_ON_JAVA_ASSERT = bool(TRUFFLE, "truffle.debug.panic_on_java_assert", false, "Panic as soon as a Java assertion failure is found.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

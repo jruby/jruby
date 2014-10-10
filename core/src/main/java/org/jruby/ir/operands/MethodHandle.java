@@ -5,7 +5,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -80,7 +80,7 @@ public class MethodHandle extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return new MethodHandle(methodName.cloneForInlining(ii), receiver.cloneForInlining(ii));
     }
 

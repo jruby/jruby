@@ -432,7 +432,7 @@ public class CoreLibrary {
     }
 
     public RubyException localJumpError(String message, Node currentNode) {
-        return new RubyException(localJumpErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(localJumpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException unexpectedReturn(Node currentNode) {
@@ -445,6 +445,10 @@ public class CoreLibrary {
 
     public RubyException typeError(String message, Node currentNode) {
         return new RubyException(typeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException typeErrorCantDefineSingleton(Node currentNode) {
+        return typeError("can't define singleton", currentNode);
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
@@ -477,6 +481,10 @@ public class CoreLibrary {
 
     public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
         return nameError(String.format("`%s' is not allowable as an instance variable name", name), currentNode);
+    }
+
+    public RubyException nameErrorReadOnly(String name, Node currentNode) {
+        return nameError(String.format("%s is a read-only variable", name), currentNode);
     }
 
     public RubyException noMethodError(String message, Node currentNode) {
@@ -713,5 +721,9 @@ public class CoreLibrary {
 
     public RubiniusLibrary getRubiniusLibrary() {
         return rubiniusLibrary;
+    }
+
+    public RubyClass getArgumentErrorClass() {
+        return argumentErrorClass;
     }
 }

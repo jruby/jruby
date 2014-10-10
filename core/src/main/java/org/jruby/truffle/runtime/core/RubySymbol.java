@@ -141,7 +141,7 @@ public class RubySymbol extends RubyObject {
     }
 
     @Override
-    public boolean isImmediate() {
+    public boolean hasNoSingleton() {
         return true;
     }
 

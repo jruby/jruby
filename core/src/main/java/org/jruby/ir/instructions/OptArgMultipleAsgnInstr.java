@@ -7,7 +7,7 @@ import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -41,7 +41,7 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedAr
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), index, minArgsLength);
     }
 

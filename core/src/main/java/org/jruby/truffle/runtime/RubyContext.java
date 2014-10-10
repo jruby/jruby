@@ -14,7 +14,9 @@ import java.math.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Queue;
 import java.util.concurrent.atomic.*;
 
 import com.oracle.truffle.api.instrument.SourceCallback;
@@ -29,10 +31,12 @@ import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.debug.RubyASTProber;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -75,6 +79,15 @@ public class RubyContext extends ExecutionContext {
     private SourceCallback sourceCallback = null;
 
     private final AtomicLong nextObjectID = new AtomicLong(0);
+
+    private final ThreadLocal<Queue<Object>> throwTags = new ThreadLocal<Queue<Object>>() {
+
+        @Override
+        protected Queue<Object> initialValue() {
+            return new ArrayDeque<>();
+        }
+
+    };
 
     public RubyContext(Ruby runtime) {
         assert runtime != null;
@@ -374,6 +387,25 @@ public class RubyContext extends ExecutionContext {
 
     public Warnings getWarnings() {
         return warnings;
+    }
+
+    public <T> T handlingTopLevelRaise(Supplier<T> run, T defaultValue) {
+        try {
+            return run.get();
+        } catch (RaiseException e) {
+            // TODO(CS): what's this cast about?
+            final RubyException rubyException = (RubyException) e.getRubyException();
+
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(this, rubyException, rubyException.getBacktrace())) {
+                System.err.println(line);
+            }
+
+            return defaultValue;
+        }
+    }
+
+    public Queue<Object> getThrowTags() {
+        return throwTags.get();
     }
 
 }

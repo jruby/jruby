@@ -5,7 +5,9 @@ import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public final String methodName; // Primarily a debugging aid
@@ -33,21 +35,21 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        switch (ii.getCloneMode()) {
-            case CLOSURE_INLINE:
-                if (ii.getInlineHostScope() instanceof IRMethod) {
-                    // Treat like inlining of a regular method-return
-                    Variable v = ii.getCallResultVariable();
-                    return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
-                }
-                // fall through
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName, maybeLambda);
-            default:
-                return super.cloneForInlining(ii);
+    public Instr clone(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(returnValue.cloneForInlining(info), methodName, maybeLambda);
+
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+        if (ii.isClosure()) {
+            if (ii.getHostScope() instanceof IRMethod) {
+                // Treat like inlining of a regular method-return
+                Variable v = ii.getCallResultVariable();
+                return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+            }
+
+            return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName, maybeLambda);
         }
+
+        return super.clone(ii);
     }
 
     @Override

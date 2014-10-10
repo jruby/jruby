@@ -7,7 +7,9 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 import java.util.Map;
 
@@ -61,37 +63,38 @@ public class BreakInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        switch (ii.getCloneMode()) {
-            case CLOSURE_INLINE:
-                // SSS FIXME: This is buggy!
-                //
-                // If scopeIdToReturnTo is a closure, it could have
-                // been cloned as well!! This is only an issue if we
-                // inline in closures. But, if we always inline in methods,
-                // this will continue to work.
-                //
-                // Hmm ... we need to figure out the required inlining info here.
-                //
-                // if (ii.getInlineHostScope().getScopeId() == scopeIdToReturnTo) {
-                //
-                if (false) {
-                    // If the break got inlined into the scope we had to break to, replace the break
-                    // with a COPY of the break-value into the call's result var.
-                    // Ex: v = foo { ..; break n; ..}.  So, "break n" is replaced with "v = n"
-                    // The CFG for the closure will be such that after break, control goes to the
-                    // scope exit block.  So, we know that after the copy, we'll continue with the
-                    // instruction after the call.
-                    Variable v = ii.getCallResultVariable();
-                    return (v == null) ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
-                }
-                // fall through
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new BreakInstr(returnValue.cloneForInlining(ii), scopeName);
-            default:
-                return super.cloneForInlining(ii);
+    public Instr clone(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) return new BreakInstr(returnValue.cloneForInlining(info), scopeName);
+
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+
+        if (ii.isClosure()) {
+            // SSS FIXME: This is buggy!
+            //
+            // If scopeIdToReturnTo is a closure, it could have
+            // been cloned as well!! This is only an issue if we
+            // inline in closures. But, if we always inline in methods,
+            // this will continue to work.
+            //
+            // Hmm ... we need to figure out the required inlining info here.
+            //
+            // if (ii.getHostScope().getScopeId() == scopeIdToReturnTo) {
+            //
+            if (false) {
+                // If the break got inlined into the scope we had to break to, replace the break
+                // with a COPY of the break-value into the call's result var.
+                // Ex: v = foo { ..; break n; ..}.  So, "break n" is replaced with "v = n"
+                // The CFG for the closure will be such that after break, control goes to the
+                // scope exit block.  So, we know that after the copy, we'll continue with the
+                // instruction after the call.
+                Variable v = ii.getCallResultVariable();
+                return (v == null) ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+            }
+
+            return new BreakInstr(returnValue.cloneForInlining(ii), scopeName);
         }
+
+        return super.clone(ii);
     }
 
     @Override

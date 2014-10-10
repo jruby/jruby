@@ -1,7 +1,6 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
@@ -15,7 +14,6 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;

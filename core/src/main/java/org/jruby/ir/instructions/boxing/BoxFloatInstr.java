@@ -5,7 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class BoxFloatInstr extends BoxInstr {
     public BoxFloatInstr(Variable dst, Operand val) {
@@ -13,7 +13,7 @@ public class BoxFloatInstr extends BoxInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new BoxFloatInstr(ii.getRenamedVariable(getResult()), getValue().cloneForInlining(ii));
     }
 

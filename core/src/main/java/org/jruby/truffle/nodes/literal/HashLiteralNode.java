@@ -60,11 +60,6 @@ public abstract class HashLiteralNode extends RubyNode {
         }
     }
 
-    @Override
-    public Object isDefined(@SuppressWarnings("unused") VirtualFrame frame) {
-        return getContext().makeString("expression");
-    }
-
     public static class EmptyHashLiteralNode extends HashLiteralNode {
 
         public EmptyHashLiteralNode(RubyContext context, SourceSection sourceSection) {

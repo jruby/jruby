@@ -7,7 +7,7 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -46,7 +46,7 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new DefineInstanceMethodInstr(method);
     }
 

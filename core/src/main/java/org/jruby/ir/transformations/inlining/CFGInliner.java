@@ -21,10 +21,10 @@ public class CFGInliner {
         this.cfg = build;
     }
 
-    private InlinerInfo cloneHostInstrs(CFG cfg) {
+    private SimpleCloneInfo cloneHostInstrs(CFG cfg) {
         cfg.getScope().initNestedClosures();
 
-        InlinerInfo ii = new InlinerInfo(cfg);
+        SimpleCloneInfo ii = new SimpleCloneInfo(cfg.getScope(), false);
         for (BasicBlock b : cfg.getBasicBlocks()) {
             b.cloneInstrs(ii);
         }
@@ -32,7 +32,7 @@ public class CFGInliner {
         return ii;
     }
 
-    private CFG cloneSelf(InlinerInfo ii) {
+    private CFG cloneSelf(InlineCloneInfo ii) {
         CFG selfClone = new CFG(cfg.getScope());
 
         // clone bbs
@@ -100,10 +100,7 @@ public class CFGInliner {
         }
         cfg.removeAllOutgoingEdgesForBB(callBB);
 
-        InlinerInfo hostCloneInfo = null;
-        if (cloneHost) {
-            hostCloneInfo = cloneHostInstrs(cfg);
-        }
+        SimpleCloneInfo hostCloneInfo = cloneHost ? cloneHostInstrs(cfg) : null;
 
         // Host method data init
         Operand callReceiver = call.getReceiver();
@@ -114,7 +111,7 @@ public class CFGInliner {
             callReceiverVar = hostScope.createTemporaryVariable();
         }
 
-        InlinerInfo ii = new InlinerInfo(call, cfg, callReceiverVar);
+        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar);
 
         // Inlinee method data init
         CFG methodCFG = scope.getCFG();
@@ -258,7 +255,7 @@ public class CFGInliner {
 */
     }
 
-    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
+    private void inlineClosureAtYieldSite(InlineCloneInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfg.getScope().getNewLabel(), false);
         cfg.addBasicBlock(splitBB);

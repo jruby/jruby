@@ -24,6 +24,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.util.cli.Options;
 
 public class ExceptionTranslatingNode extends RubyNode {
 
@@ -120,6 +121,10 @@ public class ExceptionTranslatingNode extends RubyNode {
     public RubyBasicObject translate(Throwable throwable) {
         if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
             throwable.printStackTrace();
+        }
+
+        if (Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load() && throwable instanceof AssertionError) {
+            panic(throwable.toString());
         }
 
         return getContext().getCoreLibrary().internalError(throwable.getClass().getSimpleName(), this);

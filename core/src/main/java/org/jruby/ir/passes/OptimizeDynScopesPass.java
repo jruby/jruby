@@ -109,6 +109,10 @@ public class OptimizeDynScopesPass extends CompilerPass {
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
             for (Instr i: b.getInstrs()) i.renameVars(varRenameMap);
         }
+
+        // LVA information is no longer valid after this pass
+        // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
+        (new LiveVariableAnalysis()).invalidate(s);
     }
 
     @Override

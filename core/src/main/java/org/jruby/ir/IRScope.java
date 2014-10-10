@@ -584,14 +584,15 @@ public abstract class IRScope implements ParseResult {
     private void optimizeSimpleScopes() {
         // For safe scopes that don't require a dynamic scope,
         // run DCE since the analysis is less likely to be
-        // stymied by escaped bindings.
+        // stymied by escaped bindings. We can also eliminate
+        // dynscopes for these scopes.
         if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
             (new DeadCodeElimination()).run(this);
             (new OptimizeDynScopesPass()).run(this);
         }
     }
 
-    public void initScope(boolean isLambda) {
+    private void initScope(boolean isLambda, boolean jitMode) {
         // Reset linearization, if any exists
         resetLinearizationData();
 
@@ -611,17 +612,19 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getCompilerPasses(this));
 
-        if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
-            // Run DCE and var load/store passes where applicable
-            // But, if we have been passed in a list of passes to run
-            // on the commandline, skip this opt.
+        if (!jitMode && RubyInstanceConfig.IR_COMPILER_PASSES == null) {
+            // Skip this if:
+            // * we are in JIT mode since they are being run as part
+            //   of JIT passes in a way that minimizes LVA invalidations.
+            // * we have been passed in a list of passes to run on the
+            //   commandline (so as to honor the commandline request).
             optimizeSimpleScopes();
         }
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
-        initScope(isLambda);
+        initScope(isLambda, false);
 
         checkRelinearization();
 
@@ -643,7 +646,7 @@ public abstract class IRScope implements ParseResult {
         // mark all closures lambdas always. But, check if there are
         // other smarts available to us and eliminate adding
         // this code to every closure there is.
-        initScope(this instanceof IRClosure);
+        initScope(this instanceof IRClosure, true);
 
         runCompilerPasses(getManager().getJITPasses(this));
 
@@ -758,6 +761,7 @@ public abstract class IRScope implements ParseResult {
             || flags.contains(HAS_NONLOCAL_RETURNS)
             || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
             || flags.contains(BINDING_HAS_ESCAPED)
+            || flags.contains(USES_ZSUPER)
                // SSS FIXME: checkArity for keyword args
                // looks up a keyword arg in the static scope
                // which currently requires a dynamic scope to

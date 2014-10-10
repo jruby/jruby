@@ -1,6 +1,6 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class TemporaryClosureVariable extends TemporaryLocalVariable {
     final int closureId;
@@ -21,7 +21,7 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
+    public Variable clone(SimpleCloneInfo ii) {
         return new TemporaryClosureVariable(closureId, offset);
     }
 

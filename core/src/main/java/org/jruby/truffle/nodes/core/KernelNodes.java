@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -391,6 +392,8 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             try {
+                getContext().getThrowTags().add(tag);
+
                 return yield(frame, block);
             } catch (ThrowException e) {
                 if (e.getTag().equals(tag)) {
@@ -400,6 +403,8 @@ public abstract class KernelNodes {
                 } else {
                     throw e;
                 }
+            } finally {
+                getContext().getThrowTags().remove();
             }
         }
     }
@@ -1419,7 +1424,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "raise", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "raise", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 2)
     public abstract static class RaiseNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initialize;
@@ -1432,6 +1437,13 @@ public abstract class KernelNodes {
         public RaiseNode(RaiseNode prev) {
             super(prev);
             initialize = prev.initialize;
+        }
+
+        @Specialization
+        public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, @SuppressWarnings("unused") UndefinedPlaceholder undefined2) {
+            notDesignedForCompilation();
+
+            return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), getContext().makeString("re-raised - don't have the current exception yet!"));
         }
 
         @Specialization
@@ -1789,6 +1801,13 @@ public abstract class KernelNodes {
         @Specialization
         public Object doThrow(Object tag, Object value) {
             notDesignedForCompilation();
+
+            if (!getContext().getThrowTags().contains(tag)) {
+                throw new RaiseException(new RubyException(
+                        getContext().getCoreLibrary().getArgumentErrorClass(),
+                        getContext().makeString(String.format("uncaught throw \"%s\"", tag)),
+                        RubyCallStack.getBacktrace(this)));
+            }
 
             if (value instanceof UndefinedPlaceholder) {
                 throw new ThrowException(tag, NilPlaceholder.INSTANCE);
