@@ -20,6 +20,7 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.CFGInliner;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -508,6 +509,12 @@ public abstract class IRScope implements ParseResult {
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+
+        System.out.println("CFG.original");
+        System.out.println(cfg().toStringInstrs());
+
+        System.out.println("CFG.new");
+        System.out.println(cfg().clone(new SimpleCloneInfo(this, false), this).toStringInstrs());
 
         // Set up rescue map
         setupRescueMap();
