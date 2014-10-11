@@ -177,9 +177,7 @@ public abstract class Instr {
      *                    args and return values.
      * @return a new instruction that can be used in the target scope.
      */
-    public Instr clone(CloneInfo info) {
-        throw new RuntimeException("clone: Not implemented for: " + this.getOperation());
-    }
+    public abstract Instr clone(CloneInfo info);
 
     /**
      * This method takes as input a map of operands to their values, and outputs

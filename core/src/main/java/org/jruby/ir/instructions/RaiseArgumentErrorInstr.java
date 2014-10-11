@@ -54,7 +54,7 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return this;
+        return new RaiseArgumentErrorInstr(required, opt, rest, numArgs);
     }
 
     @Override

@@ -285,7 +285,9 @@ public class IRClosure extends IRScope {
 
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         clone.nestingDepth  = this.nestingDepth;
-        clone.parameterList = this.parameterList;
+        // FIXME: This is fragile. Untangle this state.
+        // Why is this being copied over to InterpretedIRBlockBody?
+        clone.setParameterList(this.parameterList);
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 

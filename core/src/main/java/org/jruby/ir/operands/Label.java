@@ -50,7 +50,9 @@ public class Label extends Operand {
     }
 
     public Label clone() {
-        return new Label(prefix, id);
+        Label newL = new Label(prefix, id);
+        newL.setTargetPC(getTargetPC()); // Strictly not necessary, but, copy everything over
+        return newL;
     }
 
     @Override
