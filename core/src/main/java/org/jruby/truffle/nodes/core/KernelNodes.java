@@ -1517,15 +1517,18 @@ public abstract class KernelNodes {
     public abstract static class RespondToNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode dispatch;
+        @Child protected DispatchHeadNode dispatchIgnoreVisibility;
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RespondToNode(RespondToNode prev) {
             super(prev);
             dispatch = prev.dispatch;
+            dispatchIgnoreVisibility = prev.dispatchIgnoreVisibility;
         }
 
         @Specialization
@@ -1534,9 +1537,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
-            // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, name, object);
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean ignoreVisibility) {
+            if (ignoreVisibility) {
+                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+            } else {
+                return dispatch.doesRespondTo(frame, name, object);
+            }
         }
 
         @Specialization
@@ -1545,9 +1551,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
-            // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, name, object);
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean ignoreVisibility) {
+            if (ignoreVisibility) {
+                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+            } else {
+                return dispatch.doesRespondTo(frame, name, object);
+            }
         }
 
     }

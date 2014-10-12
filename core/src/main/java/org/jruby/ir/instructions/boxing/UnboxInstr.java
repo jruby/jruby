@@ -50,5 +50,4 @@ public class UnboxInstr extends Instr implements ResultInstr {
     public Instr clone(CloneInfo info) {
         throw new UnsupportedOperationException();
     }
-
 }
