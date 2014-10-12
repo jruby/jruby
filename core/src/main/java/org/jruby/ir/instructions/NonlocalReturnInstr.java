@@ -49,7 +49,8 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
             return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName, maybeLambda);
         }
 
-        return super.clone(ii);
+        throw new UnsupportedOperationException();
+        //return super.clone(ii);
     }
 
     @Override
