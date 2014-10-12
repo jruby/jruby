@@ -9,15 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -28,7 +22,7 @@ import java.util.List;
 @CoreClass(name = "IO")
 public abstract class IONodes {
 
-    @CoreMethod(names = "readlines", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "readlines", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class ReadLinesNode extends CoreMethodNode {
 
         public ReadLinesNode(RubyContext context, SourceSection sourceSection) {

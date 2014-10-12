@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class ReceiveExceptionBase extends Instr implements ResultInstr, FixedArityInstr {
     protected Variable result;
@@ -33,4 +34,10 @@ public class ReceiveExceptionBase extends Instr implements ResultInstr, FixedAri
     public void updateResult(Variable v) {
         this.result = v;
     }
+
+    @Override
+    public Instr clone(CloneInfo info) {
+        throw new UnsupportedOperationException();
+    }
+
 }

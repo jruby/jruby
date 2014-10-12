@@ -26,10 +26,10 @@ public class ThreadPollInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        if (ii instanceof SimpleCloneInfo) return this;
+        if (ii instanceof SimpleCloneInfo) return new ThreadPollInstr(onBackEdge);
 
         // Get rid of non-back-edge thread-poll instructions when scopes are inlined
-        return onBackEdge ? this : null;
+        return onBackEdge ? new ThreadPollInstr(onBackEdge) : null;
     }
 
     @Override

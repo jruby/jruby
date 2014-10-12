@@ -277,7 +277,7 @@ public class BodyTranslator extends Translator {
     /**
      * See translateDummyAssignment to understand what this is for.
      */
-    public RubyNode visitCallNodeExtraArgument(CallNode node, RubyNode extraArgument, boolean fcall) {
+    public RubyNode visitCallNodeExtraArgument(CallNode node, RubyNode extraArgument, boolean ignoreVisibility) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
@@ -300,7 +300,7 @@ public class BodyTranslator extends Translator {
                     new RescueNode[] {new RescueAnyNode(context, sourceSection, new NilLiteralNode(context, sourceSection))},
                     new NilLiteralNode(context, sourceSection));
         } else {
-            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), fcall, false, argumentsAndBlock.getArguments());
+            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), ignoreVisibility, false, argumentsAndBlock.getArguments());
         }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());

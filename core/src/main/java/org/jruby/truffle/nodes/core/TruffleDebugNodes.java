@@ -15,13 +15,12 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "TruffleDebug")
 public abstract class TruffleDebugNodes {
 
-    @CoreMethod(names = "array_storage_info", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "array_storage_info", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class ArrayStorageInfoNode extends CoreMethodNode {
 
         public ArrayStorageInfoNode(RubyContext context, SourceSection sourceSection) {
@@ -40,7 +39,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "dump_call_stack", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "dump_call_stack", isModuleFunction = true, maxArgs = 0)
     public abstract static class DumpCallStackNode extends CoreMethodNode {
 
         public DumpCallStackNode(RubyContext context, SourceSection sourceSection) {
@@ -64,7 +63,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "flush_stdout", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "flush_stdout", isModuleFunction = true, maxArgs = 0)
     public abstract static class FlushStdoutNode extends CoreMethodNode {
 
         public FlushStdoutNode(RubyContext context, SourceSection sourceSection) {
@@ -83,7 +82,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "full_tree", isModuleFunction = true, maxArgs = 0)
     public abstract static class FullTreeNode extends CoreMethodNode {
 
         public FullTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -103,7 +102,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "java_class_of", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "java_class_of", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class JavaClassOfNode extends CoreMethodNode {
 
         public JavaClassOfNode(RubyContext context, SourceSection sourceSection) {
@@ -123,7 +122,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "panic", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "panic", isModuleFunction = true, maxArgs = 0)
     public abstract static class PanicNode extends CoreMethodNode {
 
         public PanicNode(RubyContext context, SourceSection sourceSection) {
@@ -142,7 +141,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "parse_tree", isModuleFunction = true, maxArgs = 0)
     public abstract static class ParseTreeNode extends CoreMethodNode {
 
         public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -168,7 +167,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "slow_path", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "slow_path", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class SlowPathNode extends CoreMethodNode {
 
         public SlowPathNode(RubyContext context, SourceSection sourceSection) {
@@ -187,7 +186,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "tree", isModuleFunction = true, maxArgs = 0)
     public abstract static class TreeNode extends CoreMethodNode {
 
         public TreeNode(RubyContext context, SourceSection sourceSection) {

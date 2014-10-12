@@ -510,11 +510,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType)
-    {
+            IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = scope.getInstrsForInterpretation(blockType == Block.Type.LAMBDA);
-        Map<Integer, Integer> rescueMap = scope.getRescueMap();
-
         int      numTempVars    = scope.getTemporaryVariablesCount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
         int      numFloatVars   = scope.getFloatVariablesCount();
@@ -598,7 +595,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                 extractToMethodToAvoidC2Crash(context, instr, t);
 
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
-                ipc = rescueMap.get(instr.getIPC());
+                ipc = instr.getRPC();
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
 
                 if (ipc == -1) {

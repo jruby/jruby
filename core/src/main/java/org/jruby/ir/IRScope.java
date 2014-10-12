@@ -20,6 +20,7 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.CFGInliner;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -111,7 +112,6 @@ public abstract class IRScope implements ParseResult {
 
     private Instr[] linearizedInstrArray;
     private List<BasicBlock> linearizedBBList;
-    private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -475,16 +475,17 @@ public abstract class IRScope implements ParseResult {
 
         setupLinearization();
 
-        // Set up IPCs
+        SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
+
+        // FIXME: If CFG (or linearizedBBList) knew number of instrs we could end up allocing better
+
+        // Pass 1. Set up IPCs for labels and instruct and build linear instr list
         List<Instr> newInstrs = new ArrayList<Instr>();
-        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
-            Label l = b.getLabel();
-            labelIPCMap.put(l, ipc);
-            // This assumes if multiple equal/same labels exist which are scattered around the scope
-            // must be the same Java instance or only this one will get a targetPC set.
-            l.setTargetPC(ipc);
+            // All same-named labels must be same Java instance for this to work or we would need
+            // to examine all Label operands and update this as well which would be expensive.
+            b.getLabel().setTargetPC(ipc);
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
@@ -503,28 +504,29 @@ public abstract class IRScope implements ParseResult {
             }
         }
 
+        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);  // Exit BB ipc
+
         // System.out.println("SCOPE: " + getName());
         // System.out.println("INSTRS: " + cfg().toStringInstrs());
 
-        // Exit BB ipc
-        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
-
-        // Set up rescue map
-        setupRescueMap();
-
         linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
-        return linearizedInstrArray;
-    }
 
-    public void setupRescueMap() {
-        this.rescueMap = new HashMap<Integer, Integer>();
+        // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
+        ipc = 0;
         for (BasicBlock b : linearizedBBList) {
             BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
             int rescuerPC = (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
-            for (Instr i : b.getInstrs()) {
-                rescueMap.put(i.getIPC(), rescuerPC);
+            for (Instr instr : b.getInstrs()) {
+                // FIXME: If we did not omit instrs from previous pass we could end up just doing a
+                // a size and for loop this n times instead of walking an examining each instr
+                if (!(instr instanceof ReceiveSelfInstr)) {
+                    linearizedInstrArray[ipc].setRPC(rescuerPC);
+                    ipc++;
+                }
             }
         }
+
+        return linearizedInstrArray;
     }
 
     private boolean isUnsafeScope() {
@@ -1079,10 +1081,6 @@ public abstract class IRScope implements ParseResult {
         return linearizedBBList;
     }
 
-    public Map<Integer, Integer> getRescueMap() {
-        return this.rescueMap;
-    }
-
     public List<BasicBlock> linearization() {
         depends(cfg());
 
@@ -1118,7 +1116,6 @@ public abstract class IRScope implements ParseResult {
         flags.remove(HAS_NONLOCAL_RETURNS);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        rescueMap = null;
 
         // Invalidate compiler pass state.
         //
