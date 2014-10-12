@@ -48,8 +48,12 @@ public class RubyTime extends RubyObject {
         this.nanoseconds = nanoseconds;
     }
 
-    public long getSeconds() {
+    public long getWholeSeconds() {
         return seconds;
+    }
+
+    public double getRealSeconds() {
+        return seconds + nanosecondsToSecond(nanoseconds);
     }
 
     public static RubyTime fromDate(RubyClass timeClass, long timeMiliseconds) {

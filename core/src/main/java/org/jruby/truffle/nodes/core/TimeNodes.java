@@ -33,7 +33,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public double sub(RubyTime a, RubyTime b) {
-            return a.getSeconds() - b.getSeconds();
+            return a.getRealSeconds() - b.getRealSeconds();
         }
 
     }
