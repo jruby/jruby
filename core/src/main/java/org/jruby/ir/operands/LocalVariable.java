@@ -19,6 +19,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
     protected final String name;
     protected final int scopeDepth;
     protected final int offset;
+    protected final int hcode;
 
     // FIXME: We should resolve to an index into an array but localvariable has no allocator
     public LocalVariable(String name, int scopeDepth, int location) {
@@ -30,6 +31,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
         this.name = name;
         this.scopeDepth = scopeDepth;
         this.offset = location;
+        this.hcode = (name + ":" + offset).hashCode();
     }
 
     public boolean isSameDepth(LocalVariable other) {
@@ -60,20 +62,23 @@ public class LocalVariable extends Variable implements DepthCloneable {
 
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return hcode;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof LocalVariable)) return false;
 
-        return name.equals(((LocalVariable) obj).name);
+        return hashCode() == obj.hashCode();
     }
 
     public int compareTo(Object arg0) {
         // ENEBO: what should compareTo when it is not comparable?
         if (!(arg0 instanceof LocalVariable)) return 0;
 
-        return name.compareTo(((LocalVariable) arg0).name);
+        int a = hashCode();
+        int b = arg0.hashCode();
+        return a < b ? -1 : (a == b ? 0 : 1);
     }
 
     @Override
