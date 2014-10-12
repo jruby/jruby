@@ -16,9 +16,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class LocalVariable extends Variable implements DepthCloneable {
-    protected String name;
-    protected int scopeDepth;
-    protected int offset;
+    protected final String name;
+    protected final int scopeDepth;
+    protected final int offset;
 
     // FIXME: We should resolve to an index into an array but localvariable has no allocator
     public LocalVariable(String name, int scopeDepth, int location) {
