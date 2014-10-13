@@ -38,10 +38,7 @@ public final class RubyArguments {
         packed[DECLARATION_FRAME_INDEX] = declarationFrame;
         packed[SELF_INDEX] = self;
         packed[BLOCK_INDEX] = block;
-
-        for (int n = 0; n < arguments.length; n++) {
-            packed[RUNTIME_ARGUMENT_COUNT + n] = arguments[n];
-        }
+        System.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
 
         return packed;
     }
