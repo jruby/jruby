@@ -25,10 +25,6 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
         return super.toString() + "{1F}";
     }
 
-    public Operand getReceiver() {
-        return receiver;
-    }
-
     public long getFixnumArg() {
         return fixNum;
     }
