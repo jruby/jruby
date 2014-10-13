@@ -22,7 +22,7 @@ import java.util.List;
 @CoreClass(name = "IO")
 public abstract class IONodes {
 
-    @CoreMethod(names = "readlines", isModuleFunction = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "readlines", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class ReadLinesNode extends CoreMethodNode {
 
         public ReadLinesNode(RubyContext context, SourceSection sourceSection) {

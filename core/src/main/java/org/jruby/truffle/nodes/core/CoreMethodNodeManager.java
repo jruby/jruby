@@ -153,7 +153,8 @@ public abstract class CoreMethodNodeManager {
         }
 
         // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
-        final boolean needsSelf = !anno.isModuleFunction() && anno.needsSelf();
+        // Usage of needsSelf is quite rare for singleton methods (except constructors).
+        final boolean needsSelf = !anno.isModuleFunction() && !anno.onSingleton() && anno.needsSelf();
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails, needsSelf);
 

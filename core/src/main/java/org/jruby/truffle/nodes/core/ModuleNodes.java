@@ -802,7 +802,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "nesting", isModuleFunction = true, maxArgs = 0)
+    @CoreMethod(names = "nesting", onSingleton = true, maxArgs = 0)
     public abstract static class NestingNode extends CoreMethodNode {
 
         public NestingNode(RubyContext context, SourceSection sourceSection) {
