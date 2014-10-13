@@ -115,7 +115,7 @@ public abstract class ObjectSpaceNodes {
         }
     }
 
-    @CoreMethod(names = {"garbage_collect", "start"}, isModuleFunction = true, maxArgs = 0)
+    @CoreMethod(names = "garbage_collect", isModuleFunction = true, maxArgs = 0)
     public abstract static class GarbageCollectNode extends CoreMethodNode {
 
         public GarbageCollectNode(RubyContext context, SourceSection sourceSection) {
