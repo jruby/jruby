@@ -194,7 +194,8 @@ public class BodyTranslator extends Translator {
      */
     public RubyNode visitAttrAssignNodeExtraArgument(org.jruby.ast.AttrAssignNode node, RubyNode extraArgument) {
         final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), node.getArgsNode(), null);
-        return visitCallNodeExtraArgument(callNode, extraArgument, false);
+        boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
+        return visitCallNodeExtraArgument(callNode, extraArgument, isAccessorOnSelf);
     }
 
     @Override
