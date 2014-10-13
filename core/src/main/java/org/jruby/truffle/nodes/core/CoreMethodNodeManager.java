@@ -173,7 +173,7 @@ public abstract class CoreMethodNodeManager {
     }
 
     private static void addMethod(RubyModule module, RubyMethod method, List<String> aliases, Visibility visibility) {
-        method = method.withNewVisibility(visibility);
+        method = method.withVisibility(visibility);
 
         module.addMethod(null, method);
         for (String alias : aliases) {

@@ -319,7 +319,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
                  * a different visibility to this module.
                  */
 
-                addMethod(currentNode, method.withNewVisibility(visibility));
+                addMethod(currentNode, method.withVisibility(visibility));
             }
         }
     }

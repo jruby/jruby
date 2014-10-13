@@ -19,7 +19,6 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
-import org.jruby.truffle.nodes.core.MathNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -326,7 +325,7 @@ public class CoreLibrary {
         // Just create a dummy object for $stdout - we can use Kernel#print and a special method TruffleDebug.flush_stdout
 
         final RubyBasicObject stdout = new RubyBasicObject(objectClass);
-        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withNewVisibility(Visibility.PUBLIC));
+        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withVisibility(Visibility.PUBLIC));
         stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(truffleDebugModule.getSingletonClass(null), "flush_stdout").withNewName("flush"));
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
