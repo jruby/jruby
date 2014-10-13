@@ -19,6 +19,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -476,29 +477,42 @@ public abstract class IRScope implements ParseResult {
         setupLinearization();
 
         SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
+        // Clear old set
+        initNestedClosures();
 
         // FIXME: If CFG (or linearizedBBList) knew number of instrs we could end up allocing better
 
-        // Pass 1. Set up IPCs for labels and instruct and build linear instr list
+        // Pass 1. Set up IPCs for labels and instructions and build linear instr list
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
             // All same-named labels must be same Java instance for this to work or we would need
             // to examine all Label operands and update this as well which would be expensive.
-            b.getLabel().setTargetPC(ipc);
+            Label l = b.getLabel();
+            Label newL = cloneInfo.getRenamedLabel(l);
+            l.setTargetPC(ipc);
+            newL.setTargetPC(ipc);
+
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
-
-                if (instr instanceof Specializeable) {
-                    instr = ((Specializeable) instr).specializeForInterpretation();
-                    bbInstrs.set(i, instr);
-                }
-
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    newInstrs.add(instr);
-                    instr.setIPC(ipc);
+                    Instr newInstr = instr.clone(cloneInfo);
+                    // if (newInstr == instr) {
+                    //     System.out.println("Instruction " + instr.getOperation() + " returns itself on clone. Probably fragile!");
+                    // }
+
+                    if (newInstr instanceof Specializeable) {
+                        newInstr = ((Specializeable) newInstr).specializeForInterpretation();
+                        // Make sure debug CFG is identical to interpreted instr output
+                        if (IRRuntimeHelpers.isDebug()) {
+                            bbInstrs.set(i, ((Specializeable) instr).specializeForInterpretation());
+                        }
+                    }
+
+                    newInstrs.add(newInstr);
+                    newInstr.setIPC(ipc);
                     ipc++;
                 }
             }
