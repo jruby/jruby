@@ -871,6 +871,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().ldc("const_missing");
         jvmMethod().pushSymbol(constmissinginstr.getMissingConst());
         jvmMethod().invokeVirtual(Type.getType(RubyModule.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(org.jruby.runtime.ThreadContext, java.lang.String, org.jruby.runtime.builtin.IRubyObject)"));
+        jvmStoreLocal(constmissinginstr.getResult());
     }
 
     @Override
