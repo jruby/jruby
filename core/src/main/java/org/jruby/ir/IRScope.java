@@ -475,7 +475,7 @@ public abstract class IRScope implements ParseResult {
 
         SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
         // Clear old set
-        initNestedClosures();
+//        initNestedClosures();
 
         // FIXME: If CFG (or linearizedBBList) knew number of instrs we could end up allocing better
 
