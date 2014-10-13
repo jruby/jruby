@@ -1,4 +1,15 @@
-# Literals
+PETests.tests do
 
-example { truffle_assert_constant true }
-example { truffle_assert_constant false }
+  describe "A boolean" do
+    
+    example "true literal" do
+      truffle_assert_constant true
+    end
+
+    example "false literal" do
+      truffle_assert_constant false
+    end
+
+  end
+
+end

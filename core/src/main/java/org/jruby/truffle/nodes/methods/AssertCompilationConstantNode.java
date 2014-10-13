@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-@NodeChild("body")
+@NodeChild("value")
 public abstract class AssertCompilationConstantNode extends RubyNode {
 
     public AssertCompilationConstantNode(RubyContext context, SourceSection sourceSection) {
@@ -30,27 +30,32 @@ public abstract class AssertCompilationConstantNode extends RubyNode {
 
     @Specialization
     public boolean assertCompilationConstant(boolean value) {
-        return CompilerAsserts.compilationConstant(value);
+        CompilerAsserts.compilationConstant(value);
+        return value;
     }
 
     @Specialization
     public int assertCompilationConstant(int value) {
-        return CompilerAsserts.compilationConstant(value);
+        CompilerAsserts.compilationConstant(value);
+        return value;
     }
 
     @Specialization
     public long assertCompilationConstant(long value) {
-        return CompilerAsserts.compilationConstant(value);
+        CompilerAsserts.compilationConstant(value);
+        return value;
     }
 
     @Specialization
     public double assertCompilationConstant(double value) {
-        return CompilerAsserts.compilationConstant(value);
+        CompilerAsserts.compilationConstant(value);
+        return value;
     }
 
     @Specialization
     public Object assertCompilationConstant(Object value) {
-        return CompilerAsserts.compilationConstant(value);
+        CompilerAsserts.compilationConstant(value);
+        return value;
     }
 
 }
