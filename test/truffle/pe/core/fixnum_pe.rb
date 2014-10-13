@@ -1,4 +1,12 @@
-# Literals
+PETests.tests do
 
-example { truffle_assert_constant 14 }
-example { truffle_assert_constant 0xffffffffffff }
+  describe "A Fixnum" do
+    
+    example "literal" do
+      truffle_assert_constant 14
+      truffle_assert_constant 0xffffffffffff
+    end
+
+  end
+
+end

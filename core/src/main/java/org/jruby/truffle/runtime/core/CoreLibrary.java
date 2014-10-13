@@ -19,7 +19,6 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
-import org.jruby.truffle.nodes.core.MathNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -89,6 +88,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyModule configModule;
     @CompilerDirectives.CompilationFinal private RubyModule enumerableModule;
     @CompilerDirectives.CompilationFinal private RubyModule errnoModule;
+    @CompilerDirectives.CompilationFinal private RubyModule gcModule;
     @CompilerDirectives.CompilationFinal private RubyModule kernelModule;
     @CompilerDirectives.CompilationFinal private RubyModule mathModule;
     @CompilerDirectives.CompilationFinal private RubyModule objectSpaceModule;
@@ -153,6 +153,7 @@ public class CoreLibrary {
         fileClass = new RubyClass(null, null, ioClass, "File");
         fixnumClass = new RubyClass(null, null, integerClass, "Fixnum");
         floatClass = new RubyClass(null, null, numericClass, "Float");
+        gcModule = new RubyModule(moduleClass, null, "GC");
         hashClass = new RubyHash.RubyHashClass(objectClass);
         kernelModule = new RubyModule(moduleClass, null, "Kernel");
         loadErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LoadError");
@@ -256,6 +257,7 @@ public class CoreLibrary {
                         fileClass, //
                         fixnumClass, //
                         floatClass, //
+                        gcModule, //
                         hashClass, //
                         integerClass, //
                         ioClass, //
@@ -323,7 +325,7 @@ public class CoreLibrary {
         // Just create a dummy object for $stdout - we can use Kernel#print and a special method TruffleDebug.flush_stdout
 
         final RubyBasicObject stdout = new RubyBasicObject(objectClass);
-        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withNewVisibility(Visibility.PUBLIC));
+        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withVisibility(Visibility.PUBLIC));
         stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(truffleDebugModule.getSingletonClass(null), "flush_stdout").withNewName("flush"));
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
