@@ -7,13 +7,10 @@ import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
-import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.UnboxingPass;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
@@ -489,7 +486,7 @@ public abstract class IRScope implements ParseResult {
             // All same-named labels must be same Java instance for this to work or we would need
             // to examine all Label operands and update this as well which would be expensive.
             Label l = b.getLabel();
-            Label newL = cloneInfo.getRenamedLabel(l);
+            Label newL = l;//cloneInfo.getRenamedLabel(l);
             l.setTargetPC(ipc);
             newL.setTargetPC(ipc);
 
@@ -498,7 +495,7 @@ public abstract class IRScope implements ParseResult {
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    Instr newInstr = instr.clone(cloneInfo);
+                    Instr newInstr = instr;//.clone(cloneInfo);
                     // if (newInstr == instr) {
                     //     System.out.println("Instruction " + instr.getOperation() + " returns itself on clone. Probably fragile!");
                     // }
