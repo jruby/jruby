@@ -162,7 +162,7 @@ public class Profiler {
 
             IRScope tgtMethod = ircs.tgtM.getIRMethod();
 
-            Instr[] instrs = tgtMethod.getInstrsForInterpretation();
+            Instr[] instrs = tgtMethod.getInstrsForInterpretation().getInstructions();
             // Dont inline large methods -- 500 is arbitrary
             // Can be null if a previously inlined method hasn't been rebuilt
             if ((instrs == null) || instrs.length > 500) {
@@ -228,8 +228,8 @@ public class Profiler {
                 if (bden == 0) bden = 1;
 
                 // Use estimated instr count to order scopes -- rather than raw thread-poll count
-                float aCount = scopeThreadPollCounts.get(a).count * (1.0f * a.getInstrsForInterpretation().length/aden);
-                float bCount = scopeThreadPollCounts.get(b).count * (1.0f * b.getInstrsForInterpretation().length/bden);
+                float aCount = scopeThreadPollCounts.get(a).count * (1.0f * a.getInstrsForInterpretation().getInstructions().length/aden);
+                float bCount = scopeThreadPollCounts.get(b).count * (1.0f * b.getInstrsForInterpretation().getInstructions().length/bden);
                 if (aCount == bCount) return 0;
                 return (aCount < bCount) ? 1 : -1;
             }
