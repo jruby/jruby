@@ -318,7 +318,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             }
 
             case CALL_METHOD_MISSING: {
-                final RubyMethod method = lookup(callingSelf, receiverObject, "method_missing", ignoreVisibility, dispatchAction);
+                final RubyMethod method = lookup(callingSelf, receiverObject, "method_missing", true, dispatchAction);
 
                 if (method == null) {
                     throw new RaiseException(getContext().getCoreLibrary().runtimeError(

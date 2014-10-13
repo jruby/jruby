@@ -129,18 +129,8 @@ public class RubyMethod implements MethodLike {
                 return false;
 
             case PRIVATE:
-                if (module == declaringModule) {
-                    return true;
-                }
-
-                if (module.getSingletonClass(currentNode) == declaringModule) {
-                    return true;
-                }
-
-                if (module.getParentModule() != null && isVisibleToX(currentNode, module.getParentModule())) {
-                    return true;
-                }
-
+                // A private method may only be called with an implicit receiver,
+                // in which case the visibility must not be checked.
                 return false;
 
             default:
