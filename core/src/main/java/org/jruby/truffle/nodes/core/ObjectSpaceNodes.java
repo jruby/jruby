@@ -116,23 +116,13 @@ public abstract class ObjectSpaceNodes {
     }
 
     @CoreMethod(names = "garbage_collect", isModuleFunction = true, maxArgs = 0)
-    public abstract static class GarbageCollectNode extends CoreMethodNode {
-
-        @Child protected GCNodes.GarbageCollectNode gcNode;
-
+    public abstract static class GarbageCollectNode extends GCNodes.GarbageCollectNode {
         public GarbageCollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            gcNode = GCNodesFactory.GarbageCollectNodeFactory.create(context, sourceSection, null);
         }
 
         public GarbageCollectNode(GarbageCollectNode prev) {
             super(prev);
-            this.gcNode = prev.gcNode;
-        }
-
-        @Specialization
-        public NilPlaceholder garbageCollect() {
-            return gcNode.executeGC();
         }
     }
 

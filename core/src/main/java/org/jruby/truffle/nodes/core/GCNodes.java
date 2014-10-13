@@ -27,23 +27,13 @@ import java.math.BigInteger;
 public abstract class GCNodes {
 
     @CoreMethod(names = "start", onSingleton = true, maxArgs = 0)
-    public abstract static class StartNode extends CoreMethodNode {
-
-        @Child protected GarbageCollectNode gcNode;
-
+    public abstract static class StartNode extends GarbageCollectNode {
         public StartNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            gcNode = GCNodesFactory.GarbageCollectNodeFactory.create(context, sourceSection, null);
         }
 
         public StartNode(StartNode prev) {
             super(prev);
-            this.gcNode = prev.gcNode;
-        }
-
-        @Specialization
-        public NilPlaceholder start() {
-            return gcNode.executeGC();
         }
     }
 
