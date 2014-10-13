@@ -12,7 +12,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 
 @CoreClass(name = "Type")
 public abstract class TypeNodes {
-    @CoreMethod(names = "object_kind_of?", isModuleFunction = true)
+    @CoreMethod(names = "object_kind_of?", onSingleton = true)
     public abstract static class ObjKindOfPNode extends CoreMethodNode {
         public ObjKindOfPNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
