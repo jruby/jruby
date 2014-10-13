@@ -26,8 +26,6 @@ public class IRClosure extends IRScope {
 
     private int nestingDepth;      // How many nesting levels within a method is this closure nested in?
 
-    private BlockBody body;
-
     private boolean isBeginEndBlock;
 
     // Block parameters
@@ -35,9 +33,15 @@ public class IRClosure extends IRScope {
 
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
+
     private Arity arity;
     private int argumentType;
     public boolean addedGEBForUncaughtBreaks;
+
+    /** Added for interp/JIT purposes */
+    private BlockBody body;
+
+    /** Added for JIT purposes */
     private Handle handle;
 
     // Used by other constructions and by IREvalScript as well
@@ -285,7 +289,11 @@ public class IRClosure extends IRScope {
 
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         clone.nestingDepth  = this.nestingDepth;
-        clone.parameterList = this.parameterList;
+        // FIXME: This is fragile. Untangle this state.
+        // Why is this being copied over to InterpretedIRBlockBody?
+        clone.setParameterList(this.parameterList);
+        clone.addedGEBForUncaughtBreaks = this.addedGEBForUncaughtBreaks;
+        clone.isBeginEndBlock = this.isBeginEndBlock;
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 

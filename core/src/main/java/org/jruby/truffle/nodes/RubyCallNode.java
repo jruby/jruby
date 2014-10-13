@@ -73,7 +73,7 @@ public class RubyCallNode extends RubyNode {
         this.isSplatted = isSplatted;
 
         dispatchHead = new DispatchHeadNode(context, ignoreVisibility, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, ignoreVisibility, Dispatch.MissingBehavior.RETURN_MISSING);
+        respondToMissing = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
 
         this.ignoreVisibility = ignoreVisibility;

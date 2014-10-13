@@ -111,7 +111,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "escape", isModuleFunction = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "escape", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class EscapeNode extends CoreMethodNode {
 
         public EscapeNode(RubyContext context, SourceSection sourceSection) {

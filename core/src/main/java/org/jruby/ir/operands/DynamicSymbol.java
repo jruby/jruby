@@ -35,7 +35,7 @@ public class DynamicSymbol extends Operand {
     }
 
     public Operand cloneForInlining(CloneInfo ii) {
-        return symbolName.cloneForInlining(ii);
+        return new DynamicSymbol(symbolName.cloneForInlining(ii));
     }
 
     @Override

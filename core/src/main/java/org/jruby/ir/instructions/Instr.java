@@ -33,7 +33,8 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
-    private int ipc;
+    private int ipc; // Interpreter-only: instruction pointer
+    private int rpc; // Interpreter-only: rescue pointer
     private final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
@@ -43,6 +44,7 @@ public abstract class Instr {
 
     public Instr(Operation operation) {
         this.ipc = -1;
+        this.rpc = -1;
         this.operation = operation;
     }
 
@@ -56,9 +58,17 @@ public abstract class Instr {
         return operation;
     }
 
+    @Interp
     public int getIPC() { return ipc; }
 
+    @Interp
     public void setIPC(int ipc) { this.ipc = ipc; }
+
+    @Interp
+    public int getRPC() { return rpc; }
+
+    @Interp
+    public void setRPC(int rpc) { this.rpc = rpc; }
 
     // Does this instruction have side effects as a result of its operation
     // This information is used in optimization phases to impact dead code elimination
@@ -167,9 +177,7 @@ public abstract class Instr {
      *                    args and return values.
      * @return a new instruction that can be used in the target scope.
      */
-    public Instr clone(CloneInfo info) {
-        throw new RuntimeException("clone: Not implemented for: " + this.getOperation());
-    }
+    public abstract Instr clone(CloneInfo info);
 
     /**
      * This method takes as input a map of operands to their values, and outputs

@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.util.TypeConversionUtils;
 
 @CoreClass(name = "ByteArray")
 public abstract class ByteArrayNodes {
-    @CoreMethod(names = "allocate", isModuleFunction = true)
+    @CoreMethod(names = "allocate", onSingleton = true)
     public abstract static class AllocateNode extends CoreMethodNode {
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -35,8 +35,7 @@ public abstract class ByteArrayNodes {
         }
     }
 
-    // FIXME(eregon): this should only be defined on the singleton class, not as an instance method.
-    @CoreMethod(names = {"new", "allocate_sized"}, isModuleFunction = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"new", "allocate_sized"}, onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class AllocateSizedNode extends CoreMethodNode {
         @Child
         protected DispatchHeadNode bytesToIntNode;

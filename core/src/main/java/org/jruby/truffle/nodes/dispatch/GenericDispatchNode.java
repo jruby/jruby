@@ -91,7 +91,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                         ignoreVisibility, dispatchAction);
 
                 if (method == null) {
-                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "method_missing", ignoreVisibility,
+                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "method_missing", true,
                             dispatchAction);
 
                     if (missingMethod == null) {

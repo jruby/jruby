@@ -775,7 +775,7 @@ public abstract class ModuleNodes {
                         throw new UnsupportedOperationException();
                     }
 
-                    module.getSingletonClass(this).addMethod(this, method.withNewVisibility(Visibility.PUBLIC));
+                    module.getSingletonClass(this).addMethod(this, method.withVisibility(Visibility.PUBLIC));
                 }
             }
 
@@ -802,7 +802,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "nesting", isModuleFunction = true, maxArgs = 0)
+    @CoreMethod(names = "nesting", onSingleton = true, maxArgs = 0)
     public abstract static class NestingNode extends CoreMethodNode {
 
         public NestingNode(RubyContext context, SourceSection sourceSection) {
@@ -886,7 +886,7 @@ public abstract class ModuleNodes {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
                 }
 
-                moduleSingleton.addMethod(this, method.withNewVisibility(Visibility.PUBLIC));
+                moduleSingleton.addMethod(this, method.withVisibility(Visibility.PUBLIC));
             }
 
             return module;
@@ -945,7 +945,7 @@ public abstract class ModuleNodes {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
                 }
 
-                moduleSingleton.addMethod(this, method.withNewVisibility(Visibility.PRIVATE));
+                moduleSingleton.addMethod(this, method.withVisibility(Visibility.PRIVATE));
             }
 
             return module;

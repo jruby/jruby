@@ -29,8 +29,8 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        // SSS FIXME: This is buggy! 'scope' might have changed because of cloning.
-        return this;
+        // Use original scope even if inlined -- so debugging / stack-traces are meaningful
+        return new LineNumberInstr(scope, lineNumber);
     }
 
     @Override

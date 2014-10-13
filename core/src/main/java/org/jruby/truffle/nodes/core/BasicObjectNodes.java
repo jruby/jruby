@@ -15,6 +15,7 @@ import java.util.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -146,7 +147,7 @@ public abstract class BasicObjectNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "initialize", needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -199,7 +200,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "method_missing", needsBlock = true, isSplatted = true)
+    @CoreMethod(names = "method_missing", needsBlock = true, isSplatted = true, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {

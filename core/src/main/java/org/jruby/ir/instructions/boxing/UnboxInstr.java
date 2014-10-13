@@ -5,6 +5,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 import java.util.Map;
 
@@ -43,5 +44,10 @@ public class UnboxInstr extends Instr implements ResultInstr {
     @Override
     public String toString() {
         return getResult() + " = " + getOperation() + "(" + val + ")";
+    }
+
+    @Override
+    public Instr clone(CloneInfo info) {
+        throw new UnsupportedOperationException();
     }
 }
