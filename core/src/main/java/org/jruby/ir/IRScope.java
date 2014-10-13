@@ -489,7 +489,7 @@ public abstract class IRScope implements ParseResult {
             // All same-named labels must be same Java instance for this to work or we would need
             // to examine all Label operands and update this as well which would be expensive.
             Label l = b.getLabel();
-            Label newL = cloneInfo.getRenamedLabel(l);
+            Label newL = l;//cloneInfo.getRenamedLabel(l);
             l.setTargetPC(ipc);
             newL.setTargetPC(ipc);
 
@@ -498,7 +498,7 @@ public abstract class IRScope implements ParseResult {
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    Instr newInstr = instr.clone(cloneInfo);
+                    Instr newInstr = instr;//.clone(cloneInfo);
                     // if (newInstr == instr) {
                     //     System.out.println("Instruction " + instr.getOperation() + " returns itself on clone. Probably fragile!");
                     // }
