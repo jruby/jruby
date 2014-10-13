@@ -70,6 +70,24 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 }
             }
 
+/* ----------------------------------------------------------------------
+ * Turning this off for now since this code is buggy and fails a few tests
+ * See example below which fails:
+ *
+       def y; yield; end
+
+       y {
+         def revivify
+           Proc::new
+         end
+
+         y {
+           x = Proc.new {}
+           y = revivify(&x)
+           p x.object_id, y.object_id
+         }
+       }
+ *
             boolean requireFrame = bindingHasEscaped || scope.usesEval();
 
             for (IRFlags flag : scope.getFlags()) {
@@ -87,7 +105,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         requireFrame = true;
                 }
             }
+ * ---------------------------------------------------------------------- */
 
+            boolean requireFrame = true;
             boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores || !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
 
             // FIXME: Why do we need a push/pop for frame & binding for scopes with unrescued exceptions??
