@@ -207,16 +207,23 @@ public class JITCompiler implements JITCompilerMBean {
 
                 String key = SexpMaker.sha1(method.getIRMethod());
                 JVMVisitor visitor = new JVMVisitor();
-                JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts, visitor);
+                JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, visitor);
 
                 generator.compile();
 
+                // FIXME: reinstate active bytecode size check
+                // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
+                // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
+                // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
+                // mechanism of getting all method sizes.
                 Class sourceClass = visitor.defineFromBytecode(method.getIRMethod(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
 
                 if (sourceClass == null) {
                     // class could not be found nor generated; give up on JIT and bail out
                     counts.failCount.incrementAndGet();
                     return;
+                } else {
+                    generator.updateCounters(counts);
                 }
 
                 // successfully got back a jitted method
@@ -291,7 +298,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
     
     public static class JITClassGenerator {
-        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, InterpretedIRMethod method, JITCounts counts, JVMVisitor visitor) {
+        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, InterpretedIRMethod method, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
@@ -309,7 +316,6 @@ public class JITCompiler implements JITCompilerMBean {
             this.name = this.className.replaceAll("/", ".");
             this.methodName = methodName;
             this.ruby = ruby;
-            this.counts = counts;
             this.method = method;
             this.visitor = visitor;
         }
@@ -327,12 +333,12 @@ public class JITCompiler implements JITCompilerMBean {
             // CON FIXME: Really should clone scope before passes in any case
             bytecode = visitor.compileToBytecode(method.getIRMethod());
 
-            if (bytecode.length > Options.JIT_MAXSIZE.load()) {
-                throw new NotCompilableException("bytecode size " + bytecode.length + " too large in " + method.getIRMethod());
-            }
+            compileTime = System.nanoTime() - start;
+        }
 
+        void updateCounters(JITCounts counts) {
             counts.compiledCount.incrementAndGet();
-            counts.compileTime.addAndGet(System.nanoTime() - start);
+            counts.compileTime.addAndGet(compileTime);
             counts.codeSize.addAndGet(bytecode.length);
             counts.averageCompileTime.set(counts.compileTime.get() / counts.compiledCount.get());
             counts.averageCodeSize.set(counts.codeSize.get() / counts.compiledCount.get());
@@ -364,12 +370,12 @@ public class JITCompiler implements JITCompilerMBean {
         private final String packageName;
         private final String className;
         private final String methodName;
-        private final JITCounts counts;
         private final String digestString;
         private final InterpretedIRMethod method;
         private final JVMVisitor visitor;
 
         private byte[] bytecode;
+        private long compileTime;
         private String name;
     }
 
