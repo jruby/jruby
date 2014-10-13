@@ -20,6 +20,7 @@ class MSpecScript
     "spec/ruby/core/file",
     "spec/ruby/core/fixnum",
     "spec/ruby/core/float",
+    "spec/ruby/core/gc",
     "spec/ruby/core/hash",
     "spec/ruby/core/io",
     "spec/ruby/core/kernel",

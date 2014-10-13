@@ -89,6 +89,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyModule configModule;
     @CompilerDirectives.CompilationFinal private RubyModule enumerableModule;
     @CompilerDirectives.CompilationFinal private RubyModule errnoModule;
+    @CompilerDirectives.CompilationFinal private RubyModule gcModule;
     @CompilerDirectives.CompilationFinal private RubyModule kernelModule;
     @CompilerDirectives.CompilationFinal private RubyModule mathModule;
     @CompilerDirectives.CompilationFinal private RubyModule objectSpaceModule;
@@ -153,6 +154,7 @@ public class CoreLibrary {
         fileClass = new RubyClass(null, null, ioClass, "File");
         fixnumClass = new RubyClass(null, null, integerClass, "Fixnum");
         floatClass = new RubyClass(null, null, numericClass, "Float");
+        gcModule = new RubyModule(moduleClass, null, "GC");
         hashClass = new RubyHash.RubyHashClass(objectClass);
         kernelModule = new RubyModule(moduleClass, null, "Kernel");
         loadErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LoadError");
@@ -256,6 +258,7 @@ public class CoreLibrary {
                         fileClass, //
                         fixnumClass, //
                         floatClass, //
+                        gcModule, //
                         hashClass, //
                         integerClass, //
                         ioClass, //

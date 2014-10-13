@@ -72,6 +72,7 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, FixnumNodesFactory.getFactories());
         getMethods(methods, FloatNodesFactory.getFactories());
         getMethods(methods, HashNodesFactory.getFactories());
+        getMethods(methods, GCNodesFactory.getFactories());
         getMethods(methods, IONodesFactory.getFactories());
         getMethods(methods, KernelNodesFactory.getFactories());
         getMethods(methods, MainNodesFactory.getFactories());

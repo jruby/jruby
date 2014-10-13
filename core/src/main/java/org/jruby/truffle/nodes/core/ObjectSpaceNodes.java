@@ -118,33 +118,21 @@ public abstract class ObjectSpaceNodes {
     @CoreMethod(names = "garbage_collect", isModuleFunction = true, maxArgs = 0)
     public abstract static class GarbageCollectNode extends CoreMethodNode {
 
+        @Child protected GCNodes.GarbageCollectNode gcNode;
+
         public GarbageCollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            gcNode = GCNodesFactory.GarbageCollectNodeFactory.create(context, sourceSection, null);
         }
 
         public GarbageCollectNode(GarbageCollectNode prev) {
             super(prev);
+            this.gcNode = prev.gcNode;
         }
 
         @Specialization
         public NilPlaceholder garbageCollect() {
-            return doGC();
-        }
-
-        @CompilerDirectives.SlowPath
-        private NilPlaceholder doGC() {
-            notDesignedForCompilation();
-
-            getContext().outsideGlobalLock(new Runnable() {
-
-                @Override
-                public void run() {
-                    System.gc();
-                }
-
-            });
-
-            return NilPlaceholder.INSTANCE;
+            return gcNode.executeGC();
         }
     }
 
