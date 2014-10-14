@@ -75,6 +75,15 @@ module PETests
     end
   end
 
+  def self.broken_example(description)
+    puts "warning: broken examples not run"
+    #describe "#{description} is not constant" do
+    #  inner_example do
+    #    yield
+    #  end
+    #end
+  end
+
   def self.finish
     print "\n"
 
@@ -125,6 +134,7 @@ require "core/float_pe.rb"
 require "core/symbol_pe.rb"
 require "core/array_pe.rb"
 require "core/hash_pe.rb"
+require "core/kernel/set_trace_func_pe.rb"
 require "macro/pushing_pixels_pe.rb"
 
 # Finished

@@ -36,7 +36,6 @@ public class IRClosure extends IRScope {
 
     private Arity arity;
     private int argumentType;
-    public boolean addedGEBForUncaughtBreaks;
 
     /** Added for interp/JIT purposes */
     private BlockBody body;
@@ -78,7 +77,6 @@ public class IRClosure extends IRScope {
         } else {
             this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
         }
-        this.addedGEBForUncaughtBreaks = false;
         this.blockArgs = new ArrayList<Operand>();
         this.arity = c.arity;
     }
@@ -109,6 +107,21 @@ public class IRClosure extends IRScope {
         }
 
         this.nestingDepth++;
+    }
+
+    public InterpreterContext getInterpreterContext(Operand self) {
+        initScope(false);
+
+        checkRelinearization();
+
+        if (interpreterContext != null) return interpreterContext; // Already prepared
+
+        Instr[] linearizedInstrArray = prepareInstructions();
+        interpreterContext = new ClosureInterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray,
+                self, getStaticScope(), getBlockBody());
+
+        return interpreterContext;
     }
 
     public void setBeginEndBlock() {
@@ -292,7 +305,6 @@ public class IRClosure extends IRScope {
         // FIXME: This is fragile. Untangle this state.
         // Why is this being copied over to InterpretedIRBlockBody?
         clone.setParameterList(this.parameterList);
-        clone.addedGEBForUncaughtBreaks = this.addedGEBForUncaughtBreaks;
         clone.isBeginEndBlock = this.isBeginEndBlock;
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
@@ -325,48 +337,6 @@ public class IRClosure extends IRScope {
         lexicalParent.addClosure(clonedClosure);
 
         return cloneForInlining(ii, clonedClosure);
-    }
-
-    // Add a global-ensure-block to catch uncaught breaks
-    // This is usually required only if this closure is being
-    // used as a lambda, but it is safe to add this for any closure
-
-    protected boolean addGEBForUncaughtBreaks() {
-        // Nothing to do if already done
-        if (addedGEBForUncaughtBreaks) {
-            return false;
-        }
-
-        CFG        cfg = cfg();
-        BasicBlock geb = cfg.getGlobalEnsureBB();
-        if (geb == null) {
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
-            Variable exc = createTemporaryVariable();
-            geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
-            // Handle uncaught break and non-local returns using runtime helpers
-            Variable ret = createTemporaryVariable();
-            geb.addInstr(new RuntimeHelperCall(ret,
-                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
-            geb.addInstr(new ReturnInstr(ret));
-            cfg.addGlobalEnsureBB(geb);
-        } else {
-            // SSS FIXME: Assumptions:
-            //
-            // First instr is a 'ReceiveExceptionBase'
-            // Last instr is a 'ThrowExceptionInstr' -- replaced by handleBreakAndReturnsInLambdas
-
-            List<Instr> instrs = geb.getInstrs();
-            Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
-            Variable ret = createTemporaryVariable();
-            instrs.set(instrs.size()-1, new RuntimeHelperCall(ret,
-                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
-            geb.addInstr(new ReturnInstr(ret));
-        }
-
-        // Update scope
-        addedGEBForUncaughtBreaks = true;
-
-        return true;
     }
 
     @Override

@@ -80,7 +80,7 @@ public class IRScriptBody extends IRScope {
     }
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self) {
-        prepareForInterpretation(false);
+        prepareForInterpretation();
 
         String name = "(root)";
         if (IRRuntimeHelpers.isDebug()) {

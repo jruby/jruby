@@ -140,7 +140,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
         if (method.getInstrsForInterpretation() == null) {
-            InterpreterContext context = method.prepareForInterpretation(false);
+            InterpreterContext context = method.prepareForInterpretation();
             this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
         }
     }

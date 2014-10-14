@@ -28,7 +28,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
     public void ensureInstrsReady(Block.Type blockType) {
         // Prepare closure if not yet done so we know if the method requires a dynscope or not
         if (closure.getInstrsForInterpretation() == null) {
-            InterpreterContext context = closure.prepareForInterpretation(blockType == Block.Type.LAMBDA);
+            InterpreterContext context = closure.prepareForInterpretation();
             this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
             this.reuseParentScope = context.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
             if (IRRuntimeHelpers.isDebug()) {
