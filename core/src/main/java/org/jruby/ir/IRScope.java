@@ -604,7 +604,7 @@ public abstract class IRScope implements ParseResult {
         // dynscopes for these scopes.
         if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
             (new DeadCodeElimination()).run(this);
-            //(new OptimizeDynScopesPass()).run(this);
+            (new OptimizeDynScopesPass()).run(this);
         }
     }
 
