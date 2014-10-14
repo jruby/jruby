@@ -18,6 +18,8 @@ import org.jruby.truffle.runtime.*;
 
 public class SelfNode extends RubyNode {
 
+    private final RubyValueProfile valueProfile = new RubyValueProfile();
+
     public SelfNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
