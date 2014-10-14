@@ -5,6 +5,10 @@ import java.util.List;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -63,5 +67,10 @@ public class InterpreterContext extends Operand {
 
     public Instr[] getInstructions() {
         return instructions;
+    }
+
+    @Override
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        return super.retrieve(context, self, currScope, currDynScope, temp);
     }
 }

@@ -3,6 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,8 +52,21 @@ public class WrappedIRClosure extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(CloneInfo ii) {
-        return new WrappedIRClosure(ii.getRenamedVariable(self), closure.cloneForInlining(ii));
+    public Operand cloneForInlining(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) {
+            SimpleCloneInfo simpleCloneInfo = (SimpleCloneInfo) info;
+
+            // For IRBuilding we are pre-interpretation and do want a traditional simple clone
+            if (simpleCloneInfo.isEnsureBlockCloneMode()) {
+                return new WrappedIRClosure(info.getRenamedVariable(self), closure.cloneForInlining(info));
+            }
+
+            // We are saving instructions so that if JIT hits IRClosure it will not concurrently
+            // modify the same object.
+            return closure.getInterpreterContext(self);
+        }
+
+        return new WrappedIRClosure(info.getRenamedVariable(self), closure.cloneForInlining(info));
     }
 
     @Override

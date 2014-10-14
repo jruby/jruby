@@ -109,6 +109,21 @@ public class IRClosure extends IRScope {
         this.nestingDepth++;
     }
 
+    public InterpreterContext getInterpreterContext(Operand self) {
+        initScope(false);
+
+        checkRelinearization();
+
+        if (interpreterContext != null) return interpreterContext; // Already prepared
+
+        Instr[] linearizedInstrArray = prepareInstructions();
+        interpreterContext = new ClosureInterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray,
+                self, getStaticScope(), getBlockBody());
+
+        return interpreterContext;
+    }
+
     public void setBeginEndBlock() {
         this.isBeginEndBlock = true;
     }
