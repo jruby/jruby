@@ -805,10 +805,6 @@ public final class ThreadContext {
         popFrame();
     }
 
-    public void preMethodFrameAndClass(RubyModule implClass, String name, IRubyObject self, Block block, StaticScope staticScope) {
-        pushCallFrame(implClass, name, self, block);
-    }
-
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
             StaticScope staticScope) {
         pushCallFrame(clazz, name, self, block);
