@@ -212,6 +212,10 @@ public class IRBuilder {
             instrs.add(i);
         }
 
+        public void addInstrAtBeginning(Instr i) {
+            instrs.add(0, i);
+        }
+
         public void emitBody(IRBuilder b, IRScope s) {
             b.addInstr(s, new LabelInstr(start));
             for (Instr i: instrs) {
@@ -290,6 +294,16 @@ public class IRBuilder {
             s.addInstr(i);
         } else {
             ensureBodyBuildStack.peek().addInstr(i);
+        }
+    }
+
+    public void addInstrAtBeginning(IRScope s, Instr i) {
+        // If we are building an ensure body, stash the instruction
+        // in the ensure body's list. If not, add it to the scope directly.
+        if (ensureBodyBuildStack.empty()) {
+            s.addInstrAtBeginning(i);
+        } else {
+            ensureBodyBuildStack.peek().addInstrAtBeginning(i);
         }
     }
 
@@ -505,8 +519,7 @@ public class IRBuilder {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) closureBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
 
-        // Added as part of 'prepareForInterpretation' code.
-        // handleBreakAndReturnsInLambdas(closure);
+        handleBreakAndReturnsInLambdas(closure);
 
         Variable lambda = s.createTemporaryVariable();
         // SSS FIXME: Is this the right self here?
@@ -891,8 +904,8 @@ public class IRBuilder {
         //
         // Add label and marker instruction in reverse order to the beginning
         // so that the label ends up being the first instr.
-        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(gebLabel));
-        s.addInstrAtBeginning(new LabelInstr(rBeginLabel));
+        addInstrAtBeginning(s, new ExceptionRegionStartMarkerInstr(gebLabel));
+        addInstrAtBeginning(s, new LabelInstr(rBeginLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
 
         // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
@@ -1970,19 +1983,13 @@ public class IRBuilder {
         }
     }
 
-/* ------------------------------------------------------------------
- * This code is added on demand at runtime in the interpreter code.
- * For JIT, this may have to be added always!
-
-    // These two methods could have been DRY-ed out if we had closures.
-    // For now, just duplicating code.
     private void handleBreakAndReturnsInLambdas(IRClosure s) {
         Label rBeginLabel = s.getNewLabel();
         Label rEndLabel   = s.getNewLabel();
-        Label rescueLabel = s.getNewLabel();
+        Label rescueLabel = Label.GLOBAL_ENSURE_BLOCK_LABEL;
 
         // protect the entire body as it exists now with the global ensure block
-        s.addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rescueLabel));
+        addInstrAtBeginning(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
 
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
@@ -1992,14 +1999,13 @@ public class IRBuilder {
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
-        Variable ret = createTemporaryVariable();
-        addInstr(s, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+        Variable ret = s.createTemporaryVariable();
+        addInstr(s, new RuntimeHelperCall(ret, RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
         addInstr(s, new ReturnInstr(ret));
 
         // End
         addInstr(s, new LabelInstr(rEndLabel));
     }
- * ------------------------------------------------------------------ */
 
     public void receiveMethodArgs(final ArgsNode argsNode, IRScope s) {
         receiveArgs(argsNode, s);
@@ -2523,6 +2529,14 @@ public class IRBuilder {
         if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
             closureBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
         }
+
+        // Always add break/return handling even though this
+        // is only required for lambdas, but we don't know at this time,
+        // if this is a lambda or not.
+        //
+        // SSS FIXME: At a later time, see if we can optimize this and
+        // do this on demand.
+        closureBuilder.handleBreakAndReturnsInLambdas(closure);
 
         return new WrappedIRClosure(s.getSelf(), closure);
     }

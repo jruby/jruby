@@ -108,7 +108,8 @@ public abstract class IRScope implements ParseResult {
     /** What passes have been run on this scope? */
     private List<CompilerPass> executedPasses;
 
-    private Instr[] linearizedInstrArray;
+    /** What the interpreter depends on to interpret this IRScope */
+    private InterpreterContext interpreterContext;
     private List<BasicBlock> linearizedBBList;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
@@ -155,7 +156,7 @@ public abstract class IRScope implements ParseResult {
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
         this.cfg = null;
-        this.linearizedInstrArray = null;
+        this.interpreterContext = null;
         this.linearizedBBList = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -187,7 +188,7 @@ public abstract class IRScope implements ParseResult {
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>();
         this.cfg = null;
-        this.linearizedInstrArray = null;
+        this.interpreterContext = null;
         this.linearizedBBList = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -466,10 +467,10 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private synchronized Instr[] prepareInstructions() {
+    private synchronized InterpreterContext prepareInstructions() {
         checkRelinearization();
 
-        if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
+        if (interpreterContext != null) return interpreterContext; // Already prepared
 
         setupLinearization();
 
@@ -520,7 +521,7 @@ public abstract class IRScope implements ParseResult {
         // System.out.println("SCOPE: " + getName());
         // System.out.println("INSTRS: " + cfg().toStringInstrs());
 
-        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
+        Instr[] linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
 
         // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
         ipc = 0;
@@ -537,7 +538,10 @@ public abstract class IRScope implements ParseResult {
             }
         }
 
-        return linearizedInstrArray;
+        interpreterContext = new InterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray);
+
+        return interpreterContext;
     }
 
     private boolean isUnsafeScope() {
@@ -605,22 +609,13 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void initScope(boolean isLambda, boolean jitMode) {
+    private void initScope(boolean jitMode) {
         // Reset linearization, if any exists
         resetLinearizationData();
 
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             buildCFG();
-        }
-
-        if (isLambda) {
-            // Add a global ensure block to catch uncaught breaks
-            // and throw a LocalJumpError.
-            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
-                resetState();
-                computeScopeFlags();
-            }
         }
 
         runCompilerPasses(getManager().getCompilerPasses(this));
@@ -636,12 +631,10 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
-        initScope(isLambda, false);
+    public synchronized InterpreterContext prepareForInterpretation() {
+        initScope(false);
 
         checkRelinearization();
-
-        if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
@@ -652,14 +645,7 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
-        // For lambdas, we need to add a global ensure block to catch
-        // uncaught breaks and throw a LocalJumpError.
-        //
-        // Since we dont re-JIT a previously JIT-ted closure,
-        // mark all closures lambdas always. But, check if there are
-        // other smarts available to us and eliminate adding
-        // this code to every closure there is.
-        initScope(this instanceof IRClosure, true);
+        initScope(true);
 
         runCompilerPasses(getManager().getJITPasses(this));
 
@@ -1062,15 +1048,8 @@ public abstract class IRScope implements ParseResult {
         return instrList;
     }
 
-    public Instr[] getInstrsForInterpretation() {
-        return linearizedInstrArray;
-    }
-
-    public Instr[] getInstrsForInterpretation(boolean isLambda) {
-        if (linearizedInstrArray == null) {
-            prepareForInterpretation(isLambda);
-        }
-        return linearizedInstrArray;
+    public InterpreterContext getInstrsForInterpretation() {
+        return interpreterContext;
     }
 
     public void resetLinearizationData() {
@@ -1113,7 +1092,7 @@ public abstract class IRScope implements ParseResult {
 
     public void resetState() {
         relinearizeCFG = true;
-        linearizedInstrArray = null;
+        interpreterContext = null;
         cfg.resetState();
 
         // reset flags

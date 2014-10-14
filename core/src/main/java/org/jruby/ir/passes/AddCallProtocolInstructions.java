@@ -50,7 +50,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
             boolean bindingHasEscaped           = scope.bindingHasEscaped();
 
             CFG        cfg = scope.cfg();
-            BasicBlock geb = cfg.getGlobalEnsureBB();
 
             if (slvpp != null && bindingHasEscaped) {
                 scopeHasLocalVarStores      = slvpp.scopeHasLocalVarStores();
@@ -123,9 +122,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 if (requireBinding) entryBB.addInstr(new PushBindingInstr());
 
                 // Allocate GEB if necessary for popping
+                BasicBlock geb = cfg.getGlobalEnsureBB();
                 if (geb == null) {
                     Variable exc = scope.createTemporaryVariable();
-                    geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+                    geb = new BasicBlock(cfg, Label.GLOBAL_ENSURE_BLOCK_LABEL);
                     geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
                     geb.addInstr(new ThrowExceptionInstr(exc));
                     cfg.addGlobalEnsureBB(geb);

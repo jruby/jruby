@@ -1,10 +1,7 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.RubyModule;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Binding;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.interpreter.Interpreter;
@@ -31,9 +28,9 @@ public class InterpretedIRBlockBody extends IRBlockBody {
     public void ensureInstrsReady(Block.Type blockType) {
         // Prepare closure if not yet done so we know if the method requires a dynscope or not
         if (closure.getInstrsForInterpretation() == null) {
-            closure.prepareForInterpretation(blockType == Block.Type.LAMBDA);
-            this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-            this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+            InterpreterContext context = closure.prepareForInterpretation();
+            this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+            this.reuseParentScope = context.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
             if (IRRuntimeHelpers.isDebug()) {
                 LOG.info("Executing '" + closure + "'");
                 // The base IR may not have been processed yet

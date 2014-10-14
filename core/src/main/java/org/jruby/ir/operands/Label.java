@@ -9,6 +9,7 @@ import java.util.List;
 // there is exactly one label object with the same label string?
 public class Label extends Operand {
     public static final Label UNRESCUED_REGION_LABEL = new Label("UNRESCUED_REGION", 0);
+    public static final Label GLOBAL_ENSURE_BLOCK_LABEL = new Label("_GLOBAL_ENSURE_BLOCK_", 0);
 
     public final String prefix;
     public final int id;
