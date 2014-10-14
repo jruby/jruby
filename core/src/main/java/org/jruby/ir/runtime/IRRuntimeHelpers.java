@@ -107,13 +107,13 @@ public class IRRuntimeHelpers {
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
-            // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
+            // If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating.
             if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == dynScope)) {
-                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
+                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope + " matching dynscope? " + (rj.methodToReturnFrom == dynScope));
                 return (IRubyObject) rj.returnValue;
             }
 
-            // - If not, Just pass it along!
+            // If not, Just pass it along!
             throw rj;
         }
     }
@@ -147,7 +147,9 @@ public class IRRuntimeHelpers {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
-        } else if (exc instanceof IRReturnJump) {
+        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
+            // Ignore non-local return processing in non-lambda blocks.
+            // Methods have a null blocktype
             return handleNonlocalReturn(scope, dynScope, exc, blockType);
         } else {
             // Propagate

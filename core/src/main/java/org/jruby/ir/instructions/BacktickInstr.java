@@ -98,6 +98,6 @@ public class BacktickInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return result + "`" + (pieces == null ? "[]" : pieces) + "`";
+        return result + " = `" + (pieces == null ? "[]" : pieces) + "`";
     }
 }

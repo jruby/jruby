@@ -609,22 +609,13 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void initScope(boolean isLambda, boolean jitMode) {
+    private void initScope(boolean jitMode) {
         // Reset linearization, if any exists
         resetLinearizationData();
 
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             buildCFG();
-        }
-
-        if (isLambda) {
-            // Add a global ensure block to catch uncaught breaks
-            // and throw a LocalJumpError.
-            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
-                resetState();
-                computeScopeFlags();
-            }
         }
 
         runCompilerPasses(getManager().getCompilerPasses(this));
@@ -640,8 +631,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized InterpreterContext prepareForInterpretation(boolean isLambda) {
-        initScope(isLambda, false);
+    public synchronized InterpreterContext prepareForInterpretation() {
+        initScope(false);
 
         checkRelinearization();
 
@@ -654,14 +645,7 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
-        // For lambdas, we need to add a global ensure block to catch
-        // uncaught breaks and throw a LocalJumpError.
-        //
-        // Since we dont re-JIT a previously JIT-ted closure,
-        // mark all closures lambdas always. But, check if there are
-        // other smarts available to us and eliminate adding
-        // this code to every closure there is.
-        initScope(this instanceof IRClosure, true);
+        initScope(true);
 
         runCompilerPasses(getManager().getJITPasses(this));
 
@@ -1065,13 +1049,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     public InterpreterContext getInstrsForInterpretation() {
-        return interpreterContext;
-    }
-
-    public InterpreterContext getInstrsForInterpretation(boolean isLambda) {
-        if (interpreterContext == null) {
-            prepareForInterpretation(isLambda);
-        }
         return interpreterContext;
     }
 

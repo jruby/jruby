@@ -78,7 +78,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(ss, evalType);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, evalType);
-        evalScript.prepareForInterpretation(false);
+        evalScript.prepareForInterpretation();
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv = null;
@@ -121,7 +121,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            b.prepareForInterpretation(false);
+            b.prepareForInterpretation();
             Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
@@ -525,7 +525,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        InterpreterContext interpreterContext = scope.getInstrsForInterpretation(blockType == Block.Type.LAMBDA);
+        InterpreterContext interpreterContext = scope.getInstrsForInterpretation();
         Instr[] instrs = interpreterContext.getInstructions();
         int      numTempVars    = interpreterContext.getTemporaryVariablecount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
