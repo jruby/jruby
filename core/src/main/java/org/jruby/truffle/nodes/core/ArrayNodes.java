@@ -3083,20 +3083,21 @@ public abstract class ArrayNodes {
         public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array) {
             final int[] store = (int[]) array.getStore();
 
-            // Insertion sort
-
             final int size = array.getSize();
 
-            for (int i = 1; i < RubyContext.ARRAYS_SMALL; i++) {
+            // Selection sort - written very carefully to allow PE
+
+            for (int i = 0; i < RubyContext.ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    final int x = store[i];
-                    int j = i;
-                    // TODO(CS): node for this cast
-                    while (j > 0 && (int) compareDispatchNode.call(frame, store[j - 1], "<=>", null, x) > 0) {
-                        store[j] = store[j - 1];
-                        j--;
+                    for (int j = i + 1; j < RubyContext.ARRAYS_SMALL; j++) {
+                        if (j < size) {
+                            if ((int) compareDispatchNode.call(frame, store[j], "<=>", null, store[i]) < 0) {
+                                final int temp = store[j];
+                                store[j] = store[i];
+                                store[i] = temp;
+                            }
+                        }
                     }
-                    store[j] = x;
                 }
             }
 
@@ -3118,20 +3119,21 @@ public abstract class ArrayNodes {
         public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array) {
             final long[] store = (long[]) array.getStore();
 
-            // Insertion sort
-
             final int size = array.getSize();
 
-            for (int i = 1; i < RubyContext.ARRAYS_SMALL; i++) {
+            // Selection sort - written very carefully to allow PE
+
+            for (int i = 0; i < RubyContext.ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    final long x = store[i];
-                    int j = i;
-                    // TODO(CS): node for this cast
-                    while (j > 0 && (int) compareDispatchNode.call(frame, store[j - 1], "<=>", null, x) > 0) {
-                        store[j] = store[j - 1];
-                        j--;
+                    for (int j = i + 1; j < RubyContext.ARRAYS_SMALL; j++) {
+                        if (j < size) {
+                            if ((int) compareDispatchNode.call(frame, store[j], "<=>", null, store[i]) < 0) {
+                                final long temp = store[j];
+                                store[j] = store[i];
+                                store[i] = temp;
+                            }
+                        }
                     }
-                    store[j] = x;
                 }
             }
 
