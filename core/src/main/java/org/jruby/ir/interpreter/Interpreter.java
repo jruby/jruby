@@ -23,7 +23,6 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
@@ -509,14 +508,30 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
+    private static DynamicScope getNewDynScope(ThreadContext context, IRScope scope, StaticScope currScope) {
+        // SSS NOTE: Method/module scopes only!
+        //
+        // Blocks are a headache -- so, these instrs. are only added to IRMethods.
+        // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
+        if (scope instanceof IRMetaClassBody) {
+            // Add a parent-link to current dynscope to support non-local returns cheaply
+            // This doesn't affect variable scoping since local variables will all have
+            // the right scope depth.
+            return DynamicScope.newDynamicScope(currScope, context.getCurrentScope());
+        } else {
+            return DynamicScope.newDynamicScope(currScope);
+        }
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        Instr[] instrs = scope.getInstrsForInterpretation(blockType == Block.Type.LAMBDA);
-        int      numTempVars    = scope.getTemporaryVariablesCount();
+        InterpreterContext interpreterContext = scope.getInstrsForInterpretation(blockType == Block.Type.LAMBDA);
+        Instr[] instrs = interpreterContext.getInstructions();
+        int      numTempVars    = interpreterContext.getTemporaryVariablecount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
-        int      numFloatVars   = scope.getFloatVariablesCount();
-        int      numFixnumVars  = scope.getFixnumVariablesCount();
-        int      numBooleanVars = scope.getBooleanVariablesCount();
+        int      numFloatVars   = interpreterContext.getTemporaryFloatVariablecount();
+        int      numFixnumVars  = interpreterContext.getTemporaryFixnumVariablecount();
+        int      numBooleanVars = interpreterContext.getTemporaryBooleanVariablecount();
         double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;
         long[]   fixnums        = numFixnumVars > 0 ? new long[numFixnumVars] : null;
         boolean[]   booleans    = numBooleanVars > 0 ? new boolean[numBooleanVars] : null;
@@ -570,18 +585,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
-                        // SSS NOTE: Method/module scopes only!
-                        //
-                        // Blocks are a headache -- so, these instrs. are only added to IRMethods.
-                        // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
-                        if (scope instanceof IRMetaClassBody) {
-                            // Add a parent-link to current dynscope to support non-local returns cheaply
-                            // This doesn't affect variable scoping since local variables will all have
-                            // the right scope depth.
-                            currDynScope = DynamicScope.newDynamicScope(currScope, context.getCurrentScope());
-                        } else {
-                            currDynScope = DynamicScope.newDynamicScope(currScope);
-                        }
+                        currDynScope = getNewDynScope(context, scope, currScope);
                         context.pushScope(currDynScope);
                     } else {
                         processBookKeepingOp(context, instr, operation, currScope, name, args, self, block, implClass, visibility, temp, currDynScope);

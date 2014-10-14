@@ -8,6 +8,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
+import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -139,8 +140,8 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
         if (method.getInstrsForInterpretation() == null) {
-            method.prepareForInterpretation(false);
-            this.pushScope = !method.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+            InterpreterContext context = method.prepareForInterpretation(false);
+            this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
         }
     }
 

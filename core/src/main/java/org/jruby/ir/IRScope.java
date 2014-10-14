@@ -7,13 +7,10 @@ import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
-import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.UnboxingPass;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
@@ -111,7 +108,8 @@ public abstract class IRScope implements ParseResult {
     /** What passes have been run on this scope? */
     private List<CompilerPass> executedPasses;
 
-    private Instr[] linearizedInstrArray;
+    /** What the interpreter depends on to interpret this IRScope */
+    private InterpreterContext interpreterContext;
     private List<BasicBlock> linearizedBBList;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
@@ -158,7 +156,7 @@ public abstract class IRScope implements ParseResult {
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
         this.cfg = null;
-        this.linearizedInstrArray = null;
+        this.interpreterContext = null;
         this.linearizedBBList = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -190,7 +188,7 @@ public abstract class IRScope implements ParseResult {
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>();
         this.cfg = null;
-        this.linearizedInstrArray = null;
+        this.interpreterContext = null;
         this.linearizedBBList = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -469,10 +467,10 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private synchronized Instr[] prepareInstructions() {
+    private synchronized InterpreterContext prepareInstructions() {
         checkRelinearization();
 
-        if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
+        if (interpreterContext != null) return interpreterContext; // Already prepared
 
         setupLinearization();
 
@@ -523,7 +521,7 @@ public abstract class IRScope implements ParseResult {
         // System.out.println("SCOPE: " + getName());
         // System.out.println("INSTRS: " + cfg().toStringInstrs());
 
-        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
+        Instr[] linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
 
         // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
         ipc = 0;
@@ -540,7 +538,10 @@ public abstract class IRScope implements ParseResult {
             }
         }
 
-        return linearizedInstrArray;
+        interpreterContext = new InterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray);
+
+        return interpreterContext;
     }
 
     private boolean isUnsafeScope() {
@@ -639,12 +640,10 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
+    public synchronized InterpreterContext prepareForInterpretation(boolean isLambda) {
         initScope(isLambda, false);
 
         checkRelinearization();
-
-        if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
@@ -1065,15 +1064,15 @@ public abstract class IRScope implements ParseResult {
         return instrList;
     }
 
-    public Instr[] getInstrsForInterpretation() {
-        return linearizedInstrArray;
+    public InterpreterContext getInstrsForInterpretation() {
+        return interpreterContext;
     }
 
-    public Instr[] getInstrsForInterpretation(boolean isLambda) {
-        if (linearizedInstrArray == null) {
+    public InterpreterContext getInstrsForInterpretation(boolean isLambda) {
+        if (interpreterContext == null) {
             prepareForInterpretation(isLambda);
         }
-        return linearizedInstrArray;
+        return interpreterContext;
     }
 
     public void resetLinearizationData() {
@@ -1116,7 +1115,7 @@ public abstract class IRScope implements ParseResult {
 
     public void resetState() {
         relinearizeCFG = true;
-        linearizedInstrArray = null;
+        interpreterContext = null;
         cfg.resetState();
 
         // reset flags

@@ -18,10 +18,6 @@ public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
         return super.toString() + "{0O}";
     }
 
-    public Operand getReceiver() {
-        return receiver;
-    }
-
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);

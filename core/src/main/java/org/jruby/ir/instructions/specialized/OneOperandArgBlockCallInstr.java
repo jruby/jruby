@@ -19,10 +19,6 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
         return super.toString() + "{1OB}";
     }
 
-    public Operand getReceiver() {
-        return receiver;
-    }
-
     public Operand getArg1() {
         return getCallArgs()[0];
     }
