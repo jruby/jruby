@@ -105,7 +105,7 @@ public class IRScriptBody extends IRScope {
 
         scope.setModule(currModule);
         if (!this.flags.contains(IRFlags.DYNSCOPE_ELIMINATED)) {
-            context.preMethodScopeOnly(currModule, scope);
+            context.preMethodScopeOnly(scope);
         }
         context.setCurrentVisibility(Visibility.PRIVATE);
 
