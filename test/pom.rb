@@ -173,6 +173,8 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
                           '<arg value="-T" />' +
                           '<arg value="-J-ea" />' +
+                          '<arg value="-T" />' +
+                          '<arg value="-J-Xmx2G" />' +
                           '<arg value="--config" />' +
                           '<arg value="spec/truffle/truffle.mspec" />' +
                           '<arg value="--excl-tag" />' +
@@ -221,6 +223,8 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
                           '<arg value="-T" />' +
                           '<arg value="-J-ea" />' +
+                          '<arg value="-T" />' +
+                          '<arg value="-J-Xmx2G" />' +
                           '<arg value="--config" />' +
                           '<arg value="spec/truffle/truffle.mspec" />' +
                           '<arg value="--excl-tag" />' +
