@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.MethodLike;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
 /**
@@ -56,13 +57,7 @@ public final class RubyArguments {
     }
 
     public static Object[] extractUserArguments(Object[] arguments) {
-        final Object[] userArguments = new Object[arguments.length - RUNTIME_ARGUMENT_COUNT];
-
-        for (int n = 0; n < userArguments.length; n++) {
-            userArguments[n] = arguments[RUNTIME_ARGUMENT_COUNT + n];
-        }
-
-        return userArguments;
+        return Arrays.copyOfRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
     }
 
     public static Object[] concatUserArguments(Object o, Object[] arguments) {
