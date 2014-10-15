@@ -108,22 +108,16 @@ public class RubyMethod implements MethodLike {
         return false;
     }
 
-    private boolean isVisibleToX(Node currentNode, ModuleChain module) {
+    private boolean isVisibleToX(Node currentNode, RubyModule module) {
         switch (visibility) {
             case PUBLIC:
                 return true;
 
             case PROTECTED:
-                if (module == declaringModule) {
-                    return true;
-                }
-
-                if (module.getActualModule().getSingletonClass(currentNode) == declaringModule) {
-                    return true;
-                }
-
-                if (module.getParentModule() != null && isVisibleToX(currentNode, module.getParentModule())) {
-                    return true;
+                for (RubyModule ancestor : module.ancestors()) {
+                    if (ancestor == declaringModule || ancestor.getSingletonClass(currentNode) == declaringModule) {
+                        return true;
+                    }
                 }
 
                 return false;
