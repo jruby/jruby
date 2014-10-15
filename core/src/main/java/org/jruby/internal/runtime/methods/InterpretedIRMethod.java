@@ -134,7 +134,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
     public InterpreterContext ensureInstrsReady() {
-        InterpreterContext context = method.getInstrsForInterpretation();
+        InterpreterContext context = method.getInterpreterContext();
         if (context == null) {
             context =  method.prepareForInterpretation();
         }

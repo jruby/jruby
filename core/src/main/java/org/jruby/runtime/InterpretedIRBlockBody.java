@@ -27,11 +27,6 @@ public class InterpretedIRBlockBody extends IRBlockBody {
     }
 
     public InterpreterContext ensureInstrsReady() {
-        InterpreterContext context = closure.getInstrsForInterpretation();
-        if (context == null) {
-            context = closure.prepareForInterpretation();
-        }
-
         if (IRRuntimeHelpers.isDebug() && !displayedCFG) {
             LOG.info("Executing '" + closure + "' (pushScope=" + pushScope + ", reuseParentScope=" + reuseParentScope);
             CFG cfg = closure.getCFG();
@@ -39,7 +34,8 @@ public class InterpretedIRBlockBody extends IRBlockBody {
             LOG.info("CFG:\n" + cfg.toStringInstrs());
             displayedCFG = true;
         }
-        return context;
+        // Always prepared in the context of parent scope -- so a null value here is a bug.
+        return closure.getInterpreterContext();
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {

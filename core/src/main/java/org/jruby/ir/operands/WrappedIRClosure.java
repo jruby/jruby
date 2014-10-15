@@ -61,9 +61,9 @@ public class WrappedIRClosure extends Operand {
                 return new WrappedIRClosure(info.getRenamedVariable(self), closure.cloneForInlining(info));
             }
 
-            // We are saving instructions so that if JIT hits IRClosure it will not concurrently
+            // We are saving instructions so that if JIT hits IRClosure, it will not concurrently
             // modify the same object.
-            return closure.getInterpreterContext(self);
+            return closure.prepareInterpreterContext(self);
         }
 
         return new WrappedIRClosure(info.getRenamedVariable(self), closure.cloneForInlining(info));

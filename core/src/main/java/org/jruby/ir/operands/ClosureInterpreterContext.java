@@ -32,6 +32,8 @@ public class ClosureInterpreterContext extends InterpreterContext {
         this.body = body;
     }
 
+    public StaticScope getStaticScope() { return staticScope; }
+
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         staticScope.determineModule();

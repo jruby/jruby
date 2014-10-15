@@ -466,18 +466,6 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private synchronized InterpreterContext prepareInterpreterContext() {
-        checkRelinearization();
-
-        if (interpreterContext != null) return interpreterContext; // Already prepared
-
-        Instr[] linearizedInstrArray = prepareInstructions();
-        interpreterContext = new InterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
-                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray);
-
-        return interpreterContext;
-    }
-
     protected Instr[] prepareInstructions() {
         setupLinearization();
 
@@ -609,9 +597,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initScope(boolean jitMode) {
-        // Reset linearization, if any exists
-        resetLinearizationData();
-
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             buildCFG();
@@ -631,24 +616,30 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized InterpreterContext prepareForInterpretation() {
-        initScope(false);
+        if (interpreterContext != null) return interpreterContext; // Already prepared
 
-        checkRelinearization();
+        initScope(false);
 
         // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
         // Linearize CFG, etc.
-        return prepareInterpreterContext();
+        Instr[] linearizedInstrArray = prepareInstructions();
+
+        interpreterContext = new InterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray);
+
+        return interpreterContext;
     }
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
+        // Reset linearization, if any exists
+        resetLinearizationData();
+
         initScope(true);
 
         runCompilerPasses(getManager().getJITPasses(this));
-
-        checkRelinearization();
 
         prepareInstructions();
 
@@ -1047,7 +1038,7 @@ public abstract class IRScope implements ParseResult {
         return instrList;
     }
 
-    public InterpreterContext getInstrsForInterpretation() {
+    public InterpreterContext getInterpreterContext() {
         return interpreterContext;
     }
 
@@ -1056,13 +1047,7 @@ public abstract class IRScope implements ParseResult {
         relinearizeCFG = false;
     }
 
-    public void checkRelinearization() {
-        if (relinearizeCFG) resetLinearizationData();
-    }
-
     public List<BasicBlock> buildLinearization() {
-        checkRelinearization();
-
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
 
         linearizedBBList = CFGLinearizer.linearize(cfg);
@@ -1090,8 +1075,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void resetState() {
-        relinearizeCFG = true;
         interpreterContext = null;
+        resetLinearizationData();
         cfg.resetState();
 
         // reset flags

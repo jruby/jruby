@@ -1931,7 +1931,7 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().loadRuntime();
 
-        IRClosure body = buildlambdainstr.getLambdaBody().getClosure();
+        IRClosure body = ((WrappedIRClosure)buildlambdainstr.getLambdaBody()).getClosure();
         if (body == null) {
             jvmMethod().pushNil();
         } else {
