@@ -182,8 +182,8 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        private final BranchProfile singleArrayProfile = new BranchProfile();
-        private final BranchProfile multipleArgumentsProfile = new BranchProfile();
+        private final BranchProfile singleArrayProfile = BranchProfile.create();
+        private final BranchProfile multipleArgumentsProfile = BranchProfile.create();
 
         @Specialization
         public RubyString format(RubyString format, Object[] args) {

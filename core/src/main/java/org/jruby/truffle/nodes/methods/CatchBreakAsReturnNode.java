@@ -24,7 +24,7 @@ public class CatchBreakAsReturnNode extends RubyNode {
 
     @Child protected RubyNode body;
 
-    private final BranchProfile nextProfile = new BranchProfile();
+    private final BranchProfile nextProfile = BranchProfile.create();
 
     public CatchBreakAsReturnNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);

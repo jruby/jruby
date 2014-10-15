@@ -30,9 +30,9 @@ public class TryNode extends RubyNode {
     @Children final RescueNode[] rescueParts;
     @Child protected RubyNode elsePart;
 
-    private final BranchProfile elseProfile = new BranchProfile();
-    private final BranchProfile controlFlowProfile = new BranchProfile();
-    private final BranchProfile raiseExceptionProfile = new BranchProfile();
+    private final BranchProfile elseProfile = BranchProfile.create();
+    private final BranchProfile controlFlowProfile = BranchProfile.create();
+    private final BranchProfile raiseExceptionProfile = BranchProfile.create();
 
     public TryNode(RubyContext context, SourceSection sourceSection, ExceptionTranslatingNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
         super(context, sourceSection);

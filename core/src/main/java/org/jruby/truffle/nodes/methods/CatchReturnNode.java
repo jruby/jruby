@@ -26,8 +26,8 @@ public class CatchReturnNode extends RubyNode {
     @Child protected RubyNode body;
     private final long returnID;
 
-    private final BranchProfile returnProfile = new BranchProfile();
-    private final BranchProfile returnToOtherMethodProfile = new BranchProfile();
+    private final BranchProfile returnProfile = BranchProfile.create();
+    private final BranchProfile returnToOtherMethodProfile = BranchProfile.create();
 
     public CatchReturnNode(RubyContext context, SourceSection sourceSection, RubyNode body, long returnID) {
         super(context, sourceSection);

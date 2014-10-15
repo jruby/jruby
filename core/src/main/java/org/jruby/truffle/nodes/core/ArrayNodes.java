@@ -643,11 +643,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
-        private final BranchProfile tooSmallBranch = new BranchProfile();
-        private final BranchProfile pastEndBranch = new BranchProfile();
-        private final BranchProfile appendBranch = new BranchProfile();
-        private final BranchProfile beyondBranch = new BranchProfile();
-        private final BranchProfile reallocateBranch = new BranchProfile();
+        private final BranchProfile tooSmallBranch = BranchProfile.create();
+        private final BranchProfile pastEndBranch = BranchProfile.create();
+        private final BranchProfile appendBranch = BranchProfile.create();
+        private final BranchProfile beyondBranch = BranchProfile.create();
+        private final BranchProfile reallocateBranch = BranchProfile.create();
 
         public IndexSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1238,8 +1238,8 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete_at", minArgs = 1, maxArgs = 1)
     public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
 
-        private static final BranchProfile tooSmallBranch = new BranchProfile();
-        private static final BranchProfile beyondEndBranch = new BranchProfile();
+        private static final BranchProfile tooSmallBranch = BranchProfile.create();
+        private static final BranchProfile beyondEndBranch = BranchProfile.create();
 
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1335,9 +1335,9 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "each", needsBlock = true, maxArgs = 0)
     public abstract static class EachNode extends YieldingArrayCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1505,9 +1505,9 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "each_with_index", needsBlock = true, maxArgs = 0)
     public abstract static class EachWithIndexNode extends YieldingArrayCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public EachWithIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1926,7 +1926,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "insert", minArgs = 2, maxArgs = 2)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
-        private static final BranchProfile tooSmallBranch = new BranchProfile();
+        private static final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2617,7 +2617,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"push", "<<"}, isSplatted = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
-        private final BranchProfile extendBranch = new BranchProfile();
+        private final BranchProfile extendBranch = BranchProfile.create();
 
         public PushNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2734,7 +2734,7 @@ public abstract class ArrayNodes {
 
     public abstract static class PushOneNode extends ArrayCoreMethodNode {
 
-        private final BranchProfile extendBranch = new BranchProfile();
+        private final BranchProfile extendBranch = BranchProfile.create();
 
         public PushOneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -112,9 +112,9 @@ public abstract class RangeNodes {
     @CoreMethod(names = "each", needsBlock = true, maxArgs = 0, lowerFixnumSelf = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -278,9 +278,9 @@ public abstract class RangeNodes {
     @CoreMethod(names = "step", needsBlock = true, minArgs = 1, maxArgs = 1)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public StepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -54,7 +54,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     @Child protected ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
-    private final BranchProfile nullProfile = new BranchProfile();
+    private final BranchProfile nullProfile = BranchProfile.create();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
