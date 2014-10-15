@@ -10,18 +10,20 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public class InterpreterContext extends Operand {
-    private int temporaryVariablecount;
-    private int temporaryBooleanVariablecount;
-    private int temporaryFixnumVariablecount;
-    private int temporaryFloatVariablecount;
+    private final int temporaryVariablecount;
+    private final int temporaryBooleanVariablecount;
+    private final int temporaryFixnumVariablecount;
+    private final int temporaryFloatVariablecount;
 
-    private EnumSet<IRFlags> flags;
+    private final EnumSet<IRFlags> flags;
 
-    private Instr[] instructions;
+    private final Instr[] instructions;
+
+    // Cached computed fields
+    private final boolean pushNewDynScope;
+    private final boolean reuseParentDynScope;
+    private final boolean popDynScope;
 
     public InterpreterContext(int temporaryVariablecount, int temporaryBooleanVariablecount,
                               int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
@@ -34,6 +36,9 @@ public class InterpreterContext extends Operand {
         this.temporaryFloatVariablecount = temporaryFloatVariablecount;
         this.flags = flags;
         this.instructions = instructions;
+        this.reuseParentDynScope = flags.contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+        this.pushNewDynScope = !flags.contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentDynScope;
+        this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
     }
 
     @Override
@@ -67,6 +72,18 @@ public class InterpreterContext extends Operand {
 
     public Instr[] getInstructions() {
         return instructions;
+    }
+
+    public boolean pushNewDynScope() {
+        return pushNewDynScope;
+    }
+
+    public boolean reuseParentDynScope() {
+        return reuseParentDynScope;
+    }
+
+    public boolean popDynScope() {
+        return popDynScope;
     }
 
     @Override
