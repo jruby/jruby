@@ -118,7 +118,7 @@ public class RubyMethod implements MethodLike {
                     return true;
                 }
 
-                if (module.getSingletonClass(currentNode) == declaringModule) {
+                if (module.getActualModule().getSingletonClass(currentNode) == declaringModule) {
                     return true;
                 }
 

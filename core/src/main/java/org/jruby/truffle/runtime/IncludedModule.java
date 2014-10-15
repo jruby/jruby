@@ -33,54 +33,8 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
-    public RubyModule getLexicalParentModule() {
-        return includedModule.getLexicalParentModule();
-    }
-
-    @Override
     public RubyModule getActualModule() {
         return includedModule;
-    }
-
-    @Override
-    public Map<String, RubyConstant> getConstants() {
-        return includedModule.getConstants();
-    }
-
-    @Override
-    public Map<String, RubyMethod> getMethods() {
-        return includedModule.getMethods();
-    }
-
-    @Override
-    public Map<String, Object> getClassVariables() {
-        return includedModule.getClassVariables();
-    }
-
-    @Override
-    public RubyContext getContext() {
-        return includedModule.getContext();
-    }
-
-    @Override
-    public RubyClass getSingletonClass(Node currentNode) {
-        return includedModule.getSingletonClass(currentNode);
-    }
-
-    @Override
-    public void newVersion() {
-        throw new UnsupportedOperationException();
-
-    }
-
-    @Override
-    public void addDependent(ModuleChain dependent) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Assumption getUnmodifiedAssumption() {
-        throw new UnsupportedOperationException();
     }
 
 }
