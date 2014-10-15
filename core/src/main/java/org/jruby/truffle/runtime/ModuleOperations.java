@@ -211,18 +211,14 @@ public abstract class ModuleOperations {
         module.getClassVariables().put(name, value);
     }
 
-    public static boolean assignableTo(ModuleChain thisModule, ModuleChain otherModule) {
+    public static boolean assignableTo(RubyClass thisClass, RubyClass otherClass) {
         RubyNode.notDesignedForCompilation();
 
-        ModuleChain ancestor = thisModule;
-
-        do {
-            if (ancestor == otherModule) {
+        for (RubyModule ancestor : thisClass.ancestors()) {
+            if (ancestor == otherClass) {
                 return true;
             }
-
-            ancestor = ancestor.getParentModule();
-        } while (ancestor != null);
+        }
 
         return false;
     }
