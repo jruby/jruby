@@ -122,7 +122,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
             BasicBlock geb = cfg.getGlobalEnsureBB();
             if (geb == null) {
                 Variable exc = cfgScope.createTemporaryVariable();
-                geb = new BasicBlock(cfg, Label.GLOBAL_ENSURE_BLOCK_LABEL);
+                geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
                 geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
                 geb.addInstr(new ThrowExceptionInstr(exc));
                 cfg.addGlobalEnsureBB(geb);

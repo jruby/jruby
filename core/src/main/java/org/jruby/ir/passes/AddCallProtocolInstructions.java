@@ -125,7 +125,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 BasicBlock geb = cfg.getGlobalEnsureBB();
                 if (geb == null) {
                     Variable exc = scope.createTemporaryVariable();
-                    geb = new BasicBlock(cfg, Label.GLOBAL_ENSURE_BLOCK_LABEL);
+                    geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
                     geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
                     geb.addInstr(new ThrowExceptionInstr(exc));
                     cfg.addGlobalEnsureBB(geb);
