@@ -24,7 +24,7 @@ public abstract class CloneInfo {
     }
 
     public SimpleCloneInfo cloneForCloningClosure(IRClosure clonedClosure) {
-        SimpleCloneInfo clone = new SimpleCloneInfo(clonedClosure, false);
+        SimpleCloneInfo clone = new SimpleCloneInfo(clonedClosure, true);
 
         for (Variable v: variableRenameMap.keySet()) {
             clone.variableRenameMap.put(v, variableRenameMap.get(v));
