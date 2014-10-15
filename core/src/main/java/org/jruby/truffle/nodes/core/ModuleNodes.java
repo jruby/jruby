@@ -52,33 +52,6 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object isSubclassOf(VirtualFrame frame, RubyClass self, RubyClass other) {
-            notDesignedForCompilation();
-
-            if (self == other || ModuleOperations.includesModule(self, other)) {
-                return true;
-            }
-
-            for (ModuleChain c = self.getParentModule(); c != null; c = c.getParentModule()) {
-                if (c == other) {
-                    return true;
-                }
-            }
-
-            if (ModuleOperations.includesModule(other, self)) {
-                return false;
-            }
-
-            for (ModuleChain c = other.getParentModule(); c != null; c = c.getParentModule()) {
-                if (c == self) {
-                    return false;
-                }
-            }
-
-            return NilPlaceholder.INSTANCE;
-        }
-
-        @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
             notDesignedForCompilation();
 

@@ -21,13 +21,11 @@ import java.util.Map;
 
 public abstract class ModuleOperations {
 
-    public static boolean includesModule(ModuleChain module, ModuleChain other) {
-        while (module != null) {
-            if (module == other) {
+    public static boolean includesModule(RubyModule module, RubyModule other) {
+        for (RubyModule ancestor : module.ancestors()) {
+            if (ancestor == other) {
                 return true;
             }
-
-            module = module.getParentModule();
         }
 
         return false;
