@@ -1034,7 +1034,7 @@ public abstract class IRScope implements ParseResult {
         if (persistenceStore != null) {
             instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
         }
-        if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions.");
+        if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions: " + this);
         return instrList;
     }
 
