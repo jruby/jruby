@@ -1708,18 +1708,16 @@ public class Helpers {
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
-        RubyClass objectClass = context.runtime.getObject();
-        IRubyObject topLevel = context.runtime.getTopSelf();
         if (wrap) {
             staticScope.setModule(RubyModule.newModule(context.runtime));
         } else {
-            staticScope.setModule(objectClass);
+            staticScope.setModule(context.runtime.getObject());
         }
         DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
 
         // Each root node has a top-level scope that we need to push
         context.preScopedBody(scope);
-        context.preNodeEval(objectClass, topLevel);
+        context.preNodeEval(context.runtime.getTopSelf());
     }
     
     public static void postLoad(ThreadContext context) {

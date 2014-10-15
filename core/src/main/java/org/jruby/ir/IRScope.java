@@ -16,7 +16,6 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -493,17 +492,20 @@ public abstract class IRScope implements ParseResult {
             // All same-named labels must be same Java instance for this to work or we would need
             // to examine all Label operands and update this as well which would be expensive.
             b.getLabel().setTargetPC(ipc);
+            // Set all renamed labels (simple clone makes a new copy) to their proper ipc
+            cloneInfo.getRenamedLabel(b.getLabel()).setTargetPC(ipc);
 
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    if (instr instanceof Specializeable) {
-                        instr = ((Specializeable) instr).specializeForInterpretation();
+                    Instr newInstr = instr.clone(cloneInfo);
+
+                    if (newInstr instanceof Specializeable) {
+                        newInstr = ((Specializeable) newInstr).specializeForInterpretation();
                     }
 
-                    Instr newInstr = instr;//.clone(cloneInfo);
                     newInstr.setIPC(ipc);
 
                     // We add back to original CFG so that debug output will match up with what

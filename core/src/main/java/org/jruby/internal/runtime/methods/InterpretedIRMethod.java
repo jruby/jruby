@@ -128,21 +128,17 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        StaticScope ss = method.getStaticScope();
-        context.preMethodFrameAndClass(getImplementationClass(), name, self, block, ss);
-        if (this.pushScope) {
-            context.pushScope(DynamicScope.newDynamicScope(ss));
-        }
+        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
+        if (this.pushScope) context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
         context.setCurrentVisibility(getVisibility());
     }
 
     public void ensureInstrsReady() {
         // SSS FIXME: Move this out of here to some other place?
         // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
-        if (method.getInstrsForInterpretation() == null) {
-            InterpreterContext context = method.prepareForInterpretation();
-            this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-        }
+        // FIXME: This is resetting this flag per call and I now may want to push interpretercontext through to interpreter
+        InterpreterContext context = method.prepareForInterpretation();
+        this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
     }
 
     public DynamicMethod getMethodForCaching() {

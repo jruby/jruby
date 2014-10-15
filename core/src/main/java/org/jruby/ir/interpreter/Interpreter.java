@@ -341,12 +341,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, StaticScope currScope,
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
                                              RubyModule implClass, Visibility visibility, Object[] temp, DynamicScope currDynamicScope) {
         switch(operation) {
         case PUSH_FRAME:
-            context.preMethodFrameAndClass(implClass, name, self, block, currScope);
+            context.preMethodFrameOnly(implClass, name, self, block);
             context.setCurrentVisibility(visibility);
             break;
         case POP_FRAME:
@@ -588,7 +588,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         currDynScope = getNewDynScope(context, scope, currScope);
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, currScope, name, args, self, block, implClass, visibility, temp, currDynScope);
+                        processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility, temp, currDynScope);
                     }
                     break;
                 case OTHER_OP:

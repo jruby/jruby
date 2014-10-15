@@ -48,7 +48,7 @@ public enum CallConfiguration {
     },
     FrameBacktraceScopeFull (Framing.Backtrace, Scoping.Full) {
         void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
-            context.preMethodBacktraceAndScope(name, implementer, scope);
+            context.preMethodBacktraceAndScope(name, scope);
         }
         void post(ThreadContext context) {
             context.postMethodBacktraceAndScope();
@@ -56,7 +56,7 @@ public enum CallConfiguration {
     },
     FrameBacktraceScopeDummy (Framing.Backtrace, Scoping.Dummy) {
         void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
-            context.preMethodBacktraceDummyScope(implementer, name, scope);
+            context.preMethodBacktraceDummyScope(name, scope);
         }
         void post(ThreadContext context) {
             context.postMethodBacktraceDummyScope();
@@ -72,7 +72,7 @@ public enum CallConfiguration {
     },
     FrameNoneScopeFull(Framing.None, Scoping.Full) {
         void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
-            context.preMethodScopeOnly(implementer, scope);
+            context.preMethodScopeOnly(scope);
         }
         void post(ThreadContext context) {
             context.postMethodScopeOnly();
@@ -80,7 +80,7 @@ public enum CallConfiguration {
     },
     FrameNoneScopeDummy(Framing.None, Scoping.Dummy) {
         void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
-            context.preMethodNoFrameAndDummyScope(implementer, scope);
+            context.preMethodNoFrameAndDummyScope(scope);
         }
         void post(ThreadContext context) {
             context.postMethodScopeOnly();

@@ -31,13 +31,11 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
     @Override
     protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-
-        StaticScope ss = method.getStaticScope();
-        context.preMethodFrameAndClass(getImplementationClass(), name, self, block, ss);
+        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
         // Add a parent-link to current dynscope to support non-local returns cheaply
         // This doesn't affect variable scoping since local variables will all have
         // the right scope depth.
-        context.pushScope(DynamicScope.newDynamicScope(ss, context.getCurrentScope()));
+        context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope(), context.getCurrentScope()));
         context.setCurrentVisibility(getVisibility());
     }
 

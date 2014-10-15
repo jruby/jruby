@@ -26,18 +26,18 @@ public class InterpretedIRBlockBody extends IRBlockBody {
     }
 
     public void ensureInstrsReady(Block.Type blockType) {
+        // FIXME: probably save interpcontext as a field and use that as a check so we are not retrieving per call
         // Prepare closure if not yet done so we know if the method requires a dynscope or not
-        if (closure.getInstrsForInterpretation() == null) {
-            InterpreterContext context = closure.prepareForInterpretation();
-            this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-            this.reuseParentScope = context.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-            if (IRRuntimeHelpers.isDebug()) {
-                LOG.info("Executing '" + closure + "'");
-                // The base IR may not have been processed yet
-                CFG cfg = closure.getCFG();
-                LOG.info("Graph:\n" + cfg.toStringGraph());
-                LOG.info("CFG:\n" + cfg.toStringInstrs());
-            }
+        InterpreterContext context = closure.prepareForInterpretation();
+        pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        reuseParentScope = context.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+
+        if (IRRuntimeHelpers.isDebug()) {
+            LOG.info("Executing '" + closure + "' (pushScope=" + pushScope + ", reuseParentScope=" + reuseParentScope);
+            // The base IR may not have been processed yet
+            CFG cfg = closure.getCFG();
+            LOG.info("Graph:\n" + cfg.toStringGraph());
+            LOG.info("CFG:\n" + cfg.toStringInstrs());
         }
     }
 
