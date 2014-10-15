@@ -111,7 +111,7 @@ class TestObjectSpace < Test::Unit::TestCase
     (JRuby.gc; sleep 0.1) until (ObjectSpace._id2ref(n).nil? || (Time.now - t > 5))
 
     # straight reference should succeed
-    # GH #2046 ObjectSpace._id2ref not clearing dead variable after 5s
+    # GH #2046 temp variables are pinning dead values in IR
     # assert_nil(ObjectSpace._id2ref n)
 
     # reference in conditional caused NPE
