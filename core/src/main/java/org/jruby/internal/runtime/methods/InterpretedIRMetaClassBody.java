@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
+import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -22,22 +23,24 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
     }
 
     @Override
-    protected void post(ThreadContext context) {
+    protected void post(InterpreterContext ic, ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
-        context.popScope();
+        if (ic.popDynScope()) {
+            context.popScope();
+        }
     }
 
     @Override
-    protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
+    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-
-        StaticScope ss = method.getStaticScope();
-        context.preMethodFrameAndClass(getImplementationClass(), name, self, block, ss);
-        // Add a parent-link to current dynscope to support non-local returns cheaply
-        // This doesn't affect variable scoping since local variables will all have
-        // the right scope depth.
-        context.pushScope(DynamicScope.newDynamicScope(ss, context.getCurrentScope()));
+        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
+        if (ic.pushNewDynScope()) {
+            // Add a parent-link to current dynscope to support non-local returns cheaply
+            // This doesn't affect variable scoping since local variables will all have
+            // the right scope depth.
+            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope(), context.getCurrentScope()));
+        }
         context.setCurrentVisibility(getVisibility());
     }
 

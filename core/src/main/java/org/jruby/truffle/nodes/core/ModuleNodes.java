@@ -52,33 +52,6 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object isSubclassOf(VirtualFrame frame, RubyClass self, RubyClass other) {
-            notDesignedForCompilation();
-
-            if (self == other || ModuleOperations.includesModule(self, other)) {
-                return true;
-            }
-
-            for (ModuleChain c = self.getParentModule(); c != null; c = c.getParentModule()) {
-                if (c == other) {
-                    return true;
-                }
-            }
-
-            if (ModuleOperations.includesModule(other, self)) {
-                return false;
-            }
-
-            for (ModuleChain c = other.getParentModule(); c != null; c = c.getParentModule()) {
-                if (c == self) {
-                    return false;
-                }
-            }
-
-            return NilPlaceholder.INSTANCE;
-        }
-
-        @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
             notDesignedForCompilation();
 
@@ -182,8 +155,8 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final List<RubyModule> ancestors = new ArrayList<>();
-            for (ModuleChain module = self; module != null; module = module.getParentModule()) {
-                ancestors.add(module.getActualModule());
+            for (RubyModule module : self.ancestors()) {
+                ancestors.add(module);
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
@@ -817,17 +790,15 @@ public abstract class ModuleNodes {
         public RubyArray nesting() {
             notDesignedForCompilation();
 
-            final List<ModuleChain> modules = new ArrayList<>();
+            final List<RubyModule> modules = new ArrayList<>();
 
-            ModuleChain module = RubyCallStack.getCallingMethod().getDeclaringModule();
+            RubyModule module = RubyCallStack.getCallingMethod().getDeclaringModule();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
-            while (module != null && module != object) {
-                if (module instanceof RubyModule) {
-                    modules.add(module);
-                }
-
-                module = module.getLexicalParentModule();
+            for (RubyModule englobing : module.lexicalAncestors()) {
+                if (englobing == object)
+                    break;
+                modules.add(englobing);
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
@@ -974,11 +945,10 @@ public abstract class ModuleNodes {
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
             final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
+
             if (includeAncestors) {
-                ModuleChain parent = module.getParentModule();
-                while(parent != null){
+                for (RubyModule parent : module.parentAncestors()) {
                     methods.addAll(parent.getMethods().values());
-                    parent = parent.getParentModule();
                 }
             }
             for (RubyMethod method : methods) {
@@ -1014,10 +984,8 @@ public abstract class ModuleNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
             final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
             if (includeAncestors) {
-                ModuleChain parent = module.getParentModule();
-                while(parent != null){
+                for (RubyModule parent : module.parentAncestors()) {
                     methods.addAll(parent.getMethods().values());
-                    parent = parent.getParentModule();
                 }
             }
             for (RubyMethod method : methods) {
@@ -1052,15 +1020,14 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
             final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
             if (includeAncestors) {
-                ModuleChain parent = module.getParentModule();
-                while(parent != null){
+                for (RubyModule parent : module.parentAncestors()) {
                     methods.addAll(parent.getMethods().values());
-                    parent = parent.getParentModule();
                 }
             }
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
             for (RubyMethod method : methods) {
                 if (method.getVisibility() != Visibility.PRIVATE){
                     RubySymbol m = getContext().newSymbol(method.getName());

@@ -11,8 +11,11 @@ project 'JRuby Main Maven Artifact' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
 
   jar 'org.jruby:jruby-core:${project.version}'
   jar 'org.jruby:jruby-stdlib:${project.version}'

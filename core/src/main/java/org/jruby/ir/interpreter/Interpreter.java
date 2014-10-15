@@ -78,7 +78,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(ss, evalType);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, evalType);
-        evalScript.prepareForInterpretation();
+        // ClosureInterpreterContext never retrieved as an operand in this context.
+        // So, self operand is not required here.
+        // Passing null to force early crasher if ever used differently.
+        evalScript.prepareInterpreterContext(null);
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv = null;
@@ -121,7 +124,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            b.prepareForInterpretation();
+            b.prepareInterpreterContext(b.getSelf());
             Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
@@ -341,12 +344,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, StaticScope currScope,
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
                                              RubyModule implClass, Visibility visibility, Object[] temp, DynamicScope currDynamicScope) {
         switch(operation) {
         case PUSH_FRAME:
-            context.preMethodFrameAndClass(implClass, name, self, block, currScope);
+            context.preMethodFrameOnly(implClass, name, self, block);
             context.setCurrentVisibility(visibility);
             break;
         case POP_FRAME:
@@ -525,7 +528,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        InterpreterContext interpreterContext = scope.getInstrsForInterpretation();
+        InterpreterContext interpreterContext = scope.getInterpreterContext();
         Instr[] instrs = interpreterContext.getInstructions();
         int      numTempVars    = interpreterContext.getTemporaryVariablecount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
@@ -588,7 +591,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         currDynScope = getNewDynScope(context, scope, currScope);
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, currScope, name, args, self, block, implClass, visibility, temp, currDynScope);
+                        processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility, temp, currDynScope);
                     }
                     break;
                 case OTHER_OP:

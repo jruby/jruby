@@ -2831,7 +2831,7 @@ public final class Ruby {
         
         try {
             ThreadContext.pushBacktrace(context, "(root)", file, 0);
-            context.preNodeEval(objectClass, self, scriptName);
+            context.preNodeEval(self);
             ParseResult parseResult = parseFile(scriptName, in, null);
 
             if (wrap) {

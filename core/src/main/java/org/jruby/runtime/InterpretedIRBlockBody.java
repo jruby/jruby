@@ -17,6 +17,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
     protected final IRClosure closure;
     protected boolean pushScope;
     protected boolean reuseParentScope;
+    private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
     public InterpretedIRBlockBody(IRClosure closure, Arity arity, int argumentType) {
         super(closure.getStaticScope(), closure.getParameterList(), closure.getFileName(), closure.getLineNumber(), arity);
@@ -25,24 +26,20 @@ public class InterpretedIRBlockBody extends IRBlockBody {
         this.reuseParentScope = false;
     }
 
-    public void ensureInstrsReady(Block.Type blockType) {
-        // Prepare closure if not yet done so we know if the method requires a dynscope or not
-        if (closure.getInstrsForInterpretation() == null) {
-            InterpreterContext context = closure.prepareForInterpretation();
-            this.pushScope = !context.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-            this.reuseParentScope = context.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-            if (IRRuntimeHelpers.isDebug()) {
-                LOG.info("Executing '" + closure + "'");
-                // The base IR may not have been processed yet
-                CFG cfg = closure.getCFG();
-                LOG.info("Graph:\n" + cfg.toStringGraph());
-                LOG.info("CFG:\n" + cfg.toStringInstrs());
-            }
+    public InterpreterContext ensureInstrsReady() {
+        if (IRRuntimeHelpers.isDebug() && !displayedCFG) {
+            LOG.info("Executing '" + closure + "' (pushScope=" + pushScope + ", reuseParentScope=" + reuseParentScope);
+            CFG cfg = closure.getCFG();
+            LOG.info("Graph:\n" + cfg.toStringGraph());
+            LOG.info("CFG:\n" + cfg.toStringInstrs());
+            displayedCFG = true;
         }
+        // Always prepared in the context of parent scope -- so a null value here is a bug.
+        return closure.getInterpreterContext();
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
-        ensureInstrsReady(type);
+        InterpreterContext ic = ensureInstrsReady();
 
         // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
         // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
@@ -59,18 +56,16 @@ public class InterpretedIRBlockBody extends IRBlockBody {
             self = useBindingSelf(binding);
         }
 
-
         // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
         // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
         // is just wasteful allocation since the scope is not used at all.
 
         // Pass on eval state info to the dynamic scope and clear it on the block-body
         DynamicScope prevScope = binding.getDynamicScope();
-        if (this.pushScope) {
+        if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(getStaticScope(), prevScope, this.evalType.get()));
-        } else if (this.reuseParentScope) {
-            // Reuse!
-            // We can avoid the push only if surrounding vars aren't referenced!
+        } else if (ic.reuseParentDynScope()) {
+            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
             context.pushScope(prevScope);
         }
         this.evalType.set(EvalType.NONE);
@@ -83,7 +78,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
             // Ex: eval("...", foo.instance_eval { binding })
             // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
             binding.getFrame().setVisibility(oldVis);
-            if (this.pushScope || this.reuseParentScope) {
+            if (ic.popDynScope()) {
                 context.postYield(binding, prevFrame);
             } else {
                 context.postYieldNoScope(prevFrame);

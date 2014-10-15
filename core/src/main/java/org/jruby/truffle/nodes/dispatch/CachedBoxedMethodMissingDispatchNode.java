@@ -18,25 +18,25 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
 public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
-    private final ModuleChain expectedClass;
+    private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
 
     @Child protected DirectCallNode callNode;
 
     public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                ModuleChain expectedClass, RubyMethod method) {
+                                                RubyClass expectedClass, RubyMethod method) {
         super(context, cachedName, next);
 
         this.expectedClass = expectedClass;

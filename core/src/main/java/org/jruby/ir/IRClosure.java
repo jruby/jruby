@@ -109,6 +109,27 @@ public class IRClosure extends IRScope {
         this.nestingDepth++;
     }
 
+    public InterpreterContext prepareInterpreterContext(Operand self) {
+        if (interpreterContext != null) return interpreterContext; // Already prepared
+
+        initScope(false);
+
+        Instr[] linearizedInstrArray = prepareInstructions();
+
+        interpreterContext = new ClosureInterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray,
+                self, getStaticScope(), getBlockBody());
+
+        return interpreterContext;
+    }
+
+    @Override
+    public synchronized InterpreterContext prepareForInterpretation() {
+        // This should have already been prepared during preparation of parent scopes.
+        // If this is null, it would be a bug and let users throw a NPE.
+        return interpreterContext;
+    }
+
     public void setBeginEndBlock() {
         this.isBeginEndBlock = true;
     }

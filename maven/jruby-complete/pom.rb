@@ -11,9 +11,12 @@ project 'JRuby Complete' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
 
   scope :provided do
     jar 'org.jruby:jruby-core:${project.version}'

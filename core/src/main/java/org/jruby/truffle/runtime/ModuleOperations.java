@@ -21,65 +21,51 @@ import java.util.Map;
 
 public abstract class ModuleOperations {
 
-    public static boolean includesModule(ModuleChain module, ModuleChain other) {
-        while (module != null) {
-            if (module == other) {
+    public static boolean includesModule(RubyModule module, RubyModule other) {
+        for (RubyModule ancestor : module.ancestors()) {
+            if (ancestor == other) {
                 return true;
             }
-
-            module = module.getParentModule();
         }
 
         return false;
     }
 
-    public static Map<String, RubyConstant> getAllConstants(ModuleChain module) {
+    public static Map<String, RubyConstant> getAllConstants(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final Map<String, RubyConstant> methods = new HashMap<>();
+        final Map<String, RubyConstant> constants = new HashMap<>();
 
         // Look in the current module
-
-        methods.putAll(module.getConstants());
+        constants.putAll(module.getConstants());
 
         // Look in lexical ancestors
-
-        ModuleChain lexicalAncestor = module.getLexicalParentModule();
-
-        while (lexicalAncestor != null) {
+        for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
             for (Map.Entry<String, RubyConstant> constant : lexicalAncestor.getConstants().entrySet()) {
-                if (!methods.containsKey(constant.getKey())) {
-                    methods.put(constant.getKey(), constant.getValue());
+                if (!constants.containsKey(constant.getKey())) {
+                    constants.put(constant.getKey(), constant.getValue());
                 }
             }
-
-            lexicalAncestor = lexicalAncestor.getLexicalParentModule();
         }
 
         // Look in ancestors
-
-        ModuleChain ancestor = module.getParentModule();
-
-        while (ancestor != null) {
+        for (RubyModule ancestor : module.parentAncestors()) {
             for (Map.Entry<String, RubyConstant> constant : ancestor.getConstants().entrySet()) {
-                if (!methods.containsKey(constant.getKey())) {
-                    methods.put(constant.getKey(), constant.getValue());
+                if (!constants.containsKey(constant.getKey())) {
+                    constants.put(constant.getKey(), constant.getValue());
                 }
             }
-
-            ancestor = ancestor.getParentModule();
         }
 
-        return methods;
+        return constants;
     }
 
-    public static RubyConstant lookupConstant(ModuleChain module, String name) {
+    public static RubyConstant lookupConstant(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
         RubyConstant constant;
 
         // Look in the current module
-
         constant = module.getConstants().get(name);
 
         if (constant != null) {
@@ -87,31 +73,21 @@ public abstract class ModuleOperations {
         }
 
         // Look in lexical ancestors
-
-        ModuleChain lexicalAncestor = module.getLexicalParentModule();
-
-        while (lexicalAncestor != null) {
+        for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
             constant = lexicalAncestor.getConstants().get(name);
 
             if (constant != null) {
                 return constant;
             }
-
-            lexicalAncestor = lexicalAncestor.getLexicalParentModule();
         }
 
         // Look in ancestors
-
-        ModuleChain ancestor = module.getParentModule();
-
-        while (ancestor != null) {
+        for (RubyModule ancestor : module.parentAncestors()) {
             constant = ancestor.getConstants().get(name);
 
             if (constant != null) {
                 return constant;
             }
-
-            ancestor = ancestor.getParentModule();
         }
 
         // Nothing found
@@ -119,39 +95,32 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    public static Map<String, RubyMethod> getAllMethods(ModuleChain module) {
+    public static Map<String, RubyMethod> getAllMethods(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
         final Map<String, RubyMethod> methods = new HashMap<>();
 
         // Look in the current module
-
         methods.putAll(module.getMethods());
 
         // Look in ancestors
-
-        ModuleChain ancestor = module.getParentModule();
-
-        while (ancestor != null) {
+        for (RubyModule ancestor : module.parentAncestors()) {
             for (Map.Entry<String, RubyMethod> method : ancestor.getMethods().entrySet()) {
                 if (!methods.containsKey(method.getKey())) {
                     methods.put(method.getKey(), method.getValue());
                 }
             }
-
-            ancestor = ancestor.getParentModule();
         }
 
         return methods;
     }
 
-    public static RubyMethod lookupMethod(ModuleChain module, String name) {
+    public static RubyMethod lookupMethod(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
         RubyMethod method;
 
         // Look in the current module
-
         method = module.getMethods().get(name);
 
         if (method != null) {
@@ -159,17 +128,12 @@ public abstract class ModuleOperations {
         }
 
         // Look in ancestors
-
-        ModuleChain ancestor = module.getParentModule();
-
-        while (ancestor != null) {
+        for (RubyModule ancestor : module.parentAncestors()) {
             method = ancestor.getMethods().get(name);
 
             if (method != null) {
                 return method;
             }
-
-            ancestor = ancestor.getParentModule();
         }
 
         // Nothing found
@@ -177,39 +141,32 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    public static Map<String, Object> getAllClassVariables(ModuleChain module) {
+    public static Map<String, Object> getAllClassVariables(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
         final Map<String, Object> classVariables = new HashMap<>();
 
         // Look in the current module
-
         classVariables.putAll(module.getMethods());
 
         // Look in ancestors
-
-        ModuleChain ancestor = module.getParentModule();
-
-        while (ancestor != null) {
+        for (RubyModule ancestor : module.parentAncestors()) {
             for (Map.Entry<String, Object> classVariable : ancestor.getClassVariables().entrySet()) {
                 if (!classVariables.containsKey(classVariable.getKey())) {
                     classVariables.put(classVariable.getKey(), classVariable.getValue());
                 }
             }
-
-            ancestor = ancestor.getParentModule();
         }
 
         return classVariables;
     }
 
-    public static Object lookupClassVariable(ModuleChain module, String name) {
+    public static Object lookupClassVariable(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
         Object value;
 
         // Look in the current module
-
         value = module.getClassVariables().get(name);
 
         if (value != null) {
@@ -217,17 +174,12 @@ public abstract class ModuleOperations {
         }
 
         // Look in ancestors
-
-        ModuleChain ancestor = module.getParentModule();
-
-        while (ancestor != null) {
+        for (RubyModule ancestor : module.parentAncestors()) {
             value = ancestor.getClassVariables().get(name);
 
             if (value != null) {
                 return value;
             }
-
-            ancestor = ancestor.getParentModule();
         }
 
         // Nothing found
@@ -235,7 +187,7 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    public static void setClassVariable(ModuleChain module, String name, Object value) {
+    public static void setClassVariable(RubyModule module, String name, Object value) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in the current module
@@ -246,14 +198,10 @@ public abstract class ModuleOperations {
 
         // Look in ancestors
 
-        ModuleChain ancestor = module.getParentModule();
-
-        while (ancestor != null) {
+        for (RubyModule ancestor : module.parentAncestors()) {
             if (ancestor.getClassVariables().containsKey(name)) {
                 ancestor.getClassVariables().put(name, value);
             }
-
-            ancestor = ancestor.getParentModule();
         }
 
         // Not existing class variable - set in the current module
@@ -261,32 +209,16 @@ public abstract class ModuleOperations {
         module.getClassVariables().put(name, value);
     }
 
-    public static boolean assignableTo(ModuleChain thisModule, ModuleChain otherModule) {
+    public static boolean assignableTo(RubyClass thisClass, RubyClass otherClass) {
         RubyNode.notDesignedForCompilation();
 
-        ModuleChain ancestor = thisModule;
-
-        do {
-            if (ancestor == otherModule) {
+        for (RubyModule ancestor : thisClass.ancestors()) {
+            if (ancestor == otherClass) {
                 return true;
             }
-
-            ancestor = ancestor.getParentModule();
-        } while (ancestor != null);
+        }
 
         return false;
-    }
-
-    public static void debugModuleChain(ModuleChain module) {
-        while (module != null) {
-            System.err.print(module.getClass());
-
-            RubyModule real = module.getActualModule();
-            System.err.print(" " + real.getName());
-
-            System.err.println();
-            module = module.getParentModule();
-        }
     }
 
 }

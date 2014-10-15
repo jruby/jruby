@@ -1986,7 +1986,7 @@ public class IRBuilder {
     private void handleBreakAndReturnsInLambdas(IRClosure s) {
         Label rBeginLabel = s.getNewLabel();
         Label rEndLabel   = s.getNewLabel();
-        Label rescueLabel = Label.GLOBAL_ENSURE_BLOCK_LABEL;
+        Label rescueLabel = Label.getGlobalEnsureBlockLabel();
 
         // protect the entire body as it exists now with the global ensure block
         addInstrAtBeginning(s, new ExceptionRegionStartMarkerInstr(rescueLabel));

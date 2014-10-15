@@ -805,10 +805,6 @@ public final class ThreadContext {
         popFrame();
     }
 
-    public void preMethodFrameAndClass(RubyModule implClass, String name, IRubyObject self, Block block, StaticScope staticScope) {
-        pushCallFrame(implClass, name, self, block);
-    }
-
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
             StaticScope staticScope) {
         pushCallFrame(clazz, name, self, block);
@@ -821,7 +817,7 @@ public final class ThreadContext {
         pushScope(staticScope.getDummyScope());
     }
 
-    public void preMethodNoFrameAndDummyScope(RubyModule clazz, StaticScope staticScope) {
+    public void preMethodNoFrameAndDummyScope(StaticScope staticScope) {
         pushScope(staticScope.getDummyScope());
     }
     
@@ -838,7 +834,7 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preMethodScopeOnly(RubyModule clazz, StaticScope staticScope) {
+    public void preMethodScopeOnly(StaticScope staticScope) {
         pushScope(DynamicScope.newDynamicScope(staticScope));
     }
     
@@ -846,8 +842,8 @@ public final class ThreadContext {
         popScope();
     }
     
-    public void preMethodBacktraceAndScope(String name, RubyModule clazz, StaticScope staticScope) {
-        preMethodScopeOnly(clazz, staticScope);
+    public void preMethodBacktraceAndScope(String name, StaticScope staticScope) {
+        preMethodScopeOnly(staticScope);
     }
     
     public void postMethodBacktraceAndScope() {
@@ -857,7 +853,7 @@ public final class ThreadContext {
     public void preMethodBacktraceOnly(String name) {
     }
 
-    public void preMethodBacktraceDummyScope(RubyModule clazz, String name, StaticScope staticScope) {
+    public void preMethodBacktraceDummyScope(String name, StaticScope staticScope) {
         pushScope(staticScope.getDummyScope());
     }
     
@@ -877,11 +873,7 @@ public final class ThreadContext {
         getCurrentScope().getStaticScope().setModule(objectClass);
     }
     
-    public void preNodeEval(RubyModule rubyClass, IRubyObject self, String name) {
-        pushEvalFrame(self);
-    }
-
-    public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
+    public void preNodeEval(IRubyObject self) {
         pushEvalFrame(self);
     }
     

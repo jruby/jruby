@@ -9,7 +9,7 @@ import java.util.List;
 // there is exactly one label object with the same label string?
 public class Label extends Operand {
     public static final Label UNRESCUED_REGION_LABEL = new Label("UNRESCUED_REGION", 0);
-    public static final Label GLOBAL_ENSURE_BLOCK_LABEL = new Label("_GLOBAL_ENSURE_BLOCK_", 0);
+    private static final Label GLOBAL_ENSURE_BLOCK_LABEL = new Label("_GLOBAL_ENSURE_BLOCK_", 0);
 
     public final String prefix;
     public final int id;
@@ -17,6 +17,9 @@ public class Label extends Operand {
     // This is the PC (program counter == array index) for the label target -- this field is used during interpretation
     // to fetch the instruction to jump to given a label
     private int targetPC = -1;
+
+    // Clone to make sure that every scope gets its own copy of this label
+    public static Label getGlobalEnsureBlockLabel() { return GLOBAL_ENSURE_BLOCK_LABEL.clone(); }
 
     public Label(String prefix, int id) {
         super(OperandType.LABEL);
@@ -48,6 +51,10 @@ public class Label extends Operand {
     @Override
     public boolean equals(Object o) {
         return (o instanceof Label) && id == ((Label) o).id && prefix.equals(((Label)o).prefix);
+    }
+
+    public boolean isGlobalEnsureBlockLabel() {
+        return this.equals(GLOBAL_ENSURE_BLOCK_LABEL);
     }
 
     public Label clone() {
