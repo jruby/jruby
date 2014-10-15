@@ -79,15 +79,18 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'base.java.version' => '1.7',
               'tesla.dump.readonly' => 'true',
               'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.5',
+              'jruby.plugins.version' => '1.0.7-SNAPSHOT',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
               'bouncy-castle.version' => '1.47',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'jruby.home' => '${project.basedir}',
               'joda.time.version' => '2.3' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/..'
+  end
 
   modules [ 'core', 'lib' ]
 

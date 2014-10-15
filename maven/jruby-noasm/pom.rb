@@ -11,8 +11,11 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
 
   # the jar with classifier 'noasm' still has the dependencies
   # of the regular artifact and we need to exclude those which

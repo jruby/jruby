@@ -11,19 +11,23 @@ project 'JRuby Stdlib' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'jruby.home' => '${basedir}/../..',
-              'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
+              'jruby_home' => '${basedir}/../..',
+              'gem.home' => '${jruby_home}/lib/ruby/gems/shared',
               'main.basedir' => '${project.parent.parent.basedir}',
               # we copy everything into the target/classes/META-INF
               # so the jar plugin just packs it - see build/resources below
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home',
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
 
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
+
   execute( 'fix shebang on gem bin files and add *.bat files',
            'initialize' ) do |ctx|
     
     puts 'fix the gem stub files'
-    jruby_home = ctx.project.properties.get_property( 'jruby.home' )
+    jruby_home = ctx.project.properties.get_property( 'jruby_home' )
     bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
     Dir[ File.join( bindir, '*' ) ].each do |f|
       content = File.read( f )
@@ -58,7 +62,7 @@ project 'JRuby Stdlib' do
   end
 
   execute 'jrubydir', 'prepare-package' do |ctx|
-    require( ctx.project.properties['jruby.home'].to_pathname + '/core/src/main/ruby/jruby/commands.rb' )
+    require( ctx.project.properties['jruby_home'].to_pathname + '/core/src/main/ruby/jruby/commands.rb' )
     JRuby::Commands.generate_dir_info( ctx.project.build.output_directory.to_pathname + '/META-INF/jruby.home' )
   end
 
@@ -74,7 +78,7 @@ project 'JRuby Stdlib' do
 
   build do
 
-    # both resources are includes for the $jruby.home/lib directory
+    # both resources are includes for the $jruby_home/lib directory
 
     resource do
       directory '${gem.home}'
@@ -83,7 +87,7 @@ project 'JRuby Stdlib' do
     end
 
     resource do
-      directory '${jruby.home}'
+      directory '${jruby_home}'
       includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/2.1/**', 'lib/ruby/shared/**'
       excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*', 'lib/ruby/shared/rubygems/defaults/jruby_native.rb'
       target_path '${jruby.complete.home}'
