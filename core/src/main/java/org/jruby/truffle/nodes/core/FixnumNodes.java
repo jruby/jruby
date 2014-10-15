@@ -391,14 +391,14 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "/", minArgs = 1, maxArgs = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
-        private final BranchProfile bGreaterZero = new BranchProfile();
-        private final BranchProfile bGreaterZeroAGreaterEqualZero = new BranchProfile();
-        private final BranchProfile bGreaterZeroALessZero = new BranchProfile();
-        private final BranchProfile aGreaterZero = new BranchProfile();
-        private final BranchProfile bMinusOne = new BranchProfile();
-        private final BranchProfile bMinusOneAMinimum = new BranchProfile();
-        private final BranchProfile bMinusOneANotMinimum = new BranchProfile();
-        private final BranchProfile finalCase = new BranchProfile();
+        private final BranchProfile bGreaterZero = BranchProfile.create();
+        private final BranchProfile bGreaterZeroAGreaterEqualZero = BranchProfile.create();
+        private final BranchProfile bGreaterZeroALessZero = BranchProfile.create();
+        private final BranchProfile aGreaterZero = BranchProfile.create();
+        private final BranchProfile bMinusOne = BranchProfile.create();
+        private final BranchProfile bMinusOneAMinimum = BranchProfile.create();
+        private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
+        private final BranchProfile finalCase = BranchProfile.create();
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -570,7 +570,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "%", minArgs = 1, maxArgs = 1)
     public abstract static class ModNode extends CoreMethodNode {
 
-        private final BranchProfile adjustProfile = new BranchProfile();
+        private final BranchProfile adjustProfile = BranchProfile.create();
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1201,9 +1201,9 @@ public abstract class FixnumNodes {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile bAboveZeroProfile = new BranchProfile();
-        private final BranchProfile bNotAboveZeroProfile = new BranchProfile();
-        private final BranchProfile useBignumProfile = new BranchProfile();
+        private final BranchProfile bAboveZeroProfile = BranchProfile.create();
+        private final BranchProfile bNotAboveZeroProfile = BranchProfile.create();
+        private final BranchProfile useBignumProfile = BranchProfile.create();
 
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1439,9 +1439,9 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "times", needsBlock = true, maxArgs = 0)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public TimesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1608,9 +1608,9 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "upto", needsBlock = true, minArgs = 1, maxArgs = 1)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public UpToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

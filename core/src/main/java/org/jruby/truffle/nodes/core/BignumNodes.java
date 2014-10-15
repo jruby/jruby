@@ -618,7 +618,7 @@ public abstract class BignumNodes {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile bLessThanZero = new BranchProfile();
+        private final BranchProfile bLessThanZero = BranchProfile.create();
 
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -647,7 +647,7 @@ public abstract class BignumNodes {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile bLessThanZero = new BranchProfile();
+        private final BranchProfile bLessThanZero = BranchProfile.create();
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -696,9 +696,9 @@ public abstract class BignumNodes {
     @CoreMethod(names = "times", needsBlock = true, maxArgs = 0)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public TimesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

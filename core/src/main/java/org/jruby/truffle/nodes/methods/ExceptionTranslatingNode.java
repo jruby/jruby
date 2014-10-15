@@ -30,8 +30,8 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @Child protected RubyNode child;
 
-    private final BranchProfile controlProfile = new BranchProfile();
-    private final BranchProfile rethrowProfile = new BranchProfile();
+    private final BranchProfile controlProfile = BranchProfile.create();
+    private final BranchProfile rethrowProfile = BranchProfile.create();
 
     public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);

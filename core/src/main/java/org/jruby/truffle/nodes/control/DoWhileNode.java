@@ -31,9 +31,9 @@ public class DoWhileNode extends RubyNode {
     @Child protected BooleanCastNode condition;
     @Child protected RubyNode body;
 
-    private final BranchProfile breakProfile = new BranchProfile();
-    private final BranchProfile nextProfile = new BranchProfile();
-    private final BranchProfile redoProfile = new BranchProfile();
+    private final BranchProfile breakProfile = BranchProfile.create();
+    private final BranchProfile nextProfile = BranchProfile.create();
+    private final BranchProfile redoProfile = BranchProfile.create();
 
     public DoWhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
         super(context, sourceSection);

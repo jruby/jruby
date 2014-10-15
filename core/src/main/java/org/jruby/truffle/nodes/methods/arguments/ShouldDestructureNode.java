@@ -28,7 +28,7 @@ public class ShouldDestructureNode extends RubyNode {
     private final Arity arity;
     @Child protected RespondToNode respondToCheck;
 
-    private final BranchProfile checkRespondProfile = new BranchProfile();
+    private final BranchProfile checkRespondProfile = BranchProfile.create();
 
     public ShouldDestructureNode(RubyContext context, SourceSection sourceSection, Arity arity, RespondToNode respondToCheck) {
         super(context, sourceSection);

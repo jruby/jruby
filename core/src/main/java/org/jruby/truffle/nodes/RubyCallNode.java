@@ -40,7 +40,7 @@ public class RubyCallNode extends RubyNode {
 
     @Child protected DispatchHeadNode dispatchHead;
 
-    private final BranchProfile splatNotArrayProfile = new BranchProfile();
+    private final BranchProfile splatNotArrayProfile = BranchProfile.create();
 
     @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
