@@ -17,7 +17,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.cast.BoxingNode;
-import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;

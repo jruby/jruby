@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.core.*;
 
 /**

@@ -113,10 +113,8 @@ public class RubyClass extends RubyModule {
 
         assert parentModule == null;
 
-        parentModule = newSuperclass;
-        newSuperclass.addDependent(this);
+        unsafeSetParent(newSuperclass);
         newSuperclass.subClasses.add(this);
-        newVersion();
 
         objectLayoutForInstances = new ObjectLayout(newSuperclass.objectLayoutForInstances);
     }

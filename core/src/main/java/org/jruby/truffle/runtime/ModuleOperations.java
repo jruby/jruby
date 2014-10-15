@@ -221,16 +221,4 @@ public abstract class ModuleOperations {
         return false;
     }
 
-    public static void debugModuleChain(ModuleChain module) {
-        while (module != null) {
-            System.err.print(module.getClass());
-
-            RubyModule real = module.getActualModule();
-            System.err.print(" " + real.getName());
-
-            System.err.println();
-            module = module.getParentModule();
-        }
-    }
-
 }

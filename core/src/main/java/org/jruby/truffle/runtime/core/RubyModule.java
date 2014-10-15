@@ -28,9 +28,55 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import java.util.*;
 
 /**
+ * Either an IncludedModule, a RubyClass or a RubyModule.
+ * Private interface, do not use outside RubyModule.
+ */
+interface ModuleChain {
+    ModuleChain getParentModule();
+
+    RubyModule getActualModule();
+}
+
+/**
  * Represents the Ruby {@code Module} class.
  */
 public class RubyModule extends RubyObject implements ModuleChain {
+
+    /**
+     * A reference to an included RubyModule.
+     */
+    private static class IncludedModule implements ModuleChain {
+        private final RubyModule includedModule;
+        private final ModuleChain parentModule;
+
+        public IncludedModule(RubyModule includedModule, ModuleChain parentModule) {
+            this.includedModule = includedModule;
+            this.parentModule = parentModule;
+        }
+
+        @Override
+        public ModuleChain getParentModule() {
+            return parentModule;
+        }
+
+        @Override
+        public RubyModule getActualModule() {
+            return includedModule;
+        }
+    }
+
+    public static void debugModuleChain(RubyModule module) {
+        ModuleChain chain = module;
+        while (chain != null) {
+            System.err.print(chain.getClass());
+
+            RubyModule real = chain.getActualModule();
+            System.err.print(" " + real.getName());
+
+            System.err.println();
+            chain = chain.getParentModule();
+        }
+    }
 
     /**
      * The slot within a module definition method frame where we store the implicit state that is
@@ -103,6 +149,16 @@ public class RubyModule extends RubyObject implements ModuleChain {
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
         this.classVariables.putAll(other.classVariables);
+    }
+
+    /**
+     * This method supports initialization and solves boot-order problems and should not normally be
+     * used.
+     */
+    protected void unsafeSetParent(RubyModule parent) {
+        parentModule = parent;
+        parent.addDependent(this);
+        newVersion();
     }
 
     public void include(Node currentNode, RubyModule module) {
