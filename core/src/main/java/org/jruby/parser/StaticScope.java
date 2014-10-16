@@ -559,7 +559,9 @@ public class StaticScope implements Serializable {
 
     public StaticScope duplicate() {
         StaticScope dupe = new StaticScope(type, enclosingScope, variableNames == null ? NO_NAMES : variableNames);
-        dupe.setIRScope(irScope);
+        // irScope is not guaranteed to be set onto StaticScope until it is executed for the first time.
+        // We can call duplicate before its first execution.
+        if (irScope != null) dupe.setIRScope(irScope);
         dupe.setScopeType(scopeType);
         dupe.setPreviousCRefScope(previousCRefScope);
         dupe.setModule(cref);
