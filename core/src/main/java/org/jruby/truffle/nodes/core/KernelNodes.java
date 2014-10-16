@@ -52,7 +52,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
@@ -105,7 +105,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
@@ -153,43 +153,38 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean notMatch(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
         @Specialization
-        public boolean equal(boolean a, boolean b) {
+        public boolean notMatch(boolean a, boolean b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(int a, int b) {
+        public boolean notMatch(int a, int b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(long a, long b) {
+        public boolean notMatch(long a, long b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(double a, double b) {
+        public boolean notMatch(double a, double b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
+        public boolean notMatch(BigInteger a, BigInteger b) {
             return a.compareTo(b) != 0;
         }
 
         @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+        public boolean notMatch(RubyBasicObject a, RubyBasicObject b) {
             return a != b;
-        }
-
-        @Specialization
-        public boolean equal(NilPlaceholder a, RubyBasicObject b) {
-            return false;
         }
 
     }
@@ -220,7 +215,7 @@ public abstract class KernelNodes {
                 return 0;
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -237,10 +232,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder abort() {
+        public RubyNilClass abort() {
             CompilerDirectives.transferToInterpreter();
             System.exit(1);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -298,7 +293,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             getContext().getAtExitManager().add(block);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -397,7 +392,7 @@ public abstract class KernelNodes {
             } catch (ThrowException e) {
                 if (e.getTag().equals(tag)) {
                     // TODO(cs): unset rather than set to Nil?
-                    getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", NilPlaceholder.INSTANCE);
+                    getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", getContext().getCoreLibrary().getNilObject());
                     return e.getValue();
                 } else {
                     throw e;
@@ -502,7 +497,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
@@ -670,10 +665,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder exit() {
+        public RubyNilClass exit() {
             CompilerDirectives.transferToInterpreter();
             System.exit(1);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -716,7 +711,7 @@ public abstract class KernelNodes {
         public Object fork(Object[] args) {
             notDesignedForCompilation();
             getContext().getWarnings().warn("Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -879,7 +874,7 @@ public abstract class KernelNodes {
         public Object initializeCopy(RubyObject self, RubyObject other) {
             notDesignedForCompilation();
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -1074,7 +1069,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean isA(@SuppressWarnings("unused") RubyBasicObject self, @SuppressWarnings("unused") NilPlaceholder nil) {
+        public boolean isA(@SuppressWarnings("unused") RubyBasicObject self, @SuppressWarnings("unused") RubyNilClass nil) {
             return false;
         }
 
@@ -1247,7 +1242,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder p(final VirtualFrame frame, final Object[] args) {
+        public RubyNilClass p(final VirtualFrame frame, final Object[] args) {
             notDesignedForCompilation();
 
             getContext().outsideGlobalLock(new Runnable() {
@@ -1261,7 +1256,7 @@ public abstract class KernelNodes {
 
             });
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -1281,7 +1276,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder print(final VirtualFrame frame, final Object[] args) {
+        public RubyNilClass print(final VirtualFrame frame, final Object[] args) {
             getContext().outsideGlobalLock(new Runnable() {
 
                 @Override
@@ -1297,7 +1292,7 @@ public abstract class KernelNodes {
 
             });
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -1313,7 +1308,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder printf(Object[] args) {
+        public RubyNilClass printf(Object[] args) {
             notDesignedForCompilation();
 
             if (args.length > 0) {
@@ -1330,7 +1325,7 @@ public abstract class KernelNodes {
                 });
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -1606,7 +1601,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder setTraceFunc(NilPlaceholder nil) {
+        public RubyNilClass setTraceFunc(RubyNilClass nil) {
             notDesignedForCompilation();
 
             getContext().getTraceManager().setTraceFunc(null);
@@ -1785,7 +1780,7 @@ public abstract class KernelNodes {
         public Object fork(Object[] args) {
             notDesignedForCompilation();
             getContext().getWarnings().warn("Kernel#system not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -1818,7 +1813,7 @@ public abstract class KernelNodes {
             }
 
             if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, NilPlaceholder.INSTANCE);
+                throw new ThrowException(tag, getContext().getCoreLibrary().getNilObject());
             } else {
                 throw new ThrowException(tag, value);
             }

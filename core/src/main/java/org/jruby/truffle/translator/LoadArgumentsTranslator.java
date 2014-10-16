@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.*;
@@ -154,7 +154,7 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitBlockArgNode(org.jruby.ast.BlockArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode readNode = new ReadBlockNode(context, sourceSection, NilPlaceholder.INSTANCE);
+        final RubyNode readNode = new ReadBlockNode(context, sourceSection, context.getCoreLibrary().getNilObject());
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
     }

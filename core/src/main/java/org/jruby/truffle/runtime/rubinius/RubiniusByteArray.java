@@ -30,7 +30,7 @@
 package org.jruby.truffle.runtime.rubinius;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyObject;
@@ -153,7 +153,7 @@ public class RubiniusByteArray extends RubyObject {
                 }
             }
         }
-        return NilPlaceholder.INSTANCE;
+        return getContext().getCoreLibrary().getNilObject();
     }
 
     public RubyObject prepend(RubyString str) {

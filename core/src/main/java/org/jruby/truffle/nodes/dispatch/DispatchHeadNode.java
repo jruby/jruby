@@ -57,7 +57,7 @@ public class DispatchHeadNode extends Node {
             Object... argumentsObjects) {
         return dispatch(
                 frame,
-                NilPlaceholder.INSTANCE,
+                context.getCoreLibrary().getNilObject(),
                 RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,
@@ -142,7 +142,7 @@ public class DispatchHeadNode extends Node {
             Object receiverObject) {
         return (boolean) dispatch(
                 frame,
-                NilPlaceholder.INSTANCE,
+                context.getCoreLibrary().getNilObject(),
                 RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,

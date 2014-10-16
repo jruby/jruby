@@ -13,7 +13,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class IsNilNode extends RubyNode {
@@ -29,7 +29,7 @@ public class IsNilNode extends RubyNode {
     public boolean executeBoolean(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        return child.execute(frame) instanceof NilPlaceholder;
+        return child.execute(frame) instanceof RubyNilClass;
     }
 
     @Override

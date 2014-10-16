@@ -53,11 +53,11 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder close(RubyFile file) {
+        public RubyNilClass close(RubyFile file) {
             notDesignedForCompilation();
 
             file.close();
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -142,7 +142,7 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder eachLine(VirtualFrame frame, RubyFile file, RubyProc block) {
+        public RubyNilClass eachLine(VirtualFrame frame, RubyFile file, RubyProc block) {
             notDesignedForCompilation();
 
             final RubyContext context = getContext();
@@ -167,7 +167,7 @@ public abstract class FileNodes {
                 yield(frame, block, context.makeString(line));
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -307,7 +307,7 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder puts(RubyFile file, RubyString string) {
+        public RubyNilClass puts(RubyFile file, RubyString string) {
             notDesignedForCompilation();
 
             try {
@@ -319,7 +319,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -380,13 +380,13 @@ public abstract class FileNodes {
             final File f = new File(file.toString());
 
             if (!f.exists()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
 
             final long size = f.length();
 
             if (size == 0) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
 
             return size;
@@ -406,7 +406,7 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder write(RubyFile file, RubyString string) {
+        public RubyNilClass write(RubyFile file, RubyString string) {
             notDesignedForCompilation();
 
             try {
@@ -417,7 +417,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

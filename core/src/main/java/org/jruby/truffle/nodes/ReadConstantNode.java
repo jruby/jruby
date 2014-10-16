@@ -48,7 +48,7 @@ public class ReadConstantNode extends RubyNode {
 
         return dispatch.dispatch(
                 frame,
-                NilPlaceholder.INSTANCE,
+                getContext().getCoreLibrary().getNilObject(),
                 RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 name,
@@ -85,14 +85,14 @@ public class ReadConstantNode extends RubyNode {
              */
 
             if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
 
             throw e;
         }
 
         if (value == null) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else {
             return context.makeString("constant");
         }

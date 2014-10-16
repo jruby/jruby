@@ -215,7 +215,7 @@ public class RubyContext extends ExecutionContext {
     public IRubyObject toJRuby(Object object) {
         RubyNode.notDesignedForCompilation();
 
-        if (object instanceof NilPlaceholder) {
+        if (object instanceof RubyNilClass) {
             return runtime.getNil();
         } else if (object == getCoreLibrary().getKernelModule()) {
             return runtime.getKernel();
@@ -263,7 +263,7 @@ public class RubyContext extends ExecutionContext {
         } else if (object == runtime.getKernel()) {
             return getCoreLibrary().getKernelModule();
         } else if (object instanceof RubyNil) {
-            return NilPlaceholder.INSTANCE;
+            return getCoreLibrary().getNilObject();
         } else if (object instanceof org.jruby.RubyBoolean.True) {
             return true;
         } else if (object instanceof org.jruby.RubyBoolean.False) {
@@ -338,7 +338,7 @@ public class RubyContext extends ExecutionContext {
                 object instanceof BigInteger || //
                 object instanceof Double || //
                 object instanceof RubyBasicObject || //
-                object instanceof NilPlaceholder;
+                object instanceof RubyNilClass;
     }
 
     public static boolean shouldObjectsBeVisible(Object... objects) {

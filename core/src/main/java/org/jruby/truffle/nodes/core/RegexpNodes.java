@@ -55,7 +55,7 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.matchOperator(string.toString()) != NilPlaceholder.INSTANCE;
+            return regexp.matchOperator(string.toString()) != getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -106,7 +106,7 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.matchOperator(string.toString()) == NilPlaceholder.INSTANCE;
+            return regexp.matchOperator(string.toString()) == getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -143,11 +143,11 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyRegexp regexp, RubyString string) {
+        public RubyNilClass initialize(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
             regexp.initialize(this, string.toString());
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

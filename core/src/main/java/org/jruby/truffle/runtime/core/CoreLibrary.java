@@ -20,7 +20,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
@@ -195,43 +195,12 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
         objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
 
-        argv = new RubyArray(arrayClass);
-        objectClass.setConstant(null, "ARGV", argv);
-        objectClass.setConstant(null, "ENV", getEnv());
-        objectClass.setConstant(null, "TRUE", true);
-        objectClass.setConstant(null, "FALSE", false);
-        objectClass.setConstant(null, "NIL", NilPlaceholder.INSTANCE);
-
         final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
         configHashMap.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
         configHashMap.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
         configHashMap.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
         configHashMap.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
         configHashMap.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        final RubyHash configHash = new RubyHash(hashClass, null, configHashMap, 0);
-        configModule.setConstant(null, "CONFIG", configHash);
-
-        objectClass.setConstant(null, "RbConfig", configModule);
-
-        floatClass.setConstant(null, "EPSILON", org.jruby.RubyFloat.EPSILON);
-        floatClass.setConstant(null, "INFINITY", org.jruby.RubyFloat.INFINITY);
-        floatClass.setConstant(null, "NAN", org.jruby.RubyFloat.NAN);
-
-        mathModule.setConstant(null, "PI", Math.PI);
-        mathModule.setConstant(null, "E", Math.E);
-
-        fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant(null, "ALT_SEPARATOR", NilPlaceholder.INSTANCE);
-        fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
-        fileClass.setConstant(null, "FNM_SYSCASE", 0);
-
-        errnoModule.setConstant(null, "ENOENT", new RubyClass(null, null, systemCallErrorClass, "ENOENT"));
-        errnoModule.setConstant(null, "EPERM", new RubyClass(null, null, systemCallErrorClass, "EPERM"));
-        errnoModule.setConstant(null, "ENOTEMPTY", new RubyClass(null, null, systemCallErrorClass, "ENOTEMPTY"));
-        errnoModule.setConstant(null, "EEXIST", new RubyClass(null, null, systemCallErrorClass, "EEXIST"));
-        errnoModule.setConstant(null, "EXDEV", new RubyClass(null, null, systemCallErrorClass, "EXDEV"));
-        errnoModule.setConstant(null, "EACCES", new RubyClass(null, null, systemCallErrorClass, "EACCES"));
 
         edomClass = new RubyException.RubyExceptionClass(systemCallErrorClass, "EDOM");
         errnoModule.setConstant(null, edomClass.getName(), edomClass);
@@ -319,6 +288,38 @@ public class CoreLibrary {
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
+
+        argv = new RubyArray(arrayClass);
+        objectClass.setConstant(null, "ARGV", argv);
+        objectClass.setConstant(null, "ENV", getEnv());
+        objectClass.setConstant(null, "TRUE", true);
+        objectClass.setConstant(null, "FALSE", false);
+        objectClass.setConstant(null, "NIL", nilObject);
+
+        final RubyHash configHash = new RubyHash(hashClass, null, configHashMap, 0);
+        configModule.setConstant(null, "CONFIG", configHash);
+
+        objectClass.setConstant(null, "RbConfig", configModule);
+
+        floatClass.setConstant(null, "EPSILON", org.jruby.RubyFloat.EPSILON);
+        floatClass.setConstant(null, "INFINITY", org.jruby.RubyFloat.INFINITY);
+        floatClass.setConstant(null, "NAN", org.jruby.RubyFloat.NAN);
+
+        mathModule.setConstant(null, "PI", Math.PI);
+        mathModule.setConstant(null, "E", Math.E);
+
+        fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
+        fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
+        fileClass.setConstant(null, "ALT_SEPARATOR", nilObject);
+        fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
+        fileClass.setConstant(null, "FNM_SYSCASE", 0);
+
+        errnoModule.setConstant(null, "ENOENT", new RubyClass(null, null, systemCallErrorClass, "ENOENT"));
+        errnoModule.setConstant(null, "EPERM", new RubyClass(null, null, systemCallErrorClass, "EPERM"));
+        errnoModule.setConstant(null, "ENOTEMPTY", new RubyClass(null, null, systemCallErrorClass, "ENOTEMPTY"));
+        errnoModule.setConstant(null, "EEXIST", new RubyClass(null, null, systemCallErrorClass, "EEXIST"));
+        errnoModule.setConstant(null, "EXDEV", new RubyClass(null, null, systemCallErrorClass, "EXDEV"));
+        errnoModule.setConstant(null, "EACCES", new RubyClass(null, null, systemCallErrorClass, "EACCES"));
     }
 
     public void initializeAfterMethodsAdded() {
@@ -404,7 +405,7 @@ public class CoreLibrary {
             return new RubyFloat(floatClass, (double) object);
         }
 
-        if (object instanceof NilPlaceholder) {
+        if (object instanceof RubyNilClass) {
             return nilObject;
         }
 

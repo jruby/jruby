@@ -21,35 +21,9 @@ public class RubyNilClass extends RubyObject {
         super(rubyClass);
     }
 
-    /**
-     * Given a reference, produce either {@code nil} or the object. .
-     */
-    public static Object instanceOrNil(Object object) {
-        RubyNode.notDesignedForCompilation();
-
-        if (object == null) {
-            return NilPlaceholder.INSTANCE;
-        } else {
-            return object;
-        }
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        RubyNode.notDesignedForCompilation();
-
-        return other instanceof RubyNilClass || other instanceof NilPlaceholder;
-    }
-
     @Override
     public int hashCode() {
         return 0;
-    }
-
-    public static boolean isNil(Object block) {
-        RubyNode.notDesignedForCompilation();
-
-        return block == NilPlaceholder.INSTANCE || block instanceof RubyNilClass;
     }
 
     @Override

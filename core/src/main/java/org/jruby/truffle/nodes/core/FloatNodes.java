@@ -520,7 +520,7 @@ public abstract class FloatNodes {
                     return 1;
                 }
             } else {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
         }
 

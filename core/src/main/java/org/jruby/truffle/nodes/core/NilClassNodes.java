@@ -50,7 +50,7 @@ public abstract class NilClassNodes {
         public boolean equal(Object b) {
             notDesignedForCompilation();
 
-            return b instanceof NilPlaceholder || b instanceof RubyNilClass;
+            return b instanceof RubyNilClass || b instanceof RubyNilClass;
         }
 
     }
@@ -68,7 +68,7 @@ public abstract class NilClassNodes {
 
         @Specialization
         public boolean equal(Object b) {
-            return !(b == NilPlaceholder.INSTANCE || b instanceof RubyNilClass);
+            return !(b == getContext().getCoreLibrary().getNilObject() || b instanceof RubyNilClass);
         }
 
     }

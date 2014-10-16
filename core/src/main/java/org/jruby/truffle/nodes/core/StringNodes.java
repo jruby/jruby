@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -88,7 +88,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
             return false;
         }
 
@@ -119,7 +119,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
             notDesignedForCompilation();
 
             return true;
@@ -221,7 +221,7 @@ public abstract class StringNodes {
             final ByteList bytes = string.getBytes();
 
             if (normalisedIndex < 0 || normalisedIndex + 1 >= bytes.length()) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
             }
@@ -233,7 +233,7 @@ public abstract class StringNodes {
             final ByteList bytes = string.getBytes();
 
             if (normalisedIndex < 0 || normalisedIndex + 1 >= bytes.length()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
             }

@@ -529,8 +529,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNull")
-        public NilPlaceholder getNull(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            return NilPlaceholder.INSTANCE;
+        public RubyNilClass getNull(RubyArray array, int index, UndefinedPlaceholder undefined) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class)
@@ -538,7 +538,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 return ((int[]) array.getStore())[normalisedIndex];
             }
@@ -549,7 +549,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return ((int[]) array.getStore())[normalisedIndex];
             }
@@ -560,7 +560,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 return ((long[]) array.getStore())[normalisedIndex];
             }
@@ -572,7 +572,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return ((long[]) array.getStore())[normalisedIndex];
             }
@@ -583,7 +583,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 return ((double[]) array.getStore())[normalisedIndex];
             }
@@ -594,7 +594,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return ((double[]) array.getStore())[normalisedIndex];
             }
@@ -605,7 +605,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return ((Object[]) array.getStore())[normalisedIndex];
             }
@@ -618,7 +618,7 @@ public abstract class ArrayNodes {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, normalisedIndex + length), length);
             }
@@ -632,7 +632,7 @@ public abstract class ArrayNodes {
             int length = array.normaliseExclusiveIndex(range.getExclusiveEnd()) - normalisedIndex;
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, normalisedIndex + length), length);
             }
@@ -1072,7 +1072,7 @@ public abstract class ArrayNodes {
             int compactedSize = 0;
 
             for (Object object : array.slowToArray()) {
-                if (object != NilPlaceholder.INSTANCE) {
+                if (object != getContext().getCoreLibrary().getNilObject()) {
                     compacted[compactedSize] = object;
                     compactedSize++;
                 }
@@ -1179,7 +1179,7 @@ public abstract class ArrayNodes {
         public Object deleteIntegerFixnum(VirtualFrame frame, RubyArray array, Object value) {
             final int[] store = (int[]) array.getStore();
 
-            Object found = NilPlaceholder.INSTANCE;
+            Object found = getContext().getCoreLibrary().getNilObject();
 
             int i = 0;
 
@@ -1208,7 +1208,7 @@ public abstract class ArrayNodes {
         public Object deleteObject(VirtualFrame frame, RubyArray array, Object value) {
             final Object[] store = (Object[]) array.getStore();
 
-            Object found = NilPlaceholder.INSTANCE;
+            Object found = getContext().getCoreLibrary().getNilObject();
 
             int i = 0;
 
@@ -1254,9 +1254,9 @@ public abstract class ArrayNodes {
             final int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else if (normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 final int[] store = (int[]) array.getStore();
                 final int value = store[normalisedIndex];
@@ -1349,7 +1349,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull")
         public Object eachNull(VirtualFrame frame, RubyArray array, RubyProc block) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -1587,7 +1587,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull")
         public Object findNull(VirtualFrame frame, RubyArray array, RubyProc block) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -1608,7 +1608,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isLongFixnum")
@@ -1629,7 +1629,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isFloat")
@@ -1650,7 +1650,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isObject")
@@ -1671,7 +1671,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -1687,10 +1687,10 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNull")
-        public NilPlaceholder firstNull(RubyArray array) {
+        public RubyNilClass firstNull(RubyArray array) {
             notDesignedForCompilation();
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -1698,7 +1698,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             if (array.getSize() == 0) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return ((int[]) array.getStore())[0];
             }
@@ -1709,7 +1709,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             if (array.getSize() == 0) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return ((Object[]) array.getStore())[0];
             }
@@ -1806,7 +1806,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue) {
-            return initialize(array, size, NilPlaceholder.INSTANCE);
+            return initialize(array, size, getContext().getCoreLibrary().getNilObject());
         }
 
         @Specialization
@@ -1941,7 +1941,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             final Object[] store = new Object[index + 1];
-            Arrays.fill(store, NilPlaceholder.INSTANCE);
+            Arrays.fill(store, getContext().getCoreLibrary().getNilObject());
             store[index] = value;
             array.setSize(array.getSize() + 1);
             return array;
@@ -2058,7 +2058,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             if (array.getSize() == 0) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return array.slowToArray()[array.getSize() - 1];
             }
@@ -2268,7 +2268,7 @@ public abstract class ArrayNodes {
             eachNode.call(frame, array, "each", block);
 
             if (maximum.get() == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return maximum.get();
             }
@@ -2291,7 +2291,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public NilPlaceholder max(VirtualFrame frame, Object maximumObject, Object value) {
+        public RubyNilClass max(VirtualFrame frame, Object maximumObject, Object value) {
             final Memo<Object> maximum = (Memo<Object>) maximumObject;
 
             // TODO(CS): cast
@@ -2302,7 +2302,7 @@ public abstract class ArrayNodes {
                 maximum.set(value);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -2381,7 +2381,7 @@ public abstract class ArrayNodes {
             eachNode.call(frame, array, "each", block);
 
             if (minimum.get() == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return minimum.get();
             }
@@ -2404,7 +2404,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public NilPlaceholder min(VirtualFrame frame, Object minimumObject, Object value) {
+        public RubyNilClass min(VirtualFrame frame, Object minimumObject, Object value) {
             final Memo<Object> minimum = (Memo<Object>) minimumObject;
 
             // TODO(CS): cast
@@ -2415,7 +2415,7 @@ public abstract class ArrayNodes {
                 minimum.set(value);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -2500,13 +2500,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull")
         public Object popNil(RubyArray array) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
         public int popIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 final int value = ((int[]) array.getStore())[array.getSize() - 1];
                 array.setSize(array.getSize() - 1);
@@ -2517,7 +2517,7 @@ public abstract class ArrayNodes {
         @Specialization(contains = "popIntegerFixnumInBounds", guards = "isIntegerFixnum")
         public Object popIntegerFixnum(RubyArray array) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 final int value = ((int[]) array.getStore())[array.getSize() - 1];
                 array.setSize(array.getSize() - 1);
@@ -2528,7 +2528,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
         public long popLongFixnumInBounds(RubyArray array) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 final long value = ((long[]) array.getStore())[array.getSize() - 1];
                 array.setSize(array.getSize() - 1);
@@ -2539,7 +2539,7 @@ public abstract class ArrayNodes {
         @Specialization(contains = "popLongFixnumInBounds", guards = "isLongFixnum")
         public Object popLongFixnum(RubyArray array) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 final long value = ((long[]) array.getStore())[array.getSize() - 1];
                 array.setSize(array.getSize() - 1);
@@ -2550,7 +2550,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
         public double popFloatInBounds(RubyArray array) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
                 final double value = ((double[]) array.getStore())[array.getSize() - 1];
                 array.setSize(array.getSize() - 1);
@@ -2561,7 +2561,7 @@ public abstract class ArrayNodes {
         @Specialization(contains = "popFloatInBounds", guards = "isFloat")
         public Object popFloat(RubyArray array) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 final double value = ((double[]) array.getStore())[array.getSize() - 1];
                 array.setSize(array.getSize() - 1);
@@ -2572,7 +2572,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isObject")
         public Object popObject(RubyArray array) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 final Object value = ((Object[]) array.getStore())[array.getSize() - 1];
                 array.setSize(array.getSize() - 1);

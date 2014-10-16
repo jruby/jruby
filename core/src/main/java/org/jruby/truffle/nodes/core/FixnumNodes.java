@@ -19,11 +19,8 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.RubyFixnum;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 
 @CoreClass(name = "Fixnum")
@@ -1426,12 +1423,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public NilPlaceholder step(VirtualFrame frame, int from, int to, int step, RubyProc block) {
+        public RubyNilClass step(VirtualFrame frame, int from, int to, int step, RubyProc block) {
             for (int i = from; i <= to; i += step) {
                 yield(frame, block, i);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -1652,7 +1649,7 @@ public abstract class FixnumNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
@@ -1689,7 +1686,7 @@ public abstract class FixnumNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

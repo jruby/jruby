@@ -19,7 +19,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -79,7 +79,7 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            NilPlaceholder methodReceiverObject,
+            RubyNilClass methodReceiverObject,
             Object callingSelf,
             boolean receiverObject,
             Object methodName,
