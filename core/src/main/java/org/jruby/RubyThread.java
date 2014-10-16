@@ -1439,7 +1439,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public boolean select(Channel channel, OpenFile fptr, int ops, long timeout) {
-        if (channel instanceof SelectableChannel) {
+        // Use selectables but only if they're not associated with a file (which has odd select semantics)
+        if (channel instanceof SelectableChannel && (fptr == null || !fptr.fd().isNativeFile)) {
             SelectableChannel selectable = (SelectableChannel)channel;
             
             synchronized (selectable.blockingLock()) {
