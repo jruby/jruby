@@ -25,19 +25,18 @@ class TestBackquote < Test::Unit::TestCase
     end
   end
 
-  # GH #2047 backquote fails with null byte ArgumentError
   #JRUBY-2251
-  # def test_empty_backquotes
-  #   if (!WINDOWS)
-  #     assert_raise(Errno::ENOENT) {``}
-  #     assert_raise(Errno::ENOENT) {`   `}
-  #     assert_raise(Errno::ENOENT) {`\n`}
-  #   else # we just check that empty backquotes won't blow up JRuby
-  #     ``    rescue nil
-  #     `   ` rescue nil
-  #     `\n`  rescue nil
-  #   end
-  # end
+  def test_empty_backquotes
+    if (!WINDOWS)
+      assert_raise(Errno::ENOENT) {``}
+      assert_raise(Errno::ENOENT) {`   `}
+      assert_raise(Errno::ENOENT) {`\n`}
+    else # we just check that empty backquotes won't blow up JRuby
+      ``    rescue nil
+      `   ` rescue nil
+      `\n`  rescue nil
+    end
+  end
 
   # http://jira.codehaus.org/browse/JRUBY-1557
   def test_backquotes_with_redirects_pass_through_shell
