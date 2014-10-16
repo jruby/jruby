@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBinding;
@@ -71,9 +71,9 @@ public class TraceInstrument extends Instrument {
                         event,
                         file,
                         line,
-                        NilPlaceholder.INSTANCE,
+                        context.getCoreLibrary().getNilObject(),
                         new RubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
-                        NilPlaceholder.INSTANCE
+                        context.getCoreLibrary().getNilObject()
                 };
 
                 try {

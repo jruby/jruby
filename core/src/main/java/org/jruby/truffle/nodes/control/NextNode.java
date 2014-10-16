@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 
 public class NextNode extends RubyNode {
 
@@ -32,11 +33,7 @@ public class NextNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        if (child instanceof NilLiteralNode) {
-            throw NextException.NIL;
-        } else {
-            throw new NextException(child.execute(frame));
-        }
+        throw new NextException(child.execute(frame));
     }
 
 }

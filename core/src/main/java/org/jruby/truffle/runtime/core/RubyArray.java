@@ -15,7 +15,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.Arrays;
@@ -175,7 +175,7 @@ public final class RubyArray extends RubyObject {
         CompilerAsserts.neverPartOfCompilation();
 
         if (size == 0) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else {
             store = ArrayUtils.box(store);
             final Object value = ((Object[]) store)[0];

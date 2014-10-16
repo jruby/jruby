@@ -17,7 +17,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -82,7 +82,7 @@ public class DoWhileNode extends RubyNode {
             }
         }
 
-        return NilPlaceholder.INSTANCE;
+        return getContext().getCoreLibrary().getNilObject();
     }
 
 }

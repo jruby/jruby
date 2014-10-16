@@ -53,11 +53,11 @@ public abstract class FiberNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyFiber fiber, RubyProc block) {
+        public RubyNilClass initialize(RubyFiber fiber, RubyProc block) {
             notDesignedForCompilation();
 
             fiber.initialize(block);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

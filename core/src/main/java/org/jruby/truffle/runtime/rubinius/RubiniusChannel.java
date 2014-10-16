@@ -29,7 +29,7 @@
  */
 package org.jruby.truffle.runtime.rubinius;
 
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyObject;
 
@@ -74,7 +74,7 @@ public class RubiniusChannel extends RubyObject {
 	public Object try_receive() {
 		RubyObject result = queue.poll();
 		if (result == null)
-			return NilPlaceholder.INSTANCE;
+			return getContext().getCoreLibrary().getNilObject();
 		return result;
 	}
 }

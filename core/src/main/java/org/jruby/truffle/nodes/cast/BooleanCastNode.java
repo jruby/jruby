@@ -36,7 +36,7 @@ public abstract class BooleanCastNode extends RubyNode {
     }
 
     @Specialization
-    public boolean doNil(@SuppressWarnings("unused") NilPlaceholder nil) {
+    public boolean doNil(@SuppressWarnings("unused") RubyNilClass nil) {
         return false;
     }
 

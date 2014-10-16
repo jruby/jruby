@@ -63,7 +63,7 @@ public abstract class ModuleNodes {
                 return false;
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
@@ -102,8 +102,8 @@ public abstract class ModuleNodes {
 
             final Object isSubclass = subclassNode.call(frame, self, "<=", null, other);
 
-            if (RubyNilClass.isNil(isSubclass)) {
-                return NilPlaceholder.INSTANCE;
+            if (isSubclass instanceof RubyNilClass) {
+                return getContext().getCoreLibrary().getNilObject();
             } else if (booleanCastNode.executeBoolean(frame, isSubclass)) {
                 return -1;
             }
@@ -114,7 +114,7 @@ public abstract class ModuleNodes {
         public Object compare(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
             notDesignedForCompilation();
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -175,11 +175,11 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public NilPlaceholder appendFeatures(RubyModule module, RubyModule other) {
+        public RubyNilClass appendFeatures(RubyModule module, RubyModule other) {
             notDesignedForCompilation();
 
             module.appendFeatures(this, other);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -195,7 +195,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public NilPlaceholder attrReader(RubyModule module, Object[] args) {
+        public RubyNilClass attrReader(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
@@ -212,7 +212,7 @@ public abstract class ModuleNodes {
                 attrReader(this, getContext(), sourceSection, module, accessorName);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         public static void attrReader(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
@@ -247,7 +247,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public NilPlaceholder attrWriter(RubyModule module, Object[] args) {
+        public RubyNilClass attrWriter(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
@@ -264,7 +264,7 @@ public abstract class ModuleNodes {
                 attrWriter(this, getContext(), sourceSection, module, accessorName);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         public static void attrWriter(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
@@ -300,7 +300,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public NilPlaceholder attrAccessor(RubyModule module, Object[] args) {
+        public RubyNilClass attrAccessor(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
@@ -317,7 +317,7 @@ public abstract class ModuleNodes {
                 attrAccessor(this, getContext(), sourceSection, module, accessorName);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         public static void attrAccessor(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
@@ -604,7 +604,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             self.initCopy(other);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -624,10 +624,10 @@ public abstract class ModuleNodes {
             appendFeaturesNode = prev.appendFeaturesNode;
         }
 
-        public abstract NilPlaceholder executeInclude(VirtualFrame frame, RubyModule module, Object[] args);
+        public abstract RubyNilClass executeInclude(VirtualFrame frame, RubyModule module, Object[] args);
 
         @Specialization
-        public NilPlaceholder include(VirtualFrame frame, RubyModule module, Object[] args) {
+        public RubyNilClass include(VirtualFrame frame, RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
             // Note that we traverse the arguments backwards
@@ -642,7 +642,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -715,7 +715,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public NilPlaceholder moduleFunction(RubyModule module, Object... args) {
+        public RubyNilClass moduleFunction(RubyModule module, Object... args) {
             notDesignedForCompilation();
 
             if (args.length == 0) {
@@ -752,7 +752,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 

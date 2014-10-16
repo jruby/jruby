@@ -20,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -121,7 +121,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
             }
 
-        }, NilPlaceholder.INSTANCE);
+        }, truffleContext.getCoreLibrary().getNilObject());
     }
 
     @Override

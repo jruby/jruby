@@ -36,7 +36,7 @@ public abstract class ProcCastNode extends RubyNode {
     }
 
     @Specialization
-    public NilPlaceholder doNil(NilPlaceholder nil) {
+    public RubyNilClass doNil(RubyNilClass nil) {
         return nil;
     }
 

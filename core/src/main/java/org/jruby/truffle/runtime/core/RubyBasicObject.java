@@ -145,7 +145,13 @@ public class RubyBasicObject extends ObjectStorage {
     public Object getInstanceVariable(String name) {
         RubyNode.notDesignedForCompilation();
 
-        return RubyNilClass.instanceOrNil(getField(name));
+        final Object value = getField(name);
+
+        if (value == null) {
+            return getContext().getCoreLibrary().getNilObject();
+        } else {
+            return value;
+        }
     }
 
     public boolean hasPrivateLayout() {

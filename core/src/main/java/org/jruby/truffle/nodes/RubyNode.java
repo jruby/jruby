@@ -18,7 +18,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -94,10 +93,6 @@ public abstract class RubyNode extends Node {
 
     public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectDouble(execute(frame));
-    }
-
-    public NilPlaceholder executeNilPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectNilPlaceholder(execute(frame));
     }
 
     public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {

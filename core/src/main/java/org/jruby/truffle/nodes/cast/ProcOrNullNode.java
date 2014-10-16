@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
 /**
- * Wraps some node that will produce either a {@link RubyProc} or a {@link NilPlaceholder} and
+ * Wraps some node that will produce either a {@link RubyProc} or a {@link RubyNilClass} and
  * returns {@code null} in case of the latter. Used in parts of the dispatch chain.
  */
 @NodeChild(value = "child", type = RubyNode.class)
@@ -32,7 +32,7 @@ public abstract class ProcOrNullNode extends RubyNode {
     }
 
     @Specialization
-    public Object doNil(@SuppressWarnings("unused") NilPlaceholder nil) {
+    public Object doNil(@SuppressWarnings("unused") RubyNilClass nil) {
         return null;
     }
 

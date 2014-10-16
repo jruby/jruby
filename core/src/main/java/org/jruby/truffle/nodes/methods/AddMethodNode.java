@@ -75,6 +75,6 @@ public class AddMethodNode extends RubyNode {
             module.addMethod(this, methodWithDeclaringModule);
         }
 
-        return NilPlaceholder.INSTANCE;
+        return getContext().getCoreLibrary().getNilObject();
     }
 }

@@ -6,7 +6,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyObject;
 import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
@@ -27,7 +27,7 @@ public abstract class ChannelNodes {
         @Specialization
         public Object send(RubiniusChannel self, RubyObject value) {
             self.send(value);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -76,7 +76,7 @@ public abstract class ChannelNodes {
         }
 
         @Specialization
-        public Object receive_timeout(RubiniusChannel self, NilPlaceholder nil) {
+        public Object receive_timeout(RubiniusChannel self, RubyNilClass nil) {
             return self.receive_timeout(-1);
         }
     }

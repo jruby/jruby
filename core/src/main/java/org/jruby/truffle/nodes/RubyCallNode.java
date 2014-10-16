@@ -161,13 +161,13 @@ public class RubyCallNode extends RubyNode {
     public Object isDefined(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        if (receiver.isDefined(frame) == NilPlaceholder.INSTANCE) {
-            return NilPlaceholder.INSTANCE;
+        if (receiver.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         for (RubyNode argument : arguments) {
-            if (argument.isDefined(frame) == NilPlaceholder.INSTANCE) {
-                return NilPlaceholder.INSTANCE;
+            if (argument.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
+                return getContext().getCoreLibrary().getNilObject();
             }
         }
 
@@ -185,7 +185,7 @@ public class RubyCallNode extends RubyNode {
 
             receiverObject = receiver.execute(frame);
         } catch (Exception e) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         final RubyBasicObject receiverBasicObject = context.getCoreLibrary().box(receiverObject);
@@ -200,12 +200,12 @@ public class RubyCallNode extends RubyNode {
             final Object r = respondToMissing.call(frame, receiverBasicObject, "respond_to_missing?", null, context.makeString(methodName));
 
             if (r != Dispatch.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
         } else if (method.isUndefined()) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else if (!ignoreVisibility && !method.isVisibleTo(this, self)) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         return context.makeString("method");

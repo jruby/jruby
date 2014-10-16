@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {
@@ -43,8 +44,8 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization
-    public NilPlaceholder doNil(NilPlaceholder nilPlaceholder) {
-        return nilPlaceholder;
+    public RubyNilClass doNil(RubyNilClass nil) {
+        return nil;
     }
 
     @Specialization
@@ -54,7 +55,7 @@ public abstract class ArrayCastNode extends RubyNode {
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
         if (result == Dispatch.MISSING) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         if (!(result instanceof RubyArray)) {

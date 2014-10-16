@@ -35,7 +35,7 @@ public abstract class MatchDataNodes {
             notDesignedForCompilation();
 
             if (index >= matchData.getValues().length) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return matchData.getValues()[index];
             }
