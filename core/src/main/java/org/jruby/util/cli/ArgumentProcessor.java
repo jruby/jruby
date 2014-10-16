@@ -723,6 +723,8 @@ public class ArgumentProcessor {
         propertyNames.add("jruby.bindir");
         propertyNames.add("jruby.jar");
         propertyNames.add("jruby.compat.version");
+        propertyNames.add("jruby.reflection");
+        propertyNames.add("jruby.thread.pool.enabled");
 
         for (String propertyName : System.getProperties().stringPropertyNames()) {
             if (propertyName.startsWith("jruby.")) {

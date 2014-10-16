@@ -28,9 +28,55 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import java.util.*;
 
 /**
+ * Either an IncludedModule, a RubyClass or a RubyModule.
+ * Private interface, do not use outside RubyModule.
+ */
+interface ModuleChain {
+    ModuleChain getParentModule();
+
+    RubyModule getActualModule();
+}
+
+/**
  * Represents the Ruby {@code Module} class.
  */
 public class RubyModule extends RubyObject implements ModuleChain {
+
+    /**
+     * A reference to an included RubyModule.
+     */
+    private static class IncludedModule implements ModuleChain {
+        private final RubyModule includedModule;
+        private final ModuleChain parentModule;
+
+        public IncludedModule(RubyModule includedModule, ModuleChain parentModule) {
+            this.includedModule = includedModule;
+            this.parentModule = parentModule;
+        }
+
+        @Override
+        public ModuleChain getParentModule() {
+            return parentModule;
+        }
+
+        @Override
+        public RubyModule getActualModule() {
+            return includedModule;
+        }
+    }
+
+    public static void debugModuleChain(RubyModule module) {
+        ModuleChain chain = module;
+        while (chain != null) {
+            System.err.print(chain.getClass());
+
+            RubyModule real = chain.getActualModule();
+            System.err.print(" " + real.getName());
+
+            System.err.println();
+            chain = chain.getParentModule();
+        }
+    }
 
     /**
      * The slot within a module definition method frame where we store the implicit state that is
@@ -62,7 +108,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
      * Keep track of other modules that depend on the configuration of this module in some way. The
      * include subclasses and modules that include this module.
      */
-    private final Set<ModuleChain> dependents = Collections.newSetFromMap(new WeakHashMap<ModuleChain, Boolean>());
+    private final Set<RubyModule> dependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
 
     /**
      * The class from which we create the object that is {@code Module}. A subclass of
@@ -105,6 +151,16 @@ public class RubyModule extends RubyObject implements ModuleChain {
         this.classVariables.putAll(other.classVariables);
     }
 
+    /**
+     * This method supports initialization and solves boot-order problems and should not normally be
+     * used.
+     */
+    protected void unsafeSetParent(RubyModule parent) {
+        parentModule = parent;
+        parent.addDependent(this);
+        newVersion();
+    }
+
     public void include(Node currentNode, RubyModule module) {
         RubyNode.notDesignedForCompilation();
 
@@ -112,10 +168,8 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         // We need to traverse the module chain in reverse order
         Stack<RubyModule> moduleAncestors = new Stack<>();
-        ModuleChain chain = module;
-        while (chain != null) {
-            moduleAncestors.push(chain.getActualModule());
-            chain = chain.getParentModule();
+        for (RubyModule ancestor : module.ancestors()) {
+            moduleAncestors.push(ancestor);
         }
 
         while (!moduleAncestors.isEmpty()) {
@@ -132,7 +186,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void setConstant(RubyNode currentNode, String constantName, Object value) {
         RubyNode.notDesignedForCompilation();
 
-        assert RubyContext.shouldObjectBeVisible(value) : value.getClass();
+        assert RubyContext.shouldObjectBeVisible(value);
         checkFrozen(currentNode);
         getConstants().put(constantName, new RubyConstant(value, false));
         newVersion();
@@ -259,14 +313,14 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         // Make dependents new versions
 
-        for (ModuleChain dependent : dependents) {
+        for (RubyModule dependent : dependents) {
             dependent.newVersion();
         }
 
         // TODO(CS): is the lexical child a dependent?
     }
 
-    public void addDependent(ModuleChain dependent) {
+    public void addDependent(RubyModule dependent) {
         RubyNode.notDesignedForCompilation();
 
         dependents.add(dependent);
@@ -319,7 +373,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
                  * a different visibility to this module.
                  */
 
-                addMethod(currentNode, method.withNewVisibility(visibility));
+                addMethod(currentNode, method.withVisibility(visibility));
             }
         }
     }
@@ -338,7 +392,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         return methods;
     }
 
-    @Override
     public Map<String, Object> getClassVariables() {
         return classVariables;
     }
@@ -366,6 +419,96 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
     public RubyModule getActualModule() {
         return this;
+    }
+
+    private class AncestorIterator implements Iterator<RubyModule> {
+        ModuleChain module;
+
+        public AncestorIterator(ModuleChain top) {
+            module = top;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return module != null;
+        }
+
+        @Override
+        public RubyModule next() {
+            ModuleChain mod = module;
+            module = module.getParentModule();
+            return mod.getActualModule();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("remove");
+        }
+    }
+
+    public Iterable<RubyModule> ancestors() {
+        final RubyModule top = this;
+        return new Iterable<RubyModule>() {
+            @Override
+            public Iterator<RubyModule> iterator() {
+                return new AncestorIterator(top);
+            }
+        };
+    }
+
+    public Iterable<RubyModule> parentAncestors() {
+        final ModuleChain top = parentModule;
+        return new Iterable<RubyModule>() {
+            @Override
+            public Iterator<RubyModule> iterator() {
+                return new AncestorIterator(top);
+            }
+        };
+    }
+
+    private class LexicalAncestorIterator implements Iterator<RubyModule> {
+        RubyModule module;
+
+        public LexicalAncestorIterator(RubyModule top) {
+            module = top;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return module != null;
+        }
+
+        @Override
+        public RubyModule next() {
+            RubyModule mod = module;
+            module = module.getLexicalParentModule();
+            return mod;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("remove");
+        }
+    }
+
+    public Iterable<RubyModule> lexicalAncestors() {
+        final RubyModule top = this;
+        return new Iterable<RubyModule>() {
+            @Override
+            public Iterator<RubyModule> iterator() {
+                return new LexicalAncestorIterator(top);
+            }
+        };
+    }
+
+    public Iterable<RubyModule> parentLexicalAncestors() {
+        final RubyModule top = lexicalParentModule;
+        return new Iterable<RubyModule>() {
+            @Override
+            public Iterator<RubyModule> iterator() {
+                return new LexicalAncestorIterator(top);
+            }
+        };
     }
 
 }

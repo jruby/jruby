@@ -33,12 +33,12 @@ public abstract class TimeNodes {
 
         @Specialization
         public double sub(RubyTime a, RubyTime b) {
-            return a.getSeconds() - b.getSeconds();
+            return a.getRealSeconds() - b.getRealSeconds();
         }
 
     }
 
-    @CoreMethod(names = "now", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "now", onSingleton = true, maxArgs = 0)
     public abstract static class NowNode extends CoreMethodNode {
 
         public NowNode(RubyContext context, SourceSection sourceSection) {
@@ -57,7 +57,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = {"from_array", "time_s_from_array"}, isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "from_array", onSingleton = true, maxArgs = 0)
     public abstract static class FromArrayNode extends CoreMethodNode {
 
         public FromArrayNode(RubyContext context, SourceSection sourceSection) {

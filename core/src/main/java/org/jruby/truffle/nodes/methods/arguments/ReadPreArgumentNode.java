@@ -27,6 +27,8 @@ public class ReadPreArgumentNode extends RubyNode {
     private final BranchProfile outOfRangeProfile = new BranchProfile();
     private final MissingArgumentBehaviour missingArgumentBehaviour;
 
+    private final RubyValueProfile argumentValueProfile = new RubyValueProfile();
+
     public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index, MissingArgumentBehaviour missingArgumentBehaviour) {
         super(context, sourceSection);
         this.index = index;
@@ -46,11 +48,11 @@ public class ReadPreArgumentNode extends RubyNode {
                     return UndefinedPlaceholder.INSTANCE;
 
                 case NIL:
-                    return NilPlaceholder.INSTANCE;
+                    return getContext().getCoreLibrary().getNilObject();
             }
         }
 
-        return RubyArguments.getUserArgument(frame.getArguments(), index);
+        return argumentValueProfile.profile(RubyArguments.getUserArgument(frame.getArguments(), index));
     }
 
 }

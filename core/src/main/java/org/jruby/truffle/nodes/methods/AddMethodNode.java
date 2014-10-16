@@ -9,10 +9,8 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
@@ -71,12 +69,12 @@ public class AddMethodNode extends RubyNode {
         final RubyMethod methodWithDeclaringModule = methodObject.withDeclaringModule(module);
 
         if (moduleFunctionFlag) {
-            module.addMethod(this, methodWithDeclaringModule.withNewVisibility(Visibility.PRIVATE));
-            module.getSingletonClass(this).addMethod(this, methodWithDeclaringModule.withNewVisibility(Visibility.PUBLIC));
+            module.addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PRIVATE));
+            module.getSingletonClass(this).addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PUBLIC));
         } else {
             module.addMethod(this, methodWithDeclaringModule);
         }
 
-        return NilPlaceholder.INSTANCE;
+        return getContext().getCoreLibrary().getNilObject();
     }
 }

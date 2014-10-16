@@ -18,10 +18,6 @@ public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
         return super.toString() + "{1O}";
     }
 
-    public Operand getReceiver() {
-        return receiver;
-    }
-
     public Operand getArg1() {
         return getCallArgs()[0];
     }

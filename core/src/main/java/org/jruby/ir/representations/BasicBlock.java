@@ -2,15 +2,11 @@ package org.jruby.ir.representations;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRManager;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.listeners.InstructionsListenerDecorator;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -177,6 +173,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
             for (Instr i: oldInstrs) {
                 Instr clonedInstr = i.clone(ii);
                 clonedInstr.setIPC(i.getIPC());
+                clonedInstr.setRPC(i.getRPC());
                 instrs.add(clonedInstr);
             }
         }

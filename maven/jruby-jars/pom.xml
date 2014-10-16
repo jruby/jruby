@@ -37,12 +37,12 @@ freezing to) a specific jruby-complete jar version.</description>
     <url>http://github.com/jruby/jruby/tree/master/gem/jruby-jars</url>
   </scm>
   <properties>
-    <jruby.home>${basedir}/../../</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
     <jruby.plugins.version>1.0.7-SNAPSHOT</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <jruby_home>${basedir}/../../</jruby_home>
     <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>

@@ -159,7 +159,7 @@ public class RubyFiber extends RubyObject {
         Object arg;
 
         if (args.length == 0) {
-            arg = NilPlaceholder.INSTANCE;
+            arg = getContext().getCoreLibrary().getNilObject();
         } else if (args.length == 1) {
             arg = args[0];
         } else {

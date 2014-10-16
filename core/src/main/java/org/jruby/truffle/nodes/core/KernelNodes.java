@@ -29,7 +29,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -53,7 +52,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
@@ -106,7 +105,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
@@ -154,43 +153,38 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean notMatch(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
         @Specialization
-        public boolean equal(boolean a, boolean b) {
+        public boolean notMatch(boolean a, boolean b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(int a, int b) {
+        public boolean notMatch(int a, int b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(long a, long b) {
+        public boolean notMatch(long a, long b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(double a, double b) {
+        public boolean notMatch(double a, double b) {
             return a != b;
         }
 
         @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
+        public boolean notMatch(BigInteger a, BigInteger b) {
             return a.compareTo(b) != 0;
         }
 
         @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+        public boolean notMatch(RubyBasicObject a, RubyBasicObject b) {
             return a != b;
-        }
-
-        @Specialization
-        public boolean equal(NilPlaceholder a, RubyBasicObject b) {
-            return false;
         }
 
     }
@@ -221,12 +215,12 @@ public abstract class KernelNodes {
                 return 0;
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "abort", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "abort", isModuleFunction = true, maxArgs = 0)
     public abstract static class AbortNode extends CoreMethodNode {
 
         public AbortNode(RubyContext context, SourceSection sourceSection) {
@@ -238,14 +232,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder abort() {
+        public RubyNilClass abort() {
             CompilerDirectives.transferToInterpreter();
             System.exit(1);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
-    @CoreMethod(names = "Array", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "Array", isModuleFunction = true, isSplatted = true)
     public abstract static class ArrayNode extends CoreMethodNode {
 
         @Child ArrayBuilderNode arrayBuilderNode;
@@ -283,7 +277,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "at_exit", isModuleMethod = true, needsSelf = false, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, maxArgs = 0)
     public abstract static class AtExitNode extends CoreMethodNode {
 
         public AtExitNode(RubyContext context, SourceSection sourceSection) {
@@ -299,11 +293,11 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             getContext().getAtExitManager().add(block);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
-    @CoreMethod(names = "binding", isModuleMethod = true, needsSelf = true, maxArgs = 0)
+    @CoreMethod(names = "binding", isModuleFunction = true, maxArgs = 0)
     public abstract static class BindingNode extends CoreMethodNode {
 
         public BindingNode(RubyContext context, SourceSection sourceSection) {
@@ -315,7 +309,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object binding(Object self) {
+        public Object binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
             final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
@@ -323,12 +317,12 @@ public abstract class KernelNodes {
 
             return new RubyBinding(
                     getContext().getCoreLibrary().getBindingClass(),
-                    self,
+                    RubyArguments.getSelf(callerFrame.getArguments()),
                     callerFrame);
         }
     }
 
-    @CoreMethod(names = "block_given?", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "block_given?", isModuleFunction = true, maxArgs = 0)
     public abstract static class BlockGivenNode extends CoreMethodNode {
 
         public BlockGivenNode(RubyContext context, SourceSection sourceSection) {
@@ -349,7 +343,7 @@ public abstract class KernelNodes {
 
     // TODO(CS): should hide this in a feature
 
-    @CoreMethod(names = "callcc", isModuleMethod = true, needsSelf = false, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "callcc", isModuleFunction = true, needsBlock = true, maxArgs = 0)
     public abstract static class CallccNode extends CoreMethodNode {
 
         public CallccNode(RubyContext context, SourceSection sourceSection) {
@@ -376,7 +370,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "catch", isModuleMethod = true, needsSelf = false, needsBlock = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "catch", isModuleFunction = true, needsBlock = true, minArgs = 1, maxArgs = 1)
     public abstract static class CatchNode extends YieldingCoreMethodNode {
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
@@ -398,7 +392,7 @@ public abstract class KernelNodes {
             } catch (ThrowException e) {
                 if (e.getTag().equals(tag)) {
                     // TODO(cs): unset rather than set to Nil?
-                    getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", NilPlaceholder.INSTANCE);
+                    getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", getContext().getCoreLibrary().getNilObject());
                     return e.getValue();
                 } else {
                     throw e;
@@ -503,7 +497,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
             return true;
         }
 
@@ -538,7 +532,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "eval", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "eval", isModuleFunction = true, minArgs = 1, maxArgs = 2)
     public abstract static class EvalNode extends CoreMethodNode {
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
@@ -565,7 +559,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exec", isModuleMethod = true, needsSelf = false, minArgs = 1, isSplatted = true)
+    @CoreMethod(names = "exec", isModuleFunction = true, minArgs = 1, isSplatted = true)
     public abstract static class ExecNode extends CoreMethodNode {
 
         public ExecNode(RubyContext context, SourceSection sourceSection) {
@@ -628,7 +622,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exit", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "exit", isModuleFunction = true, minArgs = 0, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class ExitNode extends CoreMethodNode {
 
         public ExitNode(RubyContext context, SourceSection sourceSection) {
@@ -659,7 +653,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exit!", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "exit!", isModuleFunction = true, maxArgs = 0)
     public abstract static class ExitBangNode extends CoreMethodNode {
 
         public ExitBangNode(RubyContext context, SourceSection sourceSection) {
@@ -671,10 +665,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder exit() {
+        public RubyNilClass exit() {
             CompilerDirectives.transferToInterpreter();
             System.exit(1);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -702,7 +696,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "fork", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "fork", isModuleFunction = true, isSplatted = true)
     public abstract static class ForkNode extends CoreMethodNode {
 
         public ForkNode(RubyContext context, SourceSection sourceSection) {
@@ -717,7 +711,7 @@ public abstract class KernelNodes {
         public Object fork(Object[] args) {
             notDesignedForCompilation();
             getContext().getWarnings().warn("Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -763,7 +757,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "gets", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "gets", isModuleFunction = true, maxArgs = 0)
     public abstract static class GetsNode extends CoreMethodNode {
 
         public GetsNode(RubyContext context, SourceSection sourceSection) {
@@ -880,7 +874,7 @@ public abstract class KernelNodes {
         public Object initializeCopy(RubyObject self, RubyObject other) {
             notDesignedForCompilation();
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -1021,7 +1015,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "Integer", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "Integer", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class IntegerNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toInt;
@@ -1075,7 +1069,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean isA(@SuppressWarnings("unused") RubyBasicObject self, @SuppressWarnings("unused") NilPlaceholder nil) {
+        public boolean isA(@SuppressWarnings("unused") RubyBasicObject self, @SuppressWarnings("unused") RubyNilClass nil) {
             return false;
         }
 
@@ -1089,7 +1083,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "lambda", isModuleMethod = true, needsSelf = false, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true, maxArgs = 0)
     public abstract static class LambdaNode extends CoreMethodNode {
 
         public LambdaNode(RubyContext context, SourceSection sourceSection) {
@@ -1110,7 +1104,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "load", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "load", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class LoadNode extends CoreMethodNode {
 
         public LoadNode(RubyContext context, SourceSection sourceSection) {
@@ -1130,7 +1124,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "loop", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "loop", isModuleFunction = true, maxArgs = 0)
     public abstract static class LoopNode extends CoreMethodNode {
 
         @Child protected WhileNode whileNode;
@@ -1232,7 +1226,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "p", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "p", isModuleFunction = true, isSplatted = true)
     public abstract static class PNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode inspect;
@@ -1248,7 +1242,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder p(final VirtualFrame frame, final Object[] args) {
+        public RubyNilClass p(final VirtualFrame frame, final Object[] args) {
             notDesignedForCompilation();
 
             getContext().outsideGlobalLock(new Runnable() {
@@ -1262,11 +1256,11 @@ public abstract class KernelNodes {
 
             });
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
-    @CoreMethod(names = "print", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "print", isModuleFunction = true, isSplatted = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toS;
@@ -1282,7 +1276,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder print(final VirtualFrame frame, final Object[] args) {
+        public RubyNilClass print(final VirtualFrame frame, final Object[] args) {
             getContext().outsideGlobalLock(new Runnable() {
 
                 @Override
@@ -1298,11 +1292,11 @@ public abstract class KernelNodes {
 
             });
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
-    @CoreMethod(names = "printf", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "printf", isModuleFunction = true, isSplatted = true)
     public abstract static class PrintfNode extends CoreMethodNode {
 
         public PrintfNode(RubyContext context, SourceSection sourceSection) {
@@ -1314,7 +1308,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder printf(Object[] args) {
+        public RubyNilClass printf(Object[] args) {
             notDesignedForCompilation();
 
             if (args.length > 0) {
@@ -1331,7 +1325,7 @@ public abstract class KernelNodes {
                 });
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -1362,7 +1356,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "proc", isModuleMethod = true, needsSelf = false, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true, maxArgs = 0)
     public abstract static class ProcNode extends CoreMethodNode {
 
         public ProcNode(RubyContext context, SourceSection sourceSection) {
@@ -1424,7 +1418,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "raise", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 2)
+    @CoreMethod(names = "raise", isModuleFunction = true, minArgs = 0, maxArgs = 2)
     public abstract static class RaiseNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initialize;
@@ -1471,7 +1465,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "rand", isModuleFunction = true, maxArgs = 0)
     public abstract static class RandNode extends CoreMethodNode {
 
         public RandNode(RubyContext context, SourceSection sourceSection) {
@@ -1489,7 +1483,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "require", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "require", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class RequireNode extends CoreMethodNode {
 
         public RequireNode(RubyContext context, SourceSection sourceSection) {
@@ -1518,15 +1512,18 @@ public abstract class KernelNodes {
     public abstract static class RespondToNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode dispatch;
+        @Child protected DispatchHeadNode dispatchIgnoreVisibility;
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RespondToNode(RespondToNode prev) {
             super(prev);
             dispatch = prev.dispatch;
+            dispatchIgnoreVisibility = prev.dispatchIgnoreVisibility;
         }
 
         @Specialization
@@ -1535,9 +1532,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
-            // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, name, object);
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean ignoreVisibility) {
+            if (ignoreVisibility) {
+                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+            } else {
+                return dispatch.doesRespondTo(frame, name, object);
+            }
         }
 
         @Specialization
@@ -1546,14 +1546,17 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
-            // TODO(CS): check visibility flag
-            return dispatch.doesRespondTo(frame, name, object);
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean ignoreVisibility) {
+            if (ignoreVisibility) {
+                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+            } else {
+                return dispatch.doesRespondTo(frame, name, object);
+            }
         }
 
     }
 
-    @CoreMethod(names = "respond_to_missing?", minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "respond_to_missing?", minArgs = 1, maxArgs = 2, visibility = Visibility.PRIVATE)
     public abstract static class RespondToMissingNode extends CoreMethodNode {
 
         public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -1586,7 +1589,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "set_trace_func", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "set_trace_func", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class SetTraceFuncNode extends CoreMethodNode {
 
         public SetTraceFuncNode(RubyContext context, SourceSection sourceSection) {
@@ -1598,7 +1601,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public NilPlaceholder setTraceFunc(NilPlaceholder nil) {
+        public RubyNilClass setTraceFunc(RubyNilClass nil) {
             notDesignedForCompilation();
 
             getContext().getTraceManager().setTraceFunc(null);
@@ -1673,7 +1676,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "String", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "String", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class StringNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toS;
@@ -1715,7 +1718,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "sleep", isModuleMethod = true, needsSelf = false, maxArgs = 1)
+    @CoreMethod(names = "sleep", isModuleFunction = true, maxArgs = 1)
     public abstract static class SleepNode extends CoreMethodNode {
 
         public SleepNode(RubyContext context, SourceSection sourceSection) {
@@ -1762,7 +1765,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "system", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "system", isModuleFunction = true, isSplatted = true)
     public abstract static class SystemNode extends CoreMethodNode {
 
         public SystemNode(RubyContext context, SourceSection sourceSection) {
@@ -1777,12 +1780,12 @@ public abstract class KernelNodes {
         public Object fork(Object[] args) {
             notDesignedForCompilation();
             getContext().getWarnings().warn("Kernel#system not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "throw", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "throw", isModuleFunction = true, minArgs = 1, maxArgs = 2)
     public abstract static class ThrowNode extends CoreMethodNode {
 
         public ThrowNode(RubyContext context, SourceSection sourceSection) {
@@ -1810,7 +1813,7 @@ public abstract class KernelNodes {
             }
 
             if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, NilPlaceholder.INSTANCE);
+                throw new ThrowException(tag, getContext().getCoreLibrary().getNilObject());
             } else {
                 throw new ThrowException(tag, value);
             }
@@ -1838,7 +1841,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "truffelized?", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "truffelized?", isModuleFunction = true, maxArgs = 0)
     public abstract static class TruffelizedNode extends CoreMethodNode {
 
         public TruffelizedNode(RubyContext context, SourceSection sourceSection) {
@@ -1857,7 +1860,7 @@ public abstract class KernelNodes {
     }
 
     // Rubinius API
-    @CoreMethod(names = "undefined", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "undefined", isModuleFunction = true, maxArgs = 0)
     public abstract static class UndefinedNode extends CoreMethodNode {
 
         public UndefinedNode(RubyContext context, SourceSection sourceSection) {
@@ -1876,7 +1879,7 @@ public abstract class KernelNodes {
     }
 
     // Rubinius API
-    @CoreMethod(names = "StringValue", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "StringValue", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class StringValueNode extends CoreMethodNode {
         @Child
         protected DispatchHeadNode argToStringNode;

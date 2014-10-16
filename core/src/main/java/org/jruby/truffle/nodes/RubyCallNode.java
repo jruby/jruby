@@ -50,13 +50,13 @@ public class RubyCallNode extends RubyNode {
     @Child protected DispatchHeadNode respondToMissing;
     @Child protected BooleanCastNode respondToMissingCast;
 
-    private final boolean fcall;
+    private final boolean ignoreVisibility;
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         this(context, section, methodName, receiver, block, isSplatted, false, false, arguments);
     }
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean fcall, boolean rubiniusPrimitive, RubyNode... arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, boolean rubiniusPrimitive, RubyNode... arguments) {
         super(context, section);
 
         this.methodName = methodName;
@@ -72,11 +72,11 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context, fcall, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, fcall, Dispatch.MissingBehavior.RETURN_MISSING);
+        dispatchHead = new DispatchHeadNode(context, ignoreVisibility, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        respondToMissing = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
 
-        this.fcall = fcall;
+        this.ignoreVisibility = ignoreVisibility;
     }
 
     @Override
@@ -161,13 +161,13 @@ public class RubyCallNode extends RubyNode {
     public Object isDefined(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        if (receiver.isDefined(frame) == NilPlaceholder.INSTANCE) {
-            return NilPlaceholder.INSTANCE;
+        if (receiver.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         for (RubyNode argument : arguments) {
-            if (argument.isDefined(frame) == NilPlaceholder.INSTANCE) {
-                return NilPlaceholder.INSTANCE;
+            if (argument.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
+                return getContext().getCoreLibrary().getNilObject();
             }
         }
 
@@ -185,7 +185,7 @@ public class RubyCallNode extends RubyNode {
 
             receiverObject = receiver.execute(frame);
         } catch (Exception e) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         final RubyBasicObject receiverBasicObject = context.getCoreLibrary().box(receiverObject);
@@ -200,12 +200,12 @@ public class RubyCallNode extends RubyNode {
             final Object r = respondToMissing.call(frame, receiverBasicObject, "respond_to_missing?", null, context.makeString(methodName));
 
             if (r != Dispatch.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
         } else if (method.isUndefined()) {
-            return NilPlaceholder.INSTANCE;
-        } else if (!fcall && !method.isVisibleTo(this, self)) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
+        } else if (!ignoreVisibility && !method.isVisibleTo(this, self)) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         return context.makeString("method");

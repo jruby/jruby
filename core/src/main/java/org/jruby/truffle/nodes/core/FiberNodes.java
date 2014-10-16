@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -54,16 +53,16 @@ public abstract class FiberNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyFiber fiber, RubyProc block) {
+        public RubyNilClass initialize(RubyFiber fiber, RubyProc block) {
             notDesignedForCompilation();
 
             fiber.initialize(block);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "yield", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "yield", onSingleton = true, isSplatted = true)
     public abstract static class YieldNode extends CoreMethodNode {
 
         public YieldNode(RubyContext context, SourceSection sourceSection) {

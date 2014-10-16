@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.dsl.ImplicitCast;
 import com.oracle.truffle.api.dsl.TypeSystem;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -31,7 +30,6 @@ import java.math.BigInteger;
 @TypeSystem({ //
                 Dispatch.DispatchAction.class, //
                 UndefinedPlaceholder.class, //
-                NilPlaceholder.class, //
                 boolean.class, //
                 int.class, //
                 long.class, //
@@ -72,11 +70,6 @@ import java.math.BigInteger;
                 Object[].class})
 
 public class RubyTypes {
-
-    @ImplicitCast
-    public NilPlaceholder unboxNil(@SuppressWarnings("unused") RubyNilClass value) {
-        return NilPlaceholder.INSTANCE;
-    }
 
     @ImplicitCast
     public boolean unboxBoolean(RubyTrueClass value) {

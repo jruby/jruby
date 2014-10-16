@@ -29,10 +29,16 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'jruby.plugins.version' => '1.0.7-SNAPSHOT',
             # we share the already installed gems
             'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
-            'jruby.home' => '${basedir}/../../' )
+            # need jruby_home but not jruby.home as name otherwise
+            # tesla-plugin will pick the jruby from jruby.home
+            'jruby_home' => '${basedir}/../../' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
 
 execute 'copy jruby.jar', 'prepare-package' do |ctx|
-  FileUtils.cp( File.join( ctx.project.properties[ 'jruby.home' ],
+  FileUtils.cp( File.join( ctx.project.properties[ 'jruby_home' ],
                            'lib',
                            'jruby.jar' ),
                 File.join( ctx.project.basedir.to_s, 

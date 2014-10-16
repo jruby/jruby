@@ -118,16 +118,21 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
 
         // Allocate global-ensure block, if necessary
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
-            Variable exc = cfgScope.createTemporaryVariable();
-            BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+            ListIterator<Instr> instrs;
+            BasicBlock geb = cfg.getGlobalEnsureBB();
+            if (geb == null) {
+                Variable exc = cfgScope.createTemporaryVariable();
+                geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
+                geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
+                geb.addInstr(new ThrowExceptionInstr(exc));
+                cfg.addGlobalEnsureBB(geb);
+            }
 
-            ListIterator instrs = geb.getInstrs().listIterator();
-
-            instrs.add(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
+            instrs = geb.getInstrs().listIterator(geb.getInstrs().size());
+            Instr i = instrs.previous();
+            // Assumption: Last instr should always be a control-transfer instruction
+            assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + getScope() + " is " + i + ", not a control-xfer instruction";
             addClosureExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
-            instrs.add(new ThrowExceptionInstr(exc));
-
-            cfg.addGlobalEnsureBB(geb);
         }
     }
 }

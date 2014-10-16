@@ -8,8 +8,12 @@ project 'JRuby Dist' do
   packaging 'pom'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
-              'jruby.home' => '${basedir}/../..',
+              'tesla.dump.readonly' => true,
               'main.basedir' => '${project.parent.parent.basedir}' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
 
   # pre-installed gems - not default gems !
   gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'

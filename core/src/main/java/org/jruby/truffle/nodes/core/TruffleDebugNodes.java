@@ -15,13 +15,12 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "TruffleDebug")
 public abstract class TruffleDebugNodes {
 
-    @CoreMethod(names = "array_storage_info", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "array_storage_info", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class ArrayStorageInfoNode extends CoreMethodNode {
 
         public ArrayStorageInfoNode(RubyContext context, SourceSection sourceSection) {
@@ -40,7 +39,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "dump_call_stack", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "dump_call_stack", onSingleton = true, maxArgs = 0)
     public abstract static class DumpCallStackNode extends CoreMethodNode {
 
         public DumpCallStackNode(RubyContext context, SourceSection sourceSection) {
@@ -52,19 +51,19 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder dumpCallStack() {
+        public RubyNilClass dumpCallStack() {
             notDesignedForCompilation();
 
             for (String line : Backtrace.DEBUG_FORMATTER.format(getContext(), null, RubyCallStack.getBacktrace(this))) {
                 System.err.println(line);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "flush_stdout", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "flush_stdout", onSingleton = true, maxArgs = 0)
     public abstract static class FlushStdoutNode extends CoreMethodNode {
 
         public FlushStdoutNode(RubyContext context, SourceSection sourceSection) {
@@ -76,14 +75,14 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder flush() {
+        public RubyNilClass flush() {
             getContext().getRuntime().getOut().flush();
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "full_tree", onSingleton = true, maxArgs = 0)
     public abstract static class FullTreeNode extends CoreMethodNode {
 
         public FullTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -103,7 +102,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "java_class_of", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "java_class_of", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class JavaClassOfNode extends CoreMethodNode {
 
         public JavaClassOfNode(RubyContext context, SourceSection sourceSection) {
@@ -123,7 +122,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "panic", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "panic", onSingleton = true, maxArgs = 0)
     public abstract static class PanicNode extends CoreMethodNode {
 
         public PanicNode(RubyContext context, SourceSection sourceSection) {
@@ -135,14 +134,14 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder doPanic() {
+        public RubyNilClass doPanic() {
             panic();
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "parse_tree", onSingleton = true, maxArgs = 0)
     public abstract static class ParseTreeNode extends CoreMethodNode {
 
         public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -160,7 +159,7 @@ public abstract class TruffleDebugNodes {
             final org.jruby.ast.Node parseTree = RubyCallStack.getCurrentMethod().getSharedMethodInfo().getParseTree();
 
             if (parseTree == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return getContext().makeString(parseTree.toString(true, 0));
             }
@@ -168,7 +167,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "slow_path", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "slow_path", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class SlowPathNode extends CoreMethodNode {
 
         public SlowPathNode(RubyContext context, SourceSection sourceSection) {
@@ -187,7 +186,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "tree", onSingleton = true, maxArgs = 0)
     public abstract static class TreeNode extends CoreMethodNode {
 
         public TreeNode(RubyContext context, SourceSection sourceSection) {

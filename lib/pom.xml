@@ -11,7 +11,6 @@
   <packaging>pom</packaging>
   <name>JRuby Lib Setup</name>
   <properties>
-    <jruby.home>${basedir}/..</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.5</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>

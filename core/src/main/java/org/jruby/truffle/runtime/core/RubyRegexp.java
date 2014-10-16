@@ -20,7 +20,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.nio.ByteBuffer;
@@ -107,7 +107,7 @@ public class RubyRegexp extends RubyObject {
                 if (start > -1 && end > -1) {
                     groupString = context.makeString(string.substring(start, end));
                 } else {
-                    groupString = NilPlaceholder.INSTANCE;
+                    groupString = getContext().getCoreLibrary().getNilObject();
                 }
 
                 values[n] = groupString;
@@ -124,7 +124,7 @@ public class RubyRegexp extends RubyObject {
 
                 int nonNil = values.length - 1;
 
-                while (values[nonNil] == NilPlaceholder.INSTANCE) {
+                while (values[nonNil] == getContext().getCoreLibrary().getNilObject()) {
                     nonNil--;
                 }
 
@@ -146,10 +146,10 @@ public class RubyRegexp extends RubyObject {
             final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
 
             if (slot != null) {
-                frame.setObject(slot, NilPlaceholder.INSTANCE);
+                frame.setObject(slot, getContext().getCoreLibrary().getNilObject());
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -173,7 +173,7 @@ public class RubyRegexp extends RubyObject {
                 final int end = region.end[n];
 
                 if (start == -1 || end == -1) {
-                    values[n] = NilPlaceholder.INSTANCE;
+                    values[n] = getContext().getCoreLibrary().getNilObject();
                 } else {
                     final RubyString groupString = new RubyString(context.getCoreLibrary().getStringClass(), string.getBytes().makeShared(start, end - start).dup());
                     values[n] = groupString;
@@ -193,10 +193,10 @@ public class RubyRegexp extends RubyObject {
             final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
 
             if (slot != null) {
-                frame.setObject(slot, NilPlaceholder.INSTANCE);
+                frame.setObject(slot, getContext().getCoreLibrary().getNilObject());
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 

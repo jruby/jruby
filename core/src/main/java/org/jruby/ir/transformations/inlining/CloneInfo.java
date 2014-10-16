@@ -24,7 +24,9 @@ public abstract class CloneInfo {
     }
 
     public SimpleCloneInfo cloneForCloningClosure(IRClosure clonedClosure) {
-        SimpleCloneInfo clone = new SimpleCloneInfo(clonedClosure, false);
+        // If cloning for ensure block cloning we want to propagate that to child closure clones
+        boolean ensureClone = this instanceof SimpleCloneInfo && ((SimpleCloneInfo) this).isEnsureBlockCloneMode();
+        SimpleCloneInfo clone = new SimpleCloneInfo(clonedClosure, ensureClone);
 
         for (Variable v: variableRenameMap.keySet()) {
             clone.variableRenameMap.put(v, variableRenameMap.get(v));

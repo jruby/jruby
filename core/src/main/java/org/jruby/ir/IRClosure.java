@@ -26,8 +26,6 @@ public class IRClosure extends IRScope {
 
     private int nestingDepth;      // How many nesting levels within a method is this closure nested in?
 
-    private BlockBody body;
-
     private boolean isBeginEndBlock;
 
     // Block parameters
@@ -35,9 +33,14 @@ public class IRClosure extends IRScope {
 
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
+
     private Arity arity;
     private int argumentType;
-    public boolean addedGEBForUncaughtBreaks;
+
+    /** Added for interp/JIT purposes */
+    private BlockBody body;
+
+    /** Added for JIT purposes */
     private Handle handle;
 
     // Used by other constructions and by IREvalScript as well
@@ -74,7 +77,6 @@ public class IRClosure extends IRScope {
         } else {
             this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
         }
-        this.addedGEBForUncaughtBreaks = false;
         this.blockArgs = new ArrayList<Operand>();
         this.arity = c.arity;
     }
@@ -105,6 +107,27 @@ public class IRClosure extends IRScope {
         }
 
         this.nestingDepth++;
+    }
+
+    public InterpreterContext prepareInterpreterContext(Operand self) {
+        if (interpreterContext != null) return interpreterContext; // Already prepared
+
+        initScope(false);
+
+        Instr[] linearizedInstrArray = prepareInstructions();
+
+        interpreterContext = new ClosureInterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray,
+                self, getStaticScope(), getBlockBody());
+
+        return interpreterContext;
+    }
+
+    @Override
+    public synchronized InterpreterContext prepareForInterpretation() {
+        // This should have already been prepared during preparation of parent scopes.
+        // If this is null, it would be a bug and let users throw a NPE.
+        return interpreterContext;
     }
 
     public void setBeginEndBlock() {
@@ -285,7 +308,10 @@ public class IRClosure extends IRScope {
 
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         clone.nestingDepth  = this.nestingDepth;
-        clone.parameterList = this.parameterList;
+        // FIXME: This is fragile. Untangle this state.
+        // Why is this being copied over to InterpretedIRBlockBody?
+        clone.setParameterList(this.parameterList);
+        clone.isBeginEndBlock = this.isBeginEndBlock;
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
@@ -317,48 +343,6 @@ public class IRClosure extends IRScope {
         lexicalParent.addClosure(clonedClosure);
 
         return cloneForInlining(ii, clonedClosure);
-    }
-
-    // Add a global-ensure-block to catch uncaught breaks
-    // This is usually required only if this closure is being
-    // used as a lambda, but it is safe to add this for any closure
-
-    protected boolean addGEBForUncaughtBreaks() {
-        // Nothing to do if already done
-        if (addedGEBForUncaughtBreaks) {
-            return false;
-        }
-
-        CFG        cfg = cfg();
-        BasicBlock geb = cfg.getGlobalEnsureBB();
-        if (geb == null) {
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
-            Variable exc = createTemporaryVariable();
-            geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
-            // Handle uncaught break and non-local returns using runtime helpers
-            Variable ret = createTemporaryVariable();
-            geb.addInstr(new RuntimeHelperCall(ret,
-                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
-            geb.addInstr(new ReturnInstr(ret));
-            cfg.addGlobalEnsureBB(geb);
-        } else {
-            // SSS FIXME: Assumptions:
-            //
-            // First instr is a 'ReceiveExceptionBase'
-            // Last instr is a 'ThrowExceptionInstr' -- replaced by handleBreakAndReturnsInLambdas
-
-            List<Instr> instrs = geb.getInstrs();
-            Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
-            Variable ret = createTemporaryVariable();
-            instrs.set(instrs.size()-1, new RuntimeHelperCall(ret,
-                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
-            geb.addInstr(new ReturnInstr(ret));
-        }
-
-        // Update scope
-        addedGEBForUncaughtBreaks = true;
-
-        return true;
     }
 
     @Override

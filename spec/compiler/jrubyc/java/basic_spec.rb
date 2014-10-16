@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/../../spec_helper"
+require_relative "../../../java_integration/spec_helper"
 require 'rbconfig'
 require 'jruby'
 require 'jruby/compiler'

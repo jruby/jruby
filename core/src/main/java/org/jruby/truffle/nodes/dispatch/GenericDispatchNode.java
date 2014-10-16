@@ -17,15 +17,11 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.cast.BoxingNode;
-import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
@@ -91,7 +87,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                         ignoreVisibility, dispatchAction);
 
                 if (method == null) {
-                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "method_missing", ignoreVisibility,
+                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "method_missing", true,
                             dispatchAction);
 
                     if (missingMethod == null) {
@@ -287,21 +283,21 @@ public abstract class GenericDispatchNode extends DispatchNode {
     }
 
     @CompilerDirectives.SlowPath
-    public ConstantCacheEntry lookupInConstantCache(ModuleChain metaClass, Object methodName) {
+    public ConstantCacheEntry lookupInConstantCache(RubyClass metaClass, Object methodName) {
         return constantCache.get(new MethodCacheKey(metaClass, methodName));
     }
 
     @CompilerDirectives.SlowPath
-    public MethodCacheEntry lookupInCache(ModuleChain metaClass, Object methodName) {
+    public MethodCacheEntry lookupInCache(RubyClass metaClass, Object methodName) {
         return methodCache.get(new MethodCacheKey(metaClass, methodName));
     }
 
     private static class MethodCacheKey {
 
-        private final ModuleChain metaClass;
+        private final RubyClass metaClass;
         private final Object methodName;
 
-        private MethodCacheKey(ModuleChain metaClass, Object methodName) {
+        private MethodCacheKey(RubyClass metaClass, Object methodName) {
             this.metaClass = metaClass;
             this.methodName = methodName;
         }

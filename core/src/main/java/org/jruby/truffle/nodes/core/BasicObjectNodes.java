@@ -15,6 +15,7 @@ import java.util.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -110,43 +111,63 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
-            return true;
+        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
+        @Specialization public boolean equal(int a, int b) { return a == b; }
+        @Specialization public boolean equal(long a, long b) { return a == b; }
+        @Specialization public boolean equal(double a, double b) { return a == b; }
+        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a.equals(b); }
+
+        @Specialization public boolean equal(boolean a, int b) { return false; }
+        @Specialization public boolean equal(boolean a, long b) { return false; }
+        @Specialization public boolean equal(boolean a, double b) { return false; }
+        @Specialization public boolean equal(boolean a, BigInteger b) { return false; }
+
+        @Specialization public boolean equal(int a, boolean b) { return false; }
+        @Specialization public boolean equal(int a, long b) { return false; }
+        @Specialization public boolean equal(int a, double b) { return false; }
+        @Specialization public boolean equal(int a, BigInteger b) { return false; }
+
+        @Specialization public boolean equal(long a, boolean b) { return false; }
+        @Specialization public boolean equal(long a, int b) { return false; }
+        @Specialization public boolean equal(long a, double b) { return false; }
+        @Specialization public boolean equal(long a, BigInteger b) { return false; }
+
+        @Specialization public boolean equal(double a, boolean b) { return false; }
+        @Specialization public boolean equal(double a, int b) { return false; }
+        @Specialization public boolean equal(double a, long b) { return false; }
+        @Specialization public boolean equal(double a, BigInteger b) { return false; }
+
+        @Specialization public boolean equal(BigInteger a, boolean b) { return false; }
+        @Specialization public boolean equal(BigInteger a, int b) { return false; }
+        @Specialization public boolean equal(BigInteger a, long b) { return false; }
+        @Specialization public boolean equal(BigInteger a, double b) { return false; }
+
+        @Specialization(guards = {"!firstUnboxable", "secondUnboxable"})
+        public boolean equalFirstNotUnboxable(RubyBasicObject a, RubyBasicObject b) {
+            return false;
         }
 
-        @Specialization
-        public boolean equal(boolean a, boolean b) {
+        @Specialization(guards = {"firstUnboxable", "!secondUnboxable"})
+        public boolean equalSecondNotUnboxable(RubyBasicObject a, RubyBasicObject b) {
+            return false;
+        }
+
+        @Specialization(guards = {"!firstUnboxable", "!secondUnboxable"})
+        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
 
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
+        protected boolean firstUnboxable(Object a, Object b) {
+            return a instanceof Unboxable;
         }
 
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
+        protected boolean secondUnboxable(Object a, Object b) {
+            return b instanceof Unboxable;
         }
 
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(Object a, Object b) {
-            return a == b;
-        }
     }
 
-    @CoreMethod(names = "initialize", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "initialize", needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -158,8 +179,8 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize() {
-            return NilPlaceholder.INSTANCE;
+        public RubyNilClass initialize() {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -199,7 +220,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "method_missing", needsBlock = true, isSplatted = true)
+    @CoreMethod(names = "method_missing", needsBlock = true, isSplatted = true, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {

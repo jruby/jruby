@@ -12,44 +12,125 @@
 # helper method. truffle_assert_constant looks like a method but is replaced
 # in the parser with a specific node.
 
-$failures = 0
+# Definition of the DSL
 
-def example
-  1_000_000.times do
-    yield
+module PETests
+
+  def self.start
+    @description_stack = []
+    @failures = []
+    @successes = []
+    @dots = 0
   end
 
-  print "."
-rescue RubyTruffleError
-  $failures += 1
-  print "E"
-end
-
-def counter_example
-  1_000_000.times do
-    yield
+  def self.tests(&block)
+    instance_eval &block
   end
 
-  $failures += 1
-  print "E"
-rescue RubyTruffleError
-  print "."
+  def self.describe(description)
+    @description_stack.push description
+    
+    begin
+      yield
+    ensure
+      @description_stack.pop
+    end
+  end
+
+  def self.example(description)
+    describe "#{description} is constant" do
+      inner_example do
+        yield
+      end
+    end
+  end
+
+  def self.counter_example(description)
+    puts "warning: counter examples not run"
+    #describe "#{description} is not constant" do
+    #  inner_example do
+    #    yield
+    #  end
+    #end
+  end
+
+  def self.broken_example(description)
+    puts "warning: broken examples not run"
+    #describe "#{description} is not constant" do
+    #  inner_example do
+    #    yield
+    #  end
+    #end
+  end
+
+  def self.finish
+    print "\n"
+
+    if @failures.empty?
+      puts "success - #{@successes.length} passed"
+      true
+    else
+      puts "failure - #{@failures.length} failed, #{@successes.length} passed"
+      
+      @failures.each do |message|
+        puts "failed: #{message}"
+      end
+
+      false
+    end
+  end
+
+  def self.inner_example
+    1_000_000.times do
+      yield
+    end
+
+    @successes.push @description_stack.join(" ")
+    print "."
+  rescue RubyTruffleError
+    @failures.push @description_stack.join(" ")
+    print "E"
+  ensure
+    @dots += 1
+    puts if @dots == 80
+  end
+
 end
 
-# Two simple tests to check we're working
+PETests.start
 
-example { truffle_assert_constant 14 }
-#counter_example { truffle_assert_constant rand }
+# Test we're working
+
+PETests.tests do
+
+  describe "For example" do
+
+    example "a fixnum literal" do
+      truffle_assert_constant 14
+    end
+
+    counter_example "a call to #rand" do
+      truffle_assert_constant rand
+    end
+
+  end
+
+end
 
 # Tests organised by class
 
 $: << File.expand_path('..', __FILE__)
 
+require "language/metaprogramming_pe.rb"
 require "core/truefalse_pe.rb"
 require "core/fixnum_pe.rb"
 require "core/float_pe.rb"
 require "core/symbol_pe.rb"
+require "core/array_pe.rb"
+require "core/hash_pe.rb"
+require "core/kernel/set_trace_func_pe.rb"
+require "macro/pushing_pixels_pe.rb"
 
-print "\n"
+# Finished
 
-exit 1 unless $failures.zero?
+exit 1 unless PETests.finish

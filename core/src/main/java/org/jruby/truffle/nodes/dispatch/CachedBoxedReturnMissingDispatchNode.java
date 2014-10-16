@@ -16,19 +16,19 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.runtime.ModuleChain;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final ModuleChain expectedClass;
+    private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                ModuleChain expectedClass) {
+                                                RubyClass expectedClass) {
         super(context, cachedName, next);
         assert expectedClass != null;
         this.expectedClass = expectedClass;
@@ -45,7 +45,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            NilPlaceholder methodReceiverObject,
+            RubyNilClass methodReceiverObject,
             Object callingSelf,
             RubyBasicObject receiverObject,
             Object methodName,

@@ -17,22 +17,19 @@ public class ClosureLocalVariable extends LocalVariable {
     }
 
     @Override
-    public int hashCode() {
-        return name.hashCode();
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof ClosureLocalVariable)) return false;
 
-        return name.equals(((LocalVariable) obj).name);
+        return hashCode() == obj.hashCode();
     }
 
     public int compareTo(Object arg0) {
         // ENEBO: what should compareTo when it is not comparable?
         if (!(arg0 instanceof ClosureLocalVariable)) return 0;
 
-        return name.compareTo(((LocalVariable) arg0).name);
+        int a = hashCode();
+        int b = arg0.hashCode();
+        return a < b ? -1 : (a == b ? 0 : 1);
     }
 
     @Override

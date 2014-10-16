@@ -145,7 +145,7 @@ public class JVMVisitor extends IRVisitor {
         if (prepare) {
             bbs = scope.prepareForCompilation();
         } else {
-            scope.prepareForInterpretation(false);
+            scope.prepareForInterpretation();
             bbs = scope.buildLinearization();
         }
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
@@ -1931,7 +1931,7 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().loadRuntime();
 
-        IRClosure body = buildlambdainstr.getLambdaBody().getClosure();
+        IRClosure body = ((WrappedIRClosure)buildlambdainstr.getLambdaBody()).getClosure();
         if (body == null) {
             jvmMethod().pushNil();
         } else {

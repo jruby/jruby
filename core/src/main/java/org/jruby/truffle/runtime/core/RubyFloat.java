@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 
 import java.math.BigInteger;
 
@@ -36,7 +36,7 @@ public class RubyFloat extends RubyObject implements Unboxable {
 
         assert value != null;
 
-        if (value instanceof NilPlaceholder || value instanceof RubyNilClass) {
+        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
             return 0;
         }
 

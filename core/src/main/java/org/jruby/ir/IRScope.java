@@ -7,19 +7,17 @@ import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
 import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
-import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.UnboxingPass;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.CFGInliner;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -109,9 +107,9 @@ public abstract class IRScope implements ParseResult {
     /** What passes have been run on this scope? */
     private List<CompilerPass> executedPasses;
 
-    private Instr[] linearizedInstrArray;
+    /** What the interpreter depends on to interpret this IRScope */
+    protected InterpreterContext interpreterContext;
     private List<BasicBlock> linearizedBBList;
-    private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -157,7 +155,7 @@ public abstract class IRScope implements ParseResult {
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
         this.cfg = null;
-        this.linearizedInstrArray = null;
+        this.interpreterContext = null;
         this.linearizedBBList = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -189,7 +187,7 @@ public abstract class IRScope implements ParseResult {
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>();
         this.cfg = null;
-        this.linearizedInstrArray = null;
+        this.interpreterContext = null;
         this.linearizedBBList = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -468,63 +466,69 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private synchronized Instr[] prepareInstructions() {
-        checkRelinearization();
-
-        if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
-
+    protected Instr[] prepareInstructions() {
         setupLinearization();
 
-        // Set up IPCs
-        List<Instr> newInstrs = new ArrayList<Instr>();
-        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
+        SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
+
+        // FIXME: If CFG (or linearizedBBList) knew number of instrs we could end up allocing better
+
+        // Pass 1. Set up IPCs for labels and instructions and build linear instr list
+        List<Instr> newInstrs = new ArrayList<>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
-            Label l = b.getLabel();
-            labelIPCMap.put(l, ipc);
-            // This assumes if multiple equal/same labels exist which are scattered around the scope
-            // must be the same Java instance or only this one will get a targetPC set.
-            l.setTargetPC(ipc);
+            // All same-named labels must be same Java instance for this to work or we would need
+            // to examine all Label operands and update this as well which would be expensive.
+            b.getLabel().setTargetPC(ipc);
+            // Set all renamed labels (simple clone makes a new copy) to their proper ipc
+            cloneInfo.getRenamedLabel(b.getLabel()).setTargetPC(ipc);
+
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
-
-                if (instr instanceof Specializeable) {
-                    instr = ((Specializeable) instr).specializeForInterpretation();
-                    bbInstrs.set(i, instr);
-                }
-
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    newInstrs.add(instr);
-                    instr.setIPC(ipc);
+                    Instr newInstr = instr.clone(cloneInfo);
+
+                    if (newInstr instanceof Specializeable) {
+                        newInstr = ((Specializeable) newInstr).specializeForInterpretation();
+                    }
+
+                    newInstr.setIPC(ipc);
+
+                    // We add back to original CFG so that debug output will match up with what
+                    // we saved to interpreter.  This knowledge may get changed if we are interp'ing
+                    // with debug output while JIT is running (FIXME?)
+                    bbInstrs.set(i, newInstr);
+                    newInstrs.add(newInstr);
                     ipc++;
                 }
             }
         }
 
+        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);  // Exit BB ipc
+
         // System.out.println("SCOPE: " + getName());
         // System.out.println("INSTRS: " + cfg().toStringInstrs());
 
-        // Exit BB ipc
-        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+        Instr[] linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
 
-        // Set up rescue map
-        setupRescueMap();
-
-        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
-        return linearizedInstrArray;
-    }
-
-    public void setupRescueMap() {
-        this.rescueMap = new HashMap<Integer, Integer>();
+        // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
+        ipc = 0;
         for (BasicBlock b : linearizedBBList) {
             BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
-            int rescuerPC = (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
-            for (Instr i : b.getInstrs()) {
-                rescueMap.put(i.getIPC(), rescuerPC);
+            int rescuerPC = rescuerBB == null ? -1 : rescuerBB.getLabel().getTargetPC();
+            for (Instr instr : b.getInstrs()) {
+                // FIXME: If we did not omit instrs from previous pass we could end up just doing a
+                // a size and for loop this n times instead of walking an examining each instr
+                if (!(instr instanceof ReceiveSelfInstr)) {
+                    linearizedInstrArray[ipc].setRPC(rescuerPC);
+                    ipc++;
+                }
             }
         }
+
+        return linearizedInstrArray;
     }
 
     private boolean isUnsafeScope() {
@@ -592,22 +596,10 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void initScope(boolean isLambda, boolean jitMode) {
-        // Reset linearization, if any exists
-        resetLinearizationData();
-
+    protected void initScope(boolean jitMode) {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             buildCFG();
-        }
-
-        if (isLambda) {
-            // Add a global ensure block to catch uncaught breaks
-            // and throw a LocalJumpError.
-            if (((IRClosure)this).addGEBForUncaughtBreaks()) {
-                resetState();
-                computeScopeFlags();
-            }
         }
 
         runCompilerPasses(getManager().getCompilerPasses(this));
@@ -623,34 +615,31 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized Instr[] prepareForInterpretation(boolean isLambda) {
-        initScope(isLambda, false);
+    public synchronized InterpreterContext prepareForInterpretation() {
+        if (interpreterContext != null) return interpreterContext; // Already prepared
 
-        checkRelinearization();
-
-        if (linearizedInstrArray != null) return linearizedInstrArray;
+        initScope(false);
 
         // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
         // Linearize CFG, etc.
-        return prepareInstructions();
+        Instr[] linearizedInstrArray = prepareInstructions();
+
+        interpreterContext = new InterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray);
+
+        return interpreterContext;
     }
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
-        // For lambdas, we need to add a global ensure block to catch
-        // uncaught breaks and throw a LocalJumpError.
-        //
-        // Since we dont re-JIT a previously JIT-ted closure,
-        // mark all closures lambdas always. But, check if there are
-        // other smarts available to us and eliminate adding
-        // this code to every closure there is.
-        initScope(this instanceof IRClosure, true);
+        // Reset linearization, if any exists
+        resetLinearizationData();
+
+        initScope(true);
 
         runCompilerPasses(getManager().getJITPasses(this));
-
-        checkRelinearization();
 
         prepareInstructions();
 
@@ -1045,19 +1034,12 @@ public abstract class IRScope implements ParseResult {
         if (persistenceStore != null) {
             instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
         }
-        if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions.");
+        if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions: " + this);
         return instrList;
     }
 
-    public Instr[] getInstrsForInterpretation() {
-        return linearizedInstrArray;
-    }
-
-    public Instr[] getInstrsForInterpretation(boolean isLambda) {
-        if (linearizedInstrArray == null) {
-            prepareForInterpretation(isLambda);
-        }
-        return linearizedInstrArray;
+    public InterpreterContext getInterpreterContext() {
+        return interpreterContext;
     }
 
     public void resetLinearizationData() {
@@ -1065,22 +1047,12 @@ public abstract class IRScope implements ParseResult {
         relinearizeCFG = false;
     }
 
-    public void checkRelinearization() {
-        if (relinearizeCFG) resetLinearizationData();
-    }
-
     public List<BasicBlock> buildLinearization() {
-        checkRelinearization();
-
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
 
         linearizedBBList = CFGLinearizer.linearize(cfg);
 
         return linearizedBBList;
-    }
-
-    public Map<Integer, Integer> getRescueMap() {
-        return this.rescueMap;
     }
 
     public List<BasicBlock> linearization() {
@@ -1103,8 +1075,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void resetState() {
-        relinearizeCFG = true;
-        linearizedInstrArray = null;
+        interpreterContext = null;
+        resetLinearizationData();
         cfg.resetState();
 
         // reset flags
@@ -1118,7 +1090,6 @@ public abstract class IRScope implements ParseResult {
         flags.remove(HAS_NONLOCAL_RETURNS);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        rescueMap = null;
 
         // Invalidate compiler pass state.
         //

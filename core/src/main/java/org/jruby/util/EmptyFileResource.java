@@ -7,7 +7,7 @@ import java.io.InputStream;
 
 import java.nio.channels.Channel;
 
-class EmptyFileResource implements FileResource {
+public class EmptyFileResource implements FileResource {
     // All empty resources are the same and immutable, so may as well
     // cache the instance
     private static final EmptyFileResource INSTANCE = new EmptyFileResource();

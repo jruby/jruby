@@ -22,7 +22,9 @@ public @interface CoreMethod {
 
     Visibility visibility() default Visibility.PUBLIC;
 
-    boolean isModuleMethod() default false;
+    boolean onSingleton() default false;
+
+    boolean isModuleFunction() default false;
 
     boolean needsSelf() default true;
 

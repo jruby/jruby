@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -78,7 +77,7 @@ public class RubyMethod implements MethodLike {
         return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
-    public RubyMethod withNewVisibility(Visibility newVisibility) {
+    public RubyMethod withVisibility(Visibility newVisibility) {
         if (newVisibility == visibility) {
             return this;
         } else {
@@ -108,39 +107,23 @@ public class RubyMethod implements MethodLike {
         return false;
     }
 
-    private boolean isVisibleToX(Node currentNode, ModuleChain module) {
+    private boolean isVisibleToX(Node currentNode, RubyModule module) {
         switch (visibility) {
             case PUBLIC:
                 return true;
 
             case PROTECTED:
-                if (module == declaringModule) {
-                    return true;
-                }
-
-                if (module.getSingletonClass(currentNode) == declaringModule) {
-                    return true;
-                }
-
-                if (module.getParentModule() != null && isVisibleToX(currentNode, module.getParentModule())) {
-                    return true;
+                for (RubyModule ancestor : module.ancestors()) {
+                    if (ancestor == declaringModule || ancestor.getSingletonClass(currentNode) == declaringModule) {
+                        return true;
+                    }
                 }
 
                 return false;
 
             case PRIVATE:
-                if (module == declaringModule) {
-                    return true;
-                }
-
-                if (module.getSingletonClass(currentNode) == declaringModule) {
-                    return true;
-                }
-
-                if (module.getParentModule() != null && isVisibleToX(currentNode, module.getParentModule())) {
-                    return true;
-                }
-
+                // A private method may only be called with an implicit receiver,
+                // in which case the visibility must not be checked.
                 return false;
 
             default:

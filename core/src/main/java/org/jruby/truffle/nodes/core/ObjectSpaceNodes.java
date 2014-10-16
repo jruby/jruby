@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
 
-    @CoreMethod(names = "_id2ref", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "_id2ref", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class ID2RefNode extends CoreMethodNode {
 
         public ID2RefNode(RubyContext context, SourceSection sourceSection) {
@@ -39,7 +39,7 @@ public abstract class ObjectSpaceNodes {
             final Object object = getContext().getObjectSpaceManager().lookupId(id);
 
             if (object == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return object;
             }
@@ -52,7 +52,7 @@ public abstract class ObjectSpaceNodes {
             final Object object = getContext().getObjectSpaceManager().lookupId(id.longValue());
 
             if (object == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return object;
             }
@@ -60,7 +60,7 @@ public abstract class ObjectSpaceNodes {
 
     }
 
-    @CoreMethod(names = "each_object", isModuleMethod = true, needsSelf = false, needsBlock = true, minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "each_object", isModuleFunction = true, needsBlock = true, minArgs = 0, maxArgs = 1)
     public abstract static class EachObjectNode extends YieldingCoreMethodNode {
 
         public EachObjectNode(RubyContext context, SourceSection sourceSection) {
@@ -72,17 +72,17 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization
-        public NilPlaceholder eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
+        public RubyNilClass eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
             notDesignedForCompilation();
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
                 yield(frame, block, object);
             }
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
-        public NilPlaceholder eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
+        public RubyNilClass eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
             notDesignedForCompilation();
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
@@ -90,12 +90,12 @@ public abstract class ObjectSpaceNodes {
                     yield(frame, block, object);
                 }
             }
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "define_finalizer", isModuleMethod = true, needsSelf = false, minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "define_finalizer", isModuleFunction = true, minArgs = 2, maxArgs = 2)
     public abstract static class DefineFinalizerNode extends CoreMethodNode {
 
         public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
@@ -115,9 +115,8 @@ public abstract class ObjectSpaceNodes {
         }
     }
 
-    @CoreMethod(names = {"garbage_collect", "start"}, isModuleMethod = true, needsSelf = false, maxArgs = 0)
-    public abstract static class GarbageCollectNode extends CoreMethodNode {
-
+    @CoreMethod(names = "garbage_collect", isModuleFunction = true, maxArgs = 0)
+    public abstract static class GarbageCollectNode extends GCNodes.GarbageCollectNode {
         public GarbageCollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -125,30 +124,9 @@ public abstract class ObjectSpaceNodes {
         public GarbageCollectNode(GarbageCollectNode prev) {
             super(prev);
         }
-
-        @Specialization
-        public NilPlaceholder garbageCollect() {
-            return doGC();
-        }
-
-        @CompilerDirectives.SlowPath
-        private NilPlaceholder doGC() {
-            notDesignedForCompilation();
-
-            getContext().outsideGlobalLock(new Runnable() {
-
-                @Override
-                public void run() {
-                    System.gc();
-                }
-
-            });
-
-            return NilPlaceholder.INSTANCE;
-        }
     }
 
-    @CoreMethod(names = "undefine_finalizer", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, minArgs = 1, maxArgs = 1)
     public abstract static class UndefineFinalizerNode extends CoreMethodNode {
 
         public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {

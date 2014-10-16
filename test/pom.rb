@@ -24,21 +24,19 @@ project 'JRuby Integration Tests' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-
               'jruby.home' => '${basedir}/..',
               'gem.home' => '${jruby.home}/lib/ruby/gems/shared' )
 
-  jar 'org.jruby:jruby-core:${project.version}'
-  jar( 'junit:junit:4.11',
-       :scope => 'test' )
-  jar( 'org.apache.ant:ant:${ant.version}',
-       :scope => 'provided' )
-  jar( 'bsf:bsf:2.4.0',
-       :scope => 'provided' )
-  jar( 'commons-logging:commons-logging:1.1.3',
-       :scope => 'test' )
-  jar( 'org.livetribe:livetribe-jsr223:2.0.7',
-       :scope => 'test' )
+  scope :test do
+    jar 'junit:junit:4.11'
+    jar 'commons-logging:commons-logging:1.1.3'
+    jar 'org.livetribe:livetribe-jsr223:2.0.7'
+    jar 'org.jruby:jruby-core:${version}'
+  end
+  scope :provided do
+    jar 'org.apache.ant:ant:${ant.version}'
+    jar 'bsf:bsf:2.4.0'
+  end
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
        :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
@@ -61,15 +59,20 @@ project 'JRuby Integration Tests' do
             } )
   end
 
-  plugin 'de.saumya.mojo:gem-maven-plugin:${jruby.plugins.version}' do
-    execute_goals( 'initialize',
-                   :phase => 'initialize',
-                   'gemPath' =>  '${gem.home}',
-                   'gemHome' =>  '${gem.home}',
-                   'binDirectory' =>  '${jruby.home}/bin',
-                   'includeRubygemsInTestResources' =>  'false',
-                   'libDirectory' =>  '${jruby.home}/lib',
-                   'jrubyJvmArgs' =>  '-Djruby.home=${jruby.home}' )
+  jruby_plugin :gem, '${jruby.plugins.version}' do
+    options = { :phase => 'initialize',
+      'gemPath' => '${gem.home}',
+      'gemHome' => '${gem.home}',
+      'binDirectory' => '${jruby.home}/bin',
+      'includeRubygemsInTestResources' => 'false' }
+
+    if version =~ /-SNAPSHOT/
+      options[ 'jrubyVersion' ] = '1.7.12'
+    else
+      options[ 'libDirectory' ] = '${jruby.home}/lib'
+      options[ 'jrubyJvmArgs' ] = '-Djruby.home=${jruby.home}'
+    end
+    execute_goals( 'initialize', options )
   end
 
   plugin( :compiler,
@@ -120,9 +123,9 @@ project 'JRuby Integration Tests' do
   end
 
   profile 'bootstrap' do
-
-    gem 'rubygems:jruby-launcher:${jruby-launcher.version}'
-
+    unless version =~ /-SNAPSHOT/
+      gem 'rubygems:jruby-launcher:${jruby-launcher.version}'
+    end
   end
 
   profile 'rake' do
@@ -158,7 +161,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="run" />' +
                           '<arg value="-t" />' +
                           # Workaround for RubySpec #292
-                          '<arg value="spec/mspec/bin/mspec" />' +
+                          '<arg value="spec/truffle/spec-wrapper" />' +
                           #'<arg value="bin/jruby" />' +
                           #'<arg value="-T" />' +
                           #'<arg value="-X+T" />' +
@@ -211,7 +214,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="run" />' +
                           '<arg value="-t" />' +
                           # Workaround for RubySpec #292
-                          '<arg value="spec/mspec/bin/mspec" />' +
+                          '<arg value="spec/truffle/spec-wrapper" />' +
                           #'<arg value="bin/jruby" />' +
                           #'<arg value="-T" />' +
                           #'<arg value="-X+T" />' +
@@ -253,7 +256,7 @@ project 'JRuby Integration Tests' do
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-J-server" />' +
                           '<arg value="-J-G:-TruffleBackgroundCompilation" />' +
-                          '<arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />' +
+                          '<arg value="-J-G:+TruffleCompilationExceptionsAreFatal" />' +
                           '<arg value="-X+T" />' +
                           '<arg value="-Xtruffle.debug.enable_assert_constant=true" />' +
                           '<arg value="test/truffle/pe/pe.rb" />' +

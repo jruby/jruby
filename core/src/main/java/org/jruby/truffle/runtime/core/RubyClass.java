@@ -113,10 +113,8 @@ public class RubyClass extends RubyModule {
 
         assert parentModule == null;
 
-        parentModule = newSuperclass;
-        newSuperclass.addDependent(this);
+        unsafeSetParent(newSuperclass);
         newSuperclass.subClasses.add(this);
-        newVersion();
 
         objectLayoutForInstances = new ObjectLayout(newSuperclass.objectLayoutForInstances);
     }
@@ -167,14 +165,10 @@ public class RubyClass extends RubyModule {
     public RubyClass getSuperClass() {
         CompilerAsserts.neverPartOfCompilation();
 
-        ModuleChain parent = parentModule;
-
-        while (parent != null) {
-            if (parent instanceof RubyClass) {
-                return (RubyClass) parent;
+        for (RubyModule ancestor : parentAncestors()) {
+            if (ancestor instanceof RubyClass) {
+                return (RubyClass) ancestor;
             }
-
-            parent = parent.getParentModule();
         }
 
         return null;

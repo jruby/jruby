@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import java.io.*;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -22,8 +21,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
-
-    @CoreMethod(names = "absolute_path", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "absolute_path", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class AbsolutePathNode extends CoreMethodNode {
 
         public AbsolutePathNode(RubyContext context, SourceSection sourceSection) {
@@ -55,16 +53,16 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder close(RubyFile file) {
+        public RubyNilClass close(RubyFile file) {
             notDesignedForCompilation();
 
             file.close();
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "delete", needsSelf = false, isModuleMethod = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "delete", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class DeleteNode extends CoreMethodNode {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
@@ -86,7 +84,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "directory?", isModuleMethod = true, needsSelf = false, maxArgs = 1)
+    @CoreMethod(names = "directory?", onSingleton = true, maxArgs = 1)
     public abstract static class DirectoryNode extends CoreMethodNode {
 
         public DirectoryNode(RubyContext context, SourceSection sourceSection) {
@@ -106,7 +104,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "dirname", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "dirname", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class DirnameNode extends CoreMethodNode {
 
         public DirnameNode(RubyContext context, SourceSection sourceSection) {
@@ -144,7 +142,7 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder eachLine(VirtualFrame frame, RubyFile file, RubyProc block) {
+        public RubyNilClass eachLine(VirtualFrame frame, RubyFile file, RubyProc block) {
             notDesignedForCompilation();
 
             final RubyContext context = getContext();
@@ -169,12 +167,12 @@ public abstract class FileNodes {
                 yield(frame, block, context.makeString(line));
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = {"exist?", "exists?"}, isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class ExistsNode extends CoreMethodNode {
 
         public ExistsNode(RubyContext context, SourceSection sourceSection) {
@@ -194,7 +192,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "executable?", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "executable?", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class ExecutableNode extends CoreMethodNode {
 
         public ExecutableNode(RubyContext context, SourceSection sourceSection) {
@@ -214,7 +212,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "expand_path", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "expand_path", onSingleton = true, minArgs = 1, maxArgs = 2)
     public abstract static class ExpandPathNode extends CoreMethodNode {
 
         public ExpandPathNode(RubyContext context, SourceSection sourceSection) {
@@ -239,7 +237,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "file?", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "file?", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class FileNode extends CoreMethodNode {
 
         public FileNode(RubyContext context, SourceSection sourceSection) {
@@ -259,7 +257,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "join", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "join", onSingleton = true, isSplatted = true)
     public abstract static class JoinNode extends CoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -297,36 +295,6 @@ public abstract class FileNodes {
         }
     }
 
-    @CoreMethod(names = "open", isModuleMethod = true, needsSelf = false, needsBlock = true, minArgs = 2, maxArgs = 2)
-    public abstract static class OpenNode extends YieldingCoreMethodNode {
-
-        public OpenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public OpenNode(OpenNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, RubyProc block) {
-            notDesignedForCompilation();
-
-            final RubyFile file = RubyFile.open(getContext(), fileName.toString(), mode.toString());
-
-            if (block != null) {
-                try {
-                    yield(frame, block, file);
-                } finally {
-                    file.close();
-                }
-            }
-
-            return file;
-        }
-
-    }
-
     @CoreMethod(names = "puts", minArgs = 1, maxArgs = 1)
     public abstract static class PutsNode extends CoreMethodNode {
 
@@ -339,7 +307,7 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder puts(RubyFile file, RubyString string) {
+        public RubyNilClass puts(RubyFile file, RubyString string) {
             notDesignedForCompilation();
 
             try {
@@ -351,7 +319,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -394,7 +362,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "size?", minArgs = 1, maxArgs = 1, needsSelf = false, isModuleMethod = true)
+    @CoreMethod(names = "size?", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -412,13 +380,13 @@ public abstract class FileNodes {
             final File f = new File(file.toString());
 
             if (!f.exists()) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
 
             final long size = f.length();
 
             if (size == 0) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
 
             return size;
@@ -438,7 +406,7 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public NilPlaceholder write(RubyFile file, RubyString string) {
+        public RubyNilClass write(RubyFile file, RubyString string) {
             notDesignedForCompilation();
 
             try {
@@ -449,7 +417,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

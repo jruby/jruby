@@ -11,20 +11,19 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.impl.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 
 public final class RubyFrameTypeConversion extends DefaultFrameTypeConversion {
 
-    private static final RubyFrameTypeConversion INSTANCE = new RubyFrameTypeConversion();
+    private final RubyNilClass nil;
 
-    private RubyFrameTypeConversion() {
+    public RubyFrameTypeConversion(RubyNilClass nil) {
+        this.nil = nil;
     }
 
     @Override
     public Object getDefaultValue() {
-        return NilPlaceholder.INSTANCE;
+        return nil;
     }
 
-    public static RubyFrameTypeConversion getInstance() {
-        return INSTANCE;
-    }
 }

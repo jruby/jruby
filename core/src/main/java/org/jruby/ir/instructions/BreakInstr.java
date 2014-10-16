@@ -92,9 +92,9 @@ public class BreakInstr extends Instr implements FixedArityInstr {
             }
 
             return new BreakInstr(returnValue.cloneForInlining(ii), scopeName);
+        } else {
+            throw new UnsupportedOperationException("Break instructions shouldn't show up outside closures.");
         }
-
-        return super.clone(ii);
     }
 
     @Override

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -178,25 +178,6 @@ public class RubyWrapper extends RubyNode implements Wrapper {
 
         try {
             result = child.executeFloat(frame);
-            probe.leave(child, frame, result);
-        } catch (KillException e) {
-            throw (e);
-        } catch (Exception e) {
-            probe.leaveExceptional(child, frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
-    public NilPlaceholder executeNilPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
-        probe.enter(child, frame);
-
-        final NilPlaceholder result;
-
-        try {
-            result = child.executeNilPlaceholder(frame);
             probe.leave(child, frame, result);
         } catch (KillException e) {
             throw (e);

@@ -11,7 +11,7 @@
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
   <properties>
-    <jruby.home>${basedir}/../..</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.3</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
@@ -141,7 +141,7 @@
       </repositories>
     </profile>
     <profile>
-      <id>releases</id>
+      <id>not-working-currently---release</id>
       <build>
         <plugins>
           <plugin>

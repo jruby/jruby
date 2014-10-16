@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyMatchData;
@@ -33,7 +33,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
 
         final Object childValue = child.execute(frame);
 
-        if (!(childValue instanceof RubyMatchData || childValue instanceof NilPlaceholder || childValue instanceof RubyNilClass)) {
+        if (!(childValue instanceof RubyMatchData || childValue instanceof RubyNilClass || childValue instanceof RubyNilClass)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("wrong argument type (expected MatchData)", this));
         }

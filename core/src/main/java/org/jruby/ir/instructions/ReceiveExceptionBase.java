@@ -3,8 +3,9 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class ReceiveExceptionBase extends Instr implements ResultInstr, FixedArityInstr {
+public abstract class ReceiveExceptionBase extends Instr implements ResultInstr, FixedArityInstr {
     protected Variable result;
 
     public ReceiveExceptionBase(Operation op, Variable result) {

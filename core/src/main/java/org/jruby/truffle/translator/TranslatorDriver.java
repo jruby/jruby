@@ -149,7 +149,7 @@ public class TranslatorDriver {
             translator.parentSourceSection = sharedMethodInfo.getSourceSection();
             
             try {
-                truffleNode = new NilLiteralNode(context, null);
+                truffleNode = new ObjectLiteralNode(context, null, context.getCoreLibrary().getNilObject());
             } finally {
                 translator.parentSourceSection = null;
             }

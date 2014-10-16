@@ -17,14 +17,27 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.livetribe</groupId>
+      <artifactId>livetribe-jsr223</artifactId>
+      <version>2.0.7</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-core</artifactId>
+      <version>${version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -38,18 +51,6 @@
       <artifactId>bsf</artifactId>
       <version>2.4.0</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.1.3</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.livetribe</groupId>
-      <artifactId>livetribe-jsr223</artifactId>
-      <version>2.0.7</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -156,8 +157,7 @@
               <gemHome>${gem.home}</gemHome>
               <binDirectory>${jruby.home}/bin</binDirectory>
               <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
-              <libDirectory>${jruby.home}/lib</libDirectory>
-              <jrubyJvmArgs>-Djruby.home=${jruby.home}</jrubyJvmArgs>
+              <jrubyVersion>1.7.12</jrubyVersion>
             </configuration>
           </execution>
         </executions>
@@ -236,14 +236,6 @@
   <profiles>
     <profile>
       <id>bootstrap</id>
-      <dependencies>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>jruby-launcher</artifactId>
-          <version>${jruby-launcher.version}</version>
-          <type>gem</type>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>rake</id>
@@ -377,7 +369,7 @@
                     <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-J-server" />
                       <arg value="-J-G:-TruffleBackgroundCompilation" />
-                      <arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />
+                      <arg value="-J-G:+TruffleCompilationExceptionsAreFatal" />
                       <arg value="-X+T" />
                       <arg value="-Xtruffle.debug.enable_assert_constant=true" />
                       <arg value="test/truffle/pe/pe.rb" />

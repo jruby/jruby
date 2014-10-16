@@ -18,8 +18,6 @@ import org.jruby.truffle.runtime.*;
  */
 public final class NextException extends ControlFlowException {
 
-    public static final NextException NIL = new NextException(NilPlaceholder.INSTANCE);
-
     private final Object result;
 
     public NextException(Object result) {

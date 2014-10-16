@@ -9,16 +9,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyFile;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.io.*;
@@ -28,7 +25,37 @@ import java.util.List;
 @CoreClass(name = "IO")
 public abstract class IONodes {
 
-    @CoreMethod(names = "readlines", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, minArgs = 2, maxArgs = 2)
+    public abstract static class OpenNode extends YieldingCoreMethodNode {
+
+        public OpenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OpenNode(OpenNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyFile file = RubyFile.open(getContext(), fileName.toString(), mode.toString());
+
+            if (block != null) {
+                try {
+                    yield(frame, block, file);
+                } finally {
+                    file.close();
+                }
+            }
+
+            return file;
+        }
+
+    }
+
+    @CoreMethod(names = "readlines", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class ReadLinesNode extends CoreMethodNode {
 
         public ReadLinesNode(RubyContext context, SourceSection sourceSection) {

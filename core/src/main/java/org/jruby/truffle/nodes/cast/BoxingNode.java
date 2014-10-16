@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -59,7 +59,7 @@ public class BoxingNode extends RubyNode {
             return (RubyBasicObject) value;
         }
 
-        if (seenNil && value instanceof NilPlaceholder) {
+        if (seenNil && value instanceof RubyNilClass) {
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -94,7 +94,7 @@ public class BoxingNode extends RubyNode {
             return (RubyBasicObject) value;
         }
 
-        if (value instanceof NilPlaceholder) {
+        if (value instanceof RubyNilClass) {
             seenNil = true;
             return getContext().getCoreLibrary().getNilObject();
         }

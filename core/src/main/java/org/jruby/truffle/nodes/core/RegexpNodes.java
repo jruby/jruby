@@ -9,11 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -57,7 +55,7 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.matchOperator(string.toString()) != NilPlaceholder.INSTANCE;
+            return regexp.matchOperator(string.toString()) != getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -108,12 +106,12 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.matchOperator(string.toString()) == NilPlaceholder.INSTANCE;
+            return regexp.matchOperator(string.toString()) == getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "escape", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "escape", onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class EscapeNode extends CoreMethodNode {
 
         public EscapeNode(RubyContext context, SourceSection sourceSection) {
@@ -145,11 +143,11 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyRegexp regexp, RubyString string) {
+        public RubyNilClass initialize(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
             regexp.initialize(this, string.toString());
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

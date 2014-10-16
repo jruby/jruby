@@ -23,7 +23,6 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
@@ -79,7 +78,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(ss, evalType);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, evalType);
-        evalScript.prepareForInterpretation(false);
+        // ClosureInterpreterContext never retrieved as an operand in this context.
+        // So, self operand is not required here.
+        // Passing null to force early crasher if ever used differently.
+        evalScript.prepareInterpreterContext(null);
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv = null;
@@ -122,7 +124,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            b.prepareForInterpretation(false);
+            b.prepareInterpreterContext(b.getSelf());
             Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
@@ -342,12 +344,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, StaticScope currScope,
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
                                              RubyModule implClass, Visibility visibility, Object[] temp, DynamicScope currDynamicScope) {
         switch(operation) {
         case PUSH_FRAME:
-            context.preMethodFrameAndClass(implClass, name, self, block, currScope);
+            context.preMethodFrameOnly(implClass, name, self, block);
             context.setCurrentVisibility(visibility);
             break;
         case POP_FRAME:
@@ -509,17 +511,30 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType)
-    {
-        Instr[] instrs = scope.getInstrsForInterpretation(blockType == Block.Type.LAMBDA);
-        Map<Integer, Integer> rescueMap = scope.getRescueMap();
+    private static DynamicScope getNewDynScope(ThreadContext context, IRScope scope, StaticScope currScope) {
+        // SSS NOTE: Method/module scopes only!
+        //
+        // Blocks are a headache -- so, these instrs. are only added to IRMethods.
+        // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
+        if (scope instanceof IRMetaClassBody) {
+            // Add a parent-link to current dynscope to support non-local returns cheaply
+            // This doesn't affect variable scoping since local variables will all have
+            // the right scope depth.
+            return DynamicScope.newDynamicScope(currScope, context.getCurrentScope());
+        } else {
+            return DynamicScope.newDynamicScope(currScope);
+        }
+    }
 
-        int      numTempVars    = scope.getTemporaryVariablesCount();
+    private static IRubyObject interpret(ThreadContext context, IRubyObject self,
+            IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
+        InterpreterContext interpreterContext = scope.getInterpreterContext();
+        Instr[] instrs = interpreterContext.getInstructions();
+        int      numTempVars    = interpreterContext.getTemporaryVariablecount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
-        int      numFloatVars   = scope.getFloatVariablesCount();
-        int      numFixnumVars  = scope.getFixnumVariablesCount();
-        int      numBooleanVars = scope.getBooleanVariablesCount();
+        int      numFloatVars   = interpreterContext.getTemporaryFloatVariablecount();
+        int      numFixnumVars  = interpreterContext.getTemporaryFixnumVariablecount();
+        int      numBooleanVars = interpreterContext.getTemporaryBooleanVariablecount();
         double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;
         long[]   fixnums        = numFixnumVars > 0 ? new long[numFixnumVars] : null;
         boolean[]   booleans    = numBooleanVars > 0 ? new boolean[numBooleanVars] : null;
@@ -573,21 +588,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
-                        // SSS NOTE: Method/module scopes only!
-                        //
-                        // Blocks are a headache -- so, these instrs. are only added to IRMethods.
-                        // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
-                        if (scope instanceof IRMetaClassBody) {
-                            // Add a parent-link to current dynscope to support non-local returns cheaply
-                            // This doesn't affect variable scoping since local variables will all have
-                            // the right scope depth.
-                            currDynScope = DynamicScope.newDynamicScope(currScope, context.getCurrentScope());
-                        } else {
-                            currDynScope = DynamicScope.newDynamicScope(currScope);
-                        }
+                        currDynScope = getNewDynScope(context, scope, currScope);
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, currScope, name, args, self, block, implClass, visibility, temp, currDynScope);
+                        processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility, temp, currDynScope);
                     }
                     break;
                 case OTHER_OP:
@@ -598,7 +602,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                 extractToMethodToAvoidC2Crash(context, instr, t);
 
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
-                ipc = rescueMap.get(instr.getIPC());
+                ipc = instr.getRPC();
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
 
                 if (ipc == -1) {

@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -23,6 +24,11 @@ public class RaiseRequiredKeywordArgumentError extends Instr implements FixedAri
     @Override
     public Operand[] getOperands() {
         return new Operand[0];
+    }
+
+    @Override
+    public Instr clone(CloneInfo ii) {
+        return new RaiseRequiredKeywordArgumentError(name);
     }
 
     @Override

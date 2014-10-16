@@ -4,7 +4,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -24,7 +24,7 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") NilPlaceholder b) {
+        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
             notDesignedForCompilation();
 
             return false;
@@ -39,7 +39,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_external", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "default_external", onSingleton = true, maxArgs = 0)
     public abstract static class DefaultExternalNode extends CoreMethodNode {
 
         public DefaultExternalNode(RubyContext context, SourceSection sourceSection) {
@@ -65,7 +65,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_internal", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "default_internal", onSingleton = true, maxArgs = 0)
     public abstract static class DefaultInternalNode extends CoreMethodNode {
 
         public DefaultInternalNode(RubyContext context, SourceSection sourceSection) {
@@ -91,7 +91,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "find", isModuleMethod = true, needsSelf = false, maxArgs = 1, minArgs = 1)
+    @CoreMethod(names = "find", onSingleton = true, maxArgs = 1, minArgs = 1)
     public abstract static class FindNode extends CoreMethodNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {

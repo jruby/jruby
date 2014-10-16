@@ -8,6 +8,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
+import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -28,7 +29,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     private Arity arity;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-    private boolean pushScope;
 
     protected final IRScope method;
 
@@ -44,7 +44,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
-        this.pushScope = true;
         if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
             this.box.callCount = -1;
         }
@@ -89,18 +88,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         DynamicMethod actualMethod = box.actualMethod;
         if (actualMethod != null) return actualMethod.call(context, self, clazz, name, args, block);
 
-        ensureInstrsReady();
+        InterpreterContext ic = ensureInstrsReady();
 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (method.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
 
-        pre(context, self, name, block);
+        pre(ic, context, self, name, block);
 
         try {
             return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
         } finally {
-            post(context);
+            post(ic, context);
         }
     }
 
@@ -109,7 +108,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         String realName = name == null || "".equals(name) ? method.getName() : name;
         LOG.info("Executing '" + realName + "'");
         if (displayedCFG == false) {
-            // The base IR may not have been processed yet
             CFG cfg = method.getCFG();
             LOG.info("Graph:\n" + cfg.toStringGraph());
             LOG.info("CFG:\n" + cfg.toStringInstrs());
@@ -117,31 +115,30 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    protected void post(ThreadContext context) {
+    protected void post(InterpreterContext ic, ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
-        if (this.pushScope) {
+        if (ic.popDynScope()) {
             context.popScope();
         }
     }
 
-    protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
+    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
         StaticScope ss = method.getStaticScope();
-        context.preMethodFrameAndClass(getImplementationClass(), name, self, block, ss);
-        if (this.pushScope) {
-            context.pushScope(DynamicScope.newDynamicScope(ss));
+        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
+        if (ic.pushNewDynScope()) {
+            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
         }
         context.setCurrentVisibility(getVisibility());
     }
 
-    public void ensureInstrsReady() {
-        // SSS FIXME: Move this out of here to some other place?
-        // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
-        if (method.getInstrsForInterpretation() == null) {
-            method.prepareForInterpretation(false);
-            this.pushScope = !method.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+    public InterpreterContext ensureInstrsReady() {
+        InterpreterContext context = method.getInterpreterContext();
+        if (context == null) {
+            context =  method.prepareForInterpretation();
         }
+        return context;
     }
 
     public DynamicMethod getMethodForCaching() {

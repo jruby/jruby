@@ -8,6 +8,7 @@ import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -18,7 +19,7 @@ import org.jruby.truffle.runtime.util.TypeConversionUtils;
 
 @CoreClass(name = "ByteArray")
 public abstract class ByteArrayNodes {
-    @CoreMethod(names = "allocate", isModuleMethod = true, needsSelf = false)
+    @CoreMethod(names = "allocate", onSingleton = true)
     public abstract static class AllocateNode extends CoreMethodNode {
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -34,7 +35,7 @@ public abstract class ByteArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"new", "allocate_sized"}, isModuleMethod = true, needsSelf = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"new", "allocate_sized"}, onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class AllocateSizedNode extends CoreMethodNode {
         @Child
         protected DispatchHeadNode bytesToIntNode;
@@ -50,7 +51,8 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject allocate_sized(VirtualFrame frame, RubyClass self, RubyObject bytes) {
+        public RubyObject allocate_sized(VirtualFrame frame, RubyObject bytes) {
+            RubyClass self = (RubyClass) RubyArguments.getSelf(frame.getArguments());
             return RubiniusByteArray.allocate_sized(this, self, TypeConversionUtils.convertToLong(this, bytesToIntNode, frame, bytes));
         }
     }

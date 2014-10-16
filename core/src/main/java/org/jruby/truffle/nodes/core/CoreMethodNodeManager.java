@@ -72,6 +72,7 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, FixnumNodesFactory.getFactories());
         getMethods(methods, FloatNodesFactory.getFactories());
         getMethods(methods, HashNodesFactory.getFactories());
+        getMethods(methods, GCNodesFactory.getFactories());
         getMethods(methods, IONodesFactory.getFactories());
         getMethods(methods, KernelNodesFactory.getFactories());
         getMethods(methods, MainNodesFactory.getFactories());
@@ -143,30 +144,44 @@ public abstract class CoreMethodNodeManager {
 
         final Visibility visibility = anno.visibility();
 
-        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
+        if (anno.isModuleFunction()) {
+            if (visibility != Visibility.PUBLIC) {
+                System.err.println("WARNING: visibility ignored when isModuleFunction in " + methodDetails.getIndicativeName());
+            }
+            if (anno.onSingleton()) {
+                System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
+            }
+        }
+
+        // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
+        // Usage of needsSelf is quite rare for singleton methods (except constructors).
+        final boolean needsSelf = !anno.isModuleFunction() && !anno.onSingleton() && anno.needsSelf();
+
+        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails, needsSelf);
 
         final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
                 Truffle.getRuntime().createCallTarget(rootNode), null);
 
-        if (anno.isModuleMethod()) {
-            module.addMethod(null, method.withNewVisibility(Visibility.PRIVATE));
-            module.getSingletonClass(null).addMethod(null, method.withNewVisibility(Visibility.PUBLIC));
+        if (anno.isModuleFunction()) {
+            addMethod(module, method, aliases, Visibility.PRIVATE);
+            addMethod(module.getSingletonClass(null), method, aliases, Visibility.PUBLIC);
+        } else if (anno.onSingleton()) {
+            addMethod(module.getSingletonClass(null), method, aliases, visibility);
         } else {
-            module.addMethod(null, method);
-        }
-
-        for (String alias : aliases) {
-            final RubyMethod withAlias = method.withNewName(alias);
-
-            module.addMethod(null, withAlias);
-
-            if (anno.isModuleMethod()) {
-                module.getSingletonClass(null).addMethod(null, withAlias.withNewVisibility(Visibility.PUBLIC));
-            }
+            addMethod(module, method, aliases, visibility);
         }
     }
 
-    private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
+    private static void addMethod(RubyModule module, RubyMethod method, List<String> aliases, Visibility visibility) {
+        method = method.withVisibility(visibility);
+
+        module.addMethod(null, method);
+        for (String alias : aliases) {
+            module.addMethod(null, method.withNewName(alias));
+        }
+    }
+
+    private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), false, null);
@@ -175,7 +190,7 @@ public abstract class CoreMethodNodeManager {
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
-        if (methodDetails.getMethodAnnotation().needsSelf()) {
+        if (needsSelf) {
             RubyNode readSelfNode = new SelfNode(context, sourceSection);
 
             if (methodDetails.getMethodAnnotation().lowerFixnumSelf()) {

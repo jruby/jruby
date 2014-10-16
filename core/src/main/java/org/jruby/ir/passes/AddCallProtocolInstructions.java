@@ -1,7 +1,6 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.*;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Label;
@@ -51,7 +50,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
             boolean bindingHasEscaped           = scope.bindingHasEscaped();
 
             CFG        cfg = scope.cfg();
-            BasicBlock geb = cfg.getGlobalEnsureBB();
 
             if (slvpp != null && bindingHasEscaped) {
                 scopeHasLocalVarStores      = slvpp.scopeHasLocalVarStores();
@@ -71,6 +69,24 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 }
             }
 
+/* ----------------------------------------------------------------------
+ * Turning this off for now since this code is buggy and fails a few tests
+ * See example below which fails:
+ *
+       def y; yield; end
+
+       y {
+         def revivify
+           Proc::new
+         end
+
+         y {
+           x = Proc.new {}
+           y = revivify(&x)
+           p x.object_id, y.object_id
+         }
+       }
+ *
             boolean requireFrame = bindingHasEscaped || scope.usesEval();
 
             for (IRFlags flag : scope.getFlags()) {
@@ -88,7 +104,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         requireFrame = true;
                 }
             }
+ * ---------------------------------------------------------------------- */
 
+            boolean requireFrame = true;
             boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores || !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
 
             // FIXME: Why do we need a push/pop for frame & binding for scopes with unrescued exceptions??
@@ -104,9 +122,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 if (requireBinding) entryBB.addInstr(new PushBindingInstr());
 
                 // Allocate GEB if necessary for popping
+                BasicBlock geb = cfg.getGlobalEnsureBB();
                 if (geb == null) {
                     Variable exc = scope.createTemporaryVariable();
-                    geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+                    geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
                     geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
                     geb.addInstr(new ThrowExceptionInstr(exc));
                     cfg.addGlobalEnsureBB(geb);
@@ -153,7 +172,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
         // FIXME: Useless for now
         // Run on all nested closures.
-        for (IRClosure c: scope.getClosures()) execute(c);
+        for (IRClosure c: scope.getClosures()) run(c, false, true);
 
         // LVA information is no longer valid after the pass
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate

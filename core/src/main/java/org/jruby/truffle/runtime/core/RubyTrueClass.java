@@ -10,7 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 
 /**
  * Represents the Ruby {@code TrueClass} class.
@@ -29,7 +29,7 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
 
         assert value != null;
 
-        if (value instanceof NilPlaceholder) {
+        if (value instanceof RubyNilClass) {
             return false;
         }
 

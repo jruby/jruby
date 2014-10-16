@@ -23,7 +23,7 @@ import sun.misc.SignalHandler;
 @CoreClass(name = "Signal")
 public abstract class SignalNodes {
 
-    @CoreMethod(names = "trap", isModuleMethod = true, needsSelf = false, needsBlock = true, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "trap", isModuleFunction = true, needsBlock = true, minArgs = 1, maxArgs = 2)
     public abstract static class SignalNode extends CoreMethodNode {
 
         public SignalNode(RubyContext context, SourceSection sourceSection) {
@@ -47,14 +47,14 @@ public abstract class SignalNodes {
                 return ((ProcSignalHandler) oldHandler).getProc();
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
         public Object trap(RubyString signalName, RubyString command, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Signal#trap with a string command not implemented yet");
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

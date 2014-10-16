@@ -408,6 +408,9 @@ public class CFG {
     private BasicBlock createBB(Label label, Stack<ExceptionRegion> nestedExceptionRegions) {
         BasicBlock basicBlock = new BasicBlock(this, label);
         addBasicBlock(basicBlock);
+        if (label.isGlobalEnsureBlockLabel()) {
+            globalEnsureBB = basicBlock;
+        }
 
         if (!nestedExceptionRegions.empty()) nestedExceptionRegions.peek().addBB(basicBlock);
 
