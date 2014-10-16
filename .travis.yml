@@ -40,8 +40,6 @@ matrix:
       jdk: openjdk7
     - env: TARGET='-Pmain'
       jdk: oraclejdk7
-    - env: TARGET='-Pcomplete'
-      jdk: oraclejdk8
     - env: TARGET='-Posgi'
       jdk: openjdk7
     - env: TARGET='-Pj2ee'
@@ -49,6 +47,8 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: TARGET='-Prake -Dtask=spec:compiler'
+    - env: TARGET='-Pcomplete'
+      jdk: oraclejdk8
 
 branches:
   only:
