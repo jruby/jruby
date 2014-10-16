@@ -637,8 +637,6 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getJITPasses(this));
 
-        prepareInstructions();
-
         return buildLinearization();
     }
 
