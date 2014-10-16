@@ -466,6 +466,7 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
+    @Interp
     protected Instr[] prepareInstructions() {
         setupLinearization();
 
