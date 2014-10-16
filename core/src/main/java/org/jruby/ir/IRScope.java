@@ -472,6 +472,7 @@ public abstract class IRScope implements ParseResult {
         SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
 
         // FIXME: If CFG (or linearizedBBList) knew number of instrs we could end up allocing better
+        // FIXME: Clone CFG in debug mode so interpreter can get matching info to instrs it is interp'ing
 
         // Pass 1. Set up IPCs for labels and instructions and build linear instr list
         List<Instr> newInstrs = new ArrayList<>();
@@ -495,11 +496,6 @@ public abstract class IRScope implements ParseResult {
                     }
 
                     newInstr.setIPC(ipc);
-
-                    // We add back to original CFG so that debug output will match up with what
-                    // we saved to interpreter.  This knowledge may get changed if we are interp'ing
-                    // with debug output while JIT is running (FIXME?)
-                    bbInstrs.set(i, newInstr);
                     newInstrs.add(newInstr);
                     ipc++;
                 }
