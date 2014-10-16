@@ -1550,9 +1550,9 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        List result = instance.getLoadPaths();
+        List<String> result = instance.getLoadPaths();
         assertTrue(result != null);
-        assertTrue(result.size() > 0);
+        assertTrue(result.size() == 0);
         
         instance = null;
     }
@@ -2629,5 +2629,15 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         Object result = instance.runScriptlet("exit 1234");
         assertEquals(1234L, result);
+    }
+
+    @Test
+    public void testLoadPathOfScriptingContainer() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        // note that instance.getLoadPath is not the load-path of the runtime !!!
+        String[] results = instance.runScriptlet("$LOAD_PATH").toString().split(", ");
+        for(String result : results){
+            assertTrue(result + " containt lib/ruby/", result.contains("lib/ruby/"));
+        }
     }
 }
