@@ -30,11 +30,11 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyThread thread, RubyProc block) {
+        public RubyNilClass initialize(RubyThread thread, RubyProc block) {
             notDesignedForCompilation();
 
             thread.initialize(this, block);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

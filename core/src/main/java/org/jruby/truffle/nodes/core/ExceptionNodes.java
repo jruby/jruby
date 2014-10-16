@@ -31,19 +31,19 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyException exception, UndefinedPlaceholder message) {
+        public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
             notDesignedForCompilation();
 
             exception.initialize(getContext().makeString(" "), RubyCallStack.getBacktrace(this));
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyException exception, RubyString message) {
+        public RubyNilClass initialize(RubyException exception, RubyString message) {
             notDesignedForCompilation();
 
             exception.initialize(message, RubyCallStack.getBacktrace(this));
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

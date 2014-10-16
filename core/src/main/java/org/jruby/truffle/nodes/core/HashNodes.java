@@ -218,7 +218,7 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             if (hash.getDefaultBlock() == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
             }
@@ -240,7 +240,7 @@ public abstract class HashNodes {
             notInHashProfile.enter();
 
             if (hash.getDefaultBlock() == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
 
             useDefaultProfile.enter();
@@ -260,7 +260,7 @@ public abstract class HashNodes {
 
             if (value == null) {
                 if (hash.getDefaultBlock() == null) {
-                    return NilPlaceholder.INSTANCE;
+                    return getContext().getCoreLibrary().getNilObject();
                 } else {
                     return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
                 }
@@ -374,9 +374,9 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isNull")
-        public NilPlaceholder deleteNull(RubyHash hash, Object key) {
+        public RubyNilClass deleteNull(RubyHash hash, Object key) {
             hash.checkFrozen(this);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isObjectArray")
@@ -401,7 +401,7 @@ public abstract class HashNodes {
             final Object removed = newStore.remove(key);
 
             if (removed == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return removed;
             }
@@ -420,7 +420,7 @@ public abstract class HashNodes {
             final Object removed = store.remove(key);
 
             if (removed == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return removed;
             }
@@ -617,19 +617,19 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyHash hash, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubyNilClass initialize(RubyHash hash, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
             hash.setStore(null, 0);
             hash.setDefaultBlock(null);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyHash hash, RubyProc block) {
+        public RubyNilClass initialize(RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
             hash.setStore(null, 0);
             hash.setDefaultBlock(block);
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

@@ -84,12 +84,12 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
             }
 
             if (method == null || method.isUndefined() || !method.isVisibleTo(this, self)) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return context.makeString("super");
             }
         } catch (Exception e) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 

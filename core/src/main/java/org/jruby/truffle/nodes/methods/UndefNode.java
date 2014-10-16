@@ -14,7 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 
@@ -47,7 +47,7 @@ public class UndefNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         executeVoid(frame);
-        return NilPlaceholder.INSTANCE;
+        return getContext().getCoreLibrary().getNilObject();
     }
 
 }

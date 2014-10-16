@@ -55,11 +55,11 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyProc proc, RubyProc block) {
+        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
             proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
                     block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

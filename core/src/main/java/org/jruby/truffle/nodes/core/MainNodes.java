@@ -36,7 +36,7 @@ public abstract class MainNodes {
         }
 
         @Specialization
-        public NilPlaceholder include(VirtualFrame frame, Object[] args) {
+        public RubyNilClass include(VirtualFrame frame, Object[] args) {
             notDesignedForCompilation();
             final RubyClass object = getContext().getCoreLibrary().getObjectClass();
             return includeNode.executeInclude(frame, object, args);

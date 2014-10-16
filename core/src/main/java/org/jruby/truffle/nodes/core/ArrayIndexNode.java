@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
  * Index an array, without using any method lookup. This isn't a call - it's an operation on a core
@@ -37,8 +38,8 @@ public abstract class ArrayIndexNode extends RubyNode {
     }
 
     @Specialization(guards = "isNull")
-    public NilPlaceholder getNull(RubyArray array) {
-        return NilPlaceholder.INSTANCE;
+    public RubyNilClass getNull(RubyArray array) {
+        return getContext().getCoreLibrary().getNilObject();
     }
 
     @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class)
@@ -46,7 +47,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         int normalisedIndex = array.normaliseIndex(index);
 
         if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
         } else {
             return ((int[]) array.getStore())[normalisedIndex];
         }
@@ -57,7 +58,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         int normalisedIndex = array.normaliseIndex(index);
 
         if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else {
             return ((int[]) array.getStore())[normalisedIndex];
         }
@@ -68,7 +69,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         int normalisedIndex = array.normaliseIndex(index);
 
         if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
         } else {
             return ((long[]) array.getStore())[normalisedIndex];
         }
@@ -79,7 +80,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         int normalisedIndex = array.normaliseIndex(index);
 
         if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else {
             return ((long[]) array.getStore())[normalisedIndex];
         }
@@ -90,7 +91,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         int normalisedIndex = array.normaliseIndex(index);
 
         if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
         } else {
             return ((double[]) array.getStore())[normalisedIndex];
         }
@@ -101,7 +102,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         int normalisedIndex = array.normaliseIndex(index);
 
         if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else {
             return ((double[]) array.getStore())[normalisedIndex];
         }
@@ -112,7 +113,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         int normalisedIndex = array.normaliseIndex(index);
 
         if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else {
             return ((Object[]) array.getStore())[normalisedIndex];
         }

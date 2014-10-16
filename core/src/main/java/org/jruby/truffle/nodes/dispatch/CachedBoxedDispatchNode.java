@@ -18,7 +18,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -63,7 +63,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            NilPlaceholder methodReceiverObject,
+            RubyNilClass methodReceiverObject,
             Object callingSelf,
             RubyBasicObject receiverObject,
             Object methodName,

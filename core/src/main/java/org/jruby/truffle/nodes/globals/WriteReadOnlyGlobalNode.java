@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 
@@ -37,7 +37,7 @@ public class WriteReadOnlyGlobalNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         executeVoid(frame);
-        return NilPlaceholder.INSTANCE;
+        return getContext().getCoreLibrary().getNilObject();
     }
 
 }

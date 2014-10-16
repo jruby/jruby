@@ -84,7 +84,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
         if (value == null) {
             nullProfile.enter();
-            value = NilPlaceholder.INSTANCE;
+            value = getContext().getCoreLibrary().getNilObject();
         }
 
         return value;
@@ -98,7 +98,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             if (readNode.getName().equals("$~") || readNode.isSet(receiver.executeRubyBasicObject(frame))) {
                 return getContext().makeString("global-variable");
             } else{
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
         }
 
@@ -114,10 +114,10 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             if (storageLocation.isSet(receiverRubyObject)) {
                 return context.makeString("instance-variable");
             } else {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             }
         } catch (Exception e) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 

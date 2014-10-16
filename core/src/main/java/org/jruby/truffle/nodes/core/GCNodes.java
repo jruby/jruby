@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -48,15 +48,15 @@ public abstract class GCNodes {
             super(prev);
         }
 
-        public abstract NilPlaceholder executeGC();
+        public abstract RubyNilClass executeGC();
 
         @Specialization
-        public NilPlaceholder garbageCollect() {
+        public RubyNilClass garbageCollect() {
             return doGC();
         }
 
         @CompilerDirectives.SlowPath
-        private NilPlaceholder doGC() {
+        private RubyNilClass doGC() {
             notDesignedForCompilation();
 
             getContext().outsideGlobalLock(new Runnable() {
@@ -66,7 +66,7 @@ public abstract class GCNodes {
                 }
             });
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 

@@ -236,14 +236,6 @@
   <profiles>
     <profile>
       <id>bootstrap</id>
-      <dependencies>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>jruby-launcher</artifactId>
-          <version>${jruby-launcher.version}</version>
-          <type>gem</type>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>rake</id>
@@ -260,7 +252,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-S" />
                       <arg value="rake" />
                       <arg value="${task}" />
@@ -288,7 +280,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -296,29 +288,12 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xcompliance.strict=true" />
                       <arg value="-J-ea" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
                       <arg value="-t" />
-                      <arg value="bin/jruby" />
-                      <arg value="-T" />
-                      <arg value="-X+T" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.useless_use_of=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.not_reached=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.grouped_expressions=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.shadowing_local=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.regex_condition=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.argument_prefix=false" />
-                      <arg value="-T" />
-                      <arg value="-J-ea" />
-                      <arg value="-T" />
-                      <arg value="-J-Xmx2G" />
+                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
@@ -348,7 +323,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -356,29 +331,12 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xcompliance.strict=true" />
                       <arg value="-J-ea" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
                       <arg value="-t" />
-                      <arg value="bin/jruby" />
-                      <arg value="-T" />
-                      <arg value="-X+T" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.useless_use_of=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.not_reached=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.grouped_expressions=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.shadowing_local=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.regex_condition=false" />
-                      <arg value="-T" />
-                      <arg value="-Xparser.warn.argument_prefix=false" />
-                      <arg value="-T" />
-                      <arg value="-J-ea" />
-                      <arg value="-T" />
-                      <arg value="-J-Xmx2G" />
+                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
@@ -408,7 +366,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-J-server" />
                       <arg value="-J-G:-TruffleBackgroundCompilation" />
                       <arg value="-J-G:+TruffleCompilationExceptionsAreFatal" />

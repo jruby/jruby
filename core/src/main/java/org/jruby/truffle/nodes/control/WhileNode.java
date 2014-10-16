@@ -70,7 +70,7 @@ public class WhileNode extends RubyNode {
             }
         }
 
-        return NilPlaceholder.INSTANCE;
+        return getContext().getCoreLibrary().getNilObject();
     }
 
 }

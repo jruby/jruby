@@ -68,7 +68,7 @@ public class RubyContinuation extends RubyObject {
         Object returnValue;
 
         if (args.length == 0) {
-            returnValue = NilPlaceholder.INSTANCE;
+            returnValue = getContext().getCoreLibrary().getNilObject();
         } else if (args.length == 1) {
             returnValue = args[0];
         } else {

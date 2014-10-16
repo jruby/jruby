@@ -72,15 +72,16 @@ public class ArgumentProcessor {
     private List<Argument> arguments;
     private int argumentIndex = 0;
     private boolean processArgv;
+    private final boolean rubyOpts;
     RubyInstanceConfig config;
     private boolean endOfArguments = false;
     private int characterIndex = 0;
 
     public ArgumentProcessor(String[] arguments, RubyInstanceConfig config) {
-        this(arguments, true, false, config);
+        this(arguments, true, false, false, config);
     }
 
-    public ArgumentProcessor(String[] arguments, boolean processArgv, boolean dashed, RubyInstanceConfig config) {
+    public ArgumentProcessor(String[] arguments, boolean processArgv, boolean dashed, boolean rubyOpts, RubyInstanceConfig config) {
         this.config = config;
         this.arguments = new ArrayList<Argument>();
         if (arguments != null && arguments.length > 0) {
@@ -89,6 +90,7 @@ public class ArgumentProcessor {
             }
         }
         this.processArgv = processArgv;
+        this.rubyOpts = rubyOpts;
     }
 
     public void processArguments() {
@@ -161,6 +163,7 @@ public class ArgumentProcessor {
             switch (argument.charAt(characterIndex)) {
                 case '0':
                     {
+                        disallowedInRubyOpts(argument);
                         String temp = grabOptionalValue();
                         if (null == temp) {
                             config.setRecordSeparator("\u0000");
@@ -184,9 +187,11 @@ public class ArgumentProcessor {
                     config.setSplit(true);
                     break;
                 case 'c':
+                    disallowedInRubyOpts(argument);
                     config.setShouldCheckSyntax(true);
                     break;
                 case 'C':
+                    disallowedInRubyOpts(argument);
                     try {
                         String saved = grabValue(getArgumentError(" -C must be followed by a directory expression"));
                         File base = new File(config.getCurrentDirectory());
@@ -210,6 +215,7 @@ public class ArgumentProcessor {
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
                     break;
                 case 'e':
+                    disallowedInRubyOpts(argument);
                     config.getInlineScript().append(grabValue(getArgumentError(" -e must be followed by an expression to report")));
                     config.getInlineScript().append('\n');
                     config.setHasInlineScript(true);
@@ -218,13 +224,16 @@ public class ArgumentProcessor {
                     processEncodingOption(grabValue(getArgumentError("unknown encoding name")));
                     break FOR;
                 case 'F':
+                    disallowedInRubyOpts(argument);
                     config.setInputFieldSeparator(grabValue(getArgumentError(" -F must be followed by a pattern for input field separation")));
                     break FOR;
                 case 'h':
+                    disallowedInRubyOpts(argument);
                     config.setShouldPrintUsage(true);
                     config.setShouldRunInterpreter(false);
                     break;
                 case 'i':
+                    disallowedInRubyOpts(argument);
                     config.setInPlaceBackupExtension(grabOptionalValue());
                     if (config.getInPlaceBackupExtension() == null) {
                         config.setInPlaceBackupExtension("");
@@ -257,13 +266,16 @@ public class ArgumentProcessor {
 
                     break;
                 case 'l':
+                    disallowedInRubyOpts(argument);
                     config.setProcessLineEnds(true);
                     break;
                 case 'n':
+                    disallowedInRubyOpts(argument);
                     config.setAssumeLoop(true);
                     config.setKernelGsubDefined(true);
                     break;
                 case 'p':
+                    disallowedInRubyOpts(argument);
                     config.setAssumePrinting(true);
                     config.setAssumeLoop(true);
                     config.setKernelGsubDefined(true);
@@ -272,12 +284,14 @@ public class ArgumentProcessor {
                     config.getRequiredLibraries().add(grabValue(getArgumentError("-r must be followed by a package to require")));
                     break FOR;
                 case 's':
+                    disallowedInRubyOpts(argument);
                     config.setArgvGlobalsOn(true);
                     break;
                 case 'G':
                     config.setLoadGemfile(true);
                     break;
                 case 'S':
+                    disallowedInRubyOpts(argument);
                     runBinScript();
                     break FOR;
                 case 'T':
@@ -316,6 +330,7 @@ public class ArgumentProcessor {
                         break FOR;
                     }
                 case 'x':
+                    disallowedInRubyOpts(argument);
                     try {
                         String saved = grabOptionalValue();
                         if (saved != null) {
@@ -338,6 +353,7 @@ public class ArgumentProcessor {
                     }
                     break FOR;
                 case 'X':
+                    disallowedInRubyOpts(argument);
                     String extendedOption = grabOptionalValue();
                     if (extendedOption == null) {
                         if (SafePropertyAccessor.getBoolean("jruby.launcher.nopreamble", false)) {
@@ -370,6 +386,7 @@ public class ArgumentProcessor {
                     }
                     break FOR;
                 case 'y':
+                    disallowedInRubyOpts(argument);
                     config.setParserDebug(true);
                     break FOR;
                 case '-':
@@ -383,10 +400,12 @@ public class ArgumentProcessor {
                         config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--copyright")) {
+                        disallowedInRubyOpts(argument);
                         config.setShowCopyright(true);
                         config.setShouldRunInterpreter(false);
                         break FOR;
                     } else if (argument.equals("--debug")) {
+                        disallowedInRubyOpts(argument);
                         RubyInstanceConfig.FULL_TRACE_ENABLED = true;
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                         break FOR;
@@ -395,6 +414,7 @@ public class ArgumentProcessor {
                         config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
                         break;
                     } else if (argument.equals("--help")) {
+                        disallowedInRubyOpts(argument);
                         config.setShouldPrintUsage(true);
                         config.setShouldRunInterpreter(false);
                         break;
@@ -403,6 +423,7 @@ public class ArgumentProcessor {
                         config.setShouldRunInterpreter(false);
                         break;
                     } else if (argument.equals("--version")) {
+                        disallowedInRubyOpts(argument);
                         config.setShowVersion(true);
                         config.setShouldRunInterpreter(false);
                         break FOR;
@@ -529,6 +550,9 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--client")) {
                         // ignore this...can't do anything with it after boot
                         break FOR;
+                    } else if (argument.equals("--yydebug") && Options.COMPLIANCE_STRICT.load()) {
+                        disallowedInRubyOpts(argument);
+                        config.setParserDebug(true);
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
@@ -540,6 +564,12 @@ public class ArgumentProcessor {
                 default:
                     throw new MainExitException(1, "jruby: unknown option " + argument);
             }
+        }
+    }
+
+    private void disallowedInRubyOpts(String option) {
+        if (rubyOpts && Options.COMPLIANCE_STRICT.load()) {
+            throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
         }
     }
 
@@ -693,6 +723,8 @@ public class ArgumentProcessor {
         propertyNames.add("jruby.bindir");
         propertyNames.add("jruby.jar");
         propertyNames.add("jruby.compat.version");
+        propertyNames.add("jruby.reflection");
+        propertyNames.add("jruby.thread.pool.enabled");
 
         for (String propertyName : System.getProperties().stringPropertyNames()) {
             if (propertyName.startsWith("jruby.")) {

@@ -13,7 +13,7 @@ import com.oracle.truffle.api.source.*;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.objects.*;
@@ -53,7 +53,7 @@ class ModuleTranslator extends BodyTranslator {
                 parentSourceSection = null;
             }
         } else {
-            body = new NilLiteralNode(context, sourceSection);
+            body = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
         }
 
         if (environment.getFlipFlopStates().size() > 0) {

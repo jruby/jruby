@@ -39,7 +39,7 @@ public abstract class ObjectSpaceNodes {
             final Object object = getContext().getObjectSpaceManager().lookupId(id);
 
             if (object == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return object;
             }
@@ -52,7 +52,7 @@ public abstract class ObjectSpaceNodes {
             final Object object = getContext().getObjectSpaceManager().lookupId(id.longValue());
 
             if (object == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return object;
             }
@@ -72,17 +72,17 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization
-        public NilPlaceholder eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
+        public RubyNilClass eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
             notDesignedForCompilation();
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
                 yield(frame, block, object);
             }
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
-        public NilPlaceholder eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
+        public RubyNilClass eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
             notDesignedForCompilation();
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
@@ -90,7 +90,7 @@ public abstract class ObjectSpaceNodes {
                     yield(frame, block, object);
                 }
             }
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

@@ -68,7 +68,7 @@ public class YieldNode extends RubyNode {
         notDesignedForCompilation();
 
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         } else {
             return getContext().makeString("yield");
         }

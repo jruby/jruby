@@ -58,13 +58,13 @@ public abstract class SplatCastNode extends RubyNode {
     public RubyArray doObject(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
-        if (object == NilPlaceholder.INSTANCE) {
+        if (object == getContext().getCoreLibrary().getNilObject()) {
             switch (nilBehavior) {
                 case EMPTY_ARRAY:
                     return new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
                 case ARRAY_WITH_NIL:
-                    return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), NilPlaceholder.INSTANCE);
+                    return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
 
                 default: {
                     CompilerAsserts.neverPartOfCompilation();

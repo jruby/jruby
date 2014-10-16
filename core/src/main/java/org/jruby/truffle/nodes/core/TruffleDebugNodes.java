@@ -51,14 +51,14 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder dumpCallStack() {
+        public RubyNilClass dumpCallStack() {
             notDesignedForCompilation();
 
             for (String line : Backtrace.DEBUG_FORMATTER.format(getContext(), null, RubyCallStack.getBacktrace(this))) {
                 System.err.println(line);
             }
 
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -75,9 +75,9 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder flush() {
+        public RubyNilClass flush() {
             getContext().getRuntime().getOut().flush();
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -134,9 +134,9 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder doPanic() {
+        public RubyNilClass doPanic() {
             panic();
-            return NilPlaceholder.INSTANCE;
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -159,7 +159,7 @@ public abstract class TruffleDebugNodes {
             final org.jruby.ast.Node parseTree = RubyCallStack.getCurrentMethod().getSharedMethodInfo().getParseTree();
 
             if (parseTree == null) {
-                return NilPlaceholder.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 return getContext().makeString(parseTree.toString(true, 0));
             }
