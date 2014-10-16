@@ -4,3 +4,4 @@ fails:A block taking |a, b| arguments raises a TypeError if #to_ary does not ret
 fails:A block taking |a, *b| arguments raises a TypeError if #to_ary does not return an Array
 fails:A block taking |a, | arguments raises a TypeError if #to_ary does not return an Array
 fails:A block taking |(a, b), c| arguments raises a TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b)| arguments raises a TypeError if #to_ary does not return an Array
