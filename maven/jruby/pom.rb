@@ -38,6 +38,7 @@ project 'JRuby Main Maven Artifact' do
     source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_all_inclusive' )
      [ 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
       target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive_' + m )
+      FileUtils.rm_rf( target )
       FileUtils.cp_r( source, target )
       File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
         f.puts 'invoker.profiles = ' + m
@@ -64,7 +65,7 @@ project 'JRuby Main Maven Artifact' do
     activation do
       jdk '1.6'
     end
-    plugin :invoker, :pomExcludes => ['jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml', '${its.j2ee}', '${its.osgi}']
+    plugin :invoker, :pomExcludes => [ '${its.j2ee}', '${its.osgi}' ]
   end
 
   profile :id => :wlp do
