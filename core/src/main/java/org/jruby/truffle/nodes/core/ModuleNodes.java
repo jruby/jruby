@@ -509,6 +509,13 @@ public abstract class ModuleNodes {
             return module;
         }
 
+        @Specialization
+        public RubyModule setConstant(RubyModule module, RubySymbol name, Object object) {
+            notDesignedForCompilation();
+
+            module.setConstant(this, name.toString(), object);
+            return module;
+        }
     }
 
     @CoreMethod(names = "class_variable_get", minArgs = 1, maxArgs = 1)
