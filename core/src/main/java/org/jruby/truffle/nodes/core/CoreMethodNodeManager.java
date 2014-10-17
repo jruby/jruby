@@ -184,7 +184,7 @@ public abstract class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, methodDetails.getIndicativeName(), false, null);
+        final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, methodDetails.getIndicativeName());
 
         final Arity arity = new Arity(methodDetails.getMethodAnnotation().minArgs(), methodDetails.getMethodAnnotation().maxArgs());
 

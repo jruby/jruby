@@ -24,6 +24,14 @@ public class SharedMethodInfo {
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
 
+    public static SharedMethodInfo generated(SourceSection sourceSection, String name) {
+        return new SharedMethodInfo(sourceSection, null, name, false, null);
+    }
+
+    public static SharedMethodInfo generatedBlock(SourceSection sourceSection, String name) {
+        return new SharedMethodInfo(sourceSection, null, name, true, null);
+    }
+
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree) {
         assert sourceSection != null;
         assert name != null;
