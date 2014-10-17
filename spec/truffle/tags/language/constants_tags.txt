@@ -14,15 +14,12 @@ fails:Module#private_constant marked constants in a module cannot be accessed fr
 fails(inherited):Module#private_constant marked constants in a module cannot be reopened as a module
 fails(inherited):Module#private_constant marked constants in a module cannot be reopened as a class
 fails:Module#private_constant marked constants in a module is not defined? with A::B form
-fails:Module#private_constant marked constants in a module is defined? from lexical scope
 fails:Module#private_constant marked constants in a class cannot be accessed from outside the class
 fails(inherited):Module#private_constant marked constants in a class cannot be reopened as a module
 fails(inherited):Module#private_constant marked constants in a class cannot be reopened as a class
 fails:Module#private_constant marked constants in a class is not defined? with A::B form
 fails:Module#private_constant marked constants in Object cannot be accessed using ::Const form
 fails:Module#private_constant marked constants in Object is not defined? using ::Const form
-fails:Module#private_constant marked constants in a class is defined? from lexical scope
-fails:Constant resolution within methods with statically assigned constants does not search the lexical scope of qualifying modules
 fails:Constant resolution within methods with dynamically assigned constants does not search the lexical scope of qualifying modules
 fails:Module#public_constant marked constants in a module is defined? with A::B form
 fails:Module#public_constant marked constants in a class is defined? with A::B form
