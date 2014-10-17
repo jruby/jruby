@@ -30,11 +30,12 @@ import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.methods.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
@@ -546,31 +547,36 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitClassNode(org.jruby.ast.ClassNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
+        LexicalScope scope = context.pushLexicalScope();
+        try {
+            final SourceSection sourceSection = translate(node.getPosition());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getCPath().getName(), false, node.getBodyNode());
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, scope, node.getCPath().getName(), false, node.getBodyNode());
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        sharedMethodInfo, sharedMethodInfo.getName(), false);
-        final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
+            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
+                    sharedMethodInfo, sharedMethodInfo.getName(), false);
+            final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
+            final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
 
         /*
          * See my note in visitDefnNode about where the class gets defined - the same applies here.
          */
 
-        RubyNode superClass;
+            RubyNode superClass;
 
-        if (node.getSuperNode() != null) {
-            superClass = node.getSuperNode().accept(this);
-        } else {
-            superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
+            if (node.getSuperNode() != null) {
+                superClass = node.getSuperNode().accept(this);
+            } else {
+                superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
+            }
+
+            final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, node.getCPath().getName(), translateCPath(sourceSection, node.getCPath()), superClass);
+
+            return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod);
+        } finally {
+            context.popLexicalScope();
         }
-
-        final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, node.getCPath().getName(), translateCPath(sourceSection, node.getCPath()), superClass);
-
-        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod);
     }
 
     private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
@@ -756,7 +762,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodName, false, parseTree);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), methodName, false, parseTree);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName, false);
@@ -1141,7 +1147,7 @@ public class BodyTranslator extends Translator {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, currentCallMethodName, true, node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), currentCallMethodName, true, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
@@ -1275,22 +1281,26 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitModuleNode(org.jruby.ast.ModuleNode node) {
         // See visitClassNode
+        LexicalScope scope = context.pushLexicalScope();
+        try {
+            final SourceSection sourceSection = translate(node.getPosition());
 
-        final SourceSection sourceSection = translate(node.getPosition());
+            final String name = node.getCPath().getName();
 
-        final String name = node.getCPath().getName();
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, scope, name, false, node);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, node);
+            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                    context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, name, false);
+            final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, name, false);
-        final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
+            final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), name, node.getBodyNode());
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), name, node.getBodyNode());
+            final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, translateCPath(sourceSection, node.getCPath()));
 
-        final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, translateCPath(sourceSection, node.getCPath()));
-
-        return new OpenModuleNode(context, sourceSection, defineModuleNode, definitionMethod);
+            return new OpenModuleNode(context, sourceSection, defineModuleNode, definitionMethod);
+        } finally {
+            context.popLexicalScope();
+        }
     }
 
     @Override
@@ -1911,21 +1921,26 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSClassNode(org.jruby.ast.SClassNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
+        LexicalScope scope = context.pushLexicalScope();
+        try {
+            final SourceSection sourceSection = translate(node.getPosition());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(singleton-def)", false, node);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, scope, "(singleton-def)", false, node);
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
-        final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
+            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                    context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
+            final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
+            final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
 
-        final RubyNode receiverNode = node.getReceiverNode().accept(this);
+            final RubyNode receiverNode = node.getReceiverNode().accept(this);
 
-        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, receiverNode));
+            final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, receiverNode));
 
-        return new OpenModuleNode(context, sourceSection, singletonClassNode, definitionMethod);
+            return new OpenModuleNode(context, sourceSection, singletonClassNode, definitionMethod);
+        } finally {
+            context.popLexicalScope();
+        }
     }
 
     @Override
@@ -2093,7 +2108,7 @@ public class BodyTranslator extends Translator {
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(lambda)", true, node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), "(lambda)", true, node);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);

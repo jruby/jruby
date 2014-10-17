@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
+import org.jruby.truffle.runtime.LexicalScope;
 
 import java.math.BigInteger;
 
@@ -29,6 +30,7 @@ import java.math.BigInteger;
  */
 @TypeSystem({ //
                 Dispatch.DispatchAction.class, //
+                LexicalScope.class, //
                 UndefinedPlaceholder.class, //
                 boolean.class, //
                 int.class, //

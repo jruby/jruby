@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.LexicalScope;
 
 /**
  * {@link RubyMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores
@@ -18,15 +19,17 @@ import com.oracle.truffle.api.source.SourceSection;
 public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
+    private final LexicalScope lexicalScope;
     private final String name;
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
 
-    public SharedMethodInfo(SourceSection sourceSection, String name, boolean isBlock, org.jruby.ast.Node parseTree) {
+    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree) {
         assert sourceSection != null;
         assert name != null;
 
         this.sourceSection = sourceSection;
+        this.lexicalScope = lexicalScope;
         this.name = name;
         this.isBlock = isBlock;
         this.parseTree = parseTree;
@@ -34,6 +37,10 @@ public class SharedMethodInfo {
 
     public SourceSection getSourceSection() {
         return sourceSection;
+    }
+
+    public LexicalScope getLexicalScope() {
+        return lexicalScope;
     }
 
     public String getName() {

@@ -47,7 +47,7 @@ public class RubySymbol extends RubyObject {
 
         final RubyContext context = getContext();
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, true, null);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, symbol, true, null);
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, new FrameDescriptor(), sharedMethodInfo,
                 new SymbolProcNode(context, sourceSection, symbol));

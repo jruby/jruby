@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.LexicalScope;
 
 public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
@@ -83,7 +84,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
                 lookup();
             }
 
-            if (method == null || method.isUndefined() || !method.isVisibleTo(this, self)) {
+            if (method == null || method.isUndefined() || !method.isVisibleTo(this, self.getMetaClass())) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 return context.makeString("super");

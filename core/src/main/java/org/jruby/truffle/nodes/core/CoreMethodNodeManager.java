@@ -129,7 +129,7 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getClassAnnotation().name().equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
         } else {
-            module = (RubyModule) ModuleOperations.lookupConstant(rubyObjectClass, methodDetails.getClassAnnotation().name()).getValue();
+            module = (RubyModule) ModuleOperations.lookupConstant(null, rubyObjectClass, methodDetails.getClassAnnotation().name()).getValue();
         }
 
         assert module != null : methodDetails.getClassAnnotation().name();
@@ -184,7 +184,7 @@ public abstract class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), false, null);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, methodDetails.getIndicativeName(), false, null);
 
         final Arity arity = new Arity(methodDetails.getMethodAnnotation().minArgs(), methodDetails.getMethodAnnotation().maxArgs());
 

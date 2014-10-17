@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime;
 
 import java.io.*;
 import java.math.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -25,7 +24,6 @@ import org.jruby.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
@@ -76,6 +74,9 @@ public class RubyContext extends ExecutionContext {
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Warnings warnings;
 
+    // TODO: Wrong place for this, only during parsing but be practical for now
+    private LexicalScope lexicalScope;
+
     private SourceCallback sourceCallback = null;
 
     private final AtomicLong nextObjectID = new AtomicLong(0);
@@ -113,6 +114,14 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
+    }
+
+    public LexicalScope pushLexicalScope() {
+        return lexicalScope = new LexicalScope(lexicalScope);
+    }
+
+    public void popLexicalScope() {
+        lexicalScope = lexicalScope.getParent();
     }
 
     public void load(Source source, RubyNode currentNode) {
@@ -407,5 +416,4 @@ public class RubyContext extends ExecutionContext {
     public Queue<Object> getThrowTags() {
         return throwTags.get();
     }
-
 }

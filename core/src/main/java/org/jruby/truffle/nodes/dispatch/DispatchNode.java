@@ -22,10 +22,11 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.LexicalScope;
 
 @NodeChildren({
         @NodeChild(value="methodReceiverObject", type=Node.class),
-        @NodeChild(value="callingSelf", type=Node.class),
+        @NodeChild(value="lexicalScope", type=Node.class),
         @NodeChild(value="receiver", type=Node.class),
         @NodeChild(value="methodName", type=Node.class),
         @NodeChild(value="blockObject", type=Node.class),
@@ -44,7 +45,7 @@ public abstract class DispatchNode extends RubyNode {
     public abstract Object executeDispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
-            Object callingSelf,
+            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -52,7 +53,7 @@ public abstract class DispatchNode extends RubyNode {
             Dispatch.DispatchAction dispatchAction);
 
     protected RubyConstant lookupConstant(
-            RubyBasicObject callingSelf,
+            LexicalScope lexicalScope,
             RubyBasicObject receiver,
             String name,
             boolean ignoreVisibility,
@@ -61,7 +62,7 @@ public abstract class DispatchNode extends RubyNode {
 
         RubyConstant constant;
 
-        constant = ModuleOperations.lookupConstant(receiver.getMetaClass(), name);
+        constant = ModuleOperations.lookupConstant(lexicalScope, receiver.getMetaClass(), name);
 
         if (constant == null && receiver instanceof RubyModule) {
             /*
@@ -70,14 +71,14 @@ public abstract class DispatchNode extends RubyNode {
              * it for now.
              */
 
-            constant =  ModuleOperations.lookupConstant((RubyModule) receiver, name);
+            constant =  ModuleOperations.lookupConstant(lexicalScope, (RubyModule) receiver, name);
         }
 
         return constant;
     }
 
     protected RubyMethod lookup(
-            RubyBasicObject callingSelf,
+            RubyClass callerClass,
             RubyBasicObject receiver,
             String name,
             boolean ignoreVisibility,
@@ -100,7 +101,7 @@ public abstract class DispatchNode extends RubyNode {
 
         // Check visibility
 
-        if (!ignoreVisibility && !method.isVisibleTo(this, callingSelf)) {
+        if (!ignoreVisibility && !method.isVisibleTo(this, callerClass)) {
             if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
                 throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, receiver.toString(), this));
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
@@ -116,7 +117,7 @@ public abstract class DispatchNode extends RubyNode {
     protected Object resetAndDispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
-            Object callingSelf,
+            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             RubyProc blockObject,
@@ -128,7 +129,7 @@ public abstract class DispatchNode extends RubyNode {
         return head.dispatch(
                 frame,
                 methodReceiverObject,
-                callingSelf,
+                lexicalScope,
                 receiverObject,
                 methodName,
                 blockObject,

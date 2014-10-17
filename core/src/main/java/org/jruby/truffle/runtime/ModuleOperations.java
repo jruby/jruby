@@ -15,7 +15,6 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,7 +59,7 @@ public abstract class ModuleOperations {
         return constants;
     }
 
-    public static RubyConstant lookupConstant(RubyModule module, String name) {
+    public static RubyConstant lookupConstant(LexicalScope lexicalScope, RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
         RubyConstant constant;
@@ -73,11 +72,23 @@ public abstract class ModuleOperations {
         }
 
         // Look in lexical ancestors
-        for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
-            constant = lexicalAncestor.getConstants().get(name);
+        if (lexicalScope != null) {
+            do { // TODO: looking twice self ?
+                constant = lexicalScope.getLiveModule().getConstants().get(name);
 
-            if (constant != null) {
-                return constant;
+                if (constant != null) {
+                    return constant;
+                }
+
+                lexicalScope = lexicalScope.getParent();
+            } while (lexicalScope != null);
+        } else {
+            for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
+                constant = lexicalAncestor.getConstants().get(name);
+
+                if (constant != null) {
+                    return constant;
+                }
             }
         }
 

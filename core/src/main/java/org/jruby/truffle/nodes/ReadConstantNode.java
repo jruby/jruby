@@ -12,15 +12,13 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.methods.MethodLike;
+import org.jruby.truffle.runtime.LexicalScope;
 
 public class ReadConstantNode extends RubyNode {
 
@@ -37,6 +35,14 @@ public class ReadConstantNode extends RubyNode {
         dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
     }
 
+    private LexicalScope getLexicalScope(VirtualFrame frame) {
+        MethodLike method = RubyArguments.getMethod(frame.getArguments());
+        if (method != null) {
+            return method.getSharedMethodInfo().getLexicalScope();
+        }
+        return null;
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
@@ -46,10 +52,13 @@ public class ReadConstantNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
 
+        MethodLike method = RubyArguments.getMethod(frame.getArguments());
+        LexicalScope lexicalScope = getLexicalScope(frame);
+
         return dispatch.dispatch(
                 frame,
                 getContext().getCoreLibrary().getNilObject(),
-                RubyArguments.getSelf(frame.getArguments()),
+                lexicalScope,
                 receiverObject,
                 name,
                 null,
@@ -77,7 +86,7 @@ public class ReadConstantNode extends RubyNode {
         Object value;
 
         try {
-            value = ModuleOperations.lookupConstant(context.getCoreLibrary().box(receiver.execute(frame)).getMetaClass(), name);
+            value = ModuleOperations.lookupConstant(getLexicalScope(frame), context.getCoreLibrary().box(receiver.execute(frame)).getMetaClass(), name);
         } catch (RaiseException e) {
             /*
              * If we are looking up a constant in a constant that is itself undefined, we return Nil
