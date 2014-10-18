@@ -29,7 +29,7 @@ public @interface CoreMethod {
     boolean onSingleton() default false;
 
     /**
-     * Defines the method as a public on the singleton class
+     * Defines the method as public on the singleton class
      * and as a private instance method.
      * needsSelf is always false.
      */
