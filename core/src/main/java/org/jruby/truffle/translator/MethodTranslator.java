@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
+import org.jruby.truffle.nodes.debug.ObjectSpaceSafepointInstrument;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;

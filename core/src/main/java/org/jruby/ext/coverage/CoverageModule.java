@@ -58,15 +58,15 @@ public class CoverageModule {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
         
-        Map<String, Integer[]> coverage = runtime.getCoverageData().resetCoverage(runtime);
+        Map<String, int[]> coverage = runtime.getCoverageData().resetCoverage(runtime);
         
         // populate a Ruby Hash with coverage data
         RubyHash covHash = RubyHash.newHash(runtime);
-        for (Map.Entry<String, Integer[]> entry : coverage.entrySet()) {
+        for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
             RubyArray ary = RubyArray.newArray(runtime, entry.getValue().length);
             for (int i = 0; i < entry.getValue().length; i++) {
-                Integer integer = entry.getValue()[i];
-                ary.store(i, integer == null ? runtime.getNil() : runtime.newFixnum(integer));
+                int integer = entry.getValue()[i];
+                ary.store(i, integer == -1 ? context.nil : runtime.newFixnum(integer));
                 covHash.fastASetCheckString(runtime, RubyString.newString(runtime, entry.getKey()), ary);
             }
         }

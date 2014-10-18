@@ -60,7 +60,7 @@ project 'JRuby Main Maven Artifact' do
     activation do
       jdk '1.6'
     end
-    plugin :invoker, :pomExcludes => ['jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml', '${its.j2ee}', '${its.osgi}']
+    plugin :invoker, :pomExcludes => [ '${its.j2ee}', '${its.osgi}' ]
   end
 
   profile :id => :wlp do
@@ -72,7 +72,7 @@ project 'JRuby Main Maven Artifact' do
       system( 'java -jar ' + wlp.to_pathname + ' --acceptLicense ' + ctx.project.build.directory.to_pathname )
       system( File.join( ctx.project.build.directory.to_pathname,
                          'wlp/bin/server' ) + 'create testing' )
-      #FileUtils.cp_r( File.join( ctx.basedir.to_pathname, 'src/templates/j2ee_wlp'), File.join( ctx.basedir.to_pathname, 'src/it' ) )
+      FileUtils.cp_r( File.join( ctx.basedir.to_pathname, 'src/templates/j2ee_wlp'), File.join( ctx.basedir.to_pathname, 'src/it' ) )
     end
   end
 end

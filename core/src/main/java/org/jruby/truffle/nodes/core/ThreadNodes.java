@@ -33,7 +33,7 @@ public abstract class ThreadNodes {
         public RubyNilClass initialize(RubyThread thread, RubyProc block) {
             notDesignedForCompilation();
 
-            thread.initialize(getContext(), this, block);
+            thread.initialize(this, block);
             return getContext().getCoreLibrary().getNilObject();
         }
 
