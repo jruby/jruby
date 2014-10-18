@@ -50,7 +50,6 @@ matrix:
   allow_failures:
     - env: TARGET='-Pcomplete'
     - env: TARGET='-Prake -Dtask=spec:compiler'
-    - env: TARGET='-Posgi'
 
 branches:
   only:
