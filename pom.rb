@@ -141,6 +141,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
             'cloneProjectsTo' =>  '${project.build.directory}/it',
             'preBuildHookScript' =>  'setup.bsh',
             'postBuildHookScript' =>  'verify.bsh',
+            'goals' => [:install],
             'streamLogs' =>  'true' ) do
       execute_goals( 'install', 'run',
                      :id => 'integration-test' )
