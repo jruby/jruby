@@ -65,82 +65,54 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            context.outsideGlobalLock(new Runnable() {
 
-                @Override
-                public void run() {
-                    while (true) {
-                        try {
-                            barrier.await();
-                            break;
-                        } catch (BrokenBarrierException e) {
-                            throw new RuntimeException(e);
-                        } catch (InterruptedException e) {
-                        }
-                    }
+            waitOnBarrier();
 
-                    action.accept(false);
+            action.accept(false);
 
-                    while (true) {
-                        try {
-                            barrier.await();
-                            break;
-                        } catch (BrokenBarrierException e) {
-                            throw new RuntimeException(e);
-                        } catch (InterruptedException e) {
-                        }
-                    }
 
-                }
-
-            });
+            waitOnBarrier();
         }
     }
 
     public void pauseAllThreadsAndExecute(final Consumer<Boolean> action) {
         CompilerAsserts.neverPartOfCompilation();
 
-        context.outsideGlobalLock(new Runnable() {
+        try {
+            lock.lock();
 
+            SafepointManager.this.action = action;
+
+            barrier = new CyclicBarrier(liveThreads);
+
+            assumption.invalidate();
+
+            waitOnBarrier();
+
+            action.accept(true);
+
+            waitOnBarrier();
+
+            assumption = Truffle.getRuntime().createAssumption();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void waitOnBarrier() {
+        context.outsideGlobalLock(new Runnable() {
             @Override
             public void run() {
-                try {
-                    lock.lock();
-
-                    SafepointManager.this.action = action;
-
-                    barrier = new CyclicBarrier(liveThreads);
-
-                    assumption.invalidate();
-
-                    while (true) {
-                        try {
-                            barrier.await();
-                            break;
-                        } catch (BrokenBarrierException e) {
-                            throw new RuntimeException(e);
-                        } catch (InterruptedException e) {
-                        }
+                while (true) {
+                    try {
+                        barrier.await();
+                        break;
+                    } catch (BrokenBarrierException e) {
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
                     }
-
-                    action.accept(true);
-
-                    while (true) {
-                        try {
-                            barrier.await();
-                            break;
-                        } catch (BrokenBarrierException e) {
-                            throw new RuntimeException(e);
-                        } catch (InterruptedException e) {
-                        }
-                    }
-
-                    assumption = Truffle.getRuntime().createAssumption();
-                } finally {
-                    lock.unlock();
                 }
             }
-
         });
     }
 

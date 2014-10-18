@@ -1,4 +1,3 @@
-fails:Thread#alive? can check it's own status
 fails:Thread#alive? describes a running thread
 fails:Thread#alive? describes a sleeping thread
 fails:Thread#alive? describes a blocked thread

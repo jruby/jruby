@@ -1737,14 +1737,27 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public double sleep(UndefinedPlaceholder duration) {
+            return doSleep(0);
+        }
+
+        @Specialization
+        public double sleep(int duration) {
+            return doSleep(duration);
+        }
+
+        @Specialization
+        public double sleep(long duration) {
+            return doSleep(duration);
+        }
+
+        @Specialization
         public double sleep(double duration) {
             return doSleep(duration);
         }
 
         @SlowPath
         private double doSleep(final double duration) {
-            notDesignedForCompilation();
-
             return getContext().outsideGlobalLock(new Supplier<Double>() {
 
                 @Override
@@ -1763,11 +1776,6 @@ public abstract class KernelNodes {
                 }
 
             });
-        }
-
-        @Specialization
-        public double sleep(int duration) {
-            return sleep((double) duration);
         }
 
     }

@@ -400,9 +400,11 @@ public class RubyContext extends ExecutionContext {
             for (String line : Backtrace.DISPLAY_FORMATTER.format(this, rubyException, rubyException.getBacktrace())) {
                 System.err.println(line);
             }
-
-            return defaultValue;
+        } catch (ThreadExitException e) {
+            // Ignore
         }
+
+        return defaultValue;
     }
 
     public Queue<Object> getThrowTags() {
