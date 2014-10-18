@@ -362,6 +362,9 @@
             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
             <preBuildHookScript>setup.bsh</preBuildHookScript>
             <postBuildHookScript>verify.bsh</postBuildHookScript>
+            <goals>
+              <goal>install</goal>
+            </goals>
             <streamLogs>true</streamLogs>
 	    <goals><goal>install</goal></goals>
           </configuration>
