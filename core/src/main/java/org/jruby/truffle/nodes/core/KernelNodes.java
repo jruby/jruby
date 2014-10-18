@@ -1218,6 +1218,13 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public long objectID(int fixnum) {
+            notDesignedForCompilation();
+
+            return ObjectIDOperations.fixnumToID(fixnum);
+        }
+
+        @Specialization
         public long objectID(RubyBasicObject object) {
             notDesignedForCompilation();
 

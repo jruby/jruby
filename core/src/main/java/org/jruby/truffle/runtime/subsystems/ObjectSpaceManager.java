@@ -65,12 +65,6 @@ public class ObjectSpaceManager {
         this.context = context;
     }
 
-    public RubyBasicObject lookupId(long id) {
-        RubyNode.notDesignedForCompilation();
-
-        return collectLiveObjects().get(id);
-    }
-
     public void defineFinalizer(RubyBasicObject object, RubyProc proc) {
         RubyNode.notDesignedForCompilation();
 
@@ -255,6 +249,10 @@ public class ObjectSpaceManager {
     }
 
     public void visitFrame(Frame frame, ObjectGraphVisitor visitor) {
+        if (frame == null) {
+            return;
+        }
+
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             context.getCoreLibrary().box(frame.getValue(slot)).visitObjectGraph(visitor);
         }

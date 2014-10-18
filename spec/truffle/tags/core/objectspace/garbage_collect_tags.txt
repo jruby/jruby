@@ -1,4 +1,0 @@
-fails:ObjectSpace.garbage_collect can be invoked without any exceptions
-fails:ObjectSpace.garbage_collect doesn't accept any arguments
-fails:ObjectSpace.garbage_collect ignores the supplied block
-fails:ObjectSpace.garbage_collect always returns nil

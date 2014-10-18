@@ -77,7 +77,7 @@ public class RubyContext extends ExecutionContext {
 
     private SourceCallback sourceCallback = null;
 
-    private final AtomicLong nextObjectID = new AtomicLong(0);
+    private final AtomicLong nextObjectID = new AtomicLong(6);
 
     private final ThreadLocal<Queue<Object>> throwTags = new ThreadLocal<Queue<Object>>() {
 
@@ -183,7 +183,7 @@ public class RubyContext extends ExecutionContext {
     public long getNextObjectID() {
         // TODO(CS): We can theoretically run out of long values
 
-        final long id = nextObjectID.getAndIncrement();
+        final long id = nextObjectID.getAndAdd(2);
 
         if (id < 0) {
             nextObjectID.set(Long.MIN_VALUE);
