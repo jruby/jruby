@@ -13,17 +13,15 @@ import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.util.Consumer;
 
 /**
  * Supports the Ruby {@code ObjectSpace} module. Object IDs are lazily allocated {@code long}
@@ -88,7 +86,7 @@ public class ObjectSpaceManager {
 
             finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
 
-            finalizerThread.initialize(null, new Runnable() {
+            finalizerThread.initialize(context, null, new Runnable() {
 
                 @Override
                 public void run() {
@@ -201,101 +199,37 @@ public class ObjectSpaceManager {
     private Map<Long, RubyBasicObject> liveObjects;
     private ObjectGraphVisitor visitor;
 
-    @CompilerDirectives.CompilationFinal private Assumption notStoppingAssumption = Truffle.getRuntime().createAssumption();
-    private CyclicBarrier stoppedBarrier;
-    private CyclicBarrier markedBarrier;
-
-    public void checkSafepoint() {
-        try {
-            notStoppingAssumption.check();
-        } catch (InvalidAssumptionException e) {
-            context.outsideGlobalLock(new Runnable() {
-
-                @Override
-                public void run() {
-                    while (true) {
-                        try {
-                            stoppedBarrier.await();
-                            break;
-                        } catch (InterruptedException | BrokenBarrierException e2) {
-                        }
-                    }
-
-                    synchronized (liveObjects) {
-                        visitCallStack(visitor);
-                    }
-
-                    while (true) {
-                        try {
-                            markedBarrier.await();
-                            break;
-                        } catch (InterruptedException | BrokenBarrierException e2) {
-                        }
-                    }
-
-                    // TODO(CS): error recovery
-                }
-
-            });
-        }
-    }
-
     public Map<Long, RubyBasicObject> collectLiveObjects() {
         RubyNode.notDesignedForCompilation();
 
-        synchronized (context.getThreadManager()) {
-            context.outsideGlobalLock(new Runnable() {
+        // TODO(CS): probably a race condition here if multiple threads try to collect at the same time
 
-                @Override
-                public void run() {
-                    liveObjects = new HashMap<>();
+        liveObjects = new HashMap<>();
 
-                    visitor = new ObjectGraphVisitor() {
+        visitor = new ObjectGraphVisitor() {
 
-                        @Override
-                        public boolean visit(RubyBasicObject object) {
-                            return liveObjects.put(object.getObjectID(), object) == null;
-                        }
+            @Override
+            public boolean visit(RubyBasicObject object) {
+                return liveObjects.put(object.getObjectID(), object) == null;
+            }
 
-                    };
+        };
 
-                    stoppedBarrier = new CyclicBarrier(2);
-                    markedBarrier = new CyclicBarrier(2);
+        context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
 
-                    notStoppingAssumption.invalidate();
-
-                    while (true) {
-                        try {
-                            stoppedBarrier.await();
-                            break;
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                        }
-                    }
-
-                    synchronized (liveObjects) {
-                        context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
-                        context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
-                        context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
-                        visitCallStack(visitor);
-                    }
-
-                    notStoppingAssumption = Truffle.getRuntime().createAssumption();
-
-                    while (true) {
-                        try {
-                            markedBarrier.await();
-                            break;
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                        }
-                    }
-
-                    // TODO(CS): error recovery
+            @Override
+            public void accept(Boolean pausingThread) {
+                synchronized (liveObjects) {
+                    context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
+                    context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
+                    context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
+                    visitCallStack(visitor);
                 }
+            }
 
-            });
+        });
 
-            return Collections.unmodifiableMap(liveObjects);
-        }
+        return Collections.unmodifiableMap(liveObjects);
     }
 
     public void visitCallStack(final ObjectGraphVisitor visitor) {

@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime;
 
 import java.io.*;
 import java.math.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -25,7 +24,6 @@ import org.jruby.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
@@ -75,6 +73,7 @@ public class RubyContext extends ExecutionContext {
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Warnings warnings;
+    private final SafepointManager safepointManager;
 
     private SourceCallback sourceCallback = null;
 
@@ -91,6 +90,8 @@ public class RubyContext extends ExecutionContext {
 
     public RubyContext(Ruby runtime) {
         assert runtime != null;
+
+        safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
         translator = new TranslatorDriver(this);
@@ -408,4 +409,7 @@ public class RubyContext extends ExecutionContext {
         return throwTags.get();
     }
 
+    public SafepointManager getSafepointManager() {
+        return safepointManager;
+    }
 }

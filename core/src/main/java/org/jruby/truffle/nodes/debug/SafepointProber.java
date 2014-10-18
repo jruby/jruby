@@ -14,7 +14,7 @@ import com.oracle.truffle.api.instrument.SyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 
-public class ObjectSpaceSafepointProber implements RubyNodeProber {
+public class SafepointProber implements RubyNodeProber {
 
     @Override
     public RubyNode probeAsStatement(RubyNode node) {
@@ -32,7 +32,7 @@ public class ObjectSpaceSafepointProber implements RubyNodeProber {
         }
 
         wrapper.tagAs(StandardSyntaxTag.PERIODIC);
-        wrapper.getProbe().addInstrument(new ObjectSpaceSafepointInstrument(node.getContext()));
+        wrapper.getProbe().addInstrument(new SafepointInstrument(node.getContext()));
 
         return wrapper;
     }

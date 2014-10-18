@@ -13,7 +13,6 @@ import com.oracle.truffle.api.instrument.ASTNodeProber;
 import com.oracle.truffle.api.instrument.ASTProber;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +27,7 @@ public class RubyASTProber implements ASTProber {
         }
 
         if (RubyContext.OBJECTSPACE) {
-            probers.add(new ObjectSpaceSafepointProber());
+            probers.add(new SafepointProber());
         }
     }
 

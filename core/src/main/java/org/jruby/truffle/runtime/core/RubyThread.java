@@ -13,10 +13,10 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.util.Supplier;
 
 /**
  * Represents the Ruby {@code Thread} class. Implemented using Java threads, but note that there is
@@ -55,10 +55,10 @@ public class RubyThread extends RubyObject {
         this.manager = manager;
     }
 
-    public void initialize(final RubyNode currentNode, RubyProc block) {
+    public void initialize(RubyContext context, RubyNode currentNode, RubyProc block) {
         final RubyProc finalBlock = block;
 
-        initialize(currentNode, new Runnable() {
+        initialize(context, currentNode, new Runnable() {
 
             @Override
             public void run() {
@@ -68,7 +68,7 @@ public class RubyThread extends RubyObject {
         });
     }
 
-    public void initialize(final RubyNode currentNode, Runnable runnable) {
+    public void initialize(final RubyContext context, final RubyNode currentNode, Runnable runnable) {
         final RubyThread finalThread = this;
         final Runnable finalRunnable = runnable;
 
@@ -78,6 +78,7 @@ public class RubyThread extends RubyObject {
             public void run() {
                 finalThread.manager.registerThread(finalThread);
                 finalThread.manager.enterGlobalLock(finalThread);
+                context.getSafepointManager().enterThread();
 
                 try {
                     finalRunnable.run();
@@ -89,6 +90,7 @@ public class RubyThread extends RubyObject {
                     finalThread.manager.leaveGlobalLock();
                     finalThread.manager.unregisterThread(finalThread);
                     finalThread.finished.countDown();
+                    context.getSafepointManager().leaveThread();
                 }
             }
 
