@@ -1003,8 +1003,7 @@ class TestIO < Test::Unit::TestCase
       assert_equal(" Thi", file.sysread(4))
       rest = file.sysread(100000)
       assert_equal(LINE_LENGTH*10 - (1+2+4), rest.length)
-      # FIXME: GH #2045 IO.sysread at EOF blocks and does not return EOFError.
-      # assert_raise(EOFError) { file.sysread(1) }
+      assert_raise(EOFError) { file.sysread(1) }
     end
   end
 

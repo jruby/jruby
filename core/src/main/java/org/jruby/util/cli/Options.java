@@ -244,6 +244,8 @@ public class Options {
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
 
+    public static final Option<Boolean> COMPLIANCE_STRICT = bool(COMPLIANCE, "compliance.strict", false, "Comply more strictly with MRI's behaviour.");
+
     static {
         // FIXME: JIT only on when invokedynamic would be one...need non-indy JIT
         if (!COMPILE_INVOKEDYNAMIC.load()) {

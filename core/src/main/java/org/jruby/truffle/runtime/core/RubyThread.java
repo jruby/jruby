@@ -12,11 +12,15 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.*;
 
+import org.jruby.*;
+import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
+import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.util.Supplier;
+import org.jruby.util.ByteList;
 
 /**
  * Represents the Ruby {@code Thread} class. Implemented using Java threads, but note that there is
@@ -24,6 +28,17 @@ import org.jruby.truffle.runtime.util.Supplier;
  * fibers as they are currently implemented as their own Java threads.
  */
 public class RubyThread extends RubyObject {
+
+    public Object getValue() {
+        return value;
+    }
+
+    public RubyException getException() {
+        return exception;
+    }
+
+    public void shutdown() {
+    }
 
     /**
      * The class from which we create the object that is {@code Thread}. A subclass of
@@ -46,29 +61,31 @@ public class RubyThread extends RubyObject {
     private final ThreadManager manager;
 
     private final CountDownLatch finished = new CountDownLatch(1);
-    private RubyException exception = null;
 
-    private final int hashCode = new Random().nextInt();
+    private Status status = Status.RUN;
+
+    private RubyException exception;
+    private Object value;
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
         this.manager = manager;
     }
 
-    public void initialize(final RubyNode currentNode, RubyProc block) {
+    public void initialize(RubyContext context, RubyNode currentNode, RubyProc block) {
         final RubyProc finalBlock = block;
 
-        initialize(currentNode, new Runnable() {
+        initialize(context, currentNode, new Runnable() {
 
             @Override
             public void run() {
-                finalBlock.rootCall();
+                value = finalBlock.rootCall();
             }
 
         });
     }
 
-    public void initialize(final RubyNode currentNode, Runnable runnable) {
+    public void initialize(final RubyContext context, final RubyNode currentNode, Runnable runnable) {
         final RubyThread finalThread = this;
         final Runnable finalRunnable = runnable;
 
@@ -78,9 +95,12 @@ public class RubyThread extends RubyObject {
             public void run() {
                 finalThread.manager.registerThread(finalThread);
                 finalThread.manager.enterGlobalLock(finalThread);
+                context.getSafepointManager().enterThread();
 
                 try {
                     finalRunnable.run();
+                } catch (ThreadExitException e) {
+                    return;
                 } catch (RaiseException e) {
                     exception = (RubyException) e.getRubyException();
                 } catch (ReturnException e) {
@@ -89,18 +109,12 @@ public class RubyThread extends RubyObject {
                     finalThread.manager.leaveGlobalLock();
                     finalThread.manager.unregisterThread(finalThread);
                     finalThread.finished.countDown();
+                    context.getSafepointManager().leaveThread();
+                    status = Status.DEAD;
                 }
             }
 
         }).start();
-    }
-
-    @Override
-    public int hashCode() {
-        return hashCode;
-    }
-
-    public void shutdown() {
     }
 
     public void join() {
@@ -123,6 +137,10 @@ public class RubyThread extends RubyObject {
         if (exception != null) {
             throw new RaiseException(exception);
         }
+    }
+
+    public Status getStatus() {
+        return status;
     }
 
 }

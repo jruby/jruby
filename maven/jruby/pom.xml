@@ -124,9 +124,6 @@
             <artifactId>maven-invoker-plugin</artifactId>
             <configuration>
               <pomExcludes>
-                <pomExclude>jetty/pom.xml</pomExclude>
-                <pomExclude>j2ee_jetty/pom.xml</pomExclude>
-                <pomExclude>j2ee_wildfly/pom.xml</pomExclude>
                 <pomExclude>${its.j2ee}</pomExclude>
                 <pomExclude>${its.osgi}</pomExclude>
               </pomExcludes>

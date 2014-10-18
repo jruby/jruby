@@ -44,25 +44,6 @@ fails:Processing RUBYOPT sets $VERBOSE to false for '-W1'
 fails:Processing RUBYOPT sets $VERBOSE to true for '-W2'
 fails:Processing RUBYOPT requires the file for '-r'
 fails:Processing RUBYOPT raises a RuntimeError for '-a'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-p'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-n'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-y'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-c'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-s'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-h'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--help'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-l'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-S'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-e'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-i'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-x'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-C'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-X'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-F'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-0'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--copyright'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--version'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--yydebug'
 fails:The predefined global constant STDERR has nil for the external encoding despite Encoding.default_external being changed
 fails:The predefined global constant STDERR has the encodings set by #set_encoding
 fails:The predefined global constant ARGV contains Strings encoded in locale Encoding
@@ -81,3 +62,4 @@ fails:The predefined global constant STDIN has the encodings set by #set_encodin
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external when that encoding is changed
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external
 fails:Processing RUBYOPT prints the version number for '-v'
+fails:Processing RUBYOPT adds the -I path to $LOAD_PATH

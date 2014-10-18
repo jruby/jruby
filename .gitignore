@@ -88,10 +88,4 @@ maven/jruby-complete/src/it/osgi*
 *.iml
 
 # Truffle benchmark stuff
-bench/truffle/c/mandelbrot
-bench/truffle/java/*.class
-bench/truffle/js/budget.js
-bench/truffle/report/*.pdf
-bench/truffle/report/*.data
-bench/truffle/lib/*.rbc
-bench/truffle/*.rbc
+reference.txt

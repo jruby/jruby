@@ -86,7 +86,9 @@ public class RubyHash extends RubyObject {
     }
 
     public Map<Object, Object> slowToMap() {
-        if (store instanceof Object[]) {
+        if (store == null) {
+            return Collections.EMPTY_MAP;
+        } if (store instanceof Object[]) {
             final Map<Object, Object> map = new HashMap<>();
 
             for (int n = 0; n < storeSize; n++) {

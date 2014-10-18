@@ -155,29 +155,32 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.shadowing_local=false" />' +
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          '<arg value="-Xcompliance.strict=true" />' +
                           '<arg value="-J-ea" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
                           '<arg value="run" />' +
                           '<arg value="-t" />' +
-                          '<arg value="bin/jruby" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-X+T" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.useless_use_of=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.not_reached=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.grouped_expressions=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.shadowing_local=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.regex_condition=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.argument_prefix=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-J-ea" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-J-Xmx2G" />' +
+                          # Workaround for RubySpec #292
+                          '<arg value="spec/truffle/spec-wrapper" />' +
+                          #'<arg value="bin/jruby" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-X+T" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.useless_use_of=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.not_reached=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.grouped_expressions=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.shadowing_local=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.regex_condition=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xcompliance.strict=true" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-J-ea" />' +
                           '<arg value="--config" />' +
                           '<arg value="spec/truffle/truffle.mspec" />' +
                           '<arg value="--excl-tag" />' +
@@ -205,29 +208,32 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.shadowing_local=false" />' +
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          '<arg value="-Xcompliance.strict=true" />' +
                           '<arg value="-J-ea" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
                           '<arg value="run" />' +
                           '<arg value="-t" />' +
-                          '<arg value="bin/jruby" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-X+T" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.useless_use_of=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.not_reached=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.grouped_expressions=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.shadowing_local=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.regex_condition=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-Xparser.warn.argument_prefix=false" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-J-ea" />' +
-                          '<arg value="-T" />' +
-                          '<arg value="-J-Xmx2G" />' +
+                          # Workaround for RubySpec #292
+                          '<arg value="spec/truffle/spec-wrapper" />' +
+                          #'<arg value="bin/jruby" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-X+T" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.useless_use_of=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.not_reached=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.grouped_expressions=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.shadowing_local=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.regex_condition=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xcompliance.strict=true" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-J-ea" />' +
                           '<arg value="--config" />' +
                           '<arg value="spec/truffle/truffle.mspec" />' +
                           '<arg value="--excl-tag" />' +
