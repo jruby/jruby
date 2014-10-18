@@ -134,7 +134,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin( :invoker, '1.8',
             'settingsFile' =>  '${basedir}/src/it/settings.xml',
             'localRepositoryPath' =>  '${project.build.directory}/local-repo',
+            'properties' => { 'project.version' => '${project.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
+            'pomExcludes' => [ '${its.j2ee}', '${its.osgi}' ],
             'projectsDirectory' =>  'src/it',
             'cloneProjectsTo' =>  '${project.build.directory}/it',
             'preBuildHookScript' =>  'setup.bsh',
@@ -199,7 +201,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  [ 'osgi', 'j2ee', 'jruby-jars', 'main', 'complete', 'dist' ].each do |name|
+  [ 'jruby-jars', 'main', 'complete', 'dist' ].each do |name|
 
     profile name do
 
@@ -207,6 +209,21 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
       build do
         default_goal 'install'
+      end
+    end
+  end
+
+  [ 'osgi', 'j2ee' ].each do |name|
+    profile name do
+
+      modules [ 'maven' ]
+    
+      properties( 'invoker.skip' => false,
+                  "its.#{name}" => 'no-excludes/pom.xml' )
+      
+      build do
+        default_goal 'install'
+        plugin :invoker, 'pomIncludes' => [ "#{name}*/pom.xml" ]
       end
     end
   end

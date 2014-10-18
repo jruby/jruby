@@ -307,9 +307,16 @@
           <configuration>
             <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
             <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+            <properties>
+              <project.version>${project.version}</project.version>
+            </properties>
             <pomIncludes>
               <pomInclude>*/pom.xml</pomInclude>
             </pomIncludes>
+            <pomExcludes>
+              <pomExclude>${its.j2ee}</pomExclude>
+              <pomExclude>${its.osgi}</pomExclude>
+            </pomExcludes>
             <projectsDirectory>src/it</projectsDirectory>
             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
             <preBuildHookScript>setup.bsh</preBuildHookScript>
@@ -580,24 +587,6 @@
       </modules>
     </profile>
     <profile>
-      <id>osgi</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>maven</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>j2ee</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>maven</module>
-      </modules>
-    </profile>
-    <profile>
       <id>jruby-jars</id>
       <build>
         <defaultGoal>install</defaultGoal>
@@ -632,6 +621,52 @@
       <modules>
         <module>maven</module>
       </modules>
+    </profile>
+    <profile>
+      <id>osgi</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+        <plugins>
+          <plugin>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <configuration>
+              <pomIncludes>
+                <pomInclude>osgi*/pom.xml</pomInclude>
+              </pomIncludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+      <modules>
+        <module>maven</module>
+      </modules>
+      <properties>
+        <its.osgi>no-excludes/pom.xml</its.osgi>
+        <invoker.skip>false</invoker.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>j2ee</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+        <plugins>
+          <plugin>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <configuration>
+              <pomIncludes>
+                <pomInclude>j2ee*/pom.xml</pomInclude>
+              </pomIncludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+      <modules>
+        <module>maven</module>
+      </modules>
+      <properties>
+        <its.j2ee>no-excludes/pom.xml</its.j2ee>
+        <invoker.skip>false</invoker.skip>
+      </properties>
     </profile>
     <profile>
       <id>all</id>

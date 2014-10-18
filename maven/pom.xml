@@ -80,7 +80,6 @@
       <id>osgi</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
         <module>jruby-stdlib</module>
         <module>jruby-complete</module>
       </modules>
