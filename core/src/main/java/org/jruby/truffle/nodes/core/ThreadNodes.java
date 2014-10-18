@@ -43,7 +43,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "current", isModuleFunction = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "current", onSingleton = true, maxArgs = 0)
     public abstract static class CurrentNode extends CoreMethodNode {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
@@ -63,7 +63,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "exit", isModuleFunction = true, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "exit", onSingleton = true, maxArgs = 0)
     public abstract static class ExitModuleNode extends CoreMethodNode {
 
         public ExitModuleNode(RubyContext context, SourceSection sourceSection) {
@@ -141,7 +141,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "pass", needsSelf = false, isModuleFunction = true, maxArgs = 0)
+    @CoreMethod(names = "pass", onSingleton = true, maxArgs = 0)
     public abstract static class PassNode extends CoreMethodNode {
 
         public PassNode(RubyContext context, SourceSection sourceSection) {

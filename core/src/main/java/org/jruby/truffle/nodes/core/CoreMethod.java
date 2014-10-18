@@ -22,8 +22,17 @@ public @interface CoreMethod {
 
     Visibility visibility() default Visibility.PUBLIC;
 
+    /**
+     * Defines the method on the singleton class.
+     * needsSelf is always false.
+     * */
     boolean onSingleton() default false;
 
+    /**
+     * Defines the method as a public on the singleton class
+     * and as a private instance method.
+     * needsSelf is always false.
+     */
     boolean isModuleFunction() default false;
 
     boolean needsSelf() default true;
