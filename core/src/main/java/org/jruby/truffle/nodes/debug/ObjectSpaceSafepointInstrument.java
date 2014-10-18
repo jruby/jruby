@@ -14,17 +14,17 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.runtime.RubyContext;
 
-public class SafepointInstrument extends Instrument {
+public class ObjectSpaceSafepointInstrument extends Instrument {
 
     private final RubyContext context;
 
-    public SafepointInstrument(RubyContext context) {
+    public ObjectSpaceSafepointInstrument(RubyContext context) {
         this.context = context;
     }
 
     @Override
     public void enter(Node node, VirtualFrame frame) {
-        context.getSafepointManager().poll();
+        context.getObjectSpaceManager().checkSafepoint();
     }
 
 }
