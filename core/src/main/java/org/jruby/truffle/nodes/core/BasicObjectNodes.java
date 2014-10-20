@@ -185,7 +185,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_eval", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "instance_eval", needsBlock = true, minArgs = 0, maxArgs = 1)
     public abstract static class InstanceEvalNode extends CoreMethodNode {
 
         @Child protected YieldDispatchHeadNode yield;
@@ -201,7 +201,14 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyProc block) {
+        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyString string, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            return getContext().eval(string.toString(), receiver, this);
+        }
+
+        @Specialization
+        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, UndefinedPlaceholder string, RubyProc block) {
             notDesignedForCompilation();
 
             if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -212,10 +219,10 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, Object self, RubyProc block) {
+        public Object instanceEval(VirtualFrame frame, Object self, UndefinedPlaceholder string, RubyProc block) {
             notDesignedForCompilation();
 
-            return instanceEval(frame, getContext().getCoreLibrary().box(self), block);
+            return instanceEval(frame, getContext().getCoreLibrary().box(self), string, block);
         }
 
     }
