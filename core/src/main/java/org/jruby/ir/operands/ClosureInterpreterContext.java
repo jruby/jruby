@@ -24,7 +24,7 @@ public class ClosureInterpreterContext extends InterpreterContext {
                                      int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
                                      EnumSet<IRFlags> flags, Instr[] instructions,
                                      Operand self, StaticScope staticScope, BlockBody body) {
-        super(scope, temporaryVariablecount, temporaryBooleanVariablecount, temporaryFixnumVariablecount,
+        super(scope, false, temporaryVariablecount, temporaryBooleanVariablecount, temporaryFixnumVariablecount,
                 temporaryFloatVariablecount, flags, instructions);
 
         this.self = self;
@@ -33,6 +33,15 @@ public class ClosureInterpreterContext extends InterpreterContext {
     }
 
     public StaticScope getStaticScope() { return staticScope; }
+
+    /**
+     * Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody).
+     * We throw an error in case somehow we mistakenly try and push a binding.
+     */
+    @Override
+    public DynamicScope newDynamicScope(ThreadContext context) {
+        throw new RuntimeException("We do not push bindings for closures");
+    }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {

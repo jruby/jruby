@@ -25,14 +25,16 @@ public class InterpreterContext extends Operand {
     private final boolean reuseParentDynScope;
     private final boolean popDynScope;
     private final boolean receivesKeywordArguments;
+    private final boolean metaClassBodyScope;
 
-    public InterpreterContext(StaticScope staticScope,
+    public InterpreterContext(StaticScope staticScope, boolean metaClassBodyScope,
                               int temporaryVariablecount, int temporaryBooleanVariablecount,
                               int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
                               EnumSet<IRFlags> flags, Instr[] instructions) {
         super(null);
 
         this.staticScope = staticScope;
+        this.metaClassBodyScope = metaClassBodyScope; // IRMetaClassBody
         this.temporaryVariablecount = temporaryVariablecount;
         this.temporaryBooleanVariablecount = temporaryBooleanVariablecount;
         this.temporaryFixnumVariablecount = temporaryFixnumVariablecount;
@@ -77,6 +79,16 @@ public class InterpreterContext extends Operand {
         return instructions;
     }
 
+    /**
+     * Get a new dynamic scope.  Note: This only works for method scopes (ClosureIC will throw).
+     */
+    public DynamicScope newDynamicScope(ThreadContext context) {
+        // Add a parent-link to current dynscope to support non-local returns cheaply. This doesn't
+        // affect variable scoping since local variables will all have the right scope depth.
+        if (metaClassBodyScope) return DynamicScope.newDynamicScope(staticScope, context.getCurrentScope());
+
+        return DynamicScope.newDynamicScope(staticScope);
+    }
 
     public boolean hasExplicitCallProtocol() {
         return hasExplicitCallProtocol;

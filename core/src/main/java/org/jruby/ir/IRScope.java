@@ -622,7 +622,8 @@ public abstract class IRScope implements ParseResult {
         // Linearize CFG, etc.
         Instr[] linearizedInstrArray = prepareInstructions();
 
-        interpreterContext = new InterpreterContext(staticScope, getTemporaryVariablesCount(), getBooleanVariablesCount(),
+        interpreterContext = new InterpreterContext(staticScope, this instanceof IRMetaClassBody,
+                getTemporaryVariablesCount(), getBooleanVariablesCount(),
                 getFixnumVariablesCount(), getFloatVariablesCount(), getFlags(), linearizedInstrArray);
 
         return interpreterContext;
