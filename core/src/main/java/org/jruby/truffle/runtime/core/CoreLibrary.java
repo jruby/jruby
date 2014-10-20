@@ -206,6 +206,10 @@ public class CoreLibrary {
         errnoModule.setConstant(null, edomClass.getName(), edomClass);
         mathModule.setConstant(null, "DomainError", edomClass);
 
+        // BasicObject knows itself
+
+        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
+
         // Add all classes and modules as constants in Object
 
         final RubyModule[] modules = {argumentErrorClass, //
