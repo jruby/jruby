@@ -1,18 +1,15 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
-public class InterpreterContext extends Operand {
+public class InterpreterContext {
     private final int temporaryVariablecount;
     private final int temporaryBooleanVariablecount;
     private final int temporaryFixnumVariablecount;
@@ -38,8 +35,6 @@ public class InterpreterContext extends Operand {
     private CFG cfg = null;
 
     public InterpreterContext(IRScope scope, Instr[] instructions) {
-        super(null);
-
         //FIXME: Remove once we conditionally plug in CFG on debug-only
         this.cfg = scope.getCFG();
 
@@ -58,14 +53,6 @@ public class InterpreterContext extends Operand {
         this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
-    }
-
-    @Override
-    public void addUsedVariables(List<Variable> l) {}
-
-    @Override
-    public Operand cloneForInlining(CloneInfo info) {
-        throw new IllegalStateException("Should not clone interp context");
     }
 
     public String getFileName() {
@@ -125,11 +112,6 @@ public class InterpreterContext extends Operand {
 
     public boolean receivesKeywordArguments() {
         return receivesKeywordArguments;
-    }
-
-    @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return super.retrieve(context, self, currScope, currDynScope, temp);
     }
 
     @Override

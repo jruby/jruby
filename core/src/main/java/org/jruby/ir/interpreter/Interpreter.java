@@ -81,7 +81,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // ClosureInterpreterContext never retrieved as an operand in this context.
         // So, self operand is not required here.
         // Passing null to force early crasher if ever used differently.
-        evalScript.prepareInterpreterContext(null);
+        evalScript.prepareForInterpretation();
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv = null;
@@ -122,7 +122,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            b.prepareInterpreterContext(b.getSelf());
+            b.prepareForInterpretation();
             Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }

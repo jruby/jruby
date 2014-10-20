@@ -611,6 +611,11 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
+    public InterpreterContext allocateInterpreterContext(Instr[] instructionList) {
+        return new InterpreterContext(this, instructionList);
+    }
+
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized InterpreterContext prepareForInterpretation() {
         if (interpreterContext != null) return interpreterContext; // Already prepared
@@ -619,7 +624,7 @@ public abstract class IRScope implements ParseResult {
 
         // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
-        interpreterContext = new InterpreterContext(this, prepareInstructions());
+        interpreterContext = allocateInterpreterContext(prepareInstructions());
 
         return interpreterContext;
     }

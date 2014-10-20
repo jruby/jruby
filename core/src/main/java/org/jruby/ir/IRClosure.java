@@ -108,21 +108,9 @@ public class IRClosure extends IRScope {
         this.nestingDepth++;
     }
 
-    public InterpreterContext prepareInterpreterContext(Operand self) {
-        if (interpreterContext != null) return interpreterContext; // Already prepared
-
-        initScope(false);
-
-        interpreterContext = new ClosureInterpreterContext(this, prepareInstructions(), self, getBlockBody());
-
-        return interpreterContext;
-    }
-
     @Override
-    public synchronized InterpreterContext prepareForInterpretation() {
-        // This should have already been prepared during preparation of parent scopes.
-        // If this is null, it would be a bug and let users throw a NPE.
-        return interpreterContext;
+    public InterpreterContext allocateInterpreterContext(Instr[] instructionList) {
+        return new ClosureInterpreterContext(this, instructionList);
     }
 
     public void setBeginEndBlock() {
