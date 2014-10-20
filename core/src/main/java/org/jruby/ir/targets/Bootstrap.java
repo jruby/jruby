@@ -1367,11 +1367,19 @@ public class Bootstrap {
 
     public static IRubyObject symbol(MutableCallSite site, String name, ThreadContext context) {
         RubySymbol symbol = RubySymbol.newSymbol(context.runtime, name);
-        site.setTarget(Binder
-                .from(IRubyObject.class, ThreadContext.class)
-                .drop(0)
-                .constant(symbol)
-        );
+
+        MethodHandle constant = (MethodHandle)symbol.constant;
+        if (constant == null) {
+            constant = Binder
+                    .from(IRubyObject.class, ThreadContext.class)
+                    .drop(0)
+                    .constant(symbol);
+
+            symbol.constant = constant;
+        }
+
+        site.setTarget(constant);
+
         return symbol;
     }
 
@@ -1395,11 +1403,25 @@ public class Bootstrap {
 
     public static IRubyObject fixnum(MutableCallSite site, long value, ThreadContext context) {
         RubyFixnum fixnum = RubyFixnum.newFixnum(context.runtime, value);
-        site.setTarget(Binder
-                .from(IRubyObject.class, ThreadContext.class)
-                .drop(0)
-                .constant(fixnum)
-        );
+
+        MethodHandle constant = null;
+        if (value <= 255 && value >= -256) {
+            constant = (MethodHandle) context.runtime.fixnumConstants[(int) value];
+        }
+
+        if (constant == null) {
+            constant = Binder
+                    .from(IRubyObject.class, ThreadContext.class)
+                    .drop(0)
+                    .constant(fixnum);
+
+            if (value <= 255 && value >= -256) {
+                context.runtime.fixnumConstants[(int) value] = constant;
+            }
+        }
+
+        site.setTarget(constant);
+
         return fixnum;
     }
 
