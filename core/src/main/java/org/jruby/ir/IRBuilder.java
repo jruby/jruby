@@ -979,6 +979,15 @@ public class IRBuilder {
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
         CallInstr     callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
+
+        // This is to support the ugly Proc.new with no block, which must see caller's frame
+        if (
+                callNode.getName().equals("new") &&
+                receiverNode instanceof ConstNode &&
+                ((ConstNode)receiverNode).getName().equals("Proc")) {
+            callInstr.setProcNew(true);
+        }
+
         receiveBreakException(s, block, callInstr, callNode.getPosition().getStartLine());
         return callResult;
     }

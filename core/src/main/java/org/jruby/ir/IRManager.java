@@ -19,7 +19,7 @@ import java.util.Set;
 public class IRManager {
     public static String SAFE_COMPILER_PASSES = "";
     public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass";
-//    public static String DEFAULT_JIT_PASSES = "DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
+//    public static String DEFAULT_JIT_PASSES = "AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
     public static String DEFAULT_JIT_PASSES = "AddLocalVarLoadStoreInstructions,AddCallProtocolInstructions,EnsureTempsAssigned";
     public static String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
