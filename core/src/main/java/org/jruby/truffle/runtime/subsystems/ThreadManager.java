@@ -30,7 +30,7 @@ public class ThreadManager {
     private final Set<RubyThread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
 
     public ThreadManager(RubyContext context) {
-        rootThread = new RubyThread(context.getCoreLibrary().getFiberClass(), this);
+        rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
         runningThreads.add(rootThread);
         enterGlobalLock(rootThread);
     }

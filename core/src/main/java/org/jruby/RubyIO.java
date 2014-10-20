@@ -2692,6 +2692,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             return str;
     }
 
+    // MRI: rb_io_sysread
     @JRubyMethod(name = "sysread", required = 1, optional = 1)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -2715,6 +2716,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         /*
+         * MRI COMMENT:
          * FIXME: removing rb_thread_wait_fd() here changes sysread semantics
          * on non-blocking IOs.  However, it's still currently possible
          * for sysread to raise Errno::EAGAIN if another thread read()s

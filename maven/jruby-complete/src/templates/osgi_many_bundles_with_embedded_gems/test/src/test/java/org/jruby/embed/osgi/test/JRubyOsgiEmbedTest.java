@@ -78,6 +78,8 @@ public class JRubyOsgiEmbedTest {
         System.err.println();
 
 	// System.setProperty( "jruby.debug.loadService", "true" );
+	System.setProperty( "jruby.native.verbose", "true" );
+
 	IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
 	jruby.addLoadPath( Scripts.class.getClassLoader() );
 	jruby.addGemPath( Gems.class.getClassLoader() );
@@ -89,6 +91,10 @@ public class JRubyOsgiEmbedTest {
         System.err.println();
         System.err.println();
 
+        String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
+        gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
+        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
+
         // ensure we can load rake from the default gems
         boolean loaded = (Boolean) jruby.runScriptlet( "require 'rake'" );
         assertEquals(true, loaded);
@@ -96,17 +102,15 @@ public class JRubyOsgiEmbedTest {
         String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\"]");
 
+        // ensure we can load ffi
+        loaded = (Boolean) jruby.runScriptlet( "require 'ffi'" );
+        //assertEquals(true, loaded);
+        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
+        assertEquals(list, "[\"rake\"]");
+
         // ensure we can load openssl (with its bouncy-castle jars)
         loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
         assertEquals(true, loaded);
-
-        // ensure we can load ffi
-        loaded = (Boolean) jruby.runScriptlet( "require 'ffi'" );
-        assertEquals(true, loaded);
-
-        String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
-        gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
 
 	jruby.runScriptlet( "require 'jar-dependencies'; require 'krypt'" );
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import java.math.*;
+import java.util.Collection;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
@@ -34,28 +35,31 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public Object id2Ref(int id) {
-            notDesignedForCompilation();
-
-            final Object object = getContext().getObjectSpaceManager().lookupId(id);
-
-            if (object == null) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return object;
-            }
+            return id2Ref((long) id);
         }
 
         @Specialization
-        public Object id2Ref(BigInteger id) {
+        public Object id2Ref(long id) {
             notDesignedForCompilation();
 
-            final Object object = getContext().getObjectSpaceManager().lookupId(id.longValue());
-
-            if (object == null) {
+            if (ObjectIDOperations.isNil(id)) {
                 return getContext().getCoreLibrary().getNilObject();
+            } else if (ObjectIDOperations.isTrue(id)) {
+                return true;
+            } else if (ObjectIDOperations.isFalse(id)) {
+                return false;
+            } else if (ObjectIDOperations.isFixnum(id)) {
+                return ObjectIDOperations.toFixnum(id);
             } else {
-                return object;
+                final Object object = getContext().getObjectSpaceManager().collectLiveObjects().get(id);
+
+                if (object == null) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    return object;
+                }
             }
+
         }
 
     }
@@ -72,25 +76,32 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization
-        public RubyNilClass eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
+        public int eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
             notDesignedForCompilation();
 
-            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
+            final Collection<RubyBasicObject> liveObjects = getContext().getObjectSpaceManager().collectLiveObjects().values();
+
+            for (RubyBasicObject object : liveObjects) {
                 yield(frame, block, object);
             }
-            return getContext().getCoreLibrary().getNilObject();
+
+            return liveObjects.size();
         }
 
         @Specialization
-        public RubyNilClass eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
+        public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
             notDesignedForCompilation();
+
+            int count = 0;
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
                 if (ModuleOperations.assignableTo(object.getLogicalClass(), ofClass)) {
                     yield(frame, block, object);
+                    count++;
                 }
             }
-            return getContext().getCoreLibrary().getNilObject();
+
+            return count;
         }
 
     }

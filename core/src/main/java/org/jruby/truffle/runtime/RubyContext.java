@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime;
 
 import java.io.*;
 import java.math.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -25,7 +24,6 @@ import org.jruby.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
@@ -75,10 +73,11 @@ public class RubyContext extends ExecutionContext {
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Warnings warnings;
+    private final SafepointManager safepointManager;
 
     private SourceCallback sourceCallback = null;
 
-    private final AtomicLong nextObjectID = new AtomicLong(0);
+    private final AtomicLong nextObjectID = new AtomicLong(6);
 
     private final ThreadLocal<Queue<Object>> throwTags = new ThreadLocal<Queue<Object>>() {
 
@@ -91,6 +90,8 @@ public class RubyContext extends ExecutionContext {
 
     public RubyContext(Ruby runtime) {
         assert runtime != null;
+
+        safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
         translator = new TranslatorDriver(this);
@@ -182,7 +183,7 @@ public class RubyContext extends ExecutionContext {
     public long getNextObjectID() {
         // TODO(CS): We can theoretically run out of long values
 
-        final long id = nextObjectID.getAndIncrement();
+        final long id = nextObjectID.getAndAdd(2);
 
         if (id < 0) {
             nextObjectID.set(Long.MIN_VALUE);
@@ -399,13 +400,18 @@ public class RubyContext extends ExecutionContext {
             for (String line : Backtrace.DISPLAY_FORMATTER.format(this, rubyException, rubyException.getBacktrace())) {
                 System.err.println(line);
             }
-
-            return defaultValue;
+        } catch (ThreadExitException e) {
+            // Ignore
         }
+
+        return defaultValue;
     }
 
     public Queue<Object> getThrowTags() {
         return throwTags.get();
     }
 
+    public SafepointManager getSafepointManager() {
+        return safepointManager;
+    }
 }

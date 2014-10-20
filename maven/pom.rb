@@ -24,7 +24,7 @@ project 'JRuby Artifacts' do
 
   # module to profile map
   map = { 'jruby' => [ :release, :main, :osgi, :j2ee ],
-    'jruby-noasm' => [ :release, :main, :osgi ],
+    'jruby-noasm' => [ :release, :main ],
     'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars', :osgi, :j2ee ],
     'jruby-complete' => [ :release, :complete, :osgi ],
     'jruby-jars' => [ :release, 'jruby-jars' ],
