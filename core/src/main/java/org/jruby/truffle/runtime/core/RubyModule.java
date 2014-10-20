@@ -93,9 +93,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
-    // Temporarily used for name, but should disappear.
-    @CompilationFinal protected RubyModule lexicalParentModule;
-
     @CompilationFinal protected ModuleChain parentModule;
 
     @CompilationFinal private String name;
@@ -138,7 +135,9 @@ public class RubyModule extends RubyObject implements ModuleChain {
         super(moduleClass);
 
         this.context = context;
-        this.lexicalParentModule = lexicalParentModule;
+        if (lexicalParentModule != null) {
+            name = lexicalParentModule.getName() + "::" + name;
+        }
         this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
@@ -147,7 +146,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void initCopy(RubyModule other) {
         this.name = other.name;
         this.parentModule = other.parentModule;
-        this.lexicalParentModule = other.lexicalParentModule;
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
         this.classVariables.putAll(other.classVariables);
