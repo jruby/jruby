@@ -802,11 +802,7 @@ public abstract class ModuleNodes {
             RubyModule module = RubyCallStack.getCallingMethod().getDeclaringModule();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
-            for (RubyModule englobing : module.lexicalAncestors()) {
-                if (englobing == object)
-                    break;
-                modules.add(englobing);
-            }
+            // TODO(eregon): actually implement this
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
         }

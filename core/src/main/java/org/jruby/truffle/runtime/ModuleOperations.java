@@ -38,14 +38,7 @@ public abstract class ModuleOperations {
         // Look in the current module
         constants.putAll(module.getConstants());
 
-        // Look in lexical ancestors
-        for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
-            for (Map.Entry<String, RubyConstant> constant : lexicalAncestor.getConstants().entrySet()) {
-                if (!constants.containsKey(constant.getKey())) {
-                    constants.put(constant.getKey(), constant.getValue());
-                }
-            }
-        }
+        // TODO(eregon): Look in lexical scope?
 
         // Look in ancestors
         for (RubyModule ancestor : module.parentAncestors()) {
@@ -71,25 +64,15 @@ public abstract class ModuleOperations {
             return constant;
         }
 
-        // Look in lexical ancestors
-        if (lexicalScope != null) {
-            do { // TODO: looking twice self ?
-                constant = lexicalScope.getLiveModule().getConstants().get(name);
+        // Look in lexical scope
+        while (lexicalScope != null) { // TODO: looking twice self ?
+            constant = lexicalScope.getLiveModule().getConstants().get(name);
 
-                if (constant != null) {
-                    return constant;
-                }
-
-                lexicalScope = lexicalScope.getParent();
-            } while (lexicalScope != null);
-        } else {
-            for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
-                constant = lexicalAncestor.getConstants().get(name);
-
-                if (constant != null) {
-                    return constant;
-                }
+            if (constant != null) {
+                return constant;
             }
+
+            lexicalScope = lexicalScope.getParent();
         }
 
         // Look in ancestors

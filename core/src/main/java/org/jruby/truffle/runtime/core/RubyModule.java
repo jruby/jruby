@@ -93,7 +93,9 @@ public class RubyModule extends RubyObject implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
+    // Temporarily used for name, but should disappear.
     @CompilationFinal protected RubyModule lexicalParentModule;
+
     @CompilationFinal protected ModuleChain parentModule;
 
     @CompilationFinal private String name;
@@ -409,10 +411,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         }
     }
 
-    public RubyModule getLexicalParentModule() {
-        return lexicalParentModule;
-    }
-
     public ModuleChain getParentModule() {
         return parentModule;
     }
@@ -462,51 +460,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
             @Override
             public Iterator<RubyModule> iterator() {
                 return new AncestorIterator(top);
-            }
-        };
-    }
-
-    private class LexicalAncestorIterator implements Iterator<RubyModule> {
-        RubyModule module;
-
-        public LexicalAncestorIterator(RubyModule top) {
-            module = top;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return module != null;
-        }
-
-        @Override
-        public RubyModule next() {
-            RubyModule mod = module;
-            module = module.getLexicalParentModule();
-            return mod;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("remove");
-        }
-    }
-
-    public Iterable<RubyModule> lexicalAncestors() {
-        final RubyModule top = this;
-        return new Iterable<RubyModule>() {
-            @Override
-            public Iterator<RubyModule> iterator() {
-                return new LexicalAncestorIterator(top);
-            }
-        };
-    }
-
-    public Iterable<RubyModule> parentLexicalAncestors() {
-        final RubyModule top = lexicalParentModule;
-        return new Iterable<RubyModule>() {
-            @Override
-            public Iterator<RubyModule> iterator() {
-                return new LexicalAncestorIterator(top);
             }
         };
     }
