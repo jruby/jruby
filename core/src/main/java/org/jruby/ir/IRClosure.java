@@ -1,6 +1,8 @@
 package org.jruby.ir;
 
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.ClosureInterpreterContext;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CloneInfo;
