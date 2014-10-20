@@ -623,7 +623,7 @@ public abstract class IRScope implements ParseResult {
         Instr[] linearizedInstrArray = prepareInstructions();
 
         interpreterContext = new InterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
-                getFixnumVariablesCount(), getFloatVariablesCount(),getFlags().clone(), linearizedInstrArray);
+                getFixnumVariablesCount(), getFloatVariablesCount(), getFlags(), linearizedInstrArray);
 
         return interpreterContext;
     }
