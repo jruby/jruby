@@ -29,8 +29,28 @@
 package org.jruby.compiler;
 
 
-import java.io.File;
-import java.io.FileOutputStream;
+import org.jruby.MetaClass;
+import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
+import org.jruby.ast.util.SexpMaker;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.JavaNameMangler;
+import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.Opcodes;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
@@ -43,28 +63,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.MetaClass;
-import org.jruby.RubyEncoding;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.ast.util.SexpMaker;
-
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.ir.targets.JVMVisitor;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.util.JavaNameMangler;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.cli.Options;
-import org.objectweb.asm.Opcodes;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 public class JITCompiler implements JITCompilerMBean {
     private static final Logger LOG = LoggerFactory.getLogger("JITCompiler");
