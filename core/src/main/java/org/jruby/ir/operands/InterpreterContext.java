@@ -16,11 +16,10 @@ public class InterpreterContext extends Operand {
     private final int temporaryFixnumVariablecount;
     private final int temporaryFloatVariablecount;
 
-    private final EnumSet<IRFlags> flags;
-
     private final Instr[] instructions;
 
     // Cached computed fields
+    private final boolean hasExplicitCallProtocol;
     private final boolean pushNewDynScope;
     private final boolean reuseParentDynScope;
     private final boolean popDynScope;
@@ -34,8 +33,8 @@ public class InterpreterContext extends Operand {
         this.temporaryBooleanVariablecount = temporaryBooleanVariablecount;
         this.temporaryFixnumVariablecount = temporaryFixnumVariablecount;
         this.temporaryFloatVariablecount = temporaryFloatVariablecount;
-        this.flags = flags;
         this.instructions = instructions;
+        this.hasExplicitCallProtocol = flags.contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         this.reuseParentDynScope = flags.contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushNewDynScope = !flags.contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
@@ -45,7 +44,7 @@ public class InterpreterContext extends Operand {
     public void addUsedVariables(List<Variable> l) {}
 
     @Override
-    public Operand cloneForInlining(CloneInfo ii) {
+    public Operand cloneForInlining(CloneInfo info) {
         throw new IllegalStateException("Should not clone interp context");
     }
 
@@ -66,12 +65,13 @@ public class InterpreterContext extends Operand {
         return temporaryFloatVariablecount;
     }
 
-    public EnumSet<IRFlags> getFlags() {
-        return flags;
-    }
-
     public Instr[] getInstructions() {
         return instructions;
+    }
+
+
+    public boolean hasExplicitCallProtocol() {
+        return hasExplicitCallProtocol;
     }
 
     public boolean pushNewDynScope() {
