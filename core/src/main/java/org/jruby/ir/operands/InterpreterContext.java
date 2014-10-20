@@ -23,6 +23,7 @@ public class InterpreterContext extends Operand {
     private final boolean pushNewDynScope;
     private final boolean reuseParentDynScope;
     private final boolean popDynScope;
+    private final boolean receivesKeywordArguments;
 
     public InterpreterContext(int temporaryVariablecount, int temporaryBooleanVariablecount,
                               int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
@@ -38,6 +39,7 @@ public class InterpreterContext extends Operand {
         this.reuseParentDynScope = flags.contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushNewDynScope = !flags.contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
+        this.receivesKeywordArguments = flags.contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
     @Override
@@ -84,6 +86,10 @@ public class InterpreterContext extends Operand {
 
     public boolean popDynScope() {
         return popDynScope;
+    }
+
+    public boolean receivesKeywordArguments() {
+        return receivesKeywordArguments;
     }
 
     @Override

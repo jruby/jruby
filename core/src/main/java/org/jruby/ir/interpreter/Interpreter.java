@@ -85,9 +85,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv = null;
-        DynamicScope s = null;
-
-        s = rootNode.getScope();
+        DynamicScope s = rootNode.getScope();
         s.setEvalType(evalType);
         context.pushScope(s);
 
@@ -548,7 +546,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
         Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
-        boolean acceptsKeywordArgument = scope.receivesKeywordArgs();
+        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Enter the looooop!
         while (ipc < n) {
