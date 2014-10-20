@@ -20,11 +20,11 @@ public class ClosureInterpreterContext extends InterpreterContext {
     private StaticScope staticScope;
     private BlockBody body;
 
-    public ClosureInterpreterContext(int temporaryVariablecount, int temporaryBooleanVariablecount,
+    public ClosureInterpreterContext(StaticScope scope, int temporaryVariablecount, int temporaryBooleanVariablecount,
                                      int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
                                      EnumSet<IRFlags> flags, Instr[] instructions,
                                      Operand self, StaticScope staticScope, BlockBody body) {
-        super(temporaryVariablecount, temporaryBooleanVariablecount, temporaryFixnumVariablecount,
+        super(scope, temporaryVariablecount, temporaryBooleanVariablecount, temporaryFixnumVariablecount,
                 temporaryFloatVariablecount, flags, instructions);
 
         this.self = self;

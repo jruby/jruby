@@ -127,10 +127,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        StaticScope ss = method.getStaticScope();
         context.preMethodFrameOnly(getImplementationClass(), name, self, block);
         if (ic.pushNewDynScope()) {
-            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
+            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
         context.setCurrentVisibility(getVisibility());
     }

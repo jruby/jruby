@@ -2,7 +2,6 @@ package org.jruby.ir;
 
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -77,7 +76,7 @@ public class IRClosure extends IRScope {
         } else {
             this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
         }
-        this.blockArgs = new ArrayList<Operand>();
+        this.blockArgs = new ArrayList<>();
         this.arity = c.arity;
     }
 
@@ -91,7 +90,7 @@ public class IRClosure extends IRScope {
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
-        this.blockArgs = new ArrayList<Operand>();
+        this.blockArgs = new ArrayList<>();
         this.argumentType = argumentType;
         this.arity = arity;
         lexicalParent.addClosure(this);
@@ -116,7 +115,7 @@ public class IRClosure extends IRScope {
 
         Instr[] linearizedInstrArray = prepareInstructions();
 
-        interpreterContext = new ClosureInterpreterContext(getTemporaryVariablesCount(), getBooleanVariablesCount(),
+        interpreterContext = new ClosureInterpreterContext(getStaticScope(), getTemporaryVariablesCount(), getBooleanVariablesCount(),
                 getFixnumVariablesCount(), getFloatVariablesCount(), getFlags(), linearizedInstrArray,
                 self, getStaticScope(), getBlockBody());
 
@@ -271,7 +270,7 @@ public class IRClosure extends IRScope {
         //
         // In "(a)", it is 0 (correct), but in the body, it is 1 (incorrect)
 
-        LocalVariable lvar = null;
+        LocalVariable lvar;
         IRScope s = this;
         int d = depth;
         do {

@@ -539,7 +539,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         int      ipc            = 0;
         Object   exception      = null;
         DynamicScope currDynScope = context.getCurrentScope();
-        StaticScope currScope = scope.getStaticScope();
+        StaticScope currScope = interpreterContext.getStaticScope();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();

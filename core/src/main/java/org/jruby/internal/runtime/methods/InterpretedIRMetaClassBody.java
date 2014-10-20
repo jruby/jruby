@@ -39,7 +39,7 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
             // Add a parent-link to current dynscope to support non-local returns cheaply
             // This doesn't affect variable scoping since local variables will all have
             // the right scope depth.
-            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope(), context.getCurrentScope()));
+            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope(), context.getCurrentScope()));
         }
         context.setCurrentVisibility(getVisibility());
     }

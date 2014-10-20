@@ -16,6 +16,7 @@ public class InterpreterContext extends Operand {
     private final int temporaryFixnumVariablecount;
     private final int temporaryFloatVariablecount;
 
+    private StaticScope staticScope;
     private final Instr[] instructions;
 
     // Cached computed fields
@@ -25,11 +26,13 @@ public class InterpreterContext extends Operand {
     private final boolean popDynScope;
     private final boolean receivesKeywordArguments;
 
-    public InterpreterContext(int temporaryVariablecount, int temporaryBooleanVariablecount,
+    public InterpreterContext(StaticScope staticScope,
+                              int temporaryVariablecount, int temporaryBooleanVariablecount,
                               int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
                               EnumSet<IRFlags> flags, Instr[] instructions) {
         super(null);
 
+        this.staticScope = staticScope;
         this.temporaryVariablecount = temporaryVariablecount;
         this.temporaryBooleanVariablecount = temporaryBooleanVariablecount;
         this.temporaryFixnumVariablecount = temporaryFixnumVariablecount;
@@ -50,6 +53,9 @@ public class InterpreterContext extends Operand {
         throw new IllegalStateException("Should not clone interp context");
     }
 
+    public StaticScope getStaticScope() {
+        return staticScope;
+    }
 
     public int getTemporaryVariablecount() {
         return temporaryVariablecount;
