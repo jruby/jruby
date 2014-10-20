@@ -4695,7 +4695,7 @@ public final class Ruby {
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
-    public final Object[] fixnumConstants = new Object[fixnumCache.length];
+    final Object[] fixnumConstants = new Object[fixnumCache.length];
 
     private boolean verbose, warningsEnabled, debug;
     private IRubyObject verboseValue;

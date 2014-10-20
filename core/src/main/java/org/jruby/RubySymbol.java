@@ -77,7 +77,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     private final int id;
     private final ByteList symbolBytes;
     private final int hashCode;
-    public Object constant;
+    private Object constant;
     
     /**
      * 
@@ -181,6 +181,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name);
+    }
+
+    public Object constant() {
+        return constant == null ?
+                constant = createConstant(RubySymbol.class) :
+                constant;
     }
 
     @Deprecated

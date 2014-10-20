@@ -125,6 +125,23 @@ public class RubyFixnum extends RubyInteger {
     public ClassIndex getNativeClassIndex() {
         return ClassIndex.FIXNUM;
     }
+
+    public Object constant() {
+        Object constant = null;
+        long value = this.value;
+
+        if (value <= 255 && value >= -256) {
+            Object[] fixnumConstants = getRuntime().fixnumConstants;
+            constant = fixnumConstants[(int) value];
+
+            if (constant == null) {
+                constant = createConstant(RubyFixnum.class);
+                fixnumConstants[(int) value] = constant;
+            }
+        }
+
+        return constant;
+    }
     
     /** 
      * short circuit for Fixnum key comparison
