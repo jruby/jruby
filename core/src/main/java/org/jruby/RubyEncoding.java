@@ -41,19 +41,21 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 @JRubyClass(name="Encoding")
-public class RubyEncoding extends RubyObject {
+public class RubyEncoding extends RubyObject implements Constantizable {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     public static final Charset UTF16 = Charset.forName("UTF-16");
     public static final Charset ISO = Charset.forName("ISO-8859-1");
@@ -76,11 +78,10 @@ public class RubyEncoding extends RubyObject {
     private Encoding encoding;
     private final ByteList name;
     private final boolean isDummy;
+    private final Object constant;
 
     private RubyEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {
-        super(runtime, runtime.getEncoding());
-        this.name = new ByteList(name, p, end);
-        this.isDummy = isDummy;
+        this(runtime, new ByteList(name, p, end), null, false);
     }
     
     private RubyEncoding(Ruby runtime, byte[] name, boolean isDummy) {
@@ -88,17 +89,28 @@ public class RubyEncoding extends RubyObject {
     }
 
     private RubyEncoding(Ruby runtime, Encoding encoding) {
-        super(runtime, runtime.getEncoding());
-        this.name = new ByteList(encoding.getName());
-        this.isDummy = false;
-        this.encoding = encoding;
+        this(runtime, new ByteList(encoding.getName()), encoding, false);
     }
 
     private RubyEncoding(Ruby runtime, byte[] name, Encoding encoding, boolean isDummy) {
+        this(runtime, new ByteList(name), encoding, isDummy);
+    }
+
+    private RubyEncoding(Ruby runtime, ByteList name, Encoding encoding, boolean isDummy) {
         super(runtime, runtime.getEncoding());
-        this.name = new ByteList(name);
+        this.name = name;
         this.isDummy = isDummy;
         this.encoding = encoding;
+
+        this.constant = OptoFactory.newConstantWrapper(RubyEncoding.class, this);
+    }
+
+    /**
+     * @see org.jruby.compiler.Constantizable
+     */
+    @Override
+    public Object constant() {
+        return constant;
     }
 
     public static RubyEncoding newEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {

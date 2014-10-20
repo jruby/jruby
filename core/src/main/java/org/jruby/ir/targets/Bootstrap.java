@@ -21,6 +21,7 @@ import org.jruby.runtime.invokedynamic.JRubyCallSite;
 import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -388,28 +389,49 @@ public class Bootstrap {
     }
 
     public static IRubyObject nil(ThreadContext context, MutableCallSite site) {
-        site.setTarget(dropArguments(constant(IRubyObject.class, context.nil), 0, ThreadContext.class));
+        MethodHandle constant = (MethodHandle)((RubyNil)context.nil).constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.nil);
+
+        site.setTarget(constant);
+
         return context.nil;
     }
 
     public static IRubyObject True(ThreadContext context, MutableCallSite site) {
-        site.setTarget(dropArguments(constant(IRubyObject.class, context.runtime.getTrue()), 0, ThreadContext.class));
+        MethodHandle constant = (MethodHandle)context.runtime.getTrue().constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.runtime.getTrue());
+
+        site.setTarget(constant);
+
         return context.runtime.getTrue();
     }
 
     public static IRubyObject False(ThreadContext context, MutableCallSite site) {
-        site.setTarget(dropArguments(constant(IRubyObject.class, context.runtime.getFalse()), 0, ThreadContext.class));
+        MethodHandle constant = (MethodHandle)context.runtime.getFalse().constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.runtime.getFalse());
+
+        site.setTarget(constant);
+
         return context.runtime.getFalse();
     }
 
     public static Ruby runtime(ThreadContext context, MutableCallSite site) {
-        site.setTarget(dropArguments(constant(Ruby.class, context.runtime), 0, ThreadContext.class));
+        MethodHandle constant = (MethodHandle)context.runtime.constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(Ruby.class, context.runtime);
+
+        site.setTarget(constant);
+
         return context.runtime;
     }
 
     public static RubyEncoding encoding(ThreadContext context, MutableCallSite site, String name) {
         RubyEncoding rubyEncoding = IRRuntimeHelpers.retrieveEncoding(context, name);
-        site.setTarget(dropArguments(constant(RubyEncoding.class, rubyEncoding), 0, ThreadContext.class));
+
+        MethodHandle constant = (MethodHandle)rubyEncoding.constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(RubyEncoding.class, rubyEncoding);
+
+        site.setTarget(constant);
+
         return rubyEncoding;
     }
 

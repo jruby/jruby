@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -65,9 +64,9 @@ import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
+import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -3051,51 +3050,5 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Deprecated
     public final void setNativeHandle(Object value) {
-    }
-
-    /**
-     * A factory for abstract "constant" representations of objects. This is currently only used by our invokedynamic
-     * support to cache the "constant" handles that wrap common literal fixnums and symbols. See #2058.
-     */
-    static interface ConstantFactory {
-        public Object create(Class type, Object object);
-    }
-
-    /**
-     * A constant factory that produces MethodHandle constants that drop an initial ThreadContext argument.
-     */
-    private static class MethodHandleConstantFactory implements ConstantFactory {
-        public Object create(Class type, Object object) {
-            return MethodHandles.dropArguments(
-                    MethodHandles.constant(type, object),
-                    0,
-                    ThreadContext.class);
-        }
-    }
-
-    /**
-     * A dummy factory, for when we are not running with invokedynamic.
-     */
-    private static class DummyConstantFactory implements ConstantFactory {
-        public Object create(Class type, Object object) {
-            return object;
-        }
-    }
-
-    /**
-     * The constant factory we'll be using for this run.
-     */
-    private static final ConstantFactory CONSTANT_FACTORY = Options.COMPILE_INVOKEDYNAMIC.load() ?
-            new MethodHandleConstantFactory() :
-            new DummyConstantFactory();
-
-    /**
-     * Create a new "constant" representation for this object, conforming to the given concrete type. This is currently
-     * only used by invokedynamic to cache "constant" method handle wrappers for common literal fixnums and symbols.
-     * @param type the class to which the constant should conform
-     * @return a "constant" representation of this object appropriate to the current JVM and runtime modes
-     */
-    protected final Object createConstant(Class type) {
-        return CONSTANT_FACTORY.create(type, this);
     }
 }

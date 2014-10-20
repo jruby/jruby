@@ -39,6 +39,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.compiler.Constantizable;
 import org.objectweb.asm.util.TraceClassVisitor;
 import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
@@ -194,7 +195,7 @@ import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
  * provides a number of utility methods for constructing global types and
  * accessing global runtime structures.
  */
-public final class Ruby {
+public final class Ruby implements Constantizable {
     
     /**
      * The logger used to log relevant bits.
@@ -220,6 +221,8 @@ public final class Ruby {
             this.profiledMethods        = null;
             this.profilingServiceLookup = null;
         }
+
+        constant = OptoFactory.newConstantWrapper(Ruby.class, this);
         
         getJRubyClassLoader(); // force JRubyClassLoader to init if possible
 
@@ -4630,6 +4633,14 @@ public final class Ruby {
         }
     }
 
+    /**
+     * @see org.jruby.compiler.Constantizable
+     */
+    @Override
+    public Object constant() {
+        return constant;
+    }
+
     @Deprecated
     public int getSafeLevel() {
         return 0;
@@ -4982,4 +4993,10 @@ public final class Ruby {
     private final org.jruby.management.Runtime runtimeBean;
 
     private final FilenoUtil filenoUtil = new FilenoUtil();
+
+    /**
+     * A representation of this runtime as a JIT-optimizable constant. Used for e.g. invokedynamic binding of runtime
+     * accesses.
+     */
+    private final Object constant;
 }
