@@ -53,17 +53,12 @@ public class WrappedIRClosure extends Operand {
 
     @Override
     public Operand cloneForInlining(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) {
-            SimpleCloneInfo simpleCloneInfo = (SimpleCloneInfo) info;
+        // Making interp instrs so that if JIT hits IRClosure we will not concurrently modify the same IRScope.
+        if (info instanceof SimpleCloneInfo && !((SimpleCloneInfo) info).isEnsureBlockCloneMode()) {
+            closure.prepareForInterpretation(); // makes context as a side-effect
 
-            // For IRBuilding we are pre-interpretation and do want a traditional simple clone
-            if (simpleCloneInfo.isEnsureBlockCloneMode()) {
-                return new WrappedIRClosure(info.getRenamedVariable(self), closure.cloneForInlining(info));
-            }
-
-            // We are saving instructions so that if JIT hits IRClosure, it will not concurrently
-            // modify the same object.
-            return closure.prepareInterpreterContext(self);
+            // FIXME: It really bothers me we do not clone closure here but cloning like main clone case loses interpContext + other things.
+            return new WrappedIRClosure(info.getRenamedVariable(self), closure);
         }
 
         return new WrappedIRClosure(info.getRenamedVariable(self), closure.cloneForInlining(info));

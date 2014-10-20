@@ -24,6 +24,8 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.ir.IRFlags.HAS_EXPLICIT_CALL_PROTOCOL;
+
 public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
@@ -92,7 +94,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (method.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+        if (ic.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
 
         pre(ic, context, self, name, block);
 
@@ -125,10 +127,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        StaticScope ss = method.getStaticScope();
         context.preMethodFrameOnly(getImplementationClass(), name, self, block);
         if (ic.pushNewDynScope()) {
-            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
+            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
         context.setCurrentVisibility(getVisibility());
     }

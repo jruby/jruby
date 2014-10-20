@@ -93,6 +93,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyModule mathModule;
     @CompilerDirectives.CompilationFinal private RubyModule objectSpaceModule;
     @CompilerDirectives.CompilationFinal private RubyModule signalModule;
+    @CompilerDirectives.CompilationFinal private RubyModule truffleModule;
     @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
     @CompilerDirectives.CompilationFinal private RubyClass edomClass;
 
@@ -180,7 +181,8 @@ public class CoreLibrary {
         threadClass = new RubyThread.RubyThreadClass(objectClass);
         timeClass = new RubyTime.RubyTimeClass(objectClass);
         trueClass = new RubyClass(null, null, objectClass, "TrueClass");
-        truffleDebugModule = new RubyModule(moduleClass, null, "TruffleDebug");
+        truffleModule = new RubyModule(moduleClass, null, "Truffle");
+        truffleDebugModule = new RubyModule(moduleClass, null, "Debug");
         typeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "TypeError");
         zeroDivisionErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ZeroDivisionError");
 
@@ -260,13 +262,15 @@ public class CoreLibrary {
                         threadClass, //
                         timeClass, //
                         trueClass, //
-                        truffleDebugModule, //
+                        truffleModule, //
                         typeErrorClass, //
                         zeroDivisionErrorClass};
 
         for (RubyModule module : modules) {
             objectClass.setConstant(null, module.getName(), module);
         }
+
+        truffleModule.setConstant(null, truffleDebugModule.getName(), truffleDebugModule);
 
         // Create some key objects
 

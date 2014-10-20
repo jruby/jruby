@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes.core;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
@@ -18,6 +20,7 @@ import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
@@ -320,6 +323,31 @@ public abstract class FileNodes {
             }
 
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, minArgs= 1, maxArgs = 1)
+    public abstract static class ReadFunctionNode extends CoreMethodNode {
+
+        public ReadFunctionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReadFunctionNode(ReadFunctionNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString read(RubyString path) {
+            notDesignedForCompilation();
+
+            try {
+                return new RubyString(getContext().getCoreLibrary().getStringClass(),
+                        new ByteList(Files.readAllBytes(Paths.get(path.toString()))));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
     }

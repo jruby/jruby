@@ -84,7 +84,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
         //
         // JRUBY-5686: do this before executing so first time sets cref module
-        ((ClosureInterpreterContext)getLambdaBody()).getStaticScope().determineModule();
+        ((WrappedIRClosure) getLambdaBody()).getClosure().getStaticScope().determineModule();
 
         // CON: This must not be happening, because nil would never cast to Block
 //        IRClosure body = getLambdaBody().getClosure();
