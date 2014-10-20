@@ -933,8 +933,8 @@ public class IRRuntimeHelpers {
     // Used by JIT
     public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
         RubyHash hash = RubyHash.newHash(runtime);
-        for (int i = 0; i < pairs.length / 2; i++) {
-            hash.fastASet(runtime, pairs[i], pairs[i + 1], true);
+        for (int i = 0; i < pairs.length;) {
+            hash.fastASet(runtime, pairs[i++], pairs[i++], true);
         }
         return hash;
     }
