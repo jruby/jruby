@@ -136,13 +136,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         Object constant = null;
         long value = this.value;
 
-        if (value <= 255 && value >= -256) {
+        if (value < CACHE_OFFSET && value >= -CACHE_OFFSET) {
             Object[] fixnumConstants = getRuntime().fixnumConstants;
-            constant = fixnumConstants[(int) value];
+            constant = fixnumConstants[(int) value + CACHE_OFFSET];
 
             if (constant == null) {
                 constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
-                fixnumConstants[(int) value] = constant;
+                fixnumConstants[(int) value + CACHE_OFFSET] = constant;
             }
         }
 
