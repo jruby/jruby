@@ -24,6 +24,8 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.ir.IRFlags.HAS_EXPLICIT_CALL_PROTOCOL;
+
 public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
@@ -92,7 +94,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (method.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+        if (ic.getFlags().contains(HAS_EXPLICIT_CALL_PROTOCOL)) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
 
         pre(ic, context, self, name, block);
 
