@@ -21,7 +21,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
@@ -50,7 +49,9 @@ public class JVMVisitor extends IRVisitor {
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
 
     public JVMVisitor() {
-        _reset();
+        this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
+        this.methodIndex = 0;
+        this.scopeMap = new HashMap();
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
@@ -83,21 +84,6 @@ public class JVMVisitor extends IRVisitor {
         }
 
         return result;
-    }
-
-    public void reset() {
-        _reset();
-    }
-
-    private void _reset() {
-        this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
-        this.methodIndex = 0;
-        this.scopeMap = new HashMap();
-        this.prepare = true;
-    }
-
-    public void setPrepare(boolean prepare) {
-        this.prepare = prepare;
     }
 
     public byte[] code() {
@@ -141,15 +127,8 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void emitScope(IRScope scope, String name, Signature signature) {
-        List <BasicBlock> bbs;
-        if (prepare) {
-            bbs = scope.prepareForCompilation();
-        } else {
-            if (scope.getCFG() == null) {
-                scope.buildCFG();
-            }
-            bbs = scope.buildLinearization();
-        }
+        List <BasicBlock> bbs = scope.prepareForCompilation();
+
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
         if (Options.IR_COMPILER_DEBUG.load()) logScope(scope);
@@ -2300,5 +2279,4 @@ public class JVMVisitor extends IRVisitor {
     private JVM jvm;
     private int methodIndex;
     private Map<String, IRScope> scopeMap;
-    private boolean prepare;
 }

@@ -21,7 +21,7 @@ module CompilerTestUtils
 
     method = oj.ir.IRBuilder.createIRBuilder(JRuby.runtime, JRuby.runtime.getIRManager()).buildRoot(node)
 
-    method.prepareForInterpretation(false)
+    method.prepareForCompilation
 
     compiler = oj.ir.targets.JVMVisitor.new
     compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
