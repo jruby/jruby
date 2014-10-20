@@ -23,7 +23,61 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
-    @CoreMethod(names = "[]", onSingleton = true, minArgs = 1, maxArgs = 1)
+
+    @CoreMethod(names = "chdir", onSingleton = true, needsBlock = true, minArgs = 1, maxArgs = 1)
+    public abstract static class ChdirNode extends YieldingCoreMethodNode {
+
+        public ChdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ChdirNode(ChdirNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyContext context = getContext();
+
+            final String previous = context.getRuntime().getCurrentDirectory();
+            context.getRuntime().setCurrentDirectory(path.toString());
+
+            if (block != null) {
+                try {
+                    return yield(frame, block, path);
+                } finally {
+                    context.getRuntime().setCurrentDirectory(previous);
+                }
+            } else {
+                return 0;
+            }
+        }
+
+    }
+
+    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, maxArgs = 1)
+    public abstract static class ExistsNode extends CoreMethodNode {
+
+        public ExistsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ExistsNode(ExistsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean exists(RubyString path) {
+            notDesignedForCompilation();
+
+            return new File(path.toString()).isDirectory();
+        }
+
+    }
+
+    @CoreMethod(names = {"glob", "[]"}, onSingleton = true, minArgs = 1, maxArgs = 1)
     public abstract static class GlobNode extends CoreMethodNode {
 
         public GlobNode(RubyContext context, SourceSection sourceSection) {
@@ -91,59 +145,6 @@ public abstract class DirNodes {
             }
 
             return array;
-        }
-
-    }
-
-    @CoreMethod(names = "chdir", onSingleton = true, needsBlock = true, minArgs = 1, maxArgs = 1)
-    public abstract static class ChdirNode extends YieldingCoreMethodNode {
-
-        public ChdirNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChdirNode(ChdirNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
-            notDesignedForCompilation();
-
-            final RubyContext context = getContext();
-
-            final String previous = context.getRuntime().getCurrentDirectory();
-            context.getRuntime().setCurrentDirectory(path.toString());
-
-            if (block != null) {
-                try {
-                    return yield(frame, block, path);
-                } finally {
-                    context.getRuntime().setCurrentDirectory(previous);
-                }
-            } else {
-                return 0;
-            }
-        }
-
-    }
-
-    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, maxArgs = 1)
-    public abstract static class ExistsNode extends CoreMethodNode {
-
-        public ExistsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExistsNode(ExistsNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean exists(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).isDirectory();
         }
 
     }
