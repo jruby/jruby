@@ -1,9 +1,11 @@
 package org.jruby.ir.operands;
 
-import java.util.EnumSet;
 import java.util.List;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -16,7 +18,11 @@ public class InterpreterContext extends Operand {
     private final int temporaryFixnumVariablecount;
     private final int temporaryFloatVariablecount;
 
-    private StaticScope staticScope;
+
+    private final String name;
+    private final String fileName;
+    private final int lineNumber;
+    private final StaticScope staticScope;
     private final Instr[] instructions;
 
     // Cached computed fields
@@ -27,24 +33,31 @@ public class InterpreterContext extends Operand {
     private final boolean receivesKeywordArguments;
     private final boolean metaClassBodyScope;
 
-    public InterpreterContext(StaticScope staticScope, boolean metaClassBodyScope,
-                              int temporaryVariablecount, int temporaryBooleanVariablecount,
-                              int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
-                              EnumSet<IRFlags> flags, Instr[] instructions) {
+    // FIXME: Hack this should be a clone eventually since JIT might change this.  Comment for it reflects what it should be.
+    // View of CFG at time of creating this context.
+    private CFG cfg = null;
+
+    public InterpreterContext(IRScope scope, Instr[] instructions) {
         super(null);
 
-        this.staticScope = staticScope;
-        this.metaClassBodyScope = metaClassBodyScope; // IRMetaClassBody
-        this.temporaryVariablecount = temporaryVariablecount;
-        this.temporaryBooleanVariablecount = temporaryBooleanVariablecount;
-        this.temporaryFixnumVariablecount = temporaryFixnumVariablecount;
-        this.temporaryFloatVariablecount = temporaryFloatVariablecount;
+        //FIXME: Remove once we conditionally plug in CFG on debug-only
+        this.cfg = scope.getCFG();
+
+        this.name = scope.getName();
+        this.fileName = scope.getFileName();
+        this.lineNumber = scope.getLineNumber();
+        this.staticScope = scope.getStaticScope();
+        this.metaClassBodyScope = scope instanceof IRMetaClassBody;
+        this.temporaryVariablecount = scope.getTemporaryVariablesCount();
+        this.temporaryBooleanVariablecount = scope.getBooleanVariablesCount();
+        this.temporaryFixnumVariablecount = scope.getFixnumVariablesCount();
+        this.temporaryFloatVariablecount = scope.getFloatVariablesCount();
         this.instructions = instructions;
-        this.hasExplicitCallProtocol = flags.contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
-        this.reuseParentDynScope = flags.contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        this.pushNewDynScope = !flags.contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentDynScope;
+        this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
+        this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+        this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
-        this.receivesKeywordArguments = flags.contains(IRFlags.RECEIVES_KEYWORD_ARGS);
+        this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
     @Override
@@ -53,6 +66,10 @@ public class InterpreterContext extends Operand {
     @Override
     public Operand cloneForInlining(CloneInfo info) {
         throw new IllegalStateException("Should not clone interp context");
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 
     public StaticScope getStaticScope() {
@@ -113,5 +130,17 @@ public class InterpreterContext extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         return super.retrieve(context, self, currScope, currDynScope, temp);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder();
+
+        buf.append(fileName).append(':').append(lineNumber);
+        if (name != null) buf.append(' ').append(name);
+
+        buf.append("\nCFG:\n").append(cfg);
+
+        return buf.toString();
     }
 }

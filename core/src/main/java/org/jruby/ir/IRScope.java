@@ -619,12 +619,7 @@ public abstract class IRScope implements ParseResult {
 
         // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
 
-        // Linearize CFG, etc.
-        Instr[] linearizedInstrArray = prepareInstructions();
-
-        interpreterContext = new InterpreterContext(staticScope, this instanceof IRMetaClassBody,
-                getTemporaryVariablesCount(), getBooleanVariablesCount(),
-                getFixnumVariablesCount(), getFloatVariablesCount(), getFlags(), linearizedInstrArray);
+        interpreterContext = new InterpreterContext(this, prepareInstructions());
 
         return interpreterContext;
     }

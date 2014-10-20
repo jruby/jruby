@@ -1,9 +1,7 @@
 package org.jruby.ir.operands;
 
-import java.util.EnumSet;
-import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -13,26 +11,19 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Created by enebo on 10/14/14.
+ * Interpreter knowledge needed to interpret a closure.
  */
 public class ClosureInterpreterContext extends InterpreterContext {
     private Operand self;
-    private StaticScope staticScope;
     private BlockBody body;
 
-    public ClosureInterpreterContext(StaticScope scope, int temporaryVariablecount, int temporaryBooleanVariablecount,
-                                     int temporaryFixnumVariablecount, int temporaryFloatVariablecount,
-                                     EnumSet<IRFlags> flags, Instr[] instructions,
-                                     Operand self, StaticScope staticScope, BlockBody body) {
-        super(scope, false, temporaryVariablecount, temporaryBooleanVariablecount, temporaryFixnumVariablecount,
-                temporaryFloatVariablecount, flags, instructions);
+    public ClosureInterpreterContext(IRClosure scope, Instr[] instructions,
+                                     Operand self, BlockBody body) {
+        super(scope, instructions);
 
         this.self = self;
-        this.staticScope = staticScope;
         this.body = body;
     }
-
-    public StaticScope getStaticScope() { return staticScope; }
 
     /**
      * Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody).
@@ -45,7 +36,7 @@ public class ClosureInterpreterContext extends InterpreterContext {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        staticScope.determineModule();
+        getStaticScope().determineModule();
 
         // In non-inlining scenarios, this.self will always be %self.
         // However, in inlined scenarios, this.self will be the self in the original scope where the closure

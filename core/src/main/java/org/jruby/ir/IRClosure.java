@@ -113,11 +113,7 @@ public class IRClosure extends IRScope {
 
         initScope(false);
 
-        Instr[] linearizedInstrArray = prepareInstructions();
-
-        interpreterContext = new ClosureInterpreterContext(getStaticScope(), getTemporaryVariablesCount(), getBooleanVariablesCount(),
-                getFixnumVariablesCount(), getFloatVariablesCount(), getFlags(), linearizedInstrArray,
-                self, getStaticScope(), getBlockBody());
+        interpreterContext = new ClosureInterpreterContext(this, prepareInstructions(), self, getBlockBody());
 
         return interpreterContext;
     }

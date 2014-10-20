@@ -529,7 +529,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
+        //Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
         boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Enter the looooop!
@@ -557,7 +557,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
                     break;
                 case CALL_OP:
-                    if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
+                    //if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
                     processCall(context, instr, operation, currDynScope, currScope, temp, self);
                     break;
                 case RET_OP:
@@ -582,7 +582,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             } catch (Throwable t) {
                 extractToMethodToAvoidC2Crash(context, instr, t);
 
-                if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                if (debug) LOG.info("in : " + interpreterContext + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = instr.getRPC();
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
 
