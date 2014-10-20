@@ -799,10 +799,17 @@ public abstract class ModuleNodes {
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            RubyModule module = RubyCallStack.getCallingMethod().getDeclaringModule();
+            MethodLike method = RubyCallStack.getCallingMethod();
+            LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
-            // TODO(eregon): actually implement this
+            while (lexicalScope != null) {
+                RubyModule enclosing = lexicalScope.getLiveModule();
+                if (enclosing == object)
+                    break;
+                modules.add(enclosing);
+                lexicalScope = lexicalScope.getParent();
+            }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
         }
