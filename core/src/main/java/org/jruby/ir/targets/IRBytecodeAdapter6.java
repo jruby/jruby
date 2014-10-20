@@ -19,6 +19,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -98,6 +99,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void invokeOther(String name, int arity, boolean hasClosure) {
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
+
         SkinnyMethodAdapter adapter2;
         String incomingSig;
         String outgoingSig;
@@ -184,22 +187,32 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void invokeSelf(String name, int arity, boolean hasClosure) {
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
+
         invokeOther(name, arity, hasClosure);
     }
 
     public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
+
         performSuper(name, arity, hasClosure, splatmap, "instanceSuperSplatArgs", false);
     }
 
     public void invokeClassSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
+
         performSuper(name, arity, hasClosure, splatmap, "classSuperSplatArgs", false);
     }
 
     public void invokeUnresolvedSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
+
         performSuper(name, arity, hasClosure, splatmap, "unresolvedSuperSplatArgs", true);
     }
 
     public void invokeZSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
+
         performSuper(name, arity, hasClosure, splatmap, "zSuperSplatArgs", true);
     }
 
@@ -311,6 +324,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void array(int length) {
+        if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal array has more than " + MAX_ARGUMENTS + " elements");
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length));
 
@@ -339,6 +354,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void hash(int length) {
+        if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2));
 

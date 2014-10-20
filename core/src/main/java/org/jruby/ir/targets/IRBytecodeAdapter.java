@@ -33,6 +33,8 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 public abstract class IRBytecodeAdapter {
+    public static final int MAX_ARGUMENTS = 250;
+
     public IRBytecodeAdapter(SkinnyMethodAdapter adapter, Signature signature, ClassData classData) {
         this.adapter = adapter;
         this.signature = signature;
