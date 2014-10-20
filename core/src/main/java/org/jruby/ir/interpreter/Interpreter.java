@@ -54,7 +54,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static IRScope getEvalContainerScope(StaticScope evalScope, EvalType evalType) {
+    private static IRScope getEvalContainerScope(StaticScope evalScope) {
         // We cannot get the containing IR scope from evalScope because of static-scope wrapping
         // that is going on.
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
@@ -76,7 +76,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, EvalType evalType) {
         StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = getEvalContainerScope(ss, evalType);
+        IRScope containingIRScope = getEvalContainerScope(ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, evalType);
         // ClosureInterpreterContext never retrieved as an operand in this context.
         // So, self operand is not required here.
@@ -217,11 +217,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         fixnums[var.offset] = val;
     }
 
-    private static void setBooleanVar(ThreadContext context, boolean[] booleans, TemporaryLocalVariable var, boolean val) {
+    private static void setBooleanVar(boolean[] booleans, TemporaryLocalVariable var, boolean val) {
         booleans[var.offset] = val;
     }
 
-    private static void interpretIntOp(AluInstr instr, Operation op, ThreadContext context, long[] fixnums, boolean[] booleans, Object[] temp) {
+    private static void interpretIntOp(AluInstr instr, Operation op, long[] fixnums, boolean[] booleans) {
         TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
         long i1 = getFixnumArg(fixnums, instr.getArg1());
         long i2 = getFixnumArg(fixnums, instr.getArg2());
@@ -235,14 +235,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             case IXOR: setFixnumVar(fixnums, dst, i1 ^ i2); break;
             case ISHL: setFixnumVar(fixnums, dst, i1 << i2); break;
             case ISHR: setFixnumVar(fixnums, dst, i1 >> i2); break;
-            case ILT : setBooleanVar(context, booleans, dst, i1 < i2); break;
-            case IGT : setBooleanVar(context, booleans, dst, i1 > i2); break;
-            case IEQ : setBooleanVar(context, booleans, dst, i1 == i2); break;
+            case ILT : setBooleanVar(booleans, dst, i1 < i2); break;
+            case IGT : setBooleanVar(booleans, dst, i1 > i2); break;
+            case IEQ : setBooleanVar(booleans, dst, i1 == i2); break;
             default: throw new RuntimeException("Unhandled int op: " + op + " for instr " + instr);
         }
     }
 
-    private static void interpretFloatOp(AluInstr instr, Operation op, ThreadContext context, double[] floats, boolean[] booleans, Object[] temp) {
+    private static void interpretFloatOp(AluInstr instr, Operation op, double[] floats, boolean[] booleans) {
         TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
         double a1 = getFloatArg(floats, instr.getArg1());
         double a2 = getFloatArg(floats, instr.getArg2());
@@ -251,9 +251,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             case FSUB: setFloatVar(floats, dst, a1 - a2); break;
             case FMUL: setFloatVar(floats, dst, a1 * a2); break;
             case FDIV: setFloatVar(floats, dst, a1 / a2); break;
-            case FLT : setBooleanVar(context, booleans, dst, a1 < a2); break;
-            case FGT : setBooleanVar(context, booleans, dst, a1 > a2); break;
-            case FEQ : setBooleanVar(context, booleans, dst, a1 == a2); break;
+            case FLT : setBooleanVar(booleans, dst, a1 < a2); break;
+            case FGT : setBooleanVar(booleans, dst, a1 > a2); break;
+            case FEQ : setBooleanVar(booleans, dst, a1 == a2); break;
             default: throw new RuntimeException("Unhandled float op: " + op + " for instr " + instr);
         }
     }
@@ -286,7 +286,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         default:
             result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
             setResult(temp, currDynScope, instr.getResult(), result);
-            return;
         }
     }
 
@@ -344,7 +343,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
-                                             RubyModule implClass, Visibility visibility, Object[] temp, DynamicScope currDynamicScope) {
+                                             RubyModule implClass, Visibility visibility) {
         switch(operation) {
         case PUSH_FRAME:
             context.preMethodFrameOnly(implClass, name, self, block);
@@ -564,10 +563,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             try {
                 switch (operation.opClass) {
                 case INT_OP:
-                    interpretIntOp((AluInstr) instr, operation, context, fixnums, booleans, temp);
+                    interpretIntOp((AluInstr) instr, operation, fixnums, booleans);
                     break;
                 case FLOAT_OP:
-                    interpretFloatOp((AluInstr)instr, operation, context, floats, booleans, temp);
+                    interpretFloatOp((AluInstr) instr, operation, floats, booleans);
                     break;
                 case ARG_OP:
                     receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
@@ -589,7 +588,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         currDynScope = getNewDynScope(context, scope, currScope);
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility, temp, currDynScope);
+                        processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility);
                     }
                     break;
                 case OTHER_OP:
