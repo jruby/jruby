@@ -570,7 +570,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
-                        context.pushScope(interpreterContext.newDynamicScope(context));
+                        // IMPORTANT: Preserve this update of currDynScope.
+                        // This affects execution of all instructions in this scope
+                        // which will now use the updated value of currDynScope.
+                        currDynScope = interpreterContext.newDynamicScope(context);
+                        context.pushScope(currDynScope);
                     } else {
                         processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility);
                     }
