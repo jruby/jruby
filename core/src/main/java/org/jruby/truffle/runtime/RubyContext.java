@@ -114,6 +114,12 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
+
+        lexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+    }
+
+    public LexicalScope getLexicalScope() {
+        return lexicalScope;
     }
 
     public LexicalScope pushLexicalScope() {

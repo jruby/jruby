@@ -4,4 +4,4 @@ fails(inherited):calling methods on the metaclass calls a method defined on the 
 fails:A constant on a metaclass is not defined in the metaclass opener's scope
 fails:self in a metaclass body (class << obj) raises a TypeError for numbers
 fails:self in a metaclass body (class << obj) raises a TypeError for symbols
-fails:A constant on a metaclass is not preserved when the object is duped
+fails:A constant on a metaclass is preserved when the object is cloned

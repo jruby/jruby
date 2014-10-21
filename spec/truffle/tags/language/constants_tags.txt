@@ -27,3 +27,7 @@ fails:Literal (A::X) constant resolution with statically assigned constants sear
 fails:Constant resolution within methods with statically assigned constants searches a module included in the superclass
 fails:Literal (A::X) constant resolution with statically assigned constants searches a module included in the immediate class before the superclass
 fails:Constant resolution within methods with statically assigned constants searches a module included in the immediate class before the superclass
+fails:Literal (A::X) constant resolution with dynamically assigned constants evaluates the right hand side before evaluating a constant path
+fails:Module#private_constant marked constants in a module is defined? from classes that include the module
+fails:Module#private_constant marked constants in a class is defined? from subclasses
+fails:Literal (A::X) constant resolution with statically assigned constants searches Object after searching other scopes

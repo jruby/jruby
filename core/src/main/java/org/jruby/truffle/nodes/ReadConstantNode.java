@@ -22,14 +22,12 @@ import org.jruby.truffle.runtime.LexicalScope;
 
 public class ReadConstantNode extends RubyNode {
 
-    private final boolean isLiteral;
     private final String name;
     @Child protected RubyNode receiver;
     @Child protected DispatchHeadNode dispatch;
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, boolean isLiteral, String name, RubyNode receiver) {
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
-        this.isLiteral = isLiteral;
         this.name = name;
         this.receiver = receiver;
         dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
@@ -47,12 +45,11 @@ public class ReadConstantNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
 
-        if (isLiteral && !(receiverObject instanceof RubyModule)) {
+        if (!(receiverObject instanceof RubyModule)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(""+receiverObject, "class/module", this));
         }
 
-        MethodLike method = RubyArguments.getMethod(frame.getArguments());
         LexicalScope lexicalScope = getLexicalScope(frame);
 
         return dispatch.dispatch(
@@ -83,10 +80,10 @@ public class ReadConstantNode extends RubyNode {
             return context.makeString("constant");
         }
 
-        Object value;
+        Object receiverObject;
 
         try {
-            value = ModuleOperations.lookupConstant(getLexicalScope(frame), context.getCoreLibrary().box(receiver.execute(frame)).getMetaClass(), name);
+            receiverObject = receiver.execute(frame);
         } catch (RaiseException e) {
             /*
              * If we are looking up a constant in a constant that is itself undefined, we return Nil
@@ -99,6 +96,9 @@ public class ReadConstantNode extends RubyNode {
 
             throw e;
         }
+
+        LexicalScope lexicalScope = getLexicalScope(frame);
+        Object value = ModuleOperations.lookupConstant(lexicalScope, (RubyModule) receiverObject, name);
 
         if (value == null) {
             return getContext().getCoreLibrary().getNilObject();

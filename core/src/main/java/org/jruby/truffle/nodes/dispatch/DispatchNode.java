@@ -54,27 +54,13 @@ public abstract class DispatchNode extends RubyNode {
 
     protected RubyConstant lookupConstant(
             LexicalScope lexicalScope,
-            RubyBasicObject receiver,
+            RubyModule module,
             String name,
             boolean ignoreVisibility,
             Dispatch.DispatchAction dispatchAction) {
         CompilerAsserts.neverPartOfCompilation();
 
-        RubyConstant constant;
-
-        constant = ModuleOperations.lookupConstant(lexicalScope, receiver.getMetaClass(), name);
-
-        if (constant == null && receiver instanceof RubyModule) {
-            /*
-             * FIXME(CS): I'm obviously doing something wrong with constant lookup in nested modules
-             * here, but explicitly looking in the Module itself, not its lookup node, seems to fix
-             * it for now.
-             */
-
-            constant =  ModuleOperations.lookupConstant(lexicalScope, (RubyModule) receiver, name);
-        }
-
-        return constant;
+        return ModuleOperations.lookupConstant(lexicalScope, module, name);
     }
 
     protected RubyMethod lookup(

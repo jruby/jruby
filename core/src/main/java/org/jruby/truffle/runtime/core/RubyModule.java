@@ -220,7 +220,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         checkFrozen(currentNode);
 
         setConstant(currentNode, constantName, value);
-        getSingletonClass(currentNode).setConstant(currentNode, constantName, value);
     }
 
     public void addMethod(RubyNode currentNode, RubyMethod method) {

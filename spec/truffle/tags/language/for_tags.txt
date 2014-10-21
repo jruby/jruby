@@ -1,0 +1,1 @@
+fails:The for expression allows a constant as an iterator name

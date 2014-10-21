@@ -149,7 +149,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         blockObject, argumentsObjects, dispatchAction);
             }
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-            final RubyConstant constant = lookupConstant(lexicalScope, boxedReceiverObject, methodName.toString(),
+            final RubyModule module = (RubyModule) boxedReceiverObject;
+            final RubyConstant constant = lookupConstant(lexicalScope, module, methodName.toString(),
                     ignoreVisibility, dispatchAction);
 
             if (constant == null) {
@@ -158,7 +159,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            if (receiverObject instanceof Boolean) {
+            if (receiverObject instanceof Boolean && false) {/*
                 final Assumption falseUnmodifiedAssumption =
                         getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
 
@@ -190,9 +191,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 first.replace(newDispatch);
 
                 return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
-                        methodName, blockObject, argumentsObjects, dispatchAction);
+                        methodName, blockObject, argumentsObjects, dispatchAction);*/
+                return constant.getValue(); // TODO: cache
             } else {
-                final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
+                return constant.getValue(); // TODO: cache
+
+                /*final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
                         methodName, first, receiverObject.getClass(),
                         boxedReceiverObject.getLogicalClass().getUnmodifiedAssumption(), constant.getValue(), null, null, null, null, null,
                         null, null, null);
@@ -200,7 +204,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 first.replace(newDispatch);
 
                 return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject, methodName,
-                        blockObject, argumentsObjects, dispatchAction);
+                        blockObject, argumentsObjects, dispatchAction);*/
             }
         } else {
             throw new UnsupportedOperationException();
@@ -244,7 +248,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-            final RubyConstant constant = lookupConstant(lexicalScope, boxedReceiverObject, methodName.toString(),
+            final RubyModule module = (RubyModule) boxedReceiverObject;
+            final RubyConstant constant = lookupConstant(lexicalScope, module, methodName.toString(),
                     ignoreVisibility, dispatchAction);
 
             if (constant == null) {
@@ -254,7 +259,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
-            final DispatchNode newDispatch;
+            return constant.getValue(); // TODO: cache
+            /*final DispatchNode newDispatch;
 
             if (receiverObject instanceof RubySymbol) {
                 newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, constant.getValue(), null, null,
@@ -266,7 +272,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
-                    methodName, blockObject, argumentsObjects, dispatchAction);
+                    methodName, blockObject, argumentsObjects, dispatchAction);*/
         } else {
             throw new UnsupportedOperationException();
         }

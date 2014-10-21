@@ -184,12 +184,14 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 throw new UnsupportedOperationException();
             }
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-            ConstantCacheEntry entry = lookupInConstantCache(receiverObject.getMetaClass(), methodName);
+            final RubyModule module = (RubyModule) receiverObject;
+
+            ConstantCacheEntry entry = lookupInConstantCache(module, methodName);
 
             if (entry == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                final RubyConstant constant = lookupConstant(lexicalScope, receiverObject,
+                final RubyConstant constant = lookupConstant(lexicalScope, module,
                         methodName.toString(), ignoreVisibility, dispatchAction);
 
                 if (constant == null) {
@@ -213,7 +215,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 }
 
                 if (constantCache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
-                    constantCache.put(new MethodCacheKey(receiverObject.getMetaClass(), methodName), entry);
+                    //constantCache.put(new MethodCacheKey(receiverObject.getMetaClass(), methodName), entry);
                 }
             }
             
@@ -288,8 +290,8 @@ public abstract class GenericDispatchNode extends DispatchNode {
     }
 
     @CompilerDirectives.SlowPath
-    public ConstantCacheEntry lookupInConstantCache(RubyClass metaClass, Object methodName) {
-        return constantCache.get(new MethodCacheKey(metaClass, methodName));
+    public ConstantCacheEntry lookupInConstantCache(RubyModule module, Object methodName) {
+        return null;//constantCache.get(new ConstantCacheEntry(module, methodName));
     }
 
     @CompilerDirectives.SlowPath
