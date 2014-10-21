@@ -1,4 +1,3 @@
-fails:Constant resolution within methods with dynamically assigned constants searches Object as a lexical scope only if Object is explicitly opened
 fails:Constant resolution within methods with ||= assignes constant if previously undefined
 fails:Module#private_constant marked constants remain private even when updated
 fails:Module#private_constant marked constants in a module cannot be accessed from outside the module
@@ -12,4 +11,3 @@ fails:Module#private_constant marked constants in a class is not defined? with A
 fails:Module#private_constant marked constants in Object cannot be accessed using ::Const form
 fails:Module#private_constant marked constants in Object is not defined? using ::Const form
 fails:Literal (A::X) constant resolution with dynamically assigned constants evaluates the right hand side before evaluating a constant path
-fails:Literal (A::X) constant resolution with statically assigned constants searches Object after searching other scopes

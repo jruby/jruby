@@ -76,6 +76,7 @@ public class RubyContext extends ExecutionContext {
 
     // TODO: Wrong place for this, only during parsing but be practical for now
     private LexicalScope lexicalScope;
+    private final LexicalScope rootLexicalScope;
 
     private SourceCallback sourceCallback = null;
 
@@ -115,7 +116,11 @@ public class RubyContext extends ExecutionContext {
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
 
-        lexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+        lexicalScope = rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+    }
+
+    public LexicalScope getRootLexicalScope() {
+        return rootLexicalScope;
     }
 
     public LexicalScope getLexicalScope() {

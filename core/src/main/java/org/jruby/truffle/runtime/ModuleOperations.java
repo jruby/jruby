@@ -65,7 +65,10 @@ public abstract class ModuleOperations {
         }
 
         // Look in lexical scope
-        while (lexicalScope != null) { // TODO: looking twice self ?
+        final RubyContext context = module.getContext();
+        final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
+
+        while (lexicalScope != null && lexicalScope != context.getRootLexicalScope()) { // TODO: looking twice self ?
             constant = lexicalScope.getLiveModule().getConstants().get(name);
 
             if (constant != null) {
@@ -84,8 +87,18 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Nothing found
+        // Look in Object and its ancestors for modules
+        if (!(module instanceof RubyClass)) {
+            for (RubyModule ancestor : objectClass.ancestors()) {
+                constant = ancestor.getConstants().get(name);
 
+                if (constant != null) {
+                    return constant;
+                }
+            }
+        }
+
+        // Nothing found
         return null;
     }
 
