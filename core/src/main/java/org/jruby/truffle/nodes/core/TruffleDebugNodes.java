@@ -17,27 +17,8 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
 
-@CoreClass(name = "TruffleDebug")
+@CoreClass(name = "Truffle::Debug")
 public abstract class TruffleDebugNodes {
-
-    @CoreMethod(names = "array_storage_info", onSingleton = true, minArgs = 1, maxArgs = 1)
-    public abstract static class ArrayStorageInfoNode extends CoreMethodNode {
-
-        public ArrayStorageInfoNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ArrayStorageInfoNode(ArrayStorageInfoNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString javaClassOf(RubyArray array) {
-            notDesignedForCompilation();
-            return getContext().makeString("RubyArray(" + (array.getStore() == null ? "null" : array.getStore().getClass()) + "*" + array.getSize() + ")");
-        }
-
-    }
 
     @CoreMethod(names = "dump_call_stack", onSingleton = true, maxArgs = 0)
     public abstract static class DumpCallStackNode extends CoreMethodNode {
@@ -163,25 +144,6 @@ public abstract class TruffleDebugNodes {
             } else {
                 return getContext().makeString(parseTree.toString(true, 0));
             }
-        }
-
-    }
-
-    @CoreMethod(names = "slow_path", onSingleton = true, minArgs = 1, maxArgs = 1)
-    public abstract static class SlowPathNode extends CoreMethodNode {
-
-        public SlowPathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SlowPathNode(SlowPathNode prev) {
-            super(prev);
-        }
-
-        @CompilerDirectives.SlowPath
-        @Specialization
-        public Object slowPath(Object value) {
-            return value;
         }
 
     }

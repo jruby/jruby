@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -36,85 +36,17 @@ import java.util.List;
 
 public abstract class CoreMethodNodeManager {
 
-    public static void addStandardMethods(RubyClass rubyObjectClass) {
-        for (MethodDetails methodDetails : getMethods()) {
-            addMethod(rubyObjectClass, methodDetails);
-        }
-    }
-
-    public static void addExtensionMethods(RubyClass rubyObjectClass, List<? extends NodeFactory<? extends CoreMethodNode>> nodeFactories) {
-        final List<MethodDetails> methods = new ArrayList<>();
-        getMethods(methods, nodeFactories);
-
-        for (MethodDetails methodDetails : methods) {
-            addMethod(rubyObjectClass, methodDetails);
-        }
-    }
-
-    /**
-     * Collect up all the core method nodes. Abstracted to allow the SVM to implement at compile
-     * type.
-     */
-    public static List<MethodDetails> getMethods() {
-        final List<MethodDetails> methods = new ArrayList<>();
-        getMethods(methods, ArrayNodesFactory.getFactories());
-        getMethods(methods, BasicObjectNodesFactory.getFactories());
-        getMethods(methods, BindingNodesFactory.getFactories());
-        getMethods(methods, BignumNodesFactory.getFactories());
-        getMethods(methods, ClassNodesFactory.getFactories());
-        getMethods(methods, ContinuationNodesFactory.getFactories());
-        getMethods(methods, ComparableNodesFactory.getFactories());
-        getMethods(methods, DirNodesFactory.getFactories());
-        getMethods(methods, ExceptionNodesFactory.getFactories());
-        getMethods(methods, FalseClassNodesFactory.getFactories());
-        getMethods(methods, FiberNodesFactory.getFactories());
-        getMethods(methods, FileNodesFactory.getFactories());
-        getMethods(methods, FixnumNodesFactory.getFactories());
-        getMethods(methods, FloatNodesFactory.getFactories());
-        getMethods(methods, HashNodesFactory.getFactories());
-        getMethods(methods, GCNodesFactory.getFactories());
-        getMethods(methods, IONodesFactory.getFactories());
-        getMethods(methods, KernelNodesFactory.getFactories());
-        getMethods(methods, MainNodesFactory.getFactories());
-        getMethods(methods, MatchDataNodesFactory.getFactories());
-        getMethods(methods, MathNodesFactory.getFactories());
-        getMethods(methods, ModuleNodesFactory.getFactories());
-        getMethods(methods, NilClassNodesFactory.getFactories());
-        getMethods(methods, ObjectSpaceNodesFactory.getFactories());
-        getMethods(methods, ProcessNodesFactory.getFactories());
-        getMethods(methods, ProcNodesFactory.getFactories());
-        getMethods(methods, RangeNodesFactory.getFactories());
-        getMethods(methods, RegexpNodesFactory.getFactories());
-        getMethods(methods, SignalNodesFactory.getFactories());
-        getMethods(methods, StringNodesFactory.getFactories());
-        getMethods(methods, SymbolNodesFactory.getFactories());
-        getMethods(methods, ThreadNodesFactory.getFactories());
-        getMethods(methods, TimeNodesFactory.getFactories());
-        getMethods(methods, TrueClassNodesFactory.getFactories());
-        getMethods(methods, TruffleDebugNodesFactory.getFactories());
-        getMethods(methods, EncodingNodesFactory.getFactories());
-        return methods;
-    }
-
-    /**
-     * Collect up the core methods created by a factory.
-     */
-    private static void getMethods(List<MethodDetails> methods, List<? extends NodeFactory<? extends CoreMethodNode>> nodeFactories) {
-        for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
+    public static void addCoreMethodNodes(RubyClass rubyObjectClass, List<? extends NodeFactory<? extends CoreMethodNode>> nodeFactories) {
+        for (NodeFactory<? extends CoreMethodNode> nodeFactory : nodeFactories) {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
             final CoreClass classAnnotation = nodeClass.getEnclosingClass().getAnnotation(CoreClass.class);
             final CoreMethod methodAnnotation = nodeClass.getAnnotation(CoreMethod.class);
 
             if (methodAnnotation != null) {
-                methods.add(new MethodDetails(classAnnotation, methodAnnotation, nodeFactory));
+                final MethodDetails details = new MethodDetails(classAnnotation, methodAnnotation, nodeFactory);
+                addMethod(rubyObjectClass, details);
             }
-        }
-    }
-
-    private static void addMethods(RubyClass rubyObjectClass, List<MethodDetails> methods) {
-        for (MethodDetails methodDetails : methods) {
-            addMethod(rubyObjectClass, methodDetails);
         }
     }
 
@@ -129,7 +61,11 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getClassAnnotation().name().equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
         } else {
-            module = (RubyModule) ModuleOperations.lookupConstant(rubyObjectClass, methodDetails.getClassAnnotation().name()).getValue();
+            module = rubyObjectClass;
+
+            for (String moduleName : methodDetails.getClassAnnotation().name().split("::")) {
+                module = (RubyModule) ModuleOperations.lookupConstant(module, moduleName).getValue();
+            }
         }
 
         assert module != null : methodDetails.getClassAnnotation().name();

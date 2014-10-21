@@ -8,9 +8,9 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
-import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -127,10 +127,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        StaticScope ss = method.getStaticScope();
         context.preMethodFrameOnly(getImplementationClass(), name, self, block);
         if (ic.pushNewDynScope()) {
-            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
+            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
         context.setCurrentVisibility(getVisibility());
     }

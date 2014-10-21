@@ -1,10 +1,10 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block.Type;

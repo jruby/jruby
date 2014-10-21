@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
-import org.jruby.ir.operands.InterpreterContext;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -39,7 +39,7 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
             // Add a parent-link to current dynscope to support non-local returns cheaply
             // This doesn't affect variable scoping since local variables will all have
             // the right scope depth.
-            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope(), context.getCurrentScope()));
+            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope(), context.getCurrentScope()));
         }
         context.setCurrentVisibility(getVisibility());
     }
