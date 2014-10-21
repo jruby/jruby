@@ -63,6 +63,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
         public RubyModule getActualModule() {
             return includedModule;
         }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + includedModule + ")";
+        }
     }
 
     public static void debugModuleChain(RubyModule module) {
@@ -135,7 +140,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         super(moduleClass);
 
         this.context = context;
-        if (lexicalParentModule != null) {
+        if (lexicalParentModule != null && lexicalParentModule != context.getCoreLibrary().getObjectClass()) {
             name = lexicalParentModule.getName() + "::" + name;
         }
         this.name = name;
