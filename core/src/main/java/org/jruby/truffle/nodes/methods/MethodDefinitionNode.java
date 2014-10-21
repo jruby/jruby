@@ -101,4 +101,7 @@ public class MethodDefinitionNode extends RubyNode {
         return rootNode;
     }
 
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
+    }
 }

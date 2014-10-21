@@ -13,6 +13,7 @@ import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.specialized.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
@@ -129,8 +130,43 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     @Override
-    protected IRubyObject execute(Ruby runtime, IRScope scope, IRubyObject self) {
-        return ((IRScriptBody)scope).interpret(runtime.getCurrentContext(), self);
+    protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
+        ScriptBodyInterpreterContext ic = (ScriptBodyInterpreterContext) irScope.prepareForInterpretation();
+        ThreadContext context = runtime.getCurrentContext();
+        String name = "(root)";
+
+        if (IRRuntimeHelpers.isDebug()) LOG.info("Executing " + ic);
+
+        // We get the live object ball rolling here.
+        // This give a valid value for the top of this lexical tree.
+        // All new scopes can then retrieve and set based on lexical parent.
+        StaticScope scope = ic.getStaticScope();
+        RubyModule currModule = scope.getModule();
+        if (currModule == null) {
+            // SSS FIXME: Looks like this has to do with Kernel#load
+            // and the wrap parameter. Figure it out and document it here.
+            currModule = context.getRuntime().getObject();
+        }
+
+        IRubyObject retVal;
+
+        scope.setModule(currModule);
+        if (!ic.isDynscopeEliminated()) context.preMethodScopeOnly(scope);
+        context.setCurrentVisibility(Visibility.PRIVATE);
+
+        try {
+            Interpreter.runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+            retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
+            Interpreter.runBeginEndBlocks(ic.getEndBlocks(), context, self, scope, null);
+
+            Interpreter.dumpStats();
+        } catch (IRBreakJump bj) {
+            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+        } finally {
+            if (!ic.isDynscopeEliminated()) context.popScope();
+        }
+
+        return retVal;
     }
 
     private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
@@ -509,8 +545,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        InterpreterContext interpreterContext = scope.getInterpreterContext();
+            InterpreterContext interpreterContext, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         int      numTempVars    = interpreterContext.getTemporaryVariablecount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
@@ -570,7 +605,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
-                        context.pushScope(interpreterContext.newDynamicScope(context));
+                        // IMPORTANT: Preserve this update of currDynScope.
+                        // This affects execution of all instructions in this scope
+                        // which will now use the updated value of currDynScope.
+                        currDynScope = interpreterContext.newDynamicScope(context);
+                        context.pushScope(currDynScope);
                     } else {
                         processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility);
                     }
@@ -618,30 +657,30 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
-            IRScope scope, RubyModule clazz, String name) {
+           InterpreterContext ic, RubyModule clazz, String name) {
         try {
-            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            return interpret(context, self, ic, null, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
-            IRScope scope, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+           InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
-            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, clazz, name, args, block, blockType);
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            return interpret(context, self, ic, null, clazz, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
     public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self,
-            IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+            InterpreterContext ic, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
-            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, null, name, args, block, blockType);
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            return interpret(context, self, ic, null, null, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -649,15 +688,16 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod method,
         IRubyObject self, String name, IRubyObject[] args, Block block) {
-        IRScope    scope     = method.getIRMethod();
-        boolean syntheticMethod = name == null || name.equals("");
+        InterpreterContext ic = method.ensureInstrsReady();
+        // FIXME: Consider synthetic methods/module/class bodies to use different method type to eliminate this check
+        boolean isSynthetic = method.isSynthetic();
 
         try {
-            if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
+            if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return interpret(context, self, scope, method.getVisibility(), method.getImplementationClass(), name, args, block, null);
+            return interpret(context, self, ic, method.getVisibility(), method.getImplementationClass(), name, args, block, null);
         } finally {
-            if (!syntheticMethod) ThreadContext.popBacktrace(context);
+            if (!isSynthetic) ThreadContext.popBacktrace(context);
         }
     }
 
@@ -674,7 +714,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // this is ensured by the caller
         assert file != null;
 
-        Ruby runtime = src.getRuntime();
+        Ruby runtime = context.runtime;
 
         // no binding, just eval in "current" frame (caller's frame)
         RubyString source = src.convertToString();
@@ -714,7 +754,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      * @return An IRubyObject result from the evaluation
      */
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
-        Ruby runtime = src.getRuntime();
+        Ruby runtime = context.runtime;
         DynamicScope evalScope;
 
         // in 1.9, eval scopes are local to the binding

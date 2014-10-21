@@ -68,24 +68,6 @@ class ModuleTranslator extends BodyTranslator {
     }
 
     @Override
-    public RubyNode visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        final SelfNode selfNode = new SelfNode(context, sourceSection);
-
-        return new WriteConstantNode(context, sourceSection, node.getName(), selfNode, (RubyNode) node.getValueNode().accept(this));
-    }
-
-    @Override
-    public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        final SelfNode selfNode = new SelfNode(context, sourceSection);
-
-        return new ReadConstantNode(context, sourceSection, false, node.getName(), selfNode);
-    }
-
-    @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
@@ -94,7 +76,7 @@ class ModuleTranslator extends BodyTranslator {
          * the class being defined.
          */
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getName(), false, node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), node.getName(), false, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
@@ -125,11 +107,6 @@ class ModuleTranslator extends BodyTranslator {
         final org.jruby.ast.LiteralNode newName = (org.jruby.ast.LiteralNode) node.getNewName();
 
         return new AliasNode(context, sourceSection, new SelfNode(context, sourceSection), newName.getName(), oldName.getName());
-    }
-
-    @Override
-    protected RubyNode getModuleToDefineModulesIn(SourceSection sourceSection) {
-        return new SelfNode(context, sourceSection);
     }
 
 }

@@ -12,44 +12,50 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.methods.MethodLike;
+import org.jruby.truffle.runtime.LexicalScope;
 
 public class ReadConstantNode extends RubyNode {
 
-    private final boolean isLiteral;
     private final String name;
     @Child protected RubyNode receiver;
     @Child protected DispatchHeadNode dispatch;
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, boolean isLiteral, String name, RubyNode receiver) {
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
-        this.isLiteral = isLiteral;
         this.name = name;
         this.receiver = receiver;
         dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
+    }
+
+    private LexicalScope getLexicalScope(VirtualFrame frame) {
+        MethodLike method = RubyArguments.getMethod(frame.getArguments());
+        if (method != null) {
+            return method.getSharedMethodInfo().getLexicalScope();
+        }
+        return null;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
 
-        if (isLiteral && !(receiverObject instanceof RubyModule)) {
+        if (!(receiverObject instanceof RubyModule)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
 
+        LexicalScope lexicalScope = getLexicalScope(frame);
+
         return dispatch.dispatch(
                 frame,
                 getContext().getCoreLibrary().getNilObject(),
-                RubyArguments.getSelf(frame.getArguments()),
+                lexicalScope,
                 receiverObject,
                 name,
                 null,
@@ -74,10 +80,10 @@ public class ReadConstantNode extends RubyNode {
             return context.makeString("constant");
         }
 
-        Object value;
+        Object receiverObject;
 
         try {
-            value = ModuleOperations.lookupConstant(context.getCoreLibrary().box(receiver.execute(frame)).getMetaClass(), name);
+            receiverObject = receiver.execute(frame);
         } catch (RaiseException e) {
             /*
              * If we are looking up a constant in a constant that is itself undefined, we return Nil
@@ -90,6 +96,9 @@ public class ReadConstantNode extends RubyNode {
 
             throw e;
         }
+
+        LexicalScope lexicalScope = getLexicalScope(frame);
+        Object value = ModuleOperations.lookupConstant(lexicalScope, (RubyModule) receiverObject, name);
 
         if (value == null) {
             return getContext().getCoreLibrary().getNilObject();

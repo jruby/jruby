@@ -5,6 +5,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.ClosureInterpreterContext;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.CompilerPass;

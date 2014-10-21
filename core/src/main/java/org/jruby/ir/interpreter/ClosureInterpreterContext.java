@@ -1,4 +1,4 @@
-package org.jruby.ir.operands;
+package org.jruby.ir.interpreter;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.instructions.Instr;

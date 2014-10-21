@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
-import org.jruby.ir.operands.InterpreterContext;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;

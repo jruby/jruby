@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.util.cli.Options;
 
 import java.util.HashMap;
@@ -69,7 +70,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
     public Object dispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
-            RubyBasicObject callingSelf,
+            LexicalScope lexicalScope,
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
@@ -83,11 +84,13 @@ public abstract class GenericDispatchNode extends DispatchNode {
             if (entry == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                final RubyMethod method = lookup(callingSelf, receiverObject, methodName.toString(),
+                final RubyClass callerClass = box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+
+                final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(),
                         ignoreVisibility, dispatchAction);
 
                 if (method == null) {
-                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "method_missing", true,
+                    final RubyMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true,
                             dispatchAction);
 
                     if (missingMethod == null) {
@@ -181,16 +184,20 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 throw new UnsupportedOperationException();
             }
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-            ConstantCacheEntry entry = lookupInConstantCache(receiverObject.getMetaClass(), methodName);
+            final RubyModule module = (RubyModule) receiverObject;
+
+            ConstantCacheEntry entry = lookupInConstantCache(module, methodName);
 
             if (entry == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                final RubyConstant constant = lookupConstant(callingSelf, receiverObject, methodName.toString(),
-                        ignoreVisibility, dispatchAction);
+                final RubyConstant constant = lookupConstant(lexicalScope, module,
+                        methodName.toString(), ignoreVisibility, dispatchAction);
 
                 if (constant == null) {
-                    final RubyMethod missingMethod = lookup(callingSelf, receiverObject, "const_missing", ignoreVisibility,
+                    final RubyClass callerClass = box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+
+                    final RubyMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility,
                             dispatchAction);
 
                     if (missingMethod == null) {
@@ -208,7 +215,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 }
 
                 if (constantCache.size() <= Options.TRUFFLE_DISPATCH_MEGAMORPHIC_MAX.load()) {
-                    constantCache.put(new MethodCacheKey(receiverObject.getMetaClass(), methodName), entry);
+                    //constantCache.put(new MethodCacheKey(receiverObject.getMetaClass(), methodName), entry);
                 }
             }
             
@@ -265,7 +272,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
     public Object dispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
-            Object callingSelf,
+            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -274,7 +281,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
         return dispatch(
                 frame,
                 methodReceiverObject,
-                box.box(callingSelf),
+                lexicalScope,
                 box.box(receiverObject),
                 methodName,
                 CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
@@ -283,8 +290,8 @@ public abstract class GenericDispatchNode extends DispatchNode {
     }
 
     @CompilerDirectives.SlowPath
-    public ConstantCacheEntry lookupInConstantCache(RubyClass metaClass, Object methodName) {
-        return constantCache.get(new MethodCacheKey(metaClass, methodName));
+    public ConstantCacheEntry lookupInConstantCache(RubyModule module, Object methodName) {
+        return null;//constantCache.get(new ConstantCacheEntry(module, methodName));
     }
 
     @CompilerDirectives.SlowPath

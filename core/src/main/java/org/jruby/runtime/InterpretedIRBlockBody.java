@@ -1,10 +1,10 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block.Type;
@@ -71,7 +71,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
         this.evalType.set(EvalType.NONE);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, closure, args, binding.getMethod(), block, type);
+            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, type);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!

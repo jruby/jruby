@@ -8,9 +8,9 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
-import org.jruby.ir.operands.InterpreterContext;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -34,6 +34,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     protected final IRScope method;
 
+    // For synthetic methods and for module/class bodies we do not want these added to
+    // our backtraces.
+    private boolean isSynthetic;
+
     private static class DynamicMethodBox {
         public DynamicMethod actualMethod;
         public int callCount = 0;
@@ -49,6 +53,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
             this.box.callCount = -1;
         }
+        isSynthetic = method instanceof IRModuleBody;
+    }
+
+    public boolean isSynthetic() {
+        return isSynthetic;
     }
 
     public IRScope getIRMethod() {
@@ -94,14 +103,16 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (ic.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
-
-        pre(ic, context, self, name, block);
-
-        try {
+        if (ic.hasExplicitCallProtocol()) {
             return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
-        } finally {
-            post(ic, context);
+        } else {
+            try {
+                pre(ic, context, self, name, block);
+
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+            } finally {
+                post(ic, context);
+            }
         }
     }
 
@@ -135,11 +146,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
     public InterpreterContext ensureInstrsReady() {
-        InterpreterContext context = method.getInterpreterContext();
-        if (context == null) {
-            context =  method.prepareForInterpretation();
-        }
-        return context;
+        // Try unsync access first before calling more expensive method for getting IC
+        InterpreterContext ic = method.getInterpreterContext();
+
+        return ic == null ? method.prepareForInterpretation() : ic;
     }
 
     public DynamicMethod getMethodForCaching() {

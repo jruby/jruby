@@ -2320,7 +2320,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, "max", false, null);
+            sharedMethodInfo = SharedMethodInfo.generated(sourceSection, "max");
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2433,7 +2433,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, "min", false, null);
+            sharedMethodInfo = SharedMethodInfo.generated(sourceSection, "min");
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,

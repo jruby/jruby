@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -37,16 +38,22 @@ public class WriteConstantNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        // TODO(cs): can module ever not evaluate to a RubyModule?
-
-        final RubyModule moduleObject = (RubyModule) module.execute(frame);
-
+        // Evaluate RHS first.
         final Object rhsValue = rhs.execute(frame);
 
         assert rhsValue != null;
         assert !(rhsValue instanceof String);
 
-        moduleObject.setModuleConstant(this, name, rhsValue);
+        final Object receiverObject = module.execute(frame);
+
+        if (!(receiverObject instanceof RubyModule)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
+        }
+
+        final RubyModule module = (RubyModule) receiverObject;
+
+        module.setModuleConstant(this, name, rhsValue);
 
         return rhsValue;
     }

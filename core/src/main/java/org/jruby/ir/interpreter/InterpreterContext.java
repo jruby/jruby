@@ -1,4 +1,4 @@
-package org.jruby.ir.operands;
+package org.jruby.ir.interpreter;
 
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
@@ -24,6 +24,7 @@ public class InterpreterContext {
 
     // Cached computed fields
     private final boolean hasExplicitCallProtocol;
+    private final boolean isDynscopeEliminated;
     private final boolean pushNewDynScope;
     private final boolean reuseParentDynScope;
     private final boolean popDynScope;
@@ -50,7 +51,8 @@ public class InterpreterContext {
         this.instructions = instructions;
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentDynScope;
+        this.isDynscopeEliminated = scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        this.pushNewDynScope = !isDynscopeEliminated && !reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
@@ -81,6 +83,10 @@ public class InterpreterContext {
 
     public Instr[] getInstructions() {
         return instructions;
+    }
+
+    public boolean isDynscopeEliminated() {
+        return isDynscopeEliminated;
     }
 
     /**
