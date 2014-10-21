@@ -714,7 +714,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // this is ensured by the caller
         assert file != null;
 
-        Ruby runtime = src.getRuntime();
+        Ruby runtime = context.runtime;
 
         // no binding, just eval in "current" frame (caller's frame)
         RubyString source = src.convertToString();
@@ -754,7 +754,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      * @return An IRubyObject result from the evaluation
      */
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
-        Ruby runtime = src.getRuntime();
+        Ruby runtime = context.runtime;
         DynamicScope evalScope;
 
         // in 1.9, eval scopes are local to the binding
