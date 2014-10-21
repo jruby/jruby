@@ -146,7 +146,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
     public InterpreterContext ensureInstrsReady() {
-        return method.prepareForInterpretation();
+        // Try unsync access first before calling more expensive method for getting IC
+        InterpreterContext ic = method.getInterpreterContext();
+
+        return ic == null ? method.prepareForInterpretation() : ic;
     }
 
     public DynamicMethod getMethodForCaching() {
