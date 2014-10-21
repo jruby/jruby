@@ -236,10 +236,10 @@ describe "JRuby's bytecode compiler" do
   end
   
   it "compiles attribute assignment" do
-    run("def a=(x); 2; end; self.a = 1") {|result| expect(result).to eq 1 }
-    run("def a; 1; end; def a=(arg); fail; end; self.a ||= 2") {|result| expect(result).to eq 1 }
+    run("public; def a=(x); 2; end; self.a = 1") {|result| expect(result).to eq 1 }
+    run("public; def a; 1; end; def a=(arg); fail; end; self.a ||= 2") {|result| expect(result).to eq 1 }
     run("public; def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]") {|result| expect(result).to eq([1,1]) }
-    run("def a; nil; end; def a=(arg); fail; end; self.a &&= 2") {|result| expect(result).to be_nil }
+    run("public; def a; nil; end; def a=(arg); fail; end; self.a &&= 2") {|result| expect(result).to be_nil }
     run("public; def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]") {|result| expect(result).to eq([1,1]) }
   end
   
