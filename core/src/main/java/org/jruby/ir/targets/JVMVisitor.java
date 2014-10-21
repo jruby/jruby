@@ -48,6 +48,7 @@ public class JVMVisitor extends IRVisitor {
 
     private static final Logger LOG = LoggerFactory.getLogger("JVMVisitor");
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
+    private static final boolean DEBUG = false;
 
     public JVMVisitor() {
         this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
@@ -155,6 +156,7 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvmMethod();
 
         int numberOfLabels = bbs.size();
+        int ipc = 0; // synthetic, used for debug traces that show which instr failed
         for (int i = 0; i < numberOfLabels; i++) {
             BasicBlock bb = bbs.get(i);
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
@@ -181,6 +183,7 @@ public class JVMVisitor extends IRVisitor {
 
             // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {
+                if (DEBUG) instr.setIPC(ipc++); // debug mode uses instr offset for backtrace
                 visit(instr);
             }
 
@@ -287,6 +290,9 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void visit(Instr instr) {
+        if (DEBUG) { // debug will skip emitting actual file line numbers
+            jvmAdapter().line(instr.getIPC());
+        }
         instr.visit(this);
     }
 
@@ -1085,6 +1091,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LineNumberInstr(LineNumberInstr linenumberinstr) {
+        if (DEBUG) return; // debug mode uses IPC for line numbers
+
         jvmAdapter().line(linenumberinstr.getLineNumber() + 1);
     }
 
