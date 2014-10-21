@@ -10,4 +10,3 @@ fails(inherited):Module#private_constant marked constants in a class cannot be r
 fails:Module#private_constant marked constants in a class is not defined? with A::B form
 fails:Module#private_constant marked constants in Object cannot be accessed using ::Const form
 fails:Module#private_constant marked constants in Object is not defined? using ::Const form
-fails:Literal (A::X) constant resolution with dynamically assigned constants evaluates the right hand side before evaluating a constant path

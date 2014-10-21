@@ -37,14 +37,14 @@ public class WriteConstantNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        // TODO(cs): can module ever not evaluate to a RubyModule?
-
-        final RubyModule moduleObject = (RubyModule) module.execute(frame);
-
+        // Evaluate RHS first.
         final Object rhsValue = rhs.execute(frame);
 
         assert rhsValue != null;
         assert !(rhsValue instanceof String);
+
+        // TODO(cs): can module ever not evaluate to a RubyModule?
+        final RubyModule moduleObject = (RubyModule) module.execute(frame);
 
         moduleObject.setModuleConstant(this, name, rhsValue);
 
