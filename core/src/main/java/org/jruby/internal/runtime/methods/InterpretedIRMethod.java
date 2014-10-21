@@ -34,6 +34,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     protected final IRScope method;
 
+    // For synthetic methods and for module/class bodies we do not want these added to
+    // our backtraces.
+    private boolean isSynthetic;
+
     private static class DynamicMethodBox {
         public DynamicMethod actualMethod;
         public int callCount = 0;
@@ -49,6 +53,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
             this.box.callCount = -1;
         }
+        isSynthetic = method instanceof IRModuleBody;
+    }
+
+    public boolean isSynthetic() {
+        return isSynthetic;
     }
 
     public IRScope getIRMethod() {
