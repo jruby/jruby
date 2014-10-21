@@ -94,14 +94,16 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (ic.hasExplicitCallProtocol()) return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
-
-        pre(ic, context, self, name, block);
-
-        try {
+        if (ic.hasExplicitCallProtocol()) {
             return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
-        } finally {
-            post(ic, context);
+        } else {
+            try {
+                pre(ic, context, self, name, block);
+
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+            } finally {
+                post(ic, context);
+            }
         }
     }
 
