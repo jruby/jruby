@@ -1,7 +1,3 @@
 fails:A constant on a metaclass can be accessed via const_get
-fails:A constant on a metaclass raises a NameError for anonymous_module::CONST
 fails(inherited):calling methods on the metaclass calls a method defined on the metaclass of the metaclass
-fails:A constant on a metaclass is not defined in the metaclass opener's scope
-fails:self in a metaclass body (class << obj) raises a TypeError for numbers
-fails:self in a metaclass body (class << obj) raises a TypeError for symbols
 fails:A constant on a metaclass is preserved when the object is cloned
