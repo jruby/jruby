@@ -4,8 +4,6 @@ import com.headius.invokebinder.Signature;
 import org.jruby.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.GlobalVariables;
-import org.jruby.internal.runtime.methods.CompiledIRMetaClassBody;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
