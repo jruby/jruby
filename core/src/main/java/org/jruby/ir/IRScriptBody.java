@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRBreakJump;
@@ -80,7 +81,7 @@ public class IRScriptBody extends IRScope {
     }
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self) {
-        prepareForInterpretation();
+        InterpreterContext ic = prepareForInterpretation();
 
         String name = "(root)";
         if (IRRuntimeHelpers.isDebug()) {
@@ -111,7 +112,7 @@ public class IRScriptBody extends IRScope {
 
         try {
             Interpreter.runBeginEndBlocks(getBeginBlocks(), context, self, scope, null);
-            retVal = Interpreter.INTERPRET_ROOT(context, self, this, currModule, name);
+            retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
             Interpreter.runBeginEndBlocks(getEndBlocks(), context, self, scope, null);
 
             Interpreter.dumpStats();

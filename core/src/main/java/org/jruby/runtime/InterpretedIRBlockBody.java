@@ -71,7 +71,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
         this.evalType.set(EvalType.NONE);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, self, closure, args, binding.getMethod(), block, type);
+            return Interpreter.INTERPRET_BLOCK(context, self, ic, args, binding.getMethod(), block, type);
         }
         finally {
             // IMPORTANT: Do not clear eval-type in case this is reused in bindings!

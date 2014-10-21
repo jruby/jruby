@@ -621,8 +621,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
-            IRScope scope, RubyModule clazz, String name) {
-        InterpreterContext ic = scope.prepareForInterpretation();
+           InterpreterContext ic, RubyModule clazz, String name) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
             return interpret(context, self, ic, null, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
@@ -632,10 +631,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
-            IRScope scope, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
-        InterpreterContext ic = scope.prepareForInterpretation();
+           InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
-            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
             return interpret(context, self, ic, null, clazz, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -643,8 +641,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self,
-            IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
-        InterpreterContext ic = scope.prepareForInterpretation();
+            InterpreterContext ic, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
             return interpret(context, self, ic, null, null, name, args, block, blockType);
