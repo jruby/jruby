@@ -1747,11 +1747,6 @@ public class JVMVisitor extends IRVisitor {
     // ruby 1.9 specific
     @Override
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) {
-        // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
-        //
-        // JRUBY-5686: do this before executing so first time sets cref module
-//        getLambdaBody().getClosure().getStaticScope().determineModule();
-
         jvmMethod().loadRuntime();
 
         IRClosure body = ((WrappedIRClosure)buildlambdainstr.getLambdaBody()).getClosure();

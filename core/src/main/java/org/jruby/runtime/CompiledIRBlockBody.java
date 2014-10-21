@@ -24,6 +24,9 @@ public class CompiledIRBlockBody extends IRBlockBody {
         this.closure = (IRClosure)closure;
         this.pushScope = true;
         this.reuseParentScope = false;
+
+        // Done in the interpreter (WrappedIRClosure) but we do it here
+        closure.getStaticScope().determineModule();
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
