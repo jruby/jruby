@@ -39,7 +39,7 @@ module CompilerTestUtils
         handle,
         method,
         oj.runtime.Visibility::PUBLIC,
-        JRuby.runtime.top_self.class)
+        currModule)
   end
 
   def next_id
@@ -555,14 +555,14 @@ ary
   it "properly scopes singleton method definitions in a compiled body" do
     run("
       class GH1239
-        def self.define; def bar; end; end
-        def self.remove; remove_method :bar; end
+        def self.define; def gh1239; end; end
+        def self.remove; remove_method :gh1239; end
       end
       GH1239
     ") do |cls|
 
       cls.define
-      expect(cls.methods).not_to be_include :bar
+      expect(cls.methods).not_to be_include :gh1239
       expect{cls.remove}.not_to raise_error
     end
   end
