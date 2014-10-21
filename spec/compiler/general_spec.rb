@@ -37,14 +37,9 @@ module CompilerTestUtils
 
     return oj.internal.runtime.methods.CompiledIRMethod.new(
         handle,
-        "script",
-        filename,
-        lineno,
-        method.getStaticScope(),
+        method,
         oj.runtime.Visibility::PUBLIC,
-        JRuby.runtime.top_self.class,
-        "",
-        method.hasExplicitCallProtocol())
+        JRuby.runtime.top_self.class)
   end
 
   def next_id
