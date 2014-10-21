@@ -361,27 +361,12 @@ describe "JRuby's bytecode compiler" do
     run("a = 0; until false; a += 1; next if a < 2; break; end; a") {|result| expect(result).to eq 2 }
     run("a = 0; until false; a += 1; next 1 if a < 2; break; end; a") {|result| expect(result).to eq 2 }
     run("a = 0; until false; a += 1; redo if a < 2; break; end; a") {|result| expect(result).to eq 2 }
-    # same with evals
-    run("a = true; b = while a; a = false; eval 'break'; end; b") {|result| expect(result).to be_nil }
-    run("a = true; b = while a; a = false; eval 'break 1'; end; b") {|result| expect(result).to eq 1 }
-    run("a = 0; while true; a += 1; eval 'next' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; while true; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; while true; a += 1; eval 'redo' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = false; b = until a; a = true; eval 'break'; end; b") {|result| expect(result).to be_nil }
-    run("a = false; b = until a; a = true; eval 'break 1'; end; b") {|result| expect(result).to eq 1 }
-    run("a = 0; until false; a += 1; eval 'next' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; until false; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; until false; a += 1; eval 'redo' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
   end
   
   it "compiles loops with non-local flow control" do
     # non-local flow control with while loops
     run("a = 0; 1.times { a += 1; redo if a < 2 }; a") {|result| expect(result).to eq 2 }
     run("def foo(&b); while true; b.call; end; end; foo { break 3 }") {|result| expect(result).to eq 3 }
-  end
-
-  it "compiles loops with non-local flow control inside an eval" do
-    run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }") {|result| expect(result).to eq 3 }
   end
   
   it "compiles block passing" do
