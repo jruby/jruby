@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
@@ -50,8 +51,8 @@ public class IRMethod extends IRScope {
         super.addInstr(i);
     }
 
-    public void addArgDesc(String type, String argName) {
-        argDesc.add(new String[]{type, argName});
+    public void addArgDesc(IRMethodArgs.ArgType type, String argName) {
+        argDesc.add(new String[]{type.name(), argName});
     }
 
     public List<String[]> getArgDesc() {

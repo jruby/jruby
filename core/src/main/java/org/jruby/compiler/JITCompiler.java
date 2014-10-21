@@ -252,14 +252,9 @@ public class JITCompiler implements JITCompilerMBean {
                 method.switchToJitted(
                         new CompiledIRMethod(
                                 handle,
-                                method.getName(),
-                                method.getFile(),
-                                method.getLine(),
-                                method.getStaticScope(),
+                                method.getIRMethod(),
                                 method.getVisibility(),
-                                method.getImplementationClass(),
-                                Helpers.encodeParameterList(method.getParameterList()),
-                                method.getIRMethod().hasExplicitCallProtocol()));
+                                method.getImplementationClass()));
 
                 return;
             } catch (Throwable t) {

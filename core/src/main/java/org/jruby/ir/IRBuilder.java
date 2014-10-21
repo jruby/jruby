@@ -6,6 +6,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -1704,7 +1705,7 @@ public class IRBuilder {
             LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
             String argName = n.getName();
             Variable av = s.getLocalVariable(argName, 0);
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.opt, argName);
             addInstr(s, new ReceiveOptArgInstr(av, argIndex-j, argIndex-j, j));
             addInstr(s, BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
             build(n, s);
@@ -1728,7 +1729,7 @@ public class IRBuilder {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
                 String argName = a.getName();
-                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.req, argName);
                 // SSS FIXME: _$0 feels fragile?
                 // Ignore duplicate "_" args in blocks
                 // (duplicate _ args are named "_$0")
@@ -1741,7 +1742,7 @@ public class IRBuilder {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 Variable v = s.createTemporaryVariable();
                 addArgReceiveInstr(s, v, argIndex, post, numPreReqd, numPostRead);
-                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", "");
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.req, "");
                 Variable tmp = s.createTemporaryVariable();
                 addInstr(s, new ToAryInstr(tmp, v));
                 buildMultipleAsgn19Assignment(childNode, s, tmp, null);
@@ -1756,7 +1757,7 @@ public class IRBuilder {
         if (blockVarNode != null) {
             String blockArgName = blockVarNode.getName();
             blockVar = s.getNewLocalVariable(blockArgName, 0);
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.block, blockArgName);
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
 
@@ -1816,7 +1817,7 @@ public class IRBuilder {
                 OptArgNode n = (OptArgNode)optArgs.get(j);
                 String argName = n.getName();
                 Variable av = s.getNewLocalVariable(argName, 0);
-                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(s, new ReceiveOptArgInstr(av, required, numPreReqd, j));
                 addInstr(s, BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
@@ -1831,7 +1832,7 @@ public class IRBuilder {
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", argName == null ? "" : argName);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.rest, argName == null ? "" : argName);
             argName = (argName == null || argName.equals("")) ? "*" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
@@ -1868,7 +1869,7 @@ public class IRBuilder {
                 String argName = ((INameNode) kasgn).getName();
                 Variable av = s.getNewLocalVariable(argName, 0);
                 Label l = s.getNewLabel();
-                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("key", argName);
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.key, argName);
                 addInstr(s, new ReceiveKeywordArgInstr(av, argName, required));
                 addInstr(s, BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, we are done
 
@@ -1887,7 +1888,7 @@ public class IRBuilder {
         if (keyRest != null) {
             String argName = keyRest.getName();
             Variable av = s.getNewLocalVariable(argName, 0);
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("keyrest", argName);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.keyrest, argName);
             addInstr(s, new ReceiveKeywordRestArgInstr(av, required));
         }
 
@@ -2025,7 +2026,7 @@ public class IRBuilder {
         if (argsNode.getBlock() != null) {
             String blockArgName = argsNode.getBlock().getName();
             blockVar = s.getLocalVariable(blockArgName, 0);
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.block, blockArgName);
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
 

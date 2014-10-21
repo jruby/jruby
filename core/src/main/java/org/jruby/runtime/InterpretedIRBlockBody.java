@@ -19,7 +19,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
-    public InterpretedIRBlockBody(IRClosure closure, Arity arity, int argumentType) {
+    public InterpretedIRBlockBody(IRClosure closure, Arity arity) {
         super(closure.getStaticScope(), closure.getParameterList(), closure.getFileName(), closure.getLineNumber(), arity);
         this.closure = closure;
         this.pushScope = true;

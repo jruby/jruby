@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -17,16 +18,12 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected boolean pushScope;
     protected boolean reuseParentScope;
 
-    public CompiledIRBlockBody(StaticScope staticScope, String parameterList, String fileName, int lineNumber, boolean sharedScope, MethodHandle handle, int arity) {
-        this(staticScope, parameterList.split(","), fileName, lineNumber, sharedScope, handle, Arity.createArity(arity));
-    }
-
-    public CompiledIRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, boolean sharedScope, MethodHandle handle, Arity arity) {
-        super(staticScope, parameterList, fileName, lineNumber, arity);
-        this.closure = (IRClosure)staticScope.getIRScope();
+    public CompiledIRBlockBody(MethodHandle handle, IRScope closure, int arity) {
+        super(closure.getStaticScope(), ((IRClosure)closure).getParameterList(), closure.getFileName(), closure.getLineNumber(), Arity.createArity(arity));
         this.handle = handle;
-        this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-        this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+        this.closure = (IRClosure)closure;
+        this.pushScope = true;
+        this.reuseParentScope = false;
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {

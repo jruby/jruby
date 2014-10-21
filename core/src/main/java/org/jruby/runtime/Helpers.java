@@ -21,6 +21,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
@@ -2782,15 +2783,26 @@ public class Helpers {
                 // block arg
                 elem.add(RubySymbol.newSymbol(runtime, "block"));
             }
-            
+
             if (param.length() > 1) {
                 elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
             }
-            
+
             parms.add(elem);
         }
 
         return parms;
+    }
+
+    public static String[] irMethodArgsToParameters(List<String[]> argDesc) {
+        String[] tmp = new String[argDesc.size()];
+        for (int i = 0; i < tmp.length; i++) {
+            String[] arg = argDesc.get(i);
+            String encoded = arg[0].charAt(0) + arg[2];
+            tmp[i] = encoded;
+        }
+
+        return tmp;
     }
 
     public static RubyString getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
@@ -2894,12 +2906,6 @@ public class Helpers {
         }
 
         return (RubyModule)object;
-    }
-
-    public static IRubyObject invokeModuleBody(ThreadContext context, CompiledIRMethod method) {
-        RubyModule implClass = method.getImplementationClass();
-
-        return method.call(context, implClass, implClass, "");
     }
 
     public static RubyClass newClassForIR(ThreadContext context, String name, IRubyObject self, RubyModule classContainer, Object superClass, boolean meta) {

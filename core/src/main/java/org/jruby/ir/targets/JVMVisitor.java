@@ -4,7 +4,9 @@ import com.headius.invokebinder.Signature;
 import org.jruby.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.GlobalVariables;
+import org.jruby.internal.runtime.methods.CompiledIRMetaClassBody;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
@@ -870,261 +872,81 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void DefineClassInstr(DefineClassInstr defineclassinstr) {
         IRClassBody newIRClassBody = defineclassinstr.getNewIRClassBody();
-        StaticScope scope = newIRClassBody.getStaticScope();
-        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile variable method: " + this);
-        }
 
-        String scopeString = Helpers.encodeScope(scope);
-
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-
-        // new CompiledIRMethod
-        a.newobj(p(CompiledIRMethod.class));
-        a.dup();
-
-        // emit method body and get handle
+        jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRClassBody);
-        a.ldc(handle); // handle
-
-        // add'l args for CompiledIRMethod constructor
-        a.ldc(newIRClassBody.getName());
-        a.ldc(newIRClassBody.getFileName());
-        a.ldc(newIRClassBody.getLineNumber());
-
-        // construct class with Helpers.newClassForIR
-        m.loadContext(); // ThreadContext
-        a.ldc(newIRClassBody.getName()); // class name
-        m.loadSelf(); // self
-
-        // create class
-        m.loadContext();
+        jvmMethod().pushHandle(handle);
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(defineclassinstr.getContainer());
-        m.invokeHelper("checkIsRubyModule", RubyModule.class, ThreadContext.class, Object.class);
+        visit(defineclassinstr.getSuperClass());
 
-        // superclass
-        if (defineclassinstr.getSuperClass() instanceof Nil) {
-            a.aconst_null();
-        } else {
-            visit(defineclassinstr.getSuperClass());
-        }
+        jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class, Object.class));
 
-        // is meta?
-        a.ldc(newIRClassBody instanceof IRMetaClassBody);
-
-        m.invokeHelper("newClassForIR", RubyClass.class, ThreadContext.class, String.class, IRubyObject.class, RubyModule.class, Object.class, boolean.class);
-
-        // static scope
-        m.loadContext();
-        m.loadStaticScope();
-        a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", sig(StaticScope.class, ThreadContext.class, StaticScope.class, String.class));
-
-        // insert IRScope
-        a.dup();
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.invokevirtual(p(StaticScope.class), "setIRScope", sig(void.class, IRScope.class));
-
-        a.swap();
-
-        // set into StaticScope
-        a.dup2();
-        a.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
-
-        a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
-        a.swap();
-
-        // no arguments
-        a.ldc("");
-
-        // frame/scope
-        a.ldc(defineclassinstr.getNewIRClassBody().hasExplicitCallProtocol());
-
-        // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, String.class, String.class, int.class, StaticScope.class, Visibility.class, RubyModule.class, String.class, boolean.class));
-
-        // store
         jvmStoreLocal(defineclassinstr.getResult());
     }
 
     @Override
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) {
         IRMethod method = defineclassmethodinstr.getMethod();
-        StaticScope scope = method.getStaticScope();
 
-        String scopeString = Helpers.encodeScope(scope);
-
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-        List<String[]> parameters = method.getArgDesc();
-
-        m.loadContext();
-        visit(defineclassmethodinstr.getContainer());
+        jvmMethod().loadContext();
         Handle handle = emitMethod(method);
-        jvmMethod().pushHandle(handle); // handle
-        a.ldc(method.getName());
-        m.loadStaticScope();
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.ldc(scopeString);
-        a.ldc(method.getFileName());
-        a.ldc(method.getLineNumber());
-        a.ldc(Helpers.encodeParameterList(parameters));
-        a.ldc(method.hasExplicitCallProtocol());
+        jvmMethod().pushHandle(handle);
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
+        visit(defineclassmethodinstr.getContainer());
 
         // add method
-        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRClassMethod",
-                sig(void.class, ThreadContext.class, IRubyObject.class, java.lang.invoke.MethodHandle.class, String.class,
-                        StaticScope.class, IRScope.class, String.class, String.class, int.class, String.class, boolean.class));
+        jvmMethod().adapter.invokestatic(p(IRRuntimeHelpers.class), "defCompiledClassMethod",
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class));
     }
 
     // SSS FIXME: Needs an update to reflect instr. change
     @Override
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) {
         IRMethod method = defineinstancemethodinstr.getMethod();
-        StaticScope scope = method.getStaticScope();
-
-        String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvmMethod();
         SkinnyMethodAdapter a = m.adapter;
-        List<String[]> parameters = method.getArgDesc();
 
         m.loadContext();
         Handle handle = emitMethod(method);
-        jvmMethod().pushHandle(handle); // handle
-        a.ldc(method.getName());
-        jvmLoadLocal(DYNAMIC_SCOPE);
-        m.loadSelf();
+        jvmMethod().pushHandle(handle);
         a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.ldc(scopeString);
-        a.ldc(method.getFileName());
-        a.ldc(method.getLineNumber());
-        a.ldc(Helpers.encodeParameterList(parameters));
-        a.ldc(method.hasExplicitCallProtocol());
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        jvmMethod().loadSelf();
 
         // add method
-        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRMethod",
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
-                        DynamicScope.class, IRubyObject.class, IRScope.class, String.class, String.class, int.class, String.class, boolean.class));
+        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod",
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class));
     }
 
     @Override
     public void DefineMetaClassInstr(DefineMetaClassInstr definemetaclassinstr) {
         IRModuleBody metaClassBody = definemetaclassinstr.getMetaClassBody();
-        StaticScope scope = metaClassBody.getStaticScope();
-        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile variable method: " + this);
-        }
 
-        String scopeString = Helpers.encodeScope(scope);
-
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-
-        // new CompiledIRMethod
-        a.newobj(p(CompiledIRMethod.class));
-        a.dup();
-
-        // emit method body and get handle
-        a.ldc(emitModuleBody(metaClassBody)); // handle
-
-        // add'l args for CompiledIRMethod constructor
-        a.ldc(metaClassBody.getName());
-        a.ldc(metaClassBody.getFileName());
-        a.ldc(metaClassBody.getLineNumber());
-
-        // static scope
-        m.loadContext();
-        m.loadStaticScope();
-        a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
-
-        // get singleton class
-        m.loadRuntime();
+        jvmMethod().loadContext();
+        Handle handle = emitModuleBody(metaClassBody);
+        jvmMethod().pushHandle(handle);
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemetaclassinstr.getObject());
-        m.invokeHelper("getSingletonClass", RubyClass.class, Ruby.class, IRubyObject.class);
 
-        // set into StaticScope
-        a.dup2();
-        a.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
+        jvmMethod().invokeIRHelper("newCompiledMetaClass", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class));
 
-        a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
-        a.swap();
-
-        // no arguments
-        a.ldc("");
-
-        // frame/scope
-        a.ldc(definemetaclassinstr.getMetaClassBody().hasExplicitCallProtocol());
-
-        // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;Z)V");
-
-        // store
         jvmStoreLocal(definemetaclassinstr.getResult());
     }
 
     @Override
     public void DefineModuleInstr(DefineModuleInstr definemoduleinstr) {
         IRModuleBody newIRModuleBody = definemoduleinstr.getNewIRModuleBody();
-        StaticScope scope = newIRModuleBody.getStaticScope();
-        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile variable method: " + this);
-        }
 
-        String scopeString = Helpers.encodeScope(scope);
-
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-
-        // new CompiledIRMethod
-        a.newobj(p(CompiledIRMethod.class));
-        a.dup();
-
-        // emit method body and get handle
+        jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRModuleBody);
-        a.ldc(handle);
-
-        // add'l args for CompiledIRMethod constructor
-        a.ldc(newIRModuleBody.getName());
-        a.ldc(newIRModuleBody.getFileName());
-        a.ldc(newIRModuleBody.getLineNumber());
-
-        m.loadContext();
-        m.loadStaticScope();
-        a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
-
-        // insert IRScope
-        a.dup();
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.invokevirtual(p(StaticScope.class), "setIRScope", sig(void.class, IRScope.class));
-
-        // create module
-        m.loadContext();
+        jvmMethod().pushHandle(handle);
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemoduleinstr.getContainer());
-        m.invokeHelper("checkIsRubyModule", RubyModule.class, ThreadContext.class, Object.class);
-        a.ldc(newIRModuleBody.getName());
-        a.invokevirtual(p(RubyModule.class), "defineOrGetModuleUnder", sig(RubyModule.class, String.class));
 
-        // set into StaticScope
-        a.dup2();
-        a.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
+        jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class));
 
-        a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
-        a.swap();
-
-        // no arguments
-        a.ldc("");
-
-        // frame/scope
-        a.ldc(definemoduleinstr.getNewIRModuleBody().hasExplicitCallProtocol());
-
-        // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;Z)V");
-
-        // store
         jvmStoreLocal(definemoduleinstr.getResult());
     }
 
@@ -1392,7 +1214,7 @@ public class JVMVisitor extends IRVisitor {
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         jvmMethod().loadContext();
         visit(processmodulebodyinstr.getModuleBody());
-        jvmMethod().invokeHelper("invokeModuleBody", IRubyObject.class, ThreadContext.class, CompiledIRMethod.class);
+        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(processmodulebodyinstr.getResult());
     }
 
@@ -2227,35 +2049,15 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().newobj(p(Block.class));
         jvmAdapter().dup();
 
-        { // prepare block body (should be cached
+        { // FIXME: block body should be cached
             jvmAdapter().newobj(p(CompiledIRBlockBody.class));
             jvmAdapter().dup();
 
-            // FIXME: This is inefficient because it's creating a new StaticScope every time
-            String encodedScope = Helpers.encodeScope(closure.getStaticScope());
-            jvmMethod().loadContext();
-            jvmMethod().loadStaticScope();
-            jvmAdapter().ldc(encodedScope);
-            jvmAdapter().invokestatic(p(Helpers.class), "decodeScopeAndDetermineModule", sig(StaticScope.class, ThreadContext.class, StaticScope.class, String.class));
-
-            // insert IRScope
-            jvmAdapter().dup();
-            jvmAdapter().getstatic(jvm.clsData().clsName, closure.getHandle().getName() + "_IRScope", ci(IRScope.class));
-            jvmAdapter().invokevirtual(p(StaticScope.class), "setIRScope", sig(void.class, IRScope.class));
-
-            jvmAdapter().ldc(Helpers.stringJoin(",", closure.getParameterList()));
-
-            jvmAdapter().ldc(closure.getFileName());
-
-            jvmAdapter().ldc(closure.getLineNumber());
-
-            jvmAdapter().ldc(closure instanceof IRFor || closure.isBeginEndBlock());
-
             jvmAdapter().ldc(closure.getHandle());
-
+            jvmAdapter().getstatic(jvm.clsData().clsName, closure.getHandle().getName() + "_IRScope", ci(IRScope.class));
             jvmAdapter().ldc(closure.getArity().getValue());
 
-            jvmAdapter().invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, StaticScope.class, String.class, String.class, int.class, boolean.class, java.lang.invoke.MethodHandle.class, int.class));
+            jvmAdapter().invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, int.class));
         }
 
         { // prepare binding
