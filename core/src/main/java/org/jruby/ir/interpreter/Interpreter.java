@@ -13,6 +13,7 @@ import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.specialized.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
@@ -129,8 +130,43 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     @Override
-    protected IRubyObject execute(Ruby runtime, IRScope scope, IRubyObject self) {
-        return ((IRScriptBody)scope).interpret(runtime.getCurrentContext(), self);
+    protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
+        ScriptBodyInterpreterContext ic = (ScriptBodyInterpreterContext) irScope.prepareForInterpretation();
+        ThreadContext context = runtime.getCurrentContext();
+        String name = "(root)";
+
+        if (IRRuntimeHelpers.isDebug()) LOG.info("Executing " + ic);
+
+        // We get the live object ball rolling here.
+        // This give a valid value for the top of this lexical tree.
+        // All new scopes can then retrieve and set based on lexical parent.
+        StaticScope scope = ic.getStaticScope();
+        RubyModule currModule = scope.getModule();
+        if (currModule == null) {
+            // SSS FIXME: Looks like this has to do with Kernel#load
+            // and the wrap parameter. Figure it out and document it here.
+            currModule = context.getRuntime().getObject();
+        }
+
+        IRubyObject retVal;
+
+        scope.setModule(currModule);
+        if (!ic.isDynscopeEliminated()) context.preMethodScopeOnly(scope);
+        context.setCurrentVisibility(Visibility.PRIVATE);
+
+        try {
+            Interpreter.runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+            retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
+            Interpreter.runBeginEndBlocks(ic.getEndBlocks(), context, self, scope, null);
+
+            Interpreter.dumpStats();
+        } catch (IRBreakJump bj) {
+            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+        } finally {
+            if (!ic.isDynscopeEliminated()) context.popScope();
+        }
+
+        return retVal;
     }
 
     private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {

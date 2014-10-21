@@ -125,7 +125,7 @@ public class IRReader {
         case MODULE_BODY:
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:
-            return new IRScriptBody(manager, "__file__", name, staticScope);
+            return new IRScriptBody(manager, name, staticScope);
         case FOR:
             return new IRFor(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
         case CLOSURE:
