@@ -509,8 +509,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        InterpreterContext interpreterContext = scope.getInterpreterContext();
+            InterpreterContext interpreterContext, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         int      numTempVars    = interpreterContext.getTemporaryVariablecount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
@@ -623,9 +622,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
             IRScope scope, RubyModule clazz, String name) {
+        InterpreterContext ic = scope.prepareForInterpretation();
         try {
-            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            return interpret(context, self, ic, null, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -633,9 +633,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
             IRScope scope, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+        InterpreterContext ic = scope.prepareForInterpretation();
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, clazz, name, args, block, blockType);
+            return interpret(context, self, ic, null, clazz, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -643,9 +644,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self,
             IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+        InterpreterContext ic = scope.prepareForInterpretation();
         try {
-            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, null, name, args, block, blockType);
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            return interpret(context, self, ic, null, null, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -653,13 +655,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod method,
         IRubyObject self, String name, IRubyObject[] args, Block block) {
-        IRScope    scope     = method.getIRMethod();
+        InterpreterContext ic = method.ensureInstrsReady();
         boolean syntheticMethod = name == null || name.equals("");
 
         try {
-            if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
+            if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return interpret(context, self, scope, method.getVisibility(), method.getImplementationClass(), name, args, block, null);
+            return interpret(context, self, ic, method.getVisibility(), method.getImplementationClass(), name, args, block, null);
         } finally {
             if (!syntheticMethod) ThreadContext.popBacktrace(context);
         }
