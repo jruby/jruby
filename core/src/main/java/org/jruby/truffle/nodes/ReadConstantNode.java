@@ -47,7 +47,7 @@ public class ReadConstantNode extends RubyNode {
 
         if (!(receiverObject instanceof RubyModule)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(""+receiverObject, "class/module", this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
 
         LexicalScope lexicalScope = getLexicalScope(frame);
