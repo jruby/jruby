@@ -2,6 +2,7 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import org.jruby.*;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -752,8 +753,7 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class));
             arity = -1;
         } else if (CallBase.containsArgSplat(args)) {
-            arity = -1;
-            throw new RuntimeException("splat in non-initial argument for normal call is unsupported in JIT");
+            throw new NotCompilableException("splat in non-initial argument for normal call is unsupported in JIT");
         } else {
             for (Operand operand : args) {
                 visit(operand);
