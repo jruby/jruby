@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.LexicalScope;
 
 import java.util.Arrays;
 
@@ -204,7 +205,7 @@ public class RubyCallNode extends RubyNode {
             }
         } else if (method.isUndefined()) {
             return getContext().getCoreLibrary().getNilObject();
-        } else if (!ignoreVisibility && !method.isVisibleTo(this, self)) {
+        } else if (!ignoreVisibility && !method.isVisibleTo(this, self.getMetaClass())) {
             return getContext().getCoreLibrary().getNilObject();
         }
 

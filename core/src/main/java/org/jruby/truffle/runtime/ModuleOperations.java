@@ -15,7 +15,6 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,14 +38,7 @@ public abstract class ModuleOperations {
         // Look in the current module
         constants.putAll(module.getConstants());
 
-        // Look in lexical ancestors
-        for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
-            for (Map.Entry<String, RubyConstant> constant : lexicalAncestor.getConstants().entrySet()) {
-                if (!constants.containsKey(constant.getKey())) {
-                    constants.put(constant.getKey(), constant.getValue());
-                }
-            }
-        }
+        // TODO(eregon): Look in lexical scope?
 
         // Look in ancestors
         for (RubyModule ancestor : module.parentAncestors()) {
@@ -60,7 +52,7 @@ public abstract class ModuleOperations {
         return constants;
     }
 
-    public static RubyConstant lookupConstant(RubyModule module, String name) {
+    public static RubyConstant lookupConstant(LexicalScope lexicalScope, RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
         RubyConstant constant;
@@ -72,13 +64,18 @@ public abstract class ModuleOperations {
             return constant;
         }
 
-        // Look in lexical ancestors
-        for (RubyModule lexicalAncestor : module.parentLexicalAncestors()) {
-            constant = lexicalAncestor.getConstants().get(name);
+        // Look in lexical scope
+        final RubyContext context = module.getContext();
+        final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
+
+        while (lexicalScope != null && lexicalScope != context.getRootLexicalScope()) { // TODO: looking twice self ?
+            constant = lexicalScope.getLiveModule().getConstants().get(name);
 
             if (constant != null) {
                 return constant;
             }
+
+            lexicalScope = lexicalScope.getParent();
         }
 
         // Look in ancestors
@@ -90,8 +87,18 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Nothing found
+        // Look in Object and its ancestors for modules
+        if (!(module instanceof RubyClass)) {
+            for (RubyModule ancestor : objectClass.ancestors()) {
+                constant = ancestor.getConstants().get(name);
 
+                if (constant != null) {
+                    return constant;
+                }
+            }
+        }
+
+        // Nothing found
         return null;
     }
 

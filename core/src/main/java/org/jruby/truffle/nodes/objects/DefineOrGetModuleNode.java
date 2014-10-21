@@ -23,12 +23,12 @@ import org.jruby.truffle.runtime.core.*;
 public class DefineOrGetModuleNode extends RubyNode {
 
     private final String name;
-    @Child protected RubyNode parentModule;
+    @Child protected RubyNode lexicalParentModule;
 
-    public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode parentModule) {
+    public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParentModule) {
         super(context, sourceSection);
         this.name = name;
-        this.parentModule = parentModule;
+        this.lexicalParentModule = lexicalParentModule;
     }
 
     @Override
@@ -39,22 +39,21 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         // Look for a current definition of the module, or create a new one
 
-        RubyModule parentModuleObject;
+        RubyModule lexicalParentModuleObject;
 
         try {
-            parentModuleObject = parentModule.executeRubyModule(frame);
+            lexicalParentModuleObject = lexicalParentModule.executeRubyModule(frame);
         } catch (UnexpectedResultException e) {
             throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
         }
 
-        final RubyConstant constantValue = parentModuleObject.getConstants().get(name);
+        final RubyConstant constantValue = lexicalParentModuleObject.getConstants().get(name);
 
         RubyModule definingModule;
 
         if (constantValue == null) {
-            definingModule = new RubyModule(context.getCoreLibrary().getModuleClass(), parentModuleObject, name);
-            parentModuleObject.setConstant(this, name, definingModule);
-            parentModuleObject.getSingletonClass(this).setConstant(this, name, definingModule);
+            definingModule = new RubyModule(context.getCoreLibrary().getModuleClass(), lexicalParentModuleObject, name);
+            lexicalParentModuleObject.setConstant(this, name, definingModule);
         } else {
             if (constantValue.getValue() == getContext().getCoreLibrary().getModuleClass() || (constantValue.getValue() instanceof RubyModule && !(constantValue.getValue() instanceof RubyClass))) {
                 definingModule = (RubyModule) constantValue.getValue();

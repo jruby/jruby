@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -64,7 +65,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
     public Object dispatch(
             VirtualFrame frame,
             RubyNilClass methodReceiverObject,
-            Object callingSelf,
+            LexicalScope lexicalScope,
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
@@ -78,7 +79,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
             return next.executeDispatch(
                     frame,
                     methodReceiverObject,
-                    callingSelf,
+                    lexicalScope,
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
@@ -94,7 +95,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
             return resetAndDispatch(
                     frame,
                     methodReceiverObject,
-                    callingSelf,
+                    lexicalScope,
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
@@ -125,7 +126,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
     public Object dispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
-            Object callingSelf,
+            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -134,7 +135,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
         return next.executeDispatch(
                 frame,
                 methodReceiverObject,
-                callingSelf,
+                lexicalScope,
                 receiverObject,
                 methodName,
                 CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),

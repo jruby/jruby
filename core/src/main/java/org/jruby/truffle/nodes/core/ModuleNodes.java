@@ -227,7 +227,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_reader)";
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
+            final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, indicativeName);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
@@ -280,7 +280,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_writer)";
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
+            final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, indicativeName);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
@@ -449,7 +449,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(null, module, name.toString()) != null;
         }
 
         @Specialization
@@ -457,7 +457,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (inherit) {
-                return ModuleOperations.lookupConstant(module, name.toString()) != null;
+                return ModuleOperations.lookupConstant(null, module, name.toString()) != null;
             } else {
                 return module.getConstants().containsKey(name.toString());
             }
@@ -467,7 +467,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(null, module, name.toString()) != null;
         }
 
     }
@@ -509,6 +509,13 @@ public abstract class ModuleNodes {
             return module;
         }
 
+        @Specialization
+        public RubyModule setConstant(RubyModule module, RubySymbol name, Object object) {
+            notDesignedForCompilation();
+
+            module.setConstant(this, name.toString(), object);
+            return module;
+        }
     }
 
     @CoreMethod(names = "class_variable_get", minArgs = 1, maxArgs = 1)
@@ -792,13 +799,16 @@ public abstract class ModuleNodes {
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            RubyModule module = RubyCallStack.getCallingMethod().getDeclaringModule();
+            MethodLike method = RubyCallStack.getCallingMethod();
+            LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
-            for (RubyModule englobing : module.lexicalAncestors()) {
-                if (englobing == object)
+            while (lexicalScope != null) {
+                RubyModule enclosing = lexicalScope.getLiveModule();
+                if (enclosing == object)
                     break;
-                modules.add(englobing);
+                modules.add(enclosing);
+                lexicalScope = lexicalScope.getParent();
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));

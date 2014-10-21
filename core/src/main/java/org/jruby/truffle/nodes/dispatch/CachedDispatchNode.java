@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -51,7 +52,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     protected final boolean guardName(
             Object methodReceiverObject,
-            Object callingSelf,
+            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
