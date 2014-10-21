@@ -18,6 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -195,6 +196,10 @@ public abstract class RubyNode extends Node {
     }
 
     public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) {
+        throw new UnsupportedOperationException();
+    }
+
+    public LexicalScope executeLexicalScope(VirtualFrame frame) {
         throw new UnsupportedOperationException();
     }
 

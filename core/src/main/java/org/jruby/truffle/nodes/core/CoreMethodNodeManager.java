@@ -64,7 +64,7 @@ public abstract class CoreMethodNodeManager {
             module = rubyObjectClass;
 
             for (String moduleName : methodDetails.getClassAnnotation().name().split("::")) {
-                module = (RubyModule) ModuleOperations.lookupConstant(module, moduleName).getValue();
+                module = (RubyModule) ModuleOperations.lookupConstant(null, module, moduleName).getValue();
             }
         }
 
@@ -120,7 +120,7 @@ public abstract class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), false, null);
+        final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, methodDetails.getIndicativeName());
 
         final Arity arity = new Arity(methodDetails.getMethodAnnotation().minArgs(), methodDetails.getMethodAnnotation().maxArgs());
 

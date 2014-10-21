@@ -75,6 +75,10 @@ public class RubyContext extends ExecutionContext {
     private final Warnings warnings;
     private final SafepointManager safepointManager;
 
+    // TODO: Wrong place for this, only during parsing but be practical for now
+    private LexicalScope lexicalScope;
+    private final LexicalScope rootLexicalScope;
+
     private SourceCallback sourceCallback = null;
 
     private final AtomicLong nextObjectID = new AtomicLong(6);
@@ -114,6 +118,24 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
+
+        lexicalScope = rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+    }
+
+    public LexicalScope getRootLexicalScope() {
+        return rootLexicalScope;
+    }
+
+    public LexicalScope getLexicalScope() {
+        return lexicalScope;
+    }
+
+    public LexicalScope pushLexicalScope() {
+        return lexicalScope = new LexicalScope(lexicalScope);
+    }
+
+    public void popLexicalScope() {
+        lexicalScope = lexicalScope.getParent();
     }
 
     public void load(Source source, RubyNode currentNode) {

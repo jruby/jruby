@@ -63,6 +63,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
         public RubyModule getActualModule() {
             return includedModule;
         }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + includedModule + ")";
+        }
     }
 
     public static void debugModuleChain(RubyModule module) {
@@ -93,7 +98,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
-    @CompilationFinal protected RubyModule lexicalParentModule;
     @CompilationFinal protected ModuleChain parentModule;
 
     @CompilationFinal private String name;
@@ -136,7 +140,9 @@ public class RubyModule extends RubyObject implements ModuleChain {
         super(moduleClass);
 
         this.context = context;
-        this.lexicalParentModule = lexicalParentModule;
+        if (lexicalParentModule != null && lexicalParentModule != context.getCoreLibrary().getObjectClass()) {
+            name = lexicalParentModule.getName() + "::" + name;
+        }
         this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
@@ -145,7 +151,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void initCopy(RubyModule other) {
         this.name = other.name;
         this.parentModule = other.parentModule;
-        this.lexicalParentModule = other.lexicalParentModule;
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
         this.classVariables.putAll(other.classVariables);
@@ -215,7 +220,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         checkFrozen(currentNode);
 
         setConstant(currentNode, constantName, value);
-        getSingletonClass(currentNode).setConstant(currentNode, constantName, value);
     }
 
     public void addMethod(RubyNode currentNode, RubyMethod method) {
@@ -269,7 +273,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void changeConstantVisibility(RubyNode currentNode, RubySymbol constant, boolean isPrivate) {
         RubyNode.notDesignedForCompilation();
 
-        RubyConstant rubyConstant = ModuleOperations.lookupConstant(this, constant.toString());
+        RubyConstant rubyConstant = ModuleOperations.lookupConstant(null, this, constant.toString());
         checkFrozen(currentNode);
 
         if (rubyConstant != null) {
@@ -409,10 +413,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         }
     }
 
-    public RubyModule getLexicalParentModule() {
-        return lexicalParentModule;
-    }
-
     public ModuleChain getParentModule() {
         return parentModule;
     }
@@ -462,51 +462,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
             @Override
             public Iterator<RubyModule> iterator() {
                 return new AncestorIterator(top);
-            }
-        };
-    }
-
-    private class LexicalAncestorIterator implements Iterator<RubyModule> {
-        RubyModule module;
-
-        public LexicalAncestorIterator(RubyModule top) {
-            module = top;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return module != null;
-        }
-
-        @Override
-        public RubyModule next() {
-            RubyModule mod = module;
-            module = module.getLexicalParentModule();
-            return mod;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("remove");
-        }
-    }
-
-    public Iterable<RubyModule> lexicalAncestors() {
-        final RubyModule top = this;
-        return new Iterable<RubyModule>() {
-            @Override
-            public Iterator<RubyModule> iterator() {
-                return new LexicalAncestorIterator(top);
-            }
-        };
-    }
-
-    public Iterable<RubyModule> parentLexicalAncestors() {
-        final RubyModule top = lexicalParentModule;
-        return new Iterable<RubyModule>() {
-            @Override
-            public Iterator<RubyModule> iterator() {
-                return new LexicalAncestorIterator(top);
             }
         };
     }

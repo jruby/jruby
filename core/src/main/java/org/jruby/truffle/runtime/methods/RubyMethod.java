@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -89,32 +90,14 @@ public class RubyMethod implements MethodLike {
         return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
-    public boolean isVisibleTo(Node currentNode, RubyBasicObject caller) {
-        if (caller instanceof RubyModule) {
-            if (isVisibleToX(currentNode, (RubyModule) caller)) {
-                return true;
-            }
-        }
-
-        if (isVisibleToX(currentNode, caller.getLogicalClass())) {
-            return true;
-        }
-
-        if (isVisibleToX(currentNode, caller.getSingletonClass(currentNode))) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean isVisibleToX(Node currentNode, RubyModule module) {
+    public boolean isVisibleTo(Node currentNode, RubyClass callerClass) {
         switch (visibility) {
             case PUBLIC:
                 return true;
 
             case PROTECTED:
-                for (RubyModule ancestor : module.ancestors()) {
-                    if (ancestor == declaringModule || ancestor.getSingletonClass(currentNode) == declaringModule) {
+                for (RubyModule ancestor : callerClass.ancestors()) {
+                    if (ancestor == declaringModule || ancestor.getMetaClass() == declaringModule) {
                         return true;
                     }
                 }

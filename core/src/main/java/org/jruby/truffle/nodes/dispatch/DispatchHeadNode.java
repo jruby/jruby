@@ -58,7 +58,7 @@ public class DispatchHeadNode extends Node {
         return dispatch(
                 frame,
                 context.getCoreLibrary().getNilObject(),
-                RubyArguments.getSelf(frame.getArguments()),
+                null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,
                 blockObject,
@@ -143,7 +143,7 @@ public class DispatchHeadNode extends Node {
         return (boolean) dispatch(
                 frame,
                 context.getCoreLibrary().getNilObject(),
-                RubyArguments.getSelf(frame.getArguments()),
+                null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,
                 null,
@@ -154,7 +154,7 @@ public class DispatchHeadNode extends Node {
     public Object dispatch(
             VirtualFrame frame,
             Object methodReceiverObject,
-            Object callingSelf,
+            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -164,8 +164,8 @@ public class DispatchHeadNode extends Node {
             return first.executeDispatch(
                     frame,
                     methodReceiverObject,
-                    callingSelf,
-                    callingSelf,
+                    lexicalScope,
+                    RubyArguments.getSelf(frame.getArguments()),
                     methodName,
                     blockObject,
                     RubyArguments.concatUserArguments(argumentsObjects, frame.getArguments()),
@@ -174,7 +174,7 @@ public class DispatchHeadNode extends Node {
         return first.executeDispatch(
                 frame,
                 methodReceiverObject,
-                callingSelf,
+                lexicalScope,
                 receiverObject,
                 methodName,
                 blockObject,
