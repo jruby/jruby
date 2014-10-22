@@ -155,9 +155,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            Interpreter.runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+            Interpreter.runBeginEndBlocks(irScope.getBeginBlocks(), context, self, scope, null);
             retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
-            Interpreter.runBeginEndBlocks(ic.getEndBlocks(), context, self, scope, null);
+            Interpreter.runBeginEndBlocks(irScope.getEndBlocks(), context, self, scope, null);
 
             Interpreter.dumpStats();
         } catch (IRBreakJump bj) {
