@@ -157,12 +157,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             Interpreter.runBeginEndBlocks(irScope.getBeginBlocks(), context, self, scope, null);
             retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
-            Interpreter.runBeginEndBlocks(irScope.getEndBlocks(), context, self, scope, null);
 
             Interpreter.dumpStats();
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
+            Interpreter.runBeginEndBlocks(irScope.getEndBlocks(), context, self, scope, null);
             if (!ic.isDynscopeEliminated()) context.popScope();
         }
 
