@@ -156,6 +156,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
         this.classVariables.putAll(other.classVariables);
     }
 
+    /** If this instance is a module and not a class. */
+    public boolean isOnlyAModule() {
+        return !(this instanceof RubyClass);
+    }
+
     /**
      * This method supports initialization and solves boot-order problems and should not normally be
      * used.
@@ -265,7 +270,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         RubyMethod method = ModuleOperations.lookupMethod(this, name);
 
         // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
-        if (method == null && !(this instanceof RubyClass)) { // TODO: handle undefined methods
+        if (method == null && isOnlyAModule()) { // TODO: handle undefined methods
             method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
         }
 

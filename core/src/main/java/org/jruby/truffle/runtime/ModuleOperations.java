@@ -88,7 +88,7 @@ public abstract class ModuleOperations {
         }
 
         // Look in Object and its ancestors for modules
-        if (!(module instanceof RubyClass)) {
+        if (module.isOnlyAModule()) {
             for (RubyModule ancestor : objectClass.ancestors()) {
                 constant = ancestor.getConstants().get(name);
 
