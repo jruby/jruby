@@ -102,8 +102,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null); // FIXME: No temp vars yet right?
             rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), s, block, backtraceName);
-            runBeginEndBlocks(evalScript.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
         } finally {
+            runBeginEndBlocks(evalScript.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
             s.clearEvalType();
             context.popScope();
         }
