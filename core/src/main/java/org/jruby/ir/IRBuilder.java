@@ -2957,7 +2957,8 @@ public class IRBuilder {
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
         // might be broken currently. We could either fix it or consider dropping support
         // for END blocks altogether or only support them in the toplevel. Not worth the pain.
-        addInstr(s, new RecordEndBlockInstr(topLevel, endClosure));
+        WrappedIRClosure endBlock = new WrappedIRClosure(s.getSelf(), endClosure);
+        addInstr(s, new RecordEndBlockInstr(topLevel, endBlock));
         return manager.getNil();
     }
 
