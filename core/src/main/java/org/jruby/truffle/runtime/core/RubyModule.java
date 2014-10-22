@@ -146,6 +146,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
         this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
+
+        // Constant invalidation for lexical scope.
+        if (lexicalParentModule != null) {
+            lexicalParentModule.addDependent(this);
+        }
     }
 
     public void initCopy(RubyModule other) {
@@ -333,21 +338,27 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void newVersion() {
         RubyNode.notDesignedForCompilation();
 
+        newVersion(new HashSet<RubyModule>());
+    }
+
+    private void newVersion(Set<RubyModule> alreadyInvalidated) {
+        if (alreadyInvalidated.contains(this))
+            return;
+
         unmodifiedAssumption.invalidate();
+        alreadyInvalidated.add(this);
 
         // Make dependents new versions
-
         for (RubyModule dependent : dependents) {
-            dependent.newVersion();
+            dependent.newVersion(alreadyInvalidated);
         }
-
-        // TODO(CS): is the lexical child a dependent?
     }
 
     public void addDependent(RubyModule dependent) {
         RubyNode.notDesignedForCompilation();
 
-        dependents.add(dependent);
+        if (dependent != this)
+            dependents.add(dependent);
     }
 
     public Assumption getUnmodifiedAssumption() {
