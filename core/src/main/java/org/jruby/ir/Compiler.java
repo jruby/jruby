@@ -8,6 +8,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
+import org.jruby.ast.executable.ScriptAndCode;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
@@ -20,7 +22,7 @@ import org.jruby.util.JRubyClassLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
+public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
 
     // Compiler is singleton
     private Compiler() {}
@@ -35,23 +37,35 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
     }
 
     @Override
-    protected Script execute(final Ruby runtime, final IRScriptBody scope, JRubyClassLoader classLoader) {
-        final JVMVisitor visitor = new JVMVisitor();
-        final Class compiled = visitor.compile(scope, classLoader);
-        final StaticScope staticScope = scope.getStaticScope();
-        final IRubyObject runtimeTopSelf = runtime.getTopSelf();
-        staticScope.setModule(runtimeTopSelf.getMetaClass());
+    protected ScriptAndCode execute(final Ruby runtime, final IRScriptBody scope, JRubyClassLoader classLoader) {
+        JVMVisitor visitor;
+        byte[] bytecode;
+        Class compiled;
+        StaticScope _staticScope;
+        IRubyObject _runtimeTopSelf;
 
         Method _compiledMethod;
         try {
+            visitor = new JVMVisitor();
+            bytecode = visitor.compileToBytecode(scope);
+            compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
+            _staticScope = scope.getStaticScope();
+            _runtimeTopSelf = runtime.getTopSelf();
+            _staticScope.setModule(_runtimeTopSelf.getMetaClass());
+
             _compiledMethod = compiled.getMethod("__script__", ThreadContext.class,
                     StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (NotCompilableException nce) {
+            throw nce;
+        } catch (Throwable t) {
+            throw new NotCompilableException("failed to compile script " + scope.getName(), t);
         }
-        final Method compiledMethod = _compiledMethod;
 
-        return new AbstractScript() {
+        final Method compiledMethod = _compiledMethod;
+        final StaticScope staticScope = _staticScope;
+        final IRubyObject runtimeTopSelf = _runtimeTopSelf;
+
+        Script script = new AbstractScript() {
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
@@ -78,6 +92,8 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
                 }
             }
         };
+
+        return new ScriptAndCode(bytecode, script);
 
     }
 

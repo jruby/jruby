@@ -41,6 +41,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.compiler.Constantizable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -56,6 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
@@ -70,13 +72,14 @@ import static org.jruby.util.StringSupport.codePoint;
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name="Symbol")
-public class RubySymbol extends RubyObject implements MarshalEncoding {
+public class RubySymbol extends RubyObject implements MarshalEncoding, Constantizable {
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
     private final String symbol;
     private final int id;
     private final ByteList symbolBytes;
     private final int hashCode;
+    private Object constant;
     
     /**
      * 
@@ -180,6 +183,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name);
+    }
+
+    /**
+     * @see org.jruby.compiler.Constantizable
+     */
+    @Override
+    public Object constant() {
+        return constant == null ?
+                constant = OptoFactory.newConstantWrapper(IRubyObject.class, this) :
+                constant;
     }
 
     @Deprecated

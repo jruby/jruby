@@ -113,6 +113,10 @@ public class RubyModule extends RubyObject implements ModuleChain {
      * include subclasses and modules that include this module.
      */
     private final Set<RubyModule> dependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
+    /**
+     * Lexical dependent modules, to take care of changes to a module constants.
+     */
+    private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
 
     /**
      * The class from which we create the object that is {@code Module}. A subclass of
@@ -138,14 +142,19 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
     public RubyModule(RubyContext context, RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
         super(moduleClass);
-
         this.context = context;
+
         if (lexicalParentModule != null && lexicalParentModule != context.getCoreLibrary().getObjectClass()) {
             name = lexicalParentModule.getName() + "::" + name;
         }
         this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
+
+        // Constant invalidation for lexical scope.
+        if (lexicalParentModule != null) {
+            lexicalParentModule.addLexicalDependent(this);
+        }
     }
 
     public void initCopy(RubyModule other) {
@@ -154,6 +163,11 @@ public class RubyModule extends RubyObject implements ModuleChain {
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
         this.classVariables.putAll(other.classVariables);
+    }
+
+    /** If this instance is a module and not a class. */
+    public boolean isOnlyAModule() {
+        return !(this instanceof RubyClass);
     }
 
     /**
@@ -194,7 +208,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         assert RubyContext.shouldObjectBeVisible(value);
         checkFrozen(currentNode);
         getConstants().put(constantName, new RubyConstant(value, false));
-        newVersion();
+        newLexicalVersion();
         // TODO(CS): warn when redefining a constant
     }
 
@@ -203,7 +217,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         checkFrozen(currentNode);
         getConstants().remove(data);
-        newVersion();
+        newLexicalVersion();
     }
 
     public void removeClassVariable(RubyNode currentNode, String variableName) {
@@ -257,10 +271,25 @@ public class RubyModule extends RubyObject implements ModuleChain {
         addMethod(currentNode, method.undefined());
     }
 
+    /**
+     * Also searches on Object for modules.
+     * Used for alias_method, visibility changes, etc.
+     */
+    private RubyMethod deepMethodSearch(String name) {
+        RubyMethod method = ModuleOperations.lookupMethod(this, name);
+
+        // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
+        if (method == null && isOnlyAModule()) { // TODO: handle undefined methods
+            method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
+        }
+
+        return method;
+    }
+
     public void alias(RubyNode currentNode, String newName, String oldName) {
         RubyNode.notDesignedForCompilation();
 
-        final RubyMethod method = ModuleOperations.lookupMethod(this, oldName);
+        RubyMethod method = deepMethodSearch(oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
@@ -282,7 +311,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString(), currentNode));
         }
 
-        newVersion();
+        newLexicalVersion();
     }
 
     public void appendFeatures(RubyNode currentNode, RubyModule other) {
@@ -313,21 +342,45 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void newVersion() {
         RubyNode.notDesignedForCompilation();
 
+        newVersion(new HashSet<RubyModule>(), false);
+    }
+
+    public void newLexicalVersion() {
+        RubyNode.notDesignedForCompilation();
+
+        newVersion(new HashSet<RubyModule>(), true);
+    }
+
+    private void newVersion(Set<RubyModule> alreadyInvalidated, boolean considerLexicalDependents) {
+        if (alreadyInvalidated.contains(this))
+            return;
+
         unmodifiedAssumption.invalidate();
+        alreadyInvalidated.add(this);
 
         // Make dependents new versions
-
         for (RubyModule dependent : dependents) {
-            dependent.newVersion();
+            dependent.newVersion(alreadyInvalidated, considerLexicalDependents);
         }
 
-        // TODO(CS): is the lexical child a dependent?
+        if (considerLexicalDependents) {
+            for (RubyModule dependent : lexicalDependents) {
+                dependent.newVersion(alreadyInvalidated, considerLexicalDependents);
+            }
+        }
     }
 
     public void addDependent(RubyModule dependent) {
         RubyNode.notDesignedForCompilation();
 
         dependents.add(dependent);
+    }
+
+    public void addLexicalDependent(RubyModule lexicalChild) {
+        RubyNode.notDesignedForCompilation();
+
+        if (lexicalChild != this)
+            lexicalDependents.add(lexicalChild);
     }
 
     public Assumption getUnmodifiedAssumption() {
@@ -365,7 +418,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = ModuleOperations.lookupMethod(this, methodName);
+                final RubyMethod method = deepMethodSearch(methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());

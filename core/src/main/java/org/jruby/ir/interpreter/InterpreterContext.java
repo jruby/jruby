@@ -57,6 +57,22 @@ public class InterpreterContext {
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
+    public Object[] allocateTemporaryVariables() {
+        return temporaryVariablecount > 0 ? new Object[temporaryVariablecount] : null;
+    }
+
+    public boolean[] allocateTemporaryBooleanVariables() {
+        return temporaryBooleanVariablecount > 0 ? new boolean[temporaryBooleanVariablecount] : null;
+    }
+
+    public long[] allocateTemporaryFixnumVariables() {
+        return temporaryFixnumVariablecount > 0 ? new long[temporaryFixnumVariablecount] : null;
+    }
+
+    public double[] allocateTemporaryFloatVariables() {
+        return temporaryFloatVariablecount > 0 ? new double[temporaryFloatVariablecount] : null;
+    }
+
     public String getFileName() {
         return fileName;
     }

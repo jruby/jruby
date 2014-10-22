@@ -102,8 +102,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null); // FIXME: No temp vars yet right?
             rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), s, block, backtraceName);
-            runBeginEndBlocks(evalScript.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
         } finally {
+            runBeginEndBlocks(evalScript.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
             s.clearEvalType();
             context.popScope();
         }
@@ -155,14 +155,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            Interpreter.runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+            Interpreter.runBeginEndBlocks(irScope.getBeginBlocks(), context, self, scope, null);
             retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
-            Interpreter.runBeginEndBlocks(ic.getEndBlocks(), context, self, scope, null);
 
             Interpreter.dumpStats();
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
+            Interpreter.runBeginEndBlocks(irScope.getEndBlocks(), context, self, scope, null);
             if (!ic.isDynscopeEliminated()) context.popScope();
         }
 
@@ -327,6 +327,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self) {
         Object result;
+
         switch(operation) {
         case CALL_1F: {
             OneFixnumArgNoBlockCallInstr call = (OneFixnumArgNoBlockCallInstr)instr;
@@ -545,16 +546,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            InterpreterContext interpreterContext, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType) {
+            InterpreterContext interpreterContext, Visibility visibility, RubyModule implClass,
+            String name, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
-        int      numTempVars    = interpreterContext.getTemporaryVariablecount();
-        Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
-        int      numFloatVars   = interpreterContext.getTemporaryFloatVariablecount();
-        int      numFixnumVars  = interpreterContext.getTemporaryFixnumVariablecount();
-        int      numBooleanVars = interpreterContext.getTemporaryBooleanVariablecount();
-        double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;
-        long[]   fixnums        = numFixnumVars > 0 ? new long[numFixnumVars] : null;
-        boolean[]   booleans    = numBooleanVars > 0 ? new boolean[numBooleanVars] : null;
+        Object[] temp           = interpreterContext.allocateTemporaryVariables();
+        double[] floats         = interpreterContext.allocateTemporaryFloatVariables();
+        long[]   fixnums        = interpreterContext.allocateTemporaryFixnumVariables();
+        boolean[]   booleans    = interpreterContext.allocateTemporaryBooleanVariables();
         int      n              = instrs.length;
         int      ipc            = 0;
         Object   exception      = null;

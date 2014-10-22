@@ -52,10 +52,9 @@ public class RubyClass extends RubyModule {
 
     public RubyClass(Node currentNode, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
         this(currentNode, superclass.getContext(), superclass.getContext().getCoreLibrary().getClassClass(), lexicalParent, superclass, name);
-
         this.isSingleton = isSingleton;
-        // TODO(CS): Why am I doing this? Why does it break if I don't?
 
+        // TODO(CS): Why am I doing this? Why does it break if I don't?
         if (!isSingleton) {
             getSingletonClass(currentNode);
         }

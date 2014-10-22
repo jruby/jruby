@@ -47,19 +47,20 @@ public class DefineOrGetModuleNode extends RubyNode {
             throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
         }
 
-        final RubyConstant constantValue = lexicalParentModuleObject.getConstants().get(name);
+        final RubyConstant constant = lexicalParentModuleObject.getConstants().get(name);
 
         RubyModule definingModule;
 
-        if (constantValue == null) {
+        if (constant == null) {
             definingModule = new RubyModule(context.getCoreLibrary().getModuleClass(), lexicalParentModuleObject, name);
             lexicalParentModuleObject.setConstant(this, name, definingModule);
         } else {
-            if (constantValue.getValue() == getContext().getCoreLibrary().getModuleClass() || (constantValue.getValue() instanceof RubyModule && !(constantValue.getValue() instanceof RubyClass))) {
-                definingModule = (RubyModule) constantValue.getValue();
-            } else {
+            Object constantValue = constant.getValue();
+            if (!(constantValue instanceof RubyModule) || !((RubyModule) constantValue).isOnlyAModule()) {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
+
+            definingModule = (RubyModule) constantValue;
         }
 
         return definingModule;

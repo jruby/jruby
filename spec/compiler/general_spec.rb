@@ -21,7 +21,7 @@ module CompilerTestUtils
 
     method = oj.ir.IRBuilder.createIRBuilder(JRuby.runtime, JRuby.runtime.getIRManager()).buildRoot(node)
 
-    method.prepareForInterpretation(false)
+    method.prepareForCompilation
 
     compiler = oj.ir.targets.JVMVisitor.new
     compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
@@ -37,14 +37,9 @@ module CompilerTestUtils
 
     return oj.internal.runtime.methods.CompiledIRMethod.new(
         handle,
-        "script",
-        filename,
-        lineno,
-        method.getStaticScope(),
+        method,
         oj.runtime.Visibility::PUBLIC,
-        JRuby.runtime.top_self.class,
-        "",
-        method.hasExplicitCallProtocol())
+        currModule)
   end
 
   def next_id
@@ -241,10 +236,10 @@ describe "JRuby's bytecode compiler" do
   end
   
   it "compiles attribute assignment" do
-    run("def a=(x); 2; end; self.a = 1") {|result| expect(result).to eq 1 }
-    run("def a; 1; end; def a=(arg); fail; end; self.a ||= 2") {|result| expect(result).to eq 1 }
+    run("public; def a=(x); 2; end; self.a = 1") {|result| expect(result).to eq 1 }
+    run("public; def a; 1; end; def a=(arg); fail; end; self.a ||= 2") {|result| expect(result).to eq 1 }
     run("public; def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]") {|result| expect(result).to eq([1,1]) }
-    run("def a; nil; end; def a=(arg); fail; end; self.a &&= 2") {|result| expect(result).to be_nil }
+    run("public; def a; nil; end; def a=(arg); fail; end; self.a &&= 2") {|result| expect(result).to be_nil }
     run("public; def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]") {|result| expect(result).to eq([1,1]) }
   end
   
@@ -366,27 +361,12 @@ describe "JRuby's bytecode compiler" do
     run("a = 0; until false; a += 1; next if a < 2; break; end; a") {|result| expect(result).to eq 2 }
     run("a = 0; until false; a += 1; next 1 if a < 2; break; end; a") {|result| expect(result).to eq 2 }
     run("a = 0; until false; a += 1; redo if a < 2; break; end; a") {|result| expect(result).to eq 2 }
-    # same with evals
-    run("a = true; b = while a; a = false; eval 'break'; end; b") {|result| expect(result).to be_nil }
-    run("a = true; b = while a; a = false; eval 'break 1'; end; b") {|result| expect(result).to eq 1 }
-    run("a = 0; while true; a += 1; eval 'next' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; while true; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; while true; a += 1; eval 'redo' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = false; b = until a; a = true; eval 'break'; end; b") {|result| expect(result).to be_nil }
-    run("a = false; b = until a; a = true; eval 'break 1'; end; b") {|result| expect(result).to eq 1 }
-    run("a = 0; until false; a += 1; eval 'next' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; until false; a += 1; eval 'next 1' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
-    run("a = 0; until false; a += 1; eval 'redo' if a < 2; eval 'break'; end; a") {|result| expect(result).to eq 2 }
   end
   
   it "compiles loops with non-local flow control" do
     # non-local flow control with while loops
     run("a = 0; 1.times { a += 1; redo if a < 2 }; a") {|result| expect(result).to eq 2 }
     run("def foo(&b); while true; b.call; end; end; foo { break 3 }") {|result| expect(result).to eq 3 }
-  end
-
-  it "compiles loops with non-local flow control inside an eval" do
-    run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }") {|result| expect(result).to eq 3 }
   end
   
   it "compiles block passing" do
@@ -575,14 +555,14 @@ ary
   it "properly scopes singleton method definitions in a compiled body" do
     run("
       class GH1239
-        def self.define; def bar; end; end
-        def self.remove; remove_method :bar; end
+        def self.define; def gh1239; end; end
+        def self.remove; remove_method :gh1239; end
       end
       GH1239
     ") do |cls|
 
       cls.define
-      expect(cls.methods).not_to be_include :bar
+      expect(cls.methods).not_to be_include :gh1239
       expect{cls.remove}.not_to raise_error
     end
   end

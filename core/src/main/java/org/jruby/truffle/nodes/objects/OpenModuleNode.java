@@ -42,7 +42,9 @@ public class OpenModuleNode extends RubyNode {
         // TODO(CS): cast
         final RubyModule module = (RubyModule) definingModule.execute(frame);
 
-        definitionMethod.getSharedMethodInfo().getLexicalScope().setLiveModule(module);
+        LexicalScope lexicalScope = definitionMethod.getSharedMethodInfo().getLexicalScope();
+        lexicalScope.setLiveModule(module);
+        lexicalScope.getParent().getLiveModule().addLexicalDependent(module);
 
         final RubyMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[]{}));

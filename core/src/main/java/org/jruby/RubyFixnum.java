@@ -39,6 +39,7 @@ package org.jruby;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -48,6 +49,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
@@ -61,7 +63,7 @@ import java.util.Map;
  * Implementation of the Fixnum class.
  */
 @JRubyClass(name="Fixnum", parent="Integer", include="Precision")
-public class RubyFixnum extends RubyInteger {
+public class RubyFixnum extends RubyInteger implements Constantizable {
     
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getInteger(),
@@ -124,6 +126,27 @@ public class RubyFixnum extends RubyInteger {
     @Override
     public ClassIndex getNativeClassIndex() {
         return ClassIndex.FIXNUM;
+    }
+
+    /**
+     * @see org.jruby.compiler.Constantizable
+     */
+    @Override
+    public Object constant() {
+        Object constant = null;
+        long value = this.value;
+
+        if (value < CACHE_OFFSET && value >= -CACHE_OFFSET) {
+            Object[] fixnumConstants = getRuntime().fixnumConstants;
+            constant = fixnumConstants[(int) value + CACHE_OFFSET];
+
+            if (constant == null) {
+                constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
+                fixnumConstants[(int) value + CACHE_OFFSET] = constant;
+            }
+        }
+
+        return constant;
     }
     
     /** 

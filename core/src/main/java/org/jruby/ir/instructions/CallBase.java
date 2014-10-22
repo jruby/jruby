@@ -34,6 +34,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     private boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private boolean dontInline;
     private boolean containsArgSplat;
+    private boolean procNew;
 
     protected CallBase(Operation op, CallType callType, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op);
@@ -51,7 +52,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         targetRequiresCallersBinding = true;
         targetRequiresCallersFrame = true;
         dontInline = false;
-
+        procNew = false;
     }
 
     @Override
@@ -92,6 +93,14 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
 
     public boolean containsArgSplat() {
         return containsArgSplat;
+    }
+
+    public boolean isProcNew() {
+        return procNew;
+    }
+
+    public void setProcNew(boolean procNew) {
+        this.procNew = procNew;
     }
 
     public void blockInlining() {
@@ -340,10 +349,15 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         // and use it at a later point.
         if (closure != null) return true;
 
+        if (procNew) return true;
+
         String mname = getMethodAddr().getName();
         if (MethodIndex.FRAME_AWARE_METHODS.contains(mname)) {
+            // Known frame-aware methods.
             return true;
+
         } else if (mname.equals("send") || mname.equals("__send__")) {
+            // Allow send to access full binding, since someone might send :eval and friends.
             Operand[] args = getCallArgs();
             if (args.length >= 1) {
                 Operand meth = args[0];

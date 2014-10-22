@@ -93,7 +93,7 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
 
         // Call const_missing or cache
         if (constant == null) {
-            constant = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
+            constant = module.callMethod(context, "const_missing", runtime.fastNewSymbol(constName));
         } else {
             // recache
             Invalidator invalidator = runtime.getConstantInvalidator(constName);

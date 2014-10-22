@@ -20,8 +20,8 @@ import java.util.Map;
  */
 public class MethodData {
 
-    public MethodData(SkinnyMethodAdapter method, IRScope scope, Signature signature) {
-        this.method = new IRBytecodeAdapter(method, signature);
+    public MethodData(IRBytecodeAdapter method, IRScope scope, Signature signature) {
+        this.method = method;
         this.scope = scope;
 
         // incoming arguments

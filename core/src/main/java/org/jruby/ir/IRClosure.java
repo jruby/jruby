@@ -76,7 +76,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
+            this.body = new InterpretedIRBlockBody(this, c.body.arity());
         }
         this.blockArgs = new ArrayList<>();
         this.arity = c.arity;
@@ -100,7 +100,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
+            this.body = new InterpretedIRBlockBody(this, arity);
             if (staticScope != null && !isBeginEndBlock) {
                 staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());

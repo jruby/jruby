@@ -1,19 +1,15 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubySymbol;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
@@ -61,20 +57,9 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        String name = method.getName();
-        Ruby runtime = context.runtime;
         IRubyObject obj = (IRubyObject) container.retrieve(context, self, currScope, currDynScope, temp);
 
-        if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
-            throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + obj.getMetaClass().getBaseName());
-        }
-
-        if (obj.isFrozen()) throw runtime.newFrozenError("object");
-
-        RubyClass rubyClass = obj.getSingletonClass();
-
-        rubyClass.addMethod(name, new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass));
-        obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+        IRRuntimeHelpers.defInterpretedClassMethod(context, method, obj);
         return null;
     }
 

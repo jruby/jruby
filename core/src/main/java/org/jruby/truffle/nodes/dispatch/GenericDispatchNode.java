@@ -197,12 +197,12 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 if (constant == null) {
                     final RubyClass callerClass = box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
-                    final RubyMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility,
+                    final RubyMethod missingMethod = lookup(callerClass, module, "const_missing", ignoreVisibility,
                             dispatchAction);
 
                     if (missingMethod == null) {
                         throw new RaiseException(getContext().getCoreLibrary().runtimeError(
-                                receiverObject.toString() + " didn't have a #const_missing", this));
+                                module.toString() + " didn't have a #const_missing", this));
                     }
 
                     entry = new ConstantCacheEntry(null, missingMethod, true);
@@ -291,7 +291,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     @CompilerDirectives.TruffleBoundary
     public ConstantCacheEntry lookupInConstantCache(RubyModule module, Object methodName) {
-        return null;//constantCache.get(new ConstantCacheEntry(module, methodName));
+        return constantCache.get(new MethodCacheKey(module.getSingletonClass(null), methodName));
     }
 
     @CompilerDirectives.TruffleBoundary
