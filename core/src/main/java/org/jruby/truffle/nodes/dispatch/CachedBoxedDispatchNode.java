@@ -39,10 +39,19 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                    RubyClass expectedClass, Object value, RubyMethod method) {
+        this(context, cachedName, next, expectedClass, expectedClass.getUnmodifiedAssumption(), value, method);
+    }
+
+    /**
+     * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
+     */
+    public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
+                                   RubyClass expectedClass, Assumption unmodifiedAssumption,
+                                   Object value, RubyMethod method) {
         super(context, cachedName, next);
 
         this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        this.unmodifiedAssumption = unmodifiedAssumption;
         this.next = next;
         this.value = value;
         this.method = method;

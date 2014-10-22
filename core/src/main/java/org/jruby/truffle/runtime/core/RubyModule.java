@@ -352,11 +352,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         for (RubyModule dependent : dependents) {
             dependent.newVersion(alreadyInvalidated);
         }
-
-        // Also invalidate the singleton class, as modules are identified by it in constant lookup cache
-        if (getMetaClass() != getLogicalClass()) {
-            getMetaClass().newVersion();
-        }
     }
 
     public void addDependent(RubyModule dependent) {

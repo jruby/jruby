@@ -201,8 +201,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
+            // The module, the "receiver" is an instance of its singleton class.
+            // But we want to check the module assumption, not its singleton class assumption.
             final DispatchNode newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        module.getSingletonClass(null), constant.getValue(), null, null, null, null, null, null, null, null);
+                        module.getSingletonClass(null), module.getUnmodifiedAssumption(), constant.getValue(),
+                    null, null, null, null, null, null, null, null);
 
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
