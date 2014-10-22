@@ -113,6 +113,10 @@ public class RubyModule extends RubyObject implements ModuleChain {
      * include subclasses and modules that include this module.
      */
     private final Set<RubyModule> dependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
+    /**
+     * Lexical dependent modules, to take care of changes to a module constants.
+     */
+    private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
 
     /**
      * The class from which we create the object that is {@code Module}. A subclass of
@@ -149,7 +153,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         // Constant invalidation for lexical scope.
         if (lexicalParentModule != null) {
-            lexicalParentModule.addDependent(this);
+            lexicalParentModule.addLexicalDependent(this);
         }
     }
 
@@ -204,7 +208,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         assert RubyContext.shouldObjectBeVisible(value);
         checkFrozen(currentNode);
         getConstants().put(constantName, new RubyConstant(value, false));
-        newVersion();
+        newLexicalVersion();
         // TODO(CS): warn when redefining a constant
     }
 
@@ -213,7 +217,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         checkFrozen(currentNode);
         getConstants().remove(data);
-        newVersion();
+        newLexicalVersion();
     }
 
     public void removeClassVariable(RubyNode currentNode, String variableName) {
@@ -307,7 +311,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString(), currentNode));
         }
 
-        newVersion();
+        newLexicalVersion();
     }
 
     public void appendFeatures(RubyNode currentNode, RubyModule other) {
@@ -338,10 +342,16 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void newVersion() {
         RubyNode.notDesignedForCompilation();
 
-        newVersion(new HashSet<RubyModule>());
+        newVersion(new HashSet<RubyModule>(), false);
     }
 
-    private void newVersion(Set<RubyModule> alreadyInvalidated) {
+    public void newLexicalVersion() {
+        RubyNode.notDesignedForCompilation();
+
+        newVersion(new HashSet<RubyModule>(), true);
+    }
+
+    private void newVersion(Set<RubyModule> alreadyInvalidated, boolean considerLexicalDependents) {
         if (alreadyInvalidated.contains(this))
             return;
 
@@ -350,15 +360,27 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         // Make dependents new versions
         for (RubyModule dependent : dependents) {
-            dependent.newVersion(alreadyInvalidated);
+            dependent.newVersion(alreadyInvalidated, considerLexicalDependents);
+        }
+
+        if (considerLexicalDependents) {
+            for (RubyModule dependent : lexicalDependents) {
+                dependent.newVersion(alreadyInvalidated, considerLexicalDependents);
+            }
         }
     }
 
     public void addDependent(RubyModule dependent) {
         RubyNode.notDesignedForCompilation();
 
-        if (dependent != this)
-            dependents.add(dependent);
+        dependents.add(dependent);
+    }
+
+    public void addLexicalDependent(RubyModule lexicalChild) {
+        RubyNode.notDesignedForCompilation();
+
+        if (lexicalChild != this)
+            lexicalDependents.add(lexicalChild);
     }
 
     public Assumption getUnmodifiedAssumption() {
