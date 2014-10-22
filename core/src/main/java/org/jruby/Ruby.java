@@ -1206,8 +1206,7 @@ public final class Ruby implements Constantizable {
         
         // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
         irManager = new IRManager();
-        IRScriptBody topLevelScope = new IRScriptBody(irManager, "", "", tc.getCurrentScope().getStaticScope());
-        
+
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
         dummyClass.freeze(tc);

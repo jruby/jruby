@@ -36,7 +36,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
     }
 
     @Override
-    protected ScriptAndCode execute(final Ruby runtime, final IRScope scope, JRubyClassLoader classLoader) {
+    protected ScriptAndCode execute(final Ruby runtime, final IRScriptBody scope, JRubyClassLoader classLoader) {
         final JVMVisitor visitor = new JVMVisitor();
         final byte[] bytecode = visitor.compileToBytecode(scope);
         final Class compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);

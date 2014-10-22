@@ -831,6 +831,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             module.visibilityMethod(this, args, Visibility.PUBLIC);
+            module.visibilityMethod(this, args, Visibility.PUBLIC);
             return module;
         }
     }

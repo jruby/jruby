@@ -3237,12 +3237,12 @@ public class IRBuilder {
         return script;
     }
 
-    public IRScope buildRoot(RootNode rootNode) {
+    public IRScriptBody buildRoot(RootNode rootNode) {
         String file = rootNode.getPosition().getFile();
         StaticScope staticScope = rootNode.getStaticScope();
 
         // Top-level script!
-        IRScriptBody script = new IRScriptBody(manager, "__file__", file, staticScope);
+        IRScriptBody script = new IRScriptBody(manager, file, staticScope);
         addInstr(script, new ReceiveSelfInstr(script.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>

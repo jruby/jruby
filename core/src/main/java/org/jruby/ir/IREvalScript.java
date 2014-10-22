@@ -3,6 +3,7 @@ package org.jruby.ir;
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -104,8 +105,10 @@ public class IREvalScript extends IRClosure {
             LOG.info("CFG:\n" + cfg().toStringInstrs());
         }
 
+        InterpreterContext ic = prepareForInterpretation();
+
         // FIXME: Do not push new empty arg array in every time
-        return Interpreter.INTERPRET_EVAL(context, self, this, clazz, new IRubyObject[] {}, backtraceName, block, null);
+        return Interpreter.INTERPRET_EVAL(context, self, ic, clazz, new IRubyObject[] {}, backtraceName, block, null);
     }
 
     @Override

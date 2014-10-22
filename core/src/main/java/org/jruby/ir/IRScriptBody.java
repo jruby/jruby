@@ -1,36 +1,28 @@
 package org.jruby.ir;
 
-import org.jruby.RubyModule;
-import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.operands.IRException;
-import org.jruby.ir.representations.CFG;
-import org.jruby.ir.runtime.IRBreakJump;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.interpreter.ScriptBodyInterpreterContext;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-// FIXME: I made this IRModule because any methods placed in top-level script goes
-// into something which an IRScript is basically a module that is special in that
-// it represents a lexical unit.  Fix what now?
 public class IRScriptBody extends IRScope {
-    private static final Logger LOG = LoggerFactory.getLogger("IRScriptBody");
-
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
 
-    public IRScriptBody(IRManager manager, String className, String sourceName, StaticScope staticScope) {
+    public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
         }
+    }
+
+    @Override
+    public InterpreterContext allocateInterpreterContext(Instr[] instructionList) {
+        return new ScriptBodyInterpreterContext(this, instructionList);
     }
 
     @Override
@@ -77,52 +69,5 @@ public class IRScriptBody extends IRScope {
     @Override
     public boolean isScriptScope() {
         return true;
-    }
-
-    public IRubyObject interpret(ThreadContext context, IRubyObject self) {
-        prepareForInterpretation();
-
-        String name = "(root)";
-        if (IRRuntimeHelpers.isDebug()) {
-            LOG.info("Executing '" + name + "'");
-            CFG cfg = getCFG();
-            LOG.info("Graph:\n" + cfg.toStringGraph());
-            LOG.info("CFG:\n" + cfg.toStringInstrs());
-        }
-
-        // We get the live object ball rolling here.
-        // This give a valid value for the top of this lexical tree.
-        // All new scopes can then retrieve and set based on lexical parent.
-        StaticScope scope = getStaticScope();
-        RubyModule currModule = scope.getModule();
-        if (currModule == null) {
-            // SSS FIXME: Looks like this has to do with Kernel#load
-            // and the wrap parameter. Figure it out and document it here.
-            currModule = context.getRuntime().getObject();
-        }
-
-        IRubyObject retVal;
-
-        scope.setModule(currModule);
-        if (!this.flags.contains(IRFlags.DYNSCOPE_ELIMINATED)) {
-            context.preMethodScopeOnly(scope);
-        }
-        context.setCurrentVisibility(Visibility.PRIVATE);
-
-        try {
-            Interpreter.runBeginEndBlocks(getBeginBlocks(), context, self, scope, null);
-            retVal = Interpreter.INTERPRET_ROOT(context, self, this, currModule, name);
-            Interpreter.runBeginEndBlocks(getEndBlocks(), context, self, scope, null);
-
-            Interpreter.dumpStats();
-        } catch (IRBreakJump bj) {
-            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-        } finally {
-            if (!this.flags.contains(IRFlags.DYNSCOPE_ELIMINATED)) {
-                context.popScope();
-            }
-        }
-
-        return retVal;
     }
 }
