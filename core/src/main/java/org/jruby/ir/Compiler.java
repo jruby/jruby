@@ -9,6 +9,7 @@ import org.jruby.RubyModule;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
@@ -37,21 +38,32 @@ public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
 
     @Override
     protected ScriptAndCode execute(final Ruby runtime, final IRScriptBody scope, JRubyClassLoader classLoader) {
-        final JVMVisitor visitor = new JVMVisitor();
-        final byte[] bytecode = visitor.compileToBytecode(scope);
-        final Class compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
-        final StaticScope staticScope = scope.getStaticScope();
-        final IRubyObject runtimeTopSelf = runtime.getTopSelf();
-        staticScope.setModule(runtimeTopSelf.getMetaClass());
+        JVMVisitor visitor;
+        byte[] bytecode;
+        Class compiled;
+        StaticScope _staticScope;
+        IRubyObject _runtimeTopSelf;
 
         Method _compiledMethod;
         try {
+            visitor = new JVMVisitor();
+            bytecode = visitor.compileToBytecode(scope);
+            compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
+            _staticScope = scope.getStaticScope();
+            _runtimeTopSelf = runtime.getTopSelf();
+            _staticScope.setModule(_runtimeTopSelf.getMetaClass());
+
             _compiledMethod = compiled.getMethod("__script__", ThreadContext.class,
                     StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (NotCompilableException nce) {
+            throw nce;
+        } catch (Throwable t) {
+            throw new NotCompilableException("failed to compile script " + scope.getName(), t);
         }
+
         final Method compiledMethod = _compiledMethod;
+        final StaticScope staticScope = _staticScope;
+        final IRubyObject runtimeTopSelf = _runtimeTopSelf;
 
         Script script = new AbstractScript() {
             @Override

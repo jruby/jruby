@@ -81,7 +81,7 @@ public class JVMVisitor extends IRVisitor {
             try {
                 result.getField(entry.getKey()).set(null, entry.getValue());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new NotCompilableException(e);
             }
         }
 
@@ -100,7 +100,7 @@ public class JVMVisitor extends IRVisitor {
         } else if (scope instanceof IRModuleBody) {
             emitModuleBodyJIT((IRModuleBody)scope);
         } else {
-            throw new RuntimeException("don't know how to JIT: " + scope);
+            throw new NotCompilableException("don't know how to JIT: " + scope);
         }
     }
 
@@ -432,7 +432,7 @@ public class JVMVisitor extends IRVisitor {
                 val = (double)((Fixnum)arg).value;
             } else {
                 // Should not happen -- so, forcing an exception.
-                throw new RuntimeException("Non-float/fixnum in loadFloatArg!" + arg);
+                throw new NotCompilableException("Non-float/fixnum in loadFloatArg!" + arg);
             }
             jvmAdapter().ldc(val);
         }
@@ -449,7 +449,7 @@ public class JVMVisitor extends IRVisitor {
                 val = ((Fixnum)arg).value;
             } else {
                 // Should not happen -- so, forcing an exception.
-                throw new RuntimeException("Non-float/fixnum in loadFixnumArg!" + arg);
+                throw new NotCompilableException("Non-float/fixnum in loadFixnumArg!" + arg);
             }
             jvmAdapter().ldc(val);
         }
@@ -464,7 +464,7 @@ public class JVMVisitor extends IRVisitor {
                 val = ((UnboxedBoolean)arg).isTrue();
             } else {
                 // Should not happen -- so, forcing an exception.
-                throw new RuntimeException("Non-float/fixnum in loadFixnumArg!" + arg);
+                throw new NotCompilableException("Non-float/fixnum in loadFixnumArg!" + arg);
             }
             jvmAdapter().ldc(val);
         }
@@ -592,7 +592,7 @@ public class JVMVisitor extends IRVisitor {
             case ISHL: a.lshl(); break;
             case ISHR: a.lshr(); break;
             case IEQ: m.invokeIRHelper("ilt", sig(boolean.class, long.class, long.class)); break; // annoying to have to do it in a method
-            default: throw new RuntimeException("UNHANDLED!");
+            default: throw new NotCompilableException("UNHANDLED!");
         }
 
         // Store it
@@ -965,12 +965,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ExceptionRegionEndMarkerInstr(ExceptionRegionEndMarkerInstr exceptionregionendmarkerinstr) {
-        throw new RuntimeException("Marker instructions shouldn't reach compiler: " + exceptionregionendmarkerinstr);
+        throw new NotCompilableException("Marker instructions shouldn't reach compiler: " + exceptionregionendmarkerinstr);
     }
 
     @Override
     public void ExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr exceptionregionstartmarkerinstr) {
-        throw new RuntimeException("Marker instructions shouldn't reach compiler: " + exceptionregionstartmarkerinstr);
+        throw new NotCompilableException("Marker instructions shouldn't reach compiler: " + exceptionregionstartmarkerinstr);
     }
 
     @Override
@@ -1166,13 +1166,13 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void MethodLookupInstr(MethodLookupInstr methodlookupinstr) {
         // SSS FIXME: Unused at this time
-        throw new RuntimeException("Unsupported instruction: " + methodlookupinstr);
+        throw new NotCompilableException("Unsupported instruction: " + methodlookupinstr);
     }
 
     @Override
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) {
         // SSS FIXME: Unused at this time
-        throw new RuntimeException("Unsupported instruction: " + moduleversionguardinstr);
+        throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
     }
 
     @Override
@@ -1533,7 +1533,7 @@ public class JVMVisitor extends IRVisitor {
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             default:
-                throw new RuntimeException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
+                throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
     }
 
@@ -1912,7 +1912,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void MethodHandle(MethodHandle methodhandle) {
         // SSS FIXME: Unused at this time
-        throw new RuntimeException("Unsupported operand: " + methodhandle);
+        throw new NotCompilableException("Unsupported operand: " + methodhandle);
     }
 
     @Override
@@ -2040,7 +2040,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnexecutableNil(UnexecutableNil unexecutablenil) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " should never be directly executed!");
+        throw new NotCompilableException(this.getClass().getSimpleName() + " should never be directly executed!");
     }
 
     @Override

@@ -40,6 +40,7 @@
 package org.jruby;
 
 import org.jruby.compiler.Constantizable;
+import org.jruby.compiler.NotCompilableException;
 import org.objectweb.asm.util.TraceClassVisitor;
 import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
@@ -726,7 +727,7 @@ public final class Ruby implements Constantizable {
             // FIXME: restore error once JIT should handle everything
             try {
                 scriptAndCode = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()));
-                if (Options.JIT_LOGGING.load()) {
+                if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
                     LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
                 }
             } catch (Exception e) {
@@ -782,7 +783,17 @@ public final class Ruby implements Constantizable {
     }
 
     private ScriptAndCode tryCompile(Node node, JRubyClassLoader classLoader) {
-        return Compiler.getInstance().execute(this, node, classLoader);
+        try {
+            return Compiler.getInstance().execute(this, node, classLoader);
+        } catch (NotCompilableException e) {
+            if (Options.JIT_LOGGING.load()) {
+                LOG.error("failed to compile target script " + node.getPosition().getFile() + ": " + e.getLocalizedMessage());
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    LOG.error(e);
+                }
+            }
+            return null;
+        }
     }
     
     public IRubyObject runScript(Script script) {

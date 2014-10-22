@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
@@ -20,7 +21,7 @@ public abstract class IRVisitor {
     }
 
     private void error(Object object) {
-        throw new RuntimeException("no visitor logic for " + object.getClass().getName() + " in " + getClass().getName());
+        throw new NotCompilableException("no visitor logic for " + object.getClass().getName() + " in " + getClass().getName());
     }
 
     // standard instructions
