@@ -2471,7 +2471,7 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString pack(RubyArray array, RubyString format) {
             notDesignedForCompilation();

@@ -119,7 +119,7 @@ public class RubyClass extends RubyModule {
         objectLayoutForInstances = new ObjectLayout(newSuperclass.objectLayoutForInstances);
     }
 
-    @SlowPath
+    @TruffleBoundary
     public RubyBasicObject newInstance(RubyNode currentNode) {
         return new RubyObject(this);
     }

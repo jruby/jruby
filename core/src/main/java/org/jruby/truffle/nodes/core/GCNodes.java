@@ -55,7 +55,7 @@ public abstract class GCNodes {
             return doGC();
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         private RubyNilClass doGC() {
             notDesignedForCompilation();
 

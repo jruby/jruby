@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.CompilerDirectives.SlowPath;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -280,7 +280,7 @@ public abstract class FileNodes {
             return getContext().makeString(builder.toString());
         }
 
-        @SlowPath
+        @TruffleBoundary
         public static void join(StringBuilder builder, Object[] parts) {
             notDesignedForCompilation();
 

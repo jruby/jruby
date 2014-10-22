@@ -12,9 +12,8 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.core.RubyFixnum;
-import org.jruby.truffle.runtime.util.SlowPathBigInteger;
+import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends Node {
@@ -63,7 +62,7 @@ public class FixnumOrBignumNode extends Node {
 
         bignumProfile.enter();
 
-        return SlowPathBigInteger.create(value);
+        return RuntimeBigInteger.create(value);
     }
 
 }

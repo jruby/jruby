@@ -179,7 +179,7 @@ public abstract class HashNodes {
             }
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         public RubyHash constructObjectLinkedMapMap(Object[] args) {
             final LinkedHashMap<Object, Object> store = new LinkedHashMap<>();
 
@@ -335,7 +335,7 @@ public abstract class HashNodes {
             return value;
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         private void transitionToLinkedHashMap(RubyHash hash, Object[] oldStore, Object key, Object value) {
             final LinkedHashMap<Object, Object> newStore = new LinkedHashMap<>();
 

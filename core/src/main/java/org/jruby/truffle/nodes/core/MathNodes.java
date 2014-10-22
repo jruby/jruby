@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.util.SlowPathBigInteger;
+import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
 @CoreClass(name = "Math")
 public abstract class MathNodes {
@@ -392,7 +392,7 @@ public abstract class MathNodes {
 
         @Specialization
         public RubyArray frexp(BigInteger a) {
-            return frexp(SlowPathBigInteger.doubleValue(a));
+            return frexp(RuntimeBigInteger.doubleValue(a));
         }
 
         @Specialization
@@ -573,17 +573,17 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(BigInteger a, int b) {
-            return function(SlowPathBigInteger.doubleValue(a), b);
+            return function(RuntimeBigInteger.doubleValue(a), b);
         }
 
         @Specialization
         public double function(BigInteger a, long b) {
-            return function(SlowPathBigInteger.doubleValue(a), b);
+            return function(RuntimeBigInteger.doubleValue(a), b);
         }
 
         @Specialization
         public double function(BigInteger a, double b) {
-            return function(SlowPathBigInteger.doubleValue(a), b);
+            return function(RuntimeBigInteger.doubleValue(a), b);
         }
 
         @Specialization
@@ -666,7 +666,7 @@ public abstract class MathNodes {
 
         @Specialization
         public RubyArray lgamma(BigInteger a) {
-            return lgamma(SlowPathBigInteger.doubleValue(a));
+            return lgamma(RuntimeBigInteger.doubleValue(a));
         }
 
         @Specialization
@@ -731,7 +731,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(BigInteger a, UndefinedPlaceholder b) {
-            return doFunction(SlowPathBigInteger.doubleValue(a));
+            return doFunction(RuntimeBigInteger.doubleValue(a));
         }
 
         @Specialization
@@ -957,7 +957,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(BigInteger a) {
-            return doFunction(SlowPathBigInteger.doubleValue(a));
+            return doFunction(RuntimeBigInteger.doubleValue(a));
         }
 
         @Specialization
@@ -1028,7 +1028,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(int a, BigInteger b) {
-            return doFunction(a, SlowPathBigInteger.doubleValue(b));
+            return doFunction(a, RuntimeBigInteger.doubleValue(b));
         }
 
         @Specialization
@@ -1048,7 +1048,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(long a, BigInteger b) {
-            return doFunction(a, SlowPathBigInteger.doubleValue(b));
+            return doFunction(a, RuntimeBigInteger.doubleValue(b));
         }
 
         @Specialization
@@ -1058,22 +1058,22 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(BigInteger a, int b) {
-            return doFunction(SlowPathBigInteger.doubleValue(a), b);
+            return doFunction(RuntimeBigInteger.doubleValue(a), b);
         }
 
         @Specialization
         public double function(BigInteger a, long b) {
-            return doFunction(SlowPathBigInteger.doubleValue(a), b);
+            return doFunction(RuntimeBigInteger.doubleValue(a), b);
         }
 
         @Specialization
         public double function(BigInteger a, BigInteger b) {
-            return doFunction(SlowPathBigInteger.doubleValue(a), SlowPathBigInteger.doubleValue(b));
+            return doFunction(RuntimeBigInteger.doubleValue(a), RuntimeBigInteger.doubleValue(b));
         }
 
         @Specialization
         public double function(BigInteger a, double b) {
-            return doFunction(SlowPathBigInteger.doubleValue(a), b);
+            return doFunction(RuntimeBigInteger.doubleValue(a), b);
         }
 
         @Specialization
@@ -1088,7 +1088,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(double a, BigInteger b) {
-            return doFunction(a, SlowPathBigInteger.doubleValue(b));
+            return doFunction(a, RuntimeBigInteger.doubleValue(b));
         }
 
         @Specialization

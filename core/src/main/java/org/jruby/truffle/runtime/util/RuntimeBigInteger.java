@@ -14,84 +14,84 @@ import com.oracle.truffle.api.CompilerDirectives;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public abstract class SlowPathBigInteger {
+public abstract class RuntimeBigInteger {
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger create(double value) {
         return new BigDecimal(value).toBigInteger();
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger negate(BigInteger a) {
         return a.negate();
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger add(BigInteger a, BigInteger b) {
         return a.add(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger subtract(BigInteger a, BigInteger b) {
         return a.subtract(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger multiply(BigInteger a, BigInteger b) {
         return a.multiply(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger divide(BigInteger a, BigInteger b) {
         return a.divide(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger[] divideAndRemainder(BigInteger a, BigInteger b) {
         return a.divideAndRemainder(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger mod(BigInteger a, BigInteger b) {
         return a.mod(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger pow(BigInteger a, int b) {
         return a.pow(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static int compareTo(BigInteger a, BigInteger b) {
         return a.compareTo(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger and(BigInteger a, BigInteger b) {
         return a.and(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger or(BigInteger a, BigInteger b) {
         return a.or(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger xor(BigInteger a, BigInteger b) {
         return a.xor(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger shiftLeft(BigInteger a, int b) {
         return a.shiftLeft(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static BigInteger shiftRight(BigInteger a, int b) {
         return a.shiftRight(b);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static double doubleValue(BigInteger a) {
         return a.doubleValue();
     }

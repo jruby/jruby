@@ -190,7 +190,7 @@ public abstract class StringNodes {
             return formatSlow(format, args);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         private RubyString formatSlow(RubyString format, Object[] args) {
             final RubyContext context = getContext();
 
@@ -918,7 +918,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getBytes(), format.getBytes());

@@ -13,7 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.util.SlowPathBigInteger;
+import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
 import java.math.BigInteger;
 
@@ -90,7 +90,7 @@ public class GeneralDivModNode extends Node {
             bMinusOneProfile.enter();
 
             if (a == Long.MIN_VALUE) {
-                integerDiv = SlowPathBigInteger.negate(BigInteger.valueOf(a));
+                integerDiv = RuntimeBigInteger.negate(BigInteger.valueOf(a));
             } else {
                 integerDiv = -a;
             }
@@ -120,12 +120,12 @@ public class GeneralDivModNode extends Node {
             throw new ArithmeticException("divide by zero");
         }
 
-        final BigInteger[] bigIntegerResults = SlowPathBigInteger.divideAndRemainder(a, b);
+        final BigInteger[] bigIntegerResults = RuntimeBigInteger.divideAndRemainder(a, b);
 
         if ((a.signum() * b.signum()) == -1 && bigIntegerResults[1].signum() != 0) {
             bigIntegerFixnumProfile.enter();
-            bigIntegerResults[0] = SlowPathBigInteger.subtract(bigIntegerResults[0], BigInteger.ONE);
-            bigIntegerResults[1] = SlowPathBigInteger.add(b, bigIntegerResults[1]);
+            bigIntegerResults[0] = RuntimeBigInteger.subtract(bigIntegerResults[0], BigInteger.ONE);
+            bigIntegerResults[1] = RuntimeBigInteger.add(b, bigIntegerResults[1]);
         }
 
         return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{

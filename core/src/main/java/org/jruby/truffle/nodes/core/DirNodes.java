@@ -13,7 +13,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 
-import com.oracle.truffle.api.CompilerDirectives.SlowPath;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -93,7 +93,7 @@ public abstract class DirNodes {
             return glob(getContext(), glob.toString());
         }
 
-        @SlowPath
+        @TruffleBoundary
         private static RubyArray glob(final RubyContext context, String glob) {
             /*
              * Globbing is quite complicated. We've implemented a subset of the functionality that

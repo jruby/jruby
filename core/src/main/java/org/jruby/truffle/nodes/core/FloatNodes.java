@@ -18,7 +18,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.util.SlowPathBigInteger;
+import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -87,7 +87,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double add(double a, BigInteger b) {
-            return a + SlowPathBigInteger.doubleValue(b);
+            return a + RuntimeBigInteger.doubleValue(b);
         }
 
     }
@@ -120,7 +120,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double sub(double a, BigInteger b) {
-            return a - SlowPathBigInteger.doubleValue(b);
+            return a - RuntimeBigInteger.doubleValue(b);
         }
 
     }
@@ -153,7 +153,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mul(double a, BigInteger b) {
-            return a * SlowPathBigInteger.doubleValue(b);
+            return a * RuntimeBigInteger.doubleValue(b);
         }
 
     }
@@ -186,7 +186,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double pow(double a, BigInteger b) {
-            return Math.pow(a, SlowPathBigInteger.doubleValue(b));
+            return Math.pow(a, RuntimeBigInteger.doubleValue(b));
         }
 
     }
@@ -219,7 +219,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double div(double a, BigInteger b) {
-            return a / SlowPathBigInteger.doubleValue(b);
+            return a / RuntimeBigInteger.doubleValue(b);
         }
 
     }
@@ -318,7 +318,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean less(double a, BigInteger b) {
-            return a < SlowPathBigInteger.doubleValue(b);
+            return a < RuntimeBigInteger.doubleValue(b);
         }
     }
 
@@ -350,7 +350,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean lessEqual(double a, BigInteger b) {
-            return a <= SlowPathBigInteger.doubleValue(b);
+            return a <= RuntimeBigInteger.doubleValue(b);
         }
     }
 
@@ -382,7 +382,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean equal(double a, BigInteger b) {
-            return a == SlowPathBigInteger.doubleValue(b);
+            return a == RuntimeBigInteger.doubleValue(b);
         }
     }
 
@@ -414,7 +414,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean notEqual(double a, BigInteger b) {
-            return a != SlowPathBigInteger.doubleValue(b);
+            return a != RuntimeBigInteger.doubleValue(b);
         }
     }
 
@@ -446,7 +446,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean greaterEqual(double a, BigInteger b) {
-            return a >= SlowPathBigInteger.doubleValue(b);
+            return a >= RuntimeBigInteger.doubleValue(b);
         }
     }
 
@@ -478,7 +478,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean equal(double a, BigInteger b) {
-            return a > SlowPathBigInteger.doubleValue(b);
+            return a > RuntimeBigInteger.doubleValue(b);
         }
     }
 
@@ -642,7 +642,7 @@ public abstract class FloatNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(double value) {
             return getContext().makeString(Double.toString(value));

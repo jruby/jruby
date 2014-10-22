@@ -13,7 +13,7 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 
-import com.oracle.truffle.api.CompilerDirectives.SlowPath;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
@@ -585,7 +585,7 @@ public abstract class KernelNodes {
             return null;
         }
 
-        @SlowPath
+        @TruffleBoundary
         private static void exec(RubyContext context, String[] commandLine) {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
@@ -803,7 +803,7 @@ public abstract class KernelNodes {
             return rubyLine;
         }
 
-        @SlowPath
+        @TruffleBoundary
         private static String gets(RubyContext context) throws IOException {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
 
@@ -1756,7 +1756,7 @@ public abstract class KernelNodes {
             return doSleep(duration);
         }
 
-        @SlowPath
+        @TruffleBoundary
         private double doSleep(final double duration) {
             return getContext().outsideGlobalLock(new Supplier<Double>() {
 

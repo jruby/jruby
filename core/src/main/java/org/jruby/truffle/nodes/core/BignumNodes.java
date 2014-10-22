@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.util.SlowPathBigInteger;
+import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
@@ -56,7 +56,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public BigInteger neg(BigInteger value) {
-            return SlowPathBigInteger.negate(value);
+            return RuntimeBigInteger.negate(value);
         }
 
     }
@@ -78,22 +78,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object add(BigInteger a, int b) {
-            return SlowPathBigInteger.add(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.add(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public Object add(BigInteger a, long b) {
-            return SlowPathBigInteger.add(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.add(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public double add(BigInteger a, double b) {
-            return SlowPathBigInteger.doubleValue(a) + b;
+            return RuntimeBigInteger.doubleValue(a) + b;
         }
 
         @Specialization
         public Object add(BigInteger a, BigInteger b) {
-            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(a, b));
+            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(a, b));
         }
 
     }
@@ -115,22 +115,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object sub(BigInteger a, int b) {
-            return SlowPathBigInteger.subtract(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.subtract(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public Object sub(BigInteger a, long b) {
-            return SlowPathBigInteger.subtract(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.subtract(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public double sub(BigInteger a, double b) {
-            return SlowPathBigInteger.doubleValue(a) - b;
+            return RuntimeBigInteger.doubleValue(a) - b;
         }
 
         @Specialization
         public Object sub(BigInteger a, BigInteger b) {
-            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.subtract(a, b));
+            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.subtract(a, b));
         }
 
     }
@@ -148,22 +148,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mul(BigInteger a, int b) {
-            return SlowPathBigInteger.multiply(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.multiply(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public Object mul(BigInteger a, long b) {
-            return SlowPathBigInteger.multiply(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.multiply(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public double mul(BigInteger a, double b) {
-            return SlowPathBigInteger.doubleValue(a) * b;
+            return RuntimeBigInteger.doubleValue(a) * b;
         }
 
         @Specialization
         public Object mul(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.multiply(a, b));
+            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.multiply(a, b));
         }
 
     }
@@ -179,15 +179,15 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public BigInteger pow(BigInteger a, int b) {
-            return SlowPathBigInteger.pow(a, b);
+            return RuntimeBigInteger.pow(a, b);
         }
 
         @Specialization
         public double pow(BigInteger a, double b) {
-            return Math.pow(SlowPathBigInteger.doubleValue(a), b);
+            return Math.pow(RuntimeBigInteger.doubleValue(a), b);
         }
 
         @Specialization
@@ -195,7 +195,7 @@ public abstract class BignumNodes {
             BigInteger result = BigInteger.ONE;
 
             for (BigInteger n = BigInteger.ZERO; b.compareTo(b) < 0; n = n.add(BigInteger.ONE)) {
-                result = SlowPathBigInteger.multiply(result, a);
+                result = RuntimeBigInteger.multiply(result, a);
             }
 
             return result;
@@ -216,22 +216,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object div(BigInteger a, int b) {
-            return SlowPathBigInteger.divide(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.divide(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public Object div(BigInteger a, long b) {
-            return SlowPathBigInteger.divide(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.divide(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public double div(BigInteger a, double b) {
-            return SlowPathBigInteger.doubleValue(a) / b;
+            return RuntimeBigInteger.doubleValue(a) / b;
         }
 
         @Specialization
         public Object div(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.divide(a, b));
+            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.divide(a, b));
         }
 
     }
@@ -249,17 +249,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mod(BigInteger a, int b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, BigInteger.valueOf(b)));
+            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(BigInteger a, long b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, BigInteger.valueOf(b)));
+            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, b));
+            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.mod(a, b));
         }
 
     }
@@ -309,12 +309,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean less(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) < 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) < 0;
         }
 
         @Specialization
         public boolean less(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) < 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) < 0;
         }
 
         @Specialization
@@ -341,12 +341,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean lessEqual(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) <= 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) <= 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) <= 0;
         }
 
         @Specialization
@@ -373,12 +373,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
         }
 
         @Specialization
         public boolean equal(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
         }
 
         @Specialization
@@ -405,12 +405,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b));
         }
 
         @Specialization
         public int compare(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b));
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b));
         }
 
         @Specialization
@@ -437,12 +437,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean notEqual(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
         }
 
         @Specialization
         public boolean notEqual(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
         }
 
         @Specialization
@@ -469,12 +469,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greaterEqual(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) >= 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) >= 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) >= 0;
         }
 
         @Specialization
@@ -501,12 +501,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greater(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) > 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
         public boolean greater(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) > 0;
+            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
@@ -537,17 +537,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitAnd(BigInteger a, int b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.and(a, BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.and(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitAnd(BigInteger a, long b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.and(a, BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.and(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitAnd(BigInteger a, BigInteger b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.and(a, b));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.and(a, b));
         }
     }
 
@@ -568,17 +568,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitOr(BigInteger a, int b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.or(a, BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.or(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitOr(BigInteger a, long b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.or(a, BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.or(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitOr(BigInteger a, BigInteger b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.or(a, b));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.or(a, b));
         }
     }
 
@@ -599,17 +599,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitXOr(BigInteger a, int b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.xor(a, BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.xor(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitXOr(BigInteger a, long b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.xor(a, BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.xor(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitXOr(BigInteger a, BigInteger b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.xor(a, b));
+            return fixnumOrBignumNode.fixnumOrBignum(RuntimeBigInteger.xor(a, b));
         }
     }
 
@@ -633,10 +633,10 @@ public abstract class BignumNodes {
         @Specialization
         public Object leftShift(BigInteger a, int b) {
             if (b >= 0) {
-                return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(a, b));
+                return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.shiftLeft(a, b));
             } else {
                 bLessThanZero.enter();
-                return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftRight(a, -b));
+                return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.shiftRight(a, -b));
             }
         }
 
@@ -662,10 +662,10 @@ public abstract class BignumNodes {
         @Specialization
         public Object leftShift(BigInteger a, int b) {
             if (b >= 0) {
-                return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftRight(a, b));
+                return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.shiftRight(a, b));
             } else {
                 bLessThanZero.enter();
-                return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(a, -b));
+                return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.shiftLeft(a, -b));
             }
         }
 
@@ -745,7 +745,7 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(BigInteger value) {
             return getContext().makeString(value.toString());

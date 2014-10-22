@@ -10,7 +10,7 @@ public class ArrayAllocationSite {
     @CompilerDirectives.CompilationFinal private boolean convertedIntToLong = false;
     private final Assumption assumption = Truffle.getRuntime().createAssumption();
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public void convertedIntToLong() {
         if (RubyContext.ARRAYS_OPTIMISTIC_LONG) {
             convertedIntToLong = true;

@@ -81,7 +81,7 @@ public class RubyRegexp extends RubyObject {
         return regex;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public Object matchOperator(String string) {
         // TODO(CS) merge with match
 
@@ -153,7 +153,7 @@ public class RubyRegexp extends RubyObject {
         }
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public Object match(RubyString string) {
         final RubyContext context = getContext();
 
@@ -200,7 +200,7 @@ public class RubyRegexp extends RubyObject {
         }
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyString gsub(String string, String replacement) {
         final RubyContext context = getContext();
 
@@ -228,7 +228,7 @@ public class RubyRegexp extends RubyObject {
         return context.makeString(builder.toString());
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyString[] split(String string) {
         final RubyContext context = getContext();
 
@@ -255,7 +255,7 @@ public class RubyRegexp extends RubyObject {
         return strings.toArray(new RubyString[strings.size()]);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyString[] scan(RubyString string) {
         final RubyContext context = getContext();
 

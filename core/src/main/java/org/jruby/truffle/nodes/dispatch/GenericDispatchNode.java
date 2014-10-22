@@ -289,12 +289,12 @@ public abstract class GenericDispatchNode extends DispatchNode {
                 dispatchAction);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public ConstantCacheEntry lookupInConstantCache(RubyModule module, Object methodName) {
         return null;//constantCache.get(new ConstantCacheEntry(module, methodName));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public MethodCacheEntry lookupInCache(RubyClass metaClass, Object methodName) {
         return methodCache.get(new MethodCacheKey(metaClass, methodName));
     }

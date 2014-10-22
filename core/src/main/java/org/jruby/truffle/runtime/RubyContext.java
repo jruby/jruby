@@ -171,12 +171,12 @@ public class RubyContext extends ExecutionContext {
         return symbolTable;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubySymbol newSymbol(String name) {
         return symbolTable.getSymbol(name);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubySymbol newSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
