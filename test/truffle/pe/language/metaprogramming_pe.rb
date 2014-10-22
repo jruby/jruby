@@ -20,17 +20,17 @@ end
 
 PETests.tests do
 
-  broken_example "A call that results in #method_missing" do
+  example "A call that results in #method_missing" do
     method_missing = MetaprogrammingFixtures::MethodMissing.new
     truffle_assert_constant method_missing.does_not_exist
   end
 
-  broken_example "#respond_to? on a method that does exist" do
+  example "#respond_to? on a method that does exist" do
     object_with_existing_method = MetaprogrammingFixtures::ClassWithExistingMethod.new
     truffle_assert_constant object_with_existing_method.respond_to? :existing_method
   end
 
-  broken_example "#send on a method that exists using a symbol" do
+  example "#send on a method that exists using a symbol" do
     object_with_existing_method = MetaprogrammingFixtures::ClassWithExistingMethod.new
     truffle_assert_constant object_with_existing_method.send(:existing_method, 14)
   end
