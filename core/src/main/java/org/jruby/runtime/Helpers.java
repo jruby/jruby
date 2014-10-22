@@ -2798,7 +2798,7 @@ public class Helpers {
         String[] tmp = new String[argDesc.size()];
         for (int i = 0; i < tmp.length; i++) {
             String[] arg = argDesc.get(i);
-            String encoded = arg[0].charAt(0) + arg[2];
+            String encoded = arg[0].charAt(0) + arg[1];
             tmp[i] = encoded;
         }
 
