@@ -202,7 +202,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             }
 
             final DispatchNode newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        module.getMetaClass(), constant.getValue(), null, null, null, null, null, null, null, null);
+                        module.getSingletonClass(null), constant.getValue(), null, null, null, null, null, null, null, null);
 
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,

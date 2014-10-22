@@ -291,7 +291,7 @@ public abstract class GenericDispatchNode extends DispatchNode {
 
     @CompilerDirectives.SlowPath
     public ConstantCacheEntry lookupInConstantCache(RubyModule module, Object methodName) {
-        return constantCache.get(new MethodCacheKey(module.getMetaClass(), methodName));
+        return constantCache.get(new MethodCacheKey(module.getSingletonClass(null), methodName));
     }
 
     @CompilerDirectives.SlowPath
