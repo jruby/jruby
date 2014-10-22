@@ -22,8 +22,9 @@ public class CompiledIRBlockBody extends IRBlockBody {
         super(closure.getStaticScope(), ((IRClosure)closure).getParameterList(), closure.getFileName(), closure.getLineNumber(), Arity.createArity(arity));
         this.handle = handle;
         this.closure = (IRClosure)closure;
-        this.pushScope = true;
-        this.reuseParentScope = false;
+        // FIXME: duplicated from InterpreterContext
+        this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+        this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentScope;
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
