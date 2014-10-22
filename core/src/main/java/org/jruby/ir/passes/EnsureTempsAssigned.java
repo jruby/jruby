@@ -47,8 +47,15 @@ public class EnsureTempsAssigned extends CompilerPass {
         }
 
         BasicBlock bb = cfg.getEntryBB();
+        int index = 0;
+        TemporaryVariable first = null;
         for (TemporaryVariable name : names) {
-            bb.getInstrs().add(0, new CopyInstr(name, new Nil()));
+            if (first == null) {
+                bb.getInstrs().add(index++, new CopyInstr(name, new Nil()));
+                first = name;
+            } else {
+                bb.getInstrs().add(index++, new CopyInstr(name, first));
+            }
         }
 
         // recurse
