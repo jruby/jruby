@@ -138,8 +138,8 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
     public RubyModule(RubyContext context, RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
         super(moduleClass);
-
         this.context = context;
+
         if (lexicalParentModule != null && lexicalParentModule != context.getCoreLibrary().getObjectClass()) {
             name = lexicalParentModule.getName() + "::" + name;
         }
