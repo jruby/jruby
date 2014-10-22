@@ -112,8 +112,7 @@ public class Options {
     public static final Option<String> JIT_EXCLUDE = string(JIT, "jit.exclude", new String[]{"ClsOrMod","ClsOrMod::method_name","-::method_name"}, "", "Exclude methods from JIT. Comma delimited.");
     public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
-    // CON FIXME: IR is not thread-safe yet, so turn off background JIT for now
-    public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", false, "Run the JIT compiler in a background thread.");
+    public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", true, "Run the JIT compiler in a background thread.");
     
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
