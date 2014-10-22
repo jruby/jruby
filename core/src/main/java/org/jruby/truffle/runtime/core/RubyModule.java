@@ -257,10 +257,25 @@ public class RubyModule extends RubyObject implements ModuleChain {
         addMethod(currentNode, method.undefined());
     }
 
+    /**
+     * Also searches on Object for modules.
+     * Used for alias_method, visibility changes, etc.
+     */
+    private RubyMethod deepMethodSearch(String name) {
+        RubyMethod method = ModuleOperations.lookupMethod(this, name);
+
+        // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
+        if (method == null && !(this instanceof RubyClass)) { // TODO: handle undefined methods
+            method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
+        }
+
+        return method;
+    }
+
     public void alias(RubyNode currentNode, String newName, String oldName) {
         RubyNode.notDesignedForCompilation();
 
-        final RubyMethod method = ModuleOperations.lookupMethod(this, oldName);
+        RubyMethod method = deepMethodSearch(oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
@@ -365,7 +380,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = ModuleOperations.lookupMethod(this, methodName);
+                final RubyMethod method = deepMethodSearch(methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
