@@ -35,6 +35,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -237,45 +238,34 @@ public class JVMVisitor extends IRVisitor {
         jvm.popclass();
     }
 
-    public Map<Integer, Handle> emitMethod(IRMethod method) {
+    public void emitMethod(IRMethod method) {
         String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
 
-        Map<Integer, Handle> handles = new HashMap<>();
+        emitWithSignatures(method, name);
+    }
+
+    public void  emitMethodJIT(IRMethod method) {
+        String clsName = jvm.scriptToClass(method.getFileName());
+        jvm.pushscript(clsName, method.getFileName());
+
+        emitWithSignatures(method, "__script__");
+
+        jvm.cls().visitEnd();
+        jvm.popclass();
+    }
+
+    private void emitWithSignatures(IRMethod method, String name) {
+        method.setJittedName(name);
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false);
-        handles.put(-1, new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray())));
+        method.addNativeSignature(-1, signature.type());
 
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
             emitScope(method, name, specificSig, true);
-            handles.put(method.getStaticScope().getRequiredArgs(), new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(specificSig.type().returnType(), specificSig.type().parameterArray())));
+            method.addNativeSignature(method.getStaticScope().getRequiredArgs(), specificSig.type());
         }
-
-        return handles;
-    }
-
-    public Map<Integer, Handle>  emitMethodJIT(IRMethod method) {
-        String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
-        String clsName = jvm.scriptToClass(method.getFileName());
-        jvm.pushscript(clsName, method.getFileName());
-
-        Map<Integer, Handle> handles = new HashMap<>();
-
-        Signature signature = signatureFor(method, false);
-        emitScope(method, "__script__", signature, false);
-        handles.put(-1, new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray())));
-
-        Signature specificSig = signatureFor(method, true);
-        if (specificSig != null) {
-            emitScope(method, "__script__", specificSig, true);
-            handles.put(method.getStaticScope().getRequiredArgs(), new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(specificSig.type().returnType(), specificSig.type().parameterArray())));
-        }
-
-        jvm.cls().visitEnd();
-        jvm.popclass();
-
-        return handles;
     }
 
     public Handle emitModuleBodyJIT(IRModuleBody method) {
@@ -943,17 +933,20 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().loadContext();
 
-        Map<Integer, Handle> handles = emitMethod(method);
+        emitMethod(method);
 
-        Handle handle = handles.get(-1);
+        Map<Integer, MethodType> signatures = method.getNativeSignatures();
+
+        MethodType signature = signatures.get(-1);
 
         String defSignature = pushHandlesForDef(
-                handles,
-                handle,
+                method.getJittedName(),
+                signatures,
+                signature,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
 
-        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
+        jvmAdapter().getstatic(jvm.clsData().clsName, method.getJittedName() + "_IRScope", ci(IRScope.class));
         visit(defineclassmethodinstr.getContainer());
 
         // add method
@@ -970,17 +963,19 @@ public class JVMVisitor extends IRVisitor {
 
         m.loadContext();
 
-        Map<Integer, Handle> handles = emitMethod(method);
+        emitMethod(method);
+        Map<Integer, MethodType> signatures = method.getNativeSignatures();
 
-        Handle handle = handles.get(-1); // always a variable arity handle
+        MethodType variable = signatures.get(-1); // always a variable arity handle
 
         String defSignature = pushHandlesForDef(
-                handles,
-                handle,
+                method.getJittedName(),
+                signatures,
+                variable,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, DynamicScope.class, IRubyObject.class));
 
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
+        a.getstatic(jvm.clsData().clsName, method.getJittedName() + "_IRScope", ci(IRScope.class));
         jvmLoadLocal(DYNAMIC_SCOPE);
         jvmMethod().loadSelf();
 
@@ -988,21 +983,20 @@ public class JVMVisitor extends IRVisitor {
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
     }
 
-    public String pushHandlesForDef(Map<Integer, Handle> handles, Handle variable, String variableOnly, String variableAndSpecific) {
+    public String pushHandlesForDef(String name, Map<Integer, MethodType> handles, MethodType variable, String variableOnly, String variableAndSpecific) {
         String defSignature;
+
+        jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(variable.returnType(), variable.parameterArray())));
 
         if (handles.size() == 1) {
             defSignature = variableOnly;
-            jvmMethod().pushHandle(variable);
         } else {
             defSignature = variableAndSpecific;
 
-            jvmMethod().pushHandle(variable);
-
-            // FIXME: only supports one specific arity
-            for (Map.Entry<Integer, Handle> entry : handles.entrySet()) {
+            // FIXME: only supports one arity
+            for (Map.Entry<Integer, MethodType> entry : handles.entrySet()) {
                 if (entry.getKey() == -1) continue; // variable arity handle pushed above
-                jvmMethod().pushHandle(entry.getValue());
+                jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
                 jvmAdapter().pushInt(entry.getKey());
                 break;
             }
