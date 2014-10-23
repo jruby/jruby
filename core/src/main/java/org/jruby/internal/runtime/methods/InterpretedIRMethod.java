@@ -16,6 +16,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -110,6 +111,102 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                 pre(ic, context, self, name, block);
 
                 return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+            } finally {
+                post(ic, context);
+            }
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod actualMethod = box.actualMethod;
+        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, block);
+
+        InterpreterContext ic = ensureInstrsReady();
+
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (ic.hasExplicitCallProtocol()) {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, IRubyObject.NULL_ARRAY, block);
+        } else {
+            try {
+                pre(ic, context, self, name, block);
+
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, IRubyObject.NULL_ARRAY, block);
+            } finally {
+                post(ic, context);
+            }
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod actualMethod = box.actualMethod;
+        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, arg0, block);
+
+        InterpreterContext ic = ensureInstrsReady();
+
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (ic.hasExplicitCallProtocol()) {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0), block);
+        } else {
+            try {
+                pre(ic, context, self, name, block);
+
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0), block);
+            } finally {
+                post(ic, context);
+            }
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod actualMethod = box.actualMethod;
+        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, arg0, arg1, block);
+
+        InterpreterContext ic = ensureInstrsReady();
+
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (ic.hasExplicitCallProtocol()) {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1), block);
+        } else {
+            try {
+                pre(ic, context, self, name, block);
+
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1), block);
+            } finally {
+                post(ic, context);
+            }
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod actualMethod = box.actualMethod;
+        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
+
+        InterpreterContext ic = ensureInstrsReady();
+
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (ic.hasExplicitCallProtocol()) {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1, arg2), block);
+        } else {
+            try {
+                pre(ic, context, self, name, block);
+
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1, arg2), block);
             } finally {
                 post(ic, context);
             }

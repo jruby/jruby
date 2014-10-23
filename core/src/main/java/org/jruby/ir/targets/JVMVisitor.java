@@ -983,19 +983,19 @@ public class JVMVisitor extends IRVisitor {
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
     }
 
-    public String pushHandlesForDef(String name, Map<Integer, MethodType> handles, MethodType variable, String variableOnly, String variableAndSpecific) {
+    public String pushHandlesForDef(String name, Map<Integer, MethodType> signatures, MethodType variable, String variableOnly, String variableAndSpecific) {
         String defSignature;
 
         jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(variable.returnType(), variable.parameterArray())));
 
-        if (handles.size() == 1) {
+        if (signatures.size() == 1) {
             defSignature = variableOnly;
         } else {
             defSignature = variableAndSpecific;
 
             // FIXME: only supports one arity
-            for (Map.Entry<Integer, MethodType> entry : handles.entrySet()) {
-                if (entry.getKey() == -1) continue; // variable arity handle pushed above
+            for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
+                if (entry.getKey() == -1) continue; // variable arity signature pushed above
                 jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
                 jvmAdapter().pushInt(entry.getKey());
                 break;

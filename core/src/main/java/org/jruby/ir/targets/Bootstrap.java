@@ -822,8 +822,6 @@ public class Bootstrap {
             }
 
             if (compiledIRMethod != null) {
-                assert compiledIRMethod.hasExplicitCallProtocol() : "all jitted methods must have call protocol";
-
                 binder = SmartBinder.from(site.signature)
                         .drop("caller");
 

@@ -37,6 +37,7 @@ import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -53,10 +54,12 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -227,17 +230,6 @@ public class JITCompiler implements JITCompilerMBean {
                 // successfully got back a jitted method
                 long methodCount = counts.successCount.incrementAndGet();
 
-                // finally, grab the script
-                Method scriptMethod = sourceClass.getMethod(
-                "__script__",
-                        ThreadContext.class,
-                        StaticScope.class,
-                        IRubyObject.class,
-                        IRubyObject[].class,
-                        Block.class,
-                        RubyModule.class);
-                MethodHandle handle = MethodHandles.publicLookup().unreflect(scriptMethod);
-
                 // logEvery n methods based on configuration
                 if (config.getJitLogEvery() > 0) {
                     if (methodCount % config.getJitLogEvery() == 0) {
@@ -249,12 +241,32 @@ public class JITCompiler implements JITCompilerMBean {
                     log(method, className + "." + methodName, "done jitting");
                 }
 
-                method.switchToJitted(
-                        new CompiledIRMethod(
-                                handle,
-                                method.getIRMethod(),
-                                method.getVisibility(),
-                                method.getImplementationClass()));
+                Map<Integer, MethodType> signatures = ((IRMethod)method.getIRMethod()).getNativeSignatures();
+                String jittedName = ((IRMethod)method.getIRMethod()).getJittedName();
+                if (signatures.size() == 1) {
+                    // only variable-arity
+                    method.switchToJitted(
+                            new CompiledIRMethod(
+                                    MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                    method.getIRMethod(),
+                                    method.getVisibility(),
+                                    method.getImplementationClass()));
+                } else {
+                    // also specific-arity
+                    for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
+                        if (entry.getKey() == -1) continue; // variable arity handle pushed above
+
+                        method.switchToJitted(
+                                new CompiledIRMethod(
+                                        MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                        MethodHandles.publicLookup().findStatic(sourceClass, jittedName, entry.getValue()),
+                                        entry.getKey(),
+                                        method.getIRMethod(),
+                                        method.getVisibility(),
+                                        method.getImplementationClass()));
+                        break;
+                    }
+                }
 
                 return;
             } catch (Throwable t) {
