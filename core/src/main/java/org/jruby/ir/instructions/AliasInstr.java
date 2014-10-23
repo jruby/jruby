@@ -33,7 +33,7 @@ public class AliasInstr extends Instr implements FixedArityInstr {
 
     @Override
     public String toString() {
-        return getOperation().toString() + "(" + ", " + getNewName() + ", " + getOldName() + ")";
+        return getOperation().toString() + "(" + getNewName() + ", " + getOldName() + ")";
     }
 
     @Override

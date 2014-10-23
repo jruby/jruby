@@ -22,7 +22,7 @@ public class PushBindingInstr extends Instr implements FixedArityInstr {
 
     @Override
     public String toString() {
-        return "" + getOperation() + "()";
+        return "" + getOperation();
     }
 
     @Override
