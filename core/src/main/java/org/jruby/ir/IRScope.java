@@ -606,6 +606,12 @@ public abstract class IRScope implements ParseResult {
             //   commandline (so as to honor the commandline request).
             optimizeSimpleScopes();
         }
+
+        // If at the end, the cfg is still not build, build it.
+        // (ex: unsafe scopes for which passes don't run).
+        if (getCFG() == null) {
+            buildCFG();
+        }
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
