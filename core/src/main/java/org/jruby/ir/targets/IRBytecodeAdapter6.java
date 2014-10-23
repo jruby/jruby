@@ -27,10 +27,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
 import java.math.BigInteger;
@@ -106,28 +109,39 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String outgoingSig;
 
         if (hasClosure) {
-            if (arity == -1) {
-                incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
-                outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, String.class, JVM.OBJECT_ARRAY, Block.class));
-            } else {
-                incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class));
-                outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, String.class, JVM.OBJECT_ARRAY, Block.class));
+            switch (arity) {
+                default:
+                case -1:
+                    incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                    outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                    break;
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                    outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                    break;
             }
         } else {
-            if (arity == -1) {
-                incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
-                outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, String.class, JVM.OBJECT_ARRAY));
-            } else if (arity == 1) {
-                // specialize arity-1 calls through callMethod
-                incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2));
-                outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, String.class, JVM.OBJECT));
-            } else {
-                incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
-                outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, String.class, JVM.OBJECT_ARRAY));
+            switch (arity) {
+                default:
+                case -1:
+                    incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                    outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                    break;
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
+                    outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
+                    break;
             }
         }
 
         String methodName = "invokeOther" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -136,29 +150,55 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null,
                 null);
 
-        adapter2.aload(2);
-        adapter2.aload(0);
-        adapter2.ldc(name);
+        // call site object field
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CachingCallSite.class), null, null).visitEnd();
 
-        if (hasClosure) {
-            if (arity == -1) {
+        // lazily construct it
+        adapter2.getstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        adapter2.dup();
+        Label doCall = new Label();
+        adapter2.ifnonnull(doCall);
+        adapter2.pop();
+        adapter2.newobj(p(FunctionalCachingCallSite.class));
+        adapter2.dup();
+        adapter2.ldc(name);
+        adapter2.invokespecial(p(FunctionalCachingCallSite.class), "<init>", sig(void.class, String.class));
+        adapter2.dup();
+        adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+
+        // use call site to invoke
+        adapter2.label(doCall);
+        adapter2.aload(0); // context
+        adapter2.aload(1); // caller
+        adapter2.aload(2); // self
+
+        switch (arity) {
+            case -1:
+            case 1:
+                adapter2.aload(3);
+                if (hasClosure) adapter2.aload(4);
+                break;
+            case 0:
+                if (hasClosure) adapter2.aload(3);
+                break;
+            case 2:
                 adapter2.aload(3);
                 adapter2.aload(4);
-            } else {
-                buildArrayFromLocals(adapter2, 3, arity);
-                adapter2.aload(3 + arity);
-            }
-        } else {
-            if (arity == -1) {
+                if (hasClosure) adapter2.aload(5);
+                break;
+            case 3:
                 adapter2.aload(3);
-            } else if (arity == 1) {
-                adapter2.aload(3);
-            } else {
+                adapter2.aload(4);
+                adapter2.aload(5);
+                if (hasClosure) adapter2.aload(6);
+                break;
+            default:
                 buildArrayFromLocals(adapter2, 3, arity);
-            }
+                if (hasClosure) adapter2.aload(3 + arity);
+                break;
         }
 
-        adapter2.invokeinterface(p(IRubyObject.class), "callMethod", outgoingSig);
+        adapter2.invokevirtual(p(CachingCallSite.class), "call", outgoingSig);
         adapter2.areturn();
         adapter2.end();
 
