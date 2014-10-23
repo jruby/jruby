@@ -12,8 +12,6 @@ package org.jruby.truffle.translator;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.impl.DefaultFrameTypeConversion;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
@@ -64,7 +62,7 @@ public class TranslatorEnvironment {
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
                     SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock) {
-        this(context, parent, new FrameDescriptor(new RubyFrameTypeConversion(context.getCoreLibrary().getNilObject())), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock);
+        this(context, parent, new FrameDescriptor(context.getCoreLibrary().getNilObject()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock);
     }
 
     public TranslatorEnvironment getParent() {
