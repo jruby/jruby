@@ -477,8 +477,9 @@ public class IRBuilder {
             }
         }
 
-        while (n.getNodeType() == NodeType.NEWLINENODE)
-            n = ((NewlineNode)n).getNextNode();
+        while (n.getNodeType() == NodeType.NEWLINENODE) {
+            n = ((NewlineNode) n).getNextNode();
+        }
 
         return n;
     }
@@ -3517,27 +3518,28 @@ public class IRBuilder {
 
     private Operand buildModuleOrClassBody(IRScope parent, Variable tmpVar, IRModuleBody body, Node bodyNode, int linenumber) {
         Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), tmpVar, getImplicitBlockArg(parent)));
+        IRBuilder bodyBuilder = newIRBuilder(manager);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
+            bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
         }
 
-        addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
+        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
 
         if (body instanceof IRMetaClassBody) {
-            addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
+            bodyBuilder.addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
         }
 
-        addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
-        addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
+        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
+        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
         // Create a new nested builder to ensure this gets its own IR builder state
-        Operand bodyReturnValue = newIRBuilder(manager).build(bodyNode, body);
+        Operand bodyReturnValue = bodyBuilder.build(bodyNode, body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
+            bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
         }
 
-        addInstr(body, new ReturnInstr(bodyReturnValue));
+        bodyBuilder.addInstr(body, new ReturnInstr(bodyReturnValue));
 
         return processBodyResult;
     }
