@@ -23,14 +23,15 @@ class ClassData7 extends ClassData {
         super(clsName, cls);
     }
 
-    public void pushmethod(String name, IRScope scope, Signature signature) {
+    public void pushmethod(String name, IRScope scope, Signature signature, boolean specificArity) {
         Method m = new Method(name, Type.getType(signature.type().returnType()), IRRuntimeHelpers.typesFromSignature(signature));
         SkinnyMethodAdapter adapter = new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null);
         methodStack.push(
                 new MethodData(
                         new IRBytecodeAdapter7(adapter, signature, this),
                         scope,
-                        signature)
+                        signature,
+                        specificArity ? scope.getStaticScope().getRequiredArgs() : -1)
         );
     }
 

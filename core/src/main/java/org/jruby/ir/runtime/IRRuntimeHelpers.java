@@ -1104,6 +1104,14 @@ public class IRRuntimeHelpers {
         obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
     }
 
+    @JIT
+    public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
+        RubyClass rubyClass = checkClassForDef(context, method, obj);
+
+        rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
+        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+    }
+
     private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
             throw context.runtime.newTypeError("can't define singleton method \"" + method.getName() + "\" for " + obj.getMetaClass().getBaseName());
@@ -1136,6 +1144,19 @@ public class IRRuntimeHelpers {
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
 
         DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz);
+
+        Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
+    }
+
+    @JIT
+    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, DynamicScope currDynScope, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
+
+        Visibility currVisibility = context.getCurrentVisibility();
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
+
+        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz);
 
         Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
     }
