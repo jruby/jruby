@@ -5,8 +5,9 @@ import java.util.List;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.parser.StaticScope;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -22,7 +23,6 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
         return new ArrayList<String[]>();
     }
 
-    @Override
     protected void post(InterpreterContext ic, ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
@@ -31,7 +31,6 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
         }
     }
 
-    @Override
     protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
         context.preMethodFrameOnly(getImplementationClass(), name, self, block);
@@ -42,6 +41,30 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope(), context.getCurrentScope()));
         }
         context.setCurrentVisibility(getVisibility());
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod actualMethod = box.actualMethod;
+        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, args, block);
+
+        InterpreterContext ic = ensureInstrsReady();
+
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (ic.hasExplicitCallProtocol()) {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+        } else {
+            try {
+                pre(ic, context, self, name, block);
+
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+            } finally {
+                post(ic, context);
+            }
+        }
     }
 
     @Override
