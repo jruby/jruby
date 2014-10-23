@@ -1120,12 +1120,12 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    /* Record a begin block -- not all scope implementations can handle them */
+    /** Record a begin block.  Only eval and script body scopes support this */
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
     }
 
-    /* Record an end block -- not all scope implementations can handle them */
+    /* Record an end block.  Only eval and script body scopes support this */
     public void recordEndBlock(IRClosure endBlockClosure) {
         throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
     }

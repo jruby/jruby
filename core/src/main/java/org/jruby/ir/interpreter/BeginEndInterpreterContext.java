@@ -8,7 +8,8 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.WrappedIRClosure;
 
 /**
- * Created by enebo on 10/23/14.
+ * Script body and Evals both have begin/end bodies and need the same state
+ * to interpret.
  */
 public class BeginEndInterpreterContext extends InterpreterContext {
     private List<IRClosure> beginBlocks;
