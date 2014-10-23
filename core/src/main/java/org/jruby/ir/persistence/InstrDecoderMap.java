@@ -99,7 +99,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case PUT_FIELD: return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_GLOBAL_VAR: return new PutGlobalVarInstr(d.decodeString(), d.decodeOperand());
             case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (IRClosure) d.decodeScope());
+            case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (WrappedIRClosure) d.decodeOperand());
             case RECV_CLOSURE: return new ReceiveClosureInstr(d.decodeVariable());
             case RECV_RUBY_EXC: return decodeReceiveRubyException();
             case RECV_JRUBY_EXC: return decodeReceiveJRubyException();
