@@ -44,29 +44,17 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (explicitCallProtocolSupported(scope)) {
             StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
+            boolean scopeHasLocalVarStores = false;
+            boolean bindingHasEscaped      = scope.bindingHasEscaped();
 
-            boolean scopeHasLocalVarStores      = false;
-            boolean scopeHasUnrescuedExceptions = false;
-            boolean bindingHasEscaped           = scope.bindingHasEscaped();
-
-            CFG        cfg = scope.cfg();
+            CFG cfg = scope.cfg();
 
             if (slvpp != null && bindingHasEscaped) {
-                scopeHasLocalVarStores      = slvpp.scopeHasLocalVarStores();
-                scopeHasUnrescuedExceptions = slvpp.scopeHasUnrescuedExceptions();
+                scopeHasLocalVarStores = slvpp.scopeHasLocalVarStores();
             } else {
                 // We dont require local-var load/stores to have been run.
                 // If it is not run, we go conservative and add push/pop binding instrs. everywhere
-                scopeHasLocalVarStores      = bindingHasEscaped;
-                scopeHasUnrescuedExceptions = false;
-                for (BasicBlock bb: cfg.getBasicBlocks()) {
-                    // SSS FIXME: This is highly conservative.  If the bb has an exception raising instr.
-                    // and if we dont have a rescuer, only then do we have unrescued exceptions.
-                    if (cfg.getRescuerBBFor(bb) == null) {
-                        scopeHasUnrescuedExceptions = true;
-                        break;
-                    }
-                }
+                scopeHasLocalVarStores = bindingHasEscaped;
             }
 
             boolean requireFrame = bindingHasEscaped || scope.usesEval();
@@ -86,18 +74,15 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
             boolean requireBinding = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
 
-            // FIXME: Why do we need a push/pop for frame & binding for scopes with unrescued exceptions??
-            // 1. I think we need a different check for frames -- it is NOT scopeHasUnrescuedExceptions
-            //    We need scope.requiresFrame() to push/pop frames
-            // 2. Plus bindingHasEscaped check in IRScope is missing some other check since we should
-            //    just be able to check (bindingHasEscaped || scopeHasVarStores) to push/pop bindings.
-            // We need scopeHasUnrescuedExceptions to add GEB for popping frame/binding on exit from unrescued exceptions
-            BasicBlock entryBB = cfg.getEntryBB();
             if (requireBinding || requireFrame) {
+                BasicBlock entryBB = cfg.getEntryBB();
                 // Push
                 if (requireFrame) entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
                 if (requireBinding) entryBB.addInstr(new PushBindingInstr());
 
+                // SSS FIXME: We are doing this conservatively.
+                // Only scopes that have unrescued exceptions need a GEB.
+                //
                 // Allocate GEB if necessary for popping
                 BasicBlock geb = cfg.getGlobalEnsureBB();
                 if (geb == null) {
@@ -110,9 +95,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                 // Pop on all scope-exit paths
                 for (BasicBlock bb: cfg.getBasicBlocks()) {
+                    Instr i = null;
                     ListIterator<Instr> instrs = bb.getInstrs().listIterator();
                     while (instrs.hasNext()) {
-                        Instr i = instrs.next();
+                        i = instrs.next();
                         // Right now, we only support explicit call protocol on methods.
                         // So, non-local returns and breaks don't get here.
                         // Non-local-returns and breaks are tricky since they almost always
@@ -129,14 +115,18 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                     if (bb.isExitBB() && !bb.isEmpty()) {
                         // Last instr could be a return -- so, move iterator one position back
-                        if (instrs.hasPrevious()) instrs.previous();
+                        if (i != null && i instanceof ReturnBase) instrs.previous();
                         if (requireBinding) instrs.add(new PopBindingInstr());
                         if (requireFrame) instrs.add(new PopFrameInstr());
                     }
 
                     if (bb == geb) {
                         // Add before throw-exception-instr which would be the last instr
-                        instrs.previous();
+                        if (i != null) {
+                            // Assumption: Last instr should always be a control-transfer instruction
+                            assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
+                            instrs.previous();
+                        }
                         if (requireBinding) instrs.add(new PopBindingInstr());
                         if (requireFrame) instrs.add(new PopFrameInstr());
                     }
