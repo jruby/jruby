@@ -596,11 +596,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initScope(boolean jitMode) {
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            buildCFG();
-        }
-
         runCompilerPasses(getManager().getCompilerPasses(this));
 
         if (!jitMode && RubyInstanceConfig.IR_COMPILER_PASSES == null) {
