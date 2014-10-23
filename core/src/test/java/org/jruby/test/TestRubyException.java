@@ -53,37 +53,37 @@ public class TestRubyException extends TestCase {
 		
 		String[] lines = printError();
 
-        assertEquals(expectedTraceLine(0), lines[0]);
+		assertEquals(expectedTraceLine(0), lines[0]);
 		assertEquals(expectedTraceLine(RubyException.TRACE_HEAD), lines[RubyException.TRACE_HEAD]);
 	}
 
 	public void testPrintNilBacktrace() throws Exception {
-	    exception.set_backtrace(interpreter.getNil());
+		exception.set_backtrace(interpreter.getNil());
 		
 		String[] lines = printError();
 		
 		assertEquals(0, lines.length);
-    }
+	}
 
 	public void testPrintBackTraceWithString() throws Exception {
-        exception.set_backtrace(RubyArray.newArray(interpreter, RubyString.newString(interpreter, testLine(0))));
+		exception.set_backtrace(RubyArray.newArray(interpreter, RubyString.newString(interpreter, testLine(0))));
 
-        String[] lines = printError();
+		String[] lines = printError();
 
-        assertEquals(1, lines.length);
-        assertEquals(expectedTraceLine(0), lines[0]);
-    }
+		assertEquals(1, lines.length);
+		assertEquals(expectedTraceLine(0), lines[0]);
+	}
 
-    private String[] printError() {
+	private String[] printError() {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(2048);
 		PrintStream stream = new PrintStream(byteArrayOutputStream);
 		exception.printBacktrace(stream);
 		String output = new String(byteArrayOutputStream.toByteArray());
 		if (output.trim().length() == 0) {
 		    return new String[0];
-	    } else {
+	    	} else {
 		    return output.split("\n");
-        }
+        	}
 	}
 
 	private void setBackTrace(int lineCount) {
