@@ -2,6 +2,8 @@ package org.jruby.ir;
 
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.ClosureLocalVariable;
@@ -54,6 +56,11 @@ public class IREvalScript extends IRClosure {
                 staticScope.setScopeType(this.nearestNonEvalScope.getScopeType());
             }
         }
+    }
+
+    @Override
+    public InterpreterContext allocateInterpreterContext(Instr[] instructionList) {
+        return new BeginEndInterpreterContext(this, instructionList);
     }
 
     @Override

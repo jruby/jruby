@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
+import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -20,18 +21,18 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
         return declaringScope;
     }
 
-    public IRClosure getEndBlockClosure() {
-        return endBlockClosure.getClosure();
+    public WrappedIRClosure getEndBlockClosure() {
+        return endBlockClosure;
     }
 
     @Override
     public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        return new Operand[] { endBlockClosure };
     }
 
     @Override
     public String toString() {
-        return getOperation().toString() + "(" + endBlockClosure.getClosure().getName() + ")";
+        return getOperation().toString() + "(" + endBlockClosure + ")";
     }
 
     @Override
@@ -47,7 +48,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     }
 
     public void interpret() {
-        declaringScope.getTopLevelScope().recordEndBlock(endBlockClosure.getClosure());
+        ((BeginEndInterpreterContext) declaringScope.getTopLevelScope().getInterpreterContext()).recordEndBlock(endBlockClosure);
     }
 
     @Override
