@@ -85,12 +85,10 @@ public abstract class ModuleNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            booleanCastNode = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
         public CompareNode(CompareNode prev) {
             super(prev);
-            booleanCastNode = prev.booleanCastNode;
         }
 
         private Object isSubclass(VirtualFrame frame, RubyModule self, RubyModule other) {
@@ -99,6 +97,14 @@ public abstract class ModuleNodes {
                 subclassNode = insert(ModuleNodesFactory.IsSubclassOfNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
             }
             return subclassNode.executeIsSubclassOf(frame, self, other);
+        }
+
+        private boolean booleanCast(VirtualFrame frame, Object value) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return booleanCastNode.executeBoolean(frame, value);
         }
 
         @Specialization
@@ -113,7 +119,7 @@ public abstract class ModuleNodes {
 
             if (isSubclass instanceof RubyNilClass) {
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (booleanCastNode.executeBoolean(frame, isSubclass)) {
+            } else if (booleanCast(frame, isSubclass)) {
                 return -1;
             }
             return 1;
