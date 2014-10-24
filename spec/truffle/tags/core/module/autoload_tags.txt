@@ -29,9 +29,6 @@ fails:Module#autoload looks up the constant when in a meta class scope
 fails:Module#autoload does NOT raise a NameError when the autoload file did not define the constant and a module is opened with the same name
 fails:Module#autoload calls #to_path on non-string filenames
 fails:Module#autoload raises an ArgumentError when an empty filename is given
-fails:Module#autoload raises a NameError when the constant name starts with a lower case letter
-fails:Module#autoload raises a NameError when the constant name starts with a number
-fails:Module#autoload raises a NameError when the constant name has a space in it
 fails:Module#autoload shares the autoload request across dup'ed copies of modules
 fails:Module#autoload raises a TypeError if opening a class with a different superclass than the class defined in the autoload file
 fails:Module#autoload raises a TypeError if not passed a String or object respodning to #to_path for the filename
