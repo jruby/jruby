@@ -51,6 +51,8 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        public abstract Object executeIsSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other);
+
         @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
             notDesignedForCompilation();
@@ -78,18 +80,25 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "<=>", minArgs = 1, maxArgs = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode subclassNode;
+        @Child protected IsSubclassOfNode subclassNode;
         @Child protected BooleanCastNode booleanCastNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            subclassNode = new DispatchHeadNode(context);
             booleanCastNode = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
         public CompareNode(CompareNode prev) {
             super(prev);
-            subclassNode = prev.subclassNode;
+            booleanCastNode = prev.booleanCastNode;
+        }
+
+        private Object isSubclass(VirtualFrame frame, RubyModule self, RubyModule other) {
+            if (subclassNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                subclassNode = insert(ModuleNodesFactory.IsSubclassOfNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+            }
+            return subclassNode.executeIsSubclassOf(frame, self, other);
         }
 
         @Specialization
@@ -100,7 +109,7 @@ public abstract class ModuleNodes {
                 return 0;
             }
 
-            final Object isSubclass = subclassNode.call(frame, self, "<=", null, other);
+            final Object isSubclass = isSubclass(frame, self, other);
 
             if (isSubclass instanceof RubyNilClass) {
                 return getContext().getCoreLibrary().getNilObject();
