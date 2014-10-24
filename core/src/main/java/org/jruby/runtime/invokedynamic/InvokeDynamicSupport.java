@@ -492,7 +492,7 @@ public class InvokeDynamicSupport {
     
     public static IRubyObject getVariableFallback(VariableSite site, IRubyObject self) throws Throwable {
         RubyClass realClass = self.getMetaClass().getRealClass();
-        VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name);
+        VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
         
         // produce nil if the variable has not been initialize
         MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
@@ -520,7 +520,7 @@ public class InvokeDynamicSupport {
         // prepare fallback
         MethodHandle fallback = null;
         if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "getVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.setTarget(fallback);
@@ -528,9 +528,9 @@ public class InvokeDynamicSupport {
         } else {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (direct) {
-                    LOG.info(site.name + "\tget field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                    LOG.info(site.name() + "\tget field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
                 } else {
-                    LOG.info(site.name + "\tget on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                    LOG.info(site.name() + "\tget on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
                 }
             }
             fallback = site.getTarget();
@@ -543,7 +543,7 @@ public class InvokeDynamicSupport {
         
         getValue = guardWithTest(test, getValue, fallback);
         
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(getValue);
         
         return (IRubyObject)getValue.invokeWithArguments(self);
@@ -568,7 +568,7 @@ public class InvokeDynamicSupport {
     
     public static IRubyObject setVariableFallback(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
         RubyClass realClass = self.getMetaClass().getRealClass();
-        VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name);
+        VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name());
 
         // return provided value
         MethodHandle returnValue = identity(IRubyObject.class);
@@ -595,7 +595,7 @@ public class InvokeDynamicSupport {
         // prepare fallback
         MethodHandle fallback = null;
         if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "setVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.setTarget(fallback);
@@ -603,9 +603,9 @@ public class InvokeDynamicSupport {
         } else {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (direct) {
-                    LOG.info(site.name + "\tset field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                    LOG.info(site.name() + "\tset field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
                 } else {
-                    LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                    LOG.info(site.name() + "\tset on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
                 }
             }
             fallback = site.getTarget();
@@ -619,7 +619,7 @@ public class InvokeDynamicSupport {
 
         setValue = guardWithTest(test, setValue, fallback);
 
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(setValue);
 
         return (IRubyObject)setValue.invokeWithArguments(self, value);
@@ -688,13 +688,13 @@ public class InvokeDynamicSupport {
     
     public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
-        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
         
         if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
                 variable.getScope() != GlobalVariable.Scope.GLOBAL) {
             
             // use uncached logic forever
-            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
             
             MethodHandle uncached = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
             uncached = uncached.bindTo(variable);
@@ -715,7 +715,7 @@ public class InvokeDynamicSupport {
         
         site.setTarget(target);
         
-        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") cached");
+        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") cached");
         
         return value;
     }
@@ -726,13 +726,13 @@ public class InvokeDynamicSupport {
     
     public static boolean getGlobalBooleanFallback(GlobalSite site, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
-        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
         
         if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
                 variable.getScope() != GlobalVariable.Scope.GLOBAL) {
             
             // use uncached logic forever
-            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
 
             MethodHandle uncached = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalBooleanUncached", methodType(boolean.class, GlobalVariable.class));
             uncached = uncached.bindTo(variable);
@@ -753,7 +753,7 @@ public class InvokeDynamicSupport {
         
         site.setTarget(target);
         
-        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name + " (" + site.file() + ":" + site.line() + ") cached as boolean");
+        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") cached as boolean");
         
         return value;
     }

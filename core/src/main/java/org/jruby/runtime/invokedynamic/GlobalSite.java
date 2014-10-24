@@ -11,7 +11,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 
 public class GlobalSite extends MutableCallSite {
-    public final String name;
+    private final String name;
     private final String file;
     private final int line;
     private volatile int failures;
@@ -42,5 +42,9 @@ public class GlobalSite extends MutableCallSite {
     
     public void incrementFailures() {
         failures += 1;
+    }
+
+    public String name() {
+        return name;
     }
 }
