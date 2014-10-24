@@ -1,8 +1,8 @@
 package org.jruby.ir;
 
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.interpreter.ScriptBodyInterpreterContext;
 import org.jruby.parser.StaticScope;
 
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public class IRScriptBody extends IRScope {
 
     @Override
     public InterpreterContext allocateInterpreterContext(Instr[] instructionList) {
-        return new ScriptBodyInterpreterContext(this, instructionList);
+        return new BeginEndInterpreterContext(this, instructionList);
     }
 
     @Override

@@ -822,20 +822,28 @@ public class Bootstrap {
             }
 
             if (compiledIRMethod != null) {
-                assert compiledIRMethod.hasExplicitCallProtocol() : "all jitted methods must have call protocol";
-
-                mh = (MethodHandle)compiledIRMethod.getHandle();
-
                 binder = SmartBinder.from(site.signature)
                         .drop("caller");
 
-                // IR compiled methods only support varargs right now
                 if (site.arity == -1) {
                     // already [], nothing to do
+                    mh = (MethodHandle)compiledIRMethod.getHandle();
                 } else if (site.arity == 0) {
-                    binder = binder.insert(2, "args", IRubyObject.NULL_ARRAY);
+                    MethodHandle specific;
+                    if ((specific = compiledIRMethod.getHandleFor(site.arity)) != null) {
+                        mh = specific;
+                    } else {
+                        mh = (MethodHandle)compiledIRMethod.getHandle();
+                        binder = binder.insert(2, "args", IRubyObject.NULL_ARRAY);
+                    }
                 } else {
-                    binder = binder.collect("args", "arg.*");
+                    MethodHandle specific;
+                    if ((specific = compiledIRMethod.getHandleFor(site.arity)) != null) {
+                        mh = specific;
+                    } else {
+                        mh = (MethodHandle) compiledIRMethod.getHandle();
+                        binder = binder.collect("args", "arg.*");
+                    }
                 }
 
                 if (!block) {

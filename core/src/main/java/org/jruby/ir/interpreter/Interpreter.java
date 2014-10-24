@@ -75,6 +75,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return s;
     }
 
+    /**
+     * Note: Currently a unique item in that we always interpret evals.  If we ever implement an eval
+     * cache then this should be migrated to use an eval interpreter context and save off things like
+     * their begin/end blocks so that the eval can eventually be JIT'd.
+     */
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, EvalType evalType) {
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(ss);
@@ -82,7 +87,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // ClosureInterpreterContext never retrieved as an operand in this context.
         // So, self operand is not required here.
         // Passing null to force early crasher if ever used differently.
-        evalScript.prepareForInterpretation();
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv = null;
@@ -103,7 +108,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null); // FIXME: No temp vars yet right?
             rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), s, block, backtraceName);
         } finally {
-            runBeginEndBlocks(evalScript.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
+            runEndBlocks(ic.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
             s.clearEvalType();
             context.popScope();
         }
@@ -129,9 +134,17 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
+    public static void runEndBlocks(List<WrappedIRClosure> blocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
+        if (blocks == null) return;
+
+        for (WrappedIRClosure block: blocks) {
+            ((Block) block.retrieve(context, self, currScope, context.getCurrentScope(), temp)).yield(context, null);
+        }
+    }
+
     @Override
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
-        ScriptBodyInterpreterContext ic = (ScriptBodyInterpreterContext) irScope.prepareForInterpretation();
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.prepareForInterpretation();
         ThreadContext context = runtime.getCurrentContext();
         String name = "(root)";
 
@@ -155,14 +168,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            Interpreter.runBeginEndBlocks(irScope.getBeginBlocks(), context, self, scope, null);
+            Interpreter.runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
             retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
 
             Interpreter.dumpStats();
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
-            Interpreter.runBeginEndBlocks(irScope.getEndBlocks(), context, self, scope, null);
+            Interpreter.runEndBlocks(ic.getEndBlocks(), context, self, scope, null);
             if (!ic.isDynscopeEliminated()) context.popScope();
         }
 

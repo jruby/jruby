@@ -9,11 +9,7 @@ import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.passes.CompilerPass;
-import org.jruby.ir.passes.CompilerPassScheduler;
-import org.jruby.ir.passes.DeadCodeElimination;
-import org.jruby.ir.passes.OptimizeDynScopesPass;
-import org.jruby.ir.passes.UnboxingPass;
+import org.jruby.ir.passes.*;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -596,11 +592,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initScope(boolean jitMode) {
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            buildCFG();
-        }
-
         runCompilerPasses(getManager().getCompilerPasses(this));
 
         if (!jitMode && RubyInstanceConfig.IR_COMPILER_PASSES == null) {
@@ -610,6 +601,12 @@ public abstract class IRScope implements ParseResult {
             // * we have been passed in a list of passes to run on the
             //   commandline (so as to honor the commandline request).
             optimizeSimpleScopes();
+        }
+
+        // If at the end, the cfg is still not build, build it.
+        // (ex: unsafe scopes for which passes don't run).
+        if (getCFG() == null) {
+            buildCFG();
         }
     }
 
@@ -625,6 +622,13 @@ public abstract class IRScope implements ParseResult {
         initScope(false);
 
         // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
+
+        // Always add call protocol instructions now for both interpreter and JIT
+        // since we are removing support for implicit stuff in the interpreter.
+        // When JIT later runs this same pass, it will be a NOP there.
+        if (!isUnsafeScope()) {
+            (new AddCallProtocolInstructions()).run(this);
+        }
 
         interpreterContext = allocateInterpreterContext(prepareInstructions());
 
@@ -1116,12 +1120,12 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    /* Record a begin block -- not all scope implementations can handle them */
+    /** Record a begin block.  Only eval and script body scopes support this */
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
     }
 
-    /* Record an end block -- not all scope implementations can handle them */
+    /* Record an end block.  Only eval and script body scopes support this */
     public void recordEndBlock(IRClosure endBlockClosure) {
         throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
     }

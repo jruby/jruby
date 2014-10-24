@@ -54,7 +54,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
 
         if (Options.TRUFFLE_CALL_FORCE_SPLIT_INLINE_MISSING.load()) {
             insert(callNode);
-            callNode.split();
+            callNode.cloneCallTarget();
             callNode.forceInlining();
         }
     }

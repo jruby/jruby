@@ -4,7 +4,6 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -12,8 +11,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.List;
 
 public class CompiledIRMetaClassBody extends CompiledIRMethod {
     private final IRMetaClassBody irMetaClassBody;
@@ -58,7 +55,7 @@ public class CompiledIRMetaClassBody extends CompiledIRMethod {
 
     @Override
     public DynamicMethod dup() {
-        CompiledIRMetaClassBody x = new CompiledIRMetaClassBody(handle, method, implementationClass);
+        CompiledIRMetaClassBody x = new CompiledIRMetaClassBody(variable, method, implementationClass);
 
         return x;
     }

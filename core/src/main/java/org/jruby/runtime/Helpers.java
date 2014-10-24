@@ -1,6 +1,7 @@
 package org.jruby.runtime;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 
@@ -3116,6 +3117,12 @@ public class Helpers {
 
     public static <T> T[] arrayOf(T... values) {
         return values;
+    }
+
+    public static <T> T[] arrayOf(Class<T> t, int size, T fill) {
+        T[] ary = (T[])Array.newInstance(t, size);
+        Arrays.fill(ary, fill);
+        return ary;
     }
 
     @Deprecated

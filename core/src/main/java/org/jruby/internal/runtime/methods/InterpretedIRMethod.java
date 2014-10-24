@@ -15,7 +15,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -23,8 +23,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-
-import static org.jruby.ir.IRFlags.HAS_EXPLICIT_CALL_PROTOCOL;
 
 public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
@@ -38,12 +36,12 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     // our backtraces.
     private boolean isSynthetic;
 
-    private static class DynamicMethodBox {
+    protected static class DynamicMethodBox {
         public DynamicMethod actualMethod;
         public int callCount = 0;
     }
 
-    private DynamicMethodBox box = new DynamicMethodBox();
+    protected DynamicMethodBox box = new DynamicMethodBox();
 
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
@@ -92,64 +90,102 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         return this.arity;
     }
 
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        DynamicMethodBox box = this.box;
-        if (box.callCount >= 0) tryJit(context, box);
-        DynamicMethod actualMethod = box.actualMethod;
-        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, args, block);
-
-        InterpreterContext ic = ensureInstrsReady();
-
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (ic.hasExplicitCallProtocol()) {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
-        } else {
-            try {
-                pre(ic, context, self, name, block);
-
-                return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
-            } finally {
-                post(ic, context);
-            }
-        }
-    }
-
-    protected void doDebug() {
-        // FIXME: name should probably not be "" ever.
-        String realName = name == null || "".equals(name) ? method.getName() : name;
-        LOG.info("Executing '" + realName + "'");
-        if (displayedCFG == false) {
-            CFG cfg = method.getCFG();
-            LOG.info("Graph:\n" + cfg.toStringGraph());
-            LOG.info("CFG:\n" + cfg.toStringInstrs());
-            displayedCFG = true;
-        }
-    }
-
-    protected void post(InterpreterContext ic, ThreadContext context) {
-        // update call stacks (pop: ..)
-        context.popFrame();
-        if (ic.popDynScope()) {
-            context.popScope();
-        }
-    }
-
-    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
-        // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
-        if (ic.pushNewDynScope()) {
-            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
-        }
-        context.setCurrentVisibility(getVisibility());
-    }
-
     public InterpreterContext ensureInstrsReady() {
         // Try unsync access first before calling more expensive method for getting IC
         InterpreterContext ic = method.getInterpreterContext();
 
         return ic == null ? method.prepareForInterpretation() : ic;
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod jittedMethod = box.actualMethod;
+
+        if (jittedMethod != null) {
+            return jittedMethod.call(context, self, clazz, name, args, block);
+        } else {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod jittedMethod = box.actualMethod;
+
+        if (jittedMethod != null) {
+            return jittedMethod.call(context, self, clazz, name, block);
+        } else {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, IRubyObject.NULL_ARRAY, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod jittedMethod = box.actualMethod;
+
+        if (jittedMethod != null) {
+            return jittedMethod.call(context, self, clazz, name, arg0, block);
+        } else {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0), block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod jittedMethod = box.actualMethod;
+
+        if (jittedMethod != null) {
+            return jittedMethod.call(context, self, clazz, name, arg0, arg1, block);
+        } else {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1), block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod jittedMethod = box.actualMethod;
+
+        if (jittedMethod != null) {
+            return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
+        } else {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1, arg2), block);
+        }
+    }
+
+    protected void doDebug() {
+        // FIXME: This is printing out IRScope CFG but JIT may be active and it might not reflect
+        // currently executing.  Move into JIT and into interp since they will be getting CFG from
+        // different sources
+        // FIXME: This is only printing out CFG once.  If we keep applying more passes then we
+        // will want to print out after those new passes.
+        ensureInstrsReady();
+        LOG.info("Executing '" + method.getName() + "'");
+        if (!displayedCFG) {
+            CFG cfg = method.getCFG();
+            LOG.info("Graph:\n" + cfg.toStringGraph());
+            LOG.info("CFG:\n" + cfg.toStringInstrs());
+            displayedCFG = true;
+        }
     }
 
     public DynamicMethod getMethodForCaching() {
@@ -168,7 +204,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
 
-    private void tryJit(ThreadContext context, DynamicMethodBox box) {
+    protected void tryJit(ThreadContext context, DynamicMethodBox box) {
         Ruby runtime = context.runtime;
 
         // don't JIT during runtime boot

@@ -72,7 +72,7 @@ abstract class ClassData {
         return types;
     }
 
-    public abstract void pushmethod(String name, IRScope scope, Signature signature);
+    public abstract void pushmethod(String name, IRScope scope, Signature signature, boolean specificArity);
 
     public void popmethod() {
         method().endMethod();

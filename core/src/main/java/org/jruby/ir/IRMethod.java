@@ -9,8 +9,12 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.parser.StaticScope;
 
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -23,6 +27,12 @@ public class IRMethod extends IRScope {
     // Argument description of the form [:req, "a"], [:opt, "b"] ..
     private List<String[]> argDesc;
 
+    // Signatures to the jitted versions of this method
+    private Map<Integer, MethodType> signatures;
+
+    // Method name in the jitted version of this method
+    private String jittedName;
+
     public IRMethod(IRManager manager, IRScope lexicalParent, String name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
         super(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
@@ -30,6 +40,7 @@ public class IRMethod extends IRScope {
         this.isInstanceMethod = isInstanceMethod;
         this.callArgs = new ArrayList<Operand>();
         this.argDesc = new ArrayList<String[]>();
+        this.signatures = new HashMap<>();
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
@@ -74,5 +85,25 @@ public class IRMethod extends IRScope {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
         return lvar;
+    }
+
+    public void addNativeSignature(int arity, MethodType signature) {
+        signatures.put(arity, signature);
+    }
+
+    public MethodType getNativeSignature(int arity) {
+        return signatures.get(arity);
+    }
+
+    public Map<Integer, MethodType> getNativeSignatures() {
+        return Collections.unmodifiableMap(signatures);
+    }
+
+    public String getJittedName() {
+        return jittedName;
+    }
+
+    public void setJittedName(String jittedName) {
+        this.jittedName = jittedName;
     }
 }

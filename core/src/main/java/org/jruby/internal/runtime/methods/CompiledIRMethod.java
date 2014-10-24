@@ -3,7 +3,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -15,28 +14,35 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.jruby.runtime.Helpers;
 
 public class CompiledIRMethod extends JavaMethod implements MethodArgs2, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("CompiledIRMethod");
 
-    protected final MethodHandle handle;
+    protected final MethodHandle variable;
+
+    protected final MethodHandle specific;
+    protected final int specificArity;
 
     protected final IRScope method;
     private final Arity arity;
     private String[] parameterList;
 
-    public CompiledIRMethod(MethodHandle handle, IRScope method, Visibility visibility, RubyModule implementationClass) {
+    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass) {
+        this(variable, null, -1, method, visibility, implementationClass);
+    }
+
+    public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
-        this.handle = handle;
+        this.variable = variable;
+        this.specific = specific;
+        this.specificArity = specificArity;
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
 
-        setHandle(handle);
+        setHandle(variable);
     }
 
     public IRScope getIRMethod() {
@@ -45,6 +51,14 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
 
     public StaticScope getStaticScope() {
         return method.getStaticScope();
+    }
+
+    public MethodHandle getHandleFor(int arity) {
+        if (specificArity != -1 && arity == specificArity) {
+            return specific;
+        }
+
+        return null;
     }
 
     public String[] getParameterList() {
@@ -89,7 +103,71 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.handle.invokeExact(context, method.getStaticScope(), self, args, block, implementationClass);
+            return (IRubyObject)this.variable.invokeExact(context, method.getStaticScope(), self, args, block, implementationClass);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            // not reached
+            return null;
+        } finally {
+            post(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
+        pre(context, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, block, implementationClass);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            // not reached
+            return null;
+        } finally {
+            post(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        if (specificArity != 1) return call(context, self, clazz, name, Helpers.arrayOf(arg0), block);
+        pre(context, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, block, implementationClass);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            // not reached
+            return null;
+        } finally {
+            post(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        if (specificArity != 2) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1), block);
+        pre(context, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, block, implementationClass);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            // not reached
+            return null;
+        } finally {
+            post(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (specificArity != 3) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1, arg2), block);
+        pre(context, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, arg2, block, implementationClass);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -105,7 +183,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
 
     @Override
     public DynamicMethod dup() {
-        return new CompiledIRMethod(handle, method, visibility, implementationClass);
+        return new CompiledIRMethod(variable, specific, specificArity, method, visibility, implementationClass);
     }
 
     public String getFile() {

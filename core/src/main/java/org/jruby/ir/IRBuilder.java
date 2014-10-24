@@ -477,8 +477,9 @@ public class IRBuilder {
             }
         }
 
-        while (n.getNodeType() == NodeType.NEWLINENODE)
-            n = ((NewlineNode)n).getNextNode();
+        while (n.getNodeType() == NodeType.NEWLINENODE) {
+            n = ((NewlineNode) n).getNextNode();
+        }
 
         return n;
     }
@@ -1658,11 +1659,12 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = s.getNearestModuleReferencingScopeDepth();
-        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
-        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
+
+        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Thread poll on entry to method
         addInstr(method, new ThreadPollInstr());
@@ -2956,7 +2958,8 @@ public class IRBuilder {
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
         // might be broken currently. We could either fix it or consider dropping support
         // for END blocks altogether or only support them in the toplevel. Not worth the pain.
-        addInstr(s, new RecordEndBlockInstr(topLevel, endClosure));
+        s.recordEndBlock(endClosure);
+        addInstr(s, new RecordEndBlockInstr(topLevel, new WrappedIRClosure(s.getSelf(), endClosure)));
         return manager.getNil();
     }
 
@@ -3515,27 +3518,28 @@ public class IRBuilder {
 
     private Operand buildModuleOrClassBody(IRScope parent, Variable tmpVar, IRModuleBody body, Node bodyNode, int linenumber) {
         Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), tmpVar, getImplicitBlockArg(parent)));
+        IRBuilder bodyBuilder = newIRBuilder(manager);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
+            bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
         }
 
-        addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
+        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
 
         if (body instanceof IRMetaClassBody) {
-            addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
+            bodyBuilder.addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
         }
 
-        addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
-        addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
+        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
+        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
         // Create a new nested builder to ensure this gets its own IR builder state
-        Operand bodyReturnValue = newIRBuilder(manager).build(bodyNode, body);
+        Operand bodyReturnValue = bodyBuilder.build(bodyNode, body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
+            bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
         }
 
-        addInstr(body, new ReturnInstr(bodyReturnValue));
+        bodyBuilder.addInstr(body, new ReturnInstr(bodyReturnValue));
 
         return processBodyResult;
     }
