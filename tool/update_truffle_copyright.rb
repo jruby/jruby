@@ -70,7 +70,7 @@ paths.each do |file|
 
   year1, year2 = $~[:year1], $~[:year2]
   year1 = Integer(year1)
-  year2 = year2 ? Integer(year2) : year1
+  year2 = Integer(year2 || year1)
 
   if now_year > year2
     contents = File.read(file)
