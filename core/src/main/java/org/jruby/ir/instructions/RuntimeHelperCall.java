@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
@@ -15,6 +16,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Arrays;
 import java.util.Map;
+
+import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
 
 public class RuntimeHelperCall extends Instr implements ResultInstr {
     public enum Methods {
@@ -63,6 +66,25 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         for (int i = 0; i < args.length; i++) {
             args[i] = args[i].getSimplifiedOperand(valueMap, force);
         }
+    }
+
+    /**
+     * Does this instruction do anything the scope is interested in?
+     *
+     * @param scope
+     * @return true if it modified the scope.
+     */
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        boolean modifiedScope = false;
+
+        // FIXME: Impl of this helper uses frame class.  Determine if we can do this another way.
+        if (helperMethod == Methods.IS_DEFINED_SUPER) {
+            modifiedScope = true;
+            scope.getFlags().add(REQUIRES_FRAME);
+        }
+
+        return modifiedScope;
     }
 
     @Override
