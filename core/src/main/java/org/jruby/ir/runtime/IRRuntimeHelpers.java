@@ -37,6 +37,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
@@ -1166,5 +1167,15 @@ public class IRRuntimeHelpers {
         RubyModule implClass = method.getImplementationClass();
 
         return method.call(context, implClass, implClass, "");
+    }
+
+    @JIT
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject[] pieces, int embeddedOptions) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+
+        return re;
     }
 }

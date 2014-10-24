@@ -85,4 +85,5 @@ abstract class ClassData {
     public AtomicInteger callSiteCount = new AtomicInteger(0);
     public Set<Integer> arrayMethodsDefined = new HashSet();
     public Set<Integer> hashMethodsDefined = new HashSet();
+    public Set<Integer> dregexpMethodsDefined = new HashSet();
 }

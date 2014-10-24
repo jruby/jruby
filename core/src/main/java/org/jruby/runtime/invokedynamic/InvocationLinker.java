@@ -86,31 +86,31 @@ public class InvocationLinker {
             return new ConstantCallSite(target);
         }
 
-        JRubyCallSite site;
+        JRubyCallSite site = null;
         String method = JavaNameMangler.demangleMethodName(names[1]);
-        if (operation.equals("call")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, false, false, true);
-        } else if (operation.equals("fcall")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, file, line, method, false, false, true);
-        } else if (operation.equals("vcall")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, false, false, true);
-        } else if (operation.equals("callIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, false, true, true);
-        } else if (operation.equals("fcallIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, file, line, method, false, true, true);
-        } else if (operation.equals("vcallIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, false, true, true);
-        } else if (operation.equals("attrAssign")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, true, false, false);
-        } else if (operation.equals("attrAssignSelf")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, true, false, false);
-        } else if (operation.equals("attrAssignExpr")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, true, false, true);
-        } else if (operation.equals("attrAssignSelfExpr")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, true, false, true);
-        } else {
-            throw new RuntimeException("wrong invokedynamic target: " + name);
-        }
+//        if (operation.equals("call")) {
+//            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, false, false, true);
+//        } else if (operation.equals("fcall")) {
+//            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, file, line, method, false, false, true);
+//        } else if (operation.equals("vcall")) {
+//            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, false, false, true);
+//        } else if (operation.equals("callIter")) {
+//            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, false, true, true);
+//        } else if (operation.equals("fcallIter")) {
+//            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, file, line, method, false, true, true);
+//        } else if (operation.equals("vcallIter")) {
+//            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, false, true, true);
+//        } else if (operation.equals("attrAssign")) {
+//            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, true, false, false);
+//        } else if (operation.equals("attrAssignSelf")) {
+//            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, true, false, false);
+//        } else if (operation.equals("attrAssignExpr")) {
+//            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, true, false, true);
+//        } else if (operation.equals("attrAssignSelfExpr")) {
+//            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, true, false, true);
+//        } else {
+//            throw new RuntimeException("wrong invokedynamic target: " + name);
+//        }
         
         MethodType fallbackType = type.insertParameterTypes(0, JRubyCallSite.class);
         MethodHandle myFallback = insertArguments(

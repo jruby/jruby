@@ -17,6 +17,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -66,27 +67,28 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadContext() {
-        adapter.aload(0);
+        adapter.aload(signature.argOffset("context"));
     }
 
     public void loadStaticScope() {
-        adapter.aload(1);
+        adapter.aload(signature.argOffset("scope"));
     }
 
     public void loadSelf() {
-        adapter.aload(2);
+        adapter.aload(signature.argOffset("self"));
     }
 
     public void loadArgs() {
-        adapter.aload(3);
+        adapter.aload(signature.argOffset("args"));
     }
 
     public void loadBlock() {
-        adapter.aload(4);
+        adapter.aload(signature.argOffset("block"));
     }
 
     public void loadFrameClass() {
-        adapter.aload(5);
+        // when present, should be last element in signature
+        adapter.aload(signature.argCount() - 1);
     }
 
     public void loadSuperName() {
@@ -97,7 +99,7 @@ public abstract class IRBytecodeAdapter {
         if (signature.argOffset("type") == -1) {
             adapter.aconst_null();
         } else {
-            adapter.aload(6);
+            adapter.aload(signature.argOffset("type"));
         }
     }
 
@@ -214,11 +216,24 @@ public abstract class IRBytecodeAdapter {
     public abstract void pushByteList(ByteList bl);
 
     /**
+     * Build and save a literal regular expression.
+     *
      * Stack required: ThreadContext, RubyString.
      *
      * @param options options for the regexp
      */
     public abstract void pushRegexp(int options);
+
+    /**
+     * Build a dynamic regexp.
+     *
+     * No stack requirement. The callback must push onto this method's stack the ThreadContext and all arguments for
+     * building the dregexp, matching the given arity.
+     *
+     * @param options options for the regexp
+     * @param arity number of Strings passed in
+     */
+    public abstract void pushDRegexp(Runnable callback, RegexpOptions options, int arity);
 
     /**
      * Push a symbol on the stack.
