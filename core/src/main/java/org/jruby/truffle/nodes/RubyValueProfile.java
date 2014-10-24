@@ -33,6 +33,8 @@ public class RubyValueProfile {
             } else if (cachedValue instanceof Double && value instanceof Double
                     && exactCompare((double) cachedValue, (double) value)) {
                 return cachedValue;
+            } else if (cachedValue == value) {
+                return cachedValue;
             } else {
                 cacheMiss(value);
             }
