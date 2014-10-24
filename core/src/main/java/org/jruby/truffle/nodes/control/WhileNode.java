@@ -55,13 +55,14 @@ public class WhileNode extends RubyNode {
                 return false;
             }
 
-            while (true) {
+            while (true) { // for redo
                 try {
                     body.execute(frame);
                     return true;
                 } catch (NextException e) {
                     return true;
                 } catch (RedoException e) {
+                    // Just continue in the while(true) loop.
                 }
             }
         }
