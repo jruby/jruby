@@ -9,10 +9,8 @@
  */
 package org.jruby.truffle.nodes.methods.arguments;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
@@ -49,7 +47,7 @@ public class ShouldDestructureNode extends RubyNode {
 
         // If we only accept one argument, there's never any need to destructure
 
-        if (arity.getMinimum() == 1 && arity.getMaximum() == 1) {
+        if (arity.getRequired() == 1 && arity.getMaximum() == 1) {
             return false;
         }
 

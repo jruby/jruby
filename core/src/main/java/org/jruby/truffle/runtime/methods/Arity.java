@@ -11,19 +11,24 @@ package org.jruby.truffle.runtime.methods;
 
 public class Arity {
 
-    private final int minimum;
-    public static final int NO_MINIMUM = 0;
-
-    private final int maximum;
     public static final int NO_MAXIMUM = Integer.MAX_VALUE;
 
-    public Arity(int minimum, int maximum) {
-        this.minimum = minimum;
+    private final int required;
+    private final int optional;
+    private final int maximum;
+
+    public Arity(int required, int optional, int maximum) {
+        this.required = required;
+        this.optional = optional;
         this.maximum = maximum;
     }
 
-    public int getMinimum() {
-        return minimum;
+    public int getRequired() {
+        return required;
+    }
+
+    public int getOptional() {
+        return optional;
     }
 
     public int getMaximum() {

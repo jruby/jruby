@@ -122,7 +122,20 @@ public abstract class CoreMethodNodeManager {
 
         final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, methodDetails.getIndicativeName());
 
-        final Arity arity = new Arity(methodDetails.getMethodAnnotation().minArgs(), methodDetails.getMethodAnnotation().maxArgs());
+        final int required = methodDetails.getMethodAnnotation().minArgs();
+
+        final int maximum;
+        final int optional;
+
+        if (methodDetails.getMethodAnnotation().maxArgs() == Arity.NO_MAXIMUM) {
+            maximum = Arity.NO_MAXIMUM;
+            optional = 0;
+        } else {
+            maximum = methodDetails.getMethodAnnotation().maxArgs();
+            optional = methodDetails.getMethodAnnotation().maxArgs() - required;
+        }
+
+        final Arity arity = new Arity(required,  optional, maximum);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 

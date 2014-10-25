@@ -41,7 +41,7 @@ public @interface CoreMethod {
 
     boolean needsBlock() default false;
 
-    int minArgs() default Arity.NO_MINIMUM;
+    int minArgs() default 0;
 
     int maxArgs() default Arity.NO_MAXIMUM;
 
