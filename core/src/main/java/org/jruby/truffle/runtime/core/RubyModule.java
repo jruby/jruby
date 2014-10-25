@@ -28,16 +28,6 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import java.util.*;
 
 /**
- * Either an IncludedModule, a RubyClass or a RubyModule.
- * Private interface, do not use outside RubyModule.
- */
-interface ModuleChain {
-    ModuleChain getParentModule();
-
-    RubyModule getActualModule();
-}
-
-/**
  * Represents the Ruby {@code Module} class.
  */
 public class RubyModule extends RubyObject implements ModuleChain {
