@@ -9,14 +9,6 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
-
-/**
- * Represents the arity, or parameter contract, of a method.
- */
 public class Arity {
 
     private final int minimum;
@@ -24,9 +16,6 @@ public class Arity {
 
     private final int maximum;
     public static final int NO_MAXIMUM = Integer.MAX_VALUE;
-
-    public static final Arity NO_ARGS = new Arity(0, 0);
-    public static final Arity ONE_ARG = new Arity(1, 1);
 
     public Arity(int minimum, int maximum) {
         this.minimum = minimum;
@@ -41,28 +30,4 @@ public class Arity {
         return maximum;
     }
 
-    @Override
-    public String toString() {
-        return String.format("Arity(%d, %d)", minimum, maximum);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Arity arity = (Arity) o;
-
-        if (maximum != arity.maximum) return false;
-        if (minimum != arity.minimum) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = minimum;
-        result = 31 * result + maximum;
-        return result;
-    }
 }
