@@ -11,16 +11,14 @@ package org.jruby.truffle.runtime.methods;
 
 public class Arity {
 
-    public static final int NO_MAXIMUM = Integer.MAX_VALUE;
-
     private final int required;
     private final int optional;
-    private final int maximum;
+    private final boolean allowsMore;
 
-    public Arity(int required, int optional, int maximum) {
+    public Arity(int required, int optional, boolean allowsMore) {
         this.required = required;
         this.optional = optional;
-        this.maximum = maximum;
+        this.allowsMore = allowsMore;
     }
 
     public int getRequired() {
@@ -31,8 +29,8 @@ public class Arity {
         return optional;
     }
 
-    public int getMaximum() {
-        return maximum;
+    public boolean allowsMore() {
+        return allowsMore;
     }
 
 }

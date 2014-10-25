@@ -41,13 +41,13 @@ public class ShouldDestructureNode extends RubyNode {
         // If we don't accept any arguments, there's never any need to destructure
         // TODO(CS): is this guaranteed by the translator anyway?
 
-        if (arity.getMaximum() == 0) {
+        if (!arity.allowsMore() && arity.getRequired() == 0 && arity.getOptional() == 0) {
             return false;
         }
 
         // If we only accept one argument, there's never any need to destructure
 
-        if (arity.getRequired() == 1 && arity.getMaximum() == 1) {
+        if (!arity.allowsMore() && arity.getRequired() == 1 && arity.getOptional() == 0) {
             return false;
         }
 

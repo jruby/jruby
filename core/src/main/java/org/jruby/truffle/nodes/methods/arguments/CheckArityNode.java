@@ -44,7 +44,7 @@ public class CheckArityNode extends RubyNode {
             return false;
         }
 
-        if (arity.getMaximum() != Arity.NO_MAXIMUM && given > arity.getMaximum()) {
+        if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
             return false;
         }
 

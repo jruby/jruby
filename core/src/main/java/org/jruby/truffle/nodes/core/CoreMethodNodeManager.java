@@ -123,19 +123,15 @@ public abstract class CoreMethodNodeManager {
         final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, methodDetails.getIndicativeName());
 
         final int required = methodDetails.getMethodAnnotation().required();
-
         final int optional;
-        final int maximum;
 
         if (methodDetails.getMethodAnnotation().argumentsAsArray()) {
             optional = 0;
-            maximum = Arity.NO_MAXIMUM;
         } else {
             optional = methodDetails.getMethodAnnotation().optional();
-            maximum = required + optional;
         }
 
-        final Arity arity = new Arity(required,  optional, maximum);
+        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray());
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
@@ -152,11 +148,7 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getMethodAnnotation().argumentsAsArray()) {
             argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
         } else {
-            if (arity.getMaximum() == Arity.NO_MAXIMUM) {
-                throw new UnsupportedOperationException("if a core method isn't splatted, you need to specify a maximum");
-            }
-
-            for (int n = 0; n < arity.getMaximum(); n++) {
+            for (int n = 0; n < arity.getRequired() + arity.getOptional(); n++) {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
                 if (ArrayUtils.contains(methodDetails.getMethodAnnotation().lowerFixnumParameters(), n)) {
