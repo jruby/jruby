@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
 
-    @CoreMethod(names = "+@", maxArgs = 0)
+    @CoreMethod(names = "+@")
     public abstract static class PosNode extends CoreMethodNode {
 
         public PosNode(RubyContext context, SourceSection sourceSection) {
@@ -49,7 +49,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "-@", maxArgs = 0)
+    @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
 
         public NegNode(RubyContext context, SourceSection sourceSection) {
@@ -87,7 +87,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "+", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "+", required = 1, optional = 0)
     public abstract static class AddNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -169,7 +169,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "-", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "-", required = 1, optional = 0)
     public abstract static class SubNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -251,7 +251,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "*", required = 1, optional = 0)
     public abstract static class MulNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -333,7 +333,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "**", minArgs = 1, maxArgs = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
+    @CoreMethod(names = "**", required = 1, optional = 0, lowerFixnumSelf = true, lowerFixnumParameters = 0)
     public abstract static class PowNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -385,7 +385,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "/", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "/", required = 1, optional = 0)
     public abstract static class DivNode extends CoreMethodNode {
 
         private final BranchProfile bGreaterZero = new BranchProfile();
@@ -564,7 +564,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "%", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "%", required = 1, optional = 0)
     public abstract static class ModNode extends CoreMethodNode {
 
         private final BranchProfile adjustProfile = new BranchProfile();
@@ -627,7 +627,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "divmod", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "divmod", required = 1, optional = 0)
     public abstract static class DivModNode extends CoreMethodNode {
 
         @Child protected GeneralDivModNode divModNode;
@@ -674,7 +674,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<", required = 1, optional = 0)
     public abstract static class LessNode extends CoreMethodNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
@@ -726,7 +726,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<=", required = 1, optional = 0)
     public abstract static class LessEqualNode extends CoreMethodNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -778,7 +778,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "===", "eql?"}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "===", "eql?"}, required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -835,7 +835,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<=>", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<=>", required = 1, optional = 0)
     public abstract static class CompareNode extends CoreMethodNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -887,7 +887,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "!=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "!=", required = 1, optional = 0)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -939,7 +939,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = ">=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = ">=", required = 1, optional = 0)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -991,7 +991,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = ">", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = ">", required = 1, optional = 0)
     public abstract static class GreaterNode extends CoreMethodNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
@@ -1044,7 +1044,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "~", maxArgs = 0)
+    @CoreMethod(names = "~")
     public abstract static class ComplementNode extends CoreMethodNode {
 
         public ComplementNode(RubyContext context, SourceSection sourceSection) {
@@ -1067,7 +1067,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "&", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "&", required = 1, optional = 0)
     public abstract static class BitAndNode extends CoreMethodNode {
 
         public BitAndNode(RubyContext context, SourceSection sourceSection) {
@@ -1109,7 +1109,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "|", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "|", required = 1, optional = 0)
     public abstract static class BitOrNode extends CoreMethodNode {
 
         public BitOrNode(RubyContext context, SourceSection sourceSection) {
@@ -1151,7 +1151,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "^", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "^", required = 1, optional = 0)
     public abstract static class BitXOrNode extends CoreMethodNode {
 
         public BitXOrNode(RubyContext context, SourceSection sourceSection) {
@@ -1193,7 +1193,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "<<", required = 1, optional = 0, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -1241,7 +1241,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = ">>", required = 1, optional = 0, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
@@ -1280,7 +1280,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "[]", required = 1, optional = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -1304,7 +1304,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "abs", maxArgs = 0)
+    @CoreMethod(names = "abs")
     public abstract static class AbsNode extends CoreMethodNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
@@ -1327,7 +1327,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "floor", maxArgs = 0)
+    @CoreMethod(names = "floor")
     public abstract static class FloorNode extends CoreMethodNode {
 
         public FloorNode(RubyContext context, SourceSection sourceSection) {
@@ -1350,7 +1350,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "chr", maxArgs = 0)
+    @CoreMethod(names = "chr")
     public abstract static class ChrNode extends CoreMethodNode {
 
         public ChrNode(RubyContext context, SourceSection sourceSection) {
@@ -1371,7 +1371,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "nonzero?", maxArgs = 0)
+    @CoreMethod(names = "nonzero?")
     public abstract static class NonZeroNode extends CoreMethodNode {
 
         public NonZeroNode(RubyContext context, SourceSection sourceSection) {
@@ -1393,7 +1393,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "size", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "size", needsSelf = false)
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -1411,7 +1411,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "step", needsBlock = true, minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "step", needsBlock = true, required = 2, optional = 0)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         public StepNode(RubyContext context, SourceSection sourceSection) {
@@ -1433,7 +1433,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "times", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
@@ -1531,7 +1531,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = {"to_i", "to_int"}, maxArgs = 0)
+    @CoreMethod(names = {"to_i", "to_int"})
     public abstract static class ToINode extends CoreMethodNode {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
@@ -1554,7 +1554,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "to_f", maxArgs = 0)
+    @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends CoreMethodNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
@@ -1577,7 +1577,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -1602,7 +1602,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "upto", needsBlock = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "upto", needsBlock = true, required = 1, optional = 0)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
@@ -1691,7 +1691,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "zero?", maxArgs = 0)
+    @CoreMethod(names = "zero?")
     public abstract static class ZeroNode extends CoreMethodNode {
 
         public ZeroNode(RubyContext context, SourceSection sourceSection) {

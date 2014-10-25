@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat;
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
-    @CoreMethod(names = "-", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "-", required = 1, optional = 0)
     public abstract static class SubNode extends CoreMethodNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
@@ -38,7 +38,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = "now", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "now", onSingleton = true)
     public abstract static class NowNode extends CoreMethodNode {
 
         public NowNode(RubyContext context, SourceSection sourceSection) {
@@ -57,7 +57,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = "from_array", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "from_array", onSingleton = true)
     public abstract static class FromArrayNode extends CoreMethodNode {
 
         public FromArrayNode(RubyContext context, SourceSection sourceSection) {
@@ -84,7 +84,7 @@ public abstract class TimeNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

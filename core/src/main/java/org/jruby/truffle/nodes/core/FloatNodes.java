@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
 
-    @CoreMethod(names = "+@", maxArgs = 0)
+    @CoreMethod(names = "+@")
     public abstract static class PosNode extends CoreMethodNode {
 
         public PosNode(RubyContext context, SourceSection sourceSection) {
@@ -41,7 +41,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "-@", maxArgs = 0)
+    @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
 
         public NegNode(RubyContext context, SourceSection sourceSection) {
@@ -59,7 +59,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "+", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "+", required = 1, optional = 0)
     public abstract static class AddNode extends CoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
@@ -92,7 +92,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "-", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "-", required = 1, optional = 0)
     public abstract static class SubNode extends CoreMethodNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
@@ -125,7 +125,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "*", required = 1, optional = 0)
     public abstract static class MulNode extends CoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -158,7 +158,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "**", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "**", required = 1, optional = 0)
     public abstract static class PowNode extends CoreMethodNode {
 
         public PowNode(RubyContext context, SourceSection sourceSection) {
@@ -191,7 +191,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "/", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "/", required = 1, optional = 0)
     public abstract static class DivNode extends CoreMethodNode {
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
@@ -224,7 +224,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "%", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "%", required = 1, optional = 0)
     public abstract static class ModNode extends CoreMethodNode {
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
@@ -257,7 +257,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "divmod", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "divmod", required = 1, optional = 0)
     public abstract static class DivModNode extends CoreMethodNode {
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
@@ -290,7 +290,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "<", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<", required = 1, optional = 0)
     public abstract static class LessNode extends CoreMethodNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
@@ -322,7 +322,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "<=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<=", required = 1, optional = 0)
     public abstract static class LessEqualNode extends CoreMethodNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -354,7 +354,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "==", required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -386,7 +386,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "!=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "!=", required = 1, optional = 0)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -418,7 +418,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = ">=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = ">=", required = 1, optional = 0)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -450,7 +450,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = ">", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = ">", required = 1, optional = 0)
     public abstract static class GreaterNode extends CoreMethodNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
@@ -482,7 +482,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "abs", maxArgs = 0)
+    @CoreMethod(names = "abs")
     public abstract static class AbsNode extends CoreMethodNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
@@ -500,7 +500,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "infinite?", maxArgs = 0)
+    @CoreMethod(names = "infinite?")
     public abstract static class InfiniteNode extends CoreMethodNode {
 
         public InfiniteNode(RubyContext context, SourceSection sourceSection) {
@@ -526,7 +526,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "nan?", maxArgs = 0)
+    @CoreMethod(names = "nan?")
     public abstract static class NaNNode extends CoreMethodNode {
 
         public NaNNode(RubyContext context, SourceSection sourceSection) {
@@ -544,7 +544,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "nonzero?", maxArgs = 0)
+    @CoreMethod(names = "nonzero?")
     public abstract static class NonZeroNode extends CoreMethodNode {
 
         public NonZeroNode(RubyContext context, SourceSection sourceSection) {
@@ -566,7 +566,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "round", maxArgs = 0)
+    @CoreMethod(names = "round")
     public abstract static class RoundNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -613,7 +613,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "to_f", maxArgs = 0)
+    @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends CoreMethodNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
@@ -631,7 +631,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

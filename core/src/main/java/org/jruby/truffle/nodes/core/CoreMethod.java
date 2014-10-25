@@ -37,13 +37,13 @@ public @interface CoreMethod {
 
     boolean needsSelf() default true;
 
-    boolean isSplatted() default false;
+    boolean argumentsAsArray() default false;
 
     boolean needsBlock() default false;
 
-    int minArgs() default 0;
+    int required() default 0;
 
-    int maxArgs() default Arity.NO_MAXIMUM;
+    int optional() default 0;
 
     boolean lowerFixnumSelf() default false;
 

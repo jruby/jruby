@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -19,7 +18,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
 
-    @CoreMethod(names = "local_variable_get", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "local_variable_get", required = 1, optional = 0)
     public abstract static class LocalVariableGetNode extends CoreMethodNode {
 
         public LocalVariableGetNode(RubyContext context, SourceSection sourceSection) {

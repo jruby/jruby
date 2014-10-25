@@ -122,17 +122,17 @@ public abstract class CoreMethodNodeManager {
 
         final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, methodDetails.getIndicativeName());
 
-        final int required = methodDetails.getMethodAnnotation().minArgs();
+        final int required = methodDetails.getMethodAnnotation().required();
 
-        final int maximum;
         final int optional;
+        final int maximum;
 
-        if (methodDetails.getMethodAnnotation().maxArgs() == Arity.NO_MAXIMUM) {
-            maximum = Arity.NO_MAXIMUM;
+        if (methodDetails.getMethodAnnotation().argumentsAsArray()) {
             optional = 0;
+            maximum = Arity.NO_MAXIMUM;
         } else {
-            maximum = methodDetails.getMethodAnnotation().maxArgs();
-            optional = methodDetails.getMethodAnnotation().maxArgs() - required;
+            optional = methodDetails.getMethodAnnotation().optional();
+            maximum = required + optional;
         }
 
         final Arity arity = new Arity(required,  optional, maximum);
@@ -149,7 +149,7 @@ public abstract class CoreMethodNodeManager {
             argumentsNodes.add(readSelfNode);
         }
 
-        if (methodDetails.getMethodAnnotation().isSplatted()) {
+        if (methodDetails.getMethodAnnotation().argumentsAsArray()) {
             argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
         } else {
             if (arity.getMaximum() == Arity.NO_MAXIMUM) {

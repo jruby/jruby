@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -18,7 +17,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "NilClass")
 public abstract class NilClassNodes {
 
-    @CoreMethod(names = "!", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "!", needsSelf = false)
     public abstract static class NotNode extends CoreMethodNode {
 
         public NotNode(RubyContext context, SourceSection sourceSection) {
@@ -35,7 +34,7 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "eql?"}, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "eql?"}, needsSelf = false, required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -55,7 +54,7 @@ public abstract class NilClassNodes {
 
     }
 
-    @CoreMethod(names = "!=", needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "!=", needsSelf = false, required = 1, optional = 0)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -73,7 +72,7 @@ public abstract class NilClassNodes {
 
     }
 
-    @CoreMethod(names = "inspect", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "inspect", needsSelf = false)
     public abstract static class InpsectNode extends CoreMethodNode {
 
         public InpsectNode(RubyContext context, SourceSection sourceSection) {
@@ -90,7 +89,7 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = "nil?", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "nil?", needsSelf = false)
     public abstract static class NilNode extends CoreMethodNode {
 
         public NilNode(RubyContext context, SourceSection sourceSection) {
@@ -107,7 +106,7 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = "to_a", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "to_a", needsSelf = false)
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
@@ -124,7 +123,7 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = "to_i", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "to_i", needsSelf = false)
     public abstract static class ToINode extends CoreMethodNode {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
@@ -141,7 +140,7 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = "to_s", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "to_s", needsSelf = false)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    @CoreMethod(names = {"==", "===", "eql?"}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "===", "eql?"}, required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -67,7 +67,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "all_symbols", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "all_symbols", onSingleton = true)
     public abstract static class AllSymbolsNode extends CoreMethodNode {
 
         public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
@@ -92,7 +92,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "empty?", maxArgs = 0)
+    @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
@@ -112,7 +112,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "to_proc", maxArgs = 0)
+    @CoreMethod(names = "to_proc")
     public abstract static class ToProcNode extends CoreMethodNode {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
@@ -132,7 +132,7 @@ public abstract class SymbolNodes {
         }
     }
 
-    @CoreMethod(names = "to_sym", maxArgs = 0)
+    @CoreMethod(names = "to_sym")
     public abstract static class ToSymNode extends CoreMethodNode {
 
         public ToSymNode(RubyContext context, SourceSection sourceSection) {
@@ -150,7 +150,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -170,7 +170,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "inspect", maxArgs = 0)
+    @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {

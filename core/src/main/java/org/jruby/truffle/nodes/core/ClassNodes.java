@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,7 +26,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
 
-    @CoreMethod(names = "===", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "===", required = 1, optional = 0)
     public abstract static class ContainsInstanceNode extends CoreMethodNode {
 
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
@@ -53,7 +52,7 @@ public abstract class ClassNodes {
         }
     }
 
-    @CoreMethod(names = "new", needsBlock = true, isSplatted = true)
+    @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
     public abstract static class NewNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initialize;
@@ -86,7 +85,7 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -105,7 +104,7 @@ public abstract class ClassNodes {
         }
     }
 
-    @CoreMethod(names = "class_variables", maxArgs = 0)
+    @CoreMethod(names = "class_variables")
     public abstract static class ClassVariablesNode extends CoreMethodNode {
 
         public ClassVariablesNode(RubyContext context, SourceSection sourceSection) {
@@ -129,7 +128,7 @@ public abstract class ClassNodes {
         }
     }
 
-    @CoreMethod(names = "superclass", maxArgs = 0)
+    @CoreMethod(names = "superclass")
     public abstract static class SuperClassNode extends CoreMethodNode {
 
         public SuperClassNode(RubyContext context, SourceSection sourceSection) {

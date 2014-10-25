@@ -36,7 +36,6 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.Memo;
@@ -47,7 +46,7 @@ import java.util.Comparator;
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
 
-    @CoreMethod(names = "+", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "+", required = 1, optional = 0)
     public abstract static class AddNode extends ArrayCoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
@@ -114,7 +113,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "-", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "-", required = 1, optional = 0)
     public abstract static class SubNode extends ArrayCoreMethodNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
@@ -253,7 +252,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "*", required = 1, optional = 0, lowerFixnumParameters = 0)
     public abstract static class MulNode extends ArrayCoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -327,7 +326,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "|", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "|", required = 1, optional = 0)
     public abstract static class UnionNode extends ArrayCoreMethodNode {
 
         public UnionNode(RubyContext context, SourceSection sourceSection) {
@@ -424,7 +423,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"==", "eql?"}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "eql?"}, required = 1, optional = 0)
     public abstract static class EqualNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode equals;
@@ -517,7 +516,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"[]", "at"}, minArgs = 1, maxArgs = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = {"[]", "at"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
@@ -640,7 +639,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, lowerFixnumParameters = 0)
+    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         private final BranchProfile tooSmallBranch = new BranchProfile();
@@ -887,7 +886,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "all?", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "all?", needsBlock = true)
     public abstract static class AllNode extends YieldingArrayCoreMethodNode {
 
         public AllNode(RubyContext context, SourceSection sourceSection) {
@@ -957,7 +956,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "any?", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "any?", needsBlock = true)
     public abstract static class AnyNode extends YieldingArrayCoreMethodNode {
 
         public AnyNode(RubyContext context, SourceSection sourceSection) {
@@ -1027,7 +1026,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "clear", maxArgs = 0)
+    @CoreMethod(names = "clear")
     public abstract static class ClearNode extends ArrayCoreMethodNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
@@ -1048,7 +1047,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "compact", maxArgs = 0)
+    @CoreMethod(names = "compact")
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
         public CompactNode(RubyContext context, SourceSection sourceSection) {
@@ -1085,7 +1084,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "concat", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "concat", required = 1, optional = 0)
     public abstract static class ConcatNode extends ArrayCoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
@@ -1160,7 +1159,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "delete", required = 1, optional = 0)
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode threeEqual;
@@ -1235,7 +1234,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete_at", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "delete_at", required = 1, optional = 0)
     public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
 
         private static final BranchProfile tooSmallBranch = new BranchProfile();
@@ -1294,7 +1293,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"dup", "clone"}, maxArgs = 0)
+    @CoreMethod(names = {"dup", "clone"})
     public abstract static class DupNode extends ArrayCoreMethodNode {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
@@ -1332,7 +1331,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "each", needsBlock = true)
     public abstract static class EachNode extends YieldingArrayCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
@@ -1502,7 +1501,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "each_with_index", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "each_with_index", needsBlock = true)
     public abstract static class EachWithIndexNode extends YieldingArrayCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
@@ -1556,7 +1555,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "empty?", maxArgs = 0)
+    @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends ArrayCoreMethodNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
@@ -1574,7 +1573,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "find", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "find", needsBlock = true)
     public abstract static class FindNode extends YieldingArrayCoreMethodNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {
@@ -1675,7 +1674,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "first", maxArgs = 0)
+    @CoreMethod(names = "first")
     public abstract static class FirstNode extends ArrayCoreMethodNode {
 
         public FirstNode(RubyContext context, SourceSection sourceSection) {
@@ -1717,7 +1716,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "flatten", maxArgs = 0)
+    @CoreMethod(names = "flatten")
     public abstract static class FlattenNode extends ArrayCoreMethodNode {
 
         public FlattenNode(RubyContext context, SourceSection sourceSection) {
@@ -1735,7 +1734,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "include?", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "include?", required = 1, optional = 0)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode threeEqual;
@@ -1793,7 +1792,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "initialize", needsBlock = true, required = 1, optional = 1)
     public abstract static class InitializeNode extends ArrayCoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -1843,7 +1842,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 1)
     public abstract static class InjectNode extends YieldingArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode dispatch;
@@ -1923,7 +1922,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "insert", required = 2, optional = 0)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
         private static final BranchProfile tooSmallBranch = new BranchProfile();
@@ -1969,7 +1968,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"inspect", "to_s"}, maxArgs = 0)
+    @CoreMethod(names = {"inspect", "to_s"})
     public abstract static class InspectNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode inspect;
@@ -2010,7 +2009,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "join", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "join", required = 1, optional = 0)
     public abstract static class JoinNode extends ArrayCoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -2042,7 +2041,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "last", maxArgs = 0)
+    @CoreMethod(names = "last")
     public abstract static class LastNode extends ArrayCoreMethodNode {
 
         public LastNode(RubyContext context, SourceSection sourceSection) {
@@ -2066,7 +2065,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"map", "collect"}, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     public abstract static class MapNode extends YieldingArrayCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
@@ -2162,7 +2161,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
     public abstract static class MapInPlaceNode extends YieldingArrayCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
@@ -2234,7 +2233,7 @@ public abstract class ArrayNodes {
 
     // TODO: move into Enumerable?
 
-    @CoreMethod(names = "max", maxArgs = 0)
+    @CoreMethod(names = "max")
     public abstract static class MaxNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode eachNode;
@@ -2347,7 +2346,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "min", maxArgs = 0)
+    @CoreMethod(names = "min")
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode eachNode;
@@ -2460,7 +2459,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "pack", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "pack", required = 1, optional = 0)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
@@ -2487,7 +2486,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pop", maxArgs = 0)
+    @CoreMethod(names = "pop")
     public abstract static class PopNode extends ArrayCoreMethodNode {
 
         public PopNode(RubyContext context, SourceSection sourceSection) {
@@ -2582,7 +2581,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "product", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "product", required = 1, optional = 0)
     public abstract static class ProductNode extends ArrayCoreMethodNode {
 
         public ProductNode(RubyContext context, SourceSection sourceSection) {
@@ -2614,7 +2613,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"push", "<<"}, isSplatted = true)
+    @CoreMethod(names = {"push", "<<"}, argumentsAsArray = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = new BranchProfile();
@@ -2798,7 +2797,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject!", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "reject!", needsBlock = true)
     public abstract static class RejectInPlaceNode extends YieldingArrayCoreMethodNode {
 
         public RejectInPlaceNode(RubyContext context, SourceSection sourceSection) {
@@ -2838,7 +2837,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "replace", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "replace", required = 1, optional = 0)
     public abstract static class ReplaceNode extends ArrayCoreMethodNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
@@ -2891,7 +2890,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "select", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "select", needsBlock = true)
     public abstract static class SelectNode extends YieldingArrayCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
@@ -2983,7 +2982,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "shift", maxArgs = 0)
+    @CoreMethod(names = "shift")
     public abstract static class ShiftNode extends CoreMethodNode {
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
@@ -3003,7 +3002,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"size", "length"}, maxArgs = 0)
+    @CoreMethod(names = {"size", "length"})
     public abstract static class SizeNode extends ArrayCoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -3021,7 +3020,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "slice", minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "slice", required = 2, optional = 0)
     public abstract static class SliceNode extends ArrayCoreMethodNode {
 
         public SliceNode(RubyContext context, SourceSection sourceSection) {
@@ -3056,7 +3055,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "sort", maxArgs = 0)
+    @CoreMethod(names = "sort")
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode compareDispatchNode;
@@ -3211,7 +3210,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "to_a", maxArgs = 0)
+    @CoreMethod(names = "to_a")
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
@@ -3229,7 +3228,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "unshift", isSplatted = true)
+    @CoreMethod(names = "unshift", argumentsAsArray = true)
     public abstract static class UnshiftNode extends CoreMethodNode {
 
         public UnshiftNode(RubyContext context, SourceSection sourceSection) {
@@ -3250,7 +3249,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "zip", required = 1, optional = 0)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
@@ -3299,7 +3298,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "hash", maxArgs = 0)
+    @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {

@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Truffle::Debug")
 public abstract class TruffleDebugNodes {
 
-    @CoreMethod(names = "dump_call_stack", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "dump_call_stack", onSingleton = true)
     public abstract static class DumpCallStackNode extends CoreMethodNode {
 
         public DumpCallStackNode(RubyContext context, SourceSection sourceSection) {
@@ -44,7 +44,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "flush_stdout", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "flush_stdout", onSingleton = true)
     public abstract static class FlushStdoutNode extends CoreMethodNode {
 
         public FlushStdoutNode(RubyContext context, SourceSection sourceSection) {
@@ -63,7 +63,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "full_tree", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "full_tree", onSingleton = true)
     public abstract static class FullTreeNode extends CoreMethodNode {
 
         public FullTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -83,7 +83,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "java_class_of", onSingleton = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "java_class_of", onSingleton = true, required = 1, optional = 0)
     public abstract static class JavaClassOfNode extends CoreMethodNode {
 
         public JavaClassOfNode(RubyContext context, SourceSection sourceSection) {
@@ -103,7 +103,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "panic", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "panic", onSingleton = true)
     public abstract static class PanicNode extends CoreMethodNode {
 
         public PanicNode(RubyContext context, SourceSection sourceSection) {
@@ -122,7 +122,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "parse_tree", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "parse_tree", onSingleton = true)
     public abstract static class ParseTreeNode extends CoreMethodNode {
 
         public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -148,7 +148,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "tree", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "tree", onSingleton = true)
     public abstract static class TreeNode extends CoreMethodNode {
 
         public TreeNode(RubyContext context, SourceSection sourceSection) {

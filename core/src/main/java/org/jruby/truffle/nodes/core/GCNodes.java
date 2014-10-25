@@ -26,7 +26,7 @@ import java.math.BigInteger;
 @CoreClass(name = "GC")
 public abstract class GCNodes {
 
-    @CoreMethod(names = "start", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "start", onSingleton = true)
     public abstract static class StartNode extends GarbageCollectNode {
         public StartNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -37,7 +37,7 @@ public abstract class GCNodes {
         }
     }
 
-    @CoreMethod(names = "garbage_collect", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "garbage_collect", needsSelf = false)
     public abstract static class GarbageCollectNode extends CoreMethodNode {
 
         public GarbageCollectNode(RubyContext context, SourceSection sourceSection) {

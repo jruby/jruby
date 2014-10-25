@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -18,7 +17,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Continuation")
 public abstract class ContinuationNodes {
 
-    @CoreMethod(names = "call", isSplatted = true)
+    @CoreMethod(names = "call", argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodNode {
 
         public CallNode(RubyContext context, SourceSection sourceSection) {

@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.core.RubyThread;
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
 
-    @CoreMethod(names = "alive?", maxArgs = 0)
+    @CoreMethod(names = "alive?")
     public abstract static class AliveNode extends CoreMethodNode {
 
         public AliveNode(RubyContext context, SourceSection sourceSection) {
@@ -43,7 +43,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "current", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "current", onSingleton = true)
     public abstract static class CurrentNode extends CoreMethodNode {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
@@ -63,7 +63,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "exit", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "exit", onSingleton = true)
     public abstract static class ExitModuleNode extends CoreMethodNode {
 
         public ExitModuleNode(RubyContext context, SourceSection sourceSection) {
@@ -81,7 +81,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "exit", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "exit", needsSelf = false)
     public abstract static class ExitInstanceNode extends CoreMethodNode {
 
         public ExitInstanceNode(RubyContext context, SourceSection sourceSection) {
@@ -99,7 +99,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -120,7 +120,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "join", maxArgs = 0)
+    @CoreMethod(names = "join")
     public abstract static class JoinNode extends CoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -141,7 +141,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "pass", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "pass", onSingleton = true)
     public abstract static class PassNode extends CoreMethodNode {
 
         public PassNode(RubyContext context, SourceSection sourceSection) {
@@ -166,7 +166,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "status", maxArgs = 0)
+    @CoreMethod(names = "status")
     public abstract static class StatusNode extends CoreMethodNode {
 
         public StatusNode(RubyContext context, SourceSection sourceSection) {
@@ -186,7 +186,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "stop?", maxArgs = 0)
+    @CoreMethod(names = "stop?")
     public abstract static class StopNode extends CoreMethodNode {
 
         public StopNode(RubyContext context, SourceSection sourceSection) {
@@ -206,7 +206,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "value", maxArgs = 0)
+    @CoreMethod(names = "value")
     public abstract static class ValueNode extends CoreMethodNode {
 
         public ValueNode(RubyContext context, SourceSection sourceSection) {

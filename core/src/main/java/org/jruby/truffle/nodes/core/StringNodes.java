@@ -18,7 +18,6 @@ import org.joni.Option;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
@@ -31,7 +30,7 @@ import java.util.regex.Pattern;
 @CoreClass(name = "String")
 public abstract class StringNodes {
 
-    @CoreMethod(names = "+", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "+", required = 1, optional = 0)
     public abstract static class AddNode extends CoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
@@ -50,7 +49,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "*", required = 1, optional = 0, lowerFixnumParameters = 0)
     public abstract static class MulNode extends CoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -76,7 +75,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "===", "eql?"}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "===", "eql?"}, required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -107,7 +106,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "!=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "!=", required = 1, optional = 0)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -134,7 +133,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "<=>", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<=>", required = 1, optional = 0)
     public abstract static class CompareNode extends CoreMethodNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -153,7 +152,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<<", required = 1, optional = 0)
     public abstract static class ConcatNode extends CoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
@@ -171,7 +170,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "%", minArgs = 1, maxArgs = 1, isSplatted = true)
+    @CoreMethod(names = "%", required = 1, argumentsAsArray = true)
     public abstract static class FormatNode extends CoreMethodNode {
 
         public FormatNode(RubyContext context, SourceSection sourceSection) {
@@ -204,7 +203,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"[]", "slice"}, minArgs = 1, maxArgs = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -267,7 +266,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "=~", required = 1, optional = 0)
     public abstract static class MatchOperatorNode extends CoreMethodNode {
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
@@ -286,7 +285,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "bytes", maxArgs = 0)
+    @CoreMethod(names = "bytes")
     public abstract static class BytesNode extends CoreMethodNode {
 
         public BytesNode(RubyContext context, SourceSection sourceSection) {
@@ -311,7 +310,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "chomp", maxArgs = 0)
+    @CoreMethod(names = "chomp")
     public abstract static class ChompNode extends CoreMethodNode {
 
         public ChompNode(RubyContext context, SourceSection sourceSection) {
@@ -330,7 +329,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "chomp!", maxArgs = 0)
+    @CoreMethod(names = "chomp!")
     public abstract static class ChompBangNode extends CoreMethodNode {
 
         public ChompBangNode(RubyContext context, SourceSection sourceSection) {
@@ -350,7 +349,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "downcase", maxArgs = 0)
+    @CoreMethod(names = "downcase")
     public abstract static class DowncaseNode extends CoreMethodNode {
 
         public DowncaseNode(RubyContext context, SourceSection sourceSection) {
@@ -369,7 +368,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "downcase!", maxArgs = 0)
+    @CoreMethod(names = "downcase!")
     public abstract static class DowncaseBangNode extends CoreMethodNode {
 
         public DowncaseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -389,7 +388,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "dup", maxArgs = 0)
+    @CoreMethod(names = "dup")
     public abstract static class DupNode extends CoreMethodNode {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
@@ -409,7 +408,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "empty?", maxArgs = 0)
+    @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
@@ -428,7 +427,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "encoding", maxArgs = 0)
+    @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodNode {
 
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
@@ -447,7 +446,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "end_with?", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "end_with?", required = 1, optional = 0)
     public abstract static class EndWithNode extends CoreMethodNode {
 
         public EndWithNode(RubyContext context, SourceSection sourceSection) {
@@ -466,7 +465,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "force_encoding", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "force_encoding", required = 1, optional = 0)
     public abstract static class ForceEncodingNode extends CoreMethodNode {
 
         public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
@@ -489,7 +488,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "gsub", minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "gsub", required = 2, optional = 0)
     public abstract static class GsubNode extends CoreMethodNode {
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
@@ -516,7 +515,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "getbyte", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "getbyte", required = 1, optional = 0)
     public abstract static class GetByteNode extends CoreMethodNode {
 
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -533,7 +532,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "inspect", maxArgs = 0)
+    @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
@@ -552,7 +551,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "initialize", required = 1, optional = 0)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -577,7 +576,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "ljust", minArgs = 1, maxArgs = 2, lowerFixnumParameters = 0)
+    @CoreMethod(names = "ljust", required = 1, optional = 1, lowerFixnumParameters = 0)
     public abstract static class LjustNode extends CoreMethodNode {
 
         public LjustNode(RubyContext context, SourceSection sourceSection) {
@@ -604,7 +603,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "match", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "match", required = 1, optional = 0)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -631,7 +630,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "rjust", minArgs = 1, maxArgs = 2, lowerFixnumParameters = 0)
+    @CoreMethod(names = "rjust", required = 1, optional = 1, lowerFixnumParameters = 0)
     public abstract static class RjustNode extends CoreMethodNode {
 
         public RjustNode(RubyContext context, SourceSection sourceSection) {
@@ -658,7 +657,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "scan", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "scan", required = 1, optional = 0)
     public abstract static class ScanNode extends CoreMethodNode {
 
         public ScanNode(RubyContext context, SourceSection sourceSection) {
@@ -686,7 +685,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "setbyte", minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "setbyte", required = 2, optional = 0)
     public abstract static class SetByteNode extends CoreMethodNode {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -705,7 +704,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "size", maxArgs = 0)
+    @CoreMethod(names = "size")
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -722,7 +721,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "split", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "split", required = 1, optional = 0)
     public abstract static class SplitNode extends CoreMethodNode {
 
         public SplitNode(RubyContext context, SourceSection sourceSection) {
@@ -756,7 +755,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "start_with?", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "start_with?", required = 1, optional = 0)
     public abstract static class StartWithNode extends CoreMethodNode {
 
         public StartWithNode(RubyContext context, SourceSection sourceSection) {
@@ -775,7 +774,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "sum", maxArgs = 0)
+    @CoreMethod(names = "sum")
     public abstract static class SumNode extends CoreMethodNode {
 
         public SumNode(RubyContext context, SourceSection sourceSection) {
@@ -794,7 +793,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "to_f", maxArgs = 0)
+    @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends CoreMethodNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
@@ -813,7 +812,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "to_i", maxArgs = 0)
+    @CoreMethod(names = "to_i")
     public abstract static class ToINode extends CoreMethodNode {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
@@ -832,7 +831,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -849,7 +848,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"to_sym", "intern"}, maxArgs = 0)
+    @CoreMethod(names = {"to_sym", "intern"})
     public abstract static class ToSymNode extends CoreMethodNode {
 
         public ToSymNode(RubyContext context, SourceSection sourceSection) {
@@ -868,7 +867,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "reverse", maxArgs = 0)
+    @CoreMethod(names = "reverse")
     public abstract static class ReverseNode extends CoreMethodNode {
 
         public ReverseNode(RubyContext context, SourceSection sourceSection) {
@@ -887,7 +886,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "reverse!", maxArgs = 0)
+    @CoreMethod(names = "reverse!")
     public abstract static class ReverseBangNode extends CoreMethodNode {
 
         public ReverseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -907,7 +906,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "unpack", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "unpack", required = 1, optional = 0)
     public abstract static class UnpackNode extends ArrayCoreMethodNode {
 
         public UnpackNode(RubyContext context, SourceSection sourceSection) {
@@ -928,7 +927,7 @@ public abstract class StringNodes {
     }
 
     // Rubinius API
-    @CoreMethod(names = "data", maxArgs = 0)
+    @CoreMethod(names = "data")
     public abstract static class DataNode extends CoreMethodNode {
         public DataNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

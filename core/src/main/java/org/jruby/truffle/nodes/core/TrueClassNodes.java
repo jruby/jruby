@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -18,7 +17,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "TrueClass")
 public abstract class TrueClassNodes {
 
-    @CoreMethod(names = "!", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "!", needsSelf = false)
     public abstract static class NotNode extends CoreMethodNode {
 
         public NotNode(RubyContext context, SourceSection sourceSection) {
@@ -36,7 +35,7 @@ public abstract class TrueClassNodes {
 
     }
 
-    @CoreMethod(names = {"==", "===", "=~"}, needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "===", "=~"}, needsSelf = false, required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -61,7 +60,7 @@ public abstract class TrueClassNodes {
 
     }
 
-    @CoreMethod(names = "^", needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "^", needsSelf = false, required = 1, optional = 0)
     public abstract static class XorNode extends CoreMethodNode {
 
         public XorNode(RubyContext context, SourceSection sourceSection) {
@@ -79,7 +78,7 @@ public abstract class TrueClassNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, needsSelf = false)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

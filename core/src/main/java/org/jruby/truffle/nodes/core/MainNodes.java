@@ -13,14 +13,13 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "main")
 public abstract class MainNodes {
 
-    @CoreMethod(names = "include", isSplatted = true, needsSelf = false, minArgs = 1)
+    @CoreMethod(names = "include", argumentsAsArray = true, needsSelf = false, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child protected ModuleNodes.IncludeNode includeNode;
@@ -43,7 +42,7 @@ public abstract class MainNodes {
         }
     }
 
-    @CoreMethod(names = "to_s", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "to_s", needsSelf = false)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
