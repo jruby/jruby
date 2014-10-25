@@ -7,6 +7,7 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.util.DirectedGraph;
@@ -352,7 +353,7 @@ public class CFG {
         // System.out.println("\nGraph:\n" + toStringGraph());
         // System.out.println("\nInstructions:\n" + toStringInstrs());
 
-        optimize(); // remove useless cfg edges & orphaned bbs
+        optimize(returnBBs); // remove useless cfg edges & orphaned bbs
 
         return graph;
     }
@@ -547,10 +548,64 @@ public class CFG {
         }
     }
 
-    private void optimize() {
+    private void optimize(List<BasicBlock> returnBBs) {
+        // Propagate returns backwards where possible.
+        // If:
+        // - there is an edge from BB: x -> r, and
+        // - r has a single instr, the return, and
+        // - last instr of x is a copy, and
+        // - the copy feeds the return
+        // then:
+        // - replace the copy with a return that returns the copied value
+        // - remove the edge from x -> r
+        // - add an edge from x -> exit-bb
+        //
+        // If a jump intervenes in 'x', skip over it and if merge succeeds,
+        // delete the jump.
+        List<Edge> toRemove = new ArrayList<>();
+        for (BasicBlock retBB: returnBBs) {
+            List<Instr> rbInstrs = retBB.getInstrs();
+            Instr first = rbInstrs.get(0);
+            if (first instanceof ReturnInstr) {
+                Operand rv = ((ReturnInstr)first).getReturnValue();
+                if (rv instanceof Variable) {
+                    for (Edge<BasicBlock> e : getIncomingEdges(retBB)) {
+                        BasicBlock srcBB = e.getSource().getData();
+                        List<Instr> srcInstrs = srcBB.getInstrs();
+                        int n = srcInstrs.size();
+
+                        // Skip over empty bbs
+                        if (n == 0) continue;
+
+                        Instr jump = null;
+                        Instr last = srcInstrs.get(n-1);
+                        // Skip over a jump
+                        if (last instanceof JumpInstr && n > 2) {
+                            jump = last;
+                            last = srcInstrs.get(n-2);
+                        }
+                        // Merge
+                        if (last instanceof CopyInstr && ((CopyInstr)last).getResult().equals(rv)) {
+                            srcInstrs.set(n-1, new ReturnInstr(((CopyInstr)last).getSource()));
+                            toRemove.add(e);
+                            addEdge(srcBB, exitBB, EdgeType.EXIT);
+                            // System.out.println("Merged " + last + " with " + ri + " in " + scope);
+                            if (jump != null) {
+                                srcInstrs.remove(jump);
+                                // System.out.println("Deleting " + jump);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (Edge edge: toRemove) {
+            graph.removeEdge(edge);
+        }
+
         // SSS FIXME: Can't we not add some of these exception edges in the first place??
         // Remove exception edges from blocks that couldn't possibly thrown an exception!
-        List<Edge> toRemove = new ArrayList<>();
+        toRemove = new ArrayList<>();
         for (BasicBlock b : graph.allData()) {
             boolean noExceptions = true;
             for (Instr i : b.getInstrs()) {
