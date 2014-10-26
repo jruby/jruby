@@ -100,7 +100,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -154,7 +154,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -318,7 +318,7 @@ public abstract class RangeNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 

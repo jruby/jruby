@@ -508,7 +508,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -533,7 +533,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -750,7 +750,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -777,7 +777,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 

@@ -52,43 +52,6 @@ public class RubyRootNode extends RootNode {
         return result;
     }
 
-    public void reportLoopCountThroughBlocks(final int count) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        if (RubyContext.COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
-            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-
-                @Override
-                public Object visitFrame(FrameInstance frameInstance) {
-                    // The call node for the top level is null and should be ignored
-
-                    if (frameInstance.getCallNode() == null) {
-                        return null;
-                    }
-
-                    final RootNode rootNode = frameInstance.getCallNode().getRootNode();
-
-                    if (!(rootNode instanceof RubyRootNode)) {
-                        return frameInstance;
-                    }
-
-                    final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
-
-                    rootNode.reportLoopCount(count);
-
-                    if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
-                        return frameInstance;
-                    }
-
-                    return null;
-                }
-
-            });
-        }
-
-        reportLoopCount(count);
-    }
-
     @Override
     public String toString() {
         return sharedMethodInfo.toString();

@@ -128,8 +128,7 @@ public class Options {
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
     public static final Option<Boolean> TRUFFLE_LOAD_CORE = bool(TRUFFLE, "truffle.load_core", true, "Load the Truffle core library.");
-    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "" +
-            "Print the name of the Truffle runtime on startup.");
+    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
     public static final Option<Boolean> TRUFFLE_RUNTIME_VERSION_CHECK = bool(TRUFFLE, "truffle.runtime.version_check", true, "Check the version of Truffle supplied by the JVM before starting.");
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.trace", true, "Install trace probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_OBJECTSPACE = bool(TRUFFLE, "truffle.object_space", true, "Install safepoints needed for ObjectSpace.");
@@ -138,7 +137,6 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] for an Array and it has been converted to a long[], directly allocate a long[] next time.");
     public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASHES_SMALL = integer(TRUFFLE, "truffle.hashes.small", 3, "Maximum size of a Hash to consider small for optimisations.");
-    public static final Option<Boolean> TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS = bool(TRUFFLE, "truffle.compiler.pass_loops_through_blocks", false, "Pass loop counts through blocks to the method that is calling the block.");
     public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
     public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces displayed to the user.");
     public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");

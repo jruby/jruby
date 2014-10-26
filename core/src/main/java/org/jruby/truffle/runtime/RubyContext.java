@@ -58,7 +58,6 @@ public class RubyContext extends ExecutionContext {
     public static final boolean ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
     public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
-    public static final boolean COMPILER_PASS_LOOPS_THROUGH_BLOCKS = Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load();
     public static final boolean ALLOW_SIMPLE_SOURCE_SECTIONS = Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load();
 
     private final Ruby runtime;
