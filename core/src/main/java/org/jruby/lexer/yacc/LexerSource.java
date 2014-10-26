@@ -79,10 +79,10 @@ public abstract class LexerSource {
      * 
      * @param sourceName is the file we are reading
      */
-    protected LexerSource(String sourceName, List<String> list, int lineOffset, SourcePositionFactory sourcePositionFactory) {
+    protected LexerSource(String sourceName, List<String> list, int lineOffset) {
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
-        positionFactory = sourcePositionFactory;
+        positionFactory = new SimpleSourcePositionFactory(this, line);
         this.list = list;
         lineBuffer = new StringBuilder(160);
         sourceLine = new StringBuilder(160);
@@ -148,13 +148,13 @@ public abstract class LexerSource {
      * @return the new source
      */
     public static LexerSource getSource(String name, InputStream content, List<String> list,
-            ParserConfiguration configuration, SourcePositionFactory sourcePositionFactory) {
-        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber(), sourcePositionFactory);
+            ParserConfiguration configuration) {
+        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber());
     }
 
     public static LexerSource getSource(String name, byte[] content, List<String> list,
-            ParserConfiguration configuration, SourcePositionFactory sourcePositionFactory) {
-        return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber(), sourcePositionFactory);
+            ParserConfiguration configuration) {
+        return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber());
     }
 
     private void captureFeatureNewline() {

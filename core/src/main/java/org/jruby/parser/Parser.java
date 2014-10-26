@@ -74,7 +74,7 @@ public class Parser {
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
-        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration, new SimpleSourcePositionFactory.Factory());
+        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
         return parse(file, lexerSource, blockScope, configuration);
     }
 
@@ -85,7 +85,7 @@ public class Parser {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration, new SimpleSourcePositionFactory.Factory());
+            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
             return parse(file, lexerSource, blockScope, configuration);
         }
     }

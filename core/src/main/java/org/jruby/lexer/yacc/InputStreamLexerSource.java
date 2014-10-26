@@ -35,9 +35,8 @@ public class InputStreamLexerSource extends LexerSource {
      * @param in is what represents the contents of file sourceName
      * @param line starting line number for source (used by eval)
      */
-    public InputStreamLexerSource(String sourceName, InputStream in, List<String> list, int line,
-                                  SourcePositionFactory sourcePositionFactory) {
-        super(sourceName, list, line, sourcePositionFactory);
+    public InputStreamLexerSource(String sourceName, InputStream in, List<String> list, int line) {
+        super(sourceName, list, line);
         
         this.in = in;
         this.captureSource = list != null;

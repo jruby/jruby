@@ -93,7 +93,7 @@ public class TranslatorDriver {
             }
         }
 
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, false, false, parserContext == ParserContext.TOP_LEVEL, true);
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, false, parserContext == ParserContext.TOP_LEVEL, true);
 
         // Parse to the JRuby AST
 

@@ -198,10 +198,8 @@ public class ParserSupport {
         if (tail == null) return head;
         if (head == null) return tail;
 
-        // Reduces overhead in interp by not set position every single line we encounter. 
-        if (!configuration.hasExtraPositionInformation()) {
-            head = compactNewlines(head);
-        }
+        // Reduces overhead in interp by not set position every single line we encounter.
+        head = compactNewlines(head);
 
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getPosition()).add(head);
