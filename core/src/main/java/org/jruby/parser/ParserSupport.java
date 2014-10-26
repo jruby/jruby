@@ -168,7 +168,7 @@ public class ParserSupport {
     public Node newline_node(Node node, ISourcePosition position) {
         if (node == null) return null;
 
-        configuration.coverLine(position.getStartLine());
+        configuration.coverLine(position.getLine());
         
         return node instanceof NewlineNode ? node : new NewlineNode(position, node); 
     }

@@ -67,8 +67,8 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
-
-/** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
+/*
+ * This is a port of the MRI lexer to Java.
  */
 public class RubyLexer {
     public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;

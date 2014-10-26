@@ -129,7 +129,7 @@ public class Parser {
                 default:
                     StringBuilder buffer = new StringBuilder(100);
                     buffer.append(e.getPosition().getFile()).append(':');
-                    buffer.append(e.getPosition().getStartLine() + 1).append(": ");
+                    buffer.append(e.getPosition().getLine() + 1).append(": ");
                     buffer.append(e.getMessage());
 
                     throw runtime.newSyntaxError(buffer.toString());

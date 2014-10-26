@@ -467,7 +467,7 @@ public class IRBuilder {
     public Node skipOverNewlines(IRScope s, Node n) {
         if (n.getNodeType() == NodeType.NEWLINENODE) {
             // Do not emit multiple line number instrs for the same line
-            int currLineNum = n.getPosition().getStartLine();
+            int currLineNum = n.getPosition().getLine();
             if (currLineNum != _lastProcessedLineNum) {
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(s, new TraceInstr(RubyEvent.LINE, methodNameFor(s), s.getFileName(), currLineNum));
@@ -504,7 +504,7 @@ public class IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, node.getPosition().getLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -990,7 +990,7 @@ public class IRBuilder {
             callInstr.setProcNew(true);
         }
 
-        receiveBreakException(s, block, callInstr, callNode.getPosition().getStartLine());
+        receiveBreakException(s, block, callInstr, callNode.getPosition().getLine());
         return callResult;
     }
 
@@ -1107,7 +1107,7 @@ public class IRBuilder {
         IRClassBody body = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
         Variable tmpVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
 
-        return buildModuleOrClassBody(s, tmpVar, body, classNode.getBodyNode(), classNode.getPosition().getStartLine());
+        return buildModuleOrClassBody(s, tmpVar, body, classNode.getBodyNode(), classNode.getPosition().getLine());
     }
 
     // class Foo; class << self; end; end
@@ -1118,7 +1118,7 @@ public class IRBuilder {
         IRModuleBody body = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
         Variable tmpVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
 
-        return buildModuleOrClassBody(s, tmpVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getStartLine());
+        return buildModuleOrClassBody(s, tmpVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
     }
 
     // @@c
@@ -2243,7 +2243,7 @@ public class IRBuilder {
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
         CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), s.getSelf(), args.toArray(new Operand[args.size()]), block);
-        receiveBreakException(s, block, callInstr, fcallNode.getPosition().getStartLine());
+        receiveBreakException(s, block, callInstr, fcallNode.getPosition().getLine());
         return callResult;
     }
 
@@ -2360,14 +2360,14 @@ public class IRBuilder {
         Operand  receiver = build(forNode.getIterNode(), s);
         Operand  forBlock = buildForIter(forNode, s);
         CallInstr callInstr = new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock);
-        receiveBreakException(s, forBlock, callInstr, forNode.getPosition().getStartLine());
+        receiveBreakException(s, forBlock, callInstr, forNode.getPosition().getLine());
 
         return result;
     }
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
-        IRClosure closure = new IRFor(manager, s, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
+        IRClosure closure = new IRFor(manager, s, forNode.getPosition().getLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -2518,7 +2518,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, iterNode.getPosition().getLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -2660,7 +2660,7 @@ public class IRBuilder {
         IRModuleBody body = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
         Variable tmpVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
 
-        return buildModuleOrClassBody(s, tmpVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getStartLine());
+        return buildModuleOrClassBody(s, tmpVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
@@ -2949,7 +2949,7 @@ public class IRBuilder {
         IRScope topLevel = s.getTopLevelScope();
         IRScope nearestLVarScope = s.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getStartLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), "_END_", true);
+        IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), "_END_", true);
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -2969,7 +2969,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRFor(manager, s, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), "_BEGIN_");
+        IRClosure beginClosure = new IRFor(manager, s, preExeNode.getPosition().getLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3304,7 +3304,7 @@ public class IRBuilder {
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand block = setupCallClosure(superNode.getIterNode(), s);
         if (block == null) block = getImplicitBlockArg(s);
-        return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]), superNode.getPosition().getStartLine());
+        return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]), superNode.getPosition().getLine());
     }
 
     private Operand buildSuperInScriptBody(IRScope s) {
@@ -3495,7 +3495,7 @@ public class IRBuilder {
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = getImplicitBlockArg(s);
 
-        int linenumber = zsuperNode.getPosition().getStartLine();
+        int linenumber = zsuperNode.getPosition().getLine();
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs
         // to fixup depth.

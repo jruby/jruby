@@ -43,7 +43,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             }
         } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
-            return source.createSection(getIdentifier(), sourcePosition.getStartLine() + 1);
+            return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
         } else {
             throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
         }

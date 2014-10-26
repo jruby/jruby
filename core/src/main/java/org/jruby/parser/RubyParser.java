@@ -44,7 +44,6 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
-import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -4615,7 +4614,7 @@ states[513] = new ParserState() {
 };
 states[514] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new FixnumNode(lexer.getPosition(), lexer.tokline.getStartLine()+1);
+                    yyVal = new FixnumNode(lexer.getPosition(), lexer.tokline.getLine()+1);
     return yyVal;
   }
 };

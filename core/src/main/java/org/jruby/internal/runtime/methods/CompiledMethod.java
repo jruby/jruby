@@ -230,7 +230,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
 
         public int getLine() {
             if (compiledMethod == null) initializeMethod();
-            return position.getStartLine();
+            return position.getLine();
         }
 
         public String[] getParameterList() {
@@ -306,7 +306,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     }
 
     public int getLine() {
-        return position.getStartLine();
+        return position.getLine();
     }
 
     public Object getScriptObject() {

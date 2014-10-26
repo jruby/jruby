@@ -36,11 +36,8 @@ public class InvalidSourcePosition implements ISourcePosition {
         return "dummy";
     }
 
-    public int getStartLine() {
-        return -1;
-    }
-
     public int getLine() {
         return -1;
     }
+
 }
