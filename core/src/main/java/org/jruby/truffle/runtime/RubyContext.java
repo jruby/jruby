@@ -50,17 +50,6 @@ import org.jruby.util.cli.Options;
  */
 public class RubyContext extends ExecutionContext {
 
-    public static final boolean PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
-    public static final boolean TRACE = Options.TRUFFLE_TRACE.load();
-    public static final boolean OBJECTSPACE = Options.TRUFFLE_OBJECTSPACE.load();
-    public static final boolean EXCEPTIONS_PRINT_JAVA = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
-    public static final int ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();
-    public static final boolean ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
-    public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
-    public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
-    public static final boolean COMPILER_PASS_LOOPS_THROUGH_BLOCKS = Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load();
-    public static final boolean ALLOW_SIMPLE_SOURCE_SECTIONS = Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load();
-
     private final Ruby runtime;
     private final TranslatorDriver translator;
     private final RubyASTProber astProber;

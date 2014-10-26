@@ -130,13 +130,13 @@ public abstract class HashNodes {
 
                         // TODO(CS): zero length arrays might be a good specialisation
 
-                        if (store.length <= RubyContext.HASHES_SMALL) {
+                        if (store.length <= RubyHash.HASHES_SMALL) {
                             smallObjectArray.enter();
 
                             final int size = store.length;
-                            final Object[] newStore = new Object[RubyContext.HASHES_SMALL * 2];
+                            final Object[] newStore = new Object[RubyHash.HASHES_SMALL * 2];
 
-                            for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+                            for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
                                 if (n < size) {
                                     final Object pair = store[n];
 
@@ -230,7 +230,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getStoreSize();
 
-            for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+            for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
                 // TODO(CS): cast
                 if (n < size && (boolean) eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
                     return store[n * 2 + 1];
@@ -293,7 +293,7 @@ public abstract class HashNodes {
         @Specialization(guards = "isNull")
         public Object setNull(RubyHash hash, Object key, Object value) {
             hash.checkFrozen(this);
-            final Object[] store = new Object[RubyContext.HASHES_SMALL * 2];
+            final Object[] store = new Object[RubyHash.HASHES_SMALL * 2];
             store[0] = key;
             store[1] = value;
             hash.setStore(store, 1);
@@ -308,7 +308,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getStoreSize();
 
-            for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+            for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
                 // TODO(CS): cast
                 if (n < size && (boolean) eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
                     store[n * 2 + 1] = value;
@@ -320,7 +320,7 @@ public abstract class HashNodes {
 
             final int newSize = size + 1;
 
-            if (newSize <= RubyContext.HASHES_SMALL) {
+            if (newSize <= RubyHash.HASHES_SMALL) {
                 extendProfile.enter();
                 store[size * 2] = key;
                 store[size * 2 + 1] = value;
@@ -451,7 +451,7 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             final Object[] store = (Object[]) hash.getStore();
-            final Object[] copy = Arrays.copyOf(store, RubyContext.HASHES_SMALL * 2);
+            final Object[] copy = Arrays.copyOf(store, RubyHash.HASHES_SMALL * 2);
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy, hash.getStoreSize());
         }
@@ -497,7 +497,7 @@ public abstract class HashNodes {
             int count = 0;
 
             try {
-                for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+                for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -737,7 +737,7 @@ public abstract class HashNodes {
             int count = 0;
 
             try {
-                for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+                for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
                     if (n < size) {
                         final Object key = store[n * 2];
                         final Object value = store[n * 2 + 1];
@@ -797,7 +797,7 @@ public abstract class HashNodes {
         private final BranchProfile considerResultIsSmallProfile = new BranchProfile();
         private final BranchProfile resultIsSmallProfile = new BranchProfile();
 
-        private final int smallHashSize = RubyContext.HASHES_SMALL;
+        private final int smallHashSize = RubyHash.HASHES_SMALL;
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -812,7 +812,7 @@ public abstract class HashNodes {
         @Specialization(guards = {"isObjectArray", "isOtherNull"})
         public RubyHash mergeObjectArrayNull(RubyHash hash, RubyHash other) {
             final Object[] store = (Object[]) hash.getStore();
-            final Object[] copy = Arrays.copyOf(store, RubyContext.HASHES_SMALL * 2);
+            final Object[] copy = Arrays.copyOf(store, RubyHash.HASHES_SMALL * 2);
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), copy, hash.getStoreSize());
         }
@@ -831,11 +831,11 @@ public abstract class HashNodes {
             final boolean[] mergeFromA = new boolean[storeASize];
             int mergeFromACount = 0;
 
-            for (int a = 0; a < RubyContext.HASHES_SMALL; a++) {
+            for (int a = 0; a < RubyHash.HASHES_SMALL; a++) {
                 if (a < storeASize) {
                     boolean merge = true;
 
-                    for (int b = 0; b < RubyContext.HASHES_SMALL; b++) {
+                    for (int b = 0; b < RubyHash.HASHES_SMALL; b++) {
                         if (b < storeBSize) {
                             // TODO(CS): cast
                             if ((boolean) eqlNode.call(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
@@ -855,14 +855,14 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyContext.HASHES_SMALL * 2), storeBSize);
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyHash.HASHES_SMALL * 2), storeBSize);
             }
 
             considerNothingFromSecondProfile.enter();
 
             if (mergeFromACount == storeB.length) {
                 nothingFromSecondProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyContext.HASHES_SMALL * 2), storeBSize);
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyHash.HASHES_SMALL * 2), storeBSize);
             }
 
             considerResultIsSmallProfile.enter();
@@ -872,7 +872,7 @@ public abstract class HashNodes {
             if (storeBSize + mergeFromACount <= smallHashSize) {
                 resultIsSmallProfile.enter();
 
-                final Object[] merged = new Object[RubyContext.HASHES_SMALL * 2];
+                final Object[] merged = new Object[RubyHash.HASHES_SMALL * 2];
 
                 int index = 0;
 

@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
@@ -24,6 +25,8 @@ import java.util.Arrays;
  * Implements the Ruby {@code Array} class.
  */
 public final class RubyArray extends RubyObject {
+
+    public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
 
     public static class RubyArrayClass extends RubyClass {
 

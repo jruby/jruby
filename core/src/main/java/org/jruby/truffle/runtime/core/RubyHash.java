@@ -12,13 +12,15 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
+import org.jruby.util.cli.Options;
 
 /**
  * Represents the Ruby {@code Hash} class.
  */
 public class RubyHash extends RubyObject {
+
+    public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
 
     /**
      * The class from which we create the object that is {@code Hash}. A subclass of
@@ -46,8 +48,8 @@ public class RubyHash extends RubyObject {
         super(rubyClass);
 
         assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
-        assert !(store instanceof Object[]) || ((Object[]) store).length == RubyContext.HASHES_SMALL * 2;
-        assert !(store instanceof Object[]) || storeSize <= RubyContext.HASHES_SMALL;
+        assert !(store instanceof Object[]) || ((Object[]) store).length == HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || storeSize <= HASHES_SMALL;
 
         this.defaultBlock = defaultBlock;
         this.store = store;
@@ -72,8 +74,8 @@ public class RubyHash extends RubyObject {
 
     public void setStore(Object store, int storeSize) {
         assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
-        assert !(store instanceof Object[]) || ((Object[]) store).length == RubyContext.HASHES_SMALL * 2;
-        assert !(store instanceof Object[]) || storeSize <= RubyContext.HASHES_SMALL;
+        assert !(store instanceof Object[]) || ((Object[]) store).length == HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || storeSize <= HASHES_SMALL;
 
 
         this.store = store;
@@ -81,7 +83,7 @@ public class RubyHash extends RubyObject {
     }
 
     public void setStoreSize(int storeSize) {
-        assert storeSize <= RubyContext.HASHES_SMALL;
+        assert storeSize <= HASHES_SMALL;
         this.storeSize = storeSize;
     }
 

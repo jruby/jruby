@@ -15,12 +15,15 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.util.cli.Options;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
  * {@link #execute}, which Truffle knows about and can create a {@link CallTarget} from.
  */
 public class RubyRootNode extends RootNode {
+
+    public static final boolean COMPILER_PASS_LOOPS_THROUGH_BLOCKS = Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load();
 
     private final RubyContext context;
     private final SharedMethodInfo sharedMethodInfo;
@@ -60,7 +63,7 @@ public class RubyRootNode extends RootNode {
     public void reportLoopCountThroughBlocks(final int count) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (RubyContext.COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
+        if (COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
             Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
 
                 @Override

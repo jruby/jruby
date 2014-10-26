@@ -26,6 +26,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.util.Supplier;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -48,7 +49,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public void init() {
-        if (RubyContext.PRINT_RUNTIME) {
+        if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
             runtime.getInstanceConfig().getError().println("jruby: using " + Truffle.getRuntime().getName());
         }
 

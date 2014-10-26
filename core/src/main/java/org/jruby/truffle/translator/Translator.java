@@ -16,6 +16,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.TruffleSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
@@ -50,7 +51,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
                 context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourcePosition.getFile(), sourcePosition.getStartLine() + 1, String.format("Truffle thinks %d length %d is invalid, reporting as line", detailedSourcePosition.getOffset(), detailedSourcePosition.getLength()));
                 return source.createSection(getIdentifier(), sourcePosition.getStartLine() + 1);
             }
-        } else if (RubyContext.ALLOW_SIMPLE_SOURCE_SECTIONS) {
+        } else if ((boolean) Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
             return source.createSection(getIdentifier(), sourcePosition.getStartLine() + 1);
         } else {

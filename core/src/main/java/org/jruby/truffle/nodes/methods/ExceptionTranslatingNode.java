@@ -16,14 +16,12 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.util.cli.Options;
 
@@ -64,7 +62,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyBasicObject translate(ArithmeticException exception) {
-        if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
+        if ((boolean) Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             exception.printStackTrace();
         }
 
@@ -72,7 +70,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyBasicObject translate(UnsupportedSpecializationException exception) {
-        if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
+        if ((boolean) Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             exception.printStackTrace();
         }
 
@@ -120,7 +118,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public RubyBasicObject translate(Throwable throwable) {
-        if (throwable instanceof NullPointerException || throwable instanceof UnsupportedOperationException || RubyContext.EXCEPTIONS_PRINT_JAVA) {
+        if (throwable instanceof NullPointerException || throwable instanceof UnsupportedOperationException || Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             throwable.printStackTrace();
         }
 

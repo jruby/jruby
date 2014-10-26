@@ -14,6 +14,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
@@ -23,6 +24,8 @@ import java.util.Arrays;
  */
 
 public abstract class ArrayBuilderNode extends Node {
+
+    public static final int ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();
 
     private final RubyContext context;
 
@@ -60,7 +63,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object start() {
             CompilerDirectives.transferToInterpreter();
-            return new Object[RubyContext.ARRAYS_UNINITIALIZED_SIZE];
+            return new Object[ARRAYS_UNINITIALIZED_SIZE];
         }
 
         @Override
