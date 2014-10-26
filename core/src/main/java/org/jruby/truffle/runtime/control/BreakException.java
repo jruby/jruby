@@ -20,8 +20,6 @@ public final class BreakException extends ControlFlowException {
     private final Object result;
 
     public BreakException(Object result) {
-        assert RubyContext.shouldObjectBeVisible(result);
-
         this.result = result;
     }
 

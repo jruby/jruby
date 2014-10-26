@@ -64,7 +64,6 @@ public final class RubyArray extends RubyObject {
                 || store instanceof long[]
                 || store instanceof double[];
 
-        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
         assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
@@ -243,7 +242,6 @@ public final class RubyArray extends RubyObject {
                 || store instanceof long[]
                 || store instanceof double[];
 
-        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
         assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
@@ -265,7 +263,6 @@ public final class RubyArray extends RubyObject {
                 || store instanceof long[]
                 || store instanceof double[];
 
-        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
         assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;

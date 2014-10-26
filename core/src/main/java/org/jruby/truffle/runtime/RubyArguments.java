@@ -9,15 +9,12 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.MethodLike;
 
 import java.util.Arrays;
-import java.util.Iterator;
 
 /**
  * Pack and unpack Ruby method arguments to and from an array of objects.
@@ -31,10 +28,8 @@ public final class RubyArguments {
     public static final int RUNTIME_ARGUMENT_COUNT = 4;
 
     public static Object[] pack(MethodLike method, MaterializedFrame declarationFrame, Object self, RubyProc block, Object[] arguments) {
-        assert RubyContext.shouldObjectBeVisible(self);
-        assert RubyContext.shouldObjectsBeVisible(arguments);
-
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
+
         packed[METHOD_INDEX] = method;
         packed[DECLARATION_FRAME_INDEX] = declarationFrame;
         packed[SELF_INDEX] = self;

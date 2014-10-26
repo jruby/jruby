@@ -20,6 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -155,6 +156,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
                 final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
                 final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
+
                 return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
             }
 

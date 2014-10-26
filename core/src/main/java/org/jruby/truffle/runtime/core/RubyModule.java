@@ -195,7 +195,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void setConstant(RubyNode currentNode, String constantName, Object value) {
         RubyNode.notDesignedForCompilation();
 
-        assert RubyContext.shouldObjectBeVisible(value);
         checkFrozen(currentNode);
         getConstants().put(constantName, new RubyConstant(value, false));
         newLexicalVersion();

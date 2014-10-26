@@ -170,16 +170,17 @@ public class DispatchHeadNode extends Node {
                     blockObject,
                     RubyArguments.concatUserArguments(argumentsObjects, frame.getArguments()),
                     dispatchAction);
+        } else {
+            return first.executeDispatch(
+                    frame,
+                    methodReceiverObject,
+                    lexicalScope,
+                    receiverObject,
+                    methodName,
+                    blockObject,
+                    argumentsObjects,
+                    dispatchAction);
         }
-        return first.executeDispatch(
-                frame,
-                methodReceiverObject,
-                lexicalScope,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects,
-                dispatchAction);
     }
 
     public void reset(String reason) {

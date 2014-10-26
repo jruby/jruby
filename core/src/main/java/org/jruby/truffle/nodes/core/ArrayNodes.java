@@ -2930,8 +2930,6 @@ public abstract class ArrayNodes {
                     // TODO(CS): cast to boolean?
                     notDesignedForCompilation();
 
-                    assert RubyContext.shouldObjectBeVisible(value);
-                    assert RubyContext.shouldObjectsBeVisible(new Object[]{value});
                     if (yieldBoolean(frame, block, new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
                         selectedSize++;

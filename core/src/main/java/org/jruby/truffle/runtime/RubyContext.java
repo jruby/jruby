@@ -193,6 +193,7 @@ public class RubyContext extends ExecutionContext {
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
         final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+
         return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
     }
 
@@ -340,36 +341,6 @@ public class RubyContext extends ExecutionContext {
 
     public TranslatorDriver getTranslator() {
         return translator;
-    }
-
-    /**
-     * Utility method to check if an object should be visible in a Ruby program. Used in assertions
-     * at method boundaries to check that only values we want to be visible to the programmer become
-     * so.
-     */
-    public static boolean shouldObjectBeVisible(Object object) {
-        return object instanceof UndefinedPlaceholder || //
-                object instanceof Boolean || //
-                object instanceof Integer || //
-                object instanceof Long || //
-                object instanceof BigInteger || //
-                object instanceof Double || //
-                object instanceof RubyBasicObject || //
-                object instanceof RubyNilClass;
-    }
-
-    public static boolean shouldObjectsBeVisible(Object... objects) {
-        return shouldObjectsBeVisible(objects.length, objects);
-    }
-
-    public static boolean shouldObjectsBeVisible(int length, Object... objects) {
-        for (Object object : Arrays.asList(objects).subList(0, length)) {
-            if (!shouldObjectBeVisible(object)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public AtExitManager getAtExitManager() {

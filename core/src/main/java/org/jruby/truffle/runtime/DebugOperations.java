@@ -11,12 +11,17 @@ package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+
+import java.math.BigInteger;
 
 public abstract class DebugOperations {
 
     public static String inspect(RubyContext context, Object object) {
+        CompilerAsserts.neverPartOfCompilation();
+
         final Object inspected = send(context, object, "inspect", null);
 
         if (inspected == null) {

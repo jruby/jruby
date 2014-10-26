@@ -22,9 +22,6 @@ public final class ContinuationReturnException extends ControlFlowException {
     private final Object value;
 
     public ContinuationReturnException(RubyContinuation continuation, Object value) {
-        assert continuation != null;
-        assert RubyContext.shouldObjectBeVisible(value);
-
         this.continuation = continuation;
         this.value = value;
     }
