@@ -52,8 +52,6 @@ public class ParserConfiguration {
     private boolean inlineSource = false;
     // We parse evals more often in source so assume an eval parse.
     private boolean isEvalParse = true;
-    // Should positions added extra IDE-friendly information and leave in all newline nodes
-    private boolean extraPositionInformation = false;
     // Should we display extra debug information while parsing?
     private boolean isDebug = false;
     // whether we should save the end-of-file data as DATA
@@ -65,35 +63,23 @@ public class ParserConfiguration {
     private int[] coverage = EMPTY_COVERAGE;
 
     private static final int[] EMPTY_COVERAGE = new int[0];
-    
-    public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource,
-            CompatVersion version) {
-        this(runtime, lineNumber, false, inlineSource, version);
-    }
-    
-    public ParserConfiguration(Ruby runtime, int lineNumber,
-            boolean extraPositionInformation, boolean inlineSource, CompatVersion version) {
-        this(runtime, lineNumber, extraPositionInformation, inlineSource, true, version, false);
-    }
 
-    public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
-                               boolean inlineSource, boolean isFileParse, boolean saveData) {
+    public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
         this.runtime = runtime;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
-        this.extraPositionInformation = extraPositionInformation;
         this.isEvalParse = !isFileParse;
         this.saveData = saveData;
     }
 
-    public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
+    public ParserConfiguration(Ruby runtime, int lineNumber,
             boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
-        this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse, false, config);
+        this(runtime, lineNumber, inlineSource, isFileParse, false, config);
     }
 
-    public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
+    public ParserConfiguration(Ruby runtime, int lineNumber,
             boolean inlineSource, boolean isFileParse, boolean saveData, RubyInstanceConfig config) {
-        this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse, saveData);
+        this(runtime, lineNumber, inlineSource, isFileParse, saveData);
 
         this.isDebug = config.isParserDebug();
     }
@@ -123,22 +109,6 @@ public class ParserConfiguration {
      */
     public void setEvalParse(boolean isEvalParse) {
         this.isEvalParse = isEvalParse;
-    }
-
-    /**
-     * Should positions of nodes provide additional information in them (like character offsets).
-     * @param extraPositionInformation
-     */
-    public void setExtraPositionInformation(boolean extraPositionInformation) {
-        this.extraPositionInformation = extraPositionInformation;
-    }
-    
-    /**
-     * Should positions of nodes provide addition information?
-     * @return true if they should
-     */
-    public boolean hasExtraPositionInformation() {
-        return extraPositionInformation;
     }
 
     public boolean isDebug() {
@@ -238,17 +208,4 @@ public class ParserConfiguration {
         return coverage;
     }
 
-    @Deprecated
-    public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
-                               boolean inlineSource, boolean isFileParse, CompatVersion version, boolean saveData) {
-        this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse, saveData);
-    }
-
-    /**
-     * Get the compatibility version we're targeting with this parse.
-     */
-    @Deprecated
-    public CompatVersion getVersion() {
-        return CompatVersion.RUBY2_1;
-    }
 }

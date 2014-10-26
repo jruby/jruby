@@ -34,11 +34,10 @@ public class InputStreamLexerSource extends LexerSource {
      * @param sourceName is the file we are reading
      * @param in is what represents the contents of file sourceName
      * @param line starting line number for source (used by eval)
-     * @param extraPositionInformation will gives us extra information that an IDE may want
      */
-    public InputStreamLexerSource(String sourceName, InputStream in, List<String> list, int line, 
-            boolean extraPositionInformation, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
-        super(sourceName, list, line, extraPositionInformation, sourcePositionFactoryFactory);
+    public InputStreamLexerSource(String sourceName, InputStream in, List<String> list, int line,
+                                  SourcePositionFactory sourcePositionFactory) {
+        super(sourceName, list, line, sourcePositionFactory);
         
         this.in = in;
         this.captureSource = list != null;

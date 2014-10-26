@@ -11,7 +11,7 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
@@ -35,7 +35,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     public SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
-        if (sourcePosition == ISourcePosition.INVALID_POSITION) {
+        if (sourcePosition == InvalidSourcePosition.INSTANCE) {
             if (parentSourceSection == null) {
                 throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
             } else {

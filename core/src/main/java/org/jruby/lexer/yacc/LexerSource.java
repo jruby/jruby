@@ -78,13 +78,11 @@ public abstract class LexerSource {
      * Create our food-source for the lexer
      * 
      * @param sourceName is the file we are reading
-     * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
-    protected LexerSource(String sourceName, List<String> list, int lineOffset, 
-            boolean extraPositionInformation, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
+    protected LexerSource(String sourceName, List<String> list, int lineOffset, SourcePositionFactory sourcePositionFactory) {
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
-        positionFactory = sourcePositionFactoryFactory.create(this, line);
+        positionFactory = sourcePositionFactory;
         this.list = list;
         lineBuffer = new StringBuilder(160);
         sourceLine = new StringBuilder(160);
@@ -150,15 +148,13 @@ public abstract class LexerSource {
      * @return the new source
      */
     public static LexerSource getSource(String name, InputStream content, List<String> list,
-            ParserConfiguration configuration, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
-        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber(), 
-                configuration.hasExtraPositionInformation(), sourcePositionFactoryFactory);
+            ParserConfiguration configuration, SourcePositionFactory sourcePositionFactory) {
+        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber(), sourcePositionFactory);
     }
 
     public static LexerSource getSource(String name, byte[] content, List<String> list,
-            ParserConfiguration configuration, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
-        return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber(),
-                configuration.hasExtraPositionInformation(), sourcePositionFactoryFactory);
+            ParserConfiguration configuration, SourcePositionFactory sourcePositionFactory) {
+        return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber(), sourcePositionFactory);
     }
 
     private void captureFeatureNewline() {
@@ -260,10 +256,6 @@ public abstract class LexerSource {
      * @throws IOException if an error occurred reading from underlying IO source
      */
     public abstract boolean matchMarker(ByteList marker, boolean indent, boolean withNewline) throws IOException;
-
-    public SourcePositionFactory getPositionFactory() {
-        return positionFactory;
-    }
 
     public abstract int read() throws IOException;
     public abstract ByteList readUntil(char c) throws IOException;

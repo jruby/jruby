@@ -30,29 +30,12 @@ package org.jruby.lexer.yacc;
 
 public class SimpleSourcePositionFactory implements SourcePositionFactory {
 
-    public static class Factory implements SourcePositionFactoryFactory {
-
-        @Override
-        public SourcePositionFactory create(LexerSource source, int line) {
-            return new SimpleSourcePositionFactory(source, line);
-        }
-
-    }
-
     protected LexerSource source;
     protected ISourcePosition lastPosition;
 
     public SimpleSourcePositionFactory(LexerSource source, int line) {
         this.source = source;
         lastPosition = new SimpleSourcePosition(source.getFilename(), line);
-    }
-
-    @Override
-    public void startOfToken() {
-    }
-
-    @Override
-    public void endOfToken() {
     }
 
     public ISourcePosition getPosition(ISourcePosition startPosition) {

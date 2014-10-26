@@ -11,17 +11,6 @@ package org.jruby.lexer.yacc;
 
 public interface SourcePositionFactory {
 
-    // Sorry for creating a factory factory (CS)
-    public interface SourcePositionFactoryFactory {
-
-        public SourcePositionFactory create(LexerSource source, int line);
-
-    }
-
-    void startOfToken();
-
-    void endOfToken();
-
     ISourcePosition getPosition(ISourcePosition startPosition);
 
     ISourcePosition getPosition();

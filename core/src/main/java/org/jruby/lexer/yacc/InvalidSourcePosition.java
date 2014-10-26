@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,29 +27,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-import org.jruby.runtime.PositionAware;
+/** For nodes which are added to the AST which are not proper syntactical elements. */
+public class InvalidSourcePosition implements ISourcePosition {
 
-/**
- * This interface is the combination of two needs:  1) A Ruby interpreter position (for warnings 
- * and errors).  The interpreter only cares about filename and endLine.  2) A IDE position (offsets
- * for showing ranges of grammatical elements).
- * 
- * The offsets represent positions 'between' characters.  So a variable 'abc' has a startOffset
- * of 0 and an endOffset of 3 ( 0a1b2c3 ).
- * 
- */
-public interface ISourcePosition extends PositionAware {
-    /**
-     * Which file does this source position live in?
-     * 
-     * @return name of the source file.
-     */
-	public String getFile();
-    
-    /**
-     * Which is the first(start) line that this source position occurs on (zero-based)
-     * @return
-     */
-	public int getStartLine();
+    public static final ISourcePosition INSTANCE = new InvalidSourcePosition();
 
+    public String getFile() {
+        return "dummy";
+    }
+
+    public int getStartLine() {
+        return -1;
+    }
+
+    public int getLine() {
+        return -1;
+    }
 }
