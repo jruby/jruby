@@ -39,7 +39,7 @@ public class WhileNode extends RubyNode {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    public class WhileRepeatingNode extends Node implements RepeatingNode {
+    private static class WhileRepeatingNode extends Node implements RepeatingNode {
 
         @Child protected BooleanCastNode condition;
         @Child protected RubyNode body;
