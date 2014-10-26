@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
 
-    @CoreMethod(names = "resume", isSplatted = true)
+    @CoreMethod(names = "resume", argumentsAsArray = true)
     public abstract static class ResumeNode extends CoreMethodNode {
 
         public ResumeNode(RubyContext context, SourceSection sourceSection) {
@@ -41,7 +41,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -62,7 +62,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(names = "yield", onSingleton = true, isSplatted = true)
+    @CoreMethod(names = "yield", onSingleton = true, argumentsAsArray = true)
     public abstract static class YieldNode extends CoreMethodNode {
 
         public YieldNode(RubyContext context, SourceSection sourceSection) {

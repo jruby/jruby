@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -19,7 +18,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
 
-    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "[]", required = 1, optional = 0, lowerFixnumParameters = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -43,7 +42,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(names = {"to_a", "captures"}, maxArgs = 0)
+    @CoreMethod(names = {"to_a", "captures"})
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
@@ -63,7 +62,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(names = "values_at", isSplatted = true)
+    @CoreMethod(names = "values_at", argumentsAsArray = true)
     public abstract static class ValuesAtNode extends CoreMethodNode {
 
         public ValuesAtNode(RubyContext context, SourceSection sourceSection) {

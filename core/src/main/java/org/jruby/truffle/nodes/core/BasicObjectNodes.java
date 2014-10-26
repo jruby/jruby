@@ -16,7 +16,6 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -26,7 +25,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
 
-    @CoreMethod(names = "!", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "!", needsSelf = false)
     public abstract static class NotNode extends CoreMethodNode {
 
         public NotNode(RubyContext context, SourceSection sourceSection) {
@@ -44,7 +43,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "==", required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -62,7 +61,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "!=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "!=", required = 1, optional = 0)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -80,7 +79,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "__id__", needsSelf = true, maxArgs = 0)
+    @CoreMethod(names = "__id__", needsSelf = true)
     public abstract static class IDNode extends CoreMethodNode {
 
         public IDNode(RubyContext context, SourceSection sourceSection) {
@@ -100,7 +99,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "equal?", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "equal?", required = 1, optional = 0)
     public abstract static class ReferenceEqualNode extends CoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -167,7 +166,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsSelf = false, maxArgs = 0, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "initialize", needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -185,7 +184,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_eval", needsBlock = true, minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1)
     public abstract static class InstanceEvalNode extends CoreMethodNode {
 
         @Child protected YieldDispatchHeadNode yield;
@@ -227,7 +226,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "method_missing", needsBlock = true, isSplatted = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "method_missing", needsBlock = true, argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -262,7 +261,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = {"send", "__send__"}, needsBlock = true, minArgs = 1, isSplatted = true)
+    @CoreMethod(names = {"send", "__send__"}, needsBlock = true, required = 1, argumentsAsArray = true)
     public abstract static class SendNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode dispatchNode;

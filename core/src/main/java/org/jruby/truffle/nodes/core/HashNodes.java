@@ -28,7 +28,7 @@ import org.jruby.truffle.runtime.core.RubyHash;
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
 
-    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "==", required = 1, optional = 0)
     public abstract static class EqualNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode equalNode;
@@ -90,7 +90,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]", onSingleton = true, isSplatted = true)
+    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true)
     public abstract static class ConstructNode extends HashCoreMethodNode {
 
         private final BranchProfile singleObject = BranchProfile.create();
@@ -192,7 +192,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "[]", required = 1, optional = 0)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
@@ -271,7 +271,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "[]=", required = 2, optional = 0)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
@@ -362,7 +362,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "delete", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "delete", required = 1, optional = 0)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
@@ -428,7 +428,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "dup", maxArgs = 0)
+    @CoreMethod(names = "dup")
     public abstract static class DupNode extends HashCoreMethodNode {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
@@ -468,7 +468,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "each", needsBlock = true)
     public abstract static class EachNode extends YieldingHashCoreMethodNode {
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
@@ -542,7 +542,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "empty?", maxArgs = 0)
+    @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends HashCoreMethodNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
@@ -573,7 +573,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "to_a", maxArgs = 0)
+    @CoreMethod(names = "to_a")
     public abstract static class ToArrayNode extends HashCoreMethodNode {
 
         public ToArrayNode(RubyContext context, SourceSection sourceSection) {
@@ -605,7 +605,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends HashCoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -634,7 +634,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = {"inspect", "to_s"}, maxArgs = 0)
+    @CoreMethod(names = {"inspect", "to_s"})
     public abstract static class InspectNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode inspect;
@@ -714,7 +714,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = {"map", "collect"}, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     public abstract static class MapNode extends YieldingHashCoreMethodNode {
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
@@ -786,7 +786,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "merge", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "merge", required = 1, optional = 0)
     public abstract static class MergeNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
@@ -899,7 +899,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "key?", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "key?", required = 1, optional = 0)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
@@ -948,7 +948,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "keys", maxArgs = 0)
+    @CoreMethod(names = "keys")
     public abstract static class KeysNode extends HashCoreMethodNode {
 
         public KeysNode(RubyContext context, SourceSection sourceSection) {
@@ -999,7 +999,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "size", maxArgs = 0)
+    @CoreMethod(names = "size")
     public abstract static class SizeNode extends HashCoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -1028,7 +1028,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "values", maxArgs = 0)
+    @CoreMethod(names = "values")
     public abstract static class ValuesNode extends HashCoreMethodNode {
 
         public ValuesNode(RubyContext context, SourceSection sourceSection) {

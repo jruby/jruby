@@ -1648,17 +1648,18 @@ public class IRBuilder {
         // because of the use of copyAndReturnValue method for literal objects.
     }
 
-    private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(manager, s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
+    // Called by defineMethod but called on a new builder so things like ensure block info recording
+    // do not get confused.
+    private IRMethod defineMethodInner(MethodDefNode defNode, IRMethod method, IRScope parent) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(method, new TraceInstr(RubyEvent.CALL, defNode.getName(), s.getFileName(), defNode.getPosition().getStartLine()));
+            addInstr(method, new TraceInstr(RubyEvent.CALL, method.getName(), method.getFileName(), method.getLineNumber()));
         }
 
         addInstr(method, new ReceiveSelfInstr(method.getSelf()));
 
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
-        int nearestScopeDepth = s.getNearestModuleReferencingScopeDepth();
+        int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
@@ -1673,17 +1674,21 @@ public class IRBuilder {
         Operand rv = newIRBuilder(manager).build(defNode.getBodyNode(), method);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(method, new TraceInstr(RubyEvent.RETURN, defNode.getName(), s.getFileName(), -1));
+            addInstr(method, new TraceInstr(RubyEvent.RETURN, method.getName(), method.getFileName(), -1));
         }
 
         if (rv != null) addInstr(method, new ReturnInstr(rv));
 
         // If the method can receive non-local returns
-        if (method.canReceiveNonlocalReturns()) {
-            handleNonlocalReturnInMethod(method);
-        }
+        if (method.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod(method);
 
         return method;
+    }
+
+    private IRMethod defineNewMethod(MethodDefNode defNode, IRScope parent, boolean isInstanceMethod) {
+        IRMethod method = new IRMethod(manager, parent, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
+
+        return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
     }
 
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method

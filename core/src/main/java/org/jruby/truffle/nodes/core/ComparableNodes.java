@@ -39,7 +39,7 @@ public abstract class ComparableNodes {
 
     }
 
-    @CoreMethod(names = "<", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<", required = 1, optional = 0)
     public abstract static class LessNode extends ComparableCoreMethodNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
@@ -59,7 +59,7 @@ public abstract class ComparableNodes {
 
     }
 
-    @CoreMethod(names = "<=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<=", required = 1, optional = 0)
     public abstract static class LessEqualNode extends ComparableCoreMethodNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -79,7 +79,7 @@ public abstract class ComparableNodes {
 
     }
 
-    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "==", required = 1, optional = 0)
     public abstract static class EqualNode extends ComparableCoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -107,7 +107,7 @@ public abstract class ComparableNodes {
         }
     }
 
-    @CoreMethod(names = ">=", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = ">=", required = 1, optional = 0)
     public abstract static class GreaterEqualNode extends ComparableCoreMethodNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -127,7 +127,7 @@ public abstract class ComparableNodes {
 
     }
 
-    @CoreMethod(names = ">", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = ">", required = 1, optional = 0)
     public abstract static class GreaterNode extends ComparableCoreMethodNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
@@ -147,7 +147,7 @@ public abstract class ComparableNodes {
 
     }
 
-    @CoreMethod(names = "between?", minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "between?", required = 2, optional = 0)
     public abstract static class BetweenNode extends ComparableCoreMethodNode {
 
         public BetweenNode(RubyContext context, SourceSection sourceSection) {

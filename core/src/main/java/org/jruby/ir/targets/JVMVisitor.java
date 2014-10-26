@@ -149,11 +149,13 @@ public class JVMVisitor extends IRVisitor {
 
         // Some scopes (closures, module/class bodies) do not have explicit call protocol yet.
         // Unconditionally load current dynamic scope for those bodies.
-        if (!scope.hasExplicitCallProtocol()) {
+        // FIXME: If I don't load this there are some scopes that end up trying to use it before it is there
+        // Try uncommenting and running compiler specs.
+//        if (!scope.hasExplicitCallProtocol()) {
             jvmMethod().loadContext();
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
-        }
+//        }
 
         IRBytecodeAdapter m = jvmMethod();
 
@@ -743,26 +745,24 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
-        IRBytecodeAdapter m = jvmMethod();
+        final IRBytecodeAdapter m = jvmMethod();
         SkinnyMethodAdapter a = m.adapter;
 
         RegexpOptions options = instr.getOptions();
-        List<Operand> operands = instr.getPieces();
+        final List<Operand> operands = instr.getPieces();
 
-        m.loadContext();
-        for (int i = 0; i < operands.size(); i++) {
-            Operand operand = operands.get(i);
-            visit(operand);
-        }
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                m.loadContext();
+                for (int i = 0; i < operands.size(); i++) {
+                    Operand operand = operands.get(i);
+                    visit(operand);
+                }
+            }
+        };
 
-        a.invokedynamic(
-                "dregexp",
-                sig(RubyRegexp.class,
-                        params(ThreadContext.class,
-                                RubyString.class,
-                                operands.size())),
-                Bootstrap.regexp(),
-                options.toEmbeddedOptions());
+        m.pushDRegexp(r, options, operands.size());
 
         jvmStoreLocal(instr.getResult());
     }

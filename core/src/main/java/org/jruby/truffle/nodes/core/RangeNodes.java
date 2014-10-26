@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.control.*;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "==", required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -65,7 +65,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0, lowerFixnumSelf = true)
+    @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
@@ -109,7 +109,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, maxArgs = 0, lowerFixnumSelf = true)
+    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -163,7 +163,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "exclude_end?", maxArgs = 0)
+    @CoreMethod(names = "exclude_end?")
     public abstract static class ExcludeEndNode extends CoreMethodNode {
 
         public ExcludeEndNode(RubyContext context, SourceSection sourceSection) {
@@ -181,7 +181,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "first", maxArgs = 0)
+    @CoreMethod(names = "first")
     public abstract static class FirstNode extends CoreMethodNode {
 
         public FirstNode(RubyContext context, SourceSection sourceSection) {
@@ -204,7 +204,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"include?", "==="}, maxArgs = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
+    @CoreMethod(names = {"include?", "==="}, optional = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode callLess;
@@ -252,7 +252,7 @@ public abstract class RangeNodes {
         }
     }
 
-    @CoreMethod(names = "last", maxArgs = 0)
+    @CoreMethod(names = "last")
     public abstract static class LastNode extends CoreMethodNode {
 
         public LastNode(RubyContext context, SourceSection sourceSection) {
@@ -275,7 +275,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "step", needsBlock = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "step", needsBlock = true, required = 1, optional = 0)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -327,7 +327,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "to_a", maxArgs = 0, lowerFixnumSelf = true)
+    @CoreMethod(names = "to_a", lowerFixnumSelf = true)
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
@@ -358,7 +358,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toS;

@@ -9,19 +9,17 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
-    @CoreMethod(names = {"call", "[]"}, isSplatted = true)
+    @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodNode {
 
         @Child protected YieldDispatchHeadNode yieldNode;
@@ -43,7 +41,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -64,7 +62,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "lambda?", maxArgs = 0)
+    @CoreMethod(names = "lambda?")
     public abstract static class LambdaNode extends CoreMethodNode {
 
         public LambdaNode(RubyContext context, SourceSection sourceSection) {

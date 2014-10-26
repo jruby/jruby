@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -19,7 +18,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
 
-    @CoreMethod(names = "initialize", minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -48,7 +47,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(names = "backtrace", maxArgs = 0)
+    @CoreMethod(names = "backtrace")
     public abstract static class BacktraceNode extends CoreMethodNode {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
@@ -66,7 +65,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(names = {"message", "to_s"}, maxArgs = 0)
+    @CoreMethod(names = {"message", "to_s"})
     public abstract static class MessageNode extends CoreMethodNode {
 
         public MessageNode(RubyContext context, SourceSection sourceSection) {

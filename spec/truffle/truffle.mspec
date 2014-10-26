@@ -80,7 +80,6 @@ class MSpecScript
     "^spec/ruby/core/main/include_spec.rb",
     "^spec/ruby/core/main/private_spec.rb",
     "^spec/ruby/core/main/public_spec.rb",
-    "^spec/ruby/core/module",
     "^spec/ruby/core/object/is_a_spec.rb",
     "^spec/ruby/core/object/kind_of_spec.rb",
     "^spec/ruby/core/object/instance_of_spec.rb",

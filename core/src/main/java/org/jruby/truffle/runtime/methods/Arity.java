@@ -9,60 +9,28 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
-
-/**
- * Represents the arity, or parameter contract, of a method.
- */
 public class Arity {
 
-    private final int minimum;
-    public static final int NO_MINIMUM = 0;
+    private final int required;
+    private final int optional;
+    private final boolean allowsMore;
 
-    private final int maximum;
-    public static final int NO_MAXIMUM = Integer.MAX_VALUE;
-
-    public static final Arity NO_ARGS = new Arity(0, 0);
-    public static final Arity ONE_ARG = new Arity(1, 1);
-
-    public Arity(int minimum, int maximum) {
-        this.minimum = minimum;
-        this.maximum = maximum;
+    public Arity(int required, int optional, boolean allowsMore) {
+        this.required = required;
+        this.optional = optional;
+        this.allowsMore = allowsMore;
     }
 
-    public int getMinimum() {
-        return minimum;
+    public int getRequired() {
+        return required;
     }
 
-    public int getMaximum() {
-        return maximum;
+    public int getOptional() {
+        return optional;
     }
 
-    @Override
-    public String toString() {
-        return String.format("Arity(%d, %d)", minimum, maximum);
+    public boolean allowsMore() {
+        return allowsMore;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Arity arity = (Arity) o;
-
-        if (maximum != arity.maximum) return false;
-        if (minimum != arity.minimum) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = minimum;
-        result = 31 * result + maximum;
-        return result;
-    }
 }

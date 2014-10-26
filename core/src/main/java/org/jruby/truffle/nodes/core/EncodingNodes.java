@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
 
-    @CoreMethod(names = {"==", "==="}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "==="}, required = 1, optional = 0)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -48,7 +48,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_external", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "default_external", onSingleton = true)
     public abstract static class DefaultExternalNode extends CoreMethodNode {
 
         public DefaultExternalNode(RubyContext context, SourceSection sourceSection) {
@@ -74,7 +74,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_internal", onSingleton = true, maxArgs = 0)
+    @CoreMethod(names = "default_internal", onSingleton = true)
     public abstract static class DefaultInternalNode extends CoreMethodNode {
 
         public DefaultInternalNode(RubyContext context, SourceSection sourceSection) {
@@ -100,7 +100,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "find", onSingleton = true, maxArgs = 1, minArgs = 1)
+    @CoreMethod(names = "find", onSingleton = true, required = 1)
     public abstract static class FindNode extends CoreMethodNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {

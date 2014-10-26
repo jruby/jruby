@@ -33,6 +33,7 @@ import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
@@ -84,6 +85,58 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         invokeIRHelper("constructRubyRegexp", sig(RubyRegexp.class, ThreadContext.class, RubyString.class, int.class));
     }
 
+    public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("dynamic regexp has more than " + MAX_ARGUMENTS + " elements");
+
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity, int.class));
+
+        if (!getClassData().dregexpMethodsDefined.contains(arity)) {
+            adapter2 = new SkinnyMethodAdapter(
+                    adapter.getClassVisitor(),
+                    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                    "dregexp:" + arity,
+                    incomingSig,
+                    null,
+                    null);
+
+            adapter2.aload(0);
+            buildArrayFromLocals(adapter2, 1, arity);
+            adapter2.iload(1 + arity);
+
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), "newDynamicRegexp", sig(RubyRegexp.class, ThreadContext.class, IRubyObject[].class, int.class));
+            adapter2.areturn();
+            adapter2.end();
+
+            getClassData().dregexpMethodsDefined.add(arity);
+        }
+
+        String cacheField = null;
+        Label done = null;
+
+        if (options.isOnce()) {
+            // need to cache result forever
+            cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
+            done = new Label();
+            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
+            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+            adapter.dup();
+            adapter.ifnonnull(done);
+            adapter.pop();
+        }
+
+        // call synthetic method if we still need to build dregexp
+        callback.run();
+        adapter.ldc(options.toEmbeddedOptions());
+        adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
+
+        if (done != null) {
+            adapter.dup();
+            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+            adapter.label(done);
+        }
+    }
+
     public void pushSymbol(String sym) {
         loadRuntime();
         adapter.ldc(sym);
@@ -110,7 +163,6 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
         if (hasClosure) {
             switch (arity) {
-                default:
                 case -1:
                     incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
                     outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
@@ -122,10 +174,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                     incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
                     outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
                     break;
+                default:
+                    incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                    outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                    break;
             }
         } else {
             switch (arity) {
-                default:
                 case -1:
                     incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
                     outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
@@ -136,6 +191,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 case 3:
                     incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
                     outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
+                    break;
+                default:
+                    incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
+                    outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
                     break;
             }
         }
@@ -214,6 +273,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
         adapter2.pushInt(arity);
         adapter2.invokestatic(p(Helpers.class), "anewarrayIRubyObjects", sig(IRubyObject[].class, int.class));
+
         for (int i = 0; i < arity;) {
             int j = 0;
             while (i + j < arity && j < Helpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
@@ -221,8 +281,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 j++;
             }
             adapter2.pushInt(i);
-            i += j;
             adapter2.invokestatic(p(Helpers.class), "aastoreIRubyObjects", sig(IRubyObject[].class, params(IRubyObject[].class, IRubyObject.class, j, int.class)));
+            i += j;
         }
     }
 

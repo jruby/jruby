@@ -50,8 +50,6 @@ public class JRubyCallSite extends MutableCallSite {
     private final CallType callType;
     public CacheEntry entry = CacheEntry.NULL_CACHE;
     private final Set<Integer> seenTypes = new HashSet<Integer>();
-    private final boolean attrAssign;
-    private final boolean iterator;
     private final boolean expression;
     private final String name;
     private int clearCount;
@@ -64,81 +62,63 @@ public class JRubyCallSite extends MutableCallSite {
     private final Signature fullSignature;
     private final int arity;
 
-    public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name, boolean attrAssign, boolean iterator, boolean expression) {
+    public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name, boolean expression) {
         super(type);
-        this.lookup = lookup;
-        this.callType = callType;
-        this.attrAssign = attrAssign;
-        this.iterator = iterator;
-        this.expression = expression;
+
         this.name = name;
+        this.callType = callType;
+
+        Signature startSig;
+        int argOffset;
+
+        if (callType == CallType.SUPER) {
+            // super calls receive current class argument, so offsets and signature are different
+            startSig = JRubyCallSite.STANDARD_SUPER_SIG;
+            argOffset = 4;
+        } else {
+            startSig = JRubyCallSite.STANDARD_SITE_SIG;
+            argOffset = 3;
+        }
+
+        int arity;
+        if (type.parameterType(type.parameterCount() - 1) == Block.class) {
+            arity = type.parameterCount() - (argOffset + 1);
+
+            if (arity == 1 && type.parameterType(argOffset) == IRubyObject[].class) {
+                arity = -1;
+                startSig = startSig.appendArg("args", IRubyObject[].class);
+            } else {
+                for (int i = 0; i < arity; i++) {
+                    startSig = startSig.appendArg("arg" + i, IRubyObject.class);
+                }
+            }
+            startSig = startSig.appendArg("block", Block.class);
+            fullSignature = signature = startSig;
+        } else {
+            arity = type.parameterCount() - argOffset;
+
+            if (arity == 1 && type.parameterType(argOffset) == IRubyObject[].class) {
+                arity = -1;
+                startSig = startSig.appendArg("args", IRubyObject[].class);
+            } else {
+                for (int i = 0; i < arity; i++) {
+                    startSig = startSig.appendArg("arg" + i, IRubyObject.class);
+                }
+            }
+            signature = startSig;
+            fullSignature = startSig.appendArg("block", Block.class);
+        }
+
+        this.arity = arity;
+
+        this.lookup = lookup;
+        this.expression = expression;
         this.file = file;
         this.line = line;
-        
-        // all signatures have (context, caller, self), so length, block, and arg before block indicates signature
-        int arity = -1;
-        if (type.parameterType(type.parameterCount() - 1) == Block.class) {
-            switch (type.parameterCount()) {
-                case 4:
-                    arity = 0;
-                    break;
-                case 5:
-                    arity = (type.parameterType(3) == IRubyObject[].class) ? 4 : 1;
-                    break;
-                case 6:
-                    arity = 2;
-                    break;
-                case 7:
-                    arity = 3;
-                    break;
-                default:
-                    throw new RuntimeException("unknown incoming signature: " + type);
-            }
-
-            fullSignature = signature = STANDARD_SITE_SIGS_BLOCK[arity];
-        } else {
-            switch (type.parameterCount()) {
-                case 3:
-                    arity = 0;
-                    break;
-                case 4:
-                    arity = (type.parameterType(3) == IRubyObject[].class) ? 4 : 1;
-                    break;
-                case 5:
-                    arity = 2;
-                    break;
-                case 6:
-                    arity = 3;
-                    break;
-                default:
-                    throw new RuntimeException("unknown incoming signature: " + type);
-            }
-
-            signature = STANDARD_SITE_SIGS[arity];
-            fullSignature = STANDARD_SITE_SIGS_BLOCK[arity];
-        }
-        
-        this.arity = getSiteCount(type.parameterArray());
     }
     
     public int arity() {
         return arity;
-    }
-
-    public static int getSiteCount(Class[] args) {
-        if (args[args.length - 1] == Block.class) {
-            if (args[args.length - 2] == IRubyObject[].class) {
-                return -1;
-            } else {
-                return args.length - 4; // TC, caller, self, block
-            }
-        } else {
-            if (args[args.length - 1] == IRubyObject[].class) {
-                return -1;
-            } else {
-                return args.length - 3; // TC, caller, self
-            }
-        }
     }
     
     public Lookup lookup() {
@@ -150,11 +130,11 @@ public class JRubyCallSite extends MutableCallSite {
     }
 
     public boolean isAttrAssign() {
-        return attrAssign;
+        return false;
     }
-    
+
     public boolean isIterator() {
-        return iterator;
+        return false;
     }
     
     public boolean isExpression() {

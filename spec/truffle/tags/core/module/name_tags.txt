@@ -1,8 +1,6 @@
 fails:Module#name is nil for an anonymous module
 fails:Module#name is nil when assigned to a constant in an anonymous module
 fails:Module#name is nil for a nested module created with the module keyword
-fails:Module#name is set when opened with the module keyword
-fails:Module#name is set when a nested module is opened with the module keyword
 fails:Module#name is set when assigning to a constant
 fails:Module#name is not modified when assigning to a new constant after it has been accessed
 fails:Module#name is set with a conditional assignment to a nested constant

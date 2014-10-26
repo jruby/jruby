@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.methods.arguments;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -36,16 +35,16 @@ public class CheckArityNode extends RubyNode {
 
         if (!checkArity(given)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getMinimum(), this));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
         }
     }
 
     private boolean checkArity(int given) {
-        if (arity.getMinimum() != Arity.NO_MINIMUM && given < arity.getMinimum()) {
+        if (arity.getRequired() != 0 && given < arity.getRequired()) {
             return false;
         }
 
-        if (arity.getMaximum() != Arity.NO_MAXIMUM && given > arity.getMaximum()) {
+        if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
             return false;
         }
 
