@@ -268,7 +268,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
     private LexerSource newSource(String contents, List<String> scriptLines) {
         //return new InputStreamLexerSource("in-memory-source",
         //    new java.io.ByteArrayInputStream(safeGetBytes(contents)), scriptLines, 0, false);
-        return new ByteArrayLexerSource("in-memory-source", safeGetBytes(contents), scriptLines, 0, false, new SimpleSourcePositionFactory.Factory());
+        return new ByteArrayLexerSource("in-memory-source", safeGetBytes(contents), scriptLines, 0);
     }
 
     private void assertActionShouldProduce(String expected, Callable<byte[]> action) {
