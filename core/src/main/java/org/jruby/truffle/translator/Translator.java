@@ -11,9 +11,7 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.TruffleSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
@@ -43,15 +41,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             } else {
                 return parentSourceSection;
             }
-        } else if (sourcePosition instanceof TruffleSourcePosition) {
-            final TruffleSourcePosition detailedSourcePosition = (TruffleSourcePosition) sourcePosition;
-            try {
-                return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
-            } catch (IllegalArgumentException e) {
-                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourcePosition.getFile(), sourcePosition.getStartLine() + 1, String.format("Truffle thinks %d length %d is invalid, reporting as line", detailedSourcePosition.getOffset(), detailedSourcePosition.getLength()));
-                return source.createSection(getIdentifier(), sourcePosition.getStartLine() + 1);
-            }
-        } else if ((boolean) Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
+        } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
             return source.createSection(getIdentifier(), sourcePosition.getStartLine() + 1);
         } else {
