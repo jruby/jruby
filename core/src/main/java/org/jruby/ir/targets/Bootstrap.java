@@ -221,12 +221,12 @@ public class Bootstrap {
         return hash;
     }
 
-    static MethodHandle buildGenericHandle(InvokeSite site, DynamicMethod method, RubyClass selfClass) {
+    static MethodHandle buildGenericHandle(InvokeSite site, DynamicMethod method, RubyClass dispatchClass) {
         SmartBinder binder;
 
         binder = SmartBinder.from(site.signature)
-                .drop("caller")
-                .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, selfClass, site.name())
+                .permute("context", "self", "arg.*", "block")
+                .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, dispatchClass, site.name())
                 .insert(0, "method", DynamicMethod.class, method);
 
         if (site.arity > 3) {
@@ -255,7 +255,7 @@ public class Bootstrap {
             // TODO: this will have to expand when we start specializing arities
 
             binder = SmartBinder.from(site.signature)
-                    .drop("caller");
+                    .permute("context", "self", "arg.*", "block");
 
             if (site.arity == -1) {
                 // already [], nothing to do

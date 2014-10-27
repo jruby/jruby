@@ -12,7 +12,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 
 import static org.jruby.ir.runtime.IRRuntimeHelpers.splatArguments;
 
@@ -25,7 +27,23 @@ public class InstanceSuperInvokeSite extends SuperInvokeSite {
     }
 
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        return fail(context, caller, self, definingModule, args, block);
+        // TODO: mostly copy of org.jruby.ir.targets.InvokeSite because of different target class logic
+
+        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass superClass = definingModule.getSuperClass();
+        SwitchPoint switchPoint = (SwitchPoint) superClass.getInvalidator().getData();
+        CacheEntry entry = superClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, methodName, args, block);
+        }
+
+        MethodHandle mh = getHandle(superClass, this, method);
+
+        updateInvocationTarget(mh, self, selfClass, entry, switchPoint);
+
+        return method.call(context, self, superClass, methodName, args, block);
     }
 
     public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {

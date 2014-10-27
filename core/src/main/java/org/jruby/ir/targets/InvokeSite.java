@@ -182,12 +182,12 @@ public abstract class InvokeSite extends MutableCallSite {
         return binder.binder();
     }
 
-    MethodHandle getHandle(RubyClass selfClass, InvokeSite site, DynamicMethod method) throws Throwable {
+    MethodHandle getHandle(RubyClass dispatchClass, InvokeSite site, DynamicMethod method) throws Throwable {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
         MethodHandle mh = Bootstrap.buildNativeHandle(site, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildJittedHandle(site, method, blockGiven);
-        if (mh == null) mh = Bootstrap.buildGenericHandle(site, method, selfClass);
+        if (mh == null) mh = Bootstrap.buildGenericHandle(site, method, dispatchClass);
 
         assert mh != null : "we should have a method handle of some sort by now";
 
@@ -199,10 +199,10 @@ public abstract class InvokeSite extends MutableCallSite {
      * guard and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
-    MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule selfClass, CacheEntry entry, SwitchPoint switchPoint) {
+    MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, CacheEntry entry, SwitchPoint switchPoint) {
         if (target == null ||
                 clearCount > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
-                (!hasSeenType(selfClass.id)
+                (!hasSeenType(testClass.id)
                         && seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
             setTarget(target = prepareBinder().invokeVirtualQuiet(lookup(), "fail"));
         } else {
@@ -210,7 +210,7 @@ public abstract class InvokeSite extends MutableCallSite {
             MethodHandle gwt;
 
             // if we've cached no types, and the site is bound and we haven't seen this new type...
-            if (seenTypesCount() > 0 && getTarget() != null && !hasSeenType(selfClass.id)) {
+            if (seenTypesCount() > 0 && getTarget() != null && !hasSeenType(testClass.id)) {
                 // stack it up into a PIC
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(entry.method));
                 fallback = getTarget();
@@ -222,7 +222,7 @@ public abstract class InvokeSite extends MutableCallSite {
                 clearTypes();
             }
 
-            addType(selfClass.id);
+            addType(testClass.id);
 
             SmartHandle test;
             SmartBinder selfTest = SmartBinder
@@ -246,7 +246,7 @@ public abstract class InvokeSite extends MutableCallSite {
                 test = SmartBinder
                         .from(signature.changeReturn(boolean.class))
                         .permute("self")
-                        .insert(0, "selfClass", RubyClass.class, selfClass)
+                        .insert(0, "selfClass", RubyClass.class, testClass)
                         .invokeStaticQuiet(Bootstrap.LOOKUP, Bootstrap.class, "testType");
             }
 
