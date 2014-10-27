@@ -57,21 +57,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 scopeHasLocalVarStores = bindingHasEscaped;
             }
 
-            boolean requireFrame = bindingHasEscaped || scope.usesEval();
-
-            for (IRFlags flag : scope.getFlags()) {
-                switch (flag) {
-                    case BINDING_HAS_ESCAPED:
-                    case CAN_CAPTURE_CALLERS_BINDING:
-                    case REQUIRES_FRAME:
-                    case REQUIRES_VISIBILITY:
-                    case USES_BACKREF_OR_LASTLINE:
-                    case USES_EVAL:
-                    case USES_ZSUPER:
-                        requireFrame = true;
-                }
-            }
-
+            boolean requireFrame = doesItRequireFrame(scope, bindingHasEscaped);
             boolean requireBinding = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
 
             if (requireBinding || requireFrame) {
@@ -146,6 +132,25 @@ public class AddCallProtocolInstructions extends CompilerPass {
         (new LiveVariableAnalysis()).invalidate(scope);
 
         return null;
+    }
+
+    private boolean doesItRequireFrame(IRScope scope, boolean bindingHasEscaped) {
+        boolean requireFrame = bindingHasEscaped || scope.usesEval();
+
+        for (IRFlags flag : scope.getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_FRAME:
+                case REQUIRES_VISIBILITY:
+                case USES_BACKREF_OR_LASTLINE:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    requireFrame = true;
+            }
+        }
+
+        return requireFrame;
     }
 
     @Override
