@@ -8,4 +8,3 @@ fails:Kernel#puts writes [...] for a recursive array arg
 fails:Kernel#puts writes a newline after objects that do not end in newlines
 fails:Kernel#puts does not write a newline after objects that end in newlines
 fails:Kernel#puts ignores the $/ separator global
-fails:Kernel.puts needs to be reviewed for spec completeness

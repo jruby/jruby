@@ -1233,40 +1233,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "p", isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class PNode extends CoreMethodNode {
-
-        @Child protected DispatchHeadNode inspect;
-
-        public PNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            inspect = new DispatchHeadNode(context);
-        }
-
-        public PNode(PNode prev) {
-            super(prev);
-            inspect = prev.inspect;
-        }
-
-        @Specialization
-        public RubyNilClass p(final VirtualFrame frame, final Object[] args) {
-            notDesignedForCompilation();
-
-            getContext().outsideGlobalLock(new Runnable() {
-
-                @Override
-                public void run() {
-                    for (Object arg : args) {
-                        getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.call(frame, arg, "inspect", null));
-                    }
-                }
-
-            });
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-    }
-
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
