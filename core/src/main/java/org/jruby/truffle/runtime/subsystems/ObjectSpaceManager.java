@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -254,7 +255,10 @@ public class ObjectSpaceManager {
         }
 
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
-            context.getCoreLibrary().box(frame.getValue(slot)).visitObjectGraph(visitor);
+            Object value = frame.getValue(slot);
+            if (!(value instanceof Visibility)) { // TODO(cs): Better condition for hidden local variables
+                context.getCoreLibrary().box(value).visitObjectGraph(visitor);
+            }
         }
     }
 

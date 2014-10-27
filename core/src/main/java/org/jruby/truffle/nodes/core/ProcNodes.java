@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -36,6 +37,28 @@ public abstract class ProcNodes {
                     block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
 
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "binding")
+    public abstract static class BindingNode extends CoreMethodNode {
+
+        public BindingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BindingNode(BindingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyBinding binding(RubyProc proc) {
+            final MaterializedFrame frame = proc.getDeclarationFrame();
+
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(),
+                    RubyArguments.getSelf(frame.getArguments()),
+                    frame);
         }
 
     }
