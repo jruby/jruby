@@ -288,7 +288,6 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
-                      <arg value="-Xcompliance.strict=true" />
                       <arg value="-J-ea" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
@@ -331,7 +330,6 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
-                      <arg value="-Xcompliance.strict=true" />
                       <arg value="-J-ea" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />

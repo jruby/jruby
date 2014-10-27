@@ -184,6 +184,7 @@ public class ArgumentProcessor {
                         break FOR;
                     }
                 case 'a':
+                    disallowedInRubyOpts(argument);
                     config.setSplit(true);
                     break;
                 case 'c':
@@ -551,7 +552,7 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--client")) {
                         // ignore this...can't do anything with it after boot
                         break FOR;
-                    } else if (argument.equals("--yydebug") && Options.COMPLIANCE_STRICT.load()) {
+                    } else if (argument.equals("--yydebug")) {
                         disallowedInRubyOpts(argument);
                         config.setParserDebug(true);
                     } else {
@@ -569,7 +570,7 @@ public class ArgumentProcessor {
     }
 
     private void disallowedInRubyOpts(String option) {
-        if (rubyOpts && Options.COMPLIANCE_STRICT.load()) {
+        if (rubyOpts) {
             throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
         }
     }
