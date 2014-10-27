@@ -12,13 +12,17 @@ import java.lang.invoke.MethodType;
 * Created by headius on 10/23/14.
 */
 public class InstanceSuperInvokeSite extends SuperInvokeSite {
-    public InstanceSuperInvokeSite(MethodType type, String name) {
-        super(type, name);
+    public InstanceSuperInvokeSite(MethodType type, String name, String splatmapString) {
+        super(type, name, splatmapString);
     }
 
-    public IRubyObject invoke(String methodName, boolean[] splatMap, ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
         return IRRuntimeHelpers.instanceSuperSplatArgs(context, self, methodName, definingModule, args, block, splatMap);
+    }
+
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        return invoke(context, caller, self, definingModule, args, block);
     }
 }

@@ -4,6 +4,7 @@ import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -30,6 +31,10 @@ public class SelfInvokeSite extends InvokeSite {
         super(type, name, CallType.FUNCTIONAL);
     }
 
+    public SelfInvokeSite(MethodType type, String name, CallType callType) {
+        super(type, name, callType);
+    }
+
     public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SelfInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class));
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
@@ -38,20 +43,10 @@ public class SelfInvokeSite extends InvokeSite {
         return InvokeSite.bootstrap(site, lookup);
     }
 
-    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
-        RubyClass selfClass = self.getMetaClass();
-        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
-        CacheEntry entry = selfClass.searchWithCache(methodName);
+    @Override
+    public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
         DynamicMethod method = entry.method;
 
-        if (methodMissing(entry, CallType.FUNCTIONAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, args, block);
-        }
-
-        MethodHandle mh = getHandle(selfClass, switchPoint, this, method);
-
-        setTarget(mh);
-
-        return method.call(context, self, selfClass, methodName, args, block);
+        return method.isUndefined();
     }
 }
