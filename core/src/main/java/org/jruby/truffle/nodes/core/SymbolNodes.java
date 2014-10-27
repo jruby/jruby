@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    @CoreMethod(names = {"==", "===", "eql?"}, required = 1, optional = 0)
+    @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {

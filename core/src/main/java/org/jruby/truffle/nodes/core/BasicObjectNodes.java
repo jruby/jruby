@@ -43,7 +43,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "==", required = 1, optional = 0)
+    @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -61,7 +61,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "!=", required = 1, optional = 0)
+    @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -99,7 +99,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "equal?", required = 1, optional = 0)
+    @CoreMethod(names = "equal?", required = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {

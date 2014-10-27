@@ -20,7 +20,7 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
-    @CoreMethod(names = "==", required = 1, optional = 0)
+    @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -40,7 +40,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "===", required = 1, optional = 0)
+    @CoreMethod(names = "===", required = 1)
     public abstract static class ThreeEqualNode extends CoreMethodNode {
 
         public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -60,7 +60,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "=~", required = 1, optional = 0)
+    @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode matchNode;
@@ -91,7 +91,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "!~", required = 1, optional = 0)
+    @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchOperatorNode extends CoreMethodNode {
 
         public NotMatchOperatorNode(RubyContext context, SourceSection sourceSection) {
@@ -111,7 +111,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "escape", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "escape", onSingleton = true, required = 1)
     public abstract static class EscapeNode extends CoreMethodNode {
 
         public EscapeNode(RubyContext context, SourceSection sourceSection) {
@@ -131,7 +131,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "initialize", required = 1, optional = 0)
+    @CoreMethod(names = "initialize", required = 1)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -152,7 +152,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1, optional = 0)
+    @CoreMethod(names = "match", required = 1)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {

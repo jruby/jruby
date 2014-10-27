@@ -43,7 +43,7 @@ public abstract class ByteArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"new", "allocate_sized"}, onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = {"new", "allocate_sized"}, onSingleton = true, required = 1)
     public abstract static class AllocateSizedNode extends CoreMethodNode {
         @Child
         protected DispatchHeadNode bytesToIntNode;
@@ -65,7 +65,7 @@ public abstract class ByteArrayNodes {
         }
     }
 
-    @CoreMethod(names = "fetch_bytes", required = 2, optional = 0)
+    @CoreMethod(names = "fetch_bytes", required = 2)
     public abstract static class FetchBytesNode extends CoreMethodNode {
         @Child
         protected DispatchHeadNode countToIntNode;

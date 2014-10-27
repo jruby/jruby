@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = "chdir", onSingleton = true, needsBlock = true, required = 1, optional = 0)
+    @CoreMethod(names = "chdir", onSingleton = true, needsBlock = true, required = 1)
     public abstract static class ChdirNode extends YieldingCoreMethodNode {
 
         public ChdirNode(RubyContext context, SourceSection sourceSection) {
@@ -77,7 +77,7 @@ public abstract class DirNodes {
 
     }
 
-    @CoreMethod(names = {"glob", "[]"}, onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = {"glob", "[]"}, onSingleton = true, required = 1)
     public abstract static class GlobNode extends CoreMethodNode {
 
         public GlobNode(RubyContext context, SourceSection sourceSection) {

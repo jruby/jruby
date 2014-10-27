@@ -40,7 +40,7 @@ import java.util.List;
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
 
-    @CoreMethod(names = "<=", required = 1, optional = 0)
+    @CoreMethod(names = "<=", required = 1)
     public abstract static class IsSubclassOfNode extends CoreMethodNode {
 
         public IsSubclassOfNode(RubyContext context, SourceSection sourceSection) {
@@ -77,7 +77,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "<=>", required = 1, optional = 0)
+    @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
         @Child protected IsSubclassOfNode subclassNode;
@@ -134,7 +134,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "alias_method", required = 2, optional = 0)
+    @CoreMethod(names = "alias_method", required = 2)
     public abstract static class AliasMethodNode extends CoreMethodNode {
 
         public AliasMethodNode(RubyContext context, SourceSection sourceSection) {
@@ -178,7 +178,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "append_features", required = 1, optional = 0)
+    @CoreMethod(names = "append_features", required = 1)
     public abstract static class AppendFeaturesNode extends CoreMethodNode {
 
         public AppendFeaturesNode(RubyContext context, SourceSection sourceSection) {
@@ -487,7 +487,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "const_missing", needsSelf = false, required = 1, optional = 0)
+    @CoreMethod(names = "const_missing", needsSelf = false, required = 1)
     public abstract static class ConstMissingNode extends CoreMethodNode {
 
         public ConstMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -505,7 +505,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "const_set", required = 2, optional = 0)
+    @CoreMethod(names = "const_set", required = 2)
     public abstract static class ConstSetNode extends CoreMethodNode {
 
         public ConstSetNode(RubyContext context, SourceSection sourceSection) {
@@ -533,7 +533,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "class_variable_get", required = 1, optional = 0)
+    @CoreMethod(names = "class_variable_get", required = 1)
     public abstract static class ClassVariableGetNode extends CoreMethodNode {
 
         public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
@@ -610,7 +610,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1, optional = 0)
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -1133,7 +1133,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "remove_class_variable", required = 1, optional = 0)
+    @CoreMethod(names = "remove_class_variable", required = 1)
     public abstract static class RemoveClassVariableNode extends CoreMethodNode {
 
         public RemoveClassVariableNode(RubyContext context, SourceSection sourceSection) {
@@ -1162,7 +1162,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "remove_method", required = 1, optional = 0)
+    @CoreMethod(names = "remove_method", required = 1)
     public abstract static class RemoveMethodNode extends CoreMethodNode {
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
@@ -1208,7 +1208,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "undef_method", required = 1, optional = 0)
+    @CoreMethod(names = "undef_method", required = 1)
     public abstract static class UndefMethodNode extends CoreMethodNode {
 
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {

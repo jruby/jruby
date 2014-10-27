@@ -83,7 +83,7 @@ public abstract class TruffleDebugNodes {
 
     }
 
-    @CoreMethod(names = "java_class_of", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)
     public abstract static class JavaClassOfNode extends CoreMethodNode {
 
         public JavaClassOfNode(RubyContext context, SourceSection sourceSection) {

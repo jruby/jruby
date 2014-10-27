@@ -28,7 +28,7 @@ import org.jruby.truffle.runtime.core.RubyHash;
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
 
-    @CoreMethod(names = "==", required = 1, optional = 0)
+    @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode equalNode;
@@ -192,7 +192,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]", required = 1, optional = 0)
+    @CoreMethod(names = "[]", required = 1)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
@@ -271,7 +271,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]=", required = 2, optional = 0)
+    @CoreMethod(names = "[]=", required = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
@@ -362,7 +362,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "delete", required = 1, optional = 0)
+    @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
@@ -786,7 +786,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "merge", required = 1, optional = 0)
+    @CoreMethod(names = "merge", required = 1)
     public abstract static class MergeNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;
@@ -899,7 +899,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "key?", required = 1, optional = 0)
+    @CoreMethod(names = "key?", required = 1)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
         @Child protected DispatchHeadNode eqlNode;

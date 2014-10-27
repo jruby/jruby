@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
 
-    @CoreMethod(names = "===", required = 1, optional = 0)
+    @CoreMethod(names = "===", required = 1)
     public abstract static class ContainsInstanceNode extends CoreMethodNode {
 
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
