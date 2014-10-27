@@ -31,12 +31,19 @@ project 'JRuby Main Maven Artifact' do
 
   execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
     source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_all_inclusive' )
-     [ 'knoplerfish', 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
-      target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive_' + m )
-      FileUtils.rm_rf( target )
-      FileUtils.cp_r( source, target )
-      File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
-        f.puts 'invoker.profiles = ' + m
+    [ true, false ].each do |inline|
+      prefix = 'first_'
+      [ 'knoplerfish', 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
+        target = File.join( ctx.basedir.to_pathname, 'src', 'it', "osgi_#{prefix}all_inclusive_#{inline ? 'inline' : 'jars' }_#{m}" )
+        prefix = ''
+        FileUtils.rm_rf( target )
+        FileUtils.cp_r( source, target )
+        File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
+          f.puts "invoker.profiles = #{m}"
+        end
+        File.open( File.join( target, 'test.properties' ), 'w' ) do |f|
+          f.puts "inline = #{inline}"
+        end
       end
     end
   end
@@ -54,7 +61,7 @@ project 'JRuby Main Maven Artifact' do
     activation do
       jdk '1.8'
     end
-    plugin :invoker, :pomExcludes => ['extended/pom.xml', 'osgi_all_inclusive_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
+    plugin :invoker, :pomExcludes => ['extended/pom.xml', 'osgi_all_inclusive_*felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
 
   profile :id => :wlp do
