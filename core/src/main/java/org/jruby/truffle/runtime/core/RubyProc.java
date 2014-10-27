@@ -17,11 +17,14 @@ import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
+import org.jruby.util.cli.Options;
 
 /**
  * Represents the Ruby {@code Proc} class.
  */
 public class RubyProc extends RubyObject implements MethodLike {
+
+    public static final boolean PROC_BINDING = Options.TRUFFLE_PROC_BINDING.load();
 
     /**
      * The class from which we create the object that is {@code Proc}. A subclass of

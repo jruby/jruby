@@ -53,7 +53,12 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public RubyBinding binding(RubyProc proc) {
+        public Object binding(RubyProc proc) {
+            if (!RubyProc.PROC_BINDING) {
+                getContext().getWarnings().warn("Proc#binding disabled, returning nil. Use -Xtruffle.proc.binding=true to enable it.");
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
             final MaterializedFrame frame = proc.getDeclarationFrame();
 
             return new RubyBinding(getContext().getCoreLibrary().getBindingClass(),
