@@ -131,6 +131,10 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return closure != null;
     }
 
+    public boolean hasLiteralClosure() {
+        return closure instanceof WrappedIRClosure;
+    }
+
     public boolean isAllConstants() {
         for (Operand argument : arguments) {
             if (!(argument instanceof ImmutableLiteral)) return false;
@@ -287,9 +291,8 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     private boolean computeRequiresCallersBindingFlag() {
         if (canBeEval()) return true;
 
-        // Conservative -- assuming that the callee will save the closure
-        // and use it at a later point.
-        if (closure != null) return true;
+        // literal closures can be used to capture surrounding binding
+        if (hasLiteralClosure()) return true;
 
         String mname = getMethodAddr().getName();
         if (MethodIndex.SCOPE_AWARE_METHODS.contains(mname)) {
@@ -345,9 +348,8 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     private boolean computeRequiresCallersFrameFlag() {
         if (canBeEval()) return true;
 
-        // Conservative -- assuming that the callee will save the closure
-        // and use it at a later point.
-        if (closure != null) return true;
+        // literal closures can be used to capture surrounding binding
+        if (hasLiteralClosure()) return true;
 
         if (procNew) return true;
 

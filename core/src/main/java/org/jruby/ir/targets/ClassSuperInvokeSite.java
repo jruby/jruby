@@ -11,7 +11,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 
 import static org.jruby.ir.runtime.IRRuntimeHelpers.splatArguments;
 
@@ -23,32 +25,7 @@ public class ClassSuperInvokeSite extends SuperInvokeSite {
         super(type, name, splatmapString);
     }
 
-    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        return fail(context, caller, self, definingModule, args, block);
-    }
-
-    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        // TODO: get rid of caller
-        // TODO: mostly copy of org.jruby.ir.targets.InstanceSuperInvokeSite
-
-        RubyClass superClass = definingModule.getMetaClass().getMetaClass().getSuperClass();
-        String name = methodName;
-        CacheEntry entry = cache;
-
-        if (entry.typeOk(superClass)) {
-            return entry.method.call(context, self, superClass, name, splatArguments(args, splatMap), block);
-        }
-
-        entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
-
-        DynamicMethod method = entry.method;
-
-        if (method.isUndefined()) {
-            return Helpers.callMethodMissing(context, self, method.getVisibility(), name, callType, splatArguments(args, splatMap), block);
-        }
-
-        cache = entry;
-
-        return method.call(context, self, superClass, name, splatArguments(args, splatMap), block);
+    protected RubyClass getSuperClass(RubyClass definingModule) {
+        return definingModule.getMetaClass().getMetaClass().getSuperClass();
     }
 }

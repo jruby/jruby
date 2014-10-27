@@ -783,6 +783,11 @@ public class IRRuntimeHelpers {
         return val;
     }
 
+    @JIT // for JVM6
+    public static IRubyObject instanceSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return instanceSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
     @Interp
     public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
         RubyClass superClass = definingModule.getSuperClass();
@@ -790,6 +795,11 @@ public class IRRuntimeHelpers {
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
         return rVal;
+    }
+
+    @JIT // for JVM6
+    public static IRubyObject classSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return classSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
     @Interp

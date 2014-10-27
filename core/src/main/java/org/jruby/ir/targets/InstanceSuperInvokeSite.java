@@ -26,47 +26,7 @@ public class InstanceSuperInvokeSite extends SuperInvokeSite {
         super(type, name, splatmapString);
     }
 
-    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        // TODO: mostly copy of org.jruby.ir.targets.InvokeSite because of different target class logic
-
-        RubyClass selfClass = pollAndGetClass(context, self);
-        RubyClass superClass = definingModule.getSuperClass();
-        SwitchPoint switchPoint = (SwitchPoint) superClass.getInvalidator().getData();
-        CacheEntry entry = superClass.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
-
-        if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, methodName, args, block);
-        }
-
-        MethodHandle mh = getHandle(superClass, this, method);
-
-        updateInvocationTarget(mh, self, selfClass, entry, switchPoint);
-
-        return method.call(context, self, superClass, methodName, args, block);
-    }
-
-    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        // TODO: get rid of caller
-
-        RubyClass superClass = definingModule.getSuperClass();
-        String name = methodName;
-        CacheEntry entry = cache;
-
-        if (entry.typeOk(superClass)) {
-            return entry.method.call(context, self, superClass, name, splatArguments(args, splatMap), block);
-        }
-
-        entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
-
-        DynamicMethod method = entry.method;
-
-        if (method.isUndefined()) {
-            return Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, splatArguments(args, splatMap), block);
-        }
-
-        cache = entry;
-
-        return method.call(context, self, superClass, methodName, splatArguments(args, splatMap), block);
+    protected RubyClass getSuperClass(RubyClass definingModule) {
+        return definingModule.getSuperClass();
     }
 }
