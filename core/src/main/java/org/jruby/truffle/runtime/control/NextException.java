@@ -21,8 +21,6 @@ public final class NextException extends ControlFlowException {
     private final Object result;
 
     public NextException(Object result) {
-        assert RubyContext.shouldObjectBeVisible(result);
-
         this.result = result;
     }
 

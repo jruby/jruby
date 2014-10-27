@@ -11,11 +11,11 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.TruffleSourcePosition;
+import org.jruby.lexer.yacc.DetailedSourcePosition;
+import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
@@ -36,23 +36,18 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     public SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
-        if (sourcePosition == ISourcePosition.INVALID_POSITION) {
+        if (sourcePosition == InvalidSourcePosition.INSTANCE) {
             if (parentSourceSection == null) {
                 throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
             } else {
                 return parentSourceSection;
             }
-        } else if (sourcePosition instanceof TruffleSourcePosition) {
-            final TruffleSourcePosition detailedSourcePosition = (TruffleSourcePosition) sourcePosition;
-            try {
-                return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
-            } catch (IllegalArgumentException e) {
-                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourcePosition.getFile(), sourcePosition.getStartLine() + 1, String.format("Truffle thinks %d length %d is invalid, reporting as line", detailedSourcePosition.getOffset(), detailedSourcePosition.getLength()));
-                return source.createSection(getIdentifier(), sourcePosition.getStartLine() + 1);
-            }
-        } else if (RubyContext.ALLOW_SIMPLE_SOURCE_SECTIONS) {
+        } else if (sourcePosition instanceof DetailedSourcePosition) {
+            final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;
+            return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
+        } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
-            return source.createSection(getIdentifier(), sourcePosition.getStartLine() + 1);
+            return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
         } else {
             throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
         }

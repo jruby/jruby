@@ -21,8 +21,6 @@ public final class ReturnException extends ControlFlowException {
     private final Object value;
 
     public ReturnException(long returnID, Object value) {
-        assert RubyContext.shouldObjectBeVisible(value);
-
         this.returnID = returnID;
         this.value = value;
     }

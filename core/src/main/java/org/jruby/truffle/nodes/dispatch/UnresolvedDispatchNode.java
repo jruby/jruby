@@ -48,7 +48,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (getDepth() == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
             return getHeadNode().getFirstDispatchNode()
-                    .replace(GenericDispatchNodeFactory.create(getContext(), ignoreVisibility,
+                    .replace(UncachedDispatchNodeFactory.create(getContext(), ignoreVisibility,
                             null, null, null, null, null, null, null))
                     .executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
                             methodName, blockObject, argumentsObjects, dispatchAction);

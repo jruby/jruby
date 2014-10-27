@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ForNode;
@@ -232,7 +232,7 @@ public class BodyTranslator extends Translator {
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
         for (org.jruby.ast.Node child : node.childNodes()) {
-            if (child.getPosition() == ISourcePosition.INVALID_POSITION) {
+            if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection = sourceSection;
             }
 
@@ -241,7 +241,7 @@ public class BodyTranslator extends Translator {
             try {
                 translatedChild = child.accept(this);
             } finally {
-                if (child.getPosition() == ISourcePosition.INVALID_POSITION) {
+                if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
                     parentSourceSection = null;
                 }
             }
@@ -272,7 +272,7 @@ public class BodyTranslator extends Translator {
             } finally {
                 parentSourceSection = null;
             }
-        } else if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+        } else if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
             parentSourceSection = sourceSection;
 
             try {
@@ -1239,14 +1239,14 @@ public class BodyTranslator extends Translator {
         if (node.getValueNode() == null) {
             rhs = new DeadNode(context, sourceSection);
         } else {
-            if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection = sourceSection;
             }
 
             try {
                 rhs = node.getValueNode().accept(this);
             } finally {
-                if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+                if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                     parentSourceSection = null;
                 }
             }
@@ -1337,7 +1337,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhsTranslated;
 
         if (rhs == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "no RHS for multiple assignment - using nil");
+            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
             rhsTranslated = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
         } else {
             rhsTranslated = rhs.accept(this);
@@ -1560,7 +1560,7 @@ public class BodyTranslator extends Translator {
 
             return SequenceNode.sequence(context, sourceSection, sequence);
         } else {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " unknown form of multiple assignment");
+            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
             return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
         }
     }
@@ -1642,14 +1642,14 @@ public class BodyTranslator extends Translator {
             final boolean t = translatingNextExpression;
             translatingNextExpression = true;
 
-            if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection = sourceSection;
             }
 
             try {
                 resultNode = node.getValueNode().accept(this);
             } finally {
-                if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+                if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                     parentSourceSection = null;
                 }
 
@@ -1662,7 +1662,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
-        if (node.getPosition() == ISourcePosition.INVALID_POSITION && parentSourceSection == null) {
+        if (node.getPosition() == InvalidSourcePosition.INSTANCE && parentSourceSection == null) {
             return new DeadNode(context, null);
         }
 
@@ -2154,7 +2154,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode unimplemented(Node node) {
-        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " does nothing - translating as nil");
+        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), node + " does nothing - translating as nil");
         return new ObjectLiteralNode(context, translate(node.getPosition()), context.getCoreLibrary().getNilObject());
     }
 

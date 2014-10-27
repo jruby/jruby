@@ -67,8 +67,8 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
-
-/** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
+/*
+ * This is a port of the MRI lexer to Java.
  */
 public class RubyLexer {
     public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;
@@ -308,9 +308,14 @@ public class RubyLexer {
     private LexState last_state;
     public ISourcePosition tokline;
 
+    public void startOfToken() {
+        src.startOfToken();
+    }
+
     public void newtok() {
         tokline = getPosition();
     }
+
     // Tempory buffer to build up a potential token.  Consumer takes responsibility to reset 
     // this before use.
     private StringBuilder tokenBuffer = new StringBuilder(60);
@@ -374,14 +379,7 @@ public class RubyLexer {
     }
 
     public int nextToken() throws IOException {
-        src.getPositionFactory().startOfToken();
-
         token = yylex();
-
-        if (token != -1) {
-            src.getPositionFactory().endOfToken();
-        }
-
         return token == EOF ? 0 : token;
     }
     
@@ -1091,6 +1089,7 @@ public class RubyLexer {
         commandStart = false;
 
         loop: for(;;) {
+            startOfToken();
             last_state = lex_state;
             c = src.read();
             switch(c) {

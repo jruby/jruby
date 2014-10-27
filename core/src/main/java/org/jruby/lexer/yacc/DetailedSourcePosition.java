@@ -9,12 +9,12 @@
  */
 package org.jruby.lexer.yacc;
 
-public class TruffleSourcePosition extends SimpleSourcePosition {
+public class DetailedSourcePosition extends SimpleSourcePosition {
 
-    private final int offset;
-    private final int length;
+    final int offset;
+    final int length;
 
-    public TruffleSourcePosition(String filename, int line, int offset, int length) {
+    public DetailedSourcePosition(String filename, int line, int offset, int length) {
         super(filename, line);
         this.offset = offset;
         this.length = length;
@@ -27,4 +27,10 @@ public class TruffleSourcePosition extends SimpleSourcePosition {
     public int getLength() {
         return length;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s:%d:%d:%d", getFile(), getLine() + 1, offset, length);
+    }
+
 }

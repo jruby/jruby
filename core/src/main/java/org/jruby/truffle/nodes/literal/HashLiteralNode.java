@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.literal;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
@@ -38,7 +37,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= RubyContext.HASHES_SMALL * 2) {
+        } else if (keyValues.length <= RubyHash.HASHES_SMALL * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);
@@ -86,7 +85,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            final Object[] storage = new Object[RubyContext.HASHES_SMALL * 2];
+            final Object[] storage = new Object[RubyHash.HASHES_SMALL * 2];
 
             int position = 0;
 

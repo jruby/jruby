@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyTrueClass;
@@ -32,8 +33,6 @@ public abstract class YieldingHashCoreMethodNode extends HashCoreMethodNode {
     }
 
     public Object yield(VirtualFrame frame, RubyProc block, Object... arguments) {
-        assert RubyContext.shouldObjectsBeVisible(arguments);
-
         return dispatchNode.dispatch(frame, block, arguments);
     }
 

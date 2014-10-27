@@ -126,7 +126,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
             builder.append(":").append(((INameNode) this).getName());
         }
 
-        builder.append(" ").append(getPosition().getStartLine());
+        builder.append(" ").append(getPosition().getLine());
 
         if (!childNodes().isEmpty() && indent) {
             builder.append("\n");

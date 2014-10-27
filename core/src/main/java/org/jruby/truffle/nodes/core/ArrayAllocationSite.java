@@ -13,22 +13,25 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 public class ArrayAllocationSite {
+
+    public static final boolean ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
 
     @CompilerDirectives.CompilationFinal private boolean convertedIntToLong = false;
     private final Assumption assumption = Truffle.getRuntime().createAssumption();
 
     @CompilerDirectives.TruffleBoundary
     public void convertedIntToLong() {
-        if (RubyContext.ARRAYS_OPTIMISTIC_LONG) {
+        if (ARRAYS_OPTIMISTIC_LONG) {
             convertedIntToLong = true;
             assumption.invalidate();
         }
     }
 
     public boolean hasConvertedIntToLong() {
-        if (RubyContext.ARRAYS_OPTIMISTIC_LONG) {
+        if (ARRAYS_OPTIMISTIC_LONG) {
             assumption.isValid();
             return convertedIntToLong;
         } else {

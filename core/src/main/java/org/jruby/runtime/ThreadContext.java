@@ -44,7 +44,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
-import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -582,7 +581,7 @@ public final class ThreadContext {
     public void setFileAndLine(ISourcePosition position) {
         BacktraceElement b = backtrace[backtraceIndex];
         b.filename = position.getFile();
-        b.line = position.getStartLine();
+        b.line = position.getLine();
     }
     
     public Visibility getCurrentVisibility() {

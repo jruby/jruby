@@ -2930,8 +2930,6 @@ public abstract class ArrayNodes {
                     // TODO(CS): cast to boolean?
                     notDesignedForCompilation();
 
-                    assert RubyContext.shouldObjectBeVisible(value);
-                    assert RubyContext.shouldObjectsBeVisible(new Object[]{value});
                     if (yieldBoolean(frame, block, new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
                         selectedSize++;
@@ -3086,9 +3084,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < RubyContext.ARRAYS_SMALL; i++) {
+            for (int i = 0; i < RubyArray.ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < RubyContext.ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < RubyArray.ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if ((int) compareDispatchNode.call(frame, store[j], "<=>", null, store[i]) < 0) {
                                 final int temp = store[j];
@@ -3122,9 +3120,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < RubyContext.ARRAYS_SMALL; i++) {
+            for (int i = 0; i < RubyArray.ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < RubyContext.ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < RubyArray.ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if ((int) compareDispatchNode.call(frame, store[j], "<=>", null, store[i]) < 0) {
                                 final long temp = store[j];
@@ -3205,7 +3203,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean isSmall(RubyArray array) {
-            return array.getSize() <= RubyContext.ARRAYS_SMALL;
+            return array.getSize() <= RubyArray.ARRAYS_SMALL;
         }
 
     }

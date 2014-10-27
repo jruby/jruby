@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -63,14 +64,13 @@ public abstract class DispatchNode extends RubyNode {
         return ModuleOperations.lookupConstant(lexicalScope, module, name);
     }
 
+    @CompilerDirectives.TruffleBoundary
     protected RubyMethod lookup(
             RubyClass callerClass,
             RubyBasicObject receiver,
             String name,
             boolean ignoreVisibility,
             Dispatch.DispatchAction dispatchAction) {
-        CompilerAsserts.neverPartOfCompilation();
-
         RubyMethod method = ModuleOperations.lookupMethod(receiver.getMetaClass(), name);
 
         // If no method was found, use #method_missing
@@ -129,6 +129,30 @@ public abstract class DispatchNode extends RubyNode {
 
     public final Object execute(VirtualFrame frame) {
         throw new IllegalStateException("do not call execute on dispatch nodes");
+    }
+
+    protected boolean actionIsReadConstant(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            LexicalScope lexicalScope,
+            RubyBasicObject receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        return dispatchAction == Dispatch.DispatchAction.READ_CONSTANT;
+    }
+
+    protected boolean actionIsCallOrRespondToMethod(
+            VirtualFrame frame,
+            Object methodReceiverObject,
+            LexicalScope lexicalScope,
+            RubyBasicObject receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Dispatch.DispatchAction dispatchAction) {
+        return dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD;
     }
 
 }

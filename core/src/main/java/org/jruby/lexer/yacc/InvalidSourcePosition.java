@@ -1,5 +1,4 @@
-/*
- * **** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -12,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
- * 
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,40 +27,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-public class TruffleSourcePositionFactory extends SimpleSourcePositionFactory {
+/** For nodes which are added to the AST which are not proper syntactical elements. */
+public class InvalidSourcePosition implements ISourcePosition {
 
-    private int newStart;
+    public static final ISourcePosition INSTANCE = new InvalidSourcePosition();
 
-    private int start;
-    private int end;
-
-    public static class Factory implements SourcePositionFactoryFactory {
-
-        @Override
-        public SourcePositionFactory create(LexerSource source, int line) {
-            return new TruffleSourcePositionFactory(source, line);
-        }
-
+    public String getFile() {
+        return "dummy";
     }
 
-    public TruffleSourcePositionFactory(LexerSource source, int line) {
-        super(source, line);
-        lastPosition = new TruffleSourcePosition(source.getFilename(), line, 0, 0);
+    public int getLine() {
+        return -1;
     }
 
-    @Override
-    public void startOfToken() {
-        newStart = source.getOffset();
-    }
-
-    @Override
-    public void endOfToken() {
-        start = newStart;
-        end = source.getOffset();
-    }
-
-    public ISourcePosition getPosition() {
-        lastPosition = new TruffleSourcePosition(source.getFilename(), source.getVirtualLine(), start, end - start);
-        return lastPosition;
-    }
 }

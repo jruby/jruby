@@ -11,10 +11,8 @@ package org.jruby.truffle.nodes.literal;
 
 import java.math.*;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -25,14 +23,6 @@ public class ObjectLiteralNode extends RubyNode {
 
     public ObjectLiteralNode(RubyContext context, SourceSection sourceSection, Object object) {
         super(context, sourceSection);
-
-        assert RubyContext.shouldObjectBeVisible(object);
-        assert !(object instanceof Integer);
-        assert !(object instanceof Double);
-        assert !(object instanceof BigInteger);
-        assert !(object instanceof String);
-        assert !(object instanceof RubyString);
-
         this.object = object;
     }
 

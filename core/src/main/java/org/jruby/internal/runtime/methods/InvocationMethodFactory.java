@@ -282,7 +282,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     scope,
                     callConfig,
                     position.getFile(),
-                    position.getStartLine(),
+                    position.getLine(),
                     methodNodes);
             generatedClass = endCallWithBytes(invokerBytes, invokerPath);
         } catch (LinkageError le) {

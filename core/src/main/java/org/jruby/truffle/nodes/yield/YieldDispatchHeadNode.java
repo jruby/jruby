@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -24,14 +25,10 @@ public class YieldDispatchHeadNode extends YieldDispatchNode {
     }
 
     public Object dispatch(VirtualFrame frame, RubyProc block, Object... argumentsObjects) {
-        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-
         return dispatch.dispatch(frame, block, argumentsObjects);
     }
 
     public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
-        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-
         return dispatch.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
     }
 

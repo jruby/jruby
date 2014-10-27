@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-import org.jruby.truffle.runtime.LexicalScope;
 
 import java.util.Arrays;
 
@@ -86,9 +85,6 @@ public class RubyCallNode extends RubyNode {
         final Object[] argumentsObjects = executeArguments(frame);
         final RubyProc blockObject = executeBlock(frame);
 
-        assert RubyContext.shouldObjectBeVisible(receiverObject);
-        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
-
         return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
@@ -106,7 +102,6 @@ public class RubyCallNode extends RubyNode {
 
         for (int i = 0; i < arguments.length; i++) {
             argumentsObjects[i] = arguments[i].execute(frame);
-            assert RubyContext.shouldObjectBeVisible(argumentsObjects[i]) : argumentsObjects[i].getClass();
         }
 
         if (isSplatted) {

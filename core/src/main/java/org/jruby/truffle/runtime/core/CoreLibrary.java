@@ -19,8 +19,8 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
@@ -380,8 +380,6 @@ public class CoreLibrary {
 
     public RubyBasicObject box(Object object) {
         RubyNode.notDesignedForCompilation();
-
-        assert RubyContext.shouldObjectBeVisible(object) : object.getClass();
 
         // TODO(cs): pool common object instances like small Fixnums?
 

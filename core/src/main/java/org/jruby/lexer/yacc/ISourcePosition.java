@@ -50,21 +50,6 @@ public interface ISourcePosition extends PositionAware {
      * Which is the first(start) line that this source position occurs on (zero-based)
      * @return
      */
-	public int getStartLine();
+	public int getLine();
 
-
-    /** For nodes which are added to the AST which are not proper syntactical elements. */
-    public static final ISourcePosition INVALID_POSITION = new ISourcePosition() {
-        public String getFile() {
-            return "dummy";
-        }
-
-        public int getStartLine() {
-            return -1;
-        }
-
-        public int getLine() {
-            return -1;
-        }
-    };
 }

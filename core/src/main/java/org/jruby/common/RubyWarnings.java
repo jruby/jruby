@@ -69,7 +69,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        warn(id, position.getFile(), position.getStartLine() + 1, message);
+        warn(id, position.getFile(), position.getLine() + 1, message);
     }
 
     /**
@@ -168,7 +168,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         if (!isVerbose()) return;
         if (!runtime.warningsEnabled()) return;
 
-        warning(id, position.getFile(), position.getStartLine() + 1, message);
+        warning(id, position.getFile(), position.getLine() + 1, message);
     }
 
     /**

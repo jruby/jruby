@@ -50,16 +50,6 @@ import org.jruby.util.cli.Options;
  */
 public class RubyContext extends ExecutionContext {
 
-    public static final boolean PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
-    public static final boolean TRACE = Options.TRUFFLE_TRACE.load();
-    public static final boolean OBJECTSPACE = Options.TRUFFLE_OBJECTSPACE.load();
-    public static final boolean EXCEPTIONS_PRINT_JAVA = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
-    public static final int ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();
-    public static final boolean ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
-    public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
-    public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
-    public static final boolean ALLOW_SIMPLE_SOURCE_SECTIONS = Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load();
-
     private final Ruby runtime;
     private final TranslatorDriver translator;
     private final RubyASTProber astProber;
@@ -203,6 +193,7 @@ public class RubyContext extends ExecutionContext {
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
         final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+
         return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
     }
 
@@ -350,36 +341,6 @@ public class RubyContext extends ExecutionContext {
 
     public TranslatorDriver getTranslator() {
         return translator;
-    }
-
-    /**
-     * Utility method to check if an object should be visible in a Ruby program. Used in assertions
-     * at method boundaries to check that only values we want to be visible to the programmer become
-     * so.
-     */
-    public static boolean shouldObjectBeVisible(Object object) {
-        return object instanceof UndefinedPlaceholder || //
-                object instanceof Boolean || //
-                object instanceof Integer || //
-                object instanceof Long || //
-                object instanceof BigInteger || //
-                object instanceof Double || //
-                object instanceof RubyBasicObject || //
-                object instanceof RubyNilClass;
-    }
-
-    public static boolean shouldObjectsBeVisible(Object... objects) {
-        return shouldObjectsBeVisible(objects.length, objects);
-    }
-
-    public static boolean shouldObjectsBeVisible(int length, Object... objects) {
-        for (Object object : Arrays.asList(objects).subList(0, length)) {
-            if (!shouldObjectBeVisible(object)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public AtExitManager getAtExitManager() {
