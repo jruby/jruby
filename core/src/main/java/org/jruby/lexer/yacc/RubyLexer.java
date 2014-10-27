@@ -308,9 +308,14 @@ public class RubyLexer {
     private LexState last_state;
     public ISourcePosition tokline;
 
+    public void startOfToken() {
+        src.startOfToken();
+    }
+
     public void newtok() {
         tokline = getPosition();
     }
+
     // Tempory buffer to build up a potential token.  Consumer takes responsibility to reset 
     // this before use.
     private StringBuilder tokenBuffer = new StringBuilder(60);
@@ -1084,6 +1089,7 @@ public class RubyLexer {
         commandStart = false;
 
         loop: for(;;) {
+            startOfToken();
             last_state = lex_state;
             c = src.read();
             switch(c) {

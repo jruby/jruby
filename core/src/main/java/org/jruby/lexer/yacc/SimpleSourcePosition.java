@@ -29,6 +29,7 @@
 package org.jruby.lexer.yacc;
 
 public class SimpleSourcePosition implements ISourcePosition {
+
     final String filename;
     final int line;
 

@@ -11,6 +11,7 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.lexer.yacc.DetailedSourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -41,6 +42,9 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             } else {
                 return parentSourceSection;
             }
+        } else if (sourcePosition instanceof DetailedSourcePosition) {
+            final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;
+            return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
         } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
             return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);

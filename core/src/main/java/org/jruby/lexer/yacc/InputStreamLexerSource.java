@@ -11,8 +11,6 @@ import org.jruby.util.ByteList;
 public class InputStreamLexerSource extends LexerSource {
     private static final int INITIAL_PUSHBACK_SIZE = 100;
     
-    public static final int DATA_READ_BUFFER_SIZE = 65536;
-    
     // Where we get our newest char's
     private final InputStream in;
     
@@ -102,7 +100,6 @@ public class InputStreamLexerSource extends LexerSource {
     }
 
     private void advance(int c) {
-
         twoAgo = oneAgo;
         oneAgo = c;
         offset++;
@@ -133,7 +130,6 @@ public class InputStreamLexerSource extends LexerSource {
     }
 
     private void retreat() {
-
         offset--;
         oneAgo = twoAgo;
         twoAgo = 0;

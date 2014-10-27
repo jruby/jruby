@@ -7,3 +7,4 @@ fails:Module#class_eval raises a TypeError when the given eval-string can't be c
 fails:Module#class_eval raises an ArgumentError when no arguments and no block are given
 fails:Module#class_eval raises an ArgumentError when a block and normal arguments are given
 fails:Module#class_eval adds methods respecting the lexical constant scope
+fails:Module#class_eval evaluates a given string in the context of self

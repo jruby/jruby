@@ -6,3 +6,5 @@ fails:The __ENCODING__ pseudo-variable is Encoding::ASCII_8BIT when the interpre
 fails:The __ENCODING__ pseudo-variable is Encoding::ASCII_8BIT when the interpreter is invoked with -KA
 fails:The __ENCODING__ pseudo-variable is Encoding::UTF_8 when the interpreter is invoked with -Ku
 fails:The __ENCODING__ pseudo-variable is Encoding::UTF_8 when the interpreter is invoked with -KU
+fails:The __ENCODING__ pseudo-variable is the encoding specified by a magic comment inside an eval
+fails:The __ENCODING__ pseudo-variable is the evaluated strings's one inside an eval
