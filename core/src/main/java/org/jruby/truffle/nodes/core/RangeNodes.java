@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.control.*;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = "==", required = 1, optional = 0)
+    @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -275,7 +275,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "step", needsBlock = true, required = 1, optional = 0)
+    @CoreMethod(names = "step", needsBlock = true, required = 1)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();

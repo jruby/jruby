@@ -25,7 +25,7 @@ import java.util.List;
 @CoreClass(name = "IO")
 public abstract class IONodes {
 
-    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 2, optional = 0)
+    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 2)
     public abstract static class OpenNode extends YieldingCoreMethodNode {
 
         public OpenNode(RubyContext context, SourceSection sourceSection) {
@@ -55,7 +55,7 @@ public abstract class IONodes {
 
     }
 
-    @CoreMethod(names = "readlines", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "readlines", onSingleton = true, required = 1)
     public abstract static class ReadLinesNode extends CoreMethodNode {
 
         public ReadLinesNode(RubyContext context, SourceSection sourceSection) {

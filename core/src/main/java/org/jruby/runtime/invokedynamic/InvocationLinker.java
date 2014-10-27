@@ -363,12 +363,8 @@ public class InvocationLinker {
                         .invoke(TEST_CLASS);
                 
             } else {
-                
-                if (Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load()) {
-                    selfTest = selfTest.insert(0, "selfClass", selfClass);
-                } else {
-                    selfTest = selfTest.insert(0, "token", entry.token);
-                }
+
+                selfTest = selfTest.insert(0, "selfClass", selfClass);
                 
                 test = selfTest
                         .cast(boolean.class, RubyClass.class, IRubyObject.class)
@@ -377,11 +373,9 @@ public class InvocationLinker {
             
             gwt = createGWT(test, target, fallback, entry, site, curry);
             
-            if (Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load()) {
-                // wrap in switchpoint for mutation invalidation
-                gwt = switchPoint.guardWithTest(gwt, curry ? insertArguments(fallback, 0, site) : fallback);
-            }
-            
+            // wrap in switchpoint for mutation invalidation
+            gwt = switchPoint.guardWithTest(gwt, curry ? insertArguments(fallback, 0, site) : fallback);
+
             site.setTarget(gwt);
         }
         
@@ -1916,10 +1910,7 @@ public class InvocationLinker {
             .from(boolean.class, RubyClass.class, IRubyObject.class)
             .invokeStaticQuiet(lookup(), InvocationLinker.class, "testMetaclass");
     
-    private static final MethodHandle TEST =
-            Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load() ?
-            TEST_METACLASS :
-            TEST_GENERATION;
+    private static final MethodHandle TEST = TEST_METACLASS;
     
     private static final MethodHandle TEST_CLASS = Binder
             .from(boolean.class, Object.class, Class.class)

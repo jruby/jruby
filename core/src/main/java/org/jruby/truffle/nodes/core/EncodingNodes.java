@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
 
-    @CoreMethod(names = {"==", "==="}, required = 1, optional = 0)
+    @CoreMethod(names = {"==", "==="}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {

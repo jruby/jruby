@@ -81,7 +81,7 @@ public class OptoFactory {
     }
 
     public static Invalidator newMethodInvalidator(RubyModule module) {
-        if (indyEnabled() && indyInvocationSwitchpoint()) {
+        if (indyEnabled()) {
             try {
                 return new GenerationAndSwitchPointInvalidator(module);
             } catch (Error e) {
@@ -96,10 +96,6 @@ public class OptoFactory {
 
     private static Boolean indyConstants() {
         return Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
-    }
-
-    private static Boolean indyInvocationSwitchpoint() {
-        return Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
     }
 
     private static void disableIndy() {

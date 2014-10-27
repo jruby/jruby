@@ -632,7 +632,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             } catch (Throwable t) {
                 extractToMethodToAvoidC2Crash(context, instr, t);
 
-                if (debug) LOG.info("in : " + interpreterContext + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                if (debug) LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = instr.getRPC();
                 if (debug) LOG.info("ipc for rescuer: " + ipc);
 

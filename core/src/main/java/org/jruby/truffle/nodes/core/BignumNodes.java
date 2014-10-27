@@ -61,7 +61,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "+", required = 1, optional = 0)
+    @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -98,7 +98,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "-", required = 1, optional = 0)
+    @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -135,7 +135,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1, optional = 0)
+    @CoreMethod(names = "*", required = 1)
     public abstract static class MulNode extends CoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -168,7 +168,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "**", required = 1, optional = 0)
+    @CoreMethod(names = "**", required = 1)
     public abstract static class PowNode extends CoreMethodNode {
 
         public PowNode(RubyContext context, SourceSection sourceSection) {
@@ -203,7 +203,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "/", required = 1, optional = 0)
+    @CoreMethod(names = "/", required = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
@@ -236,7 +236,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "%", required = 1, optional = 0)
+    @CoreMethod(names = "%", required = 1)
     public abstract static class ModNode extends CoreMethodNode {
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
@@ -264,7 +264,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "divmod", required = 1, optional = 0)
+    @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
         @Child protected GeneralDivModNode divModNode;
@@ -296,7 +296,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "<", required = 1, optional = 0)
+    @CoreMethod(names = "<", required = 1)
     public abstract static class LessNode extends CoreMethodNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
@@ -328,7 +328,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "<=", required = 1, optional = 0)
+    @CoreMethod(names = "<=", required = 1)
     public abstract static class LessEqualNode extends CoreMethodNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -360,7 +360,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "==", required = 1, optional = 0)
+    @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -392,7 +392,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "<=>", required = 1, optional = 0)
+    @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -424,7 +424,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "!=", required = 1, optional = 0)
+    @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -456,7 +456,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = ">=", required = 1, optional = 0)
+    @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -488,7 +488,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = ">", required = 1, optional = 0)
+    @CoreMethod(names = ">", required = 1)
     public abstract static class GreaterNode extends CoreMethodNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
@@ -520,7 +520,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "&", required = 1, optional = 0)
+    @CoreMethod(names = "&", required = 1)
     public abstract static class BitAndNode extends CoreMethodNode {
 
         private final FixnumOrBignumNode fixnumOrBignumNode;
@@ -551,7 +551,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "|", required = 1, optional = 0)
+    @CoreMethod(names = "|", required = 1)
     public abstract static class BitOrNode extends CoreMethodNode {
 
         private final FixnumOrBignumNode fixnumOrBignumNode;
@@ -582,7 +582,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "^", required = 1, optional = 0)
+    @CoreMethod(names = "^", required = 1)
     public abstract static class BitXOrNode extends CoreMethodNode {
 
         private final FixnumOrBignumNode fixnumOrBignumNode;
@@ -613,7 +613,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "<<", required = 1, optional = 0)
+    @CoreMethod(names = "<<", required = 1)
     public abstract static class LeftShiftNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -642,7 +642,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1, optional = 0)
+    @CoreMethod(names = ">>", required = 1)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;

@@ -245,6 +245,8 @@ public class RubyGlobal {
         // ARGF, $< object
         RubyArgsFile.initArgsFile(runtime);
 
+        globals.alias("$-0", "$/");
+
         // Define aliases originally in the "English.rb" stdlib
         globals.alias("$ERROR_INFO", "$!");
         globals.alias("$ERROR_POSITION", "$@");

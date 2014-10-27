@@ -527,22 +527,15 @@ public abstract class IRScope implements ParseResult {
     }
 
     private boolean isUnsafeScope() {
-        boolean unsafeScope = false;
-        if (flags.contains(HAS_END_BLOCKS) || this.isBeginEndBlock()) {
-            unsafeScope = true;
-        } else {
-            List beginBlocks = this.getBeginBlocks();
-            // Ex: BEGIN {a = 1}; p a
-            if (beginBlocks == null || beginBlocks.isEmpty()) {
-                // Ex: eval("BEGIN {a = 1}; p a")
-                // Here, the BEGIN is added to the outer script scope.
-                beginBlocks = this.getNearestTopLocalVariableScope().getBeginBlocks();
-                unsafeScope = beginBlocks != null && !beginBlocks.isEmpty();
-            } else {
-                unsafeScope = true;
-            }
-        }
-        return unsafeScope;
+        if (this.isBeginEndBlock()) return true;                        // this is a BEGIN block
+
+        List beginBlocks = getBeginBlocks();
+        if (beginBlocks != null && !beginBlocks.isEmpty()) return true; // this contains a BEGIN block
+
+        // Does topmost variable scope contain any BEGIN blocks (IRScriptBody or IREval)?
+        // Ex1: eval("BEGIN {a = 1}; p a")    Ex2: BEGIN {a = 1}; p a
+        beginBlocks = getNearestTopLocalVariableScope().getBeginBlocks();
+        return beginBlocks != null && !beginBlocks.isEmpty();
     }
 
     public List<CompilerPass> getExecutedPasses() {

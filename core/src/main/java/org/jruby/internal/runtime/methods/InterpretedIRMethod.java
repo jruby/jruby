@@ -48,9 +48,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
-        if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
+
+        // disable JIT for anything that's not an IRMethod, or if JIT is turned off
+        // FIXME: kinda hacky, but I use IRMethod data in JITCompiler, and module/class/script bodies generally only run once
+        if (!(method instanceof IRMethod) ||
+                !implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
             this.box.callCount = -1;
         }
+
         isSynthetic = method instanceof IRModuleBody;
     }
 

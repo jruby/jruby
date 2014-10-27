@@ -29,6 +29,7 @@
  */
 package org.jruby.truffle.runtime.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -164,6 +165,7 @@ public class RubiniusByteArray extends RubyObject {
     }
 
     public RubyObject utf8_char(RubyNode currentNode, RubyObject offset) {
+        CompilerDirectives.transferToInterpreter();
         throw new RaiseException(currentNode.getContext().getCoreLibrary().runtimeError("ByteArray#utf8_char not implemented", currentNode));
     }
 

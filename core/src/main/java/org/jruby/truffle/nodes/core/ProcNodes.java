@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -18,6 +19,54 @@ import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
+
+    @CoreMethod(names = "initialize", needsBlock = true)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
+            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
+                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "binding")
+    public abstract static class BindingNode extends CoreMethodNode {
+
+        public BindingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BindingNode(BindingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object binding(RubyProc proc) {
+            if (!RubyProc.PROC_BINDING) {
+                getContext().getWarnings().warn("Proc#binding disabled, returning nil. Use -Xtruffle.proc.binding=true to enable it.");
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            final MaterializedFrame frame = proc.getDeclarationFrame();
+
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(),
+                    RubyArguments.getSelf(frame.getArguments()),
+                    frame);
+        }
+
+    }
 
     @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodNode {
@@ -37,27 +86,6 @@ public abstract class ProcNodes {
         @Specialization
         public Object call(VirtualFrame frame, RubyProc proc, Object[] args) {
             return yieldNode.dispatch(frame, proc, args);
-        }
-
-    }
-
-    @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
-            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
-
-            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

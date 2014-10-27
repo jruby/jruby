@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 @CoreClass(name = "String")
 public abstract class StringNodes {
 
-    @CoreMethod(names = "+", required = 1, optional = 0)
+    @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends CoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
@@ -49,7 +49,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "*", required = 1, optional = 0, lowerFixnumParameters = 0)
+    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0)
     public abstract static class MulNode extends CoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -75,7 +75,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "===", "eql?"}, required = 1, optional = 0)
+    @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -106,7 +106,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "!=", required = 1, optional = 0)
+    @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -133,7 +133,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "<=>", required = 1, optional = 0)
+    @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -152,7 +152,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "<<", required = 1, optional = 0)
+    @CoreMethod(names = "<<", required = 1)
     public abstract static class ConcatNode extends CoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
@@ -266,7 +266,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "=~", required = 1, optional = 0)
+    @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodNode {
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
@@ -446,7 +446,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "end_with?", required = 1, optional = 0)
+    @CoreMethod(names = "end_with?", required = 1)
     public abstract static class EndWithNode extends CoreMethodNode {
 
         public EndWithNode(RubyContext context, SourceSection sourceSection) {
@@ -465,7 +465,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "force_encoding", required = 1, optional = 0)
+    @CoreMethod(names = "force_encoding", required = 1)
     public abstract static class ForceEncodingNode extends CoreMethodNode {
 
         public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
@@ -488,7 +488,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "gsub", required = 2, optional = 0)
+    @CoreMethod(names = "gsub", required = 2)
     public abstract static class GsubNode extends CoreMethodNode {
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
@@ -515,7 +515,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "getbyte", required = 1, optional = 0)
+    @CoreMethod(names = "getbyte", required = 1)
     public abstract static class GetByteNode extends CoreMethodNode {
 
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -551,7 +551,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", required = 1, optional = 0)
+    @CoreMethod(names = "initialize", required = 1)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -603,7 +603,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1, optional = 0)
+    @CoreMethod(names = "match", required = 1)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -657,7 +657,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "scan", required = 1, optional = 0)
+    @CoreMethod(names = "scan", required = 1)
     public abstract static class ScanNode extends CoreMethodNode {
 
         public ScanNode(RubyContext context, SourceSection sourceSection) {
@@ -685,7 +685,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "setbyte", required = 2, optional = 0)
+    @CoreMethod(names = "setbyte", required = 2)
     public abstract static class SetByteNode extends CoreMethodNode {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -721,7 +721,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "split", required = 1, optional = 0)
+    @CoreMethod(names = "split", required = 1)
     public abstract static class SplitNode extends CoreMethodNode {
 
         public SplitNode(RubyContext context, SourceSection sourceSection) {
@@ -755,7 +755,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "start_with?", required = 1, optional = 0)
+    @CoreMethod(names = "start_with?", required = 1)
     public abstract static class StartWithNode extends CoreMethodNode {
 
         public StartWithNode(RubyContext context, SourceSection sourceSection) {
@@ -906,7 +906,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "unpack", required = 1, optional = 0)
+    @CoreMethod(names = "unpack", required = 1)
     public abstract static class UnpackNode extends ArrayCoreMethodNode {
 
         public UnpackNode(RubyContext context, SourceSection sourceSection) {

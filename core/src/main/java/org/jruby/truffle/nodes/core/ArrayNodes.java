@@ -46,7 +46,7 @@ import java.util.Comparator;
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
 
-    @CoreMethod(names = "+", required = 1, optional = 0)
+    @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends ArrayCoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
@@ -113,7 +113,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "-", required = 1, optional = 0)
+    @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends ArrayCoreMethodNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
@@ -252,7 +252,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1, optional = 0, lowerFixnumParameters = 0)
+    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0)
     public abstract static class MulNode extends ArrayCoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -326,7 +326,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "|", required = 1, optional = 0)
+    @CoreMethod(names = "|", required = 1)
     public abstract static class UnionNode extends ArrayCoreMethodNode {
 
         public UnionNode(RubyContext context, SourceSection sourceSection) {
@@ -423,7 +423,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"==", "eql?"}, required = 1, optional = 0)
+    @CoreMethod(names = {"==", "eql?"}, required = 1)
     public abstract static class EqualNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode equals;
@@ -1084,7 +1084,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "concat", required = 1, optional = 0)
+    @CoreMethod(names = "concat", required = 1)
     public abstract static class ConcatNode extends ArrayCoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
@@ -1159,7 +1159,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete", required = 1, optional = 0)
+    @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode threeEqual;
@@ -1234,7 +1234,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete_at", required = 1, optional = 0)
+    @CoreMethod(names = "delete_at", required = 1)
     public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
 
         private static final BranchProfile tooSmallBranch = BranchProfile.create();
@@ -1734,7 +1734,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "include?", required = 1, optional = 0)
+    @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode threeEqual;
@@ -1922,7 +1922,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, optional = 0)
+    @CoreMethod(names = "insert", required = 2)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
         private static final BranchProfile tooSmallBranch = BranchProfile.create();
@@ -2009,7 +2009,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "join", required = 1, optional = 0)
+    @CoreMethod(names = "join", required = 1)
     public abstract static class JoinNode extends ArrayCoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -2459,7 +2459,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "pack", required = 1, optional = 0)
+    @CoreMethod(names = "pack", required = 1)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
@@ -2581,7 +2581,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "product", required = 1, optional = 0)
+    @CoreMethod(names = "product", required = 1)
     public abstract static class ProductNode extends ArrayCoreMethodNode {
 
         public ProductNode(RubyContext context, SourceSection sourceSection) {
@@ -2837,7 +2837,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "replace", required = 1, optional = 0)
+    @CoreMethod(names = "replace", required = 1)
     public abstract static class ReplaceNode extends ArrayCoreMethodNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
@@ -3018,7 +3018,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "slice", required = 2, optional = 0)
+    @CoreMethod(names = "slice", required = 2)
     public abstract static class SliceNode extends ArrayCoreMethodNode {
 
         public SliceNode(RubyContext context, SourceSection sourceSection) {
@@ -3247,7 +3247,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", required = 1, optional = 0)
+    @CoreMethod(names = "zip", required = 1)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {

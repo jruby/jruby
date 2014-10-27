@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.MethAddr;
@@ -22,6 +24,13 @@ public class UnresolvedSuperInstr extends CallInstr {
 
     public UnresolvedSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure) {
         this(Operation.UNRESOLVED_SUPER, result, receiver, args, closure);
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.REQUIRES_FRAME); // for current class and method name
+        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE); // for current class and method name
+        return true;
     }
 
     @Override

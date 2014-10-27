@@ -40,7 +40,7 @@ import org.jruby.truffle.runtime.util.Supplier;
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
-    @CoreMethod(names = "===", required = 1, optional = 0)
+    @CoreMethod(names = "===", required = 1)
     public abstract static class ThreeEqualNode extends CoreMethodNode {
 
         public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -93,7 +93,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "=~", required = 1, optional = 0)
+    @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -141,7 +141,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "!~", required = 1, optional = 0)
+    @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
@@ -189,7 +189,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"<=>"}, required = 1, optional = 0)
+    @CoreMethod(names = {"<=>"}, required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode equalNode;
@@ -370,7 +370,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "catch", isModuleFunction = true, needsBlock = true, required = 1, optional = 0)
+    @CoreMethod(names = "catch", isModuleFunction = true, needsBlock = true, required = 1)
     public abstract static class CatchNode extends YieldingCoreMethodNode {
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
@@ -485,7 +485,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "eql?", required = 1, optional = 0)
+    @CoreMethod(names = "eql?", required = 1)
     public abstract static class EqlNode extends CoreMethodNode {
 
         public EqlNode(RubyContext context, SourceSection sourceSection) {
@@ -859,7 +859,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1, optional = 0)
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -879,7 +879,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "initialize_dup", visibility = Visibility.PRIVATE, required = 1, optional = 0)
+    @CoreMethod(names = "initialize_dup", visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeDupNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initializeCopyNode;
@@ -902,7 +902,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variable_defined?", required = 1, optional = 0)
+    @CoreMethod(names = "instance_variable_defined?", required = 1)
     public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
         public InstanceVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
@@ -929,7 +929,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variable_get", required = 1, optional = 0)
+    @CoreMethod(names = "instance_variable_get", required = 1)
     public abstract static class InstanceVariableGetNode extends CoreMethodNode {
 
         public InstanceVariableGetNode(RubyContext context, SourceSection sourceSection) {
@@ -956,7 +956,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variable_set", required = 2, optional = 0)
+    @CoreMethod(names = "instance_variable_set", required = 2)
     public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
         public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
@@ -1015,7 +1015,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "Integer", isModuleFunction = true, required = 1, optional = 0)
+    @CoreMethod(names = "Integer", isModuleFunction = true, required = 1)
     public abstract static class IntegerNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toInt;
@@ -1057,7 +1057,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"is_a?", "instance_of?", "kind_of?"}, required = 1, optional = 0)
+    @CoreMethod(names = {"is_a?", "instance_of?", "kind_of?"}, required = 1)
     public abstract static class IsANode extends CoreMethodNode {
 
         public IsANode(RubyContext context, SourceSection sourceSection) {
@@ -1104,7 +1104,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 0)
+    @CoreMethod(names = "load", isModuleFunction = true, required = 1)
     public abstract static class LoadNode extends CoreMethodNode {
 
         public LoadNode(RubyContext context, SourceSection sourceSection) {
@@ -1231,40 +1231,6 @@ public abstract class KernelNodes {
             return object.getObjectID();
         }
 
-    }
-
-    @CoreMethod(names = "p", isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class PNode extends CoreMethodNode {
-
-        @Child protected DispatchHeadNode inspect;
-
-        public PNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            inspect = new DispatchHeadNode(context);
-        }
-
-        public PNode(PNode prev) {
-            super(prev);
-            inspect = prev.inspect;
-        }
-
-        @Specialization
-        public RubyNilClass p(final VirtualFrame frame, final Object[] args) {
-            notDesignedForCompilation();
-
-            getContext().outsideGlobalLock(new Runnable() {
-
-                @Override
-                public void run() {
-                    for (Object arg : args) {
-                        getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.call(frame, arg, "inspect", null));
-                    }
-                }
-
-            });
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
     }
 
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
@@ -1490,7 +1456,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "require", isModuleFunction = true, required = 1, optional = 0)
+    @CoreMethod(names = "require", isModuleFunction = true, required = 1)
     public abstract static class RequireNode extends CoreMethodNode {
 
         public RequireNode(RubyContext context, SourceSection sourceSection) {
@@ -1596,7 +1562,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1, optional = 0)
+    @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)
     public abstract static class SetTraceFuncNode extends CoreMethodNode {
 
         public SetTraceFuncNode(RubyContext context, SourceSection sourceSection) {
@@ -1683,7 +1649,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "String", isModuleFunction = true, required = 1, optional = 0)
+    @CoreMethod(names = "String", isModuleFunction = true, required = 1)
     public abstract static class StringNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toS;
@@ -1894,7 +1860,7 @@ public abstract class KernelNodes {
     }
 
     // Rubinius API
-    @CoreMethod(names = "StringValue", isModuleFunction = true, required = 1, optional = 0)
+    @CoreMethod(names = "StringValue", isModuleFunction = true, required = 1)
     public abstract static class StringValueNode extends CoreMethodNode {
         @Child
         protected DispatchHeadNode argToStringNode;

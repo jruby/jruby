@@ -8,6 +8,17 @@
 
 module Kernel
 
+  module_function
+
+  def p(*args)
+    args.each do |arg|
+      print arg.inspect
+      print "\n"
+    end
+
+    args.size <= 1 ? args.first : args
+  end
+
   def puts(*args)
     args.each do |arg|
       if arg.is_a?(Array)
@@ -20,6 +31,5 @@ module Kernel
       end
     end
   end
-  private :puts
 
 end

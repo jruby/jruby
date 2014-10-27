@@ -24,7 +24,7 @@ import org.jruby.util.ByteList;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
-    @CoreMethod(names = "absolute_path", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "absolute_path", onSingleton = true, required = 1)
     public abstract static class AbsolutePathNode extends CoreMethodNode {
 
         public AbsolutePathNode(RubyContext context, SourceSection sourceSection) {
@@ -65,7 +65,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "delete", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "delete", onSingleton = true, required = 1)
     public abstract static class DeleteNode extends CoreMethodNode {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
@@ -107,7 +107,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "dirname", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "dirname", onSingleton = true, required = 1)
     public abstract static class DirnameNode extends CoreMethodNode {
 
         public DirnameNode(RubyContext context, SourceSection sourceSection) {
@@ -175,7 +175,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, required = 1)
     public abstract static class ExistsNode extends CoreMethodNode {
 
         public ExistsNode(RubyContext context, SourceSection sourceSection) {
@@ -195,7 +195,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "executable?", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "executable?", onSingleton = true, required = 1)
     public abstract static class ExecutableNode extends CoreMethodNode {
 
         public ExecutableNode(RubyContext context, SourceSection sourceSection) {
@@ -240,7 +240,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "file?", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "file?", onSingleton = true, required = 1)
     public abstract static class FileNode extends CoreMethodNode {
 
         public FileNode(RubyContext context, SourceSection sourceSection) {
@@ -298,7 +298,7 @@ public abstract class FileNodes {
         }
     }
 
-    @CoreMethod(names = "puts", required = 1, optional = 0)
+    @CoreMethod(names = "puts", required = 1)
     public abstract static class PutsNode extends CoreMethodNode {
 
         public PutsNode(RubyContext context, SourceSection sourceSection) {
@@ -327,7 +327,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, required = 1, optional = 0)
+    @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class ReadFunctionNode extends CoreMethodNode {
 
         public ReadFunctionNode(RubyContext context, SourceSection sourceSection) {
@@ -390,7 +390,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "size?", onSingleton = true, required = 1, optional = 0)
+    @CoreMethod(names = "size?", onSingleton = true, required = 1)
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -422,7 +422,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "write", required = 1, optional = 0)
+    @CoreMethod(names = "write", required = 1)
     public abstract static class WriteNode extends CoreMethodNode {
 
         public WriteNode(RubyContext context, SourceSection sourceSection) {

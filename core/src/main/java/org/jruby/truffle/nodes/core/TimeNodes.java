@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat;
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
-    @CoreMethod(names = "-", required = 1, optional = 0)
+    @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends CoreMethodNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {

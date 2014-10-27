@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
 @CoreClass(name = "Channel")
 public abstract class ChannelNodes {
 
-    @CoreMethod(names = {"send", "<<"}, required = 1, optional = 0)
+    @CoreMethod(names = {"send", "<<"}, required = 1)
     public abstract static class SendNode extends CoreMethodNode {
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

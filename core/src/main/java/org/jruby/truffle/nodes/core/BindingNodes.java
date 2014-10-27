@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
 
-    @CoreMethod(names = "local_variable_get", required = 1, optional = 0)
+    @CoreMethod(names = "local_variable_get", required = 1)
     public abstract static class LocalVariableGetNode extends CoreMethodNode {
 
         public LocalVariableGetNode(RubyContext context, SourceSection sourceSection) {

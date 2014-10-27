@@ -26,6 +26,8 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class NormalInvokeSite extends InvokeSite {
+    CacheEntry cache;
+
     public NormalInvokeSite(MethodType type, String name) {
         super(type, name, CallType.NORMAL);
     }
@@ -38,21 +40,10 @@ public class NormalInvokeSite extends InvokeSite {
         return InvokeSite.bootstrap(site, lookup);
     }
 
-    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
-        RubyClass selfClass = self.getMetaClass();
-
-        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
-        CacheEntry entry = selfClass.searchWithCache(methodName);
+    @Override
+    public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
         DynamicMethod method = entry.method;
 
-        if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, args, block);
-        }
-
-        MethodHandle mh = getHandle(selfClass, switchPoint, this, method);
-
-        this.setTarget(mh);
-        // FIXME: this varargs path needs to splat to call against handle
-        return method.call(context, self, selfClass, methodName, args, block);
+        return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
     }
 }
