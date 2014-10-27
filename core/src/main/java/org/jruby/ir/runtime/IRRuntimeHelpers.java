@@ -783,10 +783,7 @@ public class IRRuntimeHelpers {
         return val;
     }
 
-    public static IRubyObject instanceSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
-        return instanceSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
-    }
-
+    @Interp
     public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
         RubyClass superClass = definingModule.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
@@ -795,10 +792,7 @@ public class IRRuntimeHelpers {
         return rVal;
     }
 
-    public static IRubyObject classSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
-        return classSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
-    }
-
+    @Interp
     public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
         RubyClass superClass = definingModule.getMetaClass().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
