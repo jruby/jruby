@@ -55,7 +55,8 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        CompilerAsserts.neverPartOfCompilation();
+        // Need to be much more fine grained with TruffleBoundary here
+        CompilerDirectives.transferToInterpreter();
 
         final RubyConstant constant = lookupConstant(lexicalScope, receiverObject,
                 methodName.toString(), ignoreVisibility, dispatchAction);
@@ -107,7 +108,8 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        CompilerAsserts.neverPartOfCompilation();
+        // Need to be much more fine grained with TruffleBoundary here
+        CompilerDirectives.transferToInterpreter();
 
         final RubyClass callerClass = box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 

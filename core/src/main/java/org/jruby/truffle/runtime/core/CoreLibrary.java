@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
@@ -425,114 +426,142 @@ public class CoreLibrary {
     }
 
     public RubyException runtimeError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(runtimeErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException frozenError(String className, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return runtimeError(String.format("FrozenError: can't modify frozen %s \n %s", className), currentNode);
     }
 
     public RubyException argumentError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(argumentErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException argumentError(int passed, int required, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
     public RubyException localJumpError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(localJumpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException unexpectedReturn(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return localJumpError("unexpected return", currentNode);
     }
 
     public RubyException noBlockToYieldTo(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return localJumpError("no block given (yield)", currentNode);
     }
 
     public RubyException typeError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(typeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException typeErrorCantDefineSingleton(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return typeError("can't define singleton", currentNode);
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
     public RubyException typeErrorCantConvertTo(String from, String to, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("can't convert %s to %s", from, to), currentNode);
     }
 
     public RubyException typeErrorCantConvertInto(String from, String to, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("can't convert %s into %s", from, to), currentNode);
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
     }
 
     public RubyException nameError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException nameErrorUninitializedConstant(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("uninitialized constant %s", name), currentNode);
     }
 
     public RubyException nameErrorNoMethod(String name, String object, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
     }
 
     public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("`%s' is not allowable as an instance variable name", name), currentNode);
     }
 
     public RubyException nameErrorReadOnly(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("%s is a read-only variable", name), currentNode);
     }
 
     public RubyException noMethodError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException noMethodError(String name, String object, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return noMethodError(String.format("undefined method `%s' for %s", name, object), currentNode);
     }
 
     public RubyException privateMethodError(String name, String object, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return noMethodError(String.format("private method `%s' called for %s", name, object), currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getLoadErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException loadErrorCannotLoad(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return loadError(String.format("cannot load such file -- %s", name), currentNode);
     }
 
     public RubyException zeroDivisionError(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), context.makeString("divided by 0"), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException syntaxError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(syntaxErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException mathDomainError(String method, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(edomClass, context.makeString(String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyBasicObject rangeError(String type, String value, String range, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException internalError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), context.makeString("internal implementation error - " + message), RubyCallStack.getBacktrace(currentNode));
     }
 
