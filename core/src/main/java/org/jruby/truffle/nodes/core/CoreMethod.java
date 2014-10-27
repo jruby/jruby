@@ -37,13 +37,16 @@ public @interface CoreMethod {
 
     boolean needsSelf() default true;
 
-    boolean argumentsAsArray() default false;
-
-    boolean needsBlock() default false;
-
     int required() default 0;
 
     int optional() default 0;
+
+    /**
+     * Give arguments as a Object[] and allows unlimited arguments.
+     */
+    boolean argumentsAsArray() default false;
+
+    boolean needsBlock() default false;
 
     boolean lowerFixnumSelf() default false;
 
