@@ -20,11 +20,12 @@ import static org.jruby.ir.runtime.IRRuntimeHelpers.splatArguments;
 /**
 * Created by headius on 10/23/14.
 */
-public class ClassSuperInvokeSite extends SuperInvokeSite {
+public class ClassSuperInvokeSite extends ResolvedSuperInvokeSite {
     public ClassSuperInvokeSite(MethodType type, String name, String splatmapString) {
         super(type, name, splatmapString);
     }
 
+    @Override
     protected RubyClass getSuperClass(RubyClass definingModule) {
         return definingModule.getMetaClass().getMetaClass().getSuperClass();
     }
