@@ -19,6 +19,27 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
+    @CoreMethod(names = "initialize", needsBlock = true)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
+            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
+                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
     @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodNode {
 
@@ -37,27 +58,6 @@ public abstract class ProcNodes {
         @Specialization
         public Object call(VirtualFrame frame, RubyProc proc, Object[] args) {
             return yieldNode.dispatch(frame, proc, args);
-        }
-
-    }
-
-    @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
-            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
-
-            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
