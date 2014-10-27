@@ -213,7 +213,7 @@ public class IRRuntimeHelpers {
     public static void defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, IRScope irScope) {
         Ruby runtime = context.runtime;
 
-        RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
+        RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self).getMethodLocation();
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
@@ -700,6 +700,7 @@ public class IRRuntimeHelpers {
                         switch (scopeType) {
                             case MODULE_BODY:
                             case CLASS_BODY:
+                                return ((RubyModule)self).getMethodLocation();
                             case METACLASS_BODY:
                                 return (RubyModule) self;
 
@@ -829,17 +830,34 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+
         // We have to rely on the frame stack to find the implementation class
         RubyModule klazz = context.getFrameKlazz();
         String methodName = context.getCurrentFrame().getName();
 
         checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
-        RubyClass superClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        RubyModule implMod = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz);
+        RubyClass superClass = implMod.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+        // DynamicMethod method = superClass == null ? null : superClass.searchWithCache(methodName, false).method;
+        //
+        // if (method == null || !superClass.isIncluded()) {
+        //     for (RubyModule implClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz); implClass != null; implClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), superClass)) {
+        //         superClass = implClass == null ? null : implClass.getSuperClass();
+        //
+        //         method = superClass != null ? superClass.searchWithCache(methodName, false).method : null;
+        //         if (!(method == null || method.isUndefined() ) || superClass == null) break;
+        //     }
+        // }
+        //
+        // method = method == null ? UndefinedMethod.getInstance() : method;
 
-        // TODO tduehr 7/2014 There has to be a better way to break the recursion
-        IRubyObject rVal = (method.isUndefined() || (superClass.isPrepended() && (method.getImplementationClass() == self.getType()))) ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
-                : method.call(context, self, superClass, methodName, args, block);
+        IRubyObject rVal = null;
+        if (method.isUndefined()|| (superClass.isPrepended() && (method.getImplementationClass() == self.getType()))) {
+            rVal = Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block);
+        } else {
+            rVal = method.call(context, self, superClass, methodName, args, block);
+        }
 
         return rVal;
     }

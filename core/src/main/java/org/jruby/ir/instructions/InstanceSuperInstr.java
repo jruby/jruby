@@ -9,7 +9,11 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceSuperInstr extends CallInstr {
@@ -42,7 +46,7 @@ public class InstanceSuperInstr extends CallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
-        RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
+        RubyModule definingModule = ((RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp));
         String methodName = methAddr.getName();
         return IRRuntimeHelpers.instanceSuper(context, self, methodName, definingModule, args, block);
     }
