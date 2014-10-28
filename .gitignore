@@ -91,7 +91,6 @@ nbproject/private
 .metadata
 core/.classpath
 core/.project
-core/.settings/org.eclipse.jdt.core.prefs
 
 # Truffle benchmark stuff
 reference.txt
