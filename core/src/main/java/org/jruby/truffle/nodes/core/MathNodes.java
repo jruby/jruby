@@ -543,12 +543,12 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(int a, int b) {
-            return function((double) a, (double) b);
+            return function((double) a, b);
         }
 
         @Specialization
         public double function(int a, long b) {
-            return function((double) a, (double) b);
+            return function((double) a, b);
         }
 
         @Specialization
@@ -558,12 +558,12 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(long a, int b) {
-            return function((double) a, (double) b);
+            return function((double) a, b);
         }
 
         @Specialization
         public double function(long a, long b) {
-            return function((double) a, (double) b);
+            return function((double) a, b);
         }
 
         @Specialization
@@ -573,17 +573,17 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(BigInteger a, int b) {
-            return function(SlowPathBigInteger.doubleValue(a), (double) b);
+            return function(SlowPathBigInteger.doubleValue(a), b);
         }
 
         @Specialization
         public double function(BigInteger a, long b) {
-            return function(SlowPathBigInteger.doubleValue(a), (double) b);
+            return function(SlowPathBigInteger.doubleValue(a), b);
         }
 
         @Specialization
         public double function(BigInteger a, double b) {
-            return function(SlowPathBigInteger.doubleValue(a), (double) b);
+            return function(SlowPathBigInteger.doubleValue(a), b);
         }
 
         @Specialization
