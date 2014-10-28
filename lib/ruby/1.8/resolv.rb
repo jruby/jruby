@@ -855,7 +855,6 @@ class Resolv
         if File.exist? filename
           config_hash = Config.parse_resolv_conf(filename)
         else
-          require 'rbconfig'
           if WINDOWS
             require 'win32/resolv'
             search, nameserver = Win32::Resolv.get_resolv_info
