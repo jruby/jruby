@@ -77,11 +77,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object add(BigInteger a, int b) {
-            return SlowPathBigInteger.add(a, BigInteger.valueOf(b));
-        }
-
-        @Specialization
         public Object add(BigInteger a, long b) {
             return SlowPathBigInteger.add(a, BigInteger.valueOf(b));
         }
@@ -114,11 +109,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object sub(BigInteger a, int b) {
-            return SlowPathBigInteger.subtract(a, BigInteger.valueOf(b));
-        }
-
-        @Specialization
         public Object sub(BigInteger a, long b) {
             return SlowPathBigInteger.subtract(a, BigInteger.valueOf(b));
         }
@@ -144,11 +134,6 @@ public abstract class BignumNodes {
 
         public MulNode(MulNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public Object mul(BigInteger a, int b) {
-            return SlowPathBigInteger.multiply(a, BigInteger.valueOf(b));
         }
 
         @Specialization
@@ -215,11 +200,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object div(BigInteger a, int b) {
-            return SlowPathBigInteger.divide(a, BigInteger.valueOf(b));
-        }
-
-        @Specialization
         public Object div(BigInteger a, long b) {
             return SlowPathBigInteger.divide(a, BigInteger.valueOf(b));
         }
@@ -245,11 +225,6 @@ public abstract class BignumNodes {
 
         public ModNode(ModNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public Object mod(BigInteger a, int b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -280,11 +255,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyArray divMod(BigInteger a, int b) {
-            return divModNode.execute(a, b);
-        }
-
-        @Specialization
         public RubyArray divMod(BigInteger a, long b) {
             return divModNode.execute(a, b);
         }
@@ -305,11 +275,6 @@ public abstract class BignumNodes {
 
         public LessNode(LessNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public boolean less(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) < 0;
         }
 
         @Specialization
@@ -340,11 +305,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public boolean lessEqual(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) <= 0;
-        }
-
-        @Specialization
         public boolean lessEqual(BigInteger a, long b) {
             return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) <= 0;
         }
@@ -369,11 +329,6 @@ public abstract class BignumNodes {
 
         public EqualNode(EqualNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
         }
 
         @Specialization
@@ -404,11 +359,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public int compare(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b));
-        }
-
-        @Specialization
         public int compare(BigInteger a, long b) {
             return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b));
         }
@@ -433,11 +383,6 @@ public abstract class BignumNodes {
 
         public NotEqualNode(NotEqualNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
         }
 
         @Specialization
@@ -468,11 +413,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public boolean greaterEqual(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) >= 0;
-        }
-
-        @Specialization
         public boolean greaterEqual(BigInteger a, long b) {
             return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) >= 0;
         }
@@ -497,11 +437,6 @@ public abstract class BignumNodes {
 
         public GreaterNode(GreaterNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public boolean greater(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
@@ -536,11 +471,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object bitAnd(BigInteger a, int b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.and(a, BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object bitAnd(BigInteger a, long b) {
             return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.and(a, BigInteger.valueOf(b)));
         }
@@ -567,11 +497,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object bitOr(BigInteger a, int b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.or(a, BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object bitOr(BigInteger a, long b) {
             return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.or(a, BigInteger.valueOf(b)));
         }
@@ -595,11 +520,6 @@ public abstract class BignumNodes {
         public BitXOrNode(BitXOrNode prev) {
             super(prev);
             fixnumOrBignumNode = prev.fixnumOrBignumNode;
-        }
-
-        @Specialization
-        public Object bitXOr(BigInteger a, int b) {
-            return fixnumOrBignumNode.fixnumOrBignum(SlowPathBigInteger.xor(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
