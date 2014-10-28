@@ -93,6 +93,5 @@ EXT_FILES = {
   'ext/dl/win32/lib/win32' => 'win32',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
   'ext/ripper/lib/ripper' => 'ripper',
-  'ext/openssl/lib/openssl' => 'openssl',
   'ext/socket/lib/socket.rb' => 'socket.rb'
 }
