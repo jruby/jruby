@@ -860,4 +860,10 @@ ary
       expect(x).to eq false
     end
   end
+
+  it "compiles optional arguments with a constant" do
+    run 'def foo(a = Object); a; end; foo' do |x|
+      expect(x).to eq Object
+    end
+  end
 end
