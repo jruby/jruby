@@ -1,3 +1,6 @@
+require 'rdoc/markup'
+require 'rdoc/markup/formatter'
+
 ##
 # This Markup outputter is used for testing purposes.
 

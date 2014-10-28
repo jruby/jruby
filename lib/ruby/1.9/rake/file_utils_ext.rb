@@ -18,13 +18,15 @@ module Rake
     FileUtilsExt.verbose_flag = DEFAULT
     FileUtilsExt.nowrite_flag = false
 
-    FileUtils.commands.each do |name|
-      opts = FileUtils.options_of name
+    $fileutils_verbose = true
+    $fileutils_nowrite = false
+
+    FileUtils::OPT_TABLE.each do |name, opts|
       default_options = []
-      if opts.include?("verbose")
+      if opts.include?(:verbose) || opts.include?("verbose")
         default_options << ':verbose => FileUtilsExt.verbose_flag'
       end
-      if opts.include?("noop")
+      if opts.include?(:noop) || opts.include?("noop")
         default_options << ':noop => FileUtilsExt.nowrite_flag'
       end
 
@@ -135,8 +137,7 @@ module Rake
       optdecl.each do |name|
         h.delete name
       end
-      raise ArgumentError, "no such option: #{h.keys.join(' ')}" unless
-        h.empty?
+      raise ArgumentError, "no such option: #{h.keys.join(' ')}" unless h.empty?
     end
 
     extend self

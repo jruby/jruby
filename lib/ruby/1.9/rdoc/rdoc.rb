@@ -1,38 +1,52 @@
 require 'rdoc'
 
+require 'rdoc/encoding'
+require 'rdoc/parser'
+
+# Simple must come first
+require 'rdoc/parser/simple'
+require 'rdoc/parser/ruby'
+require 'rdoc/parser/c'
+
+require 'rdoc/stats'
+require 'rdoc/options'
+
 require 'find'
 require 'fileutils'
-require 'pathname'
 require 'time'
 
 ##
-# This is the driver for generating RDoc output.  It handles file parsing and
-# generation of output.
-#
-# To use this class to generate RDoc output via the API, the recommended way
-# is:
+# Encapsulate the production of rdoc documentation. Basically you can use this
+# as you would invoke rdoc from the command line:
 #
 #   rdoc = RDoc::RDoc.new
-#   options = rdoc.load_options # returns an RDoc::Options instance
-#   # set extra options
-#   rdoc.document options
+#   rdoc.document(args)
 #
-# You can also generate output like the +rdoc+ executable:
-#
-#   rdoc = RDoc::RDoc.new
-#   rdoc.document argv
-#
-# Where +argv+ is an array of strings, each corresponding to an argument you'd
+# Where +args+ is an array of strings, each corresponding to an argument you'd
 # give rdoc on the command line.  See <tt>rdoc --help<tt> for details.
+#
+# = Plugins
+#
+# When you <tt>require 'rdoc/rdoc'</tt> RDoc looks for 'rdoc/discover' files
+# in your installed gems.  This can be used to load alternate generators or
+# add additional preprocessor directives.
+#
+# You will want to wrap your plugin loading in an RDoc version check.
+# Something like:
+#
+#   begin
+#     gem 'rdoc', '~> 3'
+#     require 'path/to/my/awesome/rdoc/plugin'
+#   rescue Gem::LoadError
+#   end
+#
+# The most obvious plugin type is a new output generator.  See RDoc::Generator
+# for details.
+#
+# You can also hook into RDoc::Markup to add new directives (:nodoc: is a
+# directive).  See RDoc::Markup::PreProcess::register for details.
 
 class RDoc::RDoc
-
-  @current = nil
-
-  ##
-  # This is the list of supported output generators
-
-  GENERATORS = {}
 
   ##
   # File pattern to exclude
@@ -60,9 +74,9 @@ class RDoc::RDoc
   attr_reader :stats
 
   ##
-  # The current documentation store
+  # This is the list of supported output generators
 
-  attr_reader :store
+  GENERATORS = {}
 
   ##
   # Add +klass+ that can generate output after parsing
@@ -82,8 +96,16 @@ class RDoc::RDoc
   ##
   # Sets the active RDoc::RDoc instance
 
-  def self.current= rdoc
+  def self.current=(rdoc)
     @current = rdoc
+  end
+
+  ##
+  # Resets all internal state
+
+  def self.reset
+    RDoc::TopLevel.reset
+    RDoc::Parser::C.reset
   end
 
   ##
@@ -98,7 +120,6 @@ class RDoc::RDoc
     @old_siginfo   = nil
     @options       = nil
     @stats         = nil
-    @store         = nil
   end
 
   ##
@@ -120,21 +141,15 @@ class RDoc::RDoc
     file_list = file_list.uniq
 
     file_list = remove_unparseable file_list
-
-    file_list.sort
   end
 
   ##
   # Turns RDoc from stdin into HTML
 
   def handle_pipe
-    @html = RDoc::Markup::ToHtml.new @options
+    @html = RDoc::Markup::ToHtml.new
 
-    parser = RDoc::Text::MARKUP_FORMAT[@options.markup]
-
-    document = parser.parse $stdin.read
-
-    out = @html.convert document
+    out = @html.convert $stdin.read
 
     $stdout.write out
   end
@@ -148,33 +163,6 @@ class RDoc::RDoc
     @old_siginfo = trap 'INFO' do
       puts @current if @current
     end
-  end
-
-  ##
-  # Loads options from .rdoc_options if the file exists, otherwise creates a
-  # new RDoc::Options instance.
-
-  def load_options
-    options_file = File.expand_path '.rdoc_options'
-    return RDoc::Options.new unless File.exist? options_file
-
-    RDoc.load_yaml
-
-    parse_error = if Object.const_defined? :Psych then
-                    Psych::SyntaxError
-                  else
-                    ArgumentError
-                  end
-
-    begin
-      options = YAML.load_file '.rdoc_options'
-    rescue *parse_error
-    end
-
-    raise RDoc::Error, "#{options_file} is not a valid rdoc options file" unless
-      RDoc::Options === options
-
-    options
   end
 
   ##
@@ -221,15 +209,6 @@ option)
     end
 
     last
-  end
-
-  ##
-  # Sets the current documentation tree to +store+ and sets the store's rdoc
-  # driver to this instance.
-
-  def store= store
-    @store = store
-    @store.rdoc = self
   end
 
   ##
@@ -312,7 +291,7 @@ option)
           file_list << list_files_in_directory(rel_file_name)
         end
       else
-        warn "rdoc can't parse the #{type} #{rel_file_name}"
+        raise RDoc::Error, "I can't deal with a #{type} #{rel_file_name}"
       end
     end
 
@@ -342,22 +321,11 @@ option)
 
     @stats.add_file filename
 
-    return if RDoc::Parser.binary? filename
-
     content = RDoc::Encoding.read_file filename, encoding
 
     return unless content
 
-    filename_path = Pathname(filename).expand_path
-    relative_path = filename_path.relative_path_from @options.root
-
-    if @options.page_dir and
-       relative_path.to_s.start_with? @options.page_dir.to_s then
-      relative_path =
-        relative_path.relative_path_from @options.page_dir
-    end
-
-    top_level = @store.add_file filename, relative_path.to_s
+    top_level = RDoc::TopLevel.new filename
 
     parser = RDoc::Parser.for top_level, filename, content, @options, @stats
 
@@ -372,14 +340,6 @@ option)
 
     top_level
 
-  rescue Errno::EACCES => e
-    $stderr.puts <<-EOF
-Unable to read #{filename}, #{e.message}
-
-Please check the permissions for this file.  Perhaps you do not have access to
-it or perhaps the original author's permissions are to restrictive.  If the
-this is not your library please report a bug to the author.
-    EOF
   rescue => e
     $stderr.puts <<-EOF
 Before reporting this, could you check that the file you're documenting
@@ -406,7 +366,7 @@ The internal error was:
 
   def parse_files files
     file_list = gather_files files
-    @stats = RDoc::Stats.new @store, file_list.length, @options.verbosity
+    @stats = RDoc::Stats.new file_list.size, @options.verbosity
 
     return [] if file_list.empty?
 
@@ -425,16 +385,11 @@ The internal error was:
   end
 
   ##
-  # Removes file extensions known to be unparseable from +files+ and TAGS
-  # files for emacs and vim.
+  # Removes file extensions known to be unparseable from +files+
 
   def remove_unparseable files
     files.reject do |file|
-      file =~ /\.(?:class|eps|erb|scpt\.txt|ttf|yml)$/i or
-        (file =~ /tags$/i and
-         open(file, 'rb') { |io|
-           io.read(100) =~ /\A(\f\n[^,]+,\d+$|!_TAG_)/
-         })
+      file =~ /\.(?:class|eps|erb|scpt\.txt|ttf|yml)$/i
     end
   end
 
@@ -453,13 +408,13 @@ The internal error was:
   # current directory, so make sure you're somewhere writable before invoking.
 
   def document options
-    self.store = RDoc::Store.new
+    RDoc::RDoc.reset
 
     if RDoc::Options === options then
       @options = options
       @options.finish
     else
-      @options = load_options
+      @options = RDoc::Options.new
       @options.parse options
     end
 
@@ -474,21 +429,13 @@ The internal error was:
       @last_modified = setup_output_dir @options.op_dir, @options.force_update
     end
 
-    @store.encoding = @options.encoding if @options.respond_to? :encoding
-    @store.dry_run  = @options.dry_run
-    @store.main     = @options.main_page
-    @store.title    = @options.title
-    @store.path     = @options.op_dir
-
     @start_time = Time.now
-
-    @store.load_cache
 
     file_info = parse_files @options.files
 
     @options.default_title = "RDoc Documentation"
 
-    @store.complete @options.visibility
+    RDoc::TopLevel.complete @options.visibility
 
     @stats.coverage_level = @options.coverage_report
 
@@ -501,9 +448,9 @@ The internal error was:
     else
       gen_klass = @options.generator
 
-      @generator = gen_klass.new @store, @options
+      @generator = gen_klass.new @options
 
-      generate
+      generate file_info
     end
 
     if @stats and (@options.coverage_report or not @options.quiet) then
@@ -519,14 +466,20 @@ The internal error was:
   # output dir using the generator selected
   # by the RDoc options
 
-  def generate
+  def generate file_info
     Dir.chdir @options.op_dir do
-      unless @options.quiet then
-        $stderr.puts "\nGenerating #{@generator.class.name.sub(/^.*::/, '')} format into #{Dir.pwd}..."
-      end
+      begin
+        self.class.current = self
 
-      @generator.generate
-      update_output_dir '.', @start_time, @last_modified
+        unless @options.quiet then
+          $stderr.puts "\nGenerating #{@generator.class.name.sub(/^.*::/, '')} format into #{Dir.pwd}..."
+        end
+
+        @generator.generate file_info
+        update_output_dir '.', @start_time, @last_modified
+      ensure
+        self.class.current = nil
+      end
     end
   end
 

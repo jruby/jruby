@@ -78,8 +78,9 @@ module Net
   #
   # This library does NOT provide functions to compose internet mails.
   # You must create them by yourself. If you want better mail support,
-  # try RubyMail or TMail. You can get both libraries from RAA.
-  # (http://www.ruby-lang.org/en/raa.html)
+  # try RubyMail or TMail or search for alternatives in
+  # {RubyGems.org}[https://rubygems.org/] or {The Ruby
+  # Toolbox}[https://www.ruby-toolbox.com/].
   #
   # FYI: the official documentation on internet mail is: [RFC2822] (http://www.ietf.org/rfc/rfc2822.txt).
   #
@@ -364,12 +365,12 @@ module Net
 
     # Seconds to wait while attempting to open a connection.
     # If the connection cannot be opened within this time, a
-    # TimeoutError is raised.
+    # TimeoutError is raised. The default value is 30 seconds.
     attr_accessor :open_timeout
 
     # Seconds to wait while reading one block (by one read(2) call).
     # If the read(2) call does not complete within this time, a
-    # TimeoutError is raised.
+    # TimeoutError is raised. The default value is 60 seconds.
     attr_reader :read_timeout
 
     # Set the number of seconds to wait until timing-out a read(2)
@@ -934,11 +935,11 @@ module Net
     end
 
     def critical(&block)
-      return '200 dummy reply code' if @error_occured
+      return Response.parse('200 dummy reply code') if @error_occurred
       begin
         return yield()
       rescue Exception
-        @error_occured = true
+        @error_occurred = true
         raise
       end
     end

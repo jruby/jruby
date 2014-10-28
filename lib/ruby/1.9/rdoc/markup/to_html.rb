@@ -1,7 +1,10 @@
+require 'rdoc/markup/formatter'
+require 'rdoc/markup/inline'
+
 require 'cgi'
 
 ##
-# Outputs RDoc markup as HTML.
+# Outputs RDoc markup as HTML
 
 class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
 
@@ -13,12 +16,12 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
   # Maps RDoc::Markup::Parser::LIST_TOKENS types to HTML tags
 
   LIST_TYPE_TO_HTML = {
-    :BULLET => ['<ul>',                                      '</ul>'],
-    :LABEL  => ['<dl class="rdoc-list label-list">',         '</dl>'],
-    :LALPHA => ['<ol style="list-style-type: lower-alpha">', '</ol>'],
-    :NOTE   => ['<dl class="rdoc-list note-list">',          '</dl>'],
-    :NUMBER => ['<ol>',                                      '</ol>'],
-    :UALPHA => ['<ol style="list-style-type: upper-alpha">', '</ol>'],
+    :BULLET => ['<ul>', '</ul>'],
+    :LABEL  => ['<dl class="rdoc-list">', '</dl>'],
+    :LALPHA => ['<ol style="display: lower-alpha">', '</ol>'],
+    :NOTE   => ['<table class="rdoc-list">', '</table>'],
+    :NUMBER => ['<ol>', '</ol>'],
+    :UALPHA => ['<ol style="display: upper-alpha">', '</ol>'],
   }
 
   attr_reader :res # :nodoc:
@@ -26,37 +29,52 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
   attr_reader :list # :nodoc:
 
   ##
-  # The RDoc::CodeObject HTML is being generated for.  This is used to
-  # generate namespaced URI fragments
-
-  attr_accessor :code_object
-
-  ##
   # Path to this document for relative links
 
   attr_accessor :from_path
+
+  ##
+  # Converts a target url to one that is relative to a given path
+
+  def self.gen_relative_url(path, target)
+    from        = File.dirname path
+    to, to_file = File.split target
+
+    from = from.split "/"
+    to   = to.split "/"
+
+    from.delete '.'
+    to.delete '.'
+
+    while from.size > 0 and to.size > 0 and from[0] == to[0] do
+      from.shift
+      to.shift
+    end
+
+    from.fill ".."
+    from.concat to
+    from << to_file
+    File.join(*from)
+  end
 
   # :section:
 
   ##
   # Creates a new formatter that will output HTML
 
-  def initialize options, markup = nil
+  def initialize markup = nil
     super
 
-    @code_object = nil
-    @from_path = ''
+    @th = nil
     @in_list_entry = nil
     @list = nil
-    @th = nil
-    @hard_break = "<br>\n"
+    @from_path = ''
 
     # external links
-    @markup.add_special(/(?:link:|https?:|mailto:|ftp:|irc:|www\.)\S+\w/,
-                        :HYPERLINK)
+    @markup.add_special(/((link:|https?:|mailto:|ftp:|www\.)\S+\w)/, :HYPERLINK)
 
-    add_special_RDOCLINK
-    add_special_TIDYLINK
+    # and links of the form  <text>[<url>]
+    @markup.add_special(/(((\{.*?\})|\b\S+?)\[\S+?\])/, :TIDYLINK)
 
     init_tags
   end
@@ -64,13 +82,6 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
   # :section: Special Handling
   #
   # These methods handle special markup added by RDoc::Markup#add_special.
-
-  ##
-  # +special+ is a <code><br></code>
-
-  def handle_special_HARD_BREAK special
-    '<br>'
-  end
 
   ##
   # +special+ is a potential link.  The following schemes are handled:
@@ -88,39 +99,6 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
     url = special.text
 
     gen_url url, url
-  end
-
-  ##
-  # +special+ is an rdoc-schemed link that will be converted into a hyperlink.
-  #
-  # For the +rdoc-ref+ scheme the named reference will be returned without
-  # creating a link.
-  #
-  # For the +rdoc-label+ scheme the footnote and label prefixes are stripped
-  # when creating a link.  All other contents will be linked verbatim.
-
-  def handle_special_RDOCLINK special
-    url = special.text
-
-    case url
-    when /\Ardoc-ref:/
-      $'
-    when /\Ardoc-label:/
-      text = $'
-
-      text = case text
-             when /\Alabel-/    then $'
-             when /\Afootmark-/ then "^#{$'}"
-             when /\Afoottext-/ then "*#{$'}"
-             else                    text
-             end
-
-      gen_url url, text
-    else
-      url =~ /\Ardoc-[a-z]+:/
-
-      $'
-    end
   end
 
   ##
@@ -158,55 +136,21 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
   end
 
   ##
-  # Adds +block_quote+ to the output
-
-  def accept_block_quote block_quote
-    @res << "\n<blockquote>"
-
-    block_quote.parts.each do |part|
-      part.accept self
-    end
-
-    @res << "</blockquote>\n"
-  end
-
-  ##
   # Adds +paragraph+ to the output
 
-  def accept_paragraph paragraph
+  def accept_paragraph(paragraph)
     @res << "\n<p>"
-    text = paragraph.text @hard_break
-    text = text.gsub(/\r?\n/, ' ')
-    @res << wrap(to_html(text))
+    @res << wrap(to_html(paragraph.text))
     @res << "</p>\n"
   end
 
   ##
   # Adds +verbatim+ to the output
 
-  def accept_verbatim verbatim
-    text = verbatim.text.rstrip
-
-    klass = nil
-
-    content = if verbatim.ruby? or parseable? text then
-                begin
-                  tokens = RDoc::RubyLex.tokenize text, @options
-                  klass  = ' class="ruby"'
-
-                  RDoc::TokenStream.to_html tokens
-                rescue RDoc::RubyLex::Error
-                  CGI.escapeHTML text
-                end
-              else
-                CGI.escapeHTML text
-              end
-
-    if @options.pipe then
-      @res << "\n<pre><code>#{CGI.escapeHTML text}</code></pre>\n"
-    else
-      @res << "\n<pre#{klass}>#{content}</pre>\n"
-    end
+  def accept_verbatim(verbatim)
+    @res << "\n<pre>"
+    @res << CGI.escapeHTML(verbatim.text.rstrip)
+    @res << "</pre>\n"
   end
 
   ##
@@ -264,23 +208,12 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
   end
 
   ##
-  # Adds +heading+ to the output.  The headings greater than 6 are trimmed to
-  # level 6.
+  # Adds +heading+ to the output
 
-  def accept_heading heading
-    level = [6, heading.level].min
-
-    label = heading.aref
-    label = [@code_object.aref, label].compact.join '-' if
-      @code_object and @code_object.respond_to? :aref
-
-    @res << "\n<h#{level} id=\"#{label}\">"
+  def accept_heading(heading)
+    @res << "\n<h#{heading.level}>"
     @res << to_html(heading.text)
-    unless @options.pipe then
-      @res << "<span><a href=\"##{label}\">&para;</a>"
-      @res << " <a href=\"#documentation\">&uarr;</a></span>"
-    end
-    @res << "</h#{level}>\n"
+    @res << "</h#{heading.level}>\n"
   end
 
   ##
@@ -293,24 +226,39 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
   # :section: Utilities
 
   ##
-  # CGI-escapes +text+
+  # CGI escapes +text+
 
   def convert_string(text)
     CGI.escapeHTML text
   end
 
   ##
-  # Generate a link to +url+ with content +text+.  Handles the special cases
+  # Generate a link for +url+, labeled with +text+.  Handles the special cases
   # for img: and link: described under handle_special_HYPERLINK
 
-  def gen_url url, text
-    scheme, url, id = parse_url url
+  def gen_url(url, text)
+    if url =~ /([A-Za-z]+):(.*)/ then
+      type = $1
+      path = $2
+    else
+      type = "http"
+      path = url
+      url  = "http://#{url}"
+    end
 
-    if %w[http https link].include?(scheme) and
+    if type == "link" then
+      url = if path[0, 1] == '#' then # is this meaningful?
+              path
+            else
+              self.class.gen_relative_url @from_path, path
+            end
+    end
+
+    if (type == "http" or type == "https" or type == "link") and
        url =~ /\.(gif|png|jpg|jpeg|bmp)$/ then
       "<img src=\"#{url}\" />"
     else
-      "<a#{id} href=\"#{url}\">#{text.sub(%r{^#{scheme}:/*}i, '')}</a>"
+      "<a href=\"#{url}\">#{text.sub(%r{^#{type}:/*}, '')}</a>"
     end
   end
 
@@ -327,9 +275,9 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
   # Maps attributes to HTML tags
 
   def init_tags
-    add_tag :BOLD, "<strong>", "</strong>"
-    add_tag :TT,   "<code>",   "</code>"
-    add_tag :EM,   "<em>",     "</em>"
+    add_tag :BOLD, "<b>",  "</b>"
+    add_tag :TT,   "<tt>", "</tt>"
+    add_tag :EM,   "<em>", "</em>"
   end
 
   ##
@@ -340,10 +288,10 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
     case list_type
     when :BULLET, :LALPHA, :NUMBER, :UALPHA then
       "<li>"
-    when :LABEL, :NOTE then
-      Array(list_item.label).map do |label|
-        "<dt>#{to_html label}\n"
-      end.join << "<dd>"
+    when :LABEL then
+      "<dt>#{to_html list_item.label}</dt>\n<dd>"
+    when :NOTE then
+      "<tr><td class=\"rdoc-term\"><p>#{to_html list_item.label}</p></td>\n<td>"
     else
       raise RDoc::Error, "Invalid list type: #{list_type.inspect}"
     end
@@ -356,19 +304,13 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
     case list_type
     when :BULLET, :LALPHA, :NUMBER, :UALPHA then
       "</li>"
-    when :LABEL, :NOTE then
+    when :LABEL then
       "</dd>"
+    when :NOTE then
+      "</td></tr>"
     else
       raise RDoc::Error, "Invalid list type: #{list_type.inspect}"
     end
-  end
-
-  ##
-  # Returns true if Ripper is available it can create a sexp from +text+
-
-  def parseable? text
-    text =~ /\b(def|class|module|require) |=>|\{\s?\||do \|/ and
-      text !~ /<%|%>/
   end
 
   ##

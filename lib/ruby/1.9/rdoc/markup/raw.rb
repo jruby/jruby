@@ -13,7 +13,7 @@ class RDoc::Markup::Raw
 
   def initialize *parts
     @parts = []
-    @parts.concat parts
+    @parts.push(*parts)
   end
 
   ##
@@ -24,7 +24,7 @@ class RDoc::Markup::Raw
   end
 
   def == other # :nodoc:
-    self.class == other.class and @parts == other.parts
+    self.class == other.class and text == other.text
   end
 
   ##
@@ -38,11 +38,11 @@ class RDoc::Markup::Raw
   # Appends +other+'s parts
 
   def merge other
-    @parts.concat other.parts
+    @parts.push(*other.parts)
   end
 
   def pretty_print q # :nodoc:
-    self.class.name =~ /.*::(\w{1,4})/i
+    self.class.name =~ /.*::(\w{4})/i
 
     q.group 2, "[#{$1.downcase}: ", ']' do
       q.seplist @parts do |part|
@@ -55,7 +55,7 @@ class RDoc::Markup::Raw
   # Appends +texts+ onto this Paragraph
 
   def push *texts
-    self.parts.concat texts
+    self.parts.push(*texts)
   end
 
   ##

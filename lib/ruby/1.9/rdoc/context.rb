@@ -1,4 +1,4 @@
-require 'cgi'
+require 'rdoc/code_object'
 
 ##
 # A Context is something that can hold modules, classes, methods, attributes,
@@ -15,12 +15,6 @@ class RDoc::Context < RDoc::CodeObject
   TYPES = %w[class instance]
 
   ##
-  # If a context has these titles it will be sorted in this order.
-
-  TOMDOC_TITLES = [nil, 'Public', 'Internal', 'Deprecated'] # :nodoc:
-  TOMDOC_TITLES_SORT = TOMDOC_TITLES.sort_by { |title| title.to_s } # :nodoc:
-
-  ##
   # Class/module aliases
 
   attr_reader :aliases
@@ -29,11 +23,6 @@ class RDoc::Context < RDoc::CodeObject
   # All attr* methods
 
   attr_reader :attributes
-
-  ##
-  # Block params to be used in the next MethodAttr parsed under this context
-
-  attr_accessor :block_params
 
   ##
   # Constants defined
@@ -54,11 +43,6 @@ class RDoc::Context < RDoc::CodeObject
   # Modules this context includes
 
   attr_reader :includes
-
-  ##
-  # Modules this context is extended with
-
-  attr_reader :extends
 
   ##
   # Methods defined in this context
@@ -88,7 +72,7 @@ class RDoc::Context < RDoc::CodeObject
   attr_accessor :unmatched_alias_lists
 
   ##
-  # Aliases that could not be resolved.
+  # Aliases that could not eventually be resolved.
 
   attr_reader :external_aliases
 
@@ -104,14 +88,121 @@ class RDoc::Context < RDoc::CodeObject
   attr_reader :methods_hash
 
   ##
-  # Params to be used in the next MethodAttr parsed under this context
-
-  attr_accessor :params
-
-  ##
   # Hash of registered constants.
 
   attr_reader :constants_hash
+
+  ##
+  # A section of documentation like:
+  #
+  #   # :section: The title
+  #   # The body
+  #
+  # Sections can be referenced multiple times and will be collapsed into a
+  # single section.
+
+  class Section
+
+    include RDoc::Text
+
+    ##
+    # Section comment
+
+    attr_reader :comment
+
+    ##
+    # Context this Section lives in
+
+    attr_reader :parent
+
+    ##
+    # Section title
+
+    attr_reader :title
+
+    @@sequence = "SEC00000"
+
+    ##
+    # Creates a new section with +title+ and +comment+
+
+    def initialize parent, title, comment
+      @parent = parent
+      @title = title ? title.strip : title
+
+      @@sequence.succ!
+      @sequence = @@sequence.dup
+
+      @comment = extract_comment comment
+    end
+
+    ##
+    # Sections are equal when they have the same #title
+
+    def == other
+      self.class === other and @title == other.title
+    end
+
+    ##
+    # Anchor reference for linking to this section
+
+    def aref
+      title = @title || '[untitled]'
+
+      CGI.escape(title).gsub('%', '-').sub(/^-/, '')
+    end
+
+    ##
+    # Appends +comment+ to the current comment separated by a rule.
+
+    def comment= comment
+      comment = extract_comment comment
+
+      return if comment.empty?
+
+      if @comment then
+        @comment += "\n# ---\n#{comment}"
+      else
+        @comment = comment
+      end
+    end
+
+    ##
+    # Extracts the comment for this section from the original comment block.
+    # If the first line contains :section:, strip it and use the rest.
+    # Otherwise remove lines up to the line containing :section:, and look
+    # for those lines again at the end and remove them. This lets us write
+    #
+    #   # :section: The title
+    #   # The body
+
+    def extract_comment comment
+      if comment =~ /^#[ \t]*:section:.*\n/ then
+        start = $`
+        rest = $'
+
+        if start.empty? then
+          rest
+        else
+          rest.sub(/#{start.chomp}\Z/, '')
+        end
+      else
+        comment
+      end
+    end
+
+    def inspect # :nodoc:
+      "#<%s:0x%x %p>" % [self.class, object_id, title]
+    end
+
+    ##
+    # Section sequence number (deprecated)
+
+    def sequence
+      warn "RDoc::Context::Section#sequence is deprecated, use #aref"
+      @sequence
+    end
+
+  end
 
   ##
   # Creates an unnamed empty context with public current visibility
@@ -144,7 +235,6 @@ class RDoc::Context < RDoc::CodeObject
     @aliases     = []
     @requires    = []
     @includes    = []
-    @extends     = []
     @constants   = []
     @external_aliases = []
 
@@ -152,12 +242,8 @@ class RDoc::Context < RDoc::CodeObject
     # a method not yet encountered).
     @unmatched_alias_lists = {}
 
-    @methods_hash   = {}
+    @methods_hash = {}
     @constants_hash = {}
-
-    @params = nil
-
-    @store ||= nil
   end
 
   ##
@@ -280,12 +366,12 @@ class RDoc::Context < RDoc::CodeObject
       if full_name =~ /^(.+)::(\w+)$/ then
         name = $2
         ename = $1
-        enclosing = @store.classes_hash[ename] || @store.modules_hash[ename]
+        enclosing = RDoc::TopLevel.classes_hash[ename] ||
+                    RDoc::TopLevel.modules_hash[ename]
         # HACK: crashes in actionpack/lib/action_view/helpers/form_helper.rb (metaprogramming)
         unless enclosing then
           # try the given name at top level (will work for the above example)
-          enclosing = @store.classes_hash[given_name] ||
-                      @store.modules_hash[given_name]
+          enclosing = RDoc::TopLevel.classes_hash[given_name] || RDoc::TopLevel.modules_hash[given_name]
           return enclosing if enclosing
           # not found: create the parent(s)
           names = ename.split('::')
@@ -324,7 +410,7 @@ class RDoc::Context < RDoc::CodeObject
       end
 
       # did we believe it was a module?
-      mod = @store.modules_hash.delete superclass
+      mod = RDoc::TopLevel.modules_hash.delete superclass
 
       upgrade_to_class mod, RDoc::NormalClass, mod.parent if mod
 
@@ -332,7 +418,7 @@ class RDoc::Context < RDoc::CodeObject
       superclass = nil if superclass == full_name
     end
 
-    klass = @store.classes_hash[full_name]
+    klass = RDoc::TopLevel.classes_hash[full_name]
 
     if klass then
       # if TopLevel, it may not be registered in the classes:
@@ -349,7 +435,7 @@ class RDoc::Context < RDoc::CodeObject
       end
     else
       # this is a new class
-      mod = @store.modules_hash.delete full_name
+      mod = RDoc::TopLevel.modules_hash.delete full_name
 
       if mod then
         klass = upgrade_to_class mod, RDoc::NormalClass, enclosing
@@ -359,11 +445,9 @@ class RDoc::Context < RDoc::CodeObject
         klass = class_type.new name, superclass
 
         enclosing.add_class_or_module(klass, enclosing.classes_hash,
-                                      @store.classes_hash)
+                                      RDoc::TopLevel.classes_hash)
       end
     end
-
-    klass.parent = self
 
     klass
   end
@@ -379,7 +463,6 @@ class RDoc::Context < RDoc::CodeObject
     mod.section = current_section # TODO declaring context? something is
                                   # wrong here...
     mod.parent = self
-    mod.store = @store
 
     unless @done_documenting then
       self_hash[mod.name] = mod
@@ -421,18 +504,10 @@ class RDoc::Context < RDoc::CodeObject
   # Adds included module +include+ which should be an RDoc::Include
 
   def add_include include
-    add_to @includes, include
+    add_to @includes, include unless
+      @includes.map { |i| i.full_name }.include? include.full_name
 
     include
-  end
-
-  ##
-  # Adds extension module +ext+ which should be an RDoc::Extend
-
-  def add_extend ext
-    add_to @extends, ext
-
-    ext
   end
 
   ##
@@ -447,13 +522,7 @@ class RDoc::Context < RDoc::CodeObject
     known = @methods_hash[key]
 
     if known then
-      if @store then # otherwise we are loading
-        known.comment = method.comment if known.comment.empty?
-        previously = ", previously in #{known.file}" unless
-          method.file == known.file
-        @store.rdoc.options.warn \
-          "Duplicate method #{known.full_name} in #{method.file}#{previously}"
-      end
+      known.comment = method.comment if known.comment.empty?
     else
       @methods_hash[key] = method
       method.visibility = @visibility
@@ -473,9 +542,9 @@ class RDoc::Context < RDoc::CodeObject
     return mod if mod
 
     full_name = child_name name
-    mod = @store.modules_hash[full_name] || class_type.new(name)
+    mod = RDoc::TopLevel.modules_hash[full_name] || class_type.new(name)
 
-    add_class_or_module mod, @modules, @store.modules_hash
+    add_class_or_module(mod, @modules, RDoc::TopLevel.modules_hash)
   end
 
   ##
@@ -485,34 +554,31 @@ class RDoc::Context < RDoc::CodeObject
   def add_module_alias from, name, file
     return from if @done_documenting
 
-    to_name = child_name name
+    to_name = child_name(name)
 
     # if we already know this name, don't register an alias:
     # see the metaprogramming in lib/active_support/basic_object.rb,
-    # where we already know BasicObject is a class when we find
+    # where we already know BasicObject as a class when we find
     # BasicObject = BlankSlate
-    return from if @store.find_class_or_module to_name
+    return from if RDoc::TopLevel.find_class_or_module(to_name)
 
-    to = from.dup
-    to.name = name
-    to.full_name = nil
-
-    if to.module? then
-      @store.modules_hash[to_name] = to
-      @modules[name] = to
+    if from.module? then
+      RDoc::TopLevel.modules_hash[to_name] = from
+      @modules[name] = from
     else
-      @store.classes_hash[to_name] = to
-      @classes[name] = to
+      RDoc::TopLevel.classes_hash[to_name] = from
+      @classes[name] = from
     end
 
-    # Registers a constant for this alias.  The constant value and comment
-    # will be updated later, when the Ruby parser adds the constant
-    const = RDoc::Constant.new name, nil, to.comment
+    # HACK: register a constant for this alias:
+    # constant value and comment will be updated after,
+    # when the Ruby parser adds the constant
+    const = RDoc::Constant.new name, nil, ''
     const.record_location file
     const.is_alias_for = from
     add_constant const
 
-    to
+    from
   end
 
   ##
@@ -536,9 +602,9 @@ class RDoc::Context < RDoc::CodeObject
   #
   # See also RDoc::Context::Section
 
-  def add_section title, comment = nil
+  def add_section title, comment
     if section = @sections[title] then
-      section.add_comment comment if comment
+      section.comment = comment
     else
       section = Section.new self, title, comment
       @sections[title] = section
@@ -550,11 +616,9 @@ class RDoc::Context < RDoc::CodeObject
   ##
   # Adds +thing+ to the collection +array+
 
-  def add_to array, thing
+  def add_to(array, thing)
     array << thing if @document_self
-
-    thing.parent  = self
-    thing.store   = @store if @store
+    thing.parent = self
     thing.section = current_section
   end
 
@@ -564,7 +628,7 @@ class RDoc::Context < RDoc::CodeObject
   # This means any of: comment, aliases, methods, attributes, external
   # aliases, require, constant.
   #
-  # Includes and extends are also checked unless <tt>includes == false</tt>.
+  # Includes are also checked unless <tt>includes == false</tt>.
 
   def any_content(includes = true)
     @any_content ||= !(
@@ -576,7 +640,7 @@ class RDoc::Context < RDoc::CodeObject
       @requires.empty? &&
       @constants.empty?
     )
-    @any_content || (includes && !(@includes + @extends).empty? )
+    @any_content || (includes && !@includes.empty?)
   end
 
   ##
@@ -659,9 +723,6 @@ class RDoc::Context < RDoc::CodeObject
   ##
   # Iterator for ancestors for duck-typing.  Does nothing.  See
   # RDoc::ClassModule#each_ancestor.
-  #
-  # This method exists to make it easy to work with Context subclasses that
-  # aren't part of RDoc.
 
   def each_ancestor # :nodoc:
   end
@@ -695,19 +756,10 @@ class RDoc::Context < RDoc::CodeObject
   end
 
   ##
-  # Iterator for extension modules
-
-  def each_extend # :yields: extend
-    @extends.each do |e| yield e end
-  end
-
-  ##
   # Iterator for methods
 
   def each_method # :yields: method
-    return enum_for __method__ unless block_given?
-
-    @method_list.sort.each { |m| yield m }
+    @method_list.sort.each {|m| yield m}
   end
 
   ##
@@ -721,15 +773,13 @@ class RDoc::Context < RDoc::CodeObject
   # NOTE: Do not edit collections yielded by this method
 
   def each_section # :yields: section, constants, attributes
-    return enum_for __method__ unless block_given?
-
     constants  = @constants.group_by  do |constant|  constant.section end
-    attributes = @attributes.group_by do |attribute| attribute.section end
+    constants.default = []
 
-    constants.default  = []
+    attributes = @attributes.group_by do |attribute| attribute.section end
     attributes.default = []
 
-    sort_sections.each do |section|
+    @sections.sort_by { |title, _| title.to_s }.each do |_, section|
       yield section, constants[section].sort, attributes[section].sort
     end
   end
@@ -801,8 +851,8 @@ class RDoc::Context < RDoc::CodeObject
   ##
   # Finds a file with +name+ in this context
 
-  def find_file_named name
-    @store.find_file_named name
+  def find_file_named(name)
+    top_level.class.find_file_named(name)
   end
 
   ##
@@ -872,21 +922,21 @@ class RDoc::Context < RDoc::CodeObject
     # look for a class or module 'symbol'
     case symbol
     when /^::/ then
-      result = @store.find_class_or_module symbol
+      result = RDoc::TopLevel.find_class_or_module(symbol)
     when /^(\w+):+(.+)$/
       suffix = $2
       top = $1
       searched = self
-      while searched do
+      loop do
         mod = searched.find_module_named(top)
         break unless mod
-        result = @store.find_class_or_module "#{mod.full_name}::#{suffix}"
+        result = RDoc::TopLevel.find_class_or_module(mod.full_name + '::' + suffix)
         break if result || searched.is_a?(RDoc::TopLevel)
         searched = searched.parent
       end
     else
       searched = self
-      while searched do
+      loop do
         result = searched.find_module_named(symbol)
         break if result || searched.is_a?(RDoc::TopLevel)
         searched = searched.parent
@@ -935,8 +985,6 @@ class RDoc::Context < RDoc::CodeObject
 
   ##
   # Instance methods
-  #--
-  # TODO rename to instance_methods
 
   def instance_method_list
     @instance_method_list ||= method_list.reject { |a| a.singleton }
@@ -1050,23 +1098,24 @@ class RDoc::Context < RDoc::CodeObject
   ##
   # Only called when min_visibility == :public or :private
 
-  def remove_invisible_in array, min_visibility # :nodoc:
-    if min_visibility == :public then
+  def remove_invisible_in(array, min_visibility) # :nodoc:
+    if min_visibility == :public
       array.reject! { |e|
         e.visibility != :public and not e.force_documentation
       }
     else
       array.reject! { |e|
-        e.visibility == :private and not e.force_documentation
+        e.visibility == :private and
+          not e.force_documentation
       }
     end
   end
 
   ##
-  # Tries to resolve unmatched aliases when a method or attribute has just
-  # been added.
+  # Tries to resolve unmatched aliases when a method
+  # or attribute has just been added.
 
-  def resolve_aliases added
+  def resolve_aliases(added)
     # resolve any pending unmatched aliases
     key = added.pretty_name
     unmatched_alias_list = @unmatched_alias_lists[key]
@@ -1076,31 +1125,6 @@ class RDoc::Context < RDoc::CodeObject
       @external_aliases.delete unmatched_alias
     end
     @unmatched_alias_lists.delete key
-  end
-
-  ##
-  # Returns RDoc::Context::Section objects referenced in this context for use
-  # in a table of contents.
-
-  def section_contents
-    used_sections = {}
-
-    each_method do |method|
-      next unless method.display?
-
-      used_sections[method.section] = true
-    end
-
-    # order found sections
-    sections = sort_sections.select do |section|
-      used_sections[section]
-    end
-
-    # only the default section is used
-    return [] if
-      sections.length == 1 and not sections.first.title
-
-    sections
   end
 
   ##
@@ -1131,26 +1155,6 @@ class RDoc::Context < RDoc::CodeObject
     end
   end
 
-  ##
-  # Sorts sections alphabetically (default) or in TomDoc fashion (none,
-  # Public, Internal, Deprecated)
-
-  def sort_sections
-    titles = @sections.map { |title, _| title }
-
-    if titles.length > 1 and
-       TOMDOC_TITLES_SORT ==
-         (titles | TOMDOC_TITLES).sort_by { |title| title.to_s } then
-      @sections.values_at(*TOMDOC_TITLES).compact
-    else
-      @sections.sort_by { |title, _|
-        title.to_s
-      }.map { |_, section|
-        section
-      }
-    end
-  end
-
   def to_s # :nodoc:
     "#{self.class.name} #{self.full_name}"
   end
@@ -1175,16 +1179,13 @@ class RDoc::Context < RDoc::CodeObject
     enclosing.modules_hash.delete mod.name
 
     klass = RDoc::ClassModule.from_module class_type, mod
-    klass.store = @store
 
     # if it was there, then we keep it even if done_documenting
-    @store.classes_hash[mod.full_name] = klass
-    enclosing.classes_hash[mod.name]   = klass
+    RDoc::TopLevel.classes_hash[mod.full_name] = klass
+    enclosing.classes_hash[mod.name]           = klass
 
     klass
   end
-
-  autoload :Section, 'rdoc/context/section'
 
 end
 

@@ -1,3 +1,6 @@
+require 'rdoc'
+require 'rdoc/text'
+
 ##
 # Base class for the RDoc code tree.
 #
@@ -75,9 +78,9 @@ class RDoc::CodeObject
   attr_accessor :offset
 
   ##
-  # Sets the parent CodeObject
+  # Our parent CodeObject
 
-  attr_writer :parent
+  attr_accessor :parent
 
   ##
   # Did we ever receive a +:nodoc:+ directive?
@@ -85,14 +88,9 @@ class RDoc::CodeObject
   attr_reader :received_nodoc
 
   ##
-  # Set the section this CodeObject is in
+  # Which section are we in
 
-  attr_writer :section
-
-  ##
-  # The RDoc::Store for this object.
-
-  attr_accessor :store
+  attr_accessor :section
 
   ##
   # We are the model of the code, but we know that at some point we will be
@@ -105,24 +103,12 @@ class RDoc::CodeObject
   # Creates a new CodeObject that will document itself and its children
 
   def initialize
-    @metadata      = {}
-    @comment       = ''
-    @parent        = nil
-    @parent_name   = nil # for loading
-    @parent_class  = nil # for loading
-    @section       = nil
-    @section_title = nil # for loading
-    @file          = nil
-    @full_name     = nil
-    @store         = nil
+    @metadata  = {}
+    @comment   = ''
+    @parent    = nil
+    @file      = nil
+    @full_name = nil
 
-    initialize_visibility
-  end
-
-  ##
-  # Initializes state for visibility of this CodeObject and its children.
-
-  def initialize_visibility # :nodoc:
     @document_children   = true
     @document_self       = true
     @done_documenting    = false
@@ -138,11 +124,11 @@ class RDoc::CodeObject
     @comment = case comment
                when NilClass               then ''
                when RDoc::Markup::Document then comment
-               when RDoc::Comment          then comment.normalize
                else
                  if comment and not comment.empty? then
                    normalize_comment comment
                  else
+                   # TODO is this sufficient?
                    # HACK correct fix is to have #initialize create @comment
                    #      with the correct encoding
                    if String === @comment and
@@ -230,7 +216,7 @@ class RDoc::CodeObject
 
   ##
   # Force the documentation of this object unless documentation
-  # has been turned off by :enddoc:
+  # has been turned off by :endoc:
   #--
   # HACK untested, was assigning to an ivar
 
@@ -276,43 +262,6 @@ class RDoc::CodeObject
   end
 
   ##
-  # The options instance from the store this CodeObject is attached to, or a
-  # default options instance if the CodeObject is not attached.
-  #
-  # This is used by Text#snippet
-
-  def options
-    if @store then
-      @store.rdoc.options
-    else
-      RDoc::Options.new
-    end
-  end
-
-  ##
-  # Our parent CodeObject.  The parent may be missing for classes loaded from
-  # legacy RI data stores.
-
-  def parent
-    return @parent if @parent
-    return nil unless @parent_name
-
-    if @parent_class == RDoc::TopLevel then
-      @parent = @store.add_file @parent_name
-    else
-      @parent = @store.find_class_or_module @parent_name
-
-      return @parent if @parent
-
-      begin
-        @parent = @store.load_class @parent_name
-      rescue RDoc::Store::MissingFileError
-        nil
-      end
-    end
-  end
-
-  ##
   # File name of our parent
 
   def parent_file_name
@@ -335,18 +284,8 @@ class RDoc::CodeObject
   end
 
   ##
-  # The section this CodeObject is in.  Sections allow grouping of constants,
-  # attributes and methods inside a class or module.
-
-  def section
-    return @section if @section
-
-    @section = parent.add_section @section_title if parent
-  end
-
-  ##
   # Enable capture of documentation unless documentation has been
-  # turned off by :enddoc:
+  # turned off by :endoc:
 
   def start_doc
     return if @done_documenting

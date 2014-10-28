@@ -1,3 +1,5 @@
+require 'rdoc/markup/to_rdoc'
+
 ##
 # Outputs RDoc markup with vibrant ANSI color!
 
@@ -32,11 +34,6 @@ class RDoc::Markup::ToAnsi < RDoc::Markup::ToRdoc
             when :BULLET then
               2
             when :NOTE, :LABEL then
-              if @prefix then
-                @res << @prefix.strip
-                @prefix = nil
-              end
-
               @res << "\n" unless res.length == 1
               2
             else
@@ -56,13 +53,7 @@ class RDoc::Markup::ToAnsi < RDoc::Markup::ToRdoc
              when :BULLET then
                '*'
              when :NOTE, :LABEL then
-               labels = Array(list_item.label).map do |label|
-                 attributes(label).strip
-               end.join "\n"
-
-               labels << ":\n" unless labels.empty?
-
-               labels
+               attributes(list_item.label) + ":\n"
              else
                @list_index.last.to_s + '.'
              end

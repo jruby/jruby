@@ -1,3 +1,5 @@
+require 'rdoc/context'
+
 ##
 # ClassModule is the base class for objects representing either a class or a
 # module.
@@ -11,17 +13,8 @@ class RDoc::ClassModule < RDoc::Context
   #   * Added file to constants
   #   * Added file to includes
   #   * Added file to methods
-  # 2::
-  #   RDoc 3.13
-  #   * Added extends
-  # 3::
-  #   RDoc 4.0
-  #   * Added sections
-  #   * Added in_files
-  #   * Added parent name
-  #   * Complete Constant dump
 
-  MARSHAL_VERSION = 3 # :nodoc:
+  MARSHAL_VERSION = 1 # :nodoc:
 
   ##
   # Constants that are aliases for this class or module
@@ -31,7 +24,7 @@ class RDoc::ClassModule < RDoc::Context
   ##
   # Comment and the location it came from.  Use #add_comment to add comments
 
-  attr_accessor :comment_location
+  attr_reader :comment_location
 
   attr_accessor :diagram # :nodoc:
 
@@ -63,7 +56,6 @@ class RDoc::ClassModule < RDoc::Context
     klass.external_aliases.concat mod.external_aliases
     klass.constants.concat mod.constants
     klass.includes.concat mod.includes
-    klass.extends.concat mod.extends
 
     klass.methods_hash.update mod.methods_hash
     klass.constants_hash.update mod.constants_hash
@@ -92,7 +84,6 @@ class RDoc::ClassModule < RDoc::Context
      klass.external_aliases +
      klass.constants +
      klass.includes +
-     klass.extends +
      klass.classes +
      klass.modules).each do |obj|
       obj.parent = klass
@@ -124,33 +115,14 @@ class RDoc::ClassModule < RDoc::Context
   # across multiple runs.
 
   def add_comment comment, location
-    return unless document_self
+    return if comment.empty? or not document_self
 
     original = comment
 
-    comment = case comment
-              when RDoc::Comment then
-                comment.normalize
-              else
-                normalize_comment comment
-              end
-
-    @comment_location.delete_if { |(_, l)| l == location }
-
+    comment = normalize_comment comment
     @comment_location << [comment, location]
 
     self.comment = original
-  end
-
-  def add_things my_things, other_things # :nodoc:
-    other_things.each do |group, things|
-      my_things[group].each { |thing| yield false, thing } if
-        my_things.include? group
-
-      things.each do |thing|
-        yield true, thing
-      end
-    end
   end
 
   ##
@@ -170,11 +142,6 @@ class RDoc::ClassModule < RDoc::Context
   end
 
   ##
-  # Ancestors of this class or module only
-
-  alias direct_ancestors ancestors
-
-  ##
   # Clears the comment. Used by the ruby parser.
 
   def clear_comment
@@ -187,14 +154,10 @@ class RDoc::ClassModule < RDoc::Context
   # Appends +comment+ to the current comment, but separated by a rule.  Works
   # more like <tt>+=</tt>.
 
-  def comment= comment # :nodoc:
-    comment = case comment
-              when RDoc::Comment then
-                comment.normalize
-              else
-                normalize_comment comment
-              end
+  def comment= comment
+    return if comment.empty?
 
+    comment = normalize_comment comment
     comment = "#{@comment}\n---\n#{comment}" unless @comment.empty?
 
     super comment
@@ -203,7 +166,7 @@ class RDoc::ClassModule < RDoc::Context
   ##
   # Prepares this ClassModule for use by a generator.
   #
-  # See RDoc::Store#complete
+  # See RDoc::TopLevel::complete
 
   def complete min_visibility
     update_aliases
@@ -213,30 +176,12 @@ class RDoc::ClassModule < RDoc::Context
   end
 
   ##
-  # Does this ClassModule or any of its methods have document_self set?
-
-  def document_self_or_methods
-    document_self || method_list.any?{ |m| m.document_self }
-  end
-
-  ##
-  # Does this class or module have a comment with content or is
-  # #received_nodoc true?
-
-  def documented?
-    super or !@comment_location.empty?
-  end
-
-  ##
   # Iterates the ancestors of this class or module for which an
   # RDoc::ClassModule exists.
 
   def each_ancestor # :yields: module
-    return enum_for __method__ unless block_given?
-
     ancestors.each do |mod|
       next if String === mod
-      next if self == mod
       yield mod
     end
   end
@@ -270,8 +215,8 @@ class RDoc::ClassModule < RDoc::Context
   # Return the fully qualified name of this class or module
 
   def full_name
-    @full_name ||= if RDoc::ClassModule === parent then
-                     "#{parent.full_name}::#{@name}"
+    @full_name ||= if RDoc::ClassModule === @parent then
+                     "#{@parent.full_name}::#{@name}"
                    else
                      @name
                    end
@@ -282,18 +227,16 @@ class RDoc::ClassModule < RDoc::Context
 
   def marshal_dump # :nodoc:
     attrs = attributes.sort.map do |attr|
-      next unless attr.display?
       [ attr.name, attr.rw,
         attr.visibility, attr.singleton, attr.file_name,
       ]
-    end.compact
+    end
 
     method_types = methods_by_type.map do |type, visibilities|
       visibilities = visibilities.map do |visibility, methods|
         method_names = methods.map do |method|
-          next unless method.display?
           [method.name, method.file_name]
-        end.compact
+        end
 
         [visibility, method_names.uniq]
       end
@@ -307,27 +250,17 @@ class RDoc::ClassModule < RDoc::Context
       @superclass,
       parse(@comment_location),
       attrs,
-      constants.select { |constant| constant.display? },
-      includes.map do |incl|
-        next unless incl.display?
-        [incl.name, parse(incl.comment), incl.file_name]
-      end.compact,
-      method_types,
-      extends.map do |ext|
-        next unless ext.display?
-        [ext.name, parse(ext.comment), ext.file_name]
-      end.compact,
-      @sections.values,
-      @in_files.map do |tl|
-        tl.relative_name
+      constants.map do |const|
+        [const.name, parse(const.comment), const.file_name]
       end,
-      parent.full_name,
-      parent.class,
+      includes.map do |incl|
+        [incl.name, parse(incl.comment), incl.file_name]
+      end,
+      method_types,
     ]
   end
 
   def marshal_load array # :nodoc:
-    initialize_visibility
     initialize_methods_etc
     @current_section   = nil
     @document_self     = true
@@ -335,8 +268,6 @@ class RDoc::ClassModule < RDoc::Context
     @parent            = nil
     @temporary_section = nil
     @visibility        = nil
-    @classes           = {}
-    @modules           = {}
 
     @name       = array[1]
     @full_name  = array[2]
@@ -360,14 +291,9 @@ class RDoc::ClassModule < RDoc::Context
       attr.record_location RDoc::TopLevel.new file
     end
 
-    array[6].each do |constant, comment, file|
-      case constant
-      when RDoc::Constant then
-        add_constant constant
-      else
-        constant = add_constant RDoc::Constant.new(constant, nil, comment)
-        constant.record_location RDoc::TopLevel.new file
-      end
+    array[6].each do |name, comment, file|
+      const = add_constant RDoc::Constant.new(name, nil, comment)
+      const.record_location RDoc::TopLevel.new file
     end
 
     array[7].each do |name, comment, file|
@@ -387,27 +313,6 @@ class RDoc::ClassModule < RDoc::Context
         end
       end
     end
-
-    array[9].each do |name, comment, file|
-      ext = add_extend RDoc::Extend.new(name, comment)
-      ext.record_location RDoc::TopLevel.new file
-    end if array[9] # Support Marshal version 1
-
-    sections = (array[10] || []).map do |section|
-      [section.title, section]
-    end
-
-    @sections = Hash[*sections.flatten]
-    @current_section = add_section nil
-
-    @in_files = []
-
-    (array[11] || []).each do |filename|
-      record_location RDoc::TopLevel.new filename
-    end
-
-    @parent_name  = array[12]
-    @parent_class = array[13]
   end
 
   ##
@@ -416,9 +321,6 @@ class RDoc::ClassModule < RDoc::Context
   # The data in +class_module+ is preferred over the receiver.
 
   def merge class_module
-    @parent      = class_module.parent
-    @parent_name = class_module.parent_name
-
     other_document = parse class_module.comment_location
 
     if other_document then
@@ -458,18 +360,6 @@ class RDoc::ClassModule < RDoc::Context
       end
     end
 
-    @includes.uniq! # clean up
-
-    merge_collections extends, cm.extends, other_files do |add, ext|
-      if add then
-        add_extend ext
-      else
-        @extends.delete ext
-      end
-    end
-
-    @extends.uniq! # clean up
-
     merge_collections method_list, cm.method_list, other_files do |add, meth|
       if add then
         add_method meth
@@ -478,8 +368,6 @@ class RDoc::ClassModule < RDoc::Context
         @methods_hash.delete meth.pretty_name
       end
     end
-
-    merge_sections cm
 
     self
   end
@@ -503,46 +391,22 @@ class RDoc::ClassModule < RDoc::Context
     my_things    = mine. group_by { |thing| thing.file }
     other_things = other.group_by { |thing| thing.file }
 
-    remove_things my_things, other_files,  &block
-    add_things    my_things, other_things, &block
-  end
+    my_things.delete_if do |file, things|
+      next false unless other_files.include? file
 
-  ##
-  # Merges the comments in this ClassModule with the comments in the other
-  # ClassModule +cm+.
+      things.each do |thing|
+        yield false, thing
+      end
 
-  def merge_sections cm # :nodoc:
-    my_sections    =    sections.group_by { |section| section.title }
-    other_sections = cm.sections.group_by { |section| section.title }
-
-    other_files = cm.in_files
-
-    remove_things my_sections, other_files do |_, section|
-      @sections.delete section.title
+      true
     end
 
-    other_sections.each do |group, sections|
-      if my_sections.include? group
-        my_sections[group].each do |my_section|
-          other_section = cm.sections_hash[group]
+    other_things.each do |file, things|
+      my_things[file].each { |thing| yield false, thing } if
+        my_things.include?(file)
 
-          my_comments    = my_section.comments
-          other_comments = other_section.comments
-
-          other_files = other_section.in_files
-
-          merge_collections my_comments, other_comments, other_files do |add, comment|
-            if add then
-              my_section.add_comment comment
-            else
-              my_section.remove_comment comment
-            end
-          end
-        end
-      else
-        sections.each do |section|
-          add_section group, section.comments
-        end
+      things.each do |thing|
+        yield true, thing
       end
     end
   end
@@ -574,15 +438,11 @@ class RDoc::ClassModule < RDoc::Context
     when Array then
       docs = comment_location.map do |comment, location|
         doc = super comment
-        doc.file = location
+        doc.file = location.absolute_name
         doc
       end
 
       RDoc::Markup::Document.new(*docs)
-    when RDoc::Comment then
-      doc = super comment_location.text, comment_location.format
-      doc.file = comment_location.location
-      doc
     when RDoc::Markup::Document then
       return comment_location
     else
@@ -591,10 +451,10 @@ class RDoc::ClassModule < RDoc::Context
   end
 
   ##
-  # Path to this class or module for use with HTML generator output.
+  # Path to this class or module
 
   def path
-    http_url @store.rdoc.generator.class_dir
+    http_url RDoc::RDoc.current.generator.class_dir
   end
 
   ##
@@ -628,53 +488,13 @@ class RDoc::ClassModule < RDoc::Context
 
     modules_hash.each_key do |name|
       full_name = prefix + name
-      modules_hash.delete name unless @store.modules_hash[full_name]
+      modules_hash.delete name unless RDoc::TopLevel.all_modules_hash[full_name]
     end
 
     classes_hash.each_key do |name|
       full_name = prefix + name
-      classes_hash.delete name unless @store.classes_hash[full_name]
+      classes_hash.delete name unless RDoc::TopLevel.all_classes_hash[full_name]
     end
-  end
-
-  def remove_things my_things, other_files # :nodoc:
-    my_things.delete_if do |file, things|
-      next false unless other_files.include? file
-
-      things.each do |thing|
-        yield false, thing
-      end
-
-      true
-    end
-  end
-
-  ##
-  # Search record used by RDoc::Generator::JsonIndex
-
-  def search_record
-    [
-      name,
-      full_name,
-      full_name,
-      '',
-      path,
-      '',
-      snippet(@comment_location),
-    ]
-  end
-
-  ##
-  # Sets the store for this class or module and its contained code objects.
-
-  def store= store
-    super
-
-    @attributes .each do |attr|  attr.store  = store end
-    @constants  .each do |const| const.store = store end
-    @includes   .each do |incl|  incl.store  = store end
-    @extends    .each do |ext|   ext.store   = store end
-    @method_list.each do |meth|  meth.store  = store end
   end
 
   ##
@@ -682,7 +502,7 @@ class RDoc::ClassModule < RDoc::Context
   # object, returns the name if it is not known.
 
   def superclass
-    @store.find_class_named(@superclass) || @superclass
+    RDoc::TopLevel.find_class_named(@superclass) || @superclass
   end
 
   ##
@@ -713,7 +533,7 @@ class RDoc::ClassModule < RDoc::Context
   # aliases through a constant.
   #
   # The aliased module/class is replaced in the children and in
-  # RDoc::Store#modules_hash or RDoc::Store#classes_hash
+  # RDoc::TopLevel::all_modules_hash or RDoc::TopLevel::all_classes_hash
   # by a copy that has <tt>RDoc::ClassModule#is_alias_for</tt> set to
   # the aliased module/class, and this copy is added to <tt>#aliases</tt>
   # of the aliased module/class.
@@ -728,21 +548,16 @@ class RDoc::ClassModule < RDoc::Context
       next unless cm = const.is_alias_for
       cm_alias = cm.dup
       cm_alias.name = const.name
-
-      # Don't move top-level aliases under Object, they look ugly there
-      unless RDoc::TopLevel === cm_alias.parent then
-        cm_alias.parent = self
-        cm_alias.full_name = nil # force update for new parent
-      end
-
+      cm_alias.parent = self
+      cm_alias.full_name = nil  # force update for new parent
       cm_alias.aliases.clear
       cm_alias.is_alias_for = cm
 
       if cm.module? then
-        @store.modules_hash[cm_alias.full_name] = cm_alias
+        RDoc::TopLevel.all_modules_hash[cm_alias.full_name] = cm_alias
         modules_hash[const.name] = cm_alias
       else
-        @store.classes_hash[cm_alias.full_name] = cm_alias
+        RDoc::TopLevel.all_classes_hash[cm_alias.full_name] = cm_alias
         classes_hash[const.name] = cm_alias
       end
 
@@ -759,26 +574,8 @@ class RDoc::ClassModule < RDoc::Context
   def update_includes
     includes.reject! do |include|
       mod = include.module
-      !(String === mod) && @store.modules_hash[mod.full_name].nil?
+      !(String === mod) && RDoc::TopLevel.all_modules_hash[mod.full_name].nil?
     end
-
-    includes.uniq!
-  end
-
-  ##
-  # Deletes from #extends those whose module has been removed from the
-  # documentation.
-  #--
-  # FIXME: like update_includes, extends are not reliably removed
-
-  def update_extends
-    extends.reject! do |ext|
-      mod = ext.module
-
-      !(String === mod) && @store.modules_hash[mod.full_name].nil?
-    end
-
-    extends.uniq!
   end
 
 end

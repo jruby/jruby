@@ -1,3 +1,6 @@
+require 'rdoc/markup/formatter'
+require 'rdoc/markup/inline'
+
 ##
 # Outputs RDoc markup as RDoc markup! (mostly)
 
@@ -42,7 +45,7 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
   # Creates a new formatter that will output (mostly) \RDoc markup
 
   def initialize markup = nil
-    super nil, markup
+    super
 
     @markup.add_special(/\\\S/, :SUPPRESSED_CROSSREF)
     @width = 78
@@ -57,8 +60,6 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
     @headings[4] = ['==== ',   '']
     @headings[5] = ['===== ',  '']
     @headings[6] = ['====== ', '']
-
-    @hard_break = "\n"
   end
 
   ##
@@ -75,21 +76,6 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
 
   def accept_blank_line blank_line
     @res << "\n"
-  end
-
-  ##
-  # Adds +paragraph+ to the output
-
-  def accept_block_quote block_quote
-    @indent += 2
-
-    block_quote.parts.each do |part|
-      @prefix = '> '
-
-      part.accept self
-    end
-
-    @indent -= 2
   end
 
   ##
@@ -120,11 +106,6 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
             when :BULLET then
               2
             when :NOTE, :LABEL then
-              if @prefix then
-                @res << @prefix.strip
-                @prefix = nil
-              end
-
               @res << "\n"
               2
             else
@@ -144,15 +125,10 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
 
     case type
     when :NOTE, :LABEL then
-      bullets = Array(list_item.label).map do |label|
-        attributes(label).strip
-      end.join "\n"
-
-      bullets << ":\n" unless bullets.empty?
-
+      bullet = attributes(list_item.label) + ":\n"
       @prefix = ' ' * @indent
       @indent += 2
-      @prefix << bullets + (' ' * @indent)
+      @prefix << bullet + (' ' * @indent)
     else
       bullet = type == :BULLET ? '*' :  @list_index.last.to_s + '.'
       @prefix = (' ' * @indent) + bullet.ljust(bullet.length + 1)
@@ -192,8 +168,7 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
   # Adds +paragraph+ to the output
 
   def accept_paragraph paragraph
-    text = paragraph.text @hard_break
-    wrap attributes text
+    wrap attributes(paragraph.text)
   end
 
   ##
@@ -201,8 +176,7 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
 
   def accept_indented_paragraph paragraph
     @indent += paragraph.indent
-    text = paragraph.text @hard_break
-    wrap attributes text
+    wrap attributes(paragraph.text)
     @indent -= paragraph.indent
   end
 
@@ -261,13 +235,6 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
   end
 
   ##
-  # Adds a newline to the output
-
-  def handle_special_HARD_BREAK special
-    "\n"
-  end
-
-  ##
   # Prepares the visitor for text generation
 
   def start_accepting
@@ -285,7 +252,8 @@ class RDoc::Markup::ToRdoc < RDoc::Markup::Formatter
   # prefix for later consumption.
 
   def use_prefix
-    prefix, @prefix = @prefix, nil
+    prefix = @prefix
+    @prefix = nil
     @res << prefix if prefix
 
     prefix

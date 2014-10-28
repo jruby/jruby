@@ -3,50 +3,44 @@ module Rake
   ####################################################################
   # InvocationChain tracks the chain of task invocations to detect
   # circular dependencies.
-  class InvocationChain < LinkedList
-
-    # Is the invocation already in the chain?
-    def member?(invocation)
-      head == invocation || tail.member?(invocation)
+  class InvocationChain
+    def initialize(value, tail)
+      @value = value
+      @tail = tail
     end
 
-    # Append an invocation to the chain of invocations. It is an error
-    # if the invocation already listed.
-    def append(invocation)
-      if member?(invocation)
-        fail RuntimeError, "Circular dependency detected: #{to_s} => #{invocation}"
+    def member?(obj)
+      @value == obj || @tail.member?(obj)
+    end
+
+    def append(value)
+      if member?(value)
+        fail RuntimeError, "Circular dependency detected: #{to_s} => #{value}"
       end
-      conj(invocation)
+      self.class.new(value, self)
     end
 
-    # Convert to string, ie: TOP => invocation => invocation
     def to_s
-      "#{prefix}#{head}"
+      "#{prefix}#{@value}"
     end
 
-    # Class level append.
-    def self.append(invocation, chain)
-      chain.append(invocation)
+    def self.append(value, chain)
+      chain.append(value)
     end
 
     private
 
     def prefix
-      "#{tail.to_s} => "
+      "#{@tail.to_s} => "
     end
 
-    # Null object for an empty chain.
-    class EmptyInvocationChain < LinkedList::EmptyLinkedList
-      @parent = InvocationChain
-
+    class EmptyInvocationChain
       def member?(obj)
         false
       end
-
-      def append(invocation)
-        conj(invocation)
+      def append(value)
+        InvocationChain.new(value, self)
       end
-
       def to_s
         "TOP"
       end

@@ -1,3 +1,5 @@
+require 'rdoc/code_object'
+
 ##
 # A Module include in a class with \#include
 
@@ -15,7 +17,7 @@ class RDoc::Include < RDoc::CodeObject
     super()
     @name = name
     self.comment = comment
-    @module = nil # cache for module if found
+    @module = nil   # cache for module if found
   end
 
   ##
@@ -28,10 +30,9 @@ class RDoc::Include < RDoc::CodeObject
   end
 
   def == other # :nodoc:
-    self.class === other and @name == other.name
+    self.class == other.class and
+      self.name == other.name
   end
-
-  alias eql? ==
 
   ##
   # Full name based on #module
@@ -39,10 +40,6 @@ class RDoc::Include < RDoc::CodeObject
   def full_name
     m = self.module
     RDoc::ClassModule === m ? m.full_name : @name
-  end
-
-  def hash # :nodoc:
-    [@name, self.module].hash
   end
 
   def inspect # :nodoc:
@@ -62,13 +59,6 @@ class RDoc::Include < RDoc::CodeObject
   # - if not found, look into the children of included modules,
   #   in reverse inclusion order;
   # - if still not found, go up the hierarchy of names.
-  #
-  # This method has <code>O(n!)</code> behavior when the module calling
-  # include is referencing nonexistent modules.  Avoid calling #module until
-  # after all the files are parsed.  This behavior is due to ruby's constant
-  # lookup behavior.
-  #
-  # As of the beginning of October, 2011, no gem includes nonexistent modules.
 
   def module
     return @module if @module
@@ -76,7 +66,7 @@ class RDoc::Include < RDoc::CodeObject
     # search the current context
     return @name unless parent
     full_name = parent.child_name(@name)
-    @module = @store.modules_hash[full_name]
+    @module = RDoc::TopLevel.modules_hash[full_name]
     return @module if @module
     return @name if @name =~ /^::/
 
@@ -86,29 +76,20 @@ class RDoc::Include < RDoc::CodeObject
       inc = i.module
       next if String === inc
       full_name = inc.child_name(@name)
-      @module = @store.modules_hash[full_name]
+      @module = RDoc::TopLevel.modules_hash[full_name]
       return @module if @module
     end
 
     # go up the hierarchy of names
-    up = parent.parent
-    while up
-      full_name = up.child_name(@name)
-      @module = @store.modules_hash[full_name]
+    p = parent.parent
+    while p
+      full_name = p.child_name(@name)
+      @module = RDoc::TopLevel.modules_hash[full_name]
       return @module if @module
-      up = up.parent
+      p = p.parent
     end
 
     @name
-  end
-
-  ##
-  # Sets the store for this class or module and its contained code objects.
-
-  def store= store
-    super
-
-    @file = @store.add_file @file.full_name if @file
   end
 
   def to_s # :nodoc:

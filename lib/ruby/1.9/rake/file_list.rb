@@ -41,11 +41,10 @@ module Rake
 
     # List of array methods (that are not in +Object+) that need to be
     # delegated.
-    ARRAY_METHODS = (Array.instance_methods - Object.instance_methods).
-      map { |n| n.to_s }
+    ARRAY_METHODS = (Array.instance_methods - Object.instance_methods).map { |n| n.to_s }
 
     # List of additional methods that must be delegated.
-    MUST_DEFINE = %w[inspect <=>]
+    MUST_DEFINE = %w[to_a inspect <=>]
 
     # List of methods that should not be delegated here (we define special
     # versions of them explicitly below).
@@ -59,13 +58,12 @@ module Rake
       + - & |
     ]
 
-    DELEGATING_METHODS = (ARRAY_METHODS + MUST_DEFINE - MUST_NOT_DEFINE).
-      map { |s| s.to_s }.sort.uniq
+    DELEGATING_METHODS = (ARRAY_METHODS + MUST_DEFINE - MUST_NOT_DEFINE).collect{ |s| s.to_s }.sort.uniq
 
     # Now do the delegation.
-    DELEGATING_METHODS.each do |sym|
+    DELEGATING_METHODS.each_with_index do |sym, i|
       if SPECIAL_RETURN.include?(sym)
-        ln = __LINE__ + 1
+        ln = __LINE__+1
         class_eval %{
           def #{sym}(*args, &block)
             resolve
@@ -74,7 +72,7 @@ module Rake
           end
         }, __FILE__, ln
       else
-        ln = __LINE__ + 1
+        ln = __LINE__+1
         class_eval %{
           def #{sym}(*args, &block)
             resolve
@@ -151,8 +149,10 @@ module Rake
       patterns.each do |pat|
         @exclude_patterns << pat
       end
-      @exclude_procs << block if block_given?
-      resolve_exclude unless @pending
+      if block_given?
+        @exclude_procs << block
+      end
+      resolve_exclude if ! @pending
       self
     end
 
@@ -219,7 +219,7 @@ module Rake
     private :resolve_add
 
     def resolve_exclude
-      reject! { |fn| excluded_from_list?(fn) }
+      reject! { |fn| exclude?(fn) }
       self
     end
     private :resolve_exclude
@@ -231,7 +231,7 @@ module Rake
     #   FileList['a.c', 'b.c'].sub(/\.c$/, '.o')  => ['a.o', 'b.o']
     #
     def sub(pat, rep)
-      inject(FileList.new) { |res, fn| res << fn.sub(pat, rep) }
+      inject(FileList.new) { |res, fn| res << fn.sub(pat,rep) }
     end
 
     # Return a new FileList with the results of running +gsub+ against each
@@ -242,18 +242,18 @@ module Rake
     #      => ['lib\\test\\file', 'x\\y']
     #
     def gsub(pat, rep)
-      inject(FileList.new) { |res, fn| res << fn.gsub(pat, rep) }
+      inject(FileList.new) { |res, fn| res << fn.gsub(pat,rep) }
     end
 
     # Same as +sub+ except that the original file list is modified.
     def sub!(pat, rep)
-      each_with_index { |fn, i| self[i] = fn.sub(pat, rep) }
+      each_with_index { |fn, i| self[i] = fn.sub(pat,rep) }
       self
     end
 
     # Same as +gsub+ except that the original file list is modified.
     def gsub!(pat, rep)
-      each_with_index { |fn, i| self[i] = fn.gsub(pat, rep) }
+      each_with_index { |fn, i| self[i] = fn.gsub(pat,rep) }
       self
     end
 
@@ -286,7 +286,7 @@ module Rake
       matched = 0
       each do |fn|
         begin
-          open(fn, "r", *options) do |inf|
+          open(fn, "r:ascii-8bit", *options) do |inf|
             count = 0
             inf.each do |line|
               count += 1
@@ -340,20 +340,14 @@ module Rake
 
     # Add matching glob patterns.
     def add_matching(pattern)
-      FileList.glob(pattern).each do |fn|
-        self << fn unless excluded_from_list?(fn)
+      Dir[pattern].each do |fn|
+        self << fn unless exclude?(fn)
       end
     end
     private :add_matching
 
-    # Should the given file name be excluded from the list?
-    #
-    # NOTE: This method was formally named "exclude?", but Rails
-    # introduced an exclude? method as an array method and setup a
-    # conflict with file list. We renamed the method to avoid
-    # confusion. If you were using "FileList#exclude?" in your user
-    # code, you will need to update.
-    def excluded_from_list?(fn)
+    # Should the given file name be excluded?
+    def exclude?(fn)
       return true if @exclude_patterns.any? do |pat|
         case pat
         when Regexp
@@ -388,13 +382,6 @@ module Rake
       #   FileList.new(*args)
       def [](*args)
         new(*args)
-      end
-
-      # Get a sorted list of files matching the pattern. This method
-      # should be prefered to Dir[pattern] and Dir.glob(pattern) because
-      # the files returned are guaranteed to be sorted.
-      def glob(pattern, *args)
-        Dir.glob(pattern, *args).sort
       end
     end
   end

@@ -15,27 +15,16 @@ module Rake
       @names = names
       @parent = parent
       @hash = {}
-      @values = values
       names.each_with_index { |name, i|
         @hash[name.to_sym] = values[i] unless values[i].nil?
       }
     end
 
-    # Retrive the complete array of sequential values
-    def to_a
-      @values.dup
-    end
-
-    # Retrive the list of values not associated with named arguments
-    def extras
-      @values[@names.length..-1] || []
-    end
-
     # Create a new argument scope using the prerequisite argument
     # names.
     def new_scope(names)
-      values = names.map { |n| self[n] }
-      self.class.new(names, values + extras, self)
+      values = names.collect { |n| self[n] }
+      self.class.new(names, values, self)
     end
 
     # Find an argument value by name or index.
@@ -58,7 +47,7 @@ module Rake
       keys.map { |k| lookup(k) }
     end
 
-    def method_missing(sym, *args)
+    def method_missing(sym, *args, &block)
       lookup(sym.to_sym)
     end
 
