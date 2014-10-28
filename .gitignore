@@ -54,9 +54,6 @@ lib/ruby/cext/
 *.versionsBackup
 dev_null
 .redcar
-/.externalToolBuilders/
-.metadata
-shared.iml
 build_graph.png
 /.idea/
 /.rbx/
@@ -86,6 +83,7 @@ maven/jruby-complete/src/it/osgi*
 *.iml
 
 # Eclipse project files
+.metadata
 core/.classpath
 
 # Truffle benchmark stuff
