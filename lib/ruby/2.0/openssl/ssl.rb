@@ -23,10 +23,49 @@ module OpenSSL
       DEFAULT_PARAMS = {
         :ssl_version => "SSLv23",
         :verify_mode => OpenSSL::SSL::VERIFY_PEER,
-        :ciphers => "ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW",
-        :options => defined?(OpenSSL::SSL::OP_DONT_INSERT_EMPTY_FRAGMENTS) ?
-          OpenSSL::SSL::OP_ALL & ~OpenSSL::SSL::OP_DONT_INSERT_EMPTY_FRAGMENTS :
-          OpenSSL::SSL::OP_ALL,
+        :ciphers => %w{
+          ECDHE-ECDSA-AES128-GCM-SHA256
+          ECDHE-RSA-AES128-GCM-SHA256
+          ECDHE-ECDSA-AES256-GCM-SHA384
+          ECDHE-RSA-AES256-GCM-SHA384
+          DHE-RSA-AES128-GCM-SHA256
+          DHE-DSS-AES128-GCM-SHA256
+          DHE-RSA-AES256-GCM-SHA384
+          DHE-DSS-AES256-GCM-SHA384
+          ECDHE-ECDSA-AES128-SHA256
+          ECDHE-RSA-AES128-SHA256
+          ECDHE-ECDSA-AES128-SHA
+          ECDHE-RSA-AES128-SHA
+          ECDHE-ECDSA-AES256-SHA384
+          ECDHE-RSA-AES256-SHA384
+          ECDHE-ECDSA-AES256-SHA
+          ECDHE-RSA-AES256-SHA
+          DHE-RSA-AES128-SHA256
+          DHE-RSA-AES256-SHA256
+          DHE-RSA-AES128-SHA
+          DHE-RSA-AES256-SHA
+          DHE-DSS-AES128-SHA256
+          DHE-DSS-AES256-SHA256
+          DHE-DSS-AES128-SHA
+          DHE-DSS-AES256-SHA
+          AES128-GCM-SHA256
+          AES256-GCM-SHA384
+          AES128-SHA256
+          AES256-SHA256
+          AES128-SHA
+          AES256-SHA
+          ECDHE-ECDSA-RC4-SHA
+          ECDHE-RSA-RC4-SHA
+          RC4-SHA
+        }.join(":"),
+        :options => -> {
+          opts = OpenSSL::SSL::OP_ALL
+          opts &= ~OpenSSL::SSL::OP_DONT_INSERT_EMPTY_FRAGMENTS if defined?(OpenSSL::SSL::OP_DONT_INSERT_EMPTY_FRAGMENTS)
+          opts |= OpenSSL::SSL::OP_NO_COMPRESSION if defined?(OpenSSL::SSL::OP_NO_COMPRESSION)
+          opts |= OpenSSL::SSL::OP_NO_SSLv2 if defined?(OpenSSL::SSL::OP_NO_SSLv2)
+          opts |= OpenSSL::SSL::OP_NO_SSLv3 if defined?(OpenSSL::SSL::OP_NO_SSLv3)
+          opts
+        }.call
       }
 
       DEFAULT_CERT_STORE = OpenSSL::X509::Store.new
@@ -98,14 +137,22 @@ module OpenSSL
       should_verify_common_name = true
       cert.extensions.each{|ext|
         next if ext.oid != "subjectAltName"
-        ext.value.split(/,\s+/).each{|general_name|
-          if /\ADNS:(.*)/ =~ general_name
+        ostr = OpenSSL::ASN1.decode(ext.to_der).value.last
+        sequence = OpenSSL::ASN1.decode(ostr.value)
+        sequence.value.each{|san|
+          case san.tag
+          when 2 # dNSName in GeneralName (RFC5280)
             should_verify_common_name = false
-            reg = Regexp.escape($1).gsub(/\\\*/, "[^.]+")
+            reg = Regexp.escape(san.value).gsub(/\\\*/, "[^.]+")
             return true if /\A#{reg}\z/i =~ hostname
-          elsif /\AIP Address:(.*)/ =~ general_name
+          when 7 # iPAddress in GeneralName (RFC5280)
             should_verify_common_name = false
-            return true if $1 == hostname
+            # follows GENERAL_NAME_print() in x509v3/v3_alt.c
+            if san.value.size == 4
+              return true if san.value.unpack('C*').join('.') == hostname
+            elsif san.value.size == 16
+              return true if san.value.unpack('n*').map { |e| sprintf("%X", e) }.join(':') == hostname
+            end
           end
         }
       }
@@ -169,7 +216,10 @@ module OpenSSL
       end
 
       def accept
-        sock = @svr.accept
+        # Socket#accept returns [socket, addrinfo].
+        # TCPServer#accept returns a socket.
+        # The following comma strips addrinfo.
+        sock, = @svr.accept
         begin
           ssl = OpenSSL::SSL::SSLSocket.new(sock, @ctx)
           ssl.sync_close = true
