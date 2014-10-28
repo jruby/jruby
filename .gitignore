@@ -10,7 +10,6 @@ bin/*
 !bin/gem
 !bin/update_rubygems
 build
-build.eclipse
 build.properties
 target
 dist
@@ -57,7 +56,6 @@ dev_null
 .redcar
 /.externalToolBuilders/
 .metadata
-.idea/workspace.xml
 shared.iml
 build_graph.png
 /.idea/
@@ -86,6 +84,9 @@ maven/jruby-complete/src/it/osgi*
 # IntelliJ project files
 .idea
 *.iml
+
+# Eclipse project files
+core/.classpath
 
 # Truffle benchmark stuff
 reference.txt
