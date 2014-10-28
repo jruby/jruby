@@ -41,6 +41,7 @@ package org.jruby;
 
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ir.IRScriptBody;
 import org.objectweb.asm.util.TraceClassVisitor;
 import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
@@ -1214,6 +1215,10 @@ public final class Ruby implements Constantizable {
         
         // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
         irManager = new IRManager();
+        // FIXME: This registers itself into static scope as a side-effect.  Let's make this
+        // relationship handled either more directly or through a descriptice method
+        // FIXME: We need a failing test case for this since removing it did not regress tests
+        new IRScriptBody(irManager, "", tc.getCurrentScope().getStaticScope());
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
