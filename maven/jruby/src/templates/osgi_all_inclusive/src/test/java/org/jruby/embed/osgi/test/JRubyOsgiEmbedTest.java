@@ -66,8 +66,8 @@ public class JRubyOsgiEmbedTest {
         System.err.println();
         System.err.println();
 
-	// System.setProperty( "jruby.debug.loadService", "true" );
-	IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
+        // System.setProperty( "jruby.debug.loadService", "true" );
+        IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
 
         // run a script from LOAD_PATH
         String hello = (String) jruby.runScriptlet( "require 'hello'; Hello.say" );
