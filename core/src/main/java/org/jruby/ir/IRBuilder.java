@@ -1657,6 +1657,9 @@ public class IRBuilder {
 
         addInstr(method, new ReceiveSelfInstr(method.getSelf()));
 
+
+        // These instructions need to be toward the top of the method because they may both be needed for
+        // processing optional arguments as in def foo(a = Object).
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
