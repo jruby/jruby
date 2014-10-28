@@ -22,7 +22,8 @@ class Pathname
   end
 
   SAME_PATHS = if File::FNM_SYSCASE.nonzero?
-    proc {|a, b| a.casecmp(b).zero?}
+    # Avoid #zero? here because #casecmp can return nil.
+    proc {|a, b| a.casecmp(b) == 0}
   else
     proc {|a, b| a == b}
   end
@@ -113,6 +114,7 @@ class Pathname
         end
       end
     end
+    pre.tr!(File::ALT_SEPARATOR, File::SEPARATOR) if File::ALT_SEPARATOR
     if /#{SEPARATOR_PAT}/o =~ File.basename(pre)
       names.shift while names[0] == '..'
     end
@@ -161,6 +163,7 @@ class Pathname
       pre, base = r
       names.unshift base if base != '.'
     end
+    pre.tr!(File::ALT_SEPARATOR, File::SEPARATOR) if File::ALT_SEPARATOR
     if /#{SEPARATOR_PAT}/o =~ File.basename(pre)
       names.shift while names[0] == '..'
     end
