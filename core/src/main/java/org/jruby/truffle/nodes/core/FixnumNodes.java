@@ -66,14 +66,9 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(0, value);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long negWithLongOverflow(int value) {
-            return ExactMath.subtractExact(0, (long) value);
-        }
-
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(int value) {
-            return BigInteger.valueOf(value).negate();
+        public long negWithLongOverflow(int value) {
+            return -((long) value);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -215,7 +210,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public long mulWithLong(int a, int b) {
-            return ExactMath.multiplyExact((long) a, (long) b);
+            return (long) a * (long) b;
         }
 
         @Specialization
@@ -224,7 +219,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
-        public Object mul(long a, long b) {
+        public long mul(long a, long b) {
             return ExactMath.multiplyExact(a, b);
         }
 
