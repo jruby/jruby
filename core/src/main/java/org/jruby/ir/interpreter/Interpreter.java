@@ -84,9 +84,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, evalType);
-        // ClosureInterpreterContext never retrieved as an operand in this context.
-        // So, self operand is not required here.
-        // Passing null to force early crasher if ever used differently.
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
         ThreadContext context = runtime.getCurrentContext();
 
@@ -106,7 +103,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             s.growIfNeeded();
 
             runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null); // FIXME: No temp vars yet right?
-            rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), s, block, backtraceName);
+            rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), block, backtraceName);
         } finally {
             runEndBlocks(ic.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
             s.clearEvalType();
