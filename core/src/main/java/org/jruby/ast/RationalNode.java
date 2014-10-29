@@ -37,4 +37,8 @@ public class RationalNode extends Node {
     public NodeType getNodeType() {
         return NodeType.RATIONALNODE;
     }
+
+    public long getNumerator() {
+        return numerator;
+    }
 }

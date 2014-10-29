@@ -425,6 +425,7 @@ public class IRBuilder {
             case ORNODE: return buildOr((OrNode) node, s);
             case PREEXENODE: return buildPreExe((PreExeNode) node, s);
             case POSTEXENODE: return buildPostExe((PostExeNode) node, s);
+            case RATIONALNODE: return buildRational((RationalNode) node, s);
             case REDONODE: return buildRedo(node, s);
             case REGEXPNODE: return buildRegexp((RegexpNode) node, s);
             case RESCUEBODYNODE:
@@ -2986,6 +2987,10 @@ public class IRBuilder {
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);
         return manager.getNil();
+    }
+
+    public Operand buildRational(RationalNode rationalNode, IRScope s) {
+        return new Rational(rationalNode.getNumerator());
     }
 
     public Operand buildRedo(Node node, IRScope s) {

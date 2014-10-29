@@ -30,6 +30,7 @@ public enum OperandType {
     NTH_REF((byte) '1'),
     OBJECT_CLASS((byte) 'O'),
     RANGE((byte) '.'),
+    RATIONAL((byte) 'r'),
     REGEXP((byte) '/'),
     SCOPE_MODULE((byte) '_'),
     SELF((byte) 'S'),
