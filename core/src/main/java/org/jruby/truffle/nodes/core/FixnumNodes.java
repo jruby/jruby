@@ -297,7 +297,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
-        public Object mul(long a, long b) {
+        public long mul(long a, long b) {
             return ExactMath.multiplyExact(a, b);
         }
 
