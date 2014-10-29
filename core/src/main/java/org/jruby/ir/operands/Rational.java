@@ -10,7 +10,7 @@ public class Rational extends ImmutableLiteral {
     private long numerator;
 
     public Rational(long numerator) {
-        super(OperandType.ARRAY);
+        super(OperandType.RATIONAL);
 
         this.numerator = numerator;
     }
