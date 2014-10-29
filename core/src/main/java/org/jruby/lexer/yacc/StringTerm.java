@@ -109,11 +109,59 @@ public class StringTerm extends StrTerm {
         if ((flags & RubyLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
             c = src.read();
             switch (c) {
-            case '$':
-            case '@':
-                src.unread(c);
-                lexer.setValue("#" + c);
-                return Tokens.tSTRING_DVAR;
+            case '$': {
+                int c2 = src.read();
+
+                if (c2 == '-') {
+                    int c3 = src.read();
+
+                    if (c3 == RubyLexer.EOF) return RubyLexer.EOF;
+
+                    if (Character.isAlphabetic(c3) || c3 == '_') {
+                        src.unread(c3);
+                        src.unread(c2);
+                        src.unread(c);
+                        lexer.setValue("#" + c2);
+                        return Tokens.tSTRING_DVAR;
+                    }
+                } else if (lexer.isGlobalCharPunct(c2)) {
+                    lexer.setValue("#" + c2);
+                    src.unread(c2);
+                    src.unread(c);
+                    return Tokens.tSTRING_DVAR;
+                } if (Character.isAlphabetic(c2) || c2 == '_') {
+                    src.unread(c2);
+                    src.unread(c);
+                    lexer.setValue("#" + c2);
+                    return Tokens.tSTRING_DVAR;
+                }
+                break;
+            }
+            case '@': {
+                int c2 = src.read();
+
+                if (c2 == '@') {
+                    int c3 = src.read();
+
+                    if (c3 == RubyLexer.EOF) return RubyLexer.EOF;
+
+                    lexer.setValue("#" + c2);
+                    src.unread(c3);
+                    src.unread(c2);
+                    src.unread(c);
+
+                    return Tokens.tSTRING_DVAR;
+                }
+
+                if (Character.isAlphabetic(c2) || c2 == '_') {
+                    src.unread(c2);
+                    src.unread(c);
+                    lexer.setValue("#" + c2);
+                    return Tokens.tSTRING_DVAR;
+                }
+                break;
+
+            }
             case '{':
                 lexer.setValue("#" + c);
                 return Tokens.tSTRING_DBEG;
