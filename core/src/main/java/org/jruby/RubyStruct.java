@@ -252,6 +252,8 @@ public class RubyStruct extends RubyObject {
         }
         
         if (block.isGiven()) {
+            // Since this defines a new class, run the block as a module-eval.
+            block.setEvalType(EvalType.MODULE_EVAL);
             // Struct bodies should be public by default, so set block visibility to public. JRUBY-1185.
             block.getBinding().setVisibility(Visibility.PUBLIC);
             block.yieldNonArray(runtime.getCurrentContext(), null, newStruct);
