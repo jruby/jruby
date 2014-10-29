@@ -60,6 +60,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1601,6 +1602,15 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     // Static configuration fields, used as defaults for new JRuby instances.
     ////////////////////////////////////////////////////////////////////////////
+
+    // NOTE: These BigDecimal fields must be initialized before calls to initGlobalJavaVersion
+
+    /** A BigDecimal representing 1.5, for Java spec version matching */
+    private static final BigDecimal BIGDECIMAL_1_5 = new BigDecimal("1.5");
+    /** A BigDecimal representing 1.6, for Java spec version matching */
+    private static final BigDecimal BIGDECIMAL_1_6 = new BigDecimal("1.6");
+    /** A BigDecimal representing 1.7, for Java spec version matching */
+    private static final BigDecimal BIGDECIMAL_1_7 = new BigDecimal("1.7");
     
     /**
      * The version to use for generated classes. Set to current JVM version by default
@@ -1842,18 +1852,17 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     // Static initializers
     ////////////////////////////////////////////////////////////////////////////
-    
+
     private static int initGlobalJavaVersion() {
         String specVersion = Options.BYTECODE_VERSION.load();
-        
-        // stack map calculation is failing for some compilation scenarios, so
-        // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
-        if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
-           return Opcodes.V1_5;
-        } else if (specVersion.equals("1.6")) {
-            return Opcodes.V1_6;
-        } else if (specVersion.equals("1.7") || specVersion.equals("1.8")) {
+        BigDecimal specDecimal = new BigDecimal(specVersion);
+
+        if (specDecimal.compareTo(BIGDECIMAL_1_7) >= 0) {
             return Opcodes.V1_7;
+        } else if (specDecimal.compareTo(BIGDECIMAL_1_6) >= 0) {
+            return Opcodes.V1_6;
+        } else if (specDecimal.compareTo(BIGDECIMAL_1_5) >= 0) {
+            return Opcodes.V1_5;
         } else {
             throw new RuntimeException("unsupported Java version: " + specVersion);
         }
