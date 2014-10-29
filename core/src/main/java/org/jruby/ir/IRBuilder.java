@@ -1657,15 +1657,17 @@ public class IRBuilder {
 
         addInstr(method, new ReceiveSelfInstr(method.getSelf()));
 
+
+        // These instructions need to be toward the top of the method because they may both be needed for
+        // processing optional arguments as in def foo(a = Object).
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
+        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
-
-        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
-        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Thread poll on entry to method
         addInstr(method, new ThreadPollInstr());
@@ -3139,7 +3141,7 @@ public class IRBuilder {
             // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
             //
             // SSS FIXME: Create a 'StandardError' operand type to eliminate this.
-            Variable v = addResultInstr(s, new InheritanceSearchConstInstr(s.createTemporaryVariable(),                    s.getCurrentModuleVariable(), "StandardError", false));
+            Variable v = addResultInstr(s, new InheritanceSearchConstInstr(s.createTemporaryVariable(), s.getCurrentModuleVariable(), "StandardError", false));
             outputExceptionCheck(s, v, exc, caughtLabel);
         }
 

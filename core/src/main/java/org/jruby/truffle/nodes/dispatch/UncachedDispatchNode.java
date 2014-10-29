@@ -65,7 +65,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             return constant.getValue();
         }
 
-        final RubyClass callerClass = box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
         final RubyMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility,
                 dispatchAction);
@@ -111,7 +111,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         // Need to be much more fine grained with TruffleBoundary here
         CompilerDirectives.transferToInterpreter();
 
-        final RubyClass callerClass = box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
         final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(),
                 ignoreVisibility, dispatchAction);
