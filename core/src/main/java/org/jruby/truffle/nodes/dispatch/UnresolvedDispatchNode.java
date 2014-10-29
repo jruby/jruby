@@ -92,7 +92,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Dispatch.DispatchAction dispatchAction,
             Object methodReceiverObject) {
         final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
-        final RubyClass callerClass = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
         if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(callerClass, boxedReceiverObject, methodName.toString(), ignoreVisibility,
@@ -164,7 +164,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Dispatch.DispatchAction dispatchAction,
             Object methodReceiverObject) {
         final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
-        final RubyClass callerClass = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
         if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(callerClass, boxedReceiverObject, methodName.toString(), ignoreVisibility,
