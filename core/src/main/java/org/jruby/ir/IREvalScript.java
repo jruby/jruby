@@ -13,7 +13,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
@@ -85,7 +84,7 @@ public class IREvalScript extends IRClosure {
     /* Record a begin block -- not all scope implementations can handle them */
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
-        if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
+        if (beginBlocks == null) beginBlocks = new ArrayList<>();
         beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }
@@ -93,7 +92,7 @@ public class IREvalScript extends IRClosure {
     /* Record an end block -- not all scope implementations can handle them */
     @Override
     public void recordEndBlock(IRClosure endBlockClosure) {
-        if (endBlocks == null) endBlocks = new ArrayList<IRClosure>();
+        if (endBlocks == null) endBlocks = new ArrayList<>();
         endBlockClosure.setBeginEndBlock();
         endBlocks.add(endBlockClosure);
     }
