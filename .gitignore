@@ -88,8 +88,7 @@ maven/jruby-complete/src/it/osgi*
 nbproject/private
 
 # Eclipse project files
-.metadata
-core/.classpath
+/.metadata
 core/.project
 
 # Truffle benchmark stuff
