@@ -681,6 +681,11 @@ class TestModule < Test::Unit::TestCase
     assert_raise(NameError) { c1.const_set(:foo, :foo) }
     assert_raise(NameError) { c1.const_set("bar", :foo) }
     assert_raise(TypeError) { c1.const_set(1, :foo) }
+    assert_nothing_raised(NameError) { c1.const_set("X\u{3042}", :foo) }
+    assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-16be"), :foo) }
+    assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-16le"), :foo) }
+    assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-32be"), :foo) }
+    assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-32le"), :foo) }
   end
 
   def test_const_get_invalid_name
@@ -909,24 +914,33 @@ class TestModule < Test::Unit::TestCase
     assert_include(c.constants(false), :Foo, bug9413)
   end
 
-  def test_frozen_class
+  def test_frozen_module
     m = Module.new
     m.freeze
     assert_raise(RuntimeError) do
       m.instance_eval { undef_method(:foo) }
     end
+  end
 
+  def test_frozen_class
     c = Class.new
     c.freeze
     assert_raise(RuntimeError) do
       c.instance_eval { undef_method(:foo) }
     end
+  end
 
-    o = Object.new
+  def test_frozen_singleton_class
+    klass = Class.new
+    o = klass.new
     c = class << o; self; end
     c.freeze
-    assert_raise(RuntimeError) do
+    assert_raise_with_message(RuntimeError, /frozen/) do
       c.instance_eval { undef_method(:foo) }
+    end
+    klass.class_eval do
+      def self.foo
+      end
     end
   end
 
@@ -1272,7 +1286,7 @@ class TestModule < Test::Unit::TestCase
     c = Class.new do
       attr_writer :foo
     end
-    assert_raise(ArgumentError) { c.new.send :foo= }
+    assert_raise(ArgumentError, bug8540) { c.new.send :foo= }
   end
 
   def test_private_constant
@@ -1629,7 +1643,7 @@ class TestModule < Test::Unit::TestCase
 
   def test_prepend_visibility_inherited
     bug8238 = '[ruby-core:54105] [Bug #8238]'
-    assert_separately [], <<-"end;", timeout: 10
+    assert_separately [], <<-"end;", timeout: 20
       class A
         def foo() A; end
         private :foo
@@ -1812,6 +1826,14 @@ class TestModule < Test::Unit::TestCase
     assert_warning '' do
       assert_equal(42, a.ivar)
     end
+
+    name = "@\u{5909 6570}"
+    assert_warning(/instance variable #{name} not initialized/) do
+      val = EnvUtil.with_default_external(Encoding::UTF_8) {
+        a.instance_eval(name)
+      }
+      assert_nil(val)
+    end
   end
 
   def test_uninitialized_attr
@@ -1955,6 +1977,30 @@ class TestModule < Test::Unit::TestCase
       end
       1_000_000.times{''} # cause GC
     }
+  end
+
+  def test_inspect_segfault
+    bug_10282 = '[ruby-core:65214] [Bug #10282]'
+    assert_separately [], <<-RUBY
+      module ShallowInspect
+        def shallow_inspect
+          "foo"
+        end
+      end
+
+      module InspectIsShallow
+        include ShallowInspect
+        alias_method :inspect, :shallow_inspect
+      end
+
+      class A
+      end
+
+      A.prepend InspectIsShallow
+
+      expect = "#<Method: A(Object)#inspect(shallow_inspect)>"
+      assert_equal expect, A.new.method(:inspect).inspect, "#{bug_10282}"
+    RUBY
   end
 
   private

@@ -73,12 +73,14 @@ class TestSignal < Test::Unit::TestCase
 
   def test_invalid_signal_name
     assert_raise(ArgumentError) { Process.kill(:XXXXXXXXXX, $$) }
+    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.kill("\u{30eb 30d3 30fc}", $$) }
   end if Process.respond_to?(:kill)
 
   def test_signal_exception
     assert_raise(ArgumentError) { SignalException.new }
     assert_raise(ArgumentError) { SignalException.new(-1) }
     assert_raise(ArgumentError) { SignalException.new(:XXXXXXXXXX) }
+    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { SignalException.new("\u{30eb 30d3 30fc}") }
     Signal.list.each do |signm, signo|
       next if signm == "EXIT"
       assert_equal(SignalException.new(signm).signo, signo)
@@ -161,10 +163,27 @@ class TestSignal < Test::Unit::TestCase
 
       assert_raise(ArgumentError) { Signal.trap("XXXXXXXXXX", "SIG_DFL") }
 
+      assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Signal.trap("\u{30eb 30d3 30fc}", "SIG_DFL") }
     ensure
       Signal.trap(:INT, oldtrap) if oldtrap
     end
   end if Process.respond_to?(:kill)
+
+  %w"KILL STOP".each do |sig|
+    if Signal.list.key?(sig)
+      define_method("test_trap_uncatchable_#{sig}") do
+        assert_raise(Errno::EINVAL, "SIG#{sig} is not allowed to be caught") { Signal.trap(sig) {} }
+      end
+    end
+  end
+
+  def test_sigexit
+    assert_in_out_err([], 'Signal.trap(:EXIT) {print "OK"}', ["OK"])
+    assert_in_out_err([], 'Signal.trap("EXIT") {print "OK"}', ["OK"])
+    assert_in_out_err([], 'Signal.trap(:SIGEXIT) {print "OK"}', ["OK"])
+    assert_in_out_err([], 'Signal.trap("SIGEXIT") {print "OK"}', ["OK"])
+    assert_in_out_err([], 'Signal.trap(0) {print "OK"}', ["OK"])
+  end
 
   def test_kill_immediately_before_termination
     Signal.list[sig = "USR1"] or sig = "INT"
@@ -174,30 +193,12 @@ class TestSignal < Test::Unit::TestCase
     end;
   end if Process.respond_to?(:kill)
 
-  def test_signal_requiring
-    t = Tempfile.new(%w"require_ensure_test .rb")
-    t.puts "sleep"
-    t.close
-    error = IO.popen([EnvUtil.rubybin, "-e", <<EOS, t.path, :err => File::NULL]) do |child|
-trap(:INT, "DEFAULT")
-th = Thread.new do
-  begin
-    require ARGV[0]
-  ensure
-    err = $! ? [$!, $!.backtrace] : $!
-    Marshal.dump(err, STDOUT)
-    STDOUT.flush
-  end
-end
-Thread.pass while th.running?
-Process.kill(:INT, $$)
-th.join
-EOS
-      Marshal.load(child)
-    end
-    t.close!
-    assert_nil(error)
-  end if Process.respond_to?(:kill)
+  def test_trap_system_default
+    assert_separately([], <<-End)
+      trap(:QUIT, "SYSTEM_DEFAULT")
+      assert_equal("SYSTEM_DEFAULT", trap(:QUIT, "DEFAULT"))
+    End
+  end if Signal.list.key?('QUIT')
 
   def test_reserved_signal
     assert_raise(ArgumentError) {
@@ -268,4 +269,27 @@ EOS
       }
     }
   end if Process.respond_to?(:kill) and Signal.list.key?('HUP')
+
+  def test_ignored_interrupt
+    bug9820 = '[ruby-dev:48203] [Bug #9820]'
+    assert_separately(['-', bug9820], <<-'end;') #    begin
+      bug = ARGV.shift
+      trap(:INT, "IGNORE")
+      assert_nothing_raised(SignalException, bug) do
+        Process.kill(:INT, $$)
+      end
+    end;
+
+    if trap = Signal.list['TRAP']
+      bug9820 = '[ruby-dev:48592] [Bug #9820]'
+      status = assert_in_out_err(['-e', 'Process.kill(:TRAP, $$)'])
+      assert_predicate(status, :signaled?, bug9820)
+      assert_equal(trap, status.termsig, bug9820)
+    end
+
+    if Signal.list['CONT']
+      bug9820 = '[ruby-dev:48606] [Bug #9820]'
+      assert_ruby_status(['-e', 'Process.kill(:CONT, $$)'])
+    end
+  end if Process.respond_to?(:kill)
 end

@@ -15,6 +15,10 @@ module Psych
       end
     end
 
+    def test_string_with_newline
+      assert_equal "1\n2", Psych.load("--- ! '1\n\n  2'\n")
+    end
+
     def test_no_doublequotes_with_special_characters
       assert_equal 2, Psych.dump(%Q{<%= ENV["PATH"] %>}).count('"')
     end
@@ -137,7 +141,7 @@ string: &70121654388580 !ruby/string
       ivar = "on rock and roll"
       food.instance_variable_set(:@we_built_this_city, ivar)
 
-      str = Psych.load Psych.dump food
+      Psych.load Psych.dump food
       assert_equal ivar, food.instance_variable_get(:@we_built_this_city)
     end
 

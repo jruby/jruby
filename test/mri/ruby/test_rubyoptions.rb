@@ -209,10 +209,12 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err(%w(--encoding test_ruby_test_rubyoptions_foobarbazqux), "", [],
                       /unknown encoding name - test_ruby_test_rubyoptions_foobarbazqux \(RuntimeError\)/)
 
-    if /mswin|mingw/ =~ RUBY_PLATFORM &&
+    if /mswin|mingw|aix/ =~ RUBY_PLATFORM &&
       (str = "\u3042".force_encoding(Encoding.find("locale"))).valid_encoding?
       # This result depends on locale because LANG=C doesn't affect locale
       # on Windows.
+      # On AIX, the source encoding of stdin with LANG=C is ISO-8859-1,
+      # which allows \u3042.
       out, err = [str], []
     else
       out, err = [], /invalid multibyte char/
@@ -458,8 +460,13 @@ class TestRubyOptions < Test::Unit::TestCase
     }
   end
 
+  if /linux|freebsd|netbsd|openbsd|darwin/ =~ RUBY_PLATFORM
+    PSCMD = EnvUtil.find_executable("ps", "-o", "command", "-p", $$.to_s) {|out| /ruby/=~out}
+    PSCMD.pop if PSCMD
+  end
+
   def test_set_program_name
-    skip "platform dependent feature" if /linux|freebsd|netbsd|openbsd|darwin/ !~ RUBY_PLATFORM
+    skip "platform dependent feature" unless defined?(PSCMD) and PSCMD
 
     with_tmpchdir do
       write_file("test-script", "$0 = 'hello world'; /test-script/ =~ Process.argv0 or $0 = 'Process.argv0 changed!'; sleep 60")
@@ -468,7 +475,7 @@ class TestRubyOptions < Test::Unit::TestCase
       ps = nil
       10.times do
         sleep 0.1
-        ps = `ps -p #{pid} -o command`
+        ps = `#{PSCMD.join(' ')} #{pid}`
         break if /hello world/ =~ ps
       end
       assert_match(/hello world/, ps)
@@ -478,7 +485,7 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def test_setproctitle
-    skip "platform dependent feature" if /linux|freebsd|netbsd|openbsd|darwin/ !~ RUBY_PLATFORM
+    skip "platform dependent feature" unless defined?(PSCMD) and PSCMD
 
     with_tmpchdir do
       write_file("test-script", "$_0 = $0.dup; Process.setproctitle('hello world'); $0 == $_0 or Process.setproctitle('$0 changed!'); sleep 60")
@@ -487,7 +494,7 @@ class TestRubyOptions < Test::Unit::TestCase
       ps = nil
       10.times do
         sleep 0.1
-        ps = `ps -p #{pid} -o command`
+        ps = `#{PSCMD.join(' ')} #{pid}`
         break if /hello world/ =~ ps
       end
       assert_match(/hello world/, ps)
@@ -499,73 +506,98 @@ class TestRubyOptions < Test::Unit::TestCase
   module SEGVTest
     opts = {}
     if /mswin|mingw/ =~ RUBY_PLATFORM
-      additional = '[\s\w\.\']*'
+      additional = /[\s\w\.\']*/
     else
       opts[:rlimit_core] = 0
-      additional = ""
+      additional = nil
     end
     ExecOptions = opts.freeze
 
-    ExpectedStderr =
-      %r(\A
-      -e:(?:1:)?\s\[BUG\]\sSegmentation\sfault.*\n
-      #{ Regexp.quote(RUBY_DESCRIPTION) }\n\n
-      (?:--\s(?:.+\n)*\n)?
-      --\sControl\sframe\sinformation\s-+\n
-      (?:c:.*\n)*
-      (?:
-      --\sRuby\slevel\sbacktrace\sinformation\s----------------------------------------\n
-      -e:1:in\s\`<main>\'\n
-      -e:1:in\s\`kill\'\n
-      )?
-      \n
-      (?:
-        --\sC\slevel\sbacktrace\sinformation\s-------------------------------------------\n
-        (?:(?:.*\s)?\[0x\h+\]\n)*\n
-      )?
-      (?m:.*)
-      \[NOTE\]\n
-      You\smay\shave\sencountered\sa\sbug\sin\sthe\sRuby\sinterpreter\sor\sextension\slibraries.\n
-      Bug\sreports\sare\swelcome.\n
-      For\sdetails:\shttp:\/\/.*\.ruby-lang\.org/.*\n
-      \n
-      (?:#{additional})
-      \z
-      )x
+    ExpectedStderrList = [
+      %r(
+        -e:(?:1:)?\s\[BUG\]\sSegmentation\sfault.*\n
+      )x,
+      %r(
+        #{ Regexp.quote(RUBY_DESCRIPTION) }\n\n
+      )x,
+      %r(
+        (?:--\s(?:.+\n)*\n)?
+        --\sControl\sframe\sinformation\s-+\n
+        (?:c:.*\n)*
+      )x,
+      %r(
+        (?:
+        --\sRuby\slevel\sbacktrace\sinformation\s----------------------------------------\n
+        -e:1:in\s\`<main>\'\n
+        -e:1:in\s\`kill\'\n
+        )?
+      )x,
+      %r(
+        (?:
+          --\sC\slevel\sbacktrace\sinformation\s-------------------------------------------\n
+          (?:(?:.*\s)?\[0x\h+\]\n)*\n
+        )?
+      )x,
+      :*,
+      %r(
+        \[NOTE\]\n
+        You\smay\shave\sencountered\sa\sbug\sin\sthe\sRuby\sinterpreter\sor\sextension\slibraries.\n
+        Bug\sreports\sare\swelcome.\n
+        (?:.*\n)?
+        For\sdetails:\shttp:\/\/.*\.ruby-lang\.org/.*\n
+        \n
+      )x,
+    ]
+    ExpectedStderrList << additional if additional
+  end
+
+  def assert_segv(args, message=nil)
+    test_stdin = ""
+    opt = SEGVTest::ExecOptions.dup
+
+    _, stderr, status = EnvUtil.invoke_ruby(args, test_stdin, false, true, **opt)
+    stderr.force_encoding("ASCII-8BIT")
+
+    if signo = status.termsig
+      sleep 0.1
+      EnvUtil.diagnostic_reports(Signal.signame(signo), EnvUtil.rubybin, status.pid, Time.now)
+    end
+
+    assert_pattern_list(SEGVTest::ExpectedStderrList, stderr, message)
+
+    status
   end
 
   def test_segv_test
-    opts = SEGVTest::ExecOptions.dup
-    expected_stderr = SEGVTest::ExpectedStderr
-
-    assert_in_out_err(["--disable-gems", "-e", "Process.kill :SEGV, $$"], "", [], expected_stderr, nil, opts)
+    assert_segv(["--disable-gems", "-e", "Process.kill :SEGV, $$"])
   end
 
   def test_segv_loaded_features
     opts = SEGVTest::ExecOptions.dup
 
     bug7402 = '[ruby-core:49573]'
-    status = assert_in_out_err(['-e', 'class Bogus; def to_str; exit true; end; end',
-                                '-e', '$".clear',
-                                '-e', '$".unshift Bogus.new',
-                                '-e', '(p $"; abort) unless $".size == 1',
-                                '-e', 'Process.kill :SEGV, $$'],
-                               "", [], /#<Bogus:/,
-                               nil,
-                               opts)
+
+    status = Dir.mktmpdir("segv_test") do |tmpdir|
+      assert_in_out_err(['-e', 'class Bogus; def to_str; exit true; end; end',
+                         '-e', '$".clear',
+                         '-e', '$".unshift Bogus.new',
+                         '-e', '(p $"; abort) unless $".size == 1',
+                         '-e', 'Process.kill :SEGV, $$',
+                         '-C', tmpdir,
+                        ],
+                        "", [], //,
+                        nil,
+                        opts)
+    end
     assert_not_predicate(status, :success?, "segv but success #{bug7402}")
   end
 
   def test_segv_setproctitle
-    opts = SEGVTest::ExecOptions.dup
-    expected_stderr = SEGVTest::ExpectedStderr
-
     bug7597 = '[ruby-dev:46786]'
     Tempfile.create(["test_ruby_test_bug7597", ".rb"]) {|t|
       t.write "f" * 100
       t.flush
-      assert_in_out_err(["--disable-gems", "-e", "$0=ARGV[0]; Process.kill :SEGV, $$", t.path],
-                        "", [], expected_stderr, bug7597, opts)
+      assert_segv(["--disable-gems", "-e", "$0=ARGV[0]; Process.kill :SEGV, $$", t.path], bug7597)
     }
   end
 
@@ -677,5 +709,42 @@ class TestRubyOptions < Test::Unit::TestCase
   def test_pflag_sub
     bug7157 = '[ruby-core:47967]'
     assert_in_out_err(['-p', '-e', 'sub(/t.*/){"TEST"}'], %[test], %w[TEST], [], bug7157)
+  end
+
+  def assert_norun_with_rflag(opt)
+    bug10435 = "[ruby-dev:48712] [Bug #10435]: should not run with #{opt} option"
+    stderr = []
+    Tempfile.create(%w"bug10435- .rb") do |script|
+      dir, base = File.split(script.path)
+      script.puts "abort ':run'"
+      script.close
+      opts = ['-C', dir, '-r', "./#{base}", opt]
+      assert_in_out_err([*opts, '-ep']) do |_, e|
+        stderr.concat(e)
+      end
+      stderr << "---"
+      assert_in_out_err([*opts, base]) do |_, e|
+        stderr.concat(e)
+      end
+    end
+    assert_not_include(stderr, ":run", bug10435)
+  end
+
+  def test_dump_syntax_with_rflag
+    assert_norun_with_rflag('-c')
+    assert_norun_with_rflag('--dump=syntax')
+  end
+
+  def test_dump_yydebug_with_rflag
+    assert_norun_with_rflag('-y')
+    assert_norun_with_rflag('--dump=yydebug')
+  end
+
+  def test_dump_parsetree_with_rflag
+    assert_norun_with_rflag('--dump=parsetree')
+  end
+
+  def test_dump_insns_with_rflag
+    assert_norun_with_rflag('--dump=insns')
   end
 end

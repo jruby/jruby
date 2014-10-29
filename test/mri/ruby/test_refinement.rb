@@ -259,7 +259,7 @@ class TestRefinement < Test::Unit::TestCase
   def test_return_value_of_refine
     mod = nil
     result = nil
-    m = Module.new {
+    Module.new {
       result = refine(Object) {
         mod = self
       }
@@ -433,7 +433,6 @@ class TestRefinement < Test::Unit::TestCase
   end
 
   def test_module_using_class
-    c = Class.new
     assert_raise(TypeError) do
       eval("using TestRefinement::UsingClass", TOPLEVEL_BINDING)
     end
@@ -1150,6 +1149,21 @@ class TestRefinement < Test::Unit::TestCase
         m
         42.m
     INPUT
+  end
+
+  def test_refine_basic_object
+    assert_separately([], <<-"end;")
+    bug10106 = '[ruby-core:64166] [Bug #10106]'
+    module RefinementBug
+      refine BasicObject do
+        def foo
+          1
+        end
+      end
+    end
+
+    assert_raise(NoMethodError, bug10106) {Object.new.foo}
+    end;
   end
 
   private

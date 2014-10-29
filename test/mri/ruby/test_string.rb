@@ -808,6 +808,7 @@ class TestString < Test::Unit::TestCase
                  S("hello").gsub(/./) { |s| s[0].to_s + S(' ')})
     assert_equal(S("HELL-o"),
                  S("hello").gsub(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 })
+    assert_equal(S("<>h<>e<>l<>l<>o<>"), S("hello").gsub(S(''), S('<\0>')))
 
     a = S("hello")
     a.taint
@@ -831,6 +832,11 @@ class TestString < Test::Unit::TestCase
     c.force_encoding Encoding::US_ASCII
 
     assert_equal Encoding::UTF_8, a.gsub(/world/, c).encoding
+
+    assert_equal S("a\u{e9}apos&lt;"), S("a\u{e9}'&lt;").gsub("'", "apos")
+
+    bug9849 = '[ruby-core:62669] [Bug #9849]'
+    assert_equal S("\u{3042 3042 3042}!foo!"), S("\u{3042 3042 3042}/foo/").gsub("/", "!"), bug9849
   end
 
   def test_gsub!
@@ -1145,6 +1151,16 @@ class TestString < Test::Unit::TestCase
     res = []
     a.scan(/./) { |w| res << w }
     assert_predicate(res[0], :tainted?, '[ruby-core:33338] #4087')
+
+    /h/ =~ a
+    a.scan(/x/)
+    assert_nil($~)
+
+    /h/ =~ a
+    a.scan('x')
+    assert_nil($~)
+
+    assert_equal(3, S("hello hello hello").scan("hello".taint).count(&:tainted?))
   end
 
   def test_size
@@ -1179,6 +1195,11 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("Bar"), S("FooBar").slice(S("Bar")))
     assert_nil(S("FooBar").slice(S("xyzzy")))
     assert_nil(S("FooBar").slice(S("plugh")))
+
+    bug9882 = '[ruby-core:62842] [Bug #9882]'
+    substr = S("\u{30c6 30b9 30c8 2019}#{bug9882}").slice(4..-1)
+    assert_equal(S(bug9882).hash, substr.hash, bug9882)
+    assert_predicate(substr, :ascii_only?, bug9882)
   end
 
   def test_slice!
@@ -1405,6 +1426,7 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("HELL-o"),   S("hello").sub(/(hell)(.)/) {
                    |s| $1.upcase + S('-') + $2
                    })
+    assert_equal(S("h<e>llo"),  S("hello").sub('e', S('<\0>')))
 
     assert_equal(S("a\\aba"), S("ababa").sub(/b/, '\\'))
     assert_equal(S("ab\\aba"), S("ababa").sub(/(b)/, '\1\\'))
@@ -1454,6 +1476,12 @@ class TestString < Test::Unit::TestCase
     o = Object.new
     def o.to_s; self; end
     assert_match(/^foo#<Object:0x.*>baz$/, "foobarbaz".sub("bar") { o })
+
+    assert_equal(S("Abc"), S("abc").sub("a", "A"))
+    m = nil
+    assert_equal(S("Abc"), S("abc").sub("a") {m = $~; "A"})
+    assert_equal(S("a"), m[0])
+    assert_equal(/a/, m.regexp)
   end
 
   def test_sub!
@@ -1556,6 +1584,8 @@ class TestString < Test::Unit::TestCase
     assert_equal(16, n.sum(17))
     n[0] = 2.chr
     assert_not_equal(15, n.sum)
+    assert_equal(17, n.sum(0))
+    assert_equal(17, n.sum(-1))
   end
 
   def check_sum(str, bits=16)
@@ -1570,7 +1600,7 @@ class TestString < Test::Unit::TestCase
     assert_equal(294, "abc".sum)
     check_sum("abc")
     check_sum("\x80")
-    0.upto(70) {|bits|
+    -3.upto(70) {|bits|
       check_sum("xyz", bits)
     }
   end
@@ -2220,6 +2250,19 @@ class TestString < Test::Unit::TestCase
     RUBY
   end
 
+  class Bug9581 < String
+    def =~ re; :foo end
+  end
+
+  def test_regexp_match_subclass
+    s = Bug9581.new("abc")
+    r = /abc/
+    assert_equal(:foo, s =~ r)
+    assert_equal(:foo, s.send(:=~, r))
+    assert_equal(:foo, s.send(:=~, /abc/))
+    assert_equal(:foo, s =~ /abc/, "should not use optimized instruction")
+  end
+
   def test_LSHIFT_neary_long_max
     return unless @cls == String
     assert_ruby_status([], <<-'end;', '[ruby-core:61886] [Bug #9709]', timeout: 20)
@@ -2229,7 +2272,8 @@ class TestString < Test::Unit::TestCase
       rescue NoMemoryError
       end
     end;
-  end
+  end if [0].pack("l!").bytesize < [nil].pack("p").bytesize
+  # enable only when string size range is smaller than memory space
 end
 
 class TestString2 < TestString
