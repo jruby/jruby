@@ -13,11 +13,6 @@ public class Float extends ImmutableLiteral {
     }
 
     @Override
-    public boolean hasKnownValue() {
-        return true;
-    }
-
-    @Override
     public Object createCacheObject(ThreadContext context) {
         return context.runtime.newFloat(value);
     }
