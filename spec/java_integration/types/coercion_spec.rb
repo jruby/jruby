@@ -1,6 +1,4 @@
 require File.dirname(__FILE__) + "/../spec_helper"
-require 'rational'
-require 'complex'
 
 java_import "java_integration.fixtures.CoreTypeMethods"
 java_import "java_integration.fixtures.JavaFields"

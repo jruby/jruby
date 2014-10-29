@@ -43,11 +43,7 @@ STDLIB_FILES = %w[
   profiler.rb
   pstore.rb
   racc
-  rake
-  rake.rb
   rbconfig
-  rdoc
-  rdoc.rb
   resolv-replace.rb
   resolv.rb
   rexml

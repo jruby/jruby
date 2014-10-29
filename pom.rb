@@ -62,7 +62,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'tesla.version' => '0.1.1',
               'rspec-core.version' => '2.14.2',
               'jruby.basedir' => '${project.basedir}',
-              'minitest.version' => '5.0.7',
+              'minitest.version' => '5.4.1',
               'ant.version' => '1.9.2',
               'diff-lcs.version' => '1.1.3',
               'jffi.version' => '1.2.7',

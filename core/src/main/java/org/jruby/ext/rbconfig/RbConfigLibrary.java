@@ -108,7 +108,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRuntimeVerStr(Ruby runtime) {
-        return "2.1";
+        return Constants.RUBY_MAJOR_VERSION;
     }
 
     public static String getNormalizedHome(Ruby runtime) {
@@ -167,7 +167,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRubyLibDir(Ruby runtime) {
-        return getRubyLibDirFor(runtime, getRuntimeVerStr(runtime));
+        return getRubyLibDirFor(runtime, "stdlib");
     }
 
     public static String getRubyLibDirFor(Ruby runtime, String runtimeVerStr) {

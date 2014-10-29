@@ -24,18 +24,18 @@ default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.5', true ),
    ImportedGem.new( 'jruby-readline', '1.0.dev-SNAPSHOT', false ),
-   ImportedGem.new( 'jruby-ripper', '2.1.0.dev-SNAPSHOT', false, '2.1' ),
+   ImportedGem.new( 'jruby-ripper', '2.1.0.dev-SNAPSHOT', false ),
    ImportedGem.new( 'rake', 'rake.version', true ),
-   ImportedGem.new( 'rdoc', 'rdoc.version', true, '2.1' ),
-   ImportedGem.new( 'json', 'json.version', true, '2.1' ),
+   ImportedGem.new( 'rdoc', 'rdoc.version', true ),
+   ImportedGem.new( 'json', 'json.version', true ),
    ImportedGem.new( 'krypt', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
    ImportedGem.new( 'ffi', '1.9.3', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.2', true )
-   ImportedGem.new( 'minitest', '5.4.1', true )
-   ImportedGem.new( 'test-unit', '3.0.1', true )
-   ImportedGem.new( 'power-assert', '0.1.4', true )
+   ImportedGem.new( 'jar-dependencies', '0.1.2', true ),
+   ImportedGem.new( 'minitest', '5.4.1', true ),
+   ImportedGem.new( 'test-unit', '3.0.1', true ),
+   ImportedGem.new( 'power_assert', '0.1.4', true )
   ]
 
 project 'JRuby Lib Setup' do
@@ -82,7 +82,7 @@ project 'JRuby Lib Setup' do
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
                            :includes => [ '*' ] },
-                         { :directory => '${basedir}/ruby/shared',
+                         { :directory => '${basedir}/ruby/stdlib',
                            :includes => [ '**/bouncycastle/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
@@ -158,11 +158,20 @@ project 'JRuby Lib Setup' do
         puts "--- gem #{g.name}-#{version} ---"
 
         # copy the gem content to shared or to respective
-        dir = g.ruby_version || 'shared'
-        puts "copy gem content to ruby/#{dir}"
+        stdlib_dir = File.join( ruby_dir, 'stdlib' )
+        puts "copy gem content to #{stdlib_dir}"
         # assume default require_path
-        Dir[ File.join( gems, "#{g.name}-#{version}*", 'lib', '*' ) ].each do |f|
-          FileUtils.cp_r( f, File.join( ruby_dir, dir ) )
+        require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
+        require_files = File.join( require_base, '*' )
+
+        # remove old ones first
+        Dir[ require_files ].each do |f|
+          FileUtils.rm_rf( f.sub( require_base, stdlib_dir ) )
+        end
+
+        # copy in new ones
+        Dir[ require_files ].each do |f|
+          FileUtils.cp_r( f, stdlib_dir )
         end
 
         # copy bin files if the gem has any
@@ -190,12 +199,12 @@ project 'JRuby Lib Setup' do
 
     # patch jruby-openssl - remove file which should be only inside gem
     # use this instead of FileUtils.rm_f - issue #1698
-    f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
+    f = File.join( ruby_dir, 'stdlib', 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
 
     # PATCH krypt
     if KRYPT_VERSION == '0.0.2'
-      file = ctx.basedir.to_pathname + '/ruby/shared/krypt/provider.rb'
+      file = ctx.basedir.to_pathname + '/ruby/stdlib/krypt/provider.rb'
       content = File.read( file )
       content.sub! /begin(.|[\n])*/, <<EOS
 unless java?
@@ -210,7 +219,7 @@ EOS
     end
 
     # we do not want rubygems_plugin.rb within jruby
-    f = File.join( ruby_dir, 'shared', 'rubygems_plugin.rb' )
+    f = File.join( ruby_dir, 'stdlib', 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
 
     # fix file permissions of installed gems
