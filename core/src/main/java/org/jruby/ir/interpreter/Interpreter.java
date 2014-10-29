@@ -719,10 +719,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      * @return An IRubyObject result from the evaluation
      */
     public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, RubyString src, String file, int lineNumber, EvalType evalType) {
+        Ruby runtime = context.runtime;
+
+        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
+            throw new UnsupportedOperationException();
+        }
+
         // this is ensured by the caller
         assert file != null;
-
-        Ruby runtime = context.runtime;
 
         // no binding, just eval in "current" frame (caller's frame)
         RubyString source = src.convertToString();
@@ -732,10 +736,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         try {
             Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
-
-            if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
-                throw new UnsupportedOperationException();
-            }
 
             // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
             // and the thread-context rather than fetch one from the other.  Why is that?
@@ -763,6 +763,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      */
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = context.runtime;
+        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
+            throw new UnsupportedOperationException();
+        }
+
         DynamicScope evalScope;
 
         // in 1.9, eval scopes are local to the binding
@@ -778,10 +782,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             RubyString source = src.convertToString();
             Node node = runtime.parseEval(source.getByteList(), binding.getFile(), evalScope, binding.getLine());
             Block block = binding.getFrame().getBlock();
-
-            if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
-                throw new UnsupportedOperationException();
-            }
 
             // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
             // and the thread-context rather than fetch one from the other.  Why is that?
