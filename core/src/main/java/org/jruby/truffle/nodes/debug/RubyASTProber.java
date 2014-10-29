@@ -22,13 +22,7 @@ public class RubyASTProber implements ASTProber {
     private final List<RubyNodeProber> probers = new ArrayList<>();
 
     public RubyASTProber() {
-        if ((boolean) Options.TRUFFLE_TRACE.load()) {
-            probers.add(new TraceProber());
-        }
-
-        if ((boolean) Options.TRUFFLE_OBJECTSPACE.load()) {
-            probers.add(new SafepointProber());
-        }
+        probers.add(new TraceProber());
     }
 
     @Override

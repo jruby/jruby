@@ -50,6 +50,8 @@ public class DoWhileNode extends RubyNode {
         try {
             outer: while (true) {
                 while (true) {
+                    getContext().getSafepointManager().poll();
+
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }

@@ -24,8 +24,6 @@ import org.jruby.truffle.runtime.control.*;
  */
 public class WhileNode extends RubyNode {
 
-
-
     @Child protected BooleanCastNode condition;
     @Child protected RubyNode body;
 
@@ -46,6 +44,8 @@ public class WhileNode extends RubyNode {
         try {
             outer: while (condition.executeBoolean(frame)) {
                 while (true) {
+                    getContext().getSafepointManager().poll();
+
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
