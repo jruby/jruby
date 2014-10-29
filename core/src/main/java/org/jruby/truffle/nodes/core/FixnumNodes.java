@@ -129,7 +129,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object addWithBigIntegerOverflow(long a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -139,7 +139,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object addWithBigIntegerOverflow(long a, long b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
         @Specialization
