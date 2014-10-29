@@ -376,6 +376,7 @@ public class IRBuilder {
             case CLASSVARDECLNODE: return buildClassVarDecl((ClassVarDeclNode) node, s);
             case COLON2NODE: return buildColon2((Colon2Node) node, s);
             case COLON3NODE: return buildColon3((Colon3Node) node, s);
+            case COMPLEXNODE: return buildComplex((ComplexNode) node, s);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, s);
             case CONSTNODE: return searchConst(s, ((ConstNode) node).getName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, s);
@@ -1267,6 +1268,10 @@ public class IRBuilder {
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
         return searchConstInInheritanceHierarchy(s, new ObjectClass(), node.getName());
+    }
+
+    public Operand buildComplex(ComplexNode node, IRScope s) {
+        return new Complex((ImmutableLiteral) build(node.getNumber(), s));
     }
 
     interface CodeBlock {

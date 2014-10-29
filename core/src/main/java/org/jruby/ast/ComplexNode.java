@@ -37,4 +37,8 @@ public class ComplexNode extends Node {
     public NodeType getNodeType() {
         return NodeType.COMPLEXNODE;
     }
+
+    public Node getNumber() {
+        return y;
+    }
 }
