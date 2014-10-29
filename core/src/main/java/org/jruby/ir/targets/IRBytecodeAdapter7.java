@@ -42,12 +42,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         super(adapter, signature, classData);
     }
 
-    public void pushFixnum(Long l) {
+    public void pushFixnum(long l) {
         loadContext();
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), FixnumObjectSite.BOOTSTRAP, l);
     }
 
-    public void pushFloat(Double d) {
+    public void pushFloat(double d) {
         loadContext();
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), FloatObjectSite.BOOTSTRAP, d);
     }

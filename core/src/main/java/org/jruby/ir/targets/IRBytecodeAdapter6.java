@@ -54,13 +54,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         super(adapter, signature, classData);
     }
 
-    public void pushFixnum(Long l) {
+    public void pushFixnum(long l) {
         loadRuntime();
         adapter.ldc(l);
         adapter.invokevirtual(p(Ruby.class), "newFixnum", sig(RubyFixnum.class, long.class));
     }
 
-    public void pushFloat(Double d) {
+    public void pushFloat(double d) {
         loadRuntime();
         adapter.ldc(d);
         adapter.invokevirtual(p(Ruby.class), "newFloat", sig(RubyFloat.class, double.class));
