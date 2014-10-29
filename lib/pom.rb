@@ -33,6 +33,9 @@ default_gems =
    ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
    ImportedGem.new( 'ffi', '1.9.3', true ),
    ImportedGem.new( 'jar-dependencies', '0.1.2', true )
+   ImportedGem.new( 'minitest', '5.4.1', true )
+   ImportedGem.new( 'test-unit', '3.0.1', true )
+   ImportedGem.new( 'power-assert', '0.1.4', true )
   ]
 
 project 'JRuby Lib Setup' do
