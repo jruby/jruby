@@ -2028,6 +2028,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Rational(Rational rational) {
+        jvmMethod().loadRuntime();
+        jvmAdapter().ldc(rational.getNumerator());
+        jvmAdapter().ldc(1L);
+        jvmAdapter().invokevirtual(p(Ruby.class), "newRational", sig(RubyRational.class, long.class, long.class));
+    }
+
+    @Override
     public void Regexp(Regexp regexp) {
         if (!regexp.hasKnownValue() && !regexp.options.isOnce()) {
             jvmMethod().loadRuntime();
