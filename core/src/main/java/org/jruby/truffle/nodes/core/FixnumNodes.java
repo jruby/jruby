@@ -107,14 +107,9 @@ public abstract class FixnumNodes {
             return ExactMath.addExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long addWithLongOverflow(int a, int b) {
-            return ExactMath.addExact((long) a, (long) b);
-        }
-
         @Specialization
-        public Object addWithBigIntegerOverflow(int a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
+        public long addWithLongOverflow(int a, int b) {
+            return (long) a + (long) b;
         }
 
         @Specialization
@@ -189,14 +184,9 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long subWithLongOverflow(int a, int b) {
-            return ExactMath.subtractExact((long) a, (long) b);
-        }
-
         @Specialization
-        public Object subWithBigIntegerOverflow(int a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.subtract(BigInteger.valueOf(a), BigInteger.valueOf(b)));
+        public long subWithLongOverflow(int a, int b) {
+            return (long) a - (long) b;
         }
 
         @Specialization
@@ -271,14 +261,9 @@ public abstract class FixnumNodes {
             return ExactMath.multiplyExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long mulWithLong(int a, int b) {
-            return ExactMath.multiplyExact((long) a, (long) b);
-        }
-
         @Specialization
-        public Object mulWithBigInteger(int a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
+        public long mulWithLong(int a, int b) {
+            return (long) a * (long) b;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
