@@ -1927,6 +1927,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Complex(Complex complex) {
+        jvmMethod().loadRuntime();
+        jvmMethod().pushFixnum(0);
+        visit(complex.getNumber());
+        jvmAdapter().invokestatic(p(RubyComplex.class), "newComplexRaw", sig(RubyComplex.class, Ruby.class, IRubyObject.class, IRubyObject.class));
+    }
+
+    @Override
     public void CurrentScope(CurrentScope currentscope) {
         jvmMethod().loadStaticScope();
     }
