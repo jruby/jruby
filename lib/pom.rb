@@ -157,21 +157,34 @@ project 'JRuby Lib Setup' do
         puts
         puts "--- gem #{g.name}-#{version} ---"
 
-        # copy the gem content to shared or to respective
+        # copy the gem content to stdlib
         stdlib_dir = File.join( ruby_dir, 'stdlib' )
         puts "copy gem content to #{stdlib_dir}"
         # assume default require_path
         require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
         require_files = File.join( require_base, '*' )
 
-        # remove old ones first
+        # copy in new ones and mark writable for future updates (e.g. minitest)
+        stdlib_locs = []
         Dir[ require_files ].each do |f|
-          FileUtils.rm_rf( f.sub( require_base, stdlib_dir ) )
+          puts "copying: #{f} to #{stdlib_dir}"
+          FileUtils.cp_r( f, stdlib_dir )
+
+          stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
+          if File.directory?(stdlib_loc)
+            stdlib_locs += Dir[stdlib_loc + "/*"].to_a
+          else
+            stdlib_locs << stdlib_loc
+          end
         end
 
-        # copy in new ones
-        Dir[ require_files ].each do |f|
-          FileUtils.cp_r( f, stdlib_dir )
+        # fix permissions on copied files
+        stdlib_locs.each do |f|
+          next if File.writable? f
+
+          puts "fixing permissions: #{f}"
+          # TODO: better way to just set it writable without changing all modes?
+          FileUtils.chmod_R(0644, f)
         end
 
         # copy bin files if the gem has any
@@ -186,7 +199,14 @@ project 'JRuby Lib Setup' do
         end
 
         if g.default_gem
-          specname = File.basename( Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first )
+          specfile_wildcard = "#{g.name}-#{version}*.gemspec"
+          specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
+
+          unless specfile
+            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found; dependency unspecified in lib/pom.xml?"
+          end
+
+          specname = File.basename( specfile )
           puts "copy to specifications/default: #{specname}"
 
           spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
