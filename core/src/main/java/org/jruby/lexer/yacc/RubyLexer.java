@@ -37,6 +37,7 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 
@@ -136,8 +137,21 @@ public class RubyLexer {
         return encoding;
     }
 
-    private int getFloatToken(String number) {
-        // FIXME: Rational support is needed here.
+    private int getFloatToken(String number, int suffix) {
+        if ((suffix & SUFFIX_R) != 0) {
+            BigDecimal bd = new BigDecimal(number);
+            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
+            BigDecimal numerator = bd.multiply(denominator);
+
+            try {
+                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
+            } catch (ArithmeticException ae) {
+                // FIXME: Rational supports Bignum numerator and denominator
+                throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
+            }
+            return Tokens.tRATIONAL;
+        }
+
         double d;
         try {
             d = SafeDoubleParser.parseDouble(number);
@@ -159,7 +173,7 @@ public class RubyLexer {
     }
     
     private RationalNode newRationalNode(String value, int radix) throws NumberFormatException {
-        return new RationalNode(getPosition(), Long.parseLong(value, radix));
+        return new RationalNode(getPosition(), Long.parseLong(value, radix), 1);
     }
     
     private ComplexNode newComplexNode(Node number) {
@@ -2513,7 +2527,8 @@ public class RubyLexer {
             throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
                     getCurrentLine(), "Trailing '_' in number.");
         } else if (isFloat) {
-            return getFloatToken(number);
+            int suffix = numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL);
+            return getFloatToken(number, suffix);
         }
         yaccValue = getInteger(number, 10, numberLiteralSuffix(SUFFIX_ALL));
         return Tokens.tINTEGER;

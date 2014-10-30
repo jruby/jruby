@@ -89,6 +89,7 @@ public interface Tokens {
     int tCVAR       = RubyParser.tCVAR;
     int tINTEGER    = RubyParser.tINTEGER;
     int tFLOAT      = RubyParser.tFLOAT;
+    int tRATIONAL   = RubyParser.tRATIONAL;
     int tSTRING_CONTENT     = RubyParser.tSTRING_CONTENT;
     int tSTRING_BEG = RubyParser.tSTRING_BEG;
     int tSTRING_END = RubyParser.tSTRING_END;
