@@ -7,17 +7,19 @@ import org.jruby.runtime.ThreadContext;
  * Literal Rational number.
  */
 public class Rational extends ImmutableLiteral {
-    private long numerator;
+    private final long numerator;
+    private final long denominator;
 
-    public Rational(long numerator) {
+    public Rational(long numerator, long denominator) {
         super(OperandType.RATIONAL);
 
         this.numerator = numerator;
+        this.denominator = denominator;
     }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.newRational(numerator, 1);
+        return context.runtime.newRational(numerator, denominator);
     }
 
     @Override
@@ -32,5 +34,9 @@ public class Rational extends ImmutableLiteral {
 
     public double getNumerator() {
         return numerator;
+    }
+
+    public double getDenominator() {
+        return denominator;
     }
 }

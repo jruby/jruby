@@ -2995,7 +2995,7 @@ public class IRBuilder {
     }
 
     public Operand buildRational(RationalNode rationalNode, IRScope s) {
-        return new Rational(rationalNode.getNumerator());
+        return new Rational(rationalNode.getNumerator(), rationalNode.getDenominator());
     }
 
     public Operand buildRedo(Node node, IRScope s) {
