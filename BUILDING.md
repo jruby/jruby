@@ -58,12 +58,8 @@ executable for your platform; otherwise, it will be a copy of the
 
 Bootstrapping will install the following gems:
 
-* `rake`
 * `rspec`
 * `jruby-launcher`
-* `minitest`
-* `minitest-excludes`
-* `rdoc`
 
 and dependencies of these gems. A list of the gem versions can be found in
 `test/pom.xml` in the `dependencies` section.
