@@ -33,6 +33,9 @@ package org.jruby.ext.thread;
 import java.io.IOException;
 
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -44,5 +47,14 @@ public class ThreadLibrary implements Library {
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);
         SizedQueue.setup(runtime);
+    }
+
+    /**
+     * Convenience method for objects that are undumpable. Always throws.
+     *
+     * @throws TypeError
+     */
+    static IRubyObject undumpable(ThreadContext context, RubyObject self) {
+        throw context.runtime.newTypeError("can't dump " + self.type());
     }
 }

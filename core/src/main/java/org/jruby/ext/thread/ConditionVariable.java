@@ -126,5 +126,10 @@ public class ConditionVariable extends RubyObject {
         notify();
         return this;
     }
+
+    @JRubyMethod
+    public IRubyObject marshal_dump(ThreadContext context) {
+        return ThreadLibrary.undumpable(context, this);
+    }
     
 }

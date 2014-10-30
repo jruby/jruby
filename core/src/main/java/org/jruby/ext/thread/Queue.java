@@ -176,6 +176,11 @@ public class Queue extends RubyObject {
         }
     }
 
+    @JRubyMethod
+    public IRubyObject marshal_dump(ThreadContext context) {
+        return ThreadLibrary.undumpable(context, this);
+    }
+
     private IRubyObject pop(ThreadContext context, boolean should_block) {
         final BlockingQueue<IRubyObject> queue = getQueueSafe();
         if (!should_block && queue.size() == 0) {
