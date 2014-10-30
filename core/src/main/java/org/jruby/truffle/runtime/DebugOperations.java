@@ -11,7 +11,14 @@ package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -19,6 +26,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.math.BigInteger;
+import java.util.List;
 
 public abstract class DebugOperations {
 
@@ -49,7 +57,7 @@ public abstract class DebugOperations {
                 RubyArguments.pack(method, method.getDeclarationFrame(), rubyObject, block, arguments));
     }
 
-    public static void panic(RubyContext context, RubyNode node, String message) {
+    public static void panic(RubyContext context, Node currentNode, String message) {
         CompilerDirectives.transferToInterpreter();
 
         System.err.println("=========================== JRuby+Truffle Debug Report ========================");
@@ -60,15 +68,29 @@ public abstract class DebugOperations {
         }
 
         System.err.println();
-        System.err.println("=============================== Ruby Bracktrace ===============================");
+        System.err.println("    =========================== Ruby Bracktrace ===========================    ");
         System.err.println();
 
-        for (String line : Backtrace.PANIC_FORMATTER.format(context, null, RubyCallStack.getBacktrace(node))) {
-            System.err.println(line);
+        try {
+            for (String line : Backtrace.PANIC_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+                System.err.println(line);
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
 
         System.err.println();
-        System.err.println("=============================== Java Backtrace ================================");
+        System.err.println("    ========================== AST Backtrace ==========================    ");
+        System.err.println();
+
+        try {
+            printASTBacktrace(currentNode);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        System.err.println();
+        System.err.println("    =========================== Java Backtrace ============================    ");
         System.err.println();
 
         new Exception().printStackTrace();
@@ -78,4 +100,46 @@ public abstract class DebugOperations {
 
         System.exit(1);
     }
+
+    public static void printASTBacktrace(final Node currentNode) {
+        if (currentNode != null) {
+            printMethodASTBacktrace(currentNode);
+        }
+
+        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+
+            @Override
+            public Object visitFrame(FrameInstance frameInstance) {
+                printMethodASTBacktrace(frameInstance.getCallNode());
+                return null;
+            }
+
+        });
+    }
+
+    private static void printMethodASTBacktrace(Node currentNode) {
+        final List<Node> activeNodes = NodeUtil.findAllParents(currentNode, Node.class);
+        printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
+    }
+
+    private static void printASTForBacktrace(Node node, List<Node> activeNodes, int indentation) {
+        for (int n = 0; n < indentation; n++) {
+            System.err.print("  ");
+        }
+
+        if (activeNodes.contains(node)) {
+            System.err.print("-> ");
+        } else {
+            System.err.print("   ");
+        }
+
+        System.err.println(node);
+
+        for (Node child : node.getChildren()) {
+            if (child != null) {
+                printASTForBacktrace(child, activeNodes, indentation + 1);
+            }
+        }
+    }
+
 }
