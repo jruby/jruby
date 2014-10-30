@@ -127,8 +127,7 @@ public class Options {
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
     public static final Option<Boolean> TRUFFLE_LOAD_CORE = bool(TRUFFLE, "truffle.load_core", true, "Load the Truffle core library.");
-    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "" +
-            "Print the name of the Truffle runtime on startup.");
+    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
     public static final Option<Boolean> TRUFFLE_RUNTIME_VERSION_CHECK = bool(TRUFFLE, "truffle.runtime.version_check", true, "Check the version of Truffle supplied by the JVM before starting.");
     public static final Option<Boolean> TRUFFLE_PROC_BINDING = bool(TRUFFLE, "truffle.proc.binding", true, "Enable Proc#binding.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");

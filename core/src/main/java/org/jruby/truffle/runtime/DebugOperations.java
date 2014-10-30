@@ -10,6 +10,9 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -46,4 +49,33 @@ public abstract class DebugOperations {
                 RubyArguments.pack(method, method.getDeclarationFrame(), rubyObject, block, arguments));
     }
 
+    public static void panic(RubyContext context, RubyNode node, String message) {
+        CompilerDirectives.transferToInterpreter();
+
+        System.err.println("=========================== JRuby+Truffle Debug Report ========================");
+
+        if (message != null) {
+            System.err.println();
+            System.err.println("Stopped because: " + message);
+        }
+
+        System.err.println();
+        System.err.println("=============================== Ruby Bracktrace ===============================");
+        System.err.println();
+
+        for (String line : Backtrace.PANIC_FORMATTER.format(context, null, RubyCallStack.getBacktrace(node))) {
+            System.err.println(line);
+        }
+
+        System.err.println();
+        System.err.println("=============================== Java Backtrace ================================");
+        System.err.println();
+
+        new Exception().printStackTrace();
+
+        System.err.println();
+        System.err.println("===============================================================================");
+
+        System.exit(1);
+    }
 }
