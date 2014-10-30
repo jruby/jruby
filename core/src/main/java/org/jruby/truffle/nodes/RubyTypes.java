@@ -36,6 +36,7 @@ import java.math.BigInteger;
                 int.class, //
                 long.class, //
                 double.class, //
+                String.class, // for SymbolCastNode
                 BigInteger.class, //
                 RubyRange.IntegerFixnumRange.class, //
                 RubyRange.LongFixnumRange.class, //

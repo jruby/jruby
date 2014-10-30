@@ -9,13 +9,17 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
+import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
+import org.jruby.truffle.nodes.conversion.ToSymbolNode;
+import org.jruby.truffle.nodes.conversion.ToSymbolNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -30,12 +34,19 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
     @Child protected IndirectCallNode callNode;
     @Child protected BoxingNode box;
+    @Child protected ToSymbolNode toSymbolNode;
+    @Child protected ToJavaStringNode toJavaStringNode;
+
+    private final BranchProfile constantMissingProfile = new BranchProfile();
+    private final BranchProfile methodMissingProfile = new BranchProfile();
 
     public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility) {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
         box = new BoxingNode(context, null, null);
+        toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
+        toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
     }
 
     public UncachedDispatchNode(UncachedDispatchNode prev) {
@@ -43,6 +54,8 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         ignoreVisibility = prev.ignoreVisibility;
         callNode = prev.callNode;
         box = prev.box;
+        toSymbolNode = prev.toSymbolNode;
+        toJavaStringNode = prev.toJavaStringNode;
     }
 
     @Specialization(guards = "actionIsReadConstant")
@@ -51,19 +64,18 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             Object methodReceiverObject,
             LexicalScope lexicalScope,
             RubyModule receiverObject,
-            Object methodName,
+            Object constantName,
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        // Need to be much more fine grained with TruffleBoundary here
-        CompilerDirectives.transferToInterpreter();
-
         final RubyConstant constant = lookupConstant(lexicalScope, receiverObject,
-                methodName.toString(), ignoreVisibility, dispatchAction);
+                toJavaStringNode.executeJavaString(frame, constantName), ignoreVisibility, dispatchAction);
 
         if (constant != null) {
             return constant.getValue();
         }
+
+        constantMissingProfile.enter();
 
         final RubyClass callerClass = ignoreVisibility ? null : box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
@@ -71,20 +83,9 @@ public abstract class UncachedDispatchNode extends DispatchNode {
                 dispatchAction);
 
         if (missingMethod == null) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().runtimeError(
                     receiverObject.toString() + " didn't have a #const_missing", this));
-        }
-
-        final RubySymbol methodNameAsSymbol;
-
-        if (methodName instanceof RubySymbol) {
-            methodNameAsSymbol = (RubySymbol) methodName;
-        } else if (methodName instanceof RubyString) {
-            methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
-        } else if (methodName instanceof String) {
-            methodNameAsSymbol = getContext().newSymbol((String) methodName);
-        } else {
-            throw new UnsupportedOperationException();
         }
 
         return callNode.call(
@@ -95,7 +96,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
                         missingMethod.getDeclarationFrame(),
                         receiverObject,
                         null,
-                        new Object[]{methodNameAsSymbol}));
+                        new Object[]{toSymbolNode.executeRubySymbol(frame, constantName)}));
     }
 
     @Specialization(guards = "actionIsCallOrRespondToMethod")
@@ -108,12 +109,9 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        // Need to be much more fine grained with TruffleBoundary here
-        CompilerDirectives.transferToInterpreter();
-
         final RubyClass callerClass = ignoreVisibility ? null : box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
-        final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(),
+        final RubyMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, methodName),
                 ignoreVisibility, dispatchAction);
 
         if (method != null) {
@@ -134,6 +132,8 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             }
         }
 
+        methodMissingProfile.enter();
+
         final RubyMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true,
                 dispatchAction);
 
@@ -141,6 +141,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                 return false;
             } else {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().runtimeError(
                         receiverObject.toString() + " didn't have a #method_missing", this));
             }
@@ -151,19 +152,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
 
-            final RubySymbol methodNameAsSymbol;
-
-            if (methodName instanceof RubySymbol) {
-                methodNameAsSymbol = (RubySymbol) methodName;
-            } else if (methodName instanceof RubyString) {
-                methodNameAsSymbol = getContext().newSymbol(((RubyString) methodName).getBytes());
-            } else if (methodName instanceof String) {
-                methodNameAsSymbol = getContext().newSymbol((String) methodName);
-            } else {
-                throw new UnsupportedOperationException();
-            }
-
-            modifiedArgumentsObjects[0] = methodNameAsSymbol;
+            modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, methodName);
 
             System.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 

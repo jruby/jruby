@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -23,6 +24,8 @@ public abstract class CachedDispatchNode extends DispatchNode {
     private final RubySymbol cachedNameAsSymbol;
 
     @Child protected DispatchNode next;
+
+    private final BranchProfile moreThanReferenceCompare = new BranchProfile();
 
     public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next) {
         super(context);
@@ -57,6 +60,12 @@ public abstract class CachedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
+        if (cachedName == methodName) {
+            return true;
+        }
+
+        moreThanReferenceCompare.enter();
+
         if (cachedName instanceof String) {
             return cachedName.equals(methodName);
         } else if (cachedName instanceof RubySymbol) {
