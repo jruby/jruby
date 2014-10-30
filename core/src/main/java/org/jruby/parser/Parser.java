@@ -122,7 +122,6 @@ public class Parser {
             // but I am not sure which conditions leads to this...so lame message.
             throw runtime.newSyntaxError("Problem reading source: " + e);
         } catch (SyntaxException e) {
-            e.printStackTrace();
             switch (e.getPid()) {
                 case UNKNOWN_ENCODING:
                 case NOT_ASCII_COMPATIBLE:
