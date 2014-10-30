@@ -2040,7 +2040,7 @@ public class JVMVisitor extends IRVisitor {
     public void Rational(Rational rational) {
         jvmMethod().loadRuntime();
         jvmAdapter().ldc(rational.getNumerator());
-        jvmAdapter().ldc(1L);
+        jvmAdapter().ldc(rational.getDenominator());
         jvmAdapter().invokevirtual(p(Ruby.class), "newRational", sig(RubyRational.class, long.class, long.class));
     }
 
