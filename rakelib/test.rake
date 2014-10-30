@@ -51,28 +51,24 @@ namespace :test do
     :aot => ["-X+C", "-J-XX:MaxPermSize=256M"],
     :all => [:int, :jit, :aot]
   }
-  
-  permute_tests(:mri, compile_flags) do |t|
-    files = []
-    File.open('test/mri.index') do |f|
-      f.each_line.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
+
+  namespace :mri do
+    mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
+    task :int do
+      ruby "-X-C -r ./test/mri_test_env.rb test/mri/runner.rb -q -- #{mri_test_files}"
     end
-    t.test_files = files
-    t.verbose = true
-    ENV['EXCLUDE_DIR'] = 'test/mri/excludes'
-    ENV['TESTOPT'] = '--tty=no'
-    t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-I lib/ruby/stdlib'
-    t.ruby_opts << '-I .'
-    t.ruby_opts << '-I test/mri'
-    t.ruby_opts << '-I test/mri/ruby'
-    t.ruby_opts << '-r ./test/mri_test_env.rb'
-    t.ruby_opts << '-r minitest/excludes'
+
+    task :jit do
+      ruby "-Xjit.threshold=0 -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb -q -- #{mri_test_files}"
+    end
+
+    task :aot do
+      ruby "-X+C -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb -q -- #{mri_test_files}"
+    end
+
+    task all: %s[int jit aot]
   end
+  task mri: 'test:mri:int'
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     files = []
