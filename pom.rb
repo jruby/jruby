@@ -58,7 +58,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   properties( 'its.j2ee' => 'j2ee*/pom.xml',
               'its.osgi' => 'osgi*/pom.xml',
-              'minitest-excludes.version' => '1.0.2',
               'tesla.version' => '0.1.1',
               'rspec-core.version' => '2.14.2',
               'jruby.basedir' => '${project.basedir}',

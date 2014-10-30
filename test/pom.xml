@@ -65,18 +65,6 @@
       <version>${rspec.version}</version>
       <type>gem</type>
     </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>minitest</artifactId>
-      <version>${minitest.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>minitest-excludes</artifactId>
-      <version>${minitest-excludes.version}</version>
-      <type>gem</type>
-    </dependency>
   </dependencies>
   <repositories>
     <repository>

@@ -98,19 +98,19 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
-      <version>5.4.1</version>
+      <version>${minitest.version}</version>
       <type>gem</type>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>test-unit</artifactId>
-      <version>3.0.3</version>
+      <version>${test-unit.version}</version>
       <type>gem</type>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>power_assert</artifactId>
-      <version>0.1.4</version>
+      <version>${power_assert.version}</version>
       <type>gem</type>
     </dependency>
   </dependencies>
