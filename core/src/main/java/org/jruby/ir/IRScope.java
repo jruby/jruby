@@ -700,7 +700,11 @@ public abstract class IRScope implements ParseResult {
         // NOTE: bindingHasEscaped is the crucial flag and it effectively is
         // unconditionally true whenever it has a call that receives a closure.
         // See CallBase.computeRequiresCallersBindingFlag
-        if (this instanceof IREvalScript) { // for eval scopes, bindings are considered escaped ...
+        if (this instanceof IREvalScript || this instanceof IRScriptBody) {
+            // For eval scopes, bindings are considered escaped.
+            // For top-level script scopes, bindings are considered escaped as well
+            // because TOPLEVEL_BINDING can be used in places besides the file
+            // that is being parsed?
             flags.add(BINDING_HAS_ESCAPED);
         } else {
             flags.remove(BINDING_HAS_ESCAPED);

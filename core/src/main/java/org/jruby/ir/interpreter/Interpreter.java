@@ -161,7 +161,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         IRubyObject retVal;
 
         scope.setModule(currModule);
-        if (!ic.isDynscopeEliminated()) context.preMethodScopeOnly(scope);
+        DynamicScope tlbScope = irScope.getTopLevelBindingScope();
+        if (tlbScope == null) {
+            context.preMethodScopeOnly(scope);
+        } else {
+            context.preScopedBody(tlbScope);
+            tlbScope.growIfNeeded();
+        }
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
@@ -173,7 +179,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
             Interpreter.runEndBlocks(ic.getEndBlocks(), context, self, scope, null);
-            if (!ic.isDynscopeEliminated()) context.popScope();
+            context.popScope();
         }
 
         return retVal;

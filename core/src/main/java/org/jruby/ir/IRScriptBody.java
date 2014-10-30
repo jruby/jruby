@@ -4,6 +4,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,13 +12,23 @@ import java.util.List;
 public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
+    private DynamicScope tlbScope;
 
     public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
+        this.tlbScope = null;
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
         }
+    }
+
+    public DynamicScope getTopLevelBindingScope() {
+        return tlbScope;
+    }
+
+    public void setTopLevelBindingScope(DynamicScope tlbScope) {
+        this.tlbScope = tlbScope;
     }
 
     @Override

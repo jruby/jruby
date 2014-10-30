@@ -2074,7 +2074,9 @@ public class IRBuilder {
     }
 
     public Operand buildDot(final DotNode dotNode, IRScope s) {
-        return copyAndReturnValue(s, new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive()));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildRangeInstr(res, build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive()));
+        return res;
     }
 
     private Operand dynamicPiece(Node pieceNode, IRScope s) {
