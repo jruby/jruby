@@ -376,6 +376,7 @@ public class IRBuilder {
             case CLASSVARDECLNODE: return buildClassVarDecl((ClassVarDeclNode) node, s);
             case COLON2NODE: return buildColon2((Colon2Node) node, s);
             case COLON3NODE: return buildColon3((Colon3Node) node, s);
+            case COMPLEXNODE: return buildComplex((ComplexNode) node, s);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, s);
             case CONSTNODE: return searchConst(s, ((ConstNode) node).getName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, s);
@@ -425,6 +426,7 @@ public class IRBuilder {
             case ORNODE: return buildOr((OrNode) node, s);
             case PREEXENODE: return buildPreExe((PreExeNode) node, s);
             case POSTEXENODE: return buildPostExe((PostExeNode) node, s);
+            case RATIONALNODE: return buildRational((RationalNode) node, s);
             case REDONODE: return buildRedo(node, s);
             case REGEXPNODE: return buildRegexp((RegexpNode) node, s);
             case RESCUEBODYNODE:
@@ -1268,6 +1270,10 @@ public class IRBuilder {
         return searchConstInInheritanceHierarchy(s, new ObjectClass(), node.getName());
     }
 
+    public Operand buildComplex(ComplexNode node, IRScope s) {
+        return new Complex((ImmutableLiteral) build(node.getNumber(), s));
+    }
+
     interface CodeBlock {
         public Operand run();
     }
@@ -2068,7 +2074,9 @@ public class IRBuilder {
     }
 
     public Operand buildDot(final DotNode dotNode, IRScope s) {
-        return copyAndReturnValue(s, new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive()));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildRangeInstr(res, build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive()));
+        return res;
     }
 
     private Operand dynamicPiece(Node pieceNode, IRScope s) {
@@ -2986,6 +2994,10 @@ public class IRBuilder {
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);
         return manager.getNil();
+    }
+
+    public Operand buildRational(RationalNode rationalNode, IRScope s) {
+        return new Rational(rationalNode.getNumerator(), rationalNode.getDenominator());
     }
 
     public Operand buildRedo(Node node, IRScope s) {

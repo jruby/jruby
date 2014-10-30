@@ -25,7 +25,7 @@ public class WhileNode extends RubyNode {
 
     public WhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
         super(context, sourceSection);
-        loopNode = Truffle.getRuntime().createLoopNode(new WhileRepeatingNode(condition, body));
+        loopNode = Truffle.getRuntime().createLoopNode(new WhileRepeatingNode(context, condition, body));
     }
 
     @Override
@@ -41,10 +41,13 @@ public class WhileNode extends RubyNode {
 
     private static class WhileRepeatingNode extends Node implements RepeatingNode {
 
+        private final RubyContext context;
+
         @Child protected BooleanCastNode condition;
         @Child protected RubyNode body;
 
-        public WhileRepeatingNode(BooleanCastNode condition, RubyNode body) {
+        public WhileRepeatingNode(RubyContext context, BooleanCastNode condition, RubyNode body) {
+            this.context = context;
             this.condition = condition;
             this.body = body;
         }
@@ -56,6 +59,8 @@ public class WhileNode extends RubyNode {
             }
 
             while (true) { // for redo
+                context.getSafepointManager().poll();
+
                 try {
                     body.execute(frame);
                     return true;

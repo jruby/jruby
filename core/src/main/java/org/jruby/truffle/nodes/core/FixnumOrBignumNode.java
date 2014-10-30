@@ -36,7 +36,7 @@ public class FixnumOrBignumNode extends Node {
                 return (int) longValue;
             } else {
                 longProfile.enter();
-                return value;
+                return longValue;
             }
         } else {
             return value;

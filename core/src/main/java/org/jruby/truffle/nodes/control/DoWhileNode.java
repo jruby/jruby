@@ -28,7 +28,7 @@ public class DoWhileNode extends RubyNode {
 
     public DoWhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
         super(context, sourceSection);
-        loopNode = Truffle.getRuntime().createLoopNode(new DoWhileRepeatingNode(condition, body));
+        loopNode = Truffle.getRuntime().createLoopNode(new DoWhileRepeatingNode(context, condition, body));
     }
 
     @Override
@@ -44,10 +44,13 @@ public class DoWhileNode extends RubyNode {
 
     private static class DoWhileRepeatingNode extends Node implements RepeatingNode {
 
+        private final RubyContext context;
+
         @Child protected BooleanCastNode condition;
         @Child protected RubyNode body;
 
-        public DoWhileRepeatingNode(BooleanCastNode condition, RubyNode body) {
+        public DoWhileRepeatingNode(RubyContext context, BooleanCastNode condition, RubyNode body) {
+            this.context = context;
             this.condition = condition;
             this.body = body;
         }
@@ -55,6 +58,8 @@ public class DoWhileNode extends RubyNode {
         @Override
         public boolean executeRepeating(VirtualFrame frame) {
             while (true) { // for redo
+                context.getSafepointManager().poll();
+
                 try {
                     body.execute(frame);
                     break;

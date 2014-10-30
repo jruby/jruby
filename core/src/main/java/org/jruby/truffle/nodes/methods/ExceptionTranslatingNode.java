@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
@@ -123,7 +124,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
 
         if (Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load() && throwable instanceof AssertionError) {
-            panic(throwable.toString());
+            DebugOperations.panic(getContext(), this, throwable.toString());
         }
 
         return getContext().getCoreLibrary().internalError(throwable.getClass().getSimpleName(), this);

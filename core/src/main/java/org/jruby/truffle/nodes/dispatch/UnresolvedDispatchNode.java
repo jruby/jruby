@@ -24,6 +24,8 @@ import org.jruby.util.cli.Options;
 
 public final class UnresolvedDispatchNode extends DispatchNode {
 
+    private int depth = 0;
+
     private final boolean ignoreVisibility;
     private final Dispatch.MissingBehavior missingBehavior;
 
@@ -46,13 +48,15 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        if (getDepth() == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
+        if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
             return getHeadNode().getFirstDispatchNode()
                     .replace(UncachedDispatchNodeFactory.create(getContext(), ignoreVisibility,
                             null, null, null, null, null, null, null))
                     .executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
                             methodName, blockObject, argumentsObjects, dispatchAction);
         }
+
+        depth++;
 
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
@@ -274,20 +278,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 throw new UnsupportedOperationException(missingBehavior.toString());
             }
         }
-    }
-
-    private int getDepth() {
-        final DispatchHeadNode head = getHeadNode();
-        Node parent = getParent();
-
-        int depth = 1;
-
-        while (parent != head) {
-            depth++;
-            parent = parent.getParent();
-        }
-
-        return depth;
     }
 
 }

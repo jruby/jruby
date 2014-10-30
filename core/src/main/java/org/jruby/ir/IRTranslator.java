@@ -24,6 +24,7 @@ public abstract class IRTranslator<R, S> {
             scope = (IRScriptBody) result;
         } else if (result instanceof RootNode) { // Need to perform create IR from AST
             scope = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) result);
+            scope.setTopLevelBindingScope(((RootNode)result).getScope());
 
             if (RubyInstanceConfig.IR_WRITING) {
                 try {

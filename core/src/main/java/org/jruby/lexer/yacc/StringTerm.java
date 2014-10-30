@@ -79,6 +79,75 @@ public class StringTerm extends StrTerm {
             return Tokens.tSTRING_END;
     }
 
+    // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
+    private int parsePeekVariableName(RubyLexer lexer, LexerSource src) throws IOException {
+        int c = src.read(); // byte right after #
+        int significant = -1;
+        switch (c) {
+            case '$': {  // we unread back to before the $ so next lex can read $foo
+                int c2 = src.read();
+
+                if (c2 == '-') {
+                    int c3 = src.read();
+
+                    if (c3 == RubyLexer.EOF) {
+                        src.unread(c3); src.unread(c2);
+                        return 0;
+                    }
+
+                    significant = c3;                              // $-0 potentially
+                    src.unread(c3); src.unread(c2);
+                    break;
+                } else if (lexer.isGlobalCharPunct(c2)) {          // $_ potentially
+                    lexer.setValue("#" + c2);
+
+                    src.unread(c2); src.unread(c);
+                    return Tokens.tSTRING_DVAR;
+                }
+
+                significant = c2;                                  // $FOO potentially
+                src.unread(c2);
+                break;
+            }
+            case '@': {  // we unread back to before the @ so next lex can read @foo
+                int c2 = src.read();
+
+                if (c2 == '@') {
+                    int c3 = src.read();
+
+                    if (c3 == RubyLexer.EOF) {
+                        src.unread(c3); src.unread(c2);
+                        return 0;
+                    }
+
+                    significant = c3;                                // #@@foo potentially
+                    src.unread(c3); src.unread(c2);
+                    break;
+                }
+
+                significant = c2;                                    // #@foo potentially
+                src.unread(c2);
+                break;
+            }
+            case '{':
+                lexer.setValue("#" + c);
+                return Tokens.tSTRING_DBEG;
+            default:
+                // We did not find significant char after # so push it back to
+                // be processed as an ordinary string.
+                src.unread(c);
+                return 0;
+        }
+
+        if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
+            src.unread(c);
+            lexer.setValue("#" + significant);
+            return Tokens.tSTRING_DVAR;
+        }
+
+        return 0;
+    }
+
     public int parseString(RubyLexer lexer, LexerSource src) throws IOException {
         boolean spaceSeen = false;
         int c;
@@ -107,18 +176,9 @@ public class StringTerm extends StrTerm {
         ByteList buffer = createByteList(lexer);
         lexer.newtok();
         if ((flags & RubyLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
-            c = src.read();
-            switch (c) {
-            case '$':
-            case '@':
-                src.unread(c);
-                lexer.setValue("#" + c);
-                return Tokens.tSTRING_DVAR;
-            case '{':
-                lexer.setValue("#" + c);
-                return Tokens.tSTRING_DBEG;
-            }
-            buffer.append((byte) '#');
+            int token = parsePeekVariableName(lexer, src);
+
+            if (token != 0) return token;
         }
         src.unread(c);
         

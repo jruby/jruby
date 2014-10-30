@@ -116,7 +116,7 @@ public abstract class TruffleDebugNodes {
 
         @Specialization
         public RubyNilClass doPanic() {
-            panic();
+            DebugOperations.panic(getContext(), this, null);
             return getContext().getCoreLibrary().getNilObject();
         }
 

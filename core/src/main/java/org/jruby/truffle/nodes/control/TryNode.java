@@ -44,6 +44,8 @@ public class TryNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         while (true) {
+            getContext().getSafepointManager().poll();
+
             try {
                 final Object result = tryPart.execute(frame);
                 elseProfile.enter();
