@@ -43,6 +43,7 @@ lib/ruby/gems
 lib/ruby/stdlib/*jopenssl*.jar
 lib/ruby/stdlib/bcpkix-jdk15on-*.jar
 lib/ruby/stdlib/bcprov-jdk15on-*.jar
+lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
