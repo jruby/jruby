@@ -50,7 +50,6 @@ class OperandDecoderMap {
             case NIL: return manager.getNil();
             case NTH_REF: return new NthRef(d.decodeInt());
             case OBJECT_CLASS: return new ObjectClass();
-            case RANGE: return new Range(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case REGEXP: return decodeRegexp();
             case SCOPE_MODULE: return new ScopeModule(d.decodeInt());
             case SELF: return Self.SELF;

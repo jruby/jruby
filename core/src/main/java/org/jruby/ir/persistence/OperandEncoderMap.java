@@ -93,12 +93,6 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void ObjectClass(ObjectClass objectclass) {} // No data
 
-    @Override public void Range(Range range) {
-        encoder.encode(range.getBegin());
-        encoder.encode(range.getEnd());
-        encoder.encode(range.isExclusive());
-    }
-
     @Override public void Regexp(Regexp regexp) {
         encode(regexp.getRegexp());
         encoder.encode(regexp.options.isEncodingNone());
