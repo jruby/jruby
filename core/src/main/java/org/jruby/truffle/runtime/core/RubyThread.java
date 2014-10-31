@@ -9,10 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.*;
 import java.util.concurrent.*;
 
-import org.jruby.*;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -20,7 +18,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.util.ByteList;
 
 /**
  * Represents the Ruby {@code Thread} class. Implemented using Java threads, but note that there is
@@ -118,21 +115,20 @@ public class RubyThread extends RubyObject {
     }
 
     public void join() {
-        getContext().outsideGlobalLock(new Runnable() {
+        final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        finished.await();
-                        break;
-                    } catch (InterruptedException e) {
-                        // Await again
-                    }
+        try {
+            while (true) {
+                try {
+                    finished.await();
+                    break;
+                } catch (InterruptedException e) {
+                    // Await again
                 }
             }
-
-        });
+        } finally {
+            getContext().getThreadManager().enterGlobalLock(runningThread);
+        }
 
         if (exception != null) {
             throw new RaiseException(exception);

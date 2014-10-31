@@ -10,11 +10,9 @@
 package org.jruby.truffle.runtime;
 
 import java.io.*;
-import java.math.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.atomic.*;
 
@@ -38,12 +36,11 @@ import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.util.Supplier;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 /**
  * The global state of a running Ruby system.
@@ -329,14 +326,6 @@ public class RubyContext extends ExecutionContext {
 
     public ThreadManager getThreadManager() {
         return threadManager;
-    }
-
-    public void outsideGlobalLock(Runnable runnable) {
-        threadManager.outsideGlobalLock(runnable);
-    }
-
-    public <T> T outsideGlobalLock(Supplier<T> supplier) {
-        return threadManager.outsideGlobalLock(supplier);
     }
 
     public TranslatorDriver getTranslator() {
