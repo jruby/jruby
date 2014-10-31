@@ -27,7 +27,18 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     public CachedYieldDispatchNode(RubyContext context, RubyProc block, YieldDispatchNode next) {
         super(context);
+
         callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTarget());
+        insert(callNode);
+
+        if (callNode.isSplittable()) {
+            callNode.split();
+        }
+
+        if (callNode.isInlinable()) {
+            callNode.forceInlining();
+        }
+
         this.next = next;
     }
 
