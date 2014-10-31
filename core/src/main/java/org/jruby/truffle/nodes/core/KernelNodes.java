@@ -38,6 +38,10 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
+    /**
+     * Check if operands are the same object or call #==.
+     * Known as rb_equal() in MRI. The fact Kernel#=== uses this is pure coincidence.
+     */
     @CoreMethod(names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
