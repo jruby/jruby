@@ -172,4 +172,22 @@ public abstract class RegexpNodes {
 
     }
 
+    @CoreMethod(names = "source")
+    public abstract static class SourceNode extends CoreMethodNode {
+
+        public SourceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SourceNode(SourceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object source(RubyRegexp regexp) {
+            return getContext().makeString(regexp.getSource());
+        }
+
+    }
+
 }
