@@ -34,26 +34,23 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.util.Supplier;
-import org.jruby.util.ByteList;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
     @CoreMethod(names = "===", required = 1)
-    public abstract static class ThreeEqualNode extends CoreMethodNode {
+    public abstract static class CaseEqualNode extends CoreMethodNode {
 
         @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
         @Child protected DispatchHeadNode equalNode;
 
-        public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
+        public CaseEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             equalNode = new DispatchHeadNode(context);
         }
 
-        public ThreeEqualNode(ThreeEqualNode prev) {
+        public CaseEqualNode(CaseEqualNode prev) {
             super(prev);
             referenceEqualNode = prev.referenceEqualNode;
             equalNode = prev.equalNode;
