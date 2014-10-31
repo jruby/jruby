@@ -1203,6 +1203,11 @@ public abstract class FixnumNodes {
             }
         }
 
+        @Specialization
+        public Object leftShiftWithOverflow(int a, int b) {
+            return leftShiftWithOverflow((long) a, b);
+        }
+
         @Specialization(guards = "canShiftIntoLong")
         public long leftShift(long a, int b) {
             if (b > 0) {
