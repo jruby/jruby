@@ -195,7 +195,7 @@ public class CoreLibrary {
 
         objectClass.setConstant(null, "RUBY_VERSION", RubyString.fromJavaString(stringClass, "2.1.0"));
         objectClass.setConstant(null, "RUBY_PATCHLEVEL", 0);
-        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
+        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, "jrubytruffle"));
         objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
 
         final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
