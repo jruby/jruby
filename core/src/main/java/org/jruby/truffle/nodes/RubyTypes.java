@@ -74,12 +74,6 @@ import java.math.BigInteger;
 
 public class RubyTypes {
 
-	@ImplicitCast
-	public long int2long(int value) {
-		return value;
-	}
-
-
     @ImplicitCast
     public boolean unboxBoolean(RubyTrueClass value) {
         return true;
