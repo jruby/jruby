@@ -46,17 +46,22 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode equalNode;
+
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            equalNode = new DispatchHeadNode(context);
         }
 
         public NotEqualNode(NotEqualNode prev) {
             super(prev);
+            equalNode = prev.equalNode;
         }
 
         @Specialization
-        public boolean equal(Object a, Object b) {
-            return a != b;
+        public boolean equal(VirtualFrame frame, Object a, Object b) {
+            // TODO(CS): cast
+            return !(boolean) equalNode.call(frame, a, "==", null, b);
         }
 
     }
