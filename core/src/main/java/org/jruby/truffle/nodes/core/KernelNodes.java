@@ -39,18 +39,18 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 public abstract class KernelNodes {
 
     @CoreMethod(names = "===", required = 1)
-    public abstract static class CaseEqualNode extends CoreMethodNode {
+    public abstract static class SameOrEqualNode extends CoreMethodNode {
 
         @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
         @Child protected DispatchHeadNode equalNode;
 
-        public CaseEqualNode(RubyContext context, SourceSection sourceSection) {
+        public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             equalNode = new DispatchHeadNode(context);
         }
 
-        public CaseEqualNode(CaseEqualNode prev) {
+        public SameOrEqualNode(SameOrEqualNode prev) {
             super(prev);
             referenceEqualNode = prev.referenceEqualNode;
             equalNode = prev.equalNode;
