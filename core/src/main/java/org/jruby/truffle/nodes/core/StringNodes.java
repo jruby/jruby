@@ -91,17 +91,15 @@ public abstract class StringNodes {
             return false;
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
-            notDesignedForCompilation();
-
             return a.equals(b.toString());
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean equal(RubyString a, RubySymbol b) {
-            notDesignedForCompilation();
-
             return equal(a, b.toRubyString());
         }
     }

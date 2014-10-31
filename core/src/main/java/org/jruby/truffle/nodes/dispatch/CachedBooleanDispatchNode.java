@@ -54,6 +54,11 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (falseMethod != null) {
             falseCall = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
+
+            if (falseCall.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                insert(falseCall);
+                falseCall.cloneCallTarget();
+            }
         }
 
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
@@ -62,6 +67,11 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (trueMethod != null) {
             trueCall = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
+
+            if (trueCall.isCallTargetCloningAllowed() && trueMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                insert(trueCall);
+                trueCall.cloneCallTarget();
+            }
         }
     }
 

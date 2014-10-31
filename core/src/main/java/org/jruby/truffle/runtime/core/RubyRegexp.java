@@ -51,7 +51,7 @@ public class RubyRegexp extends RubyObject {
     }
 
     @CompilationFinal private Regex regex;
-    @CompilationFinal private Object source;
+    @CompilationFinal private String source;
 
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
@@ -79,6 +79,11 @@ public class RubyRegexp extends RubyObject {
 
     public Regex getRegex() {
         return regex;
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public String getSource() {
+        return source;
     }
 
     @CompilerDirectives.TruffleBoundary

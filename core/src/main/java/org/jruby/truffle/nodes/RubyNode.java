@@ -59,6 +59,10 @@ public abstract class RubyNode extends Node {
         return getContext().makeString("expression");
     }
 
+    public String executeJavaString(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectString(execute(frame));
+    }
+
     public RubyArray executeArray(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyArray(execute(frame));
     }

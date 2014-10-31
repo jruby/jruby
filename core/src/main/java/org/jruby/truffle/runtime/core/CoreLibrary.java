@@ -195,7 +195,7 @@ public class CoreLibrary {
 
         objectClass.setConstant(null, "RUBY_VERSION", RubyString.fromJavaString(stringClass, "2.1.0"));
         objectClass.setConstant(null, "RUBY_PATCHLEVEL", 0);
-        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
+        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, "jrubytruffle"));
         objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
 
         final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
@@ -483,6 +483,10 @@ public class CoreLibrary {
     public RubyException typeErrorCantConvertInto(String from, String to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("can't convert %s into %s", from, to), currentNode);
+    }
+
+    public RubyException typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
+        return typeErrorCantConvertInto(box(from).getLogicalClass().getName(), to.getName(), currentNode);
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {

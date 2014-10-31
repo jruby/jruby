@@ -26,3 +26,4 @@ fails:Kernel#eval does not pass the block to the method being eval'ed
 fails:Kernel#eval returns from the scope calling #eval when evaluating 'return'
 fails:Kernel#eval unwinds through a Proc-style closure and returns from a lambda-style closure in the closure chain
 fails:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
+fails:Kernel#eval can be aliased

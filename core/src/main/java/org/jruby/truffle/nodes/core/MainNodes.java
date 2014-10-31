@@ -42,7 +42,7 @@ public abstract class MainNodes {
         }
     }
 
-    @CoreMethod(names = "to_s", needsSelf = false)
+    @CoreMethod(names = {"to_s", "inspect"}, needsSelf = false)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

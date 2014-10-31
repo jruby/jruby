@@ -43,6 +43,11 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
         if (method != null) {
             callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+            if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
+                insert(callNode);
+                callNode.cloneCallTarget();
+            }
         }
     }
 

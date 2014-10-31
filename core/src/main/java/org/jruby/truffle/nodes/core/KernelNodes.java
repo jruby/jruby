@@ -36,6 +36,7 @@ import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.util.Supplier;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -776,19 +777,17 @@ public abstract class KernelNodes {
 
             final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
-            final ThreadManager threadManager = context.getThreadManager();
+            final String line;
 
-            final String line = getContext().outsideGlobalLock(new Supplier<String>() {
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                @Override
-                public String get() {
-                    try {
-                        return gets(context);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
+            try {
+                line = gets(context);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
 
             final RubyString rubyLine = context.makeString(line);
 
@@ -1073,10 +1072,9 @@ public abstract class KernelNodes {
             return false;
         }
 
+        @TruffleBoundary
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
-            notDesignedForCompilation();
-
             // TODO(CS): fast path
             return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getLogicalClass(), rubyClass);
         }
@@ -1250,23 +1248,28 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyNilClass print(final VirtualFrame frame, final Object[] args) {
-            getContext().outsideGlobalLock(new Runnable() {
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                @Override
-                public void run() {
-                    for (Object arg : args) {
-                        try {
-                            getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+            try {
+                for (Object arg : args) {
+                    write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
                 }
-
-            });
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
 
             return getContext().getCoreLibrary().getNilObject();
         }
+
+        @TruffleBoundary
+        private void write(byte[] bytes) {
+            try{
+                getContext().getRuntime().getInstanceConfig().getOutput().write(bytes);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 
     @CoreMethod(names = "printf", isModuleFunction = true, argumentsAsArray = true)
@@ -1288,14 +1291,13 @@ public abstract class KernelNodes {
                 final String format = args[0].toString();
                 final List<Object> values = Arrays.asList(args).subList(1, args.length);
 
-                getContext().outsideGlobalLock(new Runnable() {
+                final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                    @Override
-                    public void run() {
-                        StringFormatter.format(getContext().getRuntime().getInstanceConfig().getOutput(), format, values);
-                    }
-
-                });
+                try {
+                    StringFormatter.format(getContext().getRuntime().getInstanceConfig().getOutput(), format, values);
+                } finally {
+                    getContext().getThreadManager().enterGlobalLock(runningThread);
+                }
             }
 
             return getContext().getCoreLibrary().getNilObject();
@@ -1481,7 +1483,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "respond_to?", required = 1, optional = 1)
+    @CoreMethod(names = "respond_to?", required = 1, optional = 1, alwaysSplit = true)
     public abstract static class RespondToNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode dispatch;
@@ -1724,24 +1726,23 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private double doSleep(final double duration) {
-            return getContext().outsideGlobalLock(new Supplier<Double>() {
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                @Override
-                public Double get() {
-                    final long start = System.nanoTime();
+            try {
+                final long start = System.nanoTime();
 
-                    try {
-                        Thread.sleep((long) (duration * 1000));
-                    } catch (InterruptedException e) {
-                        // Ignore interruption
-                    }
-
-                    final long end = System.nanoTime();
-
-                    return (end - start) / 1e9;
+                try {
+                    Thread.sleep((long) (duration * 1000));
+                } catch (InterruptedException e) {
+                    // Ignore interruption
                 }
 
-            });
+                final long end = System.nanoTime();
+
+                return (end - start) / 1e9;
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
         }
 
     }

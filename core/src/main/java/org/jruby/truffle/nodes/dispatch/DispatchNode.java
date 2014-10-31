@@ -53,14 +53,13 @@ public abstract class DispatchNode extends RubyNode {
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction);
 
+    @CompilerDirectives.TruffleBoundary
     protected RubyConstant lookupConstant(
             LexicalScope lexicalScope,
             RubyModule module,
             String name,
             boolean ignoreVisibility,
             Dispatch.DispatchAction dispatchAction) {
-        CompilerAsserts.neverPartOfCompilation();
-
         return ModuleOperations.lookupConstant(lexicalScope, module, name);
     }
 

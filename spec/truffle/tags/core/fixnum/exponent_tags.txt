@@ -1,6 +1,4 @@
 fails:Fixnum#** returns self raised to the given power
-fails:Fixnum#** overflows the answer to a bignum transparantly
-fails:Fixnum#** raises negative numbers to the given power
 fails:Fixnum#** can raise 1 to a Bignum safely
 fails:Fixnum#** can raise -1 to a Bignum safely
 fails:Fixnum#** switches to a Float when the number is too big

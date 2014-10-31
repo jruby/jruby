@@ -65,14 +65,9 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(0, value);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long negWithLongOverflow(int value) {
-            return ExactMath.subtractExact(0, (long) value);
-        }
-
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(int value) {
-            return BigInteger.valueOf(value).negate();
+        public long negWithOverflow(int value) {
+            return -(long) (value);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -81,7 +76,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(long value) {
+        public BigInteger negWithOverflow(long value) {
             return BigInteger.valueOf(value).negate();
         }
 
@@ -108,13 +103,23 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long addWithLongOverflow(int a, int b) {
+        public long addWithOverflow(int a, int b) {
             return (long) a + (long) b;
         }
 
         @Specialization
         public double add(int a, double b) {
             return a + b;
+        }
+
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public long add(int a, long b) {
+            return ExactMath.addExact(a, b);
+        }
+
+        @Specialization
+        public Object addWithOverflow(int a, long b) {
+            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -128,7 +133,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object addWithBigIntegerOverflow(long a, int b) {
+        public Object addWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -138,7 +143,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object addWithBigIntegerOverflow(long a, long b) {
+        public Object addWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -175,7 +180,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long subWithLongOverflow(int a, int b) {
+        public long subWithOverflow(int a, int b) {
             return (long) a - (long) b;
         }
 
@@ -199,13 +204,8 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long subWithLongOverflow(long a, int b) {
-            return ExactMath.subtractExact(a, (long) b);
-        }
-
         @Specialization
-        public Object subWithBigIntegerOverflow(long a, int b) {
+        public Object subWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
@@ -215,7 +215,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object subWithBigIntegerOverflow(long a, long b) {
+        public Object subWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
@@ -252,7 +252,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long mulWithLong(int a, int b) {
+        public long mulWithOverflow(int a, int b) {
             return (long) a * (long) b;
         }
 
@@ -262,7 +262,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(int a, long b) {
+        public Object mulWithOverflow(int a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
@@ -282,7 +282,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(long a, int b) {
+        public Object mulWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -292,7 +292,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(long a, long b) {
+        public Object mulWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -1187,21 +1187,54 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization
-        public Object leftShift(int a, int b) {
-            return leftShift((long) a, b);
-        }
-
-        @Specialization
-        public Object leftShift(long a, int b) {
+        @Specialization(guards = "canShiftIntoInt")
+        public int leftShift(int a, int b) {
             if (b > 0) {
                 bAboveZeroProfile.enter();
 
-                if (Long.SIZE - Long.numberOfLeadingZeros(a) + b > Long.SIZE - 1) {
+                return a << b;
+            } else {
+                bNotAboveZeroProfile.enter();
+                if (-b >= Integer.SIZE) {
+                    return 0;
+                } else {
+                    return a >> -b;
+                }
+            }
+        }
+
+        @Specialization
+        public Object leftShiftWithOverflow(int a, int b) {
+            return leftShiftWithOverflow((long) a, b);
+        }
+
+        @Specialization(guards = "canShiftIntoLong")
+        public long leftShift(long a, int b) {
+            if (b > 0) {
+                bAboveZeroProfile.enter();
+
+                return a << b;
+            } else {
+                bNotAboveZeroProfile.enter();
+
+                if (-b >= Long.SIZE) {
+                    return 0;
+                } else {
+                    return a >> -b;
+                }
+            }
+        }
+
+        @Specialization
+        public Object leftShiftWithOverflow(long a, int b) {
+            if (b > 0) {
+                bAboveZeroProfile.enter();
+
+                if (canShiftIntoLong(a, b)) {
+                    return a << b;
+                } else {
                     useBignumProfile.enter();
                     return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.shiftLeft(BigInteger.valueOf(a), b));
-                } else {
-                    return a << b;
                 }
             } else {
                 bNotAboveZeroProfile.enter();
@@ -1212,6 +1245,14 @@ public abstract class FixnumNodes {
                     return a >> -b;
                 }
             }
+        }
+
+        static boolean canShiftIntoInt(int a, int b) {
+            return Integer.numberOfLeadingZeros(a) - b > 0;
+        }
+
+        static boolean canShiftIntoLong(long a, int b) {
+            return Long.numberOfLeadingZeros(a) - b > 0;
         }
 
     }

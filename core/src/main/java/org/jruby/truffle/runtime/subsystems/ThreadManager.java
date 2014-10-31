@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.util.Supplier;
@@ -41,6 +42,7 @@ public class ThreadManager {
      * from the current Java thread. Remember to call {@link #leaveGlobalLock} again before
      * blocking.
      */
+    @CompilerDirectives.TruffleBoundary
     public void enterGlobalLock(RubyThread thread) {
         globalLock.lock();
         currentThread = thread;
@@ -52,6 +54,7 @@ public class ThreadManager {
      * executing any Ruby code. You probably want to use this with a {@code finally} statement to
      * make sure that happens
      */
+    @CompilerDirectives.TruffleBoundary
     public RubyThread leaveGlobalLock() {
         if (!globalLock.isHeldByCurrentThread()) {
             throw new RuntimeException("You don't own this lock!");
@@ -60,28 +63,6 @@ public class ThreadManager {
         final RubyThread result = currentThread;
         globalLock.unlock();
         return result;
-    }
-
-    public void outsideGlobalLock(final Runnable runnable) {
-        outsideGlobalLock(new Supplier<Void>() {
-
-            @Override
-            public Void get() {
-                runnable.run();
-                return null;
-            }
-
-        });
-    }
-
-    public <T> T outsideGlobalLock(Supplier<T> supplier) {
-        final RubyThread runningThread = leaveGlobalLock();
-
-        try {
-            return supplier.get();
-        } finally {
-            enterGlobalLock(runningThread);
-        }
     }
 
     public RubyThread getCurrentThread() {

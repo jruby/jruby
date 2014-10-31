@@ -11,17 +11,9 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-
-import java.math.BigInteger;
 
 @CoreClass(name = "GC")
 public abstract class GCNodes {
@@ -59,12 +51,13 @@ public abstract class GCNodes {
         private RubyNilClass doGC() {
             notDesignedForCompilation();
 
-            getContext().outsideGlobalLock(new Runnable() {
-                @Override
-                public void run() {
-                    System.gc();
-                }
-            });
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+
+            try {
+                System.gc();
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
 
             return getContext().getCoreLibrary().getNilObject();
         }

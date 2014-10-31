@@ -22,8 +22,7 @@ class MSpecScript
   set :core, [
     SPEC_DIR + '/core',
 
-    '^' + SPEC_DIR + '/core/continuation',
-    '^' + SPEC_DIR + '/core/encoding/converter'
+    '^' + SPEC_DIR + '/core/continuation'
   ]
 
   set :fast, [

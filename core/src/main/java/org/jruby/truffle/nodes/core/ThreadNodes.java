@@ -9,10 +9,8 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
-import org.jruby.*;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -154,12 +152,13 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass pass() {
-            getContext().outsideGlobalLock(new Runnable() {
-                @Override
-                public void run() {
-                    Thread.yield();
-                }
-            });
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+
+            try {
+                Thread.yield();
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
 
             return getContext().getCoreLibrary().getNilObject();
         }
