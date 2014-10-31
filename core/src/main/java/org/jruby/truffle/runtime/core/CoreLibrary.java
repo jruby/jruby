@@ -485,6 +485,10 @@ public class CoreLibrary {
         return typeError(String.format("can't convert %s into %s", from, to), currentNode);
     }
 
+    public RubyException typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
+        return typeErrorCantConvertInto(box(from).getLogicalClass().getName(), to.getName(), currentNode);
+    }
+
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
