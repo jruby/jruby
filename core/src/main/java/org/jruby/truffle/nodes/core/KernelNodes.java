@@ -44,52 +44,27 @@ public abstract class KernelNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class ThreeEqualNode extends CoreMethodNode {
 
+        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+        @Child protected DispatchHeadNode equalNode;
+
         public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            equalNode = new DispatchHeadNode(context);
         }
 
         public ThreeEqualNode(ThreeEqualNode prev) {
             super(prev);
+            referenceEqualNode = prev.referenceEqualNode;
+            equalNode = prev.equalNode;
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, boolean b) {
-            return false;
+        public boolean caseEqual(VirtualFrame frame, Object a, Object b) {
+            if (referenceEqualNode.executeEqual(frame, a, b))
+                return true;
+            // TODO(CS): cast
+            return (boolean) equalNode.call(frame, a, "==", null, b);
         }
 
     }
