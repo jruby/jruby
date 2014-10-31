@@ -35,7 +35,7 @@ public abstract class TrueClassNodes {
 
     }
 
-    @CoreMethod(names = {"==", "===", "=~"}, needsSelf = false, required = 1)
+    @CoreMethod(names = {"==", "=~"}, needsSelf = false, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {

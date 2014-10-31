@@ -41,13 +41,13 @@ public abstract class RegexpNodes {
     }
 
     @CoreMethod(names = "===", required = 1)
-    public abstract static class ThreeEqualNode extends CoreMethodNode {
+    public abstract static class CaseEqualNode extends CoreMethodNode {
 
-        public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
+        public CaseEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ThreeEqualNode(ThreeEqualNode prev) {
+        public CaseEqualNode(CaseEqualNode prev) {
             super(prev);
         }
 

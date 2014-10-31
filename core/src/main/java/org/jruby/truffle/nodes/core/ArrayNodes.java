@@ -1166,16 +1166,16 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode threeEqual;
+        @Child protected KernelNodes.SameOrEqualNode equalNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context);
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
-            threeEqual = prev.threeEqual;
+            equalNode = prev.equalNode;
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -1189,9 +1189,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                // TODO(CS): need a cast node around the dispatch
-
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     found = store[n];
                     continue;
                 }
@@ -1218,9 +1216,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                // TODO(CS): need a cast node around the dispatch
-
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     found = store[n];
                     continue;
                 }
@@ -1741,16 +1737,16 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode threeEqual;
+        @Child protected KernelNodes.SameOrEqualNode equalNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context);
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
-            threeEqual = prev.threeEqual;
+            equalNode = prev.equalNode;
         }
 
         @Specialization(guards = "isNull")
@@ -1768,7 +1764,7 @@ public abstract class ArrayNodes {
                 // TODO(CS): cast node around the dispatch
                 notDesignedForCompilation();
 
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
                 }
             }
@@ -1786,7 +1782,7 @@ public abstract class ArrayNodes {
                 // TODO(CS): cast node around the dispatch
                 notDesignedForCompilation();
 
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
                 }
             }

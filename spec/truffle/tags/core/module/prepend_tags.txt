@@ -16,3 +16,4 @@ fails:Module#prepend calls prepended after prepend_features
 fails:Module#prepend detects cyclic prepends
 fails:Module#prepend returns the class it's included into
 fails:Module#prepend clears any caches
+fails:Module#prepend includes prepended modules in ancestors

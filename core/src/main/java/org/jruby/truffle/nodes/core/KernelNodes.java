@@ -60,8 +60,10 @@ public abstract class KernelNodes {
             equalNode = prev.equalNode;
         }
 
+        public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
+
         @Specialization
-        public boolean caseEqual(VirtualFrame frame, Object a, Object b) {
+        public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
             if (referenceEqualNode.executeEqual(frame, a, b))
                 return true;
             // TODO(CS): cast
