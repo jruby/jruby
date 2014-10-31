@@ -117,9 +117,14 @@ public abstract class FixnumNodes {
             return a + b;
         }
 
-        @Specialization
+        @Specialization(rewriteOn = ArithmeticException.class)
         public long add(int a, long b) {
             return ExactMath.addExact(a, b);
+        }
+
+        @Specialization
+        public Object addWithOverflow(int a, long b) {
+            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
         @Specialization
