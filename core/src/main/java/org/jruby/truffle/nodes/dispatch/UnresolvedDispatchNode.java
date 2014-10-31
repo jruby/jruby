@@ -22,6 +22,8 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.util.cli.Options;
 
+import java.io.PrintStream;
+
 public final class UnresolvedDispatchNode extends DispatchNode {
 
     private int depth = 0;
@@ -276,6 +278,23 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             default: {
                 throw new UnsupportedOperationException(missingBehavior.toString());
+            }
+        }
+    }
+
+    private void dumpChain(PrintStream out) {
+        out.println(getEncapsulatingSourceSection().getShortDescription());
+
+        DispatchNode node = getHeadNode().getFirstDispatchNode();
+
+        while (!(node instanceof UnresolvedDispatchNode)) {
+            out.print("  ");
+            out.println(node);
+
+            if (node instanceof CachedDispatchNode) {
+                node = ((CachedDispatchNode) node).next;
+            } else {
+                break;
             }
         }
     }

@@ -152,4 +152,13 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
                 dispatchAction);
     }
 
+    @Override
+    public String toString() {
+        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s, %s)",
+                getCachedNameAsSymbol().toString(),
+                expectedClass.getName(), expectedClass.hashCode(),
+                value == null ? "null" : DebugOperations.inspect(getContext(), value),
+                method == null ? "null" : method.toString());
+    }
+
 }
