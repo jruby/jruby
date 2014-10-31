@@ -122,12 +122,12 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(boolean a, BigInteger b) { return false; }
 
         @Specialization public boolean equal(int a, boolean b) { return false; }
-        @Specialization public boolean equal(int a, long b) { return false; }
+        @Specialization public boolean equal(int a, long b) { return a == b; }
         @Specialization public boolean equal(int a, double b) { return false; }
         @Specialization public boolean equal(int a, BigInteger b) { return false; }
 
         @Specialization public boolean equal(long a, boolean b) { return false; }
-        @Specialization public boolean equal(long a, int b) { return false; }
+        @Specialization public boolean equal(long a, int b) { return a == b; }
         @Specialization public boolean equal(long a, double b) { return false; }
         @Specialization public boolean equal(long a, BigInteger b) { return false; }
 
