@@ -46,6 +46,8 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
 
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
+        // TODO(CS): check shared method info should split
+
         /*
          * The splitter/inliner since Truffle 0.5 has a bug where it isn't splitting/inlining this call site - it should
          * be fixed in 0.6, but until then we'll force it. Turn off (to test) with

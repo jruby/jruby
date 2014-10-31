@@ -261,7 +261,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = {"send", "__send__"}, needsBlock = true, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = {"send", "__send__"}, needsBlock = true, required = 1, argumentsAsArray = true, alwaysSplit = true)
     public abstract static class SendNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode dispatchNode;

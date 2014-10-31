@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -58,6 +59,11 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
         if (method != null) {
             callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+            if (callNode.isSplittable() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
+                insert(callNode);
+                callNode.split();
+            }
         }
     }
 
