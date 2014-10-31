@@ -103,54 +103,24 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
         @Specialization public boolean equal(double a, double b) { return a == b; }
-        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a.equals(b); }
+        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a == b; }
 
-        @Specialization public boolean equal(boolean a, int b) { return false; }
-        @Specialization public boolean equal(boolean a, long b) { return false; }
-        @Specialization public boolean equal(boolean a, double b) { return false; }
-        @Specialization public boolean equal(boolean a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(int a, boolean b) { return false; }
-        @Specialization public boolean equal(int a, long b) { return a == b; }
-        @Specialization public boolean equal(int a, double b) { return false; }
-        @Specialization public boolean equal(int a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(long a, boolean b) { return false; }
-        @Specialization public boolean equal(long a, int b) { return a == b; }
-        @Specialization public boolean equal(long a, double b) { return false; }
-        @Specialization public boolean equal(long a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(double a, boolean b) { return false; }
-        @Specialization public boolean equal(double a, int b) { return false; }
-        @Specialization public boolean equal(double a, long b) { return false; }
-        @Specialization public boolean equal(double a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(BigInteger a, boolean b) { return false; }
-        @Specialization public boolean equal(BigInteger a, int b) { return false; }
-        @Specialization public boolean equal(BigInteger a, long b) { return false; }
-        @Specialization public boolean equal(BigInteger a, double b) { return false; }
-
-        @Specialization(guards = {"!firstUnboxable", "secondUnboxable"})
-        public boolean equalFirstNotUnboxable(RubyBasicObject a, RubyBasicObject b) {
-            return false;
+        @Specialization(guards = "bothUnboxable")
+        public boolean equalUnboxable(Object a, Object b) {
+            return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
         }
 
-        @Specialization(guards = {"firstUnboxable", "!secondUnboxable"})
-        public boolean equalSecondNotUnboxable(RubyBasicObject a, RubyBasicObject b) {
-            return false;
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            if (a instanceof Unboxable && b instanceof Unboxable) {
+                return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
+            } else {
+                return a == b;
+            }
         }
 
-        @Specialization(guards = {"!firstUnboxable", "!secondUnboxable"})
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        protected boolean firstUnboxable(Object a, Object b) {
-            return a instanceof Unboxable;
-        }
-
-        protected boolean secondUnboxable(Object a, Object b) {
-            return b instanceof Unboxable;
+        protected boolean bothUnboxable(Object a, Object b) {
+            return a instanceof Unboxable && b instanceof Unboxable;
         }
 
     }
