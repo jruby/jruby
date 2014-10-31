@@ -118,6 +118,11 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
+        public long add(int a, long b) {
+            return ExactMath.addExact(a, b);
+        }
+
+        @Specialization
         public Object add(int a, BigInteger b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), b));
         }
