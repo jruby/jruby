@@ -92,6 +92,8 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
+        public abstract boolean executeEqual(VirtualFrame frame, Object a, Object b);
+
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
