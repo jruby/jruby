@@ -1187,21 +1187,49 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization
-        public Object leftShift(int a, int b) {
-            return leftShift((long) a, b);
-        }
-
-        @Specialization
-        public Object leftShift(long a, int b) {
+        @Specialization(guards = "canShiftIntoInt")
+        public int leftShift(int a, int b) {
             if (b > 0) {
                 bAboveZeroProfile.enter();
 
-                if (Long.SIZE - Long.numberOfLeadingZeros(a) + b > Long.SIZE - 1) {
+                return a << b;
+            } else {
+                bNotAboveZeroProfile.enter();
+                if (-b >= Integer.SIZE) {
+                    return 0;
+                } else {
+                    return a >> -b;
+                }
+            }
+        }
+
+        @Specialization(guards = "canShiftIntoLong")
+        public long leftShift(long a, int b) {
+            if (b > 0) {
+                bAboveZeroProfile.enter();
+
+                return a << b;
+            } else {
+                bNotAboveZeroProfile.enter();
+
+                if (-b >= Long.SIZE) {
+                    return 0;
+                } else {
+                    return a >> -b;
+                }
+            }
+        }
+
+        @Specialization
+        public Object leftShiftWithOverflow(long a, int b) {
+            if (b > 0) {
+                bAboveZeroProfile.enter();
+
+                if (canShiftIntoLong(a, b)) {
+                    return a << b;
+                } else {
                     useBignumProfile.enter();
                     return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(BigInteger.valueOf(a), b));
-                } else {
-                    return a << b;
                 }
             } else {
                 bNotAboveZeroProfile.enter();
@@ -1212,6 +1240,14 @@ public abstract class FixnumNodes {
                     return a >> -b;
                 }
             }
+        }
+
+        static boolean canShiftIntoInt(int a, int b) {
+            return Integer.numberOfLeadingZeros(a) - b > 0;
+        }
+
+        static boolean canShiftIntoLong(long a, int b) {
+            return Long.numberOfLeadingZeros(a) - b > 0;
         }
 
     }
