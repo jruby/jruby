@@ -34,26 +34,6 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "eql?"}, needsSelf = false, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(Object b) {
-            notDesignedForCompilation();
-
-            return b instanceof RubyNilClass || b instanceof RubyNilClass;
-        }
-
-    }
-
     @CoreMethod(names = "!=", needsSelf = false, required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 

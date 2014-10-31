@@ -753,7 +753,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
+    @CoreMethod(names = {"==", "==="}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {

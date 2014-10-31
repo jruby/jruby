@@ -21,13 +21,13 @@ public class WhenSplatNode extends RubyNode {
 
     @Child protected RubyNode readCaseExpression;
     @Child protected RubyNode splat;
-    @Child protected DispatchHeadNode dispatchThreeEqual;
+    @Child protected DispatchHeadNode dispatchCaseEqual;
 
     public WhenSplatNode(RubyContext context, SourceSection sourceSection, RubyNode readCaseExpression, RubyNode splat) {
         super(context, sourceSection);
         this.readCaseExpression = readCaseExpression;
         this.splat = splat;
-        dispatchThreeEqual = new DispatchHeadNode(context);
+        dispatchCaseEqual = new DispatchHeadNode(context);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class WhenSplatNode extends RubyNode {
         for (Object value : array.slowToArray()) {
             // TODO(CS): how to cast this to a boolean?
 
-            if ((boolean) dispatchThreeEqual.call(frame, caseExpression, "===", null, value)) {
+            if ((boolean) dispatchCaseEqual.call(frame, caseExpression, "===", null, value)) {
                 return true;
             }
         }

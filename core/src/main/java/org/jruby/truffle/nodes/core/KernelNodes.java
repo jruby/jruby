@@ -34,62 +34,40 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.util.Supplier;
-import org.jruby.util.ByteList;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
+    /**
+     * Check if operands are the same object or call #==.
+     * Known as rb_equal() in MRI. The fact Kernel#=== uses this is pure coincidence.
+     */
     @CoreMethod(names = "===", required = 1)
-    public abstract static class ThreeEqualNode extends CoreMethodNode {
+    public abstract static class SameOrEqualNode extends CoreMethodNode {
 
-        public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
+        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+        @Child protected DispatchHeadNode equalNode;
+
+        public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            equalNode = new DispatchHeadNode(context);
         }
 
-        public ThreeEqualNode(ThreeEqualNode prev) {
+        public SameOrEqualNode(SameOrEqualNode prev) {
             super(prev);
+            referenceEqualNode = prev.referenceEqualNode;
+            equalNode = prev.equalNode;
         }
 
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
+        public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, boolean b) {
-            return false;
+        public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
+            if (referenceEqualNode.executeEqual(frame, a, b))
+                return true;
+            // TODO(CS): cast
+            return (boolean) equalNode.call(frame, a, "==", null, b);
         }
 
     }
@@ -489,47 +467,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "eql?", required = 1)
     public abstract static class EqlNode extends CoreMethodNode {
 
+        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+
         public EqlNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
         public EqlNode(EqlNode prev) {
             super(prev);
+            referenceEqualNode = prev.referenceEqualNode;
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
+        public boolean equal(VirtualFrame frame, Object a, Object b) {
+            return referenceEqualNode.executeEqual(frame, a, b);
         }
     }
 
