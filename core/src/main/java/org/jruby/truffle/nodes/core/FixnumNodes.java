@@ -65,14 +65,9 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(0, value);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long negWithLongOverflow(int value) {
-            return ExactMath.subtractExact(0, (long) value);
-        }
-
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(int value) {
-            return BigInteger.valueOf(value).negate();
+        public long negWithOverflow(int value) {
+            return -(long) (value);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -81,7 +76,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(long value) {
+        public BigInteger negWithOverflow(long value) {
             return BigInteger.valueOf(value).negate();
         }
 
@@ -108,7 +103,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long addWithLongOverflow(int a, int b) {
+        public long addWithOverflow(int a, int b) {
             return (long) a + (long) b;
         }
 
@@ -138,7 +133,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object addWithBigIntegerOverflow(long a, int b) {
+        public Object addWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -148,7 +143,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object addWithBigIntegerOverflow(long a, long b) {
+        public Object addWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -185,7 +180,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long subWithLongOverflow(int a, int b) {
+        public long subWithOverflow(int a, int b) {
             return (long) a - (long) b;
         }
 
@@ -209,13 +204,8 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long subWithLongOverflow(long a, int b) {
-            return ExactMath.subtractExact(a, (long) b);
-        }
-
         @Specialization
-        public Object subWithBigIntegerOverflow(long a, int b) {
+        public Object subWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
@@ -225,7 +215,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object subWithBigIntegerOverflow(long a, long b) {
+        public Object subWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
@@ -262,7 +252,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long mulWithLong(int a, int b) {
+        public long mulWithOverflow(int a, int b) {
             return (long) a * (long) b;
         }
 
@@ -272,7 +262,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(int a, long b) {
+        public Object mulWithOverflow(int a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
@@ -292,7 +282,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(long a, int b) {
+        public Object mulWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -302,7 +292,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(long a, long b) {
+        public Object mulWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
