@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.control.PassthroughNode;
