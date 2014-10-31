@@ -507,11 +507,15 @@ public abstract class ArrayNodes {
             return true;
         }
 
-        // TODO(CS): what to do about all the other cases?
-
         @Specialization
-        public boolean equal(VirtualFrame frame, RubyArray a, RubySymbol b) {
-            return false;
+        public boolean equal(VirtualFrame frame, RubyArray a, Object b) {
+            notDesignedForCompilation();
+
+            if (!(b instanceof RubyArray)) {
+                return false;
+            } else {
+                return equal(frame, a, (RubyArray) b);
+            }
         }
 
     }
