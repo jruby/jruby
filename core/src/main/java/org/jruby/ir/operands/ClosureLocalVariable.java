@@ -37,7 +37,6 @@ public class ClosureLocalVariable extends LocalVariable {
         return new ClosureLocalVariable((IRClosure) ii.getScope(), name, scopeDepth, offset);
     }
 
-    // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
         return new ClosureLocalVariable(definingScope, name, n, offset);
     }

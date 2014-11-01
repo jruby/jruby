@@ -60,7 +60,6 @@ public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
         } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
-            // SSS FIXME: Can avoid this workaround by adding a case for this instruction in the interpreter loop
             Helpers.throwException((Throwable)excObj);
         }
 

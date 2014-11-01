@@ -196,7 +196,7 @@ public class IRRuntimeHelpers {
             if (isDebug()) System.out.println("---> Break reached target in scope: " + dynScope);
             return bj.breakValue;
 /* ---------------------------------------------------------------
- * FIXME: Puzzled .. Why is this not needed?
+ * SSS FIXME: Puzzled .. Why is this not needed?
         } else if (!context.scopeExistsOnCallStack(bj.scopeToReturnTo.getStaticScope())) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
  * --------------------------------------------------------------- */

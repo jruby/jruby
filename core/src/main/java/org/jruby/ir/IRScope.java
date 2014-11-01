@@ -514,7 +514,7 @@ public abstract class IRScope implements ParseResult {
             BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
             int rescuerPC = rescuerBB == null ? -1 : rescuerBB.getLabel().getTargetPC();
             for (Instr instr : b.getInstrs()) {
-                // FIXME: If we did not omit instrs from previous pass we could end up just doing a
+                // FIXME: If we did not omit instrs from previous pass, we could end up just doing
                 // a size and for loop this n times instead of walking an examining each instr
                 if (!(instr instanceof ReceiveSelfInstr)) {
                     linearizedInstrArray[ipc].setRPC(rescuerPC);
@@ -542,18 +542,17 @@ public abstract class IRScope implements ParseResult {
         return executedPasses;
     }
 
+    // SSS FIXME: We should configure different optimization levels
+    // and run different kinds of analysis depending on time budget.
+    // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
+    // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
+    // while another thread is using it.  This may need to happen on a clone()
+    // and we may need to update the method to return the new method.  Also,
+    // if this scope is held in multiple locations how do we update all references?
     private void runCompilerPasses(List<CompilerPass> passes) {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true);
-
-        // SSS FIXME: We should configure different optimization levels
-        // and run different kinds of analysis depending on time budget.
-        // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
-        // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
-        // while another thread is using it.  This may need to happen on a clone()
-        // and we may need to update the method to return the new method.  Also,
-        // if this scope is held in multiple locations how do we update all references?
 
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
@@ -628,7 +627,6 @@ public abstract class IRScope implements ParseResult {
         return interpreterContext;
     }
 
-    /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
         // Reset linearization, if any exists
@@ -827,8 +825,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     /**
-     * Set the local variables for this scope. This should only be used by persistence
-     * layer.
+     * Set the local variables for this scope. This should only be used by persistence layer.
      */
     // FIXME: Consider making constructor for persistence to pass in all of this stuff
     public void setLocalVariables(Map<String, LocalVariable> variables) {
@@ -1179,7 +1176,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     /**
-     * Does this scope represent a module body?  (SSS FIXME: what about script or eval script bodies?)
+     * Does this scope represent a module body?
      */
     public boolean isModuleBody() {
         return false;

@@ -38,7 +38,8 @@ public class LocalOptimizationPass extends CompilerPass {
         }
 
         // SSS FIXME: What is this about? 
-        // Why 'Only after running local opts'?  Figure out and document.
+        // Why 'Only after running local opts'? Figure out and document.
+        //
         // Only after running local opts, compute various execution scope flags.
         s.computeScopeFlags();
 
@@ -70,18 +71,6 @@ public class LocalOptimizationPass extends CompilerPass {
 
     public static void runLocalOptsOnInstrList(IRScope s, ListIterator<Instr> instrs, boolean preCFG) {
         // Reset value map if this instruction is the start/end of a basic block
-        //
-        // Right now, calls are considered hard boundaries for optimization and
-        // information cannot be propagated across them!
-        //
-        // SSS FIXME: Rather than treat all calls with a broad brush, what we need
-        // is to capture different attributes about a call :
-        //   - uses closures
-        //   - known call target
-        //   - can modify scope,
-        //   - etc.
-        //
-        // This information is probably already present in the AST Inspector
         Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<Variable,List<Variable>>();
         while (instrs.hasNext()) {
@@ -133,6 +122,18 @@ public class LocalOptimizationPass extends CompilerPass {
             }
 
             // If the call has been optimized away in the previous step, it is no longer a hard boundary for opts!
+            //
+            // Right now, calls are considered hard boundaries for optimization and
+            // information cannot be propagated across them!
+            //
+            // SSS FIXME: Rather than treat all calls with a broad brush, what we need
+            // is to capture different attributes about a call :
+            //   - uses closures
+            //   - known call target
+            //   - can modify scope,
+            //   - etc.
+            //
+            // This information is present in instruction flags on CallBase. Use it!
             if ((preCFG && iop.endsBasicBlock()) || (iop.isCall() && !i.isDead())) {
                 valueMap = new HashMap<Operand,Operand>();
                 simplificationMap = new HashMap<Variable,List<Variable>>();
