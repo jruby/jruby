@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -33,31 +34,36 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     private final BranchProfile falseProfile = new BranchProfile();
 
     private final Object falseValue;
-    @Child protected DirectCallNode falseCall;
+    @Child protected DirectCallNode falseCallDirect;
 
     private final Assumption trueUnmodifiedAssumption;
     private final RubyMethod trueMethod;
     private final BranchProfile trueProfile = new BranchProfile();
 
     private final Object trueValue;
-    @Child protected DirectCallNode trueCall;
+    @Child protected DirectCallNode trueCallDirect;
+
+    @Child protected IndirectCallNode indirectCallNode;
 
     public CachedBooleanDispatchNode(
             RubyContext context, Object cachedName, DispatchNode next,
             Assumption falseUnmodifiedAssumption, Object falseValue, RubyMethod falseMethod,
-            Assumption trueUnmodifiedAssumption, Object trueValue, RubyMethod trueMethod) {
-        super(context, cachedName, next);
+            Assumption trueUnmodifiedAssumption, Object trueValue, RubyMethod trueMethod,
+            boolean indirect) {
+        super(context, cachedName, next, indirect);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
         this.falseValue = falseValue;
 
         if (falseMethod != null) {
-            falseCall = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
+            if (!indirect) {
+                falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
 
-            if (falseCall.isSplittable() && falseMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
-                insert(falseCall);
-                falseCall.split();
+                if (falseCallDirect.isSplittable() && falseMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                    insert(falseCallDirect);
+                    falseCallDirect.split();
+                }
             }
         }
 
@@ -66,12 +72,18 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
         this.trueValue = trueValue;
 
         if (trueMethod != null) {
-            trueCall = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
+            if (!indirect) {
+                trueCallDirect = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
 
-            if (trueCall.isSplittable() && trueMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
-                insert(trueCall);
-                trueCall.split();
+                if (trueCallDirect.isSplittable() && trueMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                    insert(trueCallDirect);
+                    trueCallDirect.split();
+                }
             }
+        }
+
+        if (indirect) {
+            indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
         }
     }
 
@@ -80,11 +92,12 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
         falseUnmodifiedAssumption = prev.falseUnmodifiedAssumption;
         falseMethod = prev.falseMethod;
         falseValue = prev.falseValue;
-        falseCall = prev.falseCall;
+        falseCallDirect = prev.falseCallDirect;
         trueUnmodifiedAssumption = prev.trueUnmodifiedAssumption;
         trueValue = prev.trueValue;
         trueMethod = prev.trueMethod;
-        trueCall = prev.trueCall;
+        trueCallDirect = prev.trueCallDirect;
+        indirectCallNode = prev.indirectCallNode;
     }
 
     @Specialization(guards = "guardName")
@@ -118,14 +131,26 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             }
 
             if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-                return trueCall.call(
-                        frame,
-                        RubyArguments.pack(
-                                trueMethod,
-                                trueMethod.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                if (isIndirect()) {
+                    return indirectCallNode.call(
+                            frame,
+                            trueMethod.getCallTarget(),
+                            RubyArguments.pack(
+                                    trueMethod,
+                                    trueMethod.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                } else {
+                    return trueCallDirect.call(
+                            frame,
+                            RubyArguments.pack(
+                                    trueMethod,
+                                    trueMethod.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                }
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                 return true;
             } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
@@ -152,14 +177,26 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             }
 
             if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-                return falseCall.call(
-                        frame,
-                        RubyArguments.pack(
-                                falseMethod,
-                                falseMethod.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                if (isIndirect()) {
+                    return indirectCallNode.call(
+                            frame,
+                            falseMethod.getCallTarget(),
+                            RubyArguments.pack(
+                                    falseMethod,
+                                    falseMethod.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                } else {
+                    return falseCallDirect.call(
+                            frame,
+                            RubyArguments.pack(
+                                    falseMethod,
+                                    falseMethod.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                }
             } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
                 return true;
             } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {

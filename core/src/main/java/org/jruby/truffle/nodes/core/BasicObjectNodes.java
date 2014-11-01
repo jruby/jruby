@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -229,7 +230,7 @@ public abstract class BasicObjectNodes {
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatchNode = DispatchHeadNode.onSelf(context);
+            dispatchNode = new DispatchHeadNode(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatchNode.forceUncached();

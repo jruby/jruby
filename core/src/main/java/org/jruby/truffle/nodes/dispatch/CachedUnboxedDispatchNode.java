@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.core.*;
@@ -35,18 +36,23 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
     private final RubyMethod method;
     @Child protected DirectCallNode callNode;
+    @Child protected IndirectCallNode indirectCallNode;
 
     public CachedUnboxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                      Class expectedClass, Assumption unmodifiedAssumption, Object value,
-                                     RubyMethod method) {
-        super(context, cachedName, next);
+                                     RubyMethod method, boolean indirect) {
+        super(context, cachedName, next, indirect);
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.value = value;
         this.method = method;
 
         if (method != null) {
-            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+            if (indirect) {
+                indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
+            } else {
+                callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+            }
         }
     }
 
@@ -57,6 +63,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         value = prev.value;
         method = prev.method;
         callNode = prev.callNode;
+        indirectCallNode = prev.indirectCallNode;
     }
 
     @Specialization(guards = {"isPrimitive", "guardName"})
@@ -103,13 +110,24 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         }
 
         if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-            return callNode.call(
-                    frame,
-                    RubyArguments.pack(
-                            method,
-                            method.getDeclarationFrame(),
-                            receiverObject,CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                            CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+            if (isIndirect()) {
+                return indirectCallNode.call(
+                        frame,
+                        method.getCallTarget(),
+                        RubyArguments.pack(
+                                method,
+                                method.getDeclarationFrame(),
+                                receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+            } else {
+                return callNode.call(
+                        frame,
+                        RubyArguments.pack(
+                                method,
+                                method.getDeclarationFrame(),
+                                receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+            }
         } else  if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
             return true;
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
