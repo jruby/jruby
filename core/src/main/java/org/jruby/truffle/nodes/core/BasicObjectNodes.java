@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.cli.Options;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -227,7 +228,12 @@ public abstract class BasicObjectNodes {
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+
             dispatchNode = DispatchHeadNode.onSelf(context);
+
+            if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                dispatchNode.forceUncached();
+            }
         }
 
         public SendNode(SendNode prev) {

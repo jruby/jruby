@@ -242,6 +242,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #const_missing", this));
                 }
 
+                if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                    return first.replace(UncachedDispatchNodeFactory.create(getContext(), ignoreVisibility,
+                            null, null, null, null, null, null, null));
+                }
+
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
                         receiverObject.getMetaClass(), method, null, null, null, null, null, null, null));
             }
@@ -270,6 +275,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 if (method == null) {
                     throw new RaiseException(getContext().getCoreLibrary().runtimeError(
                             receiverObject.toString() + " didn't have a #method_missing", this));
+                }
+
+                if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                    return first.replace(UncachedDispatchNodeFactory.create(getContext(), ignoreVisibility,
+                                    null, null, null, null, null, null, null));
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,

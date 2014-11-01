@@ -191,4 +191,9 @@ public class DispatchHeadNode extends Node {
         return first;
     }
 
+    public void forceUncached() {
+        adoptChildren();
+        first.replace(UncachedDispatchNodeFactory.create(context, ignoreVisibility, null, null, null, null, null, null, null));
+    }
+
 }
