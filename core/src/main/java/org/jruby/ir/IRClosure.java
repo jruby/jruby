@@ -293,7 +293,7 @@ public class IRClosure extends IRScope {
 
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         clone.nestingDepth  = this.nestingDepth;
-        // FIXME: This is fragile. Untangle this state.
+        // SSS FIXME: This is fragile. Untangle this state.
         // Why is this being copied over to InterpretedIRBlockBody?
         clone.setParameterList(this.parameterList);
         clone.isBeginEndBlock = this.isBeginEndBlock;

@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
@@ -12,9 +7,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author enebo
- */
 public class LocalVariable extends Variable implements DepthCloneable {
     protected final String name;
     protected final int scopeDepth;
@@ -93,7 +85,6 @@ public class LocalVariable extends Variable implements DepthCloneable {
         return new LocalVariable(name, scopeDepth, offset);
     }
 
-    // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
         return new LocalVariable(name, n, offset);
     }

@@ -34,6 +34,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.Options;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -1443,8 +1444,14 @@ public abstract class KernelNodes {
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+
             dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
             dispatchIgnoreVisibility = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+
+            if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                dispatch.forceUncached();
+                dispatchIgnoreVisibility.forceUncached();
+            }
         }
 
         public RespondToNode(RespondToNode prev) {

@@ -20,6 +20,7 @@ public class DispatchHeadNode extends Node {
 
     private final RubyContext context;
     private final boolean ignoreVisibility;
+    private final boolean indirect;
     private final boolean rubiniusPrimitive;
     private final Dispatch.MissingBehavior missingBehavior;
 
@@ -30,23 +31,24 @@ public class DispatchHeadNode extends Node {
     }
 
     public DispatchHeadNode(RubyContext context) {
-        this(context, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        this(context, false, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
-        this(context, false, false, missingBehavior);
+        this(context, false, false, false, missingBehavior);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, false, missingBehavior);
+        this(context, ignoreVisibility, false, false, missingBehavior);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean rubiniusPrimitive, Dispatch.MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, boolean rubiniusPrimitive, Dispatch.MissingBehavior missingBehavior) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
+        this.indirect = indirect;
         this.missingBehavior = missingBehavior;
         this.rubiniusPrimitive = rubiniusPrimitive;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
+        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior);
     }
 
     public Object call(
@@ -184,11 +186,16 @@ public class DispatchHeadNode extends Node {
     }
 
     public void reset(String reason) {
-        first.replace(new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior), reason);
+        first.replace(new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {
         return first;
+    }
+
+    public void forceUncached() {
+        adoptChildren();
+        first.replace(UncachedDispatchNodeFactory.create(context, ignoreVisibility, null, null, null, null, null, null, null));
     }
 
 }

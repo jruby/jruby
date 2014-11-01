@@ -80,8 +80,6 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr, Fixed
     private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currScope, currDynScope, temp);
 
-        // CON FIXME: Removed SSS hack for IRManager objects not having a static scope, so we can find and fix
-
         IRubyObject constant = staticScope.getConstantInner(constName);
 
         if (constant == null) {

@@ -9,8 +9,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- */
 // FIXME: Consider making argument error a single more generic instruction and combining with RaiseArgumentError
 public class RaiseRequiredKeywordArgumentError extends Instr implements FixedArityInstr {
     private String name;

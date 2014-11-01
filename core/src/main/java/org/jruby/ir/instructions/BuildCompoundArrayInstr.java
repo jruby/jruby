@@ -42,20 +42,10 @@ public class BuildCompoundArrayInstr extends Instr implements ResultInstr {
         this.result = v;
     }
 
-    public Operand getA1() {
-        return a1;
-    }
-
-    public Operand getA2() {
-        return a2;
-    }
-
-    // SSS FIXME: Consolidate identical methods
     public Operand getAppendingArg() {
         return a1;
     }
 
-    // SSS FIXME: Consolidate identical methods
     public Operand getAppendedArg() {
         return a2;
     }

@@ -505,8 +505,6 @@ public class CFG {
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
-
-        // SSS FIXME: Patch up rescued regions as well??
     }
 
     /**

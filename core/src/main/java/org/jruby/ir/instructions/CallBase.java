@@ -244,20 +244,6 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return false;
     }
 
-    // SSS FIXME: Unused currently.
-    // Can this call lead to ruby code getting modified?
-    // If we don't know what method we are calling, we assume it can (pessimistic, but safe!)
-    public boolean canModifyCode() {
-        return true;
-    }
-
-    // SSS FIXME: Unused currently.
-    // Regexp and IO calls can do this -- and since we do not know at IR-build time
-    // what the call target is, we have to conservatively assume yes
-    public boolean canSetDollarVars() {
-        return true;
-    }
-
     // SSS FIXME: Are all bases covered?
     // How about aliasing of 'call', 'eval', 'send', 'module_eval', 'class_eval', 'instance_eval'?
     private boolean computeEvalFlag() {

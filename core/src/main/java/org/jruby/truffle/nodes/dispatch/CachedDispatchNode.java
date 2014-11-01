@@ -22,12 +22,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
     private final RubySymbol cachedNameAsSymbol;
+    private final boolean indirect;
 
     @Child protected DispatchNode next;
 
     private final BranchProfile moreThanReferenceCompare = BranchProfile.create();
 
-    public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next) {
+    public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next, boolean indirect) {
         super(context);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
@@ -43,6 +44,8 @@ public abstract class CachedDispatchNode extends DispatchNode {
             throw new UnsupportedOperationException();
         }
 
+        this.indirect = indirect;
+
         this.next = next;
     }
 
@@ -51,6 +54,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         cachedName = prev.cachedName;
         cachedNameAsSymbol = prev.cachedNameAsSymbol;
         next = prev.next;
+        indirect = prev.indirect;
     }
 
     protected final boolean guardName(
@@ -79,6 +83,10 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     protected RubySymbol getCachedNameAsSymbol() {
         return cachedNameAsSymbol;
+    }
+
+    public boolean isIndirect() {
+        return indirect;
     }
 
 }

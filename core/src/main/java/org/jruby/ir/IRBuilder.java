@@ -526,8 +526,7 @@ public class IRBuilder {
         handleBreakAndReturnsInLambdas(closure);
 
         Variable lambda = s.createTemporaryVariable();
-        // SSS FIXME: Is this the right self here?
-        WrappedIRClosure lambdaBody = new WrappedIRClosure(s.getSelf(), closure);
+        WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
         addInstr(s, new BuildLambdaInstr(lambda, lambdaBody, node.getPosition()));
         return lambda;
     }
@@ -1024,7 +1023,7 @@ public class IRBuilder {
             labels.add(bodyLabel);
             Operand v1, v2;
             if (whenNode.getExpressionNodes() instanceof ListNode) {
-                // SSS FIXME: Note about refactoring:
+                // Note about refactoring:
                 // - BEQInstr has a quick implementation when the second operand is a boolean literal
                 //   If it can be fixed to do this even on the first operand, we can switch around
                 //   v1 and v2 in the UndefinedValue scenario and DRY out this code.
@@ -1053,7 +1052,7 @@ public class IRBuilder {
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
             // preserving the order (or maybe not, since we would have to sort the constants first
-            // in any case) for outputing jump tables in certain situations.
+            // in any case) for outputting jump tables in certain situations.
             //
             // add body to map for emitting later
             bodies.put(bodyLabel, whenNode.getBodyNode());
@@ -1062,13 +1061,13 @@ public class IRBuilder {
         // Jump to else in case nothing matches!
         addInstr(s, new JumpInstr(elseLabel));
 
-        // build "else" if it exists
+        // Build "else" if it exists
         if (hasElse) {
             labels.add(elseLabel);
             bodies.put(elseLabel, caseNode.getElseNode());
         }
 
-        // now emit bodies while preserving when clauses order
+        // Now, emit bodies while preserving when clauses order
         for (Label whenLabel: labels) {
             addInstr(s, new LabelInstr(whenLabel));
             Operand bodyValue = build(bodies.get(whenLabel), s);
@@ -1089,10 +1088,8 @@ public class IRBuilder {
             addInstr(s, new JumpInstr(endLabel));
         }
 
-        // close it out
+        // Close it out
         addInstr(s, new LabelInstr(endLabel));
-
-        // SSS: Got rid of the marker case label instruction
 
         return result;
     }
@@ -1239,7 +1236,7 @@ public class IRBuilder {
         boolean noPrivateConstants = false;
         Variable v = s.createTemporaryVariable();
 /**
- * SSS FIXME: Go back to a single instruction for now.
+ * SSS FIXME: Went back to a single instruction for now.
  *
  * Do not split search into lexical-search, inheritance-search, and const-missing instrs.
  *
@@ -1745,7 +1742,6 @@ public class IRBuilder {
                 ArgumentNode a = (ArgumentNode)node;
                 String argName = a.getName();
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.req, argName);
-                // SSS FIXME: _$0 feels fragile?
                 // Ignore duplicate "_" args in blocks
                 // (duplicate _ args are named "_$0")
                 if (!argName.equals("_$0")) {
@@ -1796,10 +1792,11 @@ public class IRBuilder {
 
         // For closures, we don't need the check arity call
         if (s instanceof IRMethod) {
-            // FIXME: Expensive to do this explicitly?  But, two advantages:
+            // Expensive to do this explicitly?  But, two advantages:
             // (a) on inlining, we'll be able to get rid of these checks in almost every case.
             // (b) compiler to bytecode will anyway generate this and this is explicit.
-            // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?
+            // For now, we are going explicit instruction route.
+            // But later, perhaps can make this implicit in the method setup preamble?
 
             addInstr(s, new CheckArityInstr(required, opt, rest, argsNode.hasKwargs(),
                     keyRest == null ? -1 : keyRest.getIndex()));
@@ -2817,13 +2814,13 @@ public class IRBuilder {
     // to make sure the value is not defined but nil.  Nil will trigger ||=
     // rhs expression.
     //
-    // Translate "x ||= y" --> "x = (is_defined(x) && is_true(x) ? x : y)" -->
-    //
-    //    v = -- build(x) should return a variable! --
-    //    f = is_true(v)
-    //    beq(f, true, L)
-    //    -- build(x = y) --
-    // L:
+    // "x ||= y"
+    // --> "x = (is_defined(x) && is_true(x) ? x : y)"
+    // --> v = -- build(x) should return a variable! --
+    //     f = is_true(v)
+    //     beq(f, true, L)
+    //     -- build(x = y) --
+    //   L:
     //
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode, IRScope s) {
         Label    l1 = s.getNewLabel();
@@ -3141,7 +3138,7 @@ public class IRBuilder {
                 outputExceptionCheck(s, build(exceptionList, s), exc, caughtLabel);
             }
         } else {
-            // FIXME:
+            // SSS FIXME:
             // rescue => e AND rescue implicitly EQQ the exception object with StandardError
             // We generate explicit IR for this test here.  But, this can lead to inconsistent
             // behavior (when compared to MRI) in certain scenarios.  See example:
@@ -3152,7 +3149,7 @@ public class IRBuilder {
             // MRI rescues the error, but we will raise an exception because of reassignment
             // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
             //
-            // SSS FIXME: Create a 'StandardError' operand type to eliminate this.
+            // Solution: Create a 'StandardError' operand type to eliminate this.
             Variable v = addResultInstr(s, new InheritanceSearchConstInstr(s.createTemporaryVariable(), s.getCurrentModuleVariable(), "StandardError", false));
             outputExceptionCheck(s, v, exc, caughtLabel);
         }

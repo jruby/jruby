@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -15,7 +14,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
-// identical except for 1 bit in interpret -- or will they diverge?
 public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     private Operand container;
     private final IRMethod method;
@@ -54,7 +52,6 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
         return new DefineClassMethodInstr(container.cloneForInlining(ii), method);
     }
 
-    // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject obj = (IRubyObject) container.retrieve(context, self, currScope, currDynScope, temp);

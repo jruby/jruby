@@ -48,6 +48,8 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr, FixedArit
     public Instr clone(CloneInfo info) {
         if (info instanceof SimpleCloneInfo) return new ReceiveClosureInstr(info.getRenamedVariable(result));
 
+        // SSS FIXME: This code below is for inlining and is untested.
+
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
         // SSS FIXME: This is not strictly correct -- we have to wrap the block into an

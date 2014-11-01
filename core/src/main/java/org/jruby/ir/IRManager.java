@@ -14,8 +14,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-/**
- */
 public class IRManager {
     public static final String SAFE_COMPILER_PASSES = "";
     public static final String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass";

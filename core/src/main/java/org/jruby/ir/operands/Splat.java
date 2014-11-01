@@ -46,13 +46,6 @@ public class Splat extends Operand implements DepthCloneable {
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newArray = array.getSimplifiedOperand(valueMap, force);
-        /*
-         * SSS FIXME:  Cannot convert this to an Array operand!
-         *
-        if (_array instanceof Variable) {
-        _array = ((Variable)_array).getValue(valueMap);
-        }
-         */
         return (newArray == array) ? this : new Splat(newArray, unsplatArgs);
     }
 

@@ -19,8 +19,9 @@ import java.util.Map;
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
 
-    // SSS FIXME: Note that if operands from the method are modified,
+    // Note that if operands from the method are modified,
     // callArgs would have to be updated as well
+    //
     // Call parameters
     private List<Operand> callArgs;
 

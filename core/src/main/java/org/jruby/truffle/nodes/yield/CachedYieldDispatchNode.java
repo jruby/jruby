@@ -18,6 +18,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.cli.Options;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedYieldDispatchNode extends YieldDispatchNode {
@@ -31,11 +32,11 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
         callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTarget());
         insert(callNode);
 
-        if (callNode.isCallTargetCloningAllowed()) {
+        if (Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load() && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
         }
 
-        if (callNode.isInlinable()) {
+        if (Options.TRUFFLE_INLINER_ALWAYS_INLINE_YIELD.load() && callNode.isInlinable()) {
             callNode.forceInlining();
         }
 

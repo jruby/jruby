@@ -52,6 +52,6 @@ public @interface CoreMethod {
 
     int[] lowerFixnumParameters() default {};
 
-    boolean alwaysSplit() default false;
+    boolean alwaysSplit() default true;
 
 }
