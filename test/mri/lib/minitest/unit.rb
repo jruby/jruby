@@ -1362,7 +1362,39 @@ module MiniTest
 
       def self.inherited klass # :nodoc:
         @@test_suites[klass] = true
-        super
+        result = super
+
+        if ENV["EXCLUDES"]
+          begin
+            exclude_src = File.read File.join(ENV["EXCLUDES"], klass.inspect.gsub("::", "/") + ".rb")
+            excludes = {}
+            klass.send :instance_variable_set, :@excludes, excludes
+
+            klass.instance_eval do
+              def exclude(name, reason)
+                @excludes[name] = reason
+              end
+            end
+
+            klass.class_eval exclude_src
+          rescue Errno::ENOENT
+            # no excludes for this class
+          end
+        end
+
+        result
+      end
+
+      class << self
+        alias method_added_without_excludes method_added
+      end
+      def self.method_added(name)
+        if @excludes && @excludes[name]
+          remove_method name
+          return false
+        end
+
+        method_added_without_excludes(name)
       end
 
       def self.test_order # :nodoc:
