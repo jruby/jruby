@@ -1393,7 +1393,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleFunction = true)
+    @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
     public abstract static class RandNode extends CoreMethodNode {
 
         public RandNode(RubyContext context, SourceSection sourceSection) {
@@ -1405,8 +1405,26 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public double rand() {
-            return Math.random();
+        public double rand(UndefinedPlaceholder undefined) {
+            return getContext().getRandom().nextDouble();
+        }
+
+        @Specialization(guards = "isZero")
+        public double randZero(int max) {
+            return getContext().getRandom().nextDouble();
+        }
+
+        @Specialization(guards = "isNonZero")
+        public int randNonZero(int max) {
+            return getContext().getRandom().nextInt(max);
+        }
+
+        protected boolean isZero(int max) {
+            return max == 0;
+        }
+
+        protected boolean isNonZero(int max) {
+            return max != 0;
         }
 
     }

@@ -1779,9 +1779,6 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                // TODO(CS): cast node around the dispatch
-                notDesignedForCompilation();
-
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
                 }
