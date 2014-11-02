@@ -252,7 +252,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
                       <arg value="-S" />
                       <arg value="rake" />
                       <arg value="${task}" />
@@ -280,7 +280,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -322,7 +322,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -364,7 +364,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
                       <arg value="-J-server" />
                       <arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />
                       <arg value="-X+T" />
