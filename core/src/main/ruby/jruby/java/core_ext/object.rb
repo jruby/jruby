@@ -22,6 +22,14 @@ class Object
     import_classes.map do |import_class|
       case import_class
       when String
+        cc = java.lang.Character
+        valid_name = import_class.split(".").all? do |frag|
+          cc.java_identifier_start? frag[0].ord and
+          frag.each_char.all? {|c| cc.java_identifier_part? c.ord }
+        end
+        unless valid_name
+          raise ArgumentError.new "not a valid Java identifier: #{import_class}"
+        end
         # pull in the class
         import_class = JavaUtilities.get_proxy_class(import_class)
       when Module
