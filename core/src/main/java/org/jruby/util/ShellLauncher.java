@@ -1168,12 +1168,20 @@ public class ShellLauncher {
         }
 
         public void verifyExecutableForDirect() {
-            verifyExecutable();
-            execArgs = args;
-            try {
-                execArgs[0] = executableFile.getCanonicalPath();
-            } catch (IOException ioe) {
-                // can't get the canonical path, will use as-is
+            if (isCmdBuiltin(args[0].trim())) {
+                execArgs = new String[args.length + 2];
+                execArgs[0] = shell;
+                execArgs[1] = "/c";
+                execArgs[2] = args[0].trim();
+                System.arraycopy(args, 1, execArgs, 3, args.length - 1);
+            } else {
+                verifyExecutable();
+                execArgs = args;
+                try {
+                    execArgs[0] = executableFile.getCanonicalPath();
+                } catch (IOException ioe) {
+                    // can't get the canonical path, will use as-is
+                }
             }
         }
 
