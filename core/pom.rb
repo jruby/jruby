@@ -44,7 +44,6 @@ project 'JRuby Core' do
   jar 'org.jruby.joni:joni:2.1.3'
   jar 'org.jruby.extras:bytelist:1.0.12-SNAPSHOT'
   jar 'org.jruby.jcodings:jcodings:1.0.12-SNAPSHOT'
-  jar 'org.jruby:yecht:1.0'
 
   jar 'com.headius:invokebinder:1.4-SNAPSHOT'
   jar 'com.headius:options:1.1'
