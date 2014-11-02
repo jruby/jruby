@@ -1037,6 +1037,7 @@ public class RubyClass extends RubyModule {
         }
     }
     
+    @Override
     public void addInvalidatorsAndFlush(List<Invalidator> invalidators) {
         // add this class's invalidators to the aggregate
         invalidators.add(methodInvalidator);

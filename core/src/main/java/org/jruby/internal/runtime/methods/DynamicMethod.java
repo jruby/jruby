@@ -351,6 +351,17 @@ public abstract class DynamicMethod {
     }
 
     /**
+     * Whether this method is the "null" method, used to stop method
+     * name resolution loops. Only returns true for NullMethod instances,
+     * of which there should be only one (a singleton).
+     *
+     * @return true if this method is the undefined method; false otherwise
+     */
+    public final boolean isNull() {
+        return this == NullMethod.INSTANCE;
+    }
+
+    /**
      * Retrieve the arity of this method, used for reporting arity to Ruby
      * code. This arity may or may not reflect the actual specific or variable
      * arities of the referenced method.
