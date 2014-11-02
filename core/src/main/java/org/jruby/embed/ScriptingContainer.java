@@ -252,8 +252,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     private void initConfig() throws URISyntaxException, UnsupportedEncodingException {
-        List<String> paths = SystemPropertyCatcher.findLoadPaths();
-        provider.getRubyInstanceConfig().setLoadPaths(paths);
         String home = SystemPropertyCatcher.findJRubyHome(this);
         if (home != null) {
         	provider.getRubyInstanceConfig().setJRubyHome(home);
