@@ -27,17 +27,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import junit.framework.TestCase;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyException;
 import org.jruby.RubyString;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestRubyException extends TestCase {
 
@@ -53,29 +52,38 @@ public class TestRubyException extends TestCase {
 		setBackTrace(18);
 		
 		String[] lines = printError();
-		
-		assertEquals(expectedTraceLine(1), lines[0]);
-		assertEquals(expectedTraceLine(RubyException.TRACE_HEAD + 1), lines[RubyException.TRACE_HEAD]);
+
+		assertEquals(expectedTraceLine(0), lines[0]);
+		assertEquals(expectedTraceLine(RubyException.TRACE_HEAD), lines[RubyException.TRACE_HEAD]);
 	}
 
 	public void testPrintNilBacktrace() throws Exception {
-	    exception.set_backtrace(interpreter.getNil());
+		exception.set_backtrace(interpreter.getNil());
 		
 		String[] lines = printError();
 		
 		assertEquals(0, lines.length);
 	}
 
+	public void testPrintBackTraceWithString() throws Exception {
+		exception.set_backtrace(RubyArray.newArray(interpreter, RubyString.newString(interpreter, testLine(0))));
+
+		String[] lines = printError();
+
+		assertEquals(1, lines.length);
+		assertEquals(expectedTraceLine(0), lines[0]);
+	}
+
 	private String[] printError() {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(2048);
 		PrintStream stream = new PrintStream(byteArrayOutputStream);
-		exception.printBacktrace(stream, 1);
+		exception.printBacktrace(stream);
 		String output = new String(byteArrayOutputStream.toByteArray());
 		if (output.trim().length() == 0) {
 		    return new String[0];
-	    } else {
+	    	} else {
 		    return output.split("\n");
-        }
+        	}
 	}
 
 	private void setBackTrace(int lineCount) {
