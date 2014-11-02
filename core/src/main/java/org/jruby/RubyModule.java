@@ -2429,14 +2429,17 @@ public class RubyModule extends RubyObject {
 
             // scan class hierarchy for module
             for (RubyClass nextClass = this.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
-                if (doesTheClassWrapTheModule(nextClass, nextModule)) {
-                    // next in hierarchy is an included version of the module we're attempting,
-                    // so we skip including it
-                    
-                    // if we haven't encountered a real superclass, use the found module as the new inclusion point
-                    if (!superclassSeen) currentInclusionPoint = nextClass;
-                    
-                    continue ModuleLoop;
+                if (nextClass.isIncluded()) {
+                    // does the class equal the module
+                    if (nextClass.getNonIncludedClass() == nextModule.getNonIncludedClass()) {
+                        // next in hierarchy is an included version of the module we're attempting,
+                        // so we skip including it
+
+                        // if we haven't encountered a real superclass, use the found module as the new inclusion point
+                        if (!superclassSeen) currentInclusionPoint = nextClass;
+
+                        continue ModuleLoop;
+                    }
                 } else {
                     superclassSeen = true;
                 }
