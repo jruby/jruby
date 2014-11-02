@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.atomic.*;
 
 import com.oracle.truffle.api.instrument.SourceCallback;
@@ -60,6 +61,7 @@ public class RubyContext extends ExecutionContext {
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Warnings warnings;
     private final SafepointManager safepointManager;
+    private final Random random = new Random();
 
     // TODO: Wrong place for this, only during parsing but be practical for now
     private LexicalScope lexicalScope;
@@ -389,5 +391,9 @@ public class RubyContext extends ExecutionContext {
 
     public SafepointManager getSafepointManager() {
         return safepointManager;
+    }
+
+    public Random getRandom() {
+        return random;
     }
 }
