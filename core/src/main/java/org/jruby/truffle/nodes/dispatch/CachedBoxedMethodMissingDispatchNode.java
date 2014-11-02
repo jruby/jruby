@@ -52,18 +52,20 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         } else {
             callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-            // TODO(CS): check shared method info should split
-
             /*
-             * The splitter/inliner since Truffle 0.5 has a bug where it isn't splitting/inlining this call site - it should
-             * be fixed in 0.6, but until then we'll force it. Turn off (to test) with
-             * -Xtruffle.call.force_split_inline_missing = false.
+             * The way that #method_missing is used is usually as an indirection to call some other method, and
+             * possibly to modify the arguments. In both cases, but especially the latter, it makes a lot of sense
+             * to manually clone the call target and to inline it.
              */
 
-            if (Options.TRUFFLE_CALL_FORCE_SPLIT_INLINE_MISSING.load()) {
+            if (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load() || method.getSharedMethodInfo().shouldAlwaysSplit()) {
                 insert(callNode);
                 callNode.split();
-                callNode.forceInlining();
+            }
+
+            if (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load()) {
+                insert(callNode);
+                callNode.split();
             }
         }
     }
