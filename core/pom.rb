@@ -218,6 +218,8 @@ project 'JRuby Core' do
                    :phase => 'package',
                    'relocations' => [ { 'pattern' => 'org.objectweb',
                                         'shadedPattern' => 'org.jruby.org.objectweb' } ],
+                   :filters => [ { :artifact => 'org.jruby:yecht',
+                                   :excludes => [ 'yaml/**', 'okay/**', '*.rb' ] } ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main' } ] )
@@ -279,6 +281,8 @@ project 'JRuby Core' do
                        'shadedClassifierName' =>  'complete',
                        'relocations' => [ { 'pattern' =>  'org.objectweb',
                                             'shadedPattern' =>  'org.jruby.org.objectweb' } ],
+                       :filters => [ { :artifact => 'org.jruby:yecht',
+                                       :excludes => [ 'yaml/**', 'okay/**', '*.rb' ] } ],
                        'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                              'mainClass' => 'org.jruby.Main' } ] )
       end
