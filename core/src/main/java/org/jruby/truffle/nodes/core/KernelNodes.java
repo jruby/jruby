@@ -1454,7 +1454,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "respond_to?", required = 1, optional = 1, alwaysSplit = true)
+    @CoreMethod(names = "respond_to?", required = 1, optional = 1)
     public abstract static class RespondToNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode dispatch;

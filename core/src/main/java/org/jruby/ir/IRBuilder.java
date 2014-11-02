@@ -2810,10 +2810,6 @@ public class IRBuilder {
         return result;
     }
 
-    // FIXME: This logic is not quite right....marked extra branch checks
-    // to make sure the value is not defined but nil.  Nil will trigger ||=
-    // rhs expression.
-    //
     // "x ||= y"
     // --> "x = (is_defined(x) && is_true(x) ? x : y)"
     // --> v = -- build(x) should return a variable! --
