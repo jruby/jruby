@@ -409,23 +409,13 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "eql?", required = 1)
-    public abstract static class EqlNode extends CoreMethodNode {
-
-        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-
+    public abstract static class EqlNode extends BasicObjectNodes.ReferenceEqualNode {
         public EqlNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
         public EqlNode(EqlNode prev) {
             super(prev);
-            referenceEqualNode = prev.referenceEqualNode;
-        }
-
-        @Specialization
-        public boolean equal(VirtualFrame frame, Object a, Object b) {
-            return referenceEqualNode.executeEqual(frame, a, b);
         }
     }
 
