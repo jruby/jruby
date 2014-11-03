@@ -106,22 +106,44 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(double a, double b) { return a == b; }
         @Specialization public boolean equal(BigInteger a, BigInteger b) { return a == b; }
 
-        @Specialization(guards = "bothUnboxable")
+        @Specialization(guards = {"firstUnboxable", "secondUnboxable"})
         public boolean equalUnboxable(Object a, Object b) {
             return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
         }
 
+        @Specialization(guards = {"firstUnboxable", "!secondUnboxable"})
+        public boolean equalFirstUnboxable(Object a, Object b) {
+            return ((Unboxable) a).unbox().equals(b);
+        }
+
+        @Specialization(guards = {"!firstUnboxable", "secondUnboxable"})
+        public boolean equalSecondUnboxable(Object a, Object b) {
+            return a.equals(((Unboxable) b).unbox());
+        }
+
         @Specialization
         public boolean equal(Object a, Object b) {
-            if (a instanceof Unboxable && b instanceof Unboxable) {
-                return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
+            if (a instanceof Unboxable) {
+                if (b instanceof Unboxable) {
+                    return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
+                } else {
+                    return ((Unboxable) a).unbox().equals(b);
+                }
             } else {
-                return a == b;
+                if (b instanceof Unboxable) {
+                    return a.equals(((Unboxable) b).unbox());
+                } else {
+                    return a == b;
+                }
             }
         }
 
-        protected boolean bothUnboxable(Object a, Object b) {
-            return a instanceof Unboxable && b instanceof Unboxable;
+        protected boolean firstUnboxable(Object a, Object b) {
+            return a instanceof Unboxable;
+        }
+
+        protected boolean secondUnboxable(Object a, Object b) {
+            return b instanceof Unboxable;
         }
 
     }
