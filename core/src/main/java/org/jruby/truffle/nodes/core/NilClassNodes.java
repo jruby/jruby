@@ -17,41 +17,6 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "NilClass")
 public abstract class NilClassNodes {
 
-    @CoreMethod(names = "!", needsSelf = false)
-    public abstract static class NotNode extends CoreMethodNode {
-
-        public NotNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotNode(NotNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean not() {
-            return true;
-        }
-    }
-
-    @CoreMethod(names = "!=", needsSelf = false, required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(Object b) {
-            return !(b == getContext().getCoreLibrary().getNilObject() || b instanceof RubyNilClass);
-        }
-
-    }
-
     @CoreMethod(names = "inspect", needsSelf = false)
     public abstract static class InpsectNode extends CoreMethodNode {
 

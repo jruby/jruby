@@ -424,38 +424,6 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, double b) {
-            return a.compareTo(BigInteger.valueOf((long) b)) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, BigInteger b) {
-            return a.compareTo(b) != 0;
-        }
-    }
-
     @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 

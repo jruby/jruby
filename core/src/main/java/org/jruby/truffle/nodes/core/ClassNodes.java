@@ -85,25 +85,6 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "to_s")
-    public abstract static class ToSNode extends CoreMethodNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString toS(RubyClass rubyClass) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(rubyClass.getName());
-        }
-    }
-
     @CoreMethod(names = "class_variables")
     public abstract static class ClassVariablesNode extends CoreMethodNode {
 

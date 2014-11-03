@@ -862,58 +862,6 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(int a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
-        }
-    }
-
     @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 

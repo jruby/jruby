@@ -91,26 +91,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "!~", required = 1)
-    public abstract static class NotMatchOperatorNode extends CoreMethodNode {
-
-        public NotMatchOperatorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotMatchOperatorNode(NotMatchOperatorNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyString string) {
-            notDesignedForCompilation();
-
-            return regexp.matchOperator(string.toString()) == getContext().getCoreLibrary().getNilObject();
-        }
-
-    }
-
     @CoreMethod(names = "escape", onSingleton = true, required = 1)
     public abstract static class EscapeNode extends CoreMethodNode {
 
