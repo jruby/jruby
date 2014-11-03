@@ -452,11 +452,18 @@ public class RubyFloat extends RubyNumeric {
     
     @JRubyMethod(name = "**", required = 1)
     public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
-        double d_other = ((RubyNumeric) other).getDoubleValue();
-        if (value < 0 && (d_other != Math.round(d_other))) {
-            return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
-        } else {
-            return op_pow(context, other);
+        switch (other.getMetaClass().getClassIndex()) {
+            case FIXNUM:
+            case BIGNUM:
+            case FLOAT:
+                double d_other = ((RubyNumeric) other).getDoubleValue();
+                if (value < 0 && (d_other != Math.round(d_other))) {
+                    return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
+                } else {
+                    return op_pow(context, other);
+                }
+            default:
+                return coerceBin(context, "**", other);
         }
     }
 
