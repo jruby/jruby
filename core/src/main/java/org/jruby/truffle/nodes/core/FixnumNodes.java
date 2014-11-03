@@ -346,7 +346,7 @@ public abstract class FixnumNodes {
 
             BigInteger result = BigInteger.ONE;
 
-            for (BigInteger n = BigInteger.ZERO; b.compareTo(b) < 0; n = n.add(BigInteger.ONE)) {
+            for (BigInteger n = BigInteger.ZERO; b.compareTo(n) < 0; n = n.add(BigInteger.ONE)) {
                 result = result.multiply(bigA);
             }
 
@@ -781,7 +781,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean equal(int a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
+            return BigInteger.valueOf(a).equals(b);
         }
 
         @Specialization
@@ -801,7 +801,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean equal(long a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
+            return BigInteger.valueOf(a).equals(b);
         }
 
         @Fallback

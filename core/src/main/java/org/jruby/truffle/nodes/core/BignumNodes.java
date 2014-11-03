@@ -192,9 +192,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public BigInteger pow(BigInteger a, BigInteger b) {
+            notDesignedForCompilation();
+
             BigInteger result = BigInteger.ONE;
 
-            for (BigInteger n = BigInteger.ZERO; b.compareTo(b) < 0; n = n.add(BigInteger.ONE)) {
+            for (BigInteger n = BigInteger.ZERO; b.compareTo(n) < 0; n = n.add(BigInteger.ONE)) {
                 result = SlowPathBigInteger.multiply(result, a);
             }
 
@@ -373,22 +375,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(BigInteger a, int b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
+            return a.equals(BigInteger.valueOf(b));
         }
 
         @Specialization
         public boolean equal(BigInteger a, long b) {
-            return SlowPathBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
+            return a.equals(BigInteger.valueOf(b));
         }
 
         @Specialization
         public boolean equal(BigInteger a, double b) {
-            return a.compareTo(BigInteger.valueOf((long) b)) == 0;
+            return a.equals(BigInteger.valueOf((long) b));
         }
 
         @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
+            return a.equals(b);
         }
     }
 
@@ -652,7 +654,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object nonZero(BigInteger value) {
-            if (value.compareTo(BigInteger.ZERO) == 0) {
+            if (value.equals(BigInteger.ZERO)) {
                 return false;
             } else {
                 return value;
