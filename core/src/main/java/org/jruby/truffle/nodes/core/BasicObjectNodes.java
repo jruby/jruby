@@ -27,7 +27,7 @@ import org.jruby.util.cli.Options;
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
 
-    @CoreMethod(names = "!", needsSelf = false)
+    @CoreMethod(names = "!")
     public abstract static class NotNode extends CoreMethodNode {
 
         public NotNode(RubyContext context, SourceSection sourceSection) {
@@ -39,8 +39,8 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public boolean not() {
-            return false;
+        public boolean not(Object value) {
+            return !getContext().getCoreLibrary().isTruthy(value);
         }
 
     }
@@ -62,8 +62,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean equal(VirtualFrame frame, Object a, Object b) {
-            // TODO(CS): cast
-            return !(boolean) equalNode.call(frame, a, "==", null, b);
+            return !equalNode.callIsTruthy(frame, a, "==", null, b);
         }
 
     }

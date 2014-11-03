@@ -67,8 +67,7 @@ public abstract class KernelNodes {
         public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
             if (referenceEqualNode.executeEqual(frame, a, b))
                 return true;
-            // TODO(CS): cast
-            return (boolean) equalNode.call(frame, a, "==", null, b);
+            return equalNode.callIsTruthy(frame, a, "==", null, b);
         }
 
     }
