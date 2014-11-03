@@ -72,7 +72,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "=~", required = 1)
+    @CoreMethod(names = "=~", required = 1, needsSelf = false)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -84,38 +84,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
+        public RubyNilClass equal(Object other) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -123,47 +93,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode matchNode;
+
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            matchNode = new DispatchHeadNode(context);
         }
 
         public NotMatchNode(NotMatchNode prev) {
             super(prev);
+            matchNode = prev.matchNode;
         }
 
         @Specialization
-        public boolean notMatch(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean notMatch(boolean a, boolean b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(int a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(long a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(double a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(BigInteger a, BigInteger b) {
-            return a.compareTo(b) != 0;
-        }
-
-        @Specialization
-        public boolean notMatch(RubyBasicObject a, RubyBasicObject b) {
-            return a != b;
+        public boolean notMatch(VirtualFrame frame, Object self, Object other) {
+            return !matchNode.callIsTruthy(frame, self, "=~", null, other);
         }
 
     }
