@@ -1474,6 +1474,17 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "send", needsBlock = true, required = 1, argumentsAsArray = true)
+    public abstract static class SendNode extends BasicObjectNodes.SendNode {
+        public SendNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SendNode(SendNode prev) {
+            super(prev);
+        }
+    }
+
     @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)
     public abstract static class SetTraceFuncNode extends CoreMethodNode {
 
