@@ -51,7 +51,11 @@ public class AddMethodNode extends RubyNode {
                 throw new RuntimeException(e);
             }
 
-            moduleFunctionFlag = moduleFunctionObject != null && (boolean) moduleFunctionObject;
+            if (moduleFunctionObject instanceof Boolean) {
+                moduleFunctionFlag = (boolean) moduleFunctionObject;
+            } else {
+                moduleFunctionFlag = false;
+            }
         }
 
         RubyModule module;
