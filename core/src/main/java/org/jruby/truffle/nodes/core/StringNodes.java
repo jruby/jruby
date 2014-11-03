@@ -86,21 +86,19 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
-            return false;
-        }
-
         @CompilerDirectives.SlowPath
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
             return a.equals(b.toString());
         }
 
-        @CompilerDirectives.SlowPath
         @Specialization
-        public boolean equal(RubyString a, RubySymbol b) {
-            return equal(a, b.toRubyString());
+        public boolean equal(RubyString a, Object b) {
+            if (b instanceof RubyString) {
+                return equal(a, (RubyString) b);
+            } else {
+                return false;
+            }
         }
     }
 
