@@ -1596,7 +1596,20 @@ public class RubyYaccLexer {
             return identifierToken(Tokens.tGVAR, tokenBuffer.toString().intern());
         }
     }
-    
+
+    // FIXME: I added number gvars here and they did not.
+    public boolean isGlobalCharPunct(int c) {
+        switch (c) {
+            case '_': case '~': case '*': case '$': case '?': case '!': case '@':
+            case '/': case '\\': case ';': case ',': case '.': case '=': case ':':
+            case '<': case '>': case '\"': case '-': case '&': case '`': case '\'':
+            case '+': case '1': case '2': case '3': case '4': case '5': case '6':
+            case '7': case '8': case '9': case '0':
+                return true;
+        }
+        return isIdentifierChar(c);
+    }
+
     private int dot() throws IOException {
         int c;
         
