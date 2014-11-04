@@ -872,4 +872,21 @@ ary
       expect(x).to eq Object
     end
   end
+
+  it "splats arguments to super" do
+    run '
+      class SplatSuperArgs0
+        def foo(a, b, c)
+          a + b + c
+        end
+      end
+      class SplatSuperArgs1 < SplatSuperArgs0
+        def foo(*args)
+          super(*args)
+        end
+      end
+      SplatSuperArgs1.new.foo(1, 2, 3)' do |x|
+      expect(x).to eq 6
+    end
+  end
 end
