@@ -21,33 +21,6 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
         super(objectClass);
     }
 
-    /**
-     * Convert a value to a boolean, without doing any lookup.
-     */
-    public static boolean toBoolean(Object value) {
-        RubyNode.notDesignedForCompilation();
-
-        assert value != null;
-
-        if (value instanceof RubyNilClass) {
-            return false;
-        }
-
-        if (value instanceof Boolean) {
-            return (boolean) value;
-        }
-
-        if (value instanceof RubyTrueClass) {
-            return true;
-        }
-
-        if (value instanceof RubyFalseClass) {
-            return false;
-        }
-
-        return true;
-    }
-
     public Object unbox() {
         return true;
     }

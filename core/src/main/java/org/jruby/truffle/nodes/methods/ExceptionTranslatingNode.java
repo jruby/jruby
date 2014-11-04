@@ -63,7 +63,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyBasicObject translate(ArithmeticException exception) {
-        if ((boolean) Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             exception.printStackTrace();
         }
 
@@ -71,7 +71,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyBasicObject translate(UnsupportedSpecializationException exception) {
-        if ((boolean) Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             exception.printStackTrace();
         }
 

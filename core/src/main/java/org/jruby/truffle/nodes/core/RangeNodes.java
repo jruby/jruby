@@ -234,16 +234,16 @@ public abstract class RangeNodes {
         public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
             notDesignedForCompilation();
 
-            if ((boolean) callLess.call(frame, value, "<", null, range.getBegin())) {
+            if (callLess.callIsTruthy(frame, value, "<", null, range.getBegin())) {
                 return false;
             }
 
             if (range.doesExcludeEnd()) {
-                if ((boolean) callGreaterEqual.call(frame, value, ">=", null, range.getEnd())) {
+                if (callGreaterEqual.callIsTruthy(frame, value, ">=", null, range.getEnd())) {
                     return false;
                 }
             } else {
-                if ((boolean) callGreater.call(frame, value, ">", null, range.getEnd())) {
+                if (callGreater.callIsTruthy(frame, value, ">", null, range.getEnd())) {
                     return false;
                 }
             }

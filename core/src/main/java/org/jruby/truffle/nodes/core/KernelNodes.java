@@ -67,13 +67,12 @@ public abstract class KernelNodes {
         public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
             if (referenceEqualNode.executeEqual(frame, a, b))
                 return true;
-            // TODO(CS): cast
-            return (boolean) equalNode.call(frame, a, "==", null, b);
+            return equalNode.callIsTruthy(frame, a, "==", null, b);
         }
 
     }
 
-    @CoreMethod(names = "=~", required = 1)
+    @CoreMethod(names = "=~", required = 1, needsSelf = false)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -85,38 +84,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
+        public RubyNilClass equal(Object other) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -124,47 +93,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode matchNode;
+
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            matchNode = new DispatchHeadNode(context);
         }
 
         public NotMatchNode(NotMatchNode prev) {
             super(prev);
+            matchNode = prev.matchNode;
         }
 
         @Specialization
-        public boolean notMatch(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean notMatch(boolean a, boolean b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(int a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(long a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(double a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(BigInteger a, BigInteger b) {
-            return a.compareTo(b) != 0;
-        }
-
-        @Specialization
-        public boolean notMatch(RubyBasicObject a, RubyBasicObject b) {
-            return a != b;
+        public boolean notMatch(VirtualFrame frame, Object self, Object other) {
+            return !matchNode.callIsTruthy(frame, self, "=~", null, other);
         }
 
     }
@@ -466,23 +409,13 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "eql?", required = 1)
-    public abstract static class EqlNode extends CoreMethodNode {
-
-        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-
+    public abstract static class EqlNode extends BasicObjectNodes.ReferenceEqualNode {
         public EqlNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
         public EqlNode(EqlNode prev) {
             super(prev);
-            referenceEqualNode = prev.referenceEqualNode;
-        }
-
-        @Specialization
-        public boolean equal(VirtualFrame frame, Object a, Object b) {
-            return referenceEqualNode.executeEqual(frame, a, b);
         }
     }
 
@@ -1539,6 +1472,17 @@ public abstract class KernelNodes {
             return false;
         }
 
+    }
+
+    @CoreMethod(names = "send", needsBlock = true, required = 1, argumentsAsArray = true)
+    public abstract static class SendNode extends BasicObjectNodes.SendNode {
+        public SendNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SendNode(SendNode prev) {
+            super(prev);
+        }
     }
 
     @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)

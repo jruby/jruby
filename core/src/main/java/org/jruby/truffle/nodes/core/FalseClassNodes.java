@@ -17,49 +17,6 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "FalseClass")
 public abstract class FalseClassNodes {
 
-    @CoreMethod(names = "!", needsSelf = false)
-    public abstract static class NotNode extends CoreMethodNode {
-
-        public NotNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotNode(NotNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean not() {
-            return true;
-        }
-
-    }
-
-    @CoreMethod(names = {"==", "=~"}, needsSelf = false, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(boolean other) {
-            return !other;
-        }
-
-        @Specialization
-        public boolean equal(Object other) {
-            notDesignedForCompilation();
-
-            return other instanceof Boolean && !((boolean) other);
-        }
-
-    }
-
     @CoreMethod(names = "^", needsSelf = false, required = 1)
     public abstract static class XorNode extends CoreMethodNode {
 

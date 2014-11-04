@@ -11,12 +11,15 @@ package org.jruby.truffle.nodes.literal;
 
 import java.math.*;
 
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
+@NodeInfo(cost = NodeCost.NONE)
 public class ObjectLiteralNode extends RubyNode {
 
     private final Object object;

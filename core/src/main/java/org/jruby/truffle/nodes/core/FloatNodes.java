@@ -386,38 +386,6 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(double a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(double a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(double a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(double a, BigInteger b) {
-            return a != RuntimeBigInteger.doubleValue(b);
-        }
-    }
-
     @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 

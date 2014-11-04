@@ -192,6 +192,8 @@ public abstract class BignumNodes {
 
         @Specialization
         public BigInteger pow(BigInteger a, BigInteger b) {
+            notDesignedForCompilation();
+
             BigInteger result = BigInteger.ONE;
 
             for (BigInteger n = BigInteger.ZERO; b.compareTo(b) < 0; n = n.add(BigInteger.ONE)) {
@@ -373,22 +375,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(BigInteger a, int b) {
-            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
+            return a.equals(BigInteger.valueOf(b));
         }
 
         @Specialization
         public boolean equal(BigInteger a, long b) {
-            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) == 0;
+            return a.equals(BigInteger.valueOf(b));
         }
 
         @Specialization
         public boolean equal(BigInteger a, double b) {
-            return a.compareTo(BigInteger.valueOf((long) b)) == 0;
+            return a.equals(BigInteger.valueOf((long) b));
         }
 
         @Specialization
         public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
+            return a.equals(b);
         }
     }
 
@@ -421,38 +423,6 @@ public abstract class BignumNodes {
         @Specialization
         public int compare(BigInteger a, BigInteger b) {
             return a.compareTo(b);
-        }
-    }
-
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, int b) {
-            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, long b) {
-            return RuntimeBigInteger.compareTo(a, BigInteger.valueOf(b)) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, double b) {
-            return a.compareTo(BigInteger.valueOf((long) b)) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(BigInteger a, BigInteger b) {
-            return a.compareTo(b) != 0;
         }
     }
 
@@ -684,7 +654,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object nonZero(BigInteger value) {
-            if (value.compareTo(BigInteger.ZERO) == 0) {
+            if (value.equals(BigInteger.ZERO)) {
                 return false;
             } else {
                 return value;

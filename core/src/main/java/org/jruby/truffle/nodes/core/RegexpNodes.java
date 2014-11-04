@@ -63,16 +63,12 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode matchNode;
-
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = new DispatchHeadNode(context);
         }
 
         public MatchOperatorNode(MatchOperatorNode prev) {
             super(prev);
-            matchNode = prev.matchNode;
         }
 
         @Specialization
@@ -83,30 +79,14 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject other) {
+        public Object match(RubyRegexp regexp, RubyBasicObject other) {
             notDesignedForCompilation();
 
-            return matchNode.call(frame, other, "=~", null, regexp);
-        }
-
-    }
-
-    @CoreMethod(names = "!~", required = 1)
-    public abstract static class NotMatchOperatorNode extends CoreMethodNode {
-
-        public NotMatchOperatorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotMatchOperatorNode(NotMatchOperatorNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyString string) {
-            notDesignedForCompilation();
-
-            return regexp.matchOperator(string.toString()) == getContext().getCoreLibrary().getNilObject();
+            if (other instanceof RubyString) {
+                return match(regexp, (RubyString) other);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
         }
 
     }

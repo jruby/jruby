@@ -425,6 +425,17 @@ public class CoreLibrary {
         throw new UnsupportedOperationException("Don't know how to box " + object.getClass().getName());
     }
 
+    /**
+     * Convert a value to a boolean according to Ruby rules. Never fails.
+     */
+    public boolean isTruthy(Object value) {
+        if (value instanceof Boolean) {
+            return (boolean) value;
+        } else {
+            return value != nilObject && value != falseObject;
+        }
+    }
+
     public RubyException runtimeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(runtimeErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));

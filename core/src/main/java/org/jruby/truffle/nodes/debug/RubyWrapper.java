@@ -15,6 +15,8 @@ import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.SyntaxTag;
 import com.oracle.truffle.api.instrument.Wrapper;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -25,6 +27,7 @@ import org.jruby.truffle.runtime.core.*;
 
 import java.math.BigInteger;
 
+@NodeInfo(cost = NodeCost.NONE)
 public class RubyWrapper extends ProxyNode implements Wrapper {
 
     @Child protected Probe probe;

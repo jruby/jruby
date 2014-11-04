@@ -346,7 +346,7 @@ public abstract class FixnumNodes {
 
             BigInteger result = BigInteger.ONE;
 
-            for (BigInteger n = BigInteger.ZERO; b.compareTo(b) < 0; n = n.add(BigInteger.ONE)) {
+            for (BigInteger n = BigInteger.ZERO; b.compareTo(n) < 0; n = n.add(BigInteger.ONE)) {
                 result = result.multiply(bigA);
             }
 
@@ -781,7 +781,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean equal(int a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
+            return BigInteger.valueOf(a).equals(b);
         }
 
         @Specialization
@@ -801,7 +801,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean equal(long a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
+            return BigInteger.valueOf(a).equals(b);
         }
 
         @Fallback
@@ -859,58 +859,6 @@ public abstract class FixnumNodes {
         @Specialization
         public int compare(long a, BigInteger b) {
             return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b);
-        }
-    }
-
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(int a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
         }
     }
 

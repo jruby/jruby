@@ -45,9 +45,7 @@ public class WhenSplatNode extends RubyNode {
         }
 
         for (Object value : array.slowToArray()) {
-            // TODO(CS): how to cast this to a boolean?
-
-            if ((boolean) dispatchCaseEqual.call(frame, caseExpression, "===", null, value)) {
+            if (dispatchCaseEqual.callIsTruthy(frame, caseExpression, "===", null, value)) {
                 return true;
             }
         }

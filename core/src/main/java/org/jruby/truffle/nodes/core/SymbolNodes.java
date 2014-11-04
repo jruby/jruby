@@ -67,6 +67,25 @@ public abstract class SymbolNodes {
 
     }
 
+    @CoreMethod(names = "<=>", required = 1)
+    public abstract static class CompareNode extends CoreMethodNode {
+
+        public CompareNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CompareNode(CompareNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int compare(RubySymbol a, RubySymbol b) {
+            notDesignedForCompilation();
+
+            return a.toString().compareTo(b.toString());
+        }
+    }
+
     @CoreMethod(names = "all_symbols", onSingleton = true)
     public abstract static class AllSymbolsNode extends CoreMethodNode {
 

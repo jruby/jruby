@@ -3497,6 +3497,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EINVAL"), "Invalid file");
     }
 
+    public RaiseException newErrnoELOOPError() {
+        return newRaiseException(getErrno().getClass("ELOOP"), "Too many levels of symbolic links");
+    }
+
     public RaiseException newErrnoENOENTError() {
         return newRaiseException(getErrno().getClass("ENOENT"), "File not found");
     }
@@ -3854,6 +3858,8 @@ public final class Ruby implements Constantizable {
                     || "An existing connection was forcibly closed by the remote host".equals(e.getMessage()) ||
                     (Platform.IS_WINDOWS && e.getMessage().contains("connection was aborted"))) {
                 return newErrnoECONNRESETError();
+            } else if ("Too many levels of symbolic links".equals(e.getMessage())) {
+                return newErrnoELOOPError();
             }
             return newRaiseException(getIOError(), e.getMessage());
         } else {

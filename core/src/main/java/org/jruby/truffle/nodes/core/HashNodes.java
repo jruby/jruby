@@ -67,8 +67,7 @@ public abstract class HashNodes {
             }
 
             for (int n = 0; n < aSize * 2; n++) {
-                // TODO(CS): cast
-                if (!(boolean) equalNode.call(frame, aStore[n], "==", null, bStore[n])) {
+                if (!equalNode.callIsTruthy(frame, aStore[n], "==", null, bStore[n])) {
                     return false;
                 }
             }
@@ -231,8 +230,7 @@ public abstract class HashNodes {
             final int size = hash.getStoreSize();
 
             for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
-                // TODO(CS): cast
-                if (n < size && (boolean) eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && eqlNode.callIsTruthy(frame, store[n * 2], "eql?", null, key)) {
                     return store[n * 2 + 1];
                 }
             }
@@ -309,8 +307,7 @@ public abstract class HashNodes {
             final int size = hash.getStoreSize();
 
             for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
-                // TODO(CS): cast
-                if (n < size && (boolean) eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && eqlNode.callIsTruthy(frame, store[n * 2], "eql?", null, key)) {
                     store[n * 2 + 1] = value;
                     return value;
                 }
@@ -837,8 +834,7 @@ public abstract class HashNodes {
 
                     for (int b = 0; b < RubyHash.HASHES_SMALL; b++) {
                         if (b < storeBSize) {
-                            // TODO(CS): cast
-                            if ((boolean) eqlNode.call(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
+                            if (eqlNode.callIsTruthy(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
                                 merge = false;
                                 break;
                             }
@@ -926,8 +922,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
 
             for (int n = 0; n < store.length; n += 2) {
-                // TODO(CS): cast
-                if ((boolean) eqlNode.call(frame, store[n], "eql?", null, key)) {
+                if (eqlNode.callIsTruthy(frame, store[n], "eql?", null, key)) {
                     return true;
                 }
             }
