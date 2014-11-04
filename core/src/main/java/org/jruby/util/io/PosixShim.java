@@ -415,7 +415,6 @@ public class PosixShim {
         } catch (ResourceException.TooManySymlinks e) {
             errno = Errno.ELOOP;
         } catch (IOException e) {
-            e.printStackTrace();
             throw new RuntimeException("Unhandled IOException", e);
         }
         return null;
