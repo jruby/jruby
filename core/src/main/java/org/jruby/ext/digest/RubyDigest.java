@@ -39,6 +39,7 @@ import java.security.Provider;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -146,7 +147,7 @@ public class RubyDigest {
     }
 
     private static IRubyObject toHexString(Ruby runtime, byte[] val) {
-        return RubyString.newStringNoCopy(runtime, ByteList.plain(toHex(val)));
+        return RubyString.newStringNoCopy(runtime, new ByteList(ByteList.plain(toHex(val)), USASCIIEncoding.INSTANCE));
     }
 
     @JRubyMethod(name = "hexencode", required = 1, meta = true)
