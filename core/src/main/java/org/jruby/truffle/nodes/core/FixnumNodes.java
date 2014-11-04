@@ -1268,50 +1268,6 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "floor")
-    public abstract static class FloorNode extends CoreMethodNode {
-
-        public FloorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FloorNode(FloorNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int abs(int n) {
-            return n;
-        }
-
-        @Specialization
-        public long abs(long n) {
-            return n;
-        }
-
-    }
-
-    @CoreMethod(names = "chr")
-    public abstract static class ChrNode extends CoreMethodNode {
-
-        public ChrNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChrNode(ChrNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString chr(int n) {
-            notDesignedForCompilation();
-
-            // TODO(CS): not sure about encoding here
-            return getContext().makeString((char) n);
-        }
-
-    }
-
     @CoreMethod(names = "size", needsSelf = false)
     public abstract static class SizeNode extends CoreMethodNode {
 
@@ -1326,51 +1282,6 @@ public abstract class FixnumNodes {
         @Specialization
         public int size() {
             return Integer.SIZE / Byte.SIZE;
-        }
-
-    }
-
-    @CoreMethod(names = "step", needsBlock = true, required = 2)
-    public abstract static class StepNode extends YieldingCoreMethodNode {
-
-        public StepNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public StepNode(StepNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyNilClass step(VirtualFrame frame, int from, int to, int step, RubyProc block) {
-            for (int i = from; i <= to; i += step) {
-                yield(frame, block, i);
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-    }
-
-    @CoreMethod(names = {"to_i", "to_int"})
-    public abstract static class ToINode extends CoreMethodNode {
-
-        public ToINode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToINode(ToINode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int toI(int n) {
-            return n;
-        }
-
-        @Specialization
-        public long toI(long n) {
-            return n;
         }
 
     }
@@ -1419,95 +1330,6 @@ public abstract class FixnumNodes {
         @Specialization
         public RubyString toS(long n) {
             return getContext().makeString(Long.toString(n));
-        }
-
-    }
-
-    @CoreMethod(names = "upto", needsBlock = true, required = 1)
-    public abstract static class UpToNode extends YieldingCoreMethodNode {
-
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
-
-        public UpToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public UpToNode(UpToNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
-            int count = 0;
-
-            try {
-                outer:
-                for (int i = from; i <= to; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
-                    }
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-                }
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        @Specialization
-        public Object upto(VirtualFrame frame, long from, long to, RubyProc block) {
-            notDesignedForCompilation();
-
-            int count = 0;
-
-            try {
-                outer:
-                for (long i = from; i <= to; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
-                    }
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-                }
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

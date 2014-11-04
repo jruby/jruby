@@ -21,12 +21,63 @@ import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
 
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
+
+    @CoreMethod(names = "chr")
+    public abstract static class ChrNode extends CoreMethodNode {
+
+        public ChrNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ChrNode(ChrNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString chr(int n) {
+            notDesignedForCompilation();
+
+            // TODO(CS): not sure about encoding here
+            return getContext().makeString((char) n);
+        }
+
+    }
+
+    @CoreMethod(names = "floor")
+    public abstract static class FloorNode extends CoreMethodNode {
+
+        public FloorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FloorNode(FloorNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int floor(int n) {
+            return n;
+        }
+
+        @Specialization
+        public long floor(long n) {
+            return n;
+        }
+
+        @Specialization
+        public BigInteger floor(BigInteger n) {
+            return n;
+        }
+
+    }
 
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
@@ -146,6 +197,123 @@ public abstract class IntegerNodes {
             }
 
             return n;
+        }
+
+    }
+
+    @CoreMethod(names = {"to_i", "to_int"})
+    public abstract static class ToINode extends CoreMethodNode {
+
+        public ToINode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToINode(ToINode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int toI(int n) {
+            return n;
+        }
+
+        @Specialization
+        public long toI(long n) {
+            return n;
+        }
+
+        @Specialization
+        public BigInteger toI(BigInteger n) {
+            return n;
+        }
+
+    }
+
+    @CoreMethod(names = "upto", needsBlock = true, required = 1)
+    public abstract static class UpToNode extends YieldingCoreMethodNode {
+
+        private final BranchProfile breakProfile = new BranchProfile();
+        private final BranchProfile nextProfile = new BranchProfile();
+        private final BranchProfile redoProfile = new BranchProfile();
+
+        public UpToNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UpToNode(UpToNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
+            int count = 0;
+
+            try {
+                outer:
+                for (int i = from; i <= to; i++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object upto(VirtualFrame frame, long from, long to, RubyProc block) {
+            notDesignedForCompilation();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (long i = from; i <= to; i++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

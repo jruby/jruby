@@ -10,8 +10,11 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 import java.math.BigInteger;
 
@@ -96,6 +99,28 @@ public abstract class NumericNodes {
             } else {
                 return value;
             }
+        }
+
+    }
+
+    @CoreMethod(names = "step", needsBlock = true, required = 2)
+    public abstract static class StepNode extends YieldingCoreMethodNode {
+
+        public StepNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StepNode(StepNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass step(VirtualFrame frame, int from, int to, int step, RubyProc block) {
+            for (int i = from; i <= to; i += step) {
+                yield(frame, block, i);
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
