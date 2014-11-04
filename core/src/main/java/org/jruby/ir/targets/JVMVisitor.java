@@ -869,7 +869,7 @@ public class JVMVisitor extends IRVisitor {
         boolean containsArgSplat = classsuperinstr.containsArgSplat();
         Operand closure = classsuperinstr.getClosureArg(null);
 
-        superCommon(name, classsuperinstr, args, definingModule, containsArgSplat, closure, classsuperinstr.getResult());
+        superCommon(name, classsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
@@ -1108,10 +1108,10 @@ public class JVMVisitor extends IRVisitor {
         boolean containsArgSplat = instancesuperinstr.containsArgSplat();
         Operand closure = instancesuperinstr.getClosureArg(null);
 
-        superCommon(name, instancesuperinstr, args, definingModule, containsArgSplat, closure, instancesuperinstr.getResult());
+        superCommon(name, instancesuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
-    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean containsArgSplat, Operand closure, Variable result) {
+    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean containsArgSplat, Operand closure) {
         IRBytecodeAdapter m = jvmMethod();
         Operation operation = instr.getOperation();
 
@@ -1753,7 +1753,7 @@ public class JVMVisitor extends IRVisitor {
         boolean containsArgSplat = unresolvedsuperinstr.containsArgSplat();
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
 
-        superCommon(name, unresolvedsuperinstr, args, definingModule, containsArgSplat, closure, unresolvedsuperinstr.getResult());
+        superCommon(name, unresolvedsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
@@ -1781,7 +1781,7 @@ public class JVMVisitor extends IRVisitor {
         boolean containsArgSplat = zsuperinstr.containsArgSplat();
         Operand closure = zsuperinstr.getClosureArg(null);
 
-        superCommon(name, zsuperinstr, args, definingModule, containsArgSplat, closure, zsuperinstr.getResult());
+        superCommon(name, zsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
