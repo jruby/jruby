@@ -23,24 +23,6 @@ import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
 
-    @CoreMethod(names = "+@")
-    public abstract static class PosNode extends CoreMethodNode {
-
-        public PosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PosNode(PosNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public double pos(double value) {
-            return value;
-        }
-
-    }
-
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
 

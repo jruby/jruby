@@ -25,24 +25,6 @@ import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
 
-    @CoreMethod(names = "+@")
-    public abstract static class PosNode extends CoreMethodNode {
-
-        public PosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PosNode(PosNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public BigInteger pos(BigInteger value) {
-            return value;
-        }
-
-    }
-
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
 
