@@ -1160,11 +1160,7 @@ public class JVMVisitor extends IRVisitor {
                 throw new NotCompilableException("unknown super type " + operation + " in " + instr);
         }
 
-        if (instr instanceof ResultInstr) {
-            jvmStoreLocal(((ResultInstr) instr).getResult());
-        } else {
-            jvmAdapter().pop();
-        }
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
