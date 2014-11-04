@@ -175,7 +175,6 @@ date/test_switch_hitter.rb
 
 digest/test_digest.rb
 digest/test_digest_extend.rb
-digest/test_digest_hmac.rb
 
 erb/test_erb.rb
 erb/test_erb_m17n.rb
