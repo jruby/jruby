@@ -10,6 +10,7 @@ import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -423,6 +424,12 @@ public class RubyEtc {
         ret.untaint(context);
 
         return ret;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
+        int nprocs = Runtime.getRuntime().availableProcessors();
+        return RubyFixnum.newFixnum(context.getRuntime(), nprocs);
     }
     
     private static final AtomicBoolean iteratingPasswd = new AtomicBoolean(false);
