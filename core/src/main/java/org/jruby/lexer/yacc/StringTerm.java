@@ -140,13 +140,23 @@ public class StringTerm extends StrTerm {
                 return 0;
         }
 
-        if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
+        if (significant != -1 && isAlphabetic(significant) || significant == '_') {
             src.unread(c);
             lexer.setValue(new Token("#" + significant, lexer.getPosition()));
             return Tokens.tSTRING_DVAR;
         }
 
         return 0;
+    }
+
+    // Character#isAlphabetic is a 1.7 feature, so we duplicate the logic here
+    private static boolean isAlphabetic(int codePoint) {
+        return (((((1 << Character.UPPERCASE_LETTER) |
+                (1 << Character.LOWERCASE_LETTER) |
+                (1 << Character.TITLECASE_LETTER) |
+                (1 << Character.MODIFIER_LETTER) |
+                (1 << Character.OTHER_LETTER) |
+                (1 << Character.LETTER_NUMBER)) >> Character.getType(codePoint)) & 1) != 0);
     }
 
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws IOException {
