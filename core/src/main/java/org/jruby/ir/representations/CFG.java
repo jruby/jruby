@@ -514,7 +514,7 @@ public class CFG {
     private void removeNestedScopesFromBB(BasicBlock bb) {
         for (Instr instr: bb.getInstrs()) {
             for (Operand oper: instr.getOperands()) {
-                if (oper.getOperandType() == OperandType.WRAPPED_IR_CLOSURE) {
+                if (oper instanceof WrappedIRClosure) {
                     WrappedIRClosure closure = (WrappedIRClosure) oper;
 
                     scope.removeClosure(closure.getClosure());
