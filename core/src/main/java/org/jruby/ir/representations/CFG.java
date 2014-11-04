@@ -6,7 +6,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -515,9 +514,7 @@ public class CFG {
         for (Instr instr: bb.getInstrs()) {
             for (Operand oper: instr.getOperands()) {
                 if (oper instanceof WrappedIRClosure) {
-                    WrappedIRClosure closure = (WrappedIRClosure) oper;
-
-                    scope.removeClosure(closure.getClosure());
+                    scope.removeClosure(((WrappedIRClosure) oper).getClosure());
                     break; // Only one WrappedIRClosure possible per instr
                 }
             }
