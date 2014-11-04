@@ -24,7 +24,7 @@
 	<classpathentry kind="var" path="M2_REPO/org/jruby/jcodings/jcodings/1.0.12-SNAPSHOT/jcodings-1.0.12-SNAPSHOT.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/jruby/extras/bytelist/1.0.12-SNAPSHOT/bytelist-1.0.12-SNAPSHOT.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/jruby/yecht/1.0/yecht-1.0.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/headius/invokebinder/1.4-SNAPSHOT/invokebinder-1.4-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/headius/invokebinder/1.4/invokebinder-1.4.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/headius/options/1.1/options-1.1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/headius/coro-mock/1.0/coro-mock-1.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/headius/unsafe-mock/8.0/unsafe-mock-8.0.jar"/>

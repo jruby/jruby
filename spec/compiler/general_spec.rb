@@ -886,4 +886,50 @@ modes.each do |mode|
       end
     end
   end
+<<<<<<< HEAD
 end
+=======
+
+  it "retrieves toplevel constants with ::Const form" do
+    run '::Object' do |x|
+      expect(x).to eq Object
+    end
+  end
+
+  it "splats arguments to super" do
+    run '
+      class SplatSuperArgs0
+        def foo(a, b, c)
+          a + b + c
+        end
+      end
+      class SplatSuperArgs1 < SplatSuperArgs0
+        def foo(*args)
+          super(*args)
+        end
+      end
+      SplatSuperArgs1.new.foo(1, 2, 3)' do |x|
+      expect(x).to eq 6
+    end
+  end
+
+  it "performs super calls within a closure" do
+    run '
+      class SplatSuperArgs0
+        def foo(a)
+          a
+        end
+      end
+      class SplatSuperArgs1 < SplatSuperArgs0
+        def foo(a)
+          1.times do
+            super(a)
+          end
+        end
+      end
+      SplatSuperArgs1.new.foo(1)' do |x|
+      expect(x).to eq 1
+    end
+  end
+end
+>>>>>>> master

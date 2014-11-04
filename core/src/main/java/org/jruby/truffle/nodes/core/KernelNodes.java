@@ -34,66 +34,45 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.util.Supplier;
+import org.jruby.util.cli.Options;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
 
+    /**
+     * Check if operands are the same object or call #==.
+     * Known as rb_equal() in MRI. The fact Kernel#=== uses this is pure coincidence.
+     */
     @CoreMethod(names = "===", required = 1)
-    public abstract static class ThreeEqualNode extends CoreMethodNode {
+    public abstract static class SameOrEqualNode extends CoreMethodNode {
 
-        public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
+        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+        @Child protected DispatchHeadNode equalNode;
+
+        public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            equalNode = new DispatchHeadNode(context);
         }
 
-        public ThreeEqualNode(ThreeEqualNode prev) {
+        public SameOrEqualNode(SameOrEqualNode prev) {
             super(prev);
+            referenceEqualNode = prev.referenceEqualNode;
+            equalNode = prev.equalNode;
         }
 
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
+        public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, boolean b) {
-            return false;
+        public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
+            if (referenceEqualNode.executeEqual(frame, a, b))
+                return true;
+            return equalNode.callIsTruthy(frame, a, "==", null, b);
         }
 
     }
 
-    @CoreMethod(names = "=~", required = 1)
+    @CoreMethod(names = "=~", required = 1, needsSelf = false)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -105,38 +84,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
+        public RubyNilClass equal(Object other) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -144,47 +93,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode matchNode;
+
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            matchNode = new DispatchHeadNode(context);
         }
 
         public NotMatchNode(NotMatchNode prev) {
             super(prev);
+            matchNode = prev.matchNode;
         }
 
         @Specialization
-        public boolean notMatch(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean notMatch(boolean a, boolean b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(int a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(long a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(double a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notMatch(BigInteger a, BigInteger b) {
-            return a.compareTo(b) != 0;
-        }
-
-        @Specialization
-        public boolean notMatch(RubyBasicObject a, RubyBasicObject b) {
-            return a != b;
+        public boolean notMatch(VirtualFrame frame, Object self, Object other) {
+            return !matchNode.callIsTruthy(frame, self, "=~", null, other);
         }
 
     }
@@ -486,49 +409,13 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "eql?", required = 1)
-    public abstract static class EqlNode extends CoreMethodNode {
-
+    public abstract static class EqlNode extends BasicObjectNodes.ReferenceEqualNode {
         public EqlNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public EqlNode(EqlNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyNilClass a, @SuppressWarnings("unused") RubyNilClass b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
         }
     }
 
@@ -776,19 +663,17 @@ public abstract class KernelNodes {
 
             final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
-            final ThreadManager threadManager = context.getThreadManager();
+            final String line;
 
-            final String line = getContext().outsideGlobalLock(new Supplier<String>() {
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                @Override
-                public String get() {
-                    try {
-                        return gets(context);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
+            try {
+                line = gets(context);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
 
             final RubyString rubyLine = context.makeString(line);
 
@@ -1073,10 +958,9 @@ public abstract class KernelNodes {
             return false;
         }
 
+        @SlowPath
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
-            notDesignedForCompilation();
-
             // TODO(CS): fast path
             return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getLogicalClass(), rubyClass);
         }
@@ -1250,23 +1134,28 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyNilClass print(final VirtualFrame frame, final Object[] args) {
-            getContext().outsideGlobalLock(new Runnable() {
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                @Override
-                public void run() {
-                    for (Object arg : args) {
-                        try {
-                            getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+            try {
+                for (Object arg : args) {
+                    write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
                 }
-
-            });
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
 
             return getContext().getCoreLibrary().getNilObject();
         }
+
+        @SlowPath
+        private void write(byte[] bytes) {
+            try{
+                getContext().getRuntime().getInstanceConfig().getOutput().write(bytes);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 
     @CoreMethod(names = "printf", isModuleFunction = true, argumentsAsArray = true)
@@ -1288,14 +1177,13 @@ public abstract class KernelNodes {
                 final String format = args[0].toString();
                 final List<Object> values = Arrays.asList(args).subList(1, args.length);
 
-                getContext().outsideGlobalLock(new Runnable() {
+                final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                    @Override
-                    public void run() {
-                        StringFormatter.format(getContext().getRuntime().getInstanceConfig().getOutput(), format, values);
-                    }
-
-                });
+                try {
+                    StringFormatter.format(getContext().getRuntime().getInstanceConfig().getOutput(), format, values);
+                } finally {
+                    getContext().getThreadManager().enterGlobalLock(runningThread);
+                }
             }
 
             return getContext().getCoreLibrary().getNilObject();
@@ -1438,7 +1326,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "rand", isModuleFunction = true)
+    @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
     public abstract static class RandNode extends CoreMethodNode {
 
         public RandNode(RubyContext context, SourceSection sourceSection) {
@@ -1450,8 +1338,26 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public double rand() {
-            return Math.random();
+        public double rand(UndefinedPlaceholder undefined) {
+            return getContext().getRandom().nextDouble();
+        }
+
+        @Specialization(guards = "isZero")
+        public double randZero(int max) {
+            return getContext().getRandom().nextDouble();
+        }
+
+        @Specialization(guards = "isNonZero")
+        public int randNonZero(int max) {
+            return getContext().getRandom().nextInt(max);
+        }
+
+        protected boolean isZero(int max) {
+            return max == 0;
+        }
+
+        protected boolean isNonZero(int max) {
+            return max != 0;
         }
 
     }
@@ -1489,8 +1395,14 @@ public abstract class KernelNodes {
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+
             dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
             dispatchIgnoreVisibility = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+
+            if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                dispatch.forceUncached();
+                dispatchIgnoreVisibility.forceUncached();
+            }
         }
 
         public RespondToNode(RespondToNode prev) {
@@ -1560,6 +1472,17 @@ public abstract class KernelNodes {
             return false;
         }
 
+    }
+
+    @CoreMethod(names = "send", needsBlock = true, required = 1, argumentsAsArray = true)
+    public abstract static class SendNode extends BasicObjectNodes.SendNode {
+        public SendNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SendNode(SendNode prev) {
+            super(prev);
+        }
     }
 
     @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)
@@ -1724,24 +1647,23 @@ public abstract class KernelNodes {
 
         @SlowPath
         private double doSleep(final double duration) {
-            return getContext().outsideGlobalLock(new Supplier<Double>() {
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
-                @Override
-                public Double get() {
-                    final long start = System.nanoTime();
+            try {
+                final long start = System.nanoTime();
 
-                    try {
-                        Thread.sleep((long) (duration * 1000));
-                    } catch (InterruptedException e) {
-                        // Ignore interruption
-                    }
-
-                    final long end = System.nanoTime();
-
-                    return (end - start) / 1e9;
+                try {
+                    Thread.sleep((long) (duration * 1000));
+                } catch (InterruptedException e) {
+                    // Ignore interruption
                 }
 
-            });
+                final long end = System.nanoTime();
+
+                return (end - start) / 1e9;
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
         }
 
     }

@@ -3,7 +3,6 @@ package org.jruby.ir;
 public class CodeVersion {
     private static long _nextVersionNumber = 0L;
 
-    // SSS FIXME: Does int suffice, or do we need long?
     public final long _version;
 
     public static CodeVersion getClassVersionToken()  {

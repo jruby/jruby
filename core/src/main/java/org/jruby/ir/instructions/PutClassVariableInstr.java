@@ -28,7 +28,7 @@ public class PutClassVariableInstr extends PutInstr implements FixedArityInstr {
 
         assert module != null : "MODULE should always be something";
 
-		  // SSS FIXME: What is this check again???
+		// SSS FIXME: What is this check again???
         // Modules and classes set this constant as a side-effect
         if (!(getValue() instanceof CurrentScope)) module.setClassVar(getRef(), value);
         return null;

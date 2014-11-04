@@ -790,7 +790,7 @@ public final class Ruby implements Constantizable {
                     LOG.error(e);
                 }
             }
-            return null;
+            return new ScriptAndCode(null, null);
         }
     }
     
@@ -1315,13 +1315,13 @@ public final class Ruby implements Constantizable {
         classClass = RubyClass.createBootstrapClass(this, "Class", moduleClass, RubyClass.CLASS_ALLOCATOR);
 
         basicObjectClass.setMetaClass(classClass);
-        objectClass.setMetaClass(classClass);
+        objectClass.setMetaClass(basicObjectClass);
         moduleClass.setMetaClass(classClass);
         classClass.setMetaClass(classClass);
 
         RubyClass metaClass;
         metaClass = basicObjectClass.makeMetaClass(classClass);
-        metaClass = objectClass.makeMetaClass(classClass);
+        metaClass = objectClass.makeMetaClass(metaClass);
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 
@@ -2867,6 +2867,7 @@ public final class Ruby implements Constantizable {
         
         try {
             Script script = null;
+            ScriptAndCode scriptAndCode = null;
             String className = null;
 
             try {
@@ -2910,7 +2911,8 @@ public final class Ruby implements Constantizable {
             // script was not found in cache above, so proceed to compile
             Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                script = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader)).script();
+                scriptAndCode = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader));
+                if (scriptAndCode != null) script = scriptAndCode.script();
             }
 
             if (script == null) {
@@ -3497,6 +3499,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EINVAL"), "Invalid file");
     }
 
+    public RaiseException newErrnoELOOPError() {
+        return newRaiseException(getErrno().getClass("ELOOP"), "Too many levels of symbolic links");
+    }
+
     public RaiseException newErrnoENOENTError() {
         return newRaiseException(getErrno().getClass("ENOENT"), "File not found");
     }
@@ -3854,6 +3860,8 @@ public final class Ruby implements Constantizable {
                     || "An existing connection was forcibly closed by the remote host".equals(e.getMessage()) ||
                     (Platform.IS_WINDOWS && e.getMessage().contains("connection was aborted"))) {
                 return newErrnoECONNRESETError();
+            } else if ("Too many levels of symbolic links".equals(e.getMessage())) {
+                return newErrnoELOOPError();
             }
             return newRaiseException(getIOError(), e.getMessage());
         } else {

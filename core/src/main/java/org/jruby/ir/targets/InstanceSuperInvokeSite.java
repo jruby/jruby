@@ -30,4 +30,12 @@ public class InstanceSuperInvokeSite extends ResolvedSuperInvokeSite {
     protected RubyClass getSuperClass(RubyClass definingModule) {
         return definingModule.getSuperClass();
     }
+
+    // FIXME: indy cached version was not doing splat mapping; revert to slow logic for now
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+        // TODO: get rid of caller
+        // TODO: caching
+        return IRRuntimeHelpers.instanceSuperSplatArgs(context, self, superName, definingModule, args, block, splatMap);
+    }
 }

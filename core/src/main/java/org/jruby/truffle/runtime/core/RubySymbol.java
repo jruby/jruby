@@ -112,6 +112,8 @@ public class RubySymbol extends RubyObject {
         }
 
         public RubySymbol getSymbol(ByteList byteList) {
+            // TODO(CS): is this broken? ByteList is mutable...
+
             RubySymbol symbol = symbolsTable.get(byteList);
 
             if (symbol == null) {

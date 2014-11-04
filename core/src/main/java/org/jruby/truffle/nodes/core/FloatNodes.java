@@ -23,24 +23,6 @@ import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
 
-    @CoreMethod(names = "+@")
-    public abstract static class PosNode extends CoreMethodNode {
-
-        public PosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PosNode(PosNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public double pos(double value) {
-            return value;
-        }
-
-    }
-
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
 
@@ -386,38 +368,6 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(double a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(double a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(double a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(double a, BigInteger b) {
-            return a != SlowPathBigInteger.doubleValue(b);
-        }
-    }
-
     @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 
@@ -540,28 +490,6 @@ public abstract class FloatNodes {
         @Specialization
         public boolean nan(double value) {
             return Double.isNaN(value);
-        }
-
-    }
-
-    @CoreMethod(names = "nonzero?")
-    public abstract static class NonZeroNode extends CoreMethodNode {
-
-        public NonZeroNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NonZeroNode(NonZeroNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object nonZero(double value) {
-            if (value == 0) {
-                return false;
-            } else {
-                return value;
-            }
         }
 
     }

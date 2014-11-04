@@ -114,6 +114,7 @@ public class IRRuntimeHelpers {
         throw IRReturnJump.create(dynScope, returnValue);
     }
 
+    @JIT
     public static IRubyObject handleNonlocalReturn(StaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
@@ -157,6 +158,7 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
@@ -173,6 +175,7 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
     public static IRubyObject handlePropagatedBreak(ThreadContext context, DynamicScope dynScope, Object bjExc, Block.Type blockType) {
         if (!(bjExc instanceof IRBreakJump)) {
             Helpers.throwException((Throwable)bjExc);
@@ -196,7 +199,7 @@ public class IRRuntimeHelpers {
             if (isDebug()) System.out.println("---> Break reached target in scope: " + dynScope);
             return bj.breakValue;
 /* ---------------------------------------------------------------
- * FIXME: Puzzled .. Why is this not needed?
+ * SSS FIXME: Puzzled .. Why is this not needed?
         } else if (!context.scopeExistsOnCallStack(bj.scopeToReturnTo.getStaticScope())) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
  * --------------------------------------------------------------- */
@@ -531,17 +534,20 @@ public class IRRuntimeHelpers {
         return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
     }
 
+    @JIT
     public static IRubyObject isDefinedBackref(ThreadContext context) {
         return RubyMatchData.class.isInstance(context.getBackRef()) ?
                 context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : context.nil;
     }
 
+    @JIT
     public static IRubyObject isDefinedGlobal(ThreadContext context, String name) {
         return context.runtime.getGlobalVariables().isDefined(name) ?
                 context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : context.nil;
     }
 
     // FIXME: This checks for match data differently than isDefinedBackref.  Seems like they should use same mechanism?
+    @JIT
     public static IRubyObject isDefinedNthRef(ThreadContext context, int matchNumber) {
         IRubyObject backref = context.getBackRef();
 
@@ -554,6 +560,7 @@ public class IRRuntimeHelpers {
         return context.nil;
     }
 
+    @JIT
     public static IRubyObject isDefinedClassVar(ThreadContext context, RubyModule receiver, String name) {
         boolean defined = receiver.isClassVarDefined(name);
 
@@ -566,23 +573,27 @@ public class IRRuntimeHelpers {
         return defined ? context.runtime.getDefinedMessage(DefinedMessage.CLASS_VARIABLE) : context.nil;
     }
 
+    @JIT
     public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name) {
         return receiver.getInstanceVariables().hasInstanceVariable(name) ?
                 context.runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE) : context.nil;
     }
 
+    @JIT
     public static IRubyObject isDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
         RubyString boundValue = Helpers.getDefinedCall(context, self, receiver, name);
 
         return boundValue == null ? context.nil : boundValue;
     }
 
+    @JIT
     public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, String name) {
         RubyString definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name);
 
         return definedType == null ? context.nil : definedType;
     }
 
+    @JIT
     public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name, boolean checkIfPublic) {
         DynamicMethod method = receiver.getMetaClass().searchMethod(name);
 
@@ -594,6 +605,7 @@ public class IRRuntimeHelpers {
         return context.nil;
     }
 
+    @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver) {
         boolean flag = false;
         String frameName = context.getFrameName();
@@ -657,6 +669,7 @@ public class IRRuntimeHelpers {
         return rubyClass;
     }
 
+    @JIT
     public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explcitKwarg) {
         return ((RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg)).merge(context, explcitKwarg, Block.NULL_BLOCK);
     }

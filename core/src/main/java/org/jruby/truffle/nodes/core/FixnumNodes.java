@@ -26,29 +26,6 @@ import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
 
-    @CoreMethod(names = "+@")
-    public abstract static class PosNode extends CoreMethodNode {
-
-        public PosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PosNode(PosNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int pos(int value) {
-            return value;
-        }
-
-        @Specialization
-        public long pos(long value) {
-            return value;
-        }
-
-    }
-
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
 
@@ -65,14 +42,9 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(0, value);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long negWithLongOverflow(int value) {
-            return ExactMath.subtractExact(0, (long) value);
-        }
-
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(int value) {
-            return BigInteger.valueOf(value).negate();
+        public long negWithOverflow(int value) {
+            return -(long) (value);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -81,7 +53,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public BigInteger negWithBigIntegerOverflow(long value) {
+        public BigInteger negWithOverflow(long value) {
             return BigInteger.valueOf(value).negate();
         }
 
@@ -108,13 +80,23 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long addWithLongOverflow(int a, int b) {
+        public long addWithOverflow(int a, int b) {
             return (long) a + (long) b;
         }
 
         @Specialization
         public double add(int a, double b) {
             return a + b;
+        }
+
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public long add(int a, long b) {
+            return ExactMath.addExact(a, b);
+        }
+
+        @Specialization
+        public Object addWithOverflow(int a, long b) {
+            return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -128,7 +110,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object addWithBigIntegerOverflow(long a, int b) {
+        public Object addWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -138,7 +120,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object addWithBigIntegerOverflow(long a, long b) {
+        public Object addWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -175,7 +157,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long subWithLongOverflow(int a, int b) {
+        public long subWithOverflow(int a, int b) {
             return (long) a - (long) b;
         }
 
@@ -199,13 +181,8 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(a, b);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long subWithLongOverflow(long a, int b) {
-            return ExactMath.subtractExact(a, (long) b);
-        }
-
         @Specialization
-        public Object subWithBigIntegerOverflow(long a, int b) {
+        public Object subWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
@@ -215,7 +192,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object subWithBigIntegerOverflow(long a, long b) {
+        public Object subWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
@@ -252,7 +229,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long mulWithLong(int a, int b) {
+        public long mulWithOverflow(int a, int b) {
             return (long) a * (long) b;
         }
 
@@ -262,7 +239,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(int a, long b) {
+        public Object mulWithOverflow(int a, long b) {
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
@@ -282,7 +259,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(long a, int b) {
+        public Object mulWithOverflow(long a, int b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -292,7 +269,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mulWithBigInteger(long a, long b) {
+        public Object mulWithOverflow(long a, long b) {
             return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
         }
 
@@ -346,7 +323,7 @@ public abstract class FixnumNodes {
 
             BigInteger result = BigInteger.ONE;
 
-            for (BigInteger n = BigInteger.ZERO; b.compareTo(b) < 0; n = n.add(BigInteger.ONE)) {
+            for (BigInteger n = BigInteger.ZERO; b.compareTo(n) < 0; n = n.add(BigInteger.ONE)) {
                 result = result.multiply(bigA);
             }
 
@@ -753,7 +730,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
+    @CoreMethod(names = {"==", "==="}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -781,7 +758,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean equal(int a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
+            return BigInteger.valueOf(a).equals(b);
         }
 
         @Specialization
@@ -801,7 +778,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean equal(long a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) == 0;
+            return BigInteger.valueOf(a).equals(b);
         }
 
         @Fallback
@@ -859,58 +836,6 @@ public abstract class FixnumNodes {
         @Specialization
         public int compare(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b);
-        }
-    }
-
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean notEqual(int a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(int a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, int b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, long b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, double b) {
-            return a != b;
-        }
-
-        @Specialization
-        public boolean notEqual(long a, BigInteger b) {
-            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
         }
     }
 
@@ -1187,21 +1112,54 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization
-        public Object leftShift(int a, int b) {
-            return leftShift((long) a, b);
-        }
-
-        @Specialization
-        public Object leftShift(long a, int b) {
+        @Specialization(guards = "canShiftIntoInt")
+        public int leftShift(int a, int b) {
             if (b > 0) {
                 bAboveZeroProfile.enter();
 
-                if (Long.SIZE - Long.numberOfLeadingZeros(a) + b > Long.SIZE - 1) {
+                return a << b;
+            } else {
+                bNotAboveZeroProfile.enter();
+                if (-b >= Integer.SIZE) {
+                    return 0;
+                } else {
+                    return a >> -b;
+                }
+            }
+        }
+
+        @Specialization
+        public Object leftShiftWithOverflow(int a, int b) {
+            return leftShiftWithOverflow((long) a, b);
+        }
+
+        @Specialization(guards = "canShiftIntoLong")
+        public long leftShift(long a, int b) {
+            if (b > 0) {
+                bAboveZeroProfile.enter();
+
+                return a << b;
+            } else {
+                bNotAboveZeroProfile.enter();
+
+                if (-b >= Long.SIZE) {
+                    return 0;
+                } else {
+                    return a >> -b;
+                }
+            }
+        }
+
+        @Specialization
+        public Object leftShiftWithOverflow(long a, int b) {
+            if (b > 0) {
+                bAboveZeroProfile.enter();
+
+                if (canShiftIntoLong(a, b)) {
+                    return a << b;
+                } else {
                     useBignumProfile.enter();
                     return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(BigInteger.valueOf(a), b));
-                } else {
-                    return a << b;
                 }
             } else {
                 bNotAboveZeroProfile.enter();
@@ -1212,6 +1170,14 @@ public abstract class FixnumNodes {
                     return a >> -b;
                 }
             }
+        }
+
+        static boolean canShiftIntoInt(int a, int b) {
+            return Integer.numberOfLeadingZeros(a) - b > 0;
+        }
+
+        static boolean canShiftIntoLong(long a, int b) {
+            return Long.numberOfLeadingZeros(a) - b > 0;
         }
 
     }
@@ -1302,72 +1268,6 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "floor")
-    public abstract static class FloorNode extends CoreMethodNode {
-
-        public FloorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FloorNode(FloorNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int abs(int n) {
-            return n;
-        }
-
-        @Specialization
-        public long abs(long n) {
-            return n;
-        }
-
-    }
-
-    @CoreMethod(names = "chr")
-    public abstract static class ChrNode extends CoreMethodNode {
-
-        public ChrNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChrNode(ChrNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString chr(int n) {
-            notDesignedForCompilation();
-
-            // TODO(CS): not sure about encoding here
-            return getContext().makeString((char) n);
-        }
-
-    }
-
-    @CoreMethod(names = "nonzero?")
-    public abstract static class NonZeroNode extends CoreMethodNode {
-
-        public NonZeroNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NonZeroNode(NonZeroNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object nonZero(int value) {
-            if (value == 0) {
-                return false;
-            } else {
-                return value;
-            }
-        }
-
-    }
-
     @CoreMethod(names = "size", needsSelf = false)
     public abstract static class SizeNode extends CoreMethodNode {
 
@@ -1382,149 +1282,6 @@ public abstract class FixnumNodes {
         @Specialization
         public int size() {
             return Integer.SIZE / Byte.SIZE;
-        }
-
-    }
-
-    @CoreMethod(names = "step", needsBlock = true, required = 2)
-    public abstract static class StepNode extends YieldingCoreMethodNode {
-
-        public StepNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public StepNode(StepNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyNilClass step(VirtualFrame frame, int from, int to, int step, RubyProc block) {
-            for (int i = from; i <= to; i += step) {
-                yield(frame, block, i);
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-    }
-
-    @CoreMethod(names = "times", needsBlock = true)
-    public abstract static class TimesNode extends YieldingCoreMethodNode {
-
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
-
-        public TimesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public TimesNode(TimesNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object times(VirtualFrame frame, int n, RubyProc block) {
-            int count = 0;
-
-            try {
-                outer: for (int i = 0; i < n; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
-                    }
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-                }
-            }
-
-            return n;
-        }
-
-        @Specialization
-        public RubyArray times(VirtualFrame frame, int n, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final int[] array = new int[n];
-
-            for (int i = 0; i < n; i++) {
-                array[i] = i;
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, n);
-        }
-
-        @Specialization
-        public Object times(VirtualFrame frame, long n, RubyProc block) {
-            int count = 0;
-
-            try {
-                outer: for (long i = 0; i < n; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
-                    }
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-                }
-            }
-
-            return n;
-        }
-
-    }
-
-    @CoreMethod(names = {"to_i", "to_int"})
-    public abstract static class ToINode extends CoreMethodNode {
-
-        public ToINode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToINode(ToINode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int toI(int n) {
-            return n;
-        }
-
-        @Specialization
-        public long toI(long n) {
-            return n;
         }
 
     }
@@ -1573,95 +1330,6 @@ public abstract class FixnumNodes {
         @Specialization
         public RubyString toS(long n) {
             return getContext().makeString(Long.toString(n));
-        }
-
-    }
-
-    @CoreMethod(names = "upto", needsBlock = true, required = 1)
-    public abstract static class UpToNode extends YieldingCoreMethodNode {
-
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
-
-        public UpToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public UpToNode(UpToNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
-            int count = 0;
-
-            try {
-                outer:
-                for (int i = from; i <= to; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
-                    }
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-                }
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        @Specialization
-        public Object upto(VirtualFrame frame, long from, long to, RubyProc block) {
-            notDesignedForCompilation();
-
-            int count = 0;
-
-            try {
-                outer:
-                for (long i = from; i <= to; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
-                    }
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-                }
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

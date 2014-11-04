@@ -36,10 +36,4 @@ public abstract class YieldingHashCoreMethodNode extends HashCoreMethodNode {
         return dispatchNode.dispatch(frame, block, arguments);
     }
 
-    public boolean yieldBoolean(VirtualFrame frame, RubyProc block, Object... arguments) {
-        // TODO(CS): this should be a node!
-        RubyNode.notDesignedForCompilation();
-        return RubyTrueClass.toBoolean(yield(frame, block, arguments));
-    }
-
 }

@@ -60,7 +60,6 @@ public class DefineClassInstr extends Instr implements ResultInstr, FixedArityIn
 
     @Override
     public Instr clone(CloneInfo ii) {
-        // SSS FIXME: So, do we clone the class body scope or not?
         return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClassBody, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
 

@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -21,10 +22,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
     private final RubySymbol cachedNameAsSymbol;
+    private final boolean indirect;
 
     @Child protected DispatchNode next;
 
-    public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next) {
+    private final BranchProfile moreThanReferenceCompare = new BranchProfile();
+
+    public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next, boolean indirect) {
         super(context);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
@@ -40,6 +44,8 @@ public abstract class CachedDispatchNode extends DispatchNode {
             throw new UnsupportedOperationException();
         }
 
+        this.indirect = indirect;
+
         this.next = next;
     }
 
@@ -48,6 +54,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         cachedName = prev.cachedName;
         cachedNameAsSymbol = prev.cachedNameAsSymbol;
         next = prev.next;
+        indirect = prev.indirect;
     }
 
     protected final boolean guardName(
@@ -57,6 +64,12 @@ public abstract class CachedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
+        if (cachedName == methodName) {
+            return true;
+        }
+
+        moreThanReferenceCompare.enter();
+
         if (cachedName instanceof String) {
             return cachedName.equals(methodName);
         } else if (cachedName instanceof RubySymbol) {
@@ -70,6 +83,10 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     protected RubySymbol getCachedNameAsSymbol() {
         return cachedNameAsSymbol;
+    }
+
+    public boolean isIndirect() {
+        return indirect;
     }
 
 }

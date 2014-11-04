@@ -20,6 +20,7 @@ public class DispatchHeadNode extends Node {
 
     private final RubyContext context;
     private final boolean ignoreVisibility;
+    private final boolean indirect;
     private final boolean rubiniusPrimitive;
     private final Dispatch.MissingBehavior missingBehavior;
 
@@ -30,23 +31,24 @@ public class DispatchHeadNode extends Node {
     }
 
     public DispatchHeadNode(RubyContext context) {
-        this(context, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        this(context, false, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
-        this(context, false, false, missingBehavior);
+        this(context, false, false, false, missingBehavior);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, false, missingBehavior);
+        this(context, ignoreVisibility, false, false, missingBehavior);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean rubiniusPrimitive, Dispatch.MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, boolean rubiniusPrimitive, Dispatch.MissingBehavior missingBehavior) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
+        this.indirect = indirect;
         this.missingBehavior = missingBehavior;
         this.rubiniusPrimitive = rubiniusPrimitive;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior);
+        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior);
     }
 
     public Object call(
@@ -64,6 +66,15 @@ public class DispatchHeadNode extends Node {
                 blockObject,
                 argumentsObjects,
                 Dispatch.DispatchAction.CALL_METHOD);
+    }
+
+    public boolean callIsTruthy(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object... argumentsObjects) {
+        return context.getCoreLibrary().isTruthy(call(frame, receiverObject, methodName, blockObject, argumentsObjects));
     }
 
     public double callFloat(
@@ -140,7 +151,7 @@ public class DispatchHeadNode extends Node {
             VirtualFrame frame,
             Object methodName,
             Object receiverObject) {
-        return (boolean) dispatch(
+        return context.getCoreLibrary().isTruthy(dispatch(
                 frame,
                 context.getCoreLibrary().getNilObject(),
                 null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
@@ -148,7 +159,7 @@ public class DispatchHeadNode extends Node {
                 methodName,
                 null,
                 null,
-                Dispatch.DispatchAction.RESPOND_TO_METHOD);
+                Dispatch.DispatchAction.RESPOND_TO_METHOD));
     }
 
     public Object dispatch(
@@ -184,11 +195,16 @@ public class DispatchHeadNode extends Node {
     }
 
     public void reset(String reason) {
-        first.replace(new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior), reason);
+        first.replace(new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {
         return first;
+    }
+
+    public void forceUncached() {
+        adoptChildren();
+        first.replace(UncachedDispatchNodeFactory.create(context, ignoreVisibility, null, null, null, null, null, null, null));
     }
 
 }

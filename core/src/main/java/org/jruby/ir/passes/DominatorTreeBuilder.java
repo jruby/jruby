@@ -8,6 +8,7 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.util.*;
 
+/* SSS: Currently unused code. Will be useful for some SSA building algos. */
 public class DominatorTreeBuilder extends CompilerPass {
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
@@ -37,7 +38,6 @@ public class DominatorTreeBuilder extends CompilerPass {
 
     @Override
     public boolean invalidate(IRScope scope) {
-        // FIXME: We never store our dominator tree anywhere right?
         return false;
     }
 

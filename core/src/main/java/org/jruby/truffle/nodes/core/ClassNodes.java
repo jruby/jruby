@@ -26,32 +26,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
 
-    @CoreMethod(names = "===", required = 1)
-    public abstract static class ContainsInstanceNode extends CoreMethodNode {
-
-        public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ContainsInstanceNode(ContainsInstanceNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean containsInstance(RubyClass rubyClass, RubyBasicObject instance) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.assignableTo(instance.getLogicalClass(), rubyClass);
-        }
-
-        @Specialization
-        public boolean containsInstance(RubyClass rubyClass, Object instance) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(instance).getLogicalClass(), rubyClass);
-        }
-    }
-
     @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
     public abstract static class NewNode extends CoreMethodNode {
 
@@ -83,25 +57,6 @@ public abstract class ClassNodes {
             return instance;
         }
 
-    }
-
-    @CoreMethod(names = "to_s")
-    public abstract static class ToSNode extends CoreMethodNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString toS(RubyClass rubyClass) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(rubyClass.getName());
-        }
     }
 
     @CoreMethod(names = "class_variables")

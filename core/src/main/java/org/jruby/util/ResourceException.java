@@ -8,6 +8,11 @@ import java.io.IOException;
 // While it is public, please don't use this, since in master it will be
 // marked private and replaced by RaisableException usage.
 public abstract class ResourceException extends IOException {
+    public ResourceException() {}
+    public ResourceException(Throwable t) {
+        super(t);
+    }
+
     abstract static class ErrnoException extends ResourceException {
         private final String path;
         private final String errnoClass;
@@ -43,10 +48,15 @@ public abstract class ResourceException extends IOException {
         public InvalidArguments(String path) { super("EINVAL", path); }
     }
 
+    public static class TooManySymlinks extends ErrnoException {
+        public TooManySymlinks(String path) { super("ELOOP", path); }
+    }
+
     public static class IOError extends ResourceException {
         private final IOException ioe;
 
         IOError(IOException ioe) {
+            super(ioe);
             this.ioe = ioe;
         }
 

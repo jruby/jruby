@@ -102,10 +102,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             evalScript.getStaticScope().setIRScope(evalScript);
             s.growIfNeeded();
 
-            runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null); // FIXME: No temp vars yet right?
+            runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null);
             rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), block, backtraceName);
         } finally {
-            runEndBlocks(ic.getEndBlocks(), context, self, ss, null); // FIXME: No temp vars right?
+            runEndBlocks(ic.getEndBlocks(), context, self, ss, null);
             s.clearEvalType();
             context.popScope();
         }
@@ -743,8 +743,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
 
-            // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
-            // and the thread-context rather than fetch one from the other.  Why is that?
             return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self, evalType);
 /*
  * SSS FIXME: Why was this here?
@@ -789,8 +787,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             Node node = runtime.parseEval(source.getByteList(), binding.getFile(), evalScope, binding.getLine());
             Block block = binding.getFrame().getBlock();
 
-            // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
-            // and the thread-context rather than fetch one from the other.  Why is that?
             return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block);
         } catch (StackOverflowError soe) {
             throw runtime.newSystemStackError("stack level too deep", soe);

@@ -20,6 +20,7 @@ module Kernel
   end
 
   def puts(*args)
+    print "\n" if args.empty?
     args.each do |arg|
       if arg.is_a?(Array)
         arg.each do |child|

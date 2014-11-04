@@ -11,11 +11,11 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.control.PassthroughNode;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRange;
@@ -107,7 +107,8 @@ public class FixnumLowerNode extends PassthroughNode {
             return value;
         }
 
-        throw new UnsupportedOperationException(value.getClass().getName());
+        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                value, getContext().getCoreLibrary().getIntegerClass(), this));
     }
 
     @Override

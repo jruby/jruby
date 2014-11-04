@@ -15,6 +15,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
 
 import java.util.concurrent.BrokenBarrierException;
@@ -100,20 +101,21 @@ public class SafepointManager {
     }
 
     private void waitOnBarrier() {
-        context.outsideGlobalLock(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        barrier.await();
-                        break;
-                    } catch (BrokenBarrierException e) {
-                        throw new RuntimeException(e);
-                    } catch (InterruptedException e) {
-                    }
+        final RubyThread runningThread = context.getThreadManager().leaveGlobalLock();
+
+        try {
+            while (true) {
+                try {
+                    barrier.await();
+                    break;
+                } catch (BrokenBarrierException e) {
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
                 }
             }
-        });
+        } finally {
+            context.getThreadManager().enterGlobalLock(runningThread);
+        }
     }
 
 }

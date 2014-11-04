@@ -499,7 +499,7 @@ public abstract class ArrayNodes {
             final Object[] bs = b.slowToArray();
 
             for (int n = 0; n < a.getSize(); n++) {
-                if (!(boolean)equals.call(frame, as[n], "==", null, bs[n])) {
+                if (!equals.callIsTruthy(frame, as[n], "==", null, bs[n])) {
                     return false;
                 }
             }
@@ -507,11 +507,15 @@ public abstract class ArrayNodes {
             return true;
         }
 
-        // TODO(CS): what to do about all the other cases?
-
         @Specialization
-        public boolean equal(VirtualFrame frame, RubyArray a, RubySymbol b) {
-            return false;
+        public boolean equal(VirtualFrame frame, RubyArray a, Object b) {
+            notDesignedForCompilation();
+
+            if (!(b instanceof RubyArray)) {
+                return false;
+            } else {
+                return equal(frame, a, (RubyArray) b);
+            }
         }
 
     }
@@ -907,7 +911,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldBoolean(frame, block, ((int[]) array.getStore())[n])) {
+                if (!yieldIsTruthy(frame, block, ((int[]) array.getStore())[n])) {
                     return false;
                 }
             }
@@ -920,7 +924,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldBoolean(frame, block, ((long[]) array.getStore())[n])) {
+                if (!yieldIsTruthy(frame, block, ((long[]) array.getStore())[n])) {
                     return false;
                 }
             }
@@ -933,7 +937,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldBoolean(frame, block, ((double[]) array.getStore())[n])) {
+                if (!yieldIsTruthy(frame, block, ((double[]) array.getStore())[n])) {
                     return false;
                 }
             }
@@ -946,7 +950,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldBoolean(frame, block, ((Object[]) array.getStore())[n])) {
+                if (!yieldIsTruthy(frame, block, ((Object[]) array.getStore())[n])) {
                     return false;
                 }
             }
@@ -977,7 +981,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (yieldBoolean(frame, block, ((int[]) array.getStore())[n])) {
+                if (yieldIsTruthy(frame, block, ((int[]) array.getStore())[n])) {
                     return true;
                 }
             }
@@ -990,7 +994,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (yieldBoolean(frame, block, ((long[]) array.getStore())[n])) {
+                if (yieldIsTruthy(frame, block, ((long[]) array.getStore())[n])) {
                     return true;
                 }
             }
@@ -1003,7 +1007,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (yieldBoolean(frame, block, ((double[]) array.getStore())[n])) {
+                if (yieldIsTruthy(frame, block, ((double[]) array.getStore())[n])) {
                     return true;
                 }
             }
@@ -1016,7 +1020,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (yieldBoolean(frame, block, ((Object[]) array.getStore())[n])) {
+                if (yieldIsTruthy(frame, block, ((Object[]) array.getStore())[n])) {
                     return true;
                 }
             }
@@ -1162,16 +1166,16 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode threeEqual;
+        @Child protected KernelNodes.SameOrEqualNode equalNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context);
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
-            threeEqual = prev.threeEqual;
+            equalNode = prev.equalNode;
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -1185,9 +1189,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                // TODO(CS): need a cast node around the dispatch
-
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     found = store[n];
                     continue;
                 }
@@ -1214,9 +1216,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                // TODO(CS): need a cast node around the dispatch
-
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     found = store[n];
                     continue;
                 }
@@ -1599,7 +1599,7 @@ public abstract class ArrayNodes {
                 try {
                     final Object value = store[n];
 
-                    if (yieldBoolean(frame, block, value)) {
+                    if (yieldIsTruthy(frame, block, value)) {
                         return value;
                     }
                 } catch (BreakException e) {
@@ -1620,7 +1620,7 @@ public abstract class ArrayNodes {
                 try {
                     final Object value = store[n];
 
-                    if (yieldBoolean(frame, block, value)) {
+                    if (yieldIsTruthy(frame, block, value)) {
                         return value;
                     }
                 } catch (BreakException e) {
@@ -1641,7 +1641,7 @@ public abstract class ArrayNodes {
                 try {
                     final Object value = store[n];
 
-                    if (yieldBoolean(frame, block, value)) {
+                    if (yieldIsTruthy(frame, block, value)) {
                         return value;
                     }
                 } catch (BreakException e) {
@@ -1662,7 +1662,7 @@ public abstract class ArrayNodes {
                 try {
                     final Object value = store[n];
 
-                    if (yieldBoolean(frame, block, value)) {
+                    if (yieldIsTruthy(frame, block, value)) {
                         return value;
                     }
                 } catch (BreakException e) {
@@ -1737,16 +1737,16 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode threeEqual;
+        @Child protected KernelNodes.SameOrEqualNode equalNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context);
+            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
-            threeEqual = prev.threeEqual;
+            equalNode = prev.equalNode;
         }
 
         @Specialization(guards = "isNull")
@@ -1761,10 +1761,9 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                // TODO(CS): cast node around the dispatch
                 notDesignedForCompilation();
 
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
                 }
             }
@@ -1779,10 +1778,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                // TODO(CS): cast node around the dispatch
-                notDesignedForCompilation();
-
-                if (stored == value || (boolean) threeEqual.call(frame, store[n], "===", null, value)) {
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
                 }
             }
@@ -2820,7 +2816,7 @@ public abstract class ArrayNodes {
             int i = 0;
 
             for (int n = 0; n < array.getSize(); n++) {
-                if (yieldBoolean(frame, block, store[n])) {
+                if (yieldIsTruthy(frame, block, store[n])) {
                     continue;
                 }
 
@@ -2927,10 +2923,9 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    // TODO(CS): cast to boolean?
                     notDesignedForCompilation();
 
-                    if (yieldBoolean(frame, block, new Object[]{value})) {
+                    if (yieldIsTruthy(frame, block,  new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
@@ -2961,10 +2956,9 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    // TODO(CS): cast to boolean?
                     notDesignedForCompilation();
 
-                    if ((boolean) yield(frame, block, value)) {
+                    if (yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
                         selectedSize++;
                     }

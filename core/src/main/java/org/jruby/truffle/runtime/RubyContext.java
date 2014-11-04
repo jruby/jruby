@@ -10,12 +10,11 @@
 package org.jruby.truffle.runtime;
 
 import java.io.*;
-import java.math.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.atomic.*;
 
 import com.oracle.truffle.api.instrument.SourceCallback;
@@ -38,12 +37,11 @@ import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.util.Supplier;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 /**
  * The global state of a running Ruby system.
@@ -63,6 +61,7 @@ public class RubyContext extends ExecutionContext {
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Warnings warnings;
     private final SafepointManager safepointManager;
+    private final Random random = new Random();
 
     // TODO: Wrong place for this, only during parsing but be practical for now
     private LexicalScope lexicalScope;
@@ -331,14 +330,6 @@ public class RubyContext extends ExecutionContext {
         return threadManager;
     }
 
-    public void outsideGlobalLock(Runnable runnable) {
-        threadManager.outsideGlobalLock(runnable);
-    }
-
-    public <T> T outsideGlobalLock(Supplier<T> supplier) {
-        return threadManager.outsideGlobalLock(supplier);
-    }
-
     public TranslatorDriver getTranslator() {
         return translator;
     }
@@ -400,5 +391,9 @@ public class RubyContext extends ExecutionContext {
 
     public SafepointManager getSafepointManager() {
         return safepointManager;
+    }
+
+    public Random getRandom() {
+        return random;
     }
 }

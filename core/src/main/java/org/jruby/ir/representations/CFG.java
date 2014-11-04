@@ -6,7 +6,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -505,8 +504,6 @@ public class CFG {
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
-
-        // SSS FIXME: Patch up rescued regions as well??
     }
 
     /**
@@ -516,10 +513,8 @@ public class CFG {
     private void removeNestedScopesFromBB(BasicBlock bb) {
         for (Instr instr: bb.getInstrs()) {
             for (Operand oper: instr.getOperands()) {
-                if (oper.getOperandType() == OperandType.WRAPPED_IR_CLOSURE) {
-                    WrappedIRClosure closure = (WrappedIRClosure) oper;
-
-                    scope.removeClosure(closure.getClosure());
+                if (oper instanceof WrappedIRClosure) {
+                    scope.removeClosure(((WrappedIRClosure) oper).getClosure());
                     break; // Only one WrappedIRClosure possible per instr
                 }
             }

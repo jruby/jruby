@@ -77,17 +77,6 @@ public class BuildCompoundStringInstr extends Instr implements ResultInstr {
         return new BuildCompoundStringInstr(ii.getRenamedVariable(result), newPieces, encoding);
     }
 
-    // SSS FIXME: Buggy?
-    String retrieveJavaString(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        StringBuilder buf = new StringBuilder();
-
-        for (Operand p : pieces) {
-            buf.append(p.retrieve(context, self, currScope, currDynScope, temp));
-        }
-
-        return buf.toString();
-    }
-
     public boolean isSameEncoding(StringLiteral str) {
         return str.bytelist.getEncoding() == encoding;
     }
@@ -103,12 +92,6 @@ public class BuildCompoundStringInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        // SSS FIXME: Doesn't work in all cases.  See example below
-        //
-        //    s = "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
-        //    s.length prints 70 instead of 52
-        //
-        // return context.getRuntime().newString(retrieveJavaString(interp, context, self));
 
         ByteList bytes = new ByteList();
         bytes.setEncoding(encoding);

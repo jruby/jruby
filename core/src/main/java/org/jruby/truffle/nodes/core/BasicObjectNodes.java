@@ -16,16 +16,18 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.cli.Options;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
 
-    @CoreMethod(names = "!", needsSelf = false)
+    @CoreMethod(names = "!")
     public abstract static class NotNode extends CoreMethodNode {
 
         public NotNode(RubyContext context, SourceSection sourceSection) {
@@ -37,26 +39,8 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public boolean not() {
-            return false;
-        }
-
-    }
-
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(Object a, Object b) {
-            return a == b;
+        public boolean not(Object value) {
+            return !getContext().getCoreLibrary().isTruthy(value);
         }
 
     }
@@ -64,17 +48,21 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode equalNode;
+
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            equalNode = new DispatchHeadNode(context);
         }
 
         public NotEqualNode(NotEqualNode prev) {
             super(prev);
+            equalNode = prev.equalNode;
         }
 
         @Specialization
-        public boolean equal(Object a, Object b) {
-            return a != b;
+        public boolean equal(VirtualFrame frame, Object a, Object b) {
+            return !equalNode.callIsTruthy(frame, a, "==", null, b);
         }
 
     }
@@ -99,7 +87,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "equal?", required = 1)
+    @CoreMethod(names = {"equal?", "=="}, required = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -110,48 +98,44 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
+        public abstract boolean executeEqual(VirtualFrame frame, Object a, Object b);
+
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
         @Specialization public boolean equal(double a, double b) { return a == b; }
-        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a.equals(b); }
+        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a == b; }
 
-        @Specialization public boolean equal(boolean a, int b) { return false; }
-        @Specialization public boolean equal(boolean a, long b) { return false; }
-        @Specialization public boolean equal(boolean a, double b) { return false; }
-        @Specialization public boolean equal(boolean a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(int a, boolean b) { return false; }
-        @Specialization public boolean equal(int a, double b) { return false; }
-        @Specialization public boolean equal(int a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(long a, boolean b) { return false; }
-        @Specialization public boolean equal(long a, double b) { return false; }
-        @Specialization public boolean equal(long a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(double a, boolean b) { return false; }
-        @Specialization public boolean equal(double a, int b) { return false; }
-        @Specialization public boolean equal(double a, long b) { return false; }
-        @Specialization public boolean equal(double a, BigInteger b) { return false; }
-
-        @Specialization public boolean equal(BigInteger a, boolean b) { return false; }
-        @Specialization public boolean equal(BigInteger a, int b) { return false; }
-        @Specialization public boolean equal(BigInteger a, long b) { return false; }
-        @Specialization public boolean equal(BigInteger a, double b) { return false; }
-
-        @Specialization(guards = {"!firstUnboxable", "secondUnboxable"})
-        public boolean equalFirstNotUnboxable(RubyBasicObject a, RubyBasicObject b) {
-            return false;
+        @Specialization(guards = {"firstUnboxable", "secondUnboxable"})
+        public boolean equalUnboxable(Object a, Object b) {
+            return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
         }
 
         @Specialization(guards = {"firstUnboxable", "!secondUnboxable"})
-        public boolean equalSecondNotUnboxable(RubyBasicObject a, RubyBasicObject b) {
-            return false;
+        public boolean equalFirstUnboxable(Object a, Object b) {
+            return ((Unboxable) a).unbox().equals(b);
         }
 
-        @Specialization(guards = {"!firstUnboxable", "!secondUnboxable"})
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
+        @Specialization(guards = {"!firstUnboxable", "secondUnboxable"})
+        public boolean equalSecondUnboxable(Object a, Object b) {
+            return a.equals(((Unboxable) b).unbox());
+        }
+
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            if (a instanceof Unboxable) {
+                if (b instanceof Unboxable) {
+                    return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
+                } else {
+                    return ((Unboxable) a).unbox().equals(b);
+                }
+            } else {
+                if (b instanceof Unboxable) {
+                    return a.equals(((Unboxable) b).unbox());
+                } else {
+                    return a == b;
+                }
+            }
         }
 
         protected boolean firstUnboxable(Object a, Object b) {
@@ -259,14 +243,19 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = {"send", "__send__"}, needsBlock = true, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "__send__", needsBlock = true, required = 1, argumentsAsArray = true)
     public abstract static class SendNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode dispatchNode;
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatchNode = DispatchHeadNode.onSelf(context);
+
+            dispatchNode = new DispatchHeadNode(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+
+            if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                dispatchNode.forceUncached();
+            }
         }
 
         public SendNode(SendNode prev) {

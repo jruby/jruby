@@ -21,7 +21,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
         this.problem = problem;
         this.basicBlock = basicBlock;
 
-        // FIXME: Enebo: Does this really needed to be calculaed here?  Can analysis change this value?
+        // Cache the rescuer node for easy access
         rescuer = problem.getScope().cfg().getRescuerBBFor(basicBlock);
     }
 

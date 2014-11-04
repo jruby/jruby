@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.cast.BoxingNodeFactory;
 import org.jruby.truffle.nodes.objectstorage.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -55,7 +56,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
         super(context, sourceSection);
-        this.receiver = new BoxingNode(context, sourceSection, receiver);
+        this.receiver = BoxingNodeFactory.create(context, sourceSection, receiver);
         this.rhs = rhs;
         writeNode = new WriteHeadObjectFieldNode(name, hook);
         this.isGlobal = isGlobal;

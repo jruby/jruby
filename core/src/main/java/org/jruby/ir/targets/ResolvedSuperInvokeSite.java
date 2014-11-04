@@ -52,12 +52,6 @@ public abstract class ResolvedSuperInvokeSite extends SelfInvokeSite {
             case "invokeClassSuper":
                 site = new ClassSuperInvokeSite(type, superName, splatmapString);
                 break;
-            case "invokeUnresolvedSuper":
-                site = new UnresolvedSuperInvokeSite(type, superName, splatmapString);
-                break;
-            case "invokeZSuper":
-                site = new ZSuperInvokeSite(type, superName, splatmapString);
-                break;
             default:
                 throw new RuntimeException("invalid super call: " + name);
         }
@@ -65,51 +59,53 @@ public abstract class ResolvedSuperInvokeSite extends SelfInvokeSite {
         return InvokeSite.bootstrap(site, lookup);
     }
 
-    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        // TODO: mostly copy of org.jruby.ir.targets.InvokeSite because of different target class logic
+    // FIXME: indy cached version was not doing splat mapping; revert to slow logic for now
 
-        RubyClass selfClass = pollAndGetClass(context, self);
-        RubyClass superClass = getSuperClass(definingModule);
-        SwitchPoint switchPoint = (SwitchPoint) superClass.getInvalidator().getData();
-        CacheEntry entry = superClass.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
-
-        if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, methodName, args, block);
-        }
-
-        MethodHandle mh = getHandle(superClass, this, method);
-
-        updateInvocationTarget(mh, self, selfClass, entry, switchPoint);
-
-        return method.call(context, self, superClass, methodName, args, block);
-    }
-
-    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
-        // TODO: get rid of caller
-
-        context.callThreadPoll();
-
-        RubyClass superClass = getSuperClass(definingModule);
-        String name = methodName;
-        CacheEntry entry = cache;
-
-        if (entry.typeOk(superClass)) {
-            return entry.method.call(context, self, superClass, name, splatArguments(args, splatMap), block);
-        }
-
-        entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
-
-        DynamicMethod method = entry.method;
-
-        if (method.isUndefined()) {
-            return Helpers.callMethodMissing(context, self, method.getVisibility(), name, callType, splatArguments(args, splatMap), block);
-        }
-
-        cache = entry;
-
-        return method.call(context, self, superClass, name, splatArguments(args, splatMap), block);
-    }
+//    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+//        // TODO: mostly copy of org.jruby.ir.targets.InvokeSite because of different target class logic
+//
+//        RubyClass selfClass = pollAndGetClass(context, self);
+//        RubyClass superClass = getSuperClass(definingModule);
+//        SwitchPoint switchPoint = (SwitchPoint) superClass.getInvalidator().getData();
+//        CacheEntry entry = superClass.searchWithCache(methodName);
+//        DynamicMethod method = entry.method;
+//
+//        if (methodMissing(entry, caller)) {
+//            return callMethodMissing(entry, callType, context, self, methodName, args, block);
+//        }
+//
+//        MethodHandle mh = getHandle(superClass, this, method);
+//
+//        updateInvocationTarget(mh, self, selfClass, entry, switchPoint);
+//
+//        return method.call(context, self, superClass, methodName, args, block);
+//    }
+//
+//    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
+//        // TODO: get rid of caller
+//
+//        context.callThreadPoll();
+//
+//        RubyClass superClass = getSuperClass(definingModule);
+//        String name = methodName;
+//        CacheEntry entry = cache;
+//
+//        if (entry.typeOk(superClass)) {
+//            return entry.method.call(context, self, superClass, name, splatArguments(args, splatMap), block);
+//        }
+//
+//        entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
+//
+//        DynamicMethod method = entry.method;
+//
+//        if (method.isUndefined()) {
+//            return Helpers.callMethodMissing(context, self, method.getVisibility(), name, callType, splatArguments(args, splatMap), block);
+//        }
+//
+//        cache = entry;
+//
+//        return method.call(context, self, superClass, name, splatArguments(args, splatMap), block);
+//    }
 
     protected abstract RubyClass getSuperClass(RubyClass definingModule);
 }

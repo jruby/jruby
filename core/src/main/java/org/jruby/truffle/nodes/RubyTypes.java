@@ -36,6 +36,7 @@ import java.math.BigInteger;
                 int.class, //
                 long.class, //
                 double.class, //
+                String.class, // for SymbolCastNode
                 BigInteger.class, //
                 RubyRange.IntegerFixnumRange.class, //
                 RubyRange.LongFixnumRange.class, //
@@ -72,12 +73,6 @@ import java.math.BigInteger;
                 Object[].class})
 
 public class RubyTypes {
-
-	@ImplicitCast
-	public long int2long(int value) {
-		return value;
-	}
-
 
     @ImplicitCast
     public boolean unboxBoolean(RubyTrueClass value) {

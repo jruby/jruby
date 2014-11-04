@@ -86,51 +86,20 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
-            return false;
-        }
-
+        @CompilerDirectives.SlowPath
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
-            notDesignedForCompilation();
-
             return a.equals(b.toString());
         }
 
         @Specialization
-        public boolean equal(RubyString a, RubySymbol b) {
-            notDesignedForCompilation();
-
-            return equal(a, b.toRubyString());
+        public boolean equal(RubyString a, Object b) {
+            if (b instanceof RubyString) {
+                return equal(a, (RubyString) b);
+            } else {
+                return false;
+            }
         }
-    }
-
-    @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
-            notDesignedForCompilation();
-
-            return true;
-        }
-
-        @Specialization
-        public boolean notEqual(RubyString a, RubyString b) {
-            notDesignedForCompilation();
-
-            return !a.toString().equals(b.toString());
-        }
-
     }
 
     @CoreMethod(names = "<=>", required = 1)

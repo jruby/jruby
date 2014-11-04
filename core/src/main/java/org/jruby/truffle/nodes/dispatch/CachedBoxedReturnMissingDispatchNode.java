@@ -29,8 +29,8 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                RubyClass expectedClass) {
-        super(context, cachedName, next);
+                                                RubyClass expectedClass, boolean indirect) {
+        super(context, cachedName, next, indirect);
         assert expectedClass != null;
         this.expectedClass = expectedClass;
         unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();

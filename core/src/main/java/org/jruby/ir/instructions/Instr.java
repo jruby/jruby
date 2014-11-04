@@ -110,13 +110,6 @@ public abstract class Instr {
                  // would use %block.  In that scenario, we cannot delete the '%block = recv_closure' instruction.
                  // This is safe, but conservative.
                  return false;
-             } else if (s.usesZSuper() && getOperation().isArgReceive()) {
-                 // If this scope (or any nested scope) has a ZSuperInstr, then the arguments of this
-                 // scope could be used by any of those ZSuper instructions.  If so, we cannot delete
-                 // the argument receive.
-                 // SSS FIXME: This check may be redundant. ZSuper now explicits lists
-                 // all arguments that it may use.
-                 return false;
              } else {
                  return true;
              }

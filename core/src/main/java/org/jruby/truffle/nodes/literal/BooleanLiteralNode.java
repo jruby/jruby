@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
+@NodeInfo(cost = NodeCost.NONE)
 public class BooleanLiteralNode extends RubyNode {
 
     private final boolean value;

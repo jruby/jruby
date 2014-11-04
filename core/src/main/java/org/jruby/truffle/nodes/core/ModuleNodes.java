@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.*;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
@@ -39,6 +40,32 @@ import java.util.List;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
+
+    @CoreMethod(names = "===", required = 1)
+    public abstract static class ContainsInstanceNode extends CoreMethodNode {
+
+        public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ContainsInstanceNode(ContainsInstanceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean containsInstance(RubyModule module, RubyBasicObject instance) {
+            notDesignedForCompilation();
+
+            return ModuleOperations.includesModule(instance.getMetaClass(), module);
+        }
+
+        @Specialization
+        public boolean containsInstance(RubyModule module, Object instance) {
+            notDesignedForCompilation();
+
+            return ModuleOperations.includesModule(getContext().getCoreLibrary().box(instance).getMetaClass(), module);
+        }
+    }
 
     @CoreMethod(names = "<=", required = 1)
     public abstract static class IsSubclassOfNode extends CoreMethodNode {
@@ -485,6 +512,52 @@ public abstract class ModuleNodes {
             return ModuleOperations.lookupConstant(null, module, name.toString()) != null;
         }
 
+    }
+
+    @CoreMethod(names = "const_get", required = 1)
+    public abstract static class ConstGetNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode dispatch;
+
+        public ConstGetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
+        }
+
+        public ConstGetNode(ConstGetNode prev) {
+            super(prev);
+            dispatch = prev.dispatch;
+        }
+
+        @Specialization
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name) {
+            notDesignedForCompilation();
+
+            return dispatch.dispatch(
+                    frame,
+                    getContext().getCoreLibrary().getNilObject(),
+                    null,
+                    module,
+                    name,
+                    null,
+                    new Object[]{},
+                    Dispatch.DispatchAction.READ_CONSTANT);
+        }
+
+        @Specialization
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+
+            return dispatch.dispatch(
+                    frame,
+                    getContext().getCoreLibrary().getNilObject(),
+                    null,
+                    module,
+                    name,
+                    null,
+                    new Object[]{},
+                    Dispatch.DispatchAction.READ_CONSTANT);
+        }
     }
 
     @CoreMethod(names = "const_missing", needsSelf = false, required = 1)
