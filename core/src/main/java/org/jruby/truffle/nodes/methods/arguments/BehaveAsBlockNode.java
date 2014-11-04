@@ -11,12 +11,14 @@ package org.jruby.truffle.nodes.methods.arguments;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
+@NodeInfo(cost = NodeCost.NONE)
 public class BehaveAsBlockNode extends RubyNode {
 
     private @CompilationFinal boolean behaveAsBlock;

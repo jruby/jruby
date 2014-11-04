@@ -10,12 +10,15 @@
 package org.jruby.truffle.nodes.literal;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 public abstract class FixnumLiteralNode {
 
+    @NodeInfo(cost = NodeCost.NONE)
     public static class IntegerFixnumLiteralNode extends RubyNode {
 
         private final int value;
@@ -41,6 +44,7 @@ public abstract class FixnumLiteralNode {
 
     }
 
+    @NodeInfo(cost = NodeCost.NONE)
     public static class LongFixnumLiteralNode extends RubyNode {
 
         private final long value;

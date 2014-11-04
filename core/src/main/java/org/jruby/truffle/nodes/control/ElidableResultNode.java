@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.*;
  * a non-void type is used. It is not executed at all if a void typed execute method is used.
  * Therefore it should not perform any observable side effects.
  */
+@NodeInfo(cost = NodeCost.NONE)
 public class ElidableResultNode extends RubyNode {
 
     @Child protected RubyNode required;
