@@ -50,6 +50,7 @@ matrix:
   allow_failures:
     - env: TARGET='-Pcomplete'
     - env: TARGET='-Prake -Dtask=spec:compiler'
+    - env: TARGET='-Pj2ee'
 
 branches:
   only:
