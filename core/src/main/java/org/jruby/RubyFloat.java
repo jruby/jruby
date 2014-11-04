@@ -56,6 +56,7 @@ import static org.jruby.util.Numeric.nurat_rationalize_internal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
+import java.lang.Math;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -978,4 +979,14 @@ public class RubyFloat extends RubyNumeric {
     private static final ByteList NAN_BYTELIST = new ByteList("nan".getBytes());
     private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList("-inf".getBytes());
     private static final ByteList INFINITY_BYTELIST = new ByteList("inf".getBytes());
+
+    @JRubyMethod(name = "next_float")
+    public IRubyObject next_float() {
+        return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.POSITIVE_INFINITY));
+    }
+
+    @JRubyMethod(name = "prev_float")
+    public IRubyObject prev_float() {
+        return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+    }
 }
