@@ -1447,31 +1447,25 @@ public class IRBuilder {
             addInstr(scope, new LabelInstr(doneLabel));
             return tmpVar;
         }
-        case COLON3NODE: case COLON2NODE: {
-            // SSS FIXME: Is there a reason to do this all with low-level IR?
-            // Can't this all be folded into a Java method that would be part
-            // of the runtime library, which then can be used by buildDefinitionCheck method above?
-            // This runtime library would be used both by the interpreter & the compiled code!
-
-            final Colon3Node colon = (Colon3Node) node;
-            final String name = colon.getName();
+        case COLON3NODE:
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_CONSTANT_OR_METHOD,
+                    new Operand[] {new ObjectClass(), new ConstantStringLiteral(((Colon3Node) node).getName())}));
+        case COLON2NODE: {
+            final Colon2Node colon = (Colon2Node) node;
+            final ConstantStringLiteral name = new ConstantStringLiteral(colon.getName());
             final Variable errInfo = scope.createTemporaryVariable();
 
-            // store previous exception for restoration if we rescue something
-            addInstr(scope, new GetErrorInfoInstr(errInfo));
+            // Complicated case where LHS can be an expression - (eval "Foo")::Bar
+            addInstr(scope, new GetErrorInfoInstr(errInfo));  // store previous exception for restoration if we rescue something
 
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run() {
-                    Operand v = colon instanceof Colon2Node ?
-                            build(((Colon2Node)colon).getLeftNode(), scope) : new ObjectClass();
-
-                    Variable tmpVar = scope.createTemporaryVariable();
-                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
-                    return tmpVar;
+                    Operand lhs = build(colon.getLeftNode(), scope);
+                    return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(),
+                            IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {lhs, name}));
                 }
             };
 
-            // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
                  public Operand run() {
                  // Nothing to do -- ignore the exception, and restore stashed error info!
@@ -1480,7 +1474,7 @@ public class IRBuilder {
                  }
             };
 
-                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
             return protectCodeWithRescue(scope, protectedCode, rescueBlock);
         }
         case FCALLNODE: {
