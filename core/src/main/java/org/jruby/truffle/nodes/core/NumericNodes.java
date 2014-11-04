@@ -51,4 +51,53 @@ public abstract class NumericNodes {
 
     }
 
+    @CoreMethod(names = "nonzero?")
+    public abstract static class NonZeroNode extends CoreMethodNode {
+
+        public NonZeroNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NonZeroNode(NonZeroNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object nonZero(int value) {
+            if (value == 0) {
+                return false;
+            } else {
+                return value;
+            }
+        }
+
+        @Specialization
+        public Object nonZero(long value) {
+            if (value == 0L) {
+                return false;
+            } else {
+                return value;
+            }
+        }
+
+        @Specialization
+        public Object nonZero(BigInteger value) {
+            if (value.equals(BigInteger.ZERO)) {
+                return false;
+            } else {
+                return value;
+            }
+        }
+
+        @Specialization
+        public Object nonZero(double value) {
+            if (value == 0.0) {
+                return false;
+            } else {
+                return value;
+            }
+        }
+
+    }
+
 }

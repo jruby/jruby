@@ -494,28 +494,6 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "nonzero?")
-    public abstract static class NonZeroNode extends CoreMethodNode {
-
-        public NonZeroNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NonZeroNode(NonZeroNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object nonZero(double value) {
-            if (value == 0) {
-                return false;
-            } else {
-                return value;
-            }
-        }
-
-    }
-
     @CoreMethod(names = "round")
     public abstract static class RoundNode extends CoreMethodNode {
 

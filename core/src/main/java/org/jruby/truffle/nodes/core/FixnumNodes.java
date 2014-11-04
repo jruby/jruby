@@ -1312,28 +1312,6 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "nonzero?")
-    public abstract static class NonZeroNode extends CoreMethodNode {
-
-        public NonZeroNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NonZeroNode(NonZeroNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object nonZero(int value) {
-            if (value == 0) {
-                return false;
-            } else {
-                return value;
-            }
-        }
-
-    }
-
     @CoreMethod(names = "size", needsSelf = false)
     public abstract static class SizeNode extends CoreMethodNode {
 

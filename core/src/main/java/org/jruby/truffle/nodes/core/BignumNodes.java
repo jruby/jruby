@@ -623,28 +623,6 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "nonzero?")
-    public abstract static class NonZeroNode extends CoreMethodNode {
-
-        public NonZeroNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NonZeroNode(NonZeroNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object nonZero(BigInteger value) {
-            if (value.equals(BigInteger.ZERO)) {
-                return false;
-            } else {
-                return value;
-            }
-        }
-
-    }
-
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
