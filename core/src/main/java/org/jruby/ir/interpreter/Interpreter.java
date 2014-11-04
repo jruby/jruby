@@ -87,7 +87,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
         ThreadContext context = runtime.getCurrentContext();
 
-        IRubyObject rv = null;
         DynamicScope s = rootNode.getScope();
         s.setEvalType(evalType);
         context.pushScope(s);
@@ -103,21 +102,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             s.growIfNeeded();
 
             runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null);
-            rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), block, backtraceName);
+            return evalScript.call(context, self, evalScript.getStaticScope().getModule(), block, backtraceName);
         } finally {
             runEndBlocks(ic.getEndBlocks(), context, self, ss, null);
             s.clearEvalType();
             context.popScope();
         }
-        return rv;
-    }
-
-    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self, EvalType evalType) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK, evalType);
-    }
-
-    public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self, Block block) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block, EvalType.BINDING_EVAL);
     }
 
     public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
@@ -158,8 +148,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             currModule = context.getRuntime().getObject();
         }
 
-        IRubyObject retVal;
-
         scope.setModule(currModule);
         DynamicScope tlbScope = irScope.getTopLevelBindingScope();
         if (tlbScope == null) {
@@ -171,18 +159,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            Interpreter.runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
-            retVal = Interpreter.INTERPRET_ROOT(context, self, ic, currModule, name);
-
-            Interpreter.dumpStats();
+            runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+            return INTERPRET_ROOT(context, self, ic, currModule, name);
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
-            Interpreter.runEndBlocks(ic.getEndBlocks(), context, self, scope, null);
+            runEndBlocks(ic.getEndBlocks(), context, self, scope, null);
+            dumpStats();
             context.popScope();
         }
-
-        return retVal;
     }
 
     private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
@@ -726,34 +711,17 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      */
     public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, RubyString src, String file, int lineNumber, EvalType evalType) {
         Ruby runtime = context.runtime;
-
         if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
             throw new UnsupportedOperationException();
         }
 
-        // this is ensured by the caller
-        assert file != null;
-
         // no binding, just eval in "current" frame (caller's frame)
-        RubyString source = src.convertToString();
-
         DynamicScope evalScope = context.getCurrentScope().getEvalScope(runtime);
         evalScope.getStaticScope().determineModule();
 
-        try {
-            Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
+        RootNode node = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
 
-            return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self, evalType);
-/*
- * SSS FIXME: Why was this here?
- * Do we need an IR equivalent here?
- *
-        } catch (JumpException.BreakJump bj) {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
-*/
-        } catch (StackOverflowError soe) {
-            throw runtime.newSystemStackError("stack level too deep", soe);
-        }
+        return interpretCommonEval(runtime, file, lineNumber, "(eval)", node, self, Block.NULL_BLOCK, evalType);
     }
 
     /**
@@ -771,25 +739,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             throw new UnsupportedOperationException();
         }
 
-        DynamicScope evalScope;
-
-        // in 1.9, eval scopes are local to the binding
-        evalScope = binding.getEvalScope(runtime);
+        DynamicScope evalScope = binding.getEvalScope(runtime);
         evalScope.setEvalType(EvalType.BINDING_EVAL);
-
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
 
         Frame lastFrame = context.preEvalWithBinding(binding);
         try {
             // Binding provided for scope, use it
-            RubyString source = src.convertToString();
-            Node node = runtime.parseEval(source.getByteList(), binding.getFile(), evalScope, binding.getLine());
+            RootNode node = (RootNode) runtime.parseEval(src.convertToString().getByteList(), binding.getFile(), evalScope, binding.getLine());
             Block block = binding.getFrame().getBlock();
 
-            return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block);
-        } catch (StackOverflowError soe) {
-            throw runtime.newSystemStackError("stack level too deep", soe);
+            return interpretCommonEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block, EvalType.BINDING_EVAL);
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
         }
