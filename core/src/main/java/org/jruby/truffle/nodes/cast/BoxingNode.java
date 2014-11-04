@@ -9,12 +9,12 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -23,112 +23,59 @@ import org.jruby.truffle.runtime.core.RubyFloat;
 
 import java.math.BigInteger;
 
-public class BoxingNode extends RubyNode {
+@NodeChild("child")
+public abstract class BoxingNode extends RubyNode {
 
-    @Child protected RubyNode child;
-
-    @CompilerDirectives.CompilationFinal private boolean seenBoxed = false;
-    @CompilerDirectives.CompilationFinal private boolean seenNil = false;
-    @CompilerDirectives.CompilationFinal private boolean seenBoolean = false;
-    @CompilerDirectives.CompilationFinal private boolean seenInteger = false;
-    @CompilerDirectives.CompilationFinal private boolean seenLong = false;
-    @CompilerDirectives.CompilationFinal private boolean seenDouble = false;
-    @CompilerDirectives.CompilationFinal private boolean seenBigInteger = false;
+    private final ConditionProfile booleanProfile = ConditionProfile.createCountingProfile();
 
     public BoxingNode(RubyContext context, SourceSection sourceSection) {
-        this(context, sourceSection, null);
-    }
-
-    public BoxingNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.child = child;
     }
 
-    @Override
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
-        return box(child.execute(frame));
+    public BoxingNode(BoxingNode prev) {
+        super(prev);
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeRubyBasicObject(frame);
-    }
+    public abstract RubyBasicObject executeRubyBasicObject(VirtualFrame frame);
+
+    protected abstract RubyBasicObject executeRubyBasicObject(VirtualFrame frame, Object value);
 
     public RubyBasicObject box(Object value) {
-        if (seenBoxed && value instanceof RubyBasicObject) {
-            return (RubyBasicObject) value;
+        return executeRubyBasicObject(null, value);
+    }
+
+    @Specialization
+    public RubyBasicObject box(RubyBasicObject object) {
+        return object;
+    }
+
+    @Specialization
+    public RubyBasicObject box(boolean value) {
+        if (booleanProfile.profile(value)) {
+            return getContext().getCoreLibrary().getTrueObject();
+        } else {
+            return getContext().getCoreLibrary().getFalseObject();
         }
+    }
 
-        if (seenNil && value instanceof RubyNilClass) {
-            return getContext().getCoreLibrary().getNilObject();
-        }
+    @Specialization
+    public RubyBasicObject box(int value) {
+        return new RubyFixnum.IntegerFixnum(getContext().getCoreLibrary().getFixnumClass(), value);
+    }
 
-        if (seenBoolean && value instanceof Boolean) {
-            if ((boolean) value) {
-                return getContext().getCoreLibrary().getTrueObject();
-            } else {
-                return getContext().getCoreLibrary().getFalseObject();
-            }
-        }
+    @Specialization
+    public RubyBasicObject box(long value) {
+        return new RubyFixnum.LongFixnum(getContext().getCoreLibrary().getFixnumClass(), value);
+    }
 
-        if (seenInteger && value instanceof Integer) {
-            return new RubyFixnum.IntegerFixnum(getContext().getCoreLibrary().getFixnumClass(), (int) value);
-        }
+    @Specialization
+    public RubyBasicObject box(double value) {
+        return new RubyFloat(getContext().getCoreLibrary().getFloatClass(), value);
+    }
 
-        if (seenLong && value instanceof Long) {
-            return new RubyFixnum.LongFixnum(getContext().getCoreLibrary().getFixnumClass(), (long) value);
-        }
-
-        if (seenDouble && value instanceof Double) {
-            return new RubyFloat(getContext().getCoreLibrary().getFloatClass(), (double) value);
-        }
-
-        if (seenBigInteger && value instanceof BigInteger) {
-            return new RubyBignum(getContext().getCoreLibrary().getFixnumClass(), (BigInteger) value);
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (value instanceof RubyBasicObject) {
-            seenBoxed = true;
-            return (RubyBasicObject) value;
-        }
-
-        if (value instanceof RubyNilClass) {
-            seenNil = true;
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        if (value instanceof Boolean) {
-            seenBoolean = true;
-            if ((boolean) value) {
-                return getContext().getCoreLibrary().getTrueObject();
-            } else {
-                return getContext().getCoreLibrary().getFalseObject();
-            }
-        }
-
-        if (value instanceof Integer) {
-            seenInteger = true;
-            return new RubyFixnum.IntegerFixnum(getContext().getCoreLibrary().getFixnumClass(), (int) value);
-        }
-
-        if (value instanceof Long) {
-            seenLong = true;
-            return new RubyFixnum.LongFixnum(getContext().getCoreLibrary().getFixnumClass(), (long) value);
-        }
-
-        if (value instanceof Double) {
-            seenDouble = true;
-            return new RubyFloat(getContext().getCoreLibrary().getFloatClass(), (double) value);
-        }
-
-        if (value instanceof BigInteger) {
-            seenBigInteger = true;
-            return new RubyBignum(getContext().getCoreLibrary().getFixnumClass(), (BigInteger) value);
-        }
-
-        throw new UnsupportedOperationException(value.getClass().getName());
+    @Specialization
+    public RubyBasicObject box(BigInteger value) {
+        return new RubyBignum(getContext().getCoreLibrary().getFixnumClass(), value);
     }
 
 }

@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.RubyMath;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.cast.BoxingNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
@@ -370,7 +371,7 @@ public abstract class MathNodes {
 
         public FrExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = new BoxingNode(context, sourceSection);
+            box = BoxingNodeFactory.create(context, sourceSection, null);
             floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
@@ -529,7 +530,7 @@ public abstract class MathNodes {
 
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = new BoxingNode(context, sourceSection);
+            box = BoxingNodeFactory.create(context, sourceSection, null);
             floatANode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
             integerBNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
@@ -644,7 +645,7 @@ public abstract class MathNodes {
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = new BoxingNode(context, sourceSection);
+            box = BoxingNodeFactory.create(context, sourceSection, null);
             floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
@@ -929,7 +930,7 @@ public abstract class MathNodes {
 
         protected SimpleMonadicMathFunction(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = new BoxingNode(context, sourceSection);
+            box = BoxingNodeFactory.create(context, sourceSection, null);
             floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
@@ -998,7 +999,7 @@ public abstract class MathNodes {
 
         protected SimpleDyadicMathFunction(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = new BoxingNode(context, sourceSection);
+            box = BoxingNodeFactory.create(context, sourceSection, null);
             floatANode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
             floatBNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }

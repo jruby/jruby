@@ -613,9 +613,9 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode receiver;
         if (useClassVariablesAsIfInClass) {
-            receiver = new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection));
+            receiver = BoxingNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
         } else {
-            receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
+            receiver = new ClassNode(context, sourceSection, BoxingNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection)));
         }
         final RubyNode rhs = node.getValueNode().accept(this);
         return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
@@ -626,9 +626,9 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode receiver;
         if (useClassVariablesAsIfInClass) {
-            receiver = new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection));
+            receiver = BoxingNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
         } else {
-            receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
+            receiver = new ClassNode(context, sourceSection, BoxingNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection)));
         }
         return new ReadClassVariableNode(context, sourceSection, node.getName(), receiver);
     }
@@ -786,7 +786,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode objectNode = node.getReceiverNode().accept(this);
 
-        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, objectNode));
+        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, BoxingNodeFactory.create(context, sourceSection, objectNode));
 
         return translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), true);
     }
@@ -1943,7 +1943,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode receiverNode = node.getReceiverNode().accept(this);
 
-        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, receiverNode));
+        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, BoxingNodeFactory.create(context, sourceSection, receiverNode));
 
         return openModule(sourceSection, singletonClassNode, "(singleton-def)", node.getBodyNode());
     }

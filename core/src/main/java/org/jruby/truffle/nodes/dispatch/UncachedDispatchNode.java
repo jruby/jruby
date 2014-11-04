@@ -16,6 +16,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.cast.BoxingNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -44,7 +45,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
-        box = new BoxingNode(context, null, null);
+        box = BoxingNodeFactory.create(context, null, null);
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
         toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
     }
