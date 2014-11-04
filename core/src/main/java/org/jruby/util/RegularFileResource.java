@@ -162,6 +162,8 @@ class RegularFileResource implements FileResource {
                         throw new ResourceException.InvalidArguments(absolutePath());
                     case ENOENT:
                         throw new ResourceException.NotFound(absolutePath());
+                    case ELOOP:
+                        throw new ResourceException.TooManySymlinks(absolutePath());
                     default:
                         throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
 

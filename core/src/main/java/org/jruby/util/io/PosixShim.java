@@ -412,7 +412,10 @@ public class PosixShim {
             errno = Errno.ENOENT;
         } catch (ResourceException.PermissionDenied e) {
             errno = Errno.EACCES;
+        } catch (ResourceException.TooManySymlinks e) {
+            errno = Errno.ELOOP;
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException("Unhandled IOException", e);
         }
         return null;
