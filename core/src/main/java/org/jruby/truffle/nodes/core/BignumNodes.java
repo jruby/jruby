@@ -623,47 +623,6 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "times", needsBlock = true)
-    public abstract static class TimesNode extends YieldingCoreMethodNode {
-
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
-
-        public TimesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public TimesNode(TimesNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object times(VirtualFrame frame, BigInteger n, RubyProc block) {
-            notDesignedForCompilation();
-
-            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(n) < 0; i = i.add(BigInteger.ONE)) {
-                while (true) {
-                    try {
-                        yield(frame, block, i);
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
-                    }
-                }
-            }
-
-            return n;
-        }
-
-    }
-
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
