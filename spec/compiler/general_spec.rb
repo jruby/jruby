@@ -866,4 +866,10 @@ ary
       expect(x).to eq Object
     end
   end
+
+  it "retrieves toplevel constants with ::Const form" do
+    run '::Object' do |x|
+      expect(x).to eq Object
+    end
+  end
 end
