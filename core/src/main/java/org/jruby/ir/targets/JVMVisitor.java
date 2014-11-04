@@ -1975,6 +1975,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Null(Null nul) {
+        jvmAdapter().aconst_null();
+    }
+
+    @Override
     public void ObjectClass(ObjectClass objectclass) {
         jvmMethod().pushObjectClass();
     }
