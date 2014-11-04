@@ -29,7 +29,6 @@ public enum OperandType {
     METHOD_HANDLE((byte) 'm'),
     NIL((byte) 'N'),
     NTH_REF((byte) '1'),
-    NULL((byte) '0'),
     OBJECT_CLASS((byte) 'O'),
     RANGE((byte) '.'),
     RATIONAL((byte) 'r'),

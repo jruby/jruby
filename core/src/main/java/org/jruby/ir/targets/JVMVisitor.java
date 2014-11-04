@@ -1118,7 +1118,11 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
         m.loadSelf(); // TODO: get rid of caller
         m.loadSelf();
-        visit(definingModule);
+        if (definingModule == UndefinedValue.UNDEFINED) {
+            jvmAdapter().aconst_null();
+        } else {
+            visit(definingModule);
+        }
 
         // TODO: CON: is this safe?
         jvmAdapter().checkcast(p(RubyClass.class));
@@ -1749,7 +1753,7 @@ public class JVMVisitor extends IRVisitor {
         String name = unresolvedsuperinstr.getMethodAddr().getName();
         Operand[] args = unresolvedsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
-        Operand definingModule = Null.INSTANCE;
+        Operand definingModule = UndefinedValue.UNDEFINED;
         boolean containsArgSplat = unresolvedsuperinstr.containsArgSplat();
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
 
@@ -1777,7 +1781,7 @@ public class JVMVisitor extends IRVisitor {
         String name = zsuperinstr.getMethodAddr().getName();
         Operand[] args = zsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
-        Operand definingModule = Null.INSTANCE;
+        Operand definingModule = UndefinedValue.UNDEFINED;
         boolean containsArgSplat = zsuperinstr.containsArgSplat();
         Operand closure = zsuperinstr.getClosureArg(null);
 
@@ -1972,11 +1976,6 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmAdapter().pushInt(nthref.matchNumber);
         jvmMethod().invokeIRHelper("nthMatch", sig(IRubyObject.class, ThreadContext.class, int.class));
-    }
-
-    @Override
-    public void Null(Null nul) {
-        jvmAdapter().aconst_null();
     }
 
     @Override

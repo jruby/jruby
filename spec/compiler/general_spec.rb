@@ -889,4 +889,23 @@ ary
       expect(x).to eq 6
     end
   end
+
+  it "performs super calls within a closure" do
+    run '
+      class SplatSuperArgs0
+        def foo(a)
+          a
+        end
+      end
+      class SplatSuperArgs1 < SplatSuperArgs0
+        def foo(a)
+          1.times do
+            super(a)
+          end
+        end
+      end
+      SplatSuperArgs1.new.foo(1)' do |x|
+      expect(x).to eq 1
+    end
+  end
 end

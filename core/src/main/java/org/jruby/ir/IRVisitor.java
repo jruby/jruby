@@ -156,7 +156,6 @@ public abstract class IRVisitor {
     public void MethodHandle(MethodHandle methodhandle) { error(methodhandle); }
     public void Nil(Nil nil) { error(nil); }
     public void NthRef(NthRef nthref) { error(nthref); }
-    public void Null(Null nul) { error(nul); }
     public void ObjectClass(ObjectClass objectclass) { error(objectclass); }
     public void Rational(Rational rational) { error(rational); }
     public void Regexp(Regexp regexp) { error(regexp); }
