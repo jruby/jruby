@@ -1280,6 +1280,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return runtime.newFixnum(n);
     }
 
+    // MRI: rb_io_write_nonblock
     @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
         Ruby runtime = context.runtime;
@@ -1334,10 +1335,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         return runtime.newFixnum(n);
-    }
-
-    public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject[] argv, boolean useException) {
-        return write_nonblock(context, argv);
     }
 
     public RubyIO GetWriteIO() {
@@ -2574,7 +2571,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         return doReadNonblock(context, args, true);
     }
-    
+
+    // MRI: io_read_nonblock
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
         Ruby runtime = context.runtime;
         IRubyObject ret;
@@ -2992,7 +2990,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ByteListCache cache = new ByteListCache();
         for (IRubyObject line = getline(context, separator); !line.isNil();
-		        line = getline(context, separator, cache)) {
+		        line = getline(context, separator, -1, cache)) {
             block.yield(context, line);
         }
         
@@ -3032,18 +3030,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
             result.append(line);
         }
         return result;
-    }
-    
-    private long getLimitFromArgs(IRubyObject[] args) {
-        long limit = -1;
-
-        if (args.length > 1) {
-            limit = RubyNumeric.num2long(args[1]);
-        } else if (args.length > 0 && args[0] instanceof RubyFixnum) {
-            limit = RubyNumeric.num2long(args[0]);
-        }
-
-        return limit;
     }
 
     @JRubyMethod(name = "to_io")
@@ -4715,6 +4701,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }
+    }
+
+    @Deprecated
+    public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject[] argv, boolean useException) {
+        return write_nonblock(context, argv);
     }
     
     protected OpenFile openFile;
