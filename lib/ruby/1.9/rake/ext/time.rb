@@ -1,8 +1,6 @@
 #--
 # Extensions to time to allow comparisons with an early time class.
 
-require 'rake/early_time'
-
 class Time
   alias rake_original_time_compare :<=>
   def <=>(other)
@@ -13,3 +11,4 @@ class Time
     end
   end
 end
+

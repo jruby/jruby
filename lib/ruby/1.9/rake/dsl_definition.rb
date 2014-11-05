@@ -32,6 +32,7 @@ module Rake
       Rake::Task.define_task(*args, &block)
     end
 
+
     # Declare a file task.
     #
     # Example:
@@ -51,8 +52,8 @@ module Rake
 
     # Declare a file creation task.
     # (Mainly used for the directory command).
-    def file_create(*args, &block)
-      Rake::FileCreationTask.define_task(*args, &block)
+    def file_create(args, &block)
+      Rake::FileCreationTask.define_task(args, &block)
     end
 
     # Declare a set of files tasks to create the given directories on
@@ -61,15 +62,12 @@ module Rake
     # Example:
     #   directory "testdata/doc"
     #
-    def directory(*args, &block)
-      result = file_create(*args, &block)
-      dir, _ = *Rake.application.resolve_args(args)
+    def directory(dir)
       Rake.each_dir_parent(dir) do |d|
         file_create d do |t|
-          mkdir_p t.name unless File.exist?(t.name)
+          mkdir_p t.name if ! File.exist?(t.name)
         end
       end
-      result
     end
 
     # Declare a task that performs its prerequisites in
@@ -80,8 +78,8 @@ module Rake
     # Example:
     #   multitask :deploy => [:deploy_gem, :deploy_rdoc]
     #
-    def multitask(*args, &block)
-      Rake::MultiTask.define_task(*args, &block)
+    def multitask(args, &block)
+      Rake::MultiTask.define_task(args, &block)
     end
 
     # Create a new rake namespace and use it for evaluating the given
@@ -116,7 +114,6 @@ module Rake
     end
 
     # Describe the next rake task.
-    # Duplicate descriptions are discarded.
     #
     # Example:
     #   desc "Run the Unit Tests"
@@ -147,11 +144,33 @@ module Rake
         Rake.application.add_import(fn)
       end
     end
+
   end
+
+  DeprecatedCommands = Object.new.extend(DSL)
+
+  module DeprecatedObjectDSL # :nodoc:
+    DSL.private_instance_methods(false).each do |name|
+      line = __LINE__+1
+      class_eval %{
+        def #{name}(*args, &block)
+          unless Rake.application.options.ignore_deprecate
+            unless @rake_dsl_warning
+              $stderr.puts "WARNING: Global access to Rake DSL methods is deprecated.  Please include"
+              $stderr.puts "    ...  Rake::DSL into classes and modules which use the Rake DSL methods."
+              @rake_dsl_warning = true
+            end
+            $stderr.puts "WARNING: DSL method \#{self.class}##{name} called at \#{caller.first}"
+          end
+          Rake::DeprecatedCommands.send(:#{name}, *args, &block)
+        end
+        private :#{name}
+      }, __FILE__, line
+    end
+  end
+
   extend FileUtilsExt
 end
 
-# Extend the main object with the DSL commands. This allows top-level
-# calls to task, etc. to work from a Rakefile without polluting the
-# object inheritance tree.
 self.extend Rake::DSL
+include Rake::DeprecatedObjectDSL

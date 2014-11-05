@@ -23,6 +23,7 @@ class Object
       case import_class
       when String
         # pull in the class
+        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include? "::"
         import_class = JavaUtilities.get_proxy_class(import_class)
       when Module
         if import_class.respond_to? "java_class"

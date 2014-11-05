@@ -24,6 +24,7 @@ lib/ruby/shared/jopenssl*
 lib/ruby/shared/org/
 lib/ruby/shared/openssl
 lib/ruby/shared/jar*
+lib/ruby/shared/*rdoc*
 nbproject/private
 share
 latest_source_cache
@@ -71,10 +72,6 @@ lib/ruby/shared/ripper.jar
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
 
-# These files are bin files for default gems
-!lib/ruby/gems/shared/gems/rake-10.1.0/bin/rake
-!lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/rdoc
-!lib/ruby/gems/shared/gems/rdoc-4.0.1/bin/ri
 install/updates.xml
 
 # generated ITs

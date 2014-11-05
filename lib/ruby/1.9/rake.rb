@@ -40,12 +40,9 @@ require 'rake/ext/time'
 
 require 'rake/win32'
 
-require 'rake/linked_list'
-require 'rake/scope'
 require 'rake/task_argument_error'
 require 'rake/rule_recursion_overflow_error'
 require 'rake/rake_module'
-require 'rake/trace_output'
 require 'rake/pseudo_status'
 require 'rake/task_arguments'
 require 'rake/invocation_chain'
@@ -61,7 +58,6 @@ require 'rake/early_time'
 require 'rake/name_space'
 require 'rake/task_manager'
 require 'rake/application'
-require 'rake/backtrace'
 
 $trace = false
 

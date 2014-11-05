@@ -16,7 +16,6 @@ externals/ruby1.8/optparse/test_getopts
 # TODO there's a number of other tests but require -I on optparse dir
 externals/ruby1.8/optparse/test_optparse
 externals/ruby1.8/ostruct/test_ostruct
-externals/ruby1.8/rdoc/parsers/test_parse_c
 externals/ruby1.8/ruby/test_alias
 externals/ruby1.8/ruby/test_array
 externals/ruby1.8/ruby/test_assignment

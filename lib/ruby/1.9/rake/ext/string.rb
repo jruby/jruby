@@ -4,7 +4,6 @@ require 'rake/ext/core'
 # Rake extension methods for String.
 #
 class String
-
   rake_extension("ext") do
     # Replace the file extension with +newext+.  If there is no extension on
     # the string, append the new extension to the end.  If the new extension
@@ -13,7 +12,9 @@ class String
     # +ext+ is a user added method for the String class.
     def ext(newext='')
       return self.dup if ['.', '..'].include? self
-      newext = (newext =~ /^\./) ? newext : ("." + newext) if newext != ''
+      if newext != ''
+        newext = (newext =~ /^\./) ? newext : ("." + newext)
+      end
       self.chomp(File.extname(self)) << newext
     end
   end
@@ -162,5 +163,5 @@ class String
       result
     end
   end
+end # class String
 
-end

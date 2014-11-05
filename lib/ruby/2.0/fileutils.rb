@@ -271,7 +271,7 @@ module FileUtils
             Dir.rmdir(dir)
           end
         end
-      rescue Errno::ENOTEMPTY, Errno::ENOENT
+      rescue Errno::ENOTEMPTY, Errno::EEXIST, Errno::ENOENT
       end
     end
   end
@@ -449,8 +449,8 @@ module FileUtils
   # Both of +src+ and +dest+ must be a path name.
   # +src+ must exist, +dest+ must not exist.
   #
-  # If +preserve+ is true, this method preserves owner, group, permissions
-  # and modified time.
+  # If +preserve+ is true, this method preserves owner, group, and
+  # modified time.  Permissions are copied regardless +preserve+.
   #
   # If +dereference_root+ is true, this method dereference tree root.
   #
@@ -858,7 +858,8 @@ module FileUtils
     fu_check_options options, OPT_TABLE['install']
     fu_output_message "install -c#{options[:preserve] && ' -p'}#{options[:mode] ? (' -m 0%o' % options[:mode]) : ''} #{[src,dest].flatten.join ' '}" if options[:verbose]
     return if options[:noop]
-    fu_each_src_dest(src, dest) do |s, d, st|
+    fu_each_src_dest(src, dest) do |s, d|
+      st = File.stat(s)
       unless File.exist?(d) and compare_file(s, d)
         remove_file d, true
         copy_file s, d
@@ -914,8 +915,8 @@ module FileUtils
   def symbolic_modes_to_i(modes, path)  #:nodoc:
     current_mode = (File.stat(path).mode & 07777)
     modes.split(/,/).inject(0) do |mode, mode_sym|
-      mode_sym = "a#{mode_sym}" if mode_sym =~ %r!^[+-=]!
-      target, mode = mode_sym.split %r![+-=]!
+      mode_sym = "a#{mode_sym}" if mode_sym =~ %r!^[=+-]!
+      target, mode = mode_sym.split %r![=+-]!
       user_mask = user_mask(target)
       mode_mask = mode_mask(mode ? mode : "", path)
 
@@ -940,6 +941,7 @@ module FileUtils
   def mode_to_s(mode)  #:nodoc:
     mode.is_a?(String) ? mode : "%o" % mode
   end
+  private_module_function :mode_to_s
 
   #
   # Options: noop verbose
@@ -1032,8 +1034,8 @@ module FileUtils
   def chown(user, group, list, options = {})
     fu_check_options options, OPT_TABLE['chown']
     list = fu_list(list)
-    fu_output_message sprintf('chown %s%s',
-                              [user,group].compact.join(':') + ' ',
+    fu_output_message sprintf('chown %s %s',
+                              (group ? "#{user}:#{group}" : user || ':'),
                               list.join(' ')) if options[:verbose]
     return if options[:noop]
     uid = fu_get_uid(user)
@@ -1061,9 +1063,9 @@ module FileUtils
   def chown_R(user, group, list, options = {})
     fu_check_options options, OPT_TABLE['chown_R']
     list = fu_list(list)
-    fu_output_message sprintf('chown -R%s %s%s',
+    fu_output_message sprintf('chown -R%s %s %s',
                               (options[:force] ? 'f' : ''),
-                              [user,group].compact.join(':') + ' ',
+                              (group ? "#{user}:#{group}" : user || ':'),
                               list.join(' ')) if options[:verbose]
     return if options[:noop]
     uid = fu_get_uid(user)
@@ -1240,7 +1242,12 @@ module FileUtils
     end
 
     def exist?
-      lstat! ? true : false
+      begin
+        lstat
+        true
+      rescue Errno::ENOENT
+        false
+      end
     end
 
     def file?
@@ -1558,7 +1565,7 @@ module FileUtils
   def fu_each_src_dest(src, dest)   #:nodoc:
     fu_each_src_dest0(src, dest) do |s, d|
       raise ArgumentError, "same file: #{s} and #{d}" if fu_same?(s, d)
-      yield s, d, File.stat(s)
+      yield s, d
     end
   end
   private_module_function :fu_each_src_dest

@@ -15,7 +15,7 @@ def compile_file(file)
                   IO.read(signature).chomp == FFI_RUBY_SIGNATURE and
                   File.exists?(obj) and File.mtime(obj) > File.mtime(file)
 
-  cc        = RbConfig::CONFIG["CC"]
+  cc        = RbConfig::CONFIG["CC"] || 'cc'
   cflags    = RbConfig::CONFIG["CFLAGS"]
   output    = `#{cc} #{cflags} #{ENV["CFLAGS"]} -c #{file} -o #{obj}`
 
@@ -44,15 +44,15 @@ def compile_library(path, lib)
 
   lib = "#{dir}/#{lib}"
   if !File.exists?(lib) || needs_compile
-    ldshared  = RbConfig::CONFIG["LDSHARED"]
+    ldshared  = RbConfig::CONFIG["LDSHARED"] || "clang -dynamic -bundle"
     libs      = RbConfig::CONFIG["LIBS"]
-    dldflags  = RbConfig::CONFIG["DLDFLAGS"]
+    dldflags  = RbConfig::CONFIG["DLDFLAGS"] || "-Wl,-undefined,dynamic_lookup -Wl,-multiply_defined,suppress"
 
     output = `#{ldshared} #{objs.join(" ")} #{dldflags} #{libs} -o #{lib}`
 
     if $?.exitstatus != 0
       puts "ERROR:\n#{output}"
-      raise "Unable to link \"#{source}\""
+      raise "Unable to link \"#{lib}\""
     end
   end
 

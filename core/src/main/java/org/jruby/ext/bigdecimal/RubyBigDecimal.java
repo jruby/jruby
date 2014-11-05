@@ -458,11 +458,14 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     private static IRubyObject getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational r, long precision, boolean must) {
-        long numerator = RubyNumeric.num2long(r.numerator(context));
-        long denominator = RubyNumeric.num2long(r.denominator(context));
-            
-        return new RubyBigDecimal(context.runtime, 
-                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), getRoundingMode(context.runtime)));
+        BigDecimal numerator = BigDecimal.valueOf(RubyNumeric.num2long(r.numerator(context)));
+        BigDecimal denominator = BigDecimal.valueOf(RubyNumeric.num2long(r.denominator(context)));
+        
+        int len = numerator.precision() + denominator.precision();
+        int pow = len / 4;
+        MathContext mathContext = new MathContext((pow + 1) * 4, getRoundingMode(context.runtime));
+        
+        return new RubyBigDecimal(context.runtime, numerator.divide(denominator, mathContext));
     }
     
     private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {

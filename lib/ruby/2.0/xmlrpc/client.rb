@@ -77,8 +77,6 @@ module XMLRPC # :nodoc:
     #
     # If +use_ssl+ is set to +true+, communication over SSL is enabled.
     #
-    # Note, that you need the SSL package from RAA installed.
-    #
     # Parameter +timeout+ is the time to wait for a XML-RPC response, defaults to 30.
     def initialize(host=nil, path=nil, port=nil, proxy_host=nil, proxy_port=nil,
                    user=nil, password=nil, use_ssl=nil, timeout=nil)
@@ -501,8 +499,6 @@ module XMLRPC # :nodoc:
 
       expected = resp["Content-Length"] || "<unknown>"
       if data.nil? or data.bytesize == 0
-        raise "Wrong size. Was #{data.bytesize}, should be #{expected}"
-      elsif expected != "<unknown>" and expected.to_i != data.bytesize and resp["Transfer-Encoding"].nil?
         raise "Wrong size. Was #{data.bytesize}, should be #{expected}"
       end
 

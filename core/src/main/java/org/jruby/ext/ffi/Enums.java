@@ -51,8 +51,9 @@ import java.util.Iterator;
  * Represents a C enum
  */
 @JRubyClass(name="FFI::Enums", parent="Object")
-public final class Enums extends RubyHash {
+public final class Enums extends RubyObject {
     private final RubyArray allEnums;
+    private final RubyHash symbolMap;
     private final RubyHash taggedEnums;
         
     public static RubyClass createEnumsClass(Ruby runtime, RubyModule ffiModule) {
@@ -77,6 +78,7 @@ public final class Enums extends RubyHash {
         super(runtime, klass);
         allEnums    = RubyArray.newArray(runtime);
         taggedEnums = RubyHash.newHash(runtime);
+        symbolMap   = RubyHash.newHash(runtime);
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
@@ -93,12 +95,12 @@ public final class Enums extends RubyHash {
         if (!(item == null || item == context.nil)){
             taggedEnums.fastASet(((Enum)item).tag(context), item);
         }
-        merge_bang(context, ((Enum)item).symbol_map(context), Block.NULL_BLOCK);
+        symbolMap.merge_bang(context, ((Enum)item).symbol_map(context), Block.NULL_BLOCK);
         return item;
     }
 
     public boolean isEmpty(){
-        return (super.isEmpty() && allEnums.isEmpty() && taggedEnums.isEmpty());
+        return ( allEnums.isEmpty() && symbolMap.isEmpty() && taggedEnums.isEmpty());
     }
 
     @JRubyMethod(name = "empty?")
@@ -122,6 +124,6 @@ public final class Enums extends RubyHash {
 
     @JRubyMethod(name = "__map_symbol")
     public IRubyObject mapSymbol(final ThreadContext context, IRubyObject symbol){
-        return op_aref(context, symbol);
+        return symbolMap.op_aref(context, symbol);
     }
 }

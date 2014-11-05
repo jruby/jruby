@@ -36,28 +36,25 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.runtime.backtrace.BacktraceData;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.List;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException.FlowControlException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectMarshal;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.*;
+import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.List;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  *
@@ -91,11 +88,14 @@ public class RubyException extends RubyObject {
     public IRubyObject set_backtrace(IRubyObject obj) {
         if (obj.isNil()) {
             backtrace = null;
-        } else if (!isArrayOfStrings(obj)) {
-            throw getRuntime().newTypeError("backtrace must be Array of String");
-        } else {
+        } else if (isArrayOfStrings(obj)) {
             backtrace = obj;
+        } else if (obj instanceof RubyString) {
+            backtrace = RubyArray.newArray(getRuntime(), obj);
+        } else {
+            throw getRuntime().newTypeError("backtrace must be Array of String or a single String");
         }
+
         return backtrace();
     }
     

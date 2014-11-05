@@ -47,12 +47,8 @@ STDLIB_FILES = %w[
   profiler.rb
   pstore.rb
   racc
-  rake
-  rake.rb
   rational.rb
   rbconfig
-  rdoc
-  rdoc.rb
   resolv-replace.rb
   resolv.rb
   rexml
@@ -93,6 +89,5 @@ EXT_FILES = {
   'ext/dl/win32/lib/win32' => 'win32',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
   'ext/ripper/lib/ripper' => 'ripper',
-  'ext/openssl/lib/openssl' => 'openssl',
   'ext/socket/lib/socket.rb' => 'socket.rb'
 }

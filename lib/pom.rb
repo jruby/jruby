@@ -31,7 +31,7 @@ default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.5', true ),
    ImportedGem.new( 'rake', 'rake.version', true ),
-   ImportedGem.new( 'rdoc', 'rdoc.version', true, false, true ),
+   ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
    ImportedGem.new( 'krypt', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),

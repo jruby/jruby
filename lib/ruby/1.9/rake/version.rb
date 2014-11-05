@@ -1,9 +1,8 @@
 module Rake
-  VERSION = '10.1.0'
+  VERSION = '0.9.2.2'
 
   module Version # :nodoc: all
-    MAJOR, MINOR, BUILD, *OTHER = Rake::VERSION.split '.'
-
-    NUMBERS = [MAJOR, MINOR, BUILD, *OTHER]
+    MAJOR, MINOR, BUILD = VERSION.split '.'
+    NUMBERS = [ MAJOR, MINOR, BUILD ]
   end
 end
