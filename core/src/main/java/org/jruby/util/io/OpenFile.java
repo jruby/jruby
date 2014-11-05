@@ -2195,6 +2195,10 @@ public class OpenFile implements Finalizable {
         // and make those channels act like non-blocking
         nonblock = !blocking;
 
+        ChannelFD fd = this.fd;
+
+        checkClosed();
+
         if (fd.chSelect != null) {
             try {
                 fd.chSelect.configureBlocking(blocking);
