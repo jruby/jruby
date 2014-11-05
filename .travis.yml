@@ -28,6 +28,7 @@ env:
     - TARGET='-Prake -Dtask=spec:ffi'
     - TARGET='-Prake -Dtask=spec:regression'
     - TARGET='-Prake -Dtask=spec:ruby:fast'
+    - TARGET='-Prake -Dtask=spec:profiler'
     - TARGET='-Ptruffle-specs-language'
     - TARGET='-Ptruffle-specs-core'
 
@@ -51,6 +52,7 @@ matrix:
     - env: TARGET='-Pcomplete'
     - env: TARGET='-Prake -Dtask=spec:compiler'
     - env: TARGET='-Pj2ee'
+    - env: TARGET='-Prake -Dtask=spec:profiler'
 
 branches:
   only:
