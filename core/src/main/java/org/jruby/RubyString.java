@@ -3056,6 +3056,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum) {
             index = RubyNumeric.fix2int((RubyFixnum)idx);
+        } else if (idx.respondsTo("begin") && idx.respondsTo("end")) {
+            IRubyObject begin = idx.callMethod(getRuntime().getCurrentContext(), "begin");
+            IRubyObject end   = idx.callMethod(getRuntime().getCurrentContext(), "end");
+            IRubyObject excl  = idx.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
+            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+
+            int[] begLen = rng.begLenInt(getByteList().length(), 0);
+            return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else {
             index = RubyNumeric.num2int(idx);
         }
@@ -3211,6 +3219,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
+        } else if (arg.respondsTo("begin") && arg.respondsTo("end")) {
+            int len = strLength();
+            IRubyObject begin = arg.callMethod(getRuntime().getCurrentContext(), "begin");
+            IRubyObject end   = arg.callMethod(getRuntime().getCurrentContext(), "end");
+            IRubyObject excl  = arg.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
+            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+
+            int[] begLen = rng.begLenInt(len, 0);
+            return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
         }
         return op_aref19(runtime, RubyNumeric.num2int(arg));
     }
@@ -3327,6 +3344,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         } else if (arg0 instanceof RubyRange) {
             int[] begLen = ((RubyRange) arg0).begLenInt(strLength(), 2);
             replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
+            return arg1;
+        } else if (arg0.respondsTo("begin") && arg0.respondsTo("end")) {
+            IRubyObject begin = arg0.callMethod(getRuntime().getCurrentContext(), "begin");
+            IRubyObject end   = arg0.callMethod(getRuntime().getCurrentContext(), "end");
+            IRubyObject excl  = arg0.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
+            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+
+            int[] begLen = rng.begLenInt(strLength(), 2);
+            replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
+
             return arg1;
         }
         return op_aset19(context, RubyNumeric.num2int(arg0), arg1);
