@@ -80,7 +80,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
 
                     Helpers.throwException(cause);
                     return null; // not reached
-                    
+
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
