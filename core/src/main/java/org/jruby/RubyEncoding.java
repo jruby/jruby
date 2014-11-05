@@ -61,6 +61,8 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static final Charset ISO = Charset.forName("ISO-8859-1");
     public static final ByteList LOCALE = ByteList.create("locale");
     public static final ByteList EXTERNAL = ByteList.create("external");
+    public static final ByteList FILESYSTEM = ByteList.create("filesystem");
+    public static final ByteList INTERNAL = ByteList.create("internal");
 
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
