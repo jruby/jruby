@@ -253,13 +253,13 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod(required = 1, visibility = PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject orig) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         if (!begin.isNil() || !end.isNil()) {
-            throw getRuntime().newNameError("`initialize' called twice", "initialize");
+            throw context.runtime.newNameError("`initialize' called twice", "initialize");
         }
 
-        RubyRange other = (RubyRange)orig;
-        init(getRuntime().getCurrentContext(), other.begin, other.end, other.isExclusive);
+        RubyRange other = (RubyRange) original;
+        init(context, other.begin, other.end, other.isExclusive);
         return getRuntime().getNil();
     }
 
@@ -279,13 +279,13 @@ public class RubyRange extends RubyObject {
     private static byte[] DOTDOTDOT = "...".getBytes();
     private static byte[] DOTDOT = "..".getBytes();
 
-    private IRubyObject inspectValue(IRubyObject value) {
+    private IRubyObject inspectValue(final ThreadContext context, IRubyObject value) {
         return getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
             public IRubyObject call(IRubyObject obj, boolean recur) {
                 if(recur) {
-                    return RubyString.newString(getRuntime(), isExclusive ? "(... ... ...)" : "(... .. ...)");
+                    return RubyString.newString(context.runtime, isExclusive ? "(... ... ...)" : "(... .. ...)");
                 } else {
-                    return inspect(getRuntime().getCurrentContext(), obj);
+                    return inspect(context, obj);
                 }
             }
         }, value);
@@ -293,8 +293,8 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = {"inspect", "to_s"})
     public IRubyObject inspect(final ThreadContext context) {
-        RubyString i1 = ((RubyString) inspectValue(begin)).strDup(context.runtime);
-        RubyString i2 = (RubyString) inspectValue(end);
+        RubyString i1 = ((RubyString) inspectValue(context, begin)).strDup(context.runtime);
+        RubyString i2 = (RubyString) inspectValue(context, end);
         i1.cat(isExclusive ? DOTDOTDOT : DOTDOT);
         i1.append(i2);
         i1.infectBy(i2);
@@ -458,8 +458,8 @@ public class RubyRange extends RubyObject {
             if(!tmp.isNil()) {
                 ((RubyString) tmp).uptoCommon19(context, end, isExclusive, block);
             } else {
-                if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
-                        "can't iterate from " + begin.getMetaClass().getName());
+                if (!begin.respondsTo("succ")) throw getRuntime().newTypeError("can't iterate from " +
+                        begin.getMetaClass().getName());
                 rangeEach(context, new RangeCallBack() {
                     @Override
                     void call(ThreadContext context, IRubyObject arg) {

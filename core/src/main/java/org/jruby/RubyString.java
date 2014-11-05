@@ -3057,12 +3057,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         } else if (idx instanceof RubyFixnum) {
             index = RubyNumeric.fix2int((RubyFixnum)idx);
         } else if (idx.respondsTo("begin") && idx.respondsTo("end")) {
-            IRubyObject begin = idx.callMethod(getRuntime().getCurrentContext(), "begin");
-            IRubyObject end   = idx.callMethod(getRuntime().getCurrentContext(), "end");
-            IRubyObject excl  = idx.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
-            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+            ThreadContext context = runtime.getCurrentContext();
+            IRubyObject begin = idx.callMethod(context, "begin");
+            IRubyObject end   = idx.callMethod(context, "end");
+            IRubyObject excl  = idx.callMethod(context, "exclude_end?");
+            RubyRange range = RubyRange.newRange(runtime, context, begin, end, excl.isTrue());
 
-            int[] begLen = rng.begLenInt(getByteList().length(), 0);
+            int[] begLen = range.begLenInt(getByteList().length(), 0);
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else {
             index = RubyNumeric.num2int(idx);
@@ -3221,12 +3222,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
         } else if (arg.respondsTo("begin") && arg.respondsTo("end")) {
             int len = strLength();
-            IRubyObject begin = arg.callMethod(getRuntime().getCurrentContext(), "begin");
-            IRubyObject end   = arg.callMethod(getRuntime().getCurrentContext(), "end");
-            IRubyObject excl  = arg.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
-            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+            IRubyObject begin = arg.callMethod(context, "begin");
+            IRubyObject end   = arg.callMethod(context, "end");
+            IRubyObject excl  = arg.callMethod(context, "exclude_end?");
+            RubyRange range = RubyRange.newRange(runtime, context, begin, end, excl.isTrue());
 
-            int[] begLen = rng.begLenInt(len, 0);
+            int[] begLen = range.begLenInt(len, 0);
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
         }
         return op_aref19(runtime, RubyNumeric.num2int(arg));
@@ -3346,10 +3347,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
             return arg1;
         } else if (arg0.respondsTo("begin") && arg0.respondsTo("end")) {
-            IRubyObject begin = arg0.callMethod(getRuntime().getCurrentContext(), "begin");
-            IRubyObject end   = arg0.callMethod(getRuntime().getCurrentContext(), "end");
-            IRubyObject excl  = arg0.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
-            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+            IRubyObject begin = arg0.callMethod(context, "begin");
+            IRubyObject end   = arg0.callMethod(context, "end");
+            IRubyObject excl  = arg0.callMethod(context, "exclude_end?");
+            RubyRange rng = RubyRange.newRange(context.runtime, context, begin, end, excl.isTrue());
 
             int[] begLen = rng.begLenInt(strLength(), 2);
             replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
