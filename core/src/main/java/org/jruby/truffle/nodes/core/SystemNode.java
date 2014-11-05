@@ -40,7 +40,7 @@ public class SystemNode extends RubyNode {
 
         final RubyContext context = getContext();
 
-        final RubyHash env = (RubyHash) ModuleOperations.lookupConstant(null, getContext().getCoreLibrary().getObjectClass(), "ENV").getValue();
+        final RubyHash env = context.getCoreLibrary().getENV();
 
         final List<String> envp = new ArrayList<>();
 

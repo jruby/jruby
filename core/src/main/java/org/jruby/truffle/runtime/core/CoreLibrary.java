@@ -106,6 +106,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyFalseClass falseObject;
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
     @CompilerDirectives.CompilationFinal private RubyTrueClass trueObject;
+    @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -304,8 +305,9 @@ public class CoreLibrary {
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
         argv = new RubyArray(arrayClass);
+        envHash = getSystemEnv();
         objectClass.setConstant(null, "ARGV", argv);
-        objectClass.setConstant(null, "ENV", getEnv());
+        objectClass.setConstant(null, "ENV", envHash);
         objectClass.setConstant(null, "TRUE", true);
         objectClass.setConstant(null, "FALSE", false);
         objectClass.setConstant(null, "NIL", nilObject);
@@ -750,9 +752,13 @@ public class CoreLibrary {
         return nilObject;
     }
 
+    public RubyHash getENV() {
+        return envHash;
+    }
+
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding(context, "US-ASCII"); }
 
-    public RubyHash getEnv() {
+    private RubyHash getSystemEnv() {
         final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
