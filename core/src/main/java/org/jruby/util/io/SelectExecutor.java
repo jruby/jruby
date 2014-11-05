@@ -58,14 +58,45 @@ public class SelectExecutor {
         fdTerm(writeKeyList);
         fdTerm(errorKeyList);
 
-        // clear cancelled keys (with selectNow) and return to pool
         for (Selector selector : selectors.values()) {
-            try {
+            // if it is a JDK selector, cache it
+            if (selector.provider() == SelectorProvider.provider()) {
+                // clear cancelled keys (with selectNow) and return to pool
                 selector.selectNow();
-            } finally {
                 context.runtime.getSelectorPool().put(selector);
+            } else {
+                selector.close();
             }
         }
+
+        for (ENXIOSelector enxioSelector : enxioSelectors) {
+            enxioSelector.pipe.sink().close();
+            enxioSelector.pipe.source().close();
+        }
+
+        // TODO: reset blocking status
+//        if (readBlocking != null) {
+//            for (int i = 0; i < readBlocking.length; i++) {
+//                if (readBlocking[i] != null) {
+//                    try {
+//                        ((SelectableChannel) readIOs[i].getChannel()).configureBlocking(readBlocking[i]);
+//                    } catch (IllegalBlockingModeException ibme) {
+//                        throw runtime.newConcurrencyError("can not set IO blocking after select; concurrent select detected?");
+//                    }
+//                }
+//            }
+//        }
+//        if (writeBlocking != null) {
+//            for (int i = 0; i < writeBlocking.length; i++) {
+//                if (writeBlocking[i] != null) {
+//                    try {
+//                        ((SelectableChannel) writeIOs[i].getChannel()).configureBlocking(writeBlocking[i]);
+//                    } catch (IllegalBlockingModeException ibme) {
+//                        throw runtime.newConcurrencyError("can not set IO blocking after select; concurrent select detected?");
+//                    }
+//                }
+//            }
+//        }
 
         return context.nil;
     }
@@ -232,7 +263,7 @@ public class SelectExecutor {
         if (fds == null) return false;
 
         for (SelectionKey key : fds) {
-            if (key.isValid() && ((Set<ChannelFD>)key.attachment()).contains(fd) && (key.readyOps() & operations) != 0) return true;
+            if (key.isValid() && (key.readyOps() & operations) != 0 && ((Set<ChannelFD>)key.attachment()).contains(fd)) return true;
         }
         return false;
     }
