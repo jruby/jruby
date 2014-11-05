@@ -56,6 +56,10 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    public int getNest() {
+        return nest;
+    }
+
     protected ByteList createByteList(RubyLexer lexer) {
         return new ByteList(new byte[]{}, lexer.getEncoding());
     }
@@ -75,7 +79,7 @@ public class StringTerm extends StrTerm {
                 return Tokens.tREGEXP_END;
             }
 
-            lexer.setValue("\"");
+            lexer.setValue("" + end);
             return Tokens.tSTRING_END;
     }
 
@@ -99,7 +103,7 @@ public class StringTerm extends StrTerm {
                     src.unread(c3); src.unread(c2);
                     break;
                 } else if (lexer.isGlobalCharPunct(c2)) {          // $_ potentially
-                    lexer.setValue("#" + c2);
+                    lexer.setValue("#" + (char) c2);
 
                     src.unread(c2); src.unread(c);
                     return Tokens.tSTRING_DVAR;
@@ -130,7 +134,7 @@ public class StringTerm extends StrTerm {
                 break;
             }
             case '{':
-                lexer.setValue("#" + c);
+                lexer.setValue("#" + (char) c);
                 return Tokens.tSTRING_DBEG;
             default:
                 // We did not find significant char after # so push it back to
@@ -155,7 +159,7 @@ public class StringTerm extends StrTerm {
         // FIXME: How much more obtuse can this be?
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
-            lexer.setValue("\"");
+            lexer.setValue("" + end);
             return Tokens.tSTRING_END;
         }
 
