@@ -97,6 +97,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyModule truffleModule;
     @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
     @CompilerDirectives.CompilationFinal private RubyClass edomClass;
+    @CompilerDirectives.CompilationFinal private RubyClass encodingConverterClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -186,6 +187,7 @@ public class CoreLibrary {
         truffleDebugModule = new RubyModule(moduleClass, null, "Debug");
         typeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "TypeError");
         zeroDivisionErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ZeroDivisionError");
+        encodingConverterClass = new RubyEncodingConverter.RubyEncodingConverterClass(objectClass);
 
         // Includes
 
@@ -274,6 +276,8 @@ public class CoreLibrary {
         for (RubyModule module : modules) {
             objectClass.setConstant(null, module.getName(), module);
         }
+
+        encodingClass.setConstant(null, encodingConverterClass.getName(), encodingConverterClass);
 
         truffleModule.setConstant(null, truffleDebugModule.getName(), truffleDebugModule);
 
@@ -778,5 +782,9 @@ public class CoreLibrary {
 
     public RubyClass getArgumentErrorClass() {
         return argumentErrorClass;
+    }
+
+    public RubyClass getEncodingConverterClass() {
+        return encodingConverterClass;
     }
 }
