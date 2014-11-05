@@ -629,32 +629,68 @@ public class RubyRange extends RubyObject {
                 rangeLt(context, obj, end) != null : rangeLe(context, obj, end) != null);
     }
 
-    @JRubyMethod(frame = true)
-    public IRubyObject min(ThreadContext context, Block block) {
-        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+    @JRubyMethod(frame = true, optional = 1)
+    public IRubyObject min(ThreadContext context, IRubyObject[] args, Block block) {
+        RubyObject receiver;
 
-        int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        if (block.isGiven()) {
+            receiver = this;
+        } else {
+            int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+            boolean emptyRange = c > 0 || (c == 0 && isExclusive);
+            boolean wantsArray = args.length > 0;
+            if(emptyRange) {
+                if(wantsArray) {
+                    return RubyArray.newArray(context.runtime, 0);
+                } else {
+                    return context.runtime.getNil();
+                }
+            } else if (wantsArray) {
+                // Shortcut - just take the first N elements. No need to sort, as ranges are implicitly sorted.
+                return first(context, args[0]);
+            } else {
+                receiver = RubyArray.newArray(context.runtime, new IRubyObject[] {begin, end});
+            }
+        }
 
-        return c > 0 || (c == 0 && isExclusive) ? context.runtime.getNil(): begin;
+        return Helpers.invokeSuper(context, receiver, args, block);
     }
 
-    @JRubyMethod(frame = true)
-    public IRubyObject max(ThreadContext context, Block block) {
-        if (begin.callMethod(context, ">", end).isTrue()) return context.runtime.getNil();
+    @JRubyMethod(frame = true, optional = 1)
+    public IRubyObject max(ThreadContext context, IRubyObject[] args, Block block) {
+        RubyObject receiver;
 
-        if (block.isGiven() || isExclusive && !(end instanceof RubyNumeric)) return Helpers.invokeSuper(context, this, block);
+        if (block.isGiven()) {
+            receiver = this;
+        } else {
+            IRubyObject rangeEnd = end;
+            if (isExclusive) {
+                if (!(end instanceof RubyInteger)) {
+                    throw context.runtime.newTypeError("cannot exclude non Integer end value");
+                }
+                if (!(begin instanceof RubyInteger)) {
+                    throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
+                }
+                rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
+            }
 
-        int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-        Ruby runtime = context.runtime;
-        if (isExclusive) {
-            if (!(end instanceof RubyInteger)) throw runtime.newTypeError("cannot exclude non Integer end value");
-            if (c == 0) return runtime.getNil();
-            if (end instanceof RubyFixnum) return RubyFixnum.newFixnum(runtime, ((RubyFixnum)end).getLongValue() - 1);
-            
-            return end.callMethod(context, "-", RubyFixnum.one(runtime));
+            boolean emptyRange = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, rangeEnd), begin, rangeEnd) > 0;
+            boolean wantsArray = args.length > 0;
+            if(emptyRange) {
+                if(wantsArray) {
+                    return RubyArray.newArray(context.runtime, 0);
+                } else {
+                    return context.runtime.getNil();
+                }
+            } else if (wantsArray) {
+                // Shortcut - just take the first N elements and reverse them. No need to sort, as ranges are implicitly sorted.
+                return ((RubyArray) last(context, args[0])).reverse();
+            } else {
+                receiver = RubyArray.newArray(context.runtime, new IRubyObject[]{begin, rangeEnd});
+            }
         }
-        
-        return end;
+
+        return Helpers.invokeSuper(context, receiver, args, block);
     }
 
     @JRubyMethod
