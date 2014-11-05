@@ -3061,7 +3061,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject begin = idx.callMethod(context, "begin");
             IRubyObject end   = idx.callMethod(context, "end");
             IRubyObject excl  = idx.callMethod(context, "exclude_end?");
-            RubyRange range = RubyRange.newRange(runtime, context, begin, end, excl.isTrue());
+            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
 
             int[] begLen = range.begLenInt(getByteList().length(), 0);
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
@@ -3225,7 +3225,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject begin = arg.callMethod(context, "begin");
             IRubyObject end   = arg.callMethod(context, "end");
             IRubyObject excl  = arg.callMethod(context, "exclude_end?");
-            RubyRange range = RubyRange.newRange(runtime, context, begin, end, excl.isTrue());
+            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
 
             int[] begLen = range.begLenInt(len, 0);
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
@@ -3350,7 +3350,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject begin = arg0.callMethod(context, "begin");
             IRubyObject end   = arg0.callMethod(context, "end");
             IRubyObject excl  = arg0.callMethod(context, "exclude_end?");
-            RubyRange rng = RubyRange.newRange(context.runtime, context, begin, end, excl.isTrue());
+            RubyRange rng = RubyRange.newRange(context, begin, end, excl.isTrue());
 
             int[] begLen = rng.begLenInt(strLength(), 2);
             replaceInternal19(begLen[0], begLen[1], arg1.convertToString());

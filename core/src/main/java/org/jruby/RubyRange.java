@@ -109,21 +109,9 @@ public class RubyRange extends RubyObject {
         begin = end = runtime.getNil();
     }
 
-    public static RubyRange newRange(Ruby runtime, ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
-        RubyRange range = new RubyRange(runtime, runtime.getRange());
+    public static RubyRange newRange(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
+        RubyRange range = new RubyRange(context.runtime, context.runtime.getRange());
         range.init(context, begin, end, isExclusive);
-        return range;
-    }
-
-    public static RubyRange newExclusiveRange(Ruby runtime, ThreadContext context, IRubyObject begin, IRubyObject end) {
-        RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, begin, end, true);
-        return range;
-    }
-
-    public static RubyRange newInclusiveRange(Ruby runtime, ThreadContext context, IRubyObject begin, IRubyObject end) {
-        RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, begin, end, false);
         return range;
     }
 

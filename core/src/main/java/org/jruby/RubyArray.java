@@ -1324,7 +1324,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             IRubyObject begin = arg0.callMethod(context, "begin");
             IRubyObject end   = arg0.callMethod(context, "end");
             IRubyObject excl  = arg0.callMethod(context, "exclude_end?");
-            RubyRange range = RubyRange.newRange(runtime, context, begin, end, excl.isTrue());
+            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
 
             long[] beglen = range.begLen(realLength, 0);
             return beglen == null ? runtime.getNil() : subseq(beglen[0], beglen[1]);
@@ -1380,7 +1380,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             IRubyObject begin = arg0.callMethod(context, "begin");
             IRubyObject end   = arg0.callMethod(context, "end");
             IRubyObject excl  = arg0.callMethod(context, "exclude_end?");
-            RubyRange range = RubyRange.newRange(context.runtime, context, begin, end, excl.isTrue());
+            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
 
             long beg = range.begLen0(realLength);
             splice(beg, range.begLen1(realLength, beg), arg1, true);
