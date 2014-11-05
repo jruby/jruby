@@ -53,7 +53,6 @@ import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.POSIXProcess;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
-import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
 
 import java.io.IOException;
