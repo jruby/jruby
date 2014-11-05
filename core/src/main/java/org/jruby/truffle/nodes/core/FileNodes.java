@@ -175,26 +175,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, required = 1)
-    public abstract static class ExistsNode extends CoreMethodNode {
-
-        public ExistsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExistsNode(ExistsNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean exists(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).isFile();
-        }
-
-    }
-
     @CoreMethod(names = "executable?", onSingleton = true, required = 1)
     public abstract static class ExecutableNode extends CoreMethodNode {
 
@@ -211,6 +191,26 @@ public abstract class FileNodes {
             notDesignedForCompilation();
 
             return new File(path.toString()).canExecute();
+        }
+
+    }
+
+    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, required = 1)
+    public abstract static class ExistsNode extends CoreMethodNode {
+
+        public ExistsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ExistsNode(ExistsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean exists(RubyString path) {
+            notDesignedForCompilation();
+
+            return new File(path.toString()).exists();
         }
 
     }
@@ -296,6 +296,26 @@ public abstract class FileNodes {
                 }
             }
         }
+    }
+
+    @CoreMethod(names = "path", onSingleton = true, required = 1)
+    public abstract static class PathNode extends CoreMethodNode {
+
+        public PathNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PathNode(PathNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString path(RubyString path) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(path.toString());
+        }
+
     }
 
     @CoreMethod(names = "puts", required = 1)

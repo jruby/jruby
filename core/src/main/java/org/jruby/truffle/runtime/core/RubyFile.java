@@ -98,6 +98,14 @@ public class RubyFile extends RubyObject {
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
+        } else if (mode.equals("a") || mode.equals("ab")) {
+            reader = null;
+
+            try {
+                writer = new OutputStreamWriter(new FileOutputStream(fileName, true));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             throw new UnsupportedOperationException();
         }
