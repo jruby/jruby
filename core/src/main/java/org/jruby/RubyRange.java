@@ -649,13 +649,19 @@ public class RubyRange extends RubyObject {
             receiver = this;
         } else {
             int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-            if(c > 0 || (c == 0 && isExclusive)) {
-                return context.runtime.getNil();
-            } else if (args.length == 0) {
-                receiver = RubyArray.newArray(context.runtime, new IRubyObject[] {begin, end});
-            } else {
+            boolean emptyRange = c > 0 || (c == 0 && isExclusive);
+            boolean wantsArray = args.length > 0;
+            if(emptyRange) {
+                if(wantsArray) {
+                    return RubyArray.newArray(context.runtime, 0);
+                } else {
+                    return context.runtime.getNil();
+                }
+            } else if (wantsArray) {
                 // Shortcut - just take the first N elements. No need to sort, as ranges are implicitly sorted.
                 return first(context, args[0]);
+            } else {
+                receiver = RubyArray.newArray(context.runtime, new IRubyObject[] {begin, end});
             }
         }
 
@@ -680,14 +686,19 @@ public class RubyRange extends RubyObject {
                 rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
             }
 
-            int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, rangeEnd), begin, rangeEnd);
-            if(c > 0) {
-                return context.runtime.getNil();
-            } else if (args.length == 0) {
-                receiver = RubyArray.newArray(context.runtime, new IRubyObject[]{begin, rangeEnd});
-            } else {
+            boolean emptyRange = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, rangeEnd), begin, rangeEnd) > 0;
+            boolean wantsArray = args.length > 0;
+            if(emptyRange) {
+                if(wantsArray) {
+                    return RubyArray.newArray(context.runtime, 0);
+                } else {
+                    return context.runtime.getNil();
+                }
+            } else if (wantsArray) {
                 // Shortcut - just take the first N elements and reverse them. No need to sort, as ranges are implicitly sorted.
-                return ((RubyArray)last(context, args[0])).reverse();
+                return ((RubyArray) last(context, args[0])).reverse();
+            } else {
+                receiver = RubyArray.newArray(context.runtime, new IRubyObject[]{begin, rangeEnd});
             }
         }
 
