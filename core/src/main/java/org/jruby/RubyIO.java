@@ -2818,9 +2818,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public synchronized IRubyObject stat(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr = getOpenFileChecked();
+        int realFileno;
         fptr.checkClosed();
-        if (runtime.getPosix().isNative() && fptr.fd().realFileno != -1) {
-            return RubyFileStat.newFileStat(runtime, fptr.fd().bestFileno());
+        if (runtime.getPosix().isNative() && (realFileno = fptr.fd().realFileno) != -1) {
+            return RubyFileStat.newFileStat(runtime, realFileno);
         } else {
             // no real fd, stat the path
             return context.runtime.newFileStat(fptr.getPath(), false);
