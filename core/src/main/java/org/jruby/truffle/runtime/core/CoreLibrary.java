@@ -523,7 +523,7 @@ public class CoreLibrary {
 
     public RubyException nameErrorNoMethod(String name, String object, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
+        return nameError(String.format("undefined method `%s' for %s", name, object), currentNode);
     }
 
     public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
