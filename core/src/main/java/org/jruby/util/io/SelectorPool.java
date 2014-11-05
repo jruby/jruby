@@ -115,12 +115,14 @@ public class SelectorPool {
     }
 
     private void returnToPool(Selector selector) {
-        SelectorProvider provider = selector.provider();
-        List<Selector> providerPool = pool.get(provider);
-        if (providerPool == null) {
-            providerPool = new LinkedList<Selector>();
-            pool.put(provider, providerPool);
+        if (selector.isOpen()) {
+            SelectorProvider provider = selector.provider();
+            List<Selector> providerPool = pool.get(provider);
+            if (providerPool == null) {
+                providerPool = new LinkedList<Selector>();
+                pool.put(provider, providerPool);
+            }
+            providerPool.add(selector);
         }
-        providerPool.add(selector);
     }
 }
