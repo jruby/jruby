@@ -863,38 +863,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
-        // TODO: Nearly identical to InstanceSuperInstr
-        IRBytecodeAdapter m = jvmMethod();
         String name = classsuperinstr.getMethodAddr().getName();
         Operand[] args = classsuperinstr.getCallArgs();
-
-        m.loadContext();
-        m.loadSelf(); // TODO: get rid of caller
-        m.loadSelf();
-        visit(classsuperinstr.getDefiningModule());
-
-        // TODO: CON: is this safe?
-        jvmAdapter().checkcast(p(RubyClass.class));
-
-        for (int i = 0; i < args.length; i++) {
-            Operand operand = args[i];
-            visit(operand);
-        }
-
-        // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, classsuperinstr.containsArgSplat());
-
+        Operand definingModule = classsuperinstr.getDefiningModule();
+        boolean containsArgSplat = classsuperinstr.containsArgSplat();
         Operand closure = classsuperinstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
-        if (hasClosure) {
-            m.loadContext();
-            visit(closure);
-            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        }
 
-        m.invokeClassSuper(name, args.length, hasClosure, splatMap);
-
-        jvmStoreLocal(classsuperinstr.getResult());
+        superCommon(name, classsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
@@ -1127,14 +1102,27 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
-        IRBytecodeAdapter m = jvmMethod();
         String name = instancesuperinstr.getMethodAddr().getName();
         Operand[] args = instancesuperinstr.getCallArgs();
+        Operand definingModule = instancesuperinstr.getDefiningModule();
+        boolean containsArgSplat = instancesuperinstr.containsArgSplat();
+        Operand closure = instancesuperinstr.getClosureArg(null);
+
+        superCommon(name, instancesuperinstr, args, definingModule, containsArgSplat, closure);
+    }
+
+    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean containsArgSplat, Operand closure) {
+        IRBytecodeAdapter m = jvmMethod();
+        Operation operation = instr.getOperation();
 
         m.loadContext();
         m.loadSelf(); // TODO: get rid of caller
         m.loadSelf();
-        visit(instancesuperinstr.getDefiningModule());
+        if (definingModule == UndefinedValue.UNDEFINED) {
+            jvmAdapter().aconst_null();
+        } else {
+            visit(definingModule);
+        }
 
         // TODO: CON: is this safe?
         jvmAdapter().checkcast(p(RubyClass.class));
@@ -1146,9 +1134,8 @@ public class JVMVisitor extends IRVisitor {
         }
 
         // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, instancesuperinstr.containsArgSplat());
+        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, containsArgSplat);
 
-        Operand closure = instancesuperinstr.getClosureArg(null);
         boolean hasClosure = closure != null;
         if (hasClosure) {
             m.loadContext();
@@ -1156,9 +1143,24 @@ public class JVMVisitor extends IRVisitor {
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
         }
 
-        m.invokeInstanceSuper(name, args.length, hasClosure, splatMap);
+        switch (operation) {
+            case INSTANCE_SUPER:
+                m.invokeInstanceSuper(name, args.length, hasClosure, splatMap);
+                break;
+            case CLASS_SUPER:
+                m.invokeClassSuper(name, args.length, hasClosure, splatMap);
+                break;
+            case UNRESOLVED_SUPER:
+                m.invokeUnresolvedSuper(name, args.length, hasClosure, splatMap);
+                break;
+            case ZSUPER:
+                m.invokeZSuper(name, args.length, hasClosure, splatMap);
+                break;
+            default:
+                throw new NotCompilableException("unknown super type " + operation + " in " + instr);
+        }
 
-        jvmStoreLocal(instancesuperinstr.getResult());
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1573,10 +1575,9 @@ public class JVMVisitor extends IRVisitor {
                 break;
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 jvmMethod().loadContext();
-                jvmMethod().loadSelf();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_NTH_REF:
@@ -1745,40 +1746,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
-
-        IRBytecodeAdapter m = jvmMethod();
         String name = unresolvedsuperinstr.getMethodAddr().getName();
         Operand[] args = unresolvedsuperinstr.getCallArgs();
-
-        m.loadContext();
-        m.loadSelf(); // TODO: get rid of caller
-        m.loadSelf();
         // this would be getDefiningModule but that is not used for unresolved super
-//        visit(unresolvedsuperinstr.getDefiningModule());
-        jvmAdapter().aconst_null();
-
-//        // TODO: CON: is this safe?
-//        jvmAdapter().checkcast(p(RubyClass.class));
-
-        for (int i = 0; i < args.length; i++) {
-            Operand operand = args[i];
-            visit(operand);
-        }
-
-        // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, unresolvedsuperinstr.containsArgSplat());
-
+        Operand definingModule = UndefinedValue.UNDEFINED;
+        boolean containsArgSplat = unresolvedsuperinstr.containsArgSplat();
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
-        if (hasClosure) {
-            m.loadContext();
-            visit(closure);
-            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        }
 
-        m.invokeUnresolvedSuper(name, args.length, hasClosure, splatMap);
-
-        jvmStoreLocal(unresolvedsuperinstr.getResult());
+        superCommon(name, unresolvedsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
@@ -1799,38 +1774,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
-        // TODO: Nearly identical to InstanceSuperInstr
-        IRBytecodeAdapter m = jvmMethod();
-        String name = zsuperinstr.getMethodAddr().getName(); // ignored on the other side since it is unresolved
+        String name = zsuperinstr.getMethodAddr().getName();
         Operand[] args = zsuperinstr.getCallArgs();
-
-        m.loadContext();
-        m.loadSelf(); // TODO: get rid of caller
-        m.loadSelf();
-        jvmAdapter().aconst_null(); // no defining class
-
-        // TODO: CON: is this safe?
-        jvmAdapter().checkcast(p(RubyClass.class));
-
-        for (int i = 0; i < args.length; i++) {
-            Operand operand = args[i];
-            visit(operand);
-        }
-
-        // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, zsuperinstr.containsArgSplat());
-
+        // this would be getDefiningModule but that is not used for unresolved super
+        Operand definingModule = UndefinedValue.UNDEFINED;
+        boolean containsArgSplat = zsuperinstr.containsArgSplat();
         Operand closure = zsuperinstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
-        if (hasClosure) {
-            m.loadContext();
-            visit(closure);
-            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        }
 
-        m.invokeZSuper(name, args.length, hasClosure, splatMap);
-
-        jvmStoreLocal(zsuperinstr.getResult());
+        superCommon(name, zsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override

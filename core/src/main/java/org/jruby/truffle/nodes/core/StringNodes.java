@@ -415,7 +415,7 @@ public abstract class StringNodes {
         public RubyEncoding encoding(RubyString string) {
             notDesignedForCompilation();
 
-            return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), string.getBytes().getEncoding());
+            return RubyEncoding.getEncoding(getContext(), string.getBytes().getEncoding());
         }
     }
 
@@ -453,8 +453,8 @@ public abstract class StringNodes {
         public RubyString forceEncoding(RubyString string, RubyString encodingName) {
             notDesignedForCompilation();
 
-            RubyEncoding encoding = RubyEncoding.findEncodingByName(encodingName);
-            string.forceEncoding(encoding.getRubyEncoding().getEncoding());
+            RubyEncoding encoding = RubyEncoding.getEncoding(getContext(), encodingName.toString());
+            string.forceEncoding(encoding.getEncoding());
 
             return string;
         }

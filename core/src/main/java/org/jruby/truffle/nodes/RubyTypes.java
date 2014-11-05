@@ -68,6 +68,7 @@ import java.math.BigInteger;
                 RubyFalseClass.class, //
                 RubiniusChannel.class, //
                 RubiniusByteArray.class, //
+                RubyEncodingConverter.class, //
                 RubyObject.class, //
                 RubyBasicObject.class, //
                 Object[].class})

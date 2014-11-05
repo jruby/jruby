@@ -25,24 +25,6 @@ import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
 
-    @CoreMethod(names = "+@")
-    public abstract static class PosNode extends CoreMethodNode {
-
-        public PosNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PosNode(PosNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public BigInteger pos(BigInteger value) {
-            return value;
-        }
-
-    }
-
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
 
@@ -637,69 +619,6 @@ public abstract class BignumNodes {
                 bLessThanZero.enter();
                 return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.shiftLeft(a, -b));
             }
-        }
-
-    }
-
-    @CoreMethod(names = "nonzero?")
-    public abstract static class NonZeroNode extends CoreMethodNode {
-
-        public NonZeroNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NonZeroNode(NonZeroNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object nonZero(BigInteger value) {
-            if (value.equals(BigInteger.ZERO)) {
-                return false;
-            } else {
-                return value;
-            }
-        }
-
-    }
-
-    @CoreMethod(names = "times", needsBlock = true)
-    public abstract static class TimesNode extends YieldingCoreMethodNode {
-
-        private final BranchProfile breakProfile = BranchProfile.create();
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
-        public TimesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public TimesNode(TimesNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object times(VirtualFrame frame, BigInteger n, RubyProc block) {
-            notDesignedForCompilation();
-
-            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(n) < 0; i = i.add(BigInteger.ONE)) {
-                while (true) {
-                    try {
-                        yield(frame, block, i);
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
-                    }
-                }
-            }
-
-            return n;
         }
 
     }

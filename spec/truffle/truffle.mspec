@@ -14,6 +14,7 @@ class MSpecScript
     "spec/ruby/core/continuation",
     "spec/ruby/core/dir",
     "spec/ruby/core/encoding",
+    "spec/ruby/core/encoding/converter",
     "spec/ruby/core/exception",
     "spec/ruby/core/false",
     "spec/ruby/core/fiber",

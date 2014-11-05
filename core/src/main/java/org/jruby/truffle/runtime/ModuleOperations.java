@@ -30,6 +30,12 @@ public abstract class ModuleOperations {
         return false;
     }
 
+    public static boolean assignableTo(RubyClass thisClass, RubyClass otherClass) {
+        RubyNode.notDesignedForCompilation();
+
+        return includesModule(thisClass, otherClass);
+    }
+
     public static Map<String, RubyConstant> getAllConstants(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -214,18 +220,6 @@ public abstract class ModuleOperations {
         // Not existing class variable - set in the current module
 
         module.getClassVariables().put(name, value);
-    }
-
-    public static boolean assignableTo(RubyClass thisClass, RubyClass otherClass) {
-        RubyNode.notDesignedForCompilation();
-
-        for (RubyModule ancestor : thisClass.ancestors()) {
-            if (ancestor == otherClass) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
 }

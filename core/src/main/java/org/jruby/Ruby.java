@@ -2867,6 +2867,7 @@ public final class Ruby implements Constantizable {
         
         try {
             Script script = null;
+            ScriptAndCode scriptAndCode = null;
             String className = null;
 
             try {
@@ -2910,7 +2911,8 @@ public final class Ruby implements Constantizable {
             // script was not found in cache above, so proceed to compile
             Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                script = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader)).script();
+                scriptAndCode = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader));
+                if (scriptAndCode != null) script = scriptAndCode.script();
             }
 
             if (script == null) {
