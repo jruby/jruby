@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -893,7 +894,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "all?", needsBlock = true)
-    public abstract static class AllNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class AllNode extends YieldingCoreMethodNode {
 
         public AllNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -963,7 +965,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "any?", needsBlock = true)
-    public abstract static class AnyNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class AnyNode extends YieldingCoreMethodNode {
 
         public AnyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1334,7 +1337,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each", needsBlock = true)
-    public abstract static class EachNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class EachNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
         private final BranchProfile nextProfile = new BranchProfile();
@@ -1504,7 +1508,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each_with_index", needsBlock = true)
-    public abstract static class EachWithIndexNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
         private final BranchProfile nextProfile = new BranchProfile();
@@ -1581,7 +1586,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "find", needsBlock = true)
-    public abstract static class FindNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class FindNode extends YieldingCoreMethodNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1846,7 +1852,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 1)
-    public abstract static class InjectNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class InjectNode extends YieldingCoreMethodNode {
 
         @Child protected DispatchHeadNode dispatch;
 
@@ -2069,7 +2076,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
-    public abstract static class MapNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
 
@@ -2165,7 +2173,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
-    public abstract static class MapInPlaceNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
 
@@ -2863,7 +2872,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "reject!", needsBlock = true)
-    public abstract static class RejectInPlaceNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
         public RejectInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2956,7 +2966,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "select", needsBlock = true)
-    public abstract static class SelectNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class SelectNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
 
