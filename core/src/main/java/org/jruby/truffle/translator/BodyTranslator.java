@@ -561,7 +561,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, Node bodyNode) {
-        LexicalScope newLexicalScope = context.pushLexicalScope();
+        LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, name, false, bodyNode);
 
@@ -574,7 +574,7 @@ public class BodyTranslator extends Translator {
 
             return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod);
         } finally {
-            context.popLexicalScope();
+            environment.popLexicalScope();
         }
     }
 
@@ -600,7 +600,7 @@ public class BodyTranslator extends Translator {
 
     private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
         if (node instanceof Colon2ImplicitNode) { // use current lexical scope
-            return new LexicalScopeNode(context, sourceSection, context.getLexicalScope());
+            return new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
         } else if (node instanceof Colon2ConstNode) { // A::B
             return node.childNodes().get(0).accept(this);
         } else { // Colon3Node: on top-level (Object)
@@ -662,7 +662,7 @@ public class BodyTranslator extends Translator {
         RubyNode moduleNode;
         Node constNode = node.getConstNode();
         if (constNode == null || constNode instanceof Colon2ImplicitNode) {
-            moduleNode = new LexicalScopeNode(context, sourceSection, context.getLexicalScope());
+            moduleNode = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
         } else if (constNode instanceof Colon2ConstNode) {
             constNode = ((Colon2Node) constNode).getLeftNode(); // Misleading doc, we only want the defined part.
             moduleNode = constNode.accept(this);
@@ -679,7 +679,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, context.getLexicalScope());
+        RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
 
         return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode);
     }

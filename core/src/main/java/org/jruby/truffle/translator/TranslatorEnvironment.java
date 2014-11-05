@@ -12,8 +12,6 @@ package org.jruby.truffle.translator;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.impl.DefaultFrameTypeConversion;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
@@ -25,6 +23,8 @@ import org.jruby.truffle.runtime.methods.*;
 public class TranslatorEnvironment {
 
     private final RubyContext context;
+
+    private final ParseEnvironment parseEnvironment;
 
     private final FrameDescriptor frameDescriptor;
 
@@ -60,11 +60,24 @@ public class TranslatorEnvironment {
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
         this.isBlock = isBlock;
+        this.parseEnvironment = (parent != null ? parent.parseEnvironment : new ParseEnvironment(context));
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
                     SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock) {
         this(context, parent, new FrameDescriptor(new RubyFrameTypeConversion(context.getCoreLibrary().getNilObject())), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock);
+    }
+
+    public LexicalScope getLexicalScope() {
+        return parseEnvironment.getLexicalScope();
+    }
+
+    public LexicalScope pushLexicalScope() {
+        return parseEnvironment.pushLexicalScope();
+    }
+
+    public void popLexicalScope() {
+        parseEnvironment.popLexicalScope();
     }
 
     public TranslatorEnvironment getParent() {

@@ -62,9 +62,6 @@ public class RubyContext extends ExecutionContext {
     private final Warnings warnings;
     private final SafepointManager safepointManager;
     private final Random random = new Random();
-
-    // TODO: Wrong place for this, only during parsing but be practical for now
-    private LexicalScope lexicalScope;
     private final LexicalScope rootLexicalScope;
 
     private SourceCallback sourceCallback = null;
@@ -107,23 +104,7 @@ public class RubyContext extends ExecutionContext {
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
 
-        lexicalScope = rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
-    }
-
-    public LexicalScope getRootLexicalScope() {
-        return rootLexicalScope;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
-    }
-
-    public LexicalScope pushLexicalScope() {
-        return lexicalScope = new LexicalScope(lexicalScope);
-    }
-
-    public void popLexicalScope() {
-        lexicalScope = lexicalScope.getParent();
+        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
     }
 
     public void load(Source source, RubyNode currentNode) {
@@ -395,5 +376,9 @@ public class RubyContext extends ExecutionContext {
 
     public Random getRandom() {
         return random;
+    }
+
+    public LexicalScope getRootLexicalScope() {
+        return rootLexicalScope;
     }
 }
