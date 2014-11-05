@@ -5728,14 +5728,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, Block block) {
-        // Inefficient; build array manually rather than via Enumerator
+        // FIXME: Inefficient; build array manually rather than via Enumerator
         return block.isGiven() ? each_lineCommon19(context, block) :
             enumeratorize(context.runtime, this, "lines").callMethod(context, "to_a");
     }
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
-        // Inefficient; build array manually rather than via Enumerator
+        // FIXME: Inefficient; build array manually rather than via Enumerator
         return block.isGiven() ? each_lineCommon19(context, arg, block) :
             enumeratorize(context.runtime, this, "lines", arg).callMethod(context, "to_a");
     }
