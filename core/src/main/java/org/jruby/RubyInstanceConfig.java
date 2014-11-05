@@ -347,7 +347,8 @@ public class RubyInstanceConfig {
 
         // RegularFileResource absolutePath will canonicalize resources so that will change c: paths to C:.
         // We will cannonicalize on windows so that jruby.home is also C:.
-        if (Platform.IS_WINDOWS) {
+        // assume all those uri-like pathnames are already in absolute form
+        if (Platform.IS_WINDOWS && !newJRubyHome.startsWith("jar:") && !newJRubyHome.startsWith("file:") && !newJRubyHome.startsWith("classpath:") && !newJRubyHome.startsWith("uri:")) {
             File file = new File(newJRubyHome);
 
             try {
