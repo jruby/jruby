@@ -1518,6 +1518,11 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @Specialization(guards = "isNull")
+        public RubyArray eachWithEmpty(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return array;
+        }
+
         @Specialization(guards = "isObject")
         public Object eachWithIndexObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
