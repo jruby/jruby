@@ -644,7 +644,7 @@ public class RubyKernel {
 
     @JRubyMethod(required = 1, optional = 3, module = true, visibility = PRIVATE)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return RubyIO.select_static(context, context.runtime, args);
+        return RubyIO.select(context, recv, args);
     }
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)

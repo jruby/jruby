@@ -3111,10 +3111,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return args.go(context);
     }
 
-    public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        return new SelectBlob().goForIt(context, runtime, args);
-    }
-
     // MRI: rb_io_advise
     @JRubyMethod(required = 1, optional = 2)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
@@ -4707,6 +4703,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @Deprecated
     public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject[] argv, boolean useException) {
         return write_nonblock(context, argv);
+    }
+
+    @Deprecated
+    public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
+        return select(context, runtime.getIO(), args);
     }
     
     protected OpenFile openFile;
