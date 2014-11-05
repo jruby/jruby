@@ -629,68 +629,62 @@ public class RubyRange extends RubyObject {
                 rangeLt(context, obj, end) != null : rangeLe(context, obj, end) != null);
     }
 
-    @JRubyMethod(frame = true, optional = 1)
-    public IRubyObject min(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyObject receiver;
-
-        if (block.isGiven()) {
-            receiver = this;
-        } else {
-            int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-            boolean emptyRange = c > 0 || (c == 0 && isExclusive);
-            boolean wantsArray = args.length > 0;
-            if(emptyRange) {
-                if(wantsArray) {
-                    return RubyArray.newArray(context.runtime, 0);
-                } else {
-                    return context.runtime.getNil();
-                }
-            } else if (wantsArray) {
-                // Shortcut - just take the first N elements. No need to sort, as ranges are implicitly sorted.
-                return first(context, args[0]);
-            } else {
-                receiver = RubyArray.newArray(context.runtime, new IRubyObject[] {begin, end});
-            }
-        }
-
-        return Helpers.invokeSuper(context, receiver, args, block);
+    @JRubyMethod(frame = true)
+    public IRubyObject min(ThreadContext context, Block block) {
+        IRubyObject receiver = getReceiverForMinMax(context, end, block);
+        if(receiver.isNil()) return receiver;
+        return Helpers.invokeSuper(context, receiver, block);
     }
 
-    @JRubyMethod(frame = true, optional = 1)
-    public IRubyObject max(ThreadContext context, IRubyObject[] args, Block block) {
+    @JRubyMethod(frame = true)
+    public IRubyObject max(ThreadContext context, Block block) {
+        IRubyObject rangeEnd;
+        if (isExclusive) {
+            if (!(end instanceof RubyInteger)) {
+                throw context.runtime.newTypeError("cannot exclude non Integer end value");
+            }
+            if (!(begin instanceof RubyInteger)) {
+                throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
+            }
+            rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
+        } else {
+            rangeEnd = end;
+        }
+
+        IRubyObject receiver = getReceiverForMinMax(context, rangeEnd, block);
+        if(receiver.isNil()) return receiver;
+        return Helpers.invokeSuper(context, receiver, block);
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
+        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+
+        return first(context, arg);
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
+        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+
+        return ((RubyArray) last(context, arg)).reverse();
+    }
+
+    private boolean rangeEmpty_p(ThreadContext context) {
+        int cmp = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        return cmp > 0 || (cmp == 0 && isExclusive);
+    }
+
+    private IRubyObject getReceiverForMinMax(ThreadContext context, IRubyObject rangeEnd, Block block) {
         RubyObject receiver;
 
         if (block.isGiven()) {
             receiver = this;
         } else {
-            IRubyObject rangeEnd = end;
-            if (isExclusive) {
-                if (!(end instanceof RubyInteger)) {
-                    throw context.runtime.newTypeError("cannot exclude non Integer end value");
-                }
-                if (!(begin instanceof RubyInteger)) {
-                    throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
-                }
-                rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
-            }
-
-            boolean emptyRange = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, rangeEnd), begin, rangeEnd) > 0;
-            boolean wantsArray = args.length > 0;
-            if(emptyRange) {
-                if(wantsArray) {
-                    return RubyArray.newArray(context.runtime, 0);
-                } else {
-                    return context.runtime.getNil();
-                }
-            } else if (wantsArray) {
-                // Shortcut - just take the first N elements and reverse them. No need to sort, as ranges are implicitly sorted.
-                return ((RubyArray) last(context, args[0])).reverse();
-            } else {
-                receiver = RubyArray.newArray(context.runtime, new IRubyObject[]{begin, rangeEnd});
-            }
+            if(rangeEmpty_p(context)) return context.runtime.getNil();
+            receiver = RubyArray.newArray(context.runtime, new IRubyObject[]{begin, rangeEnd});
         }
-
-        return Helpers.invokeSuper(context, receiver, args, block);
+        return receiver;
     }
 
     @JRubyMethod

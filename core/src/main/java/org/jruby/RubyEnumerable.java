@@ -1123,29 +1123,56 @@ public class RubyEnumerable {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(optional = 1)
-    public static IRubyObject max(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        return getExtent(context, self, args, "max", SORT_MAX, block);
+    @JRubyMethod
+    public static IRubyObject max(ThreadContext context, IRubyObject self, final Block block) {
+        return singleExtent(context, self, "max", SORT_MAX, block);
     }
 
-    @JRubyMethod(optional = 1)
-    public static IRubyObject min(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        return getExtent(context, self, args, "min", SORT_MIN, block);
+    @JRubyMethod
+    public static IRubyObject max(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
+        RubyArray sorted = (RubyArray)sort(context, self, block);
+        return ((RubyArray) sorted.last(arg)).reverse();
     }
 
-    @JRubyMethod(optional = 1)
-    public static IRubyObject max_by(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        return getExtentBy(context, self, args, "max_by", SORT_MAX, block);
+    @JRubyMethod
+    public static IRubyObject min(ThreadContext context, IRubyObject self, final Block block) {
+        return singleExtent(context, self, "min", SORT_MIN, block);
     }
 
-    @JRubyMethod(optional = 1)
-    public static IRubyObject min_by(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        return getExtentBy(context, self, args, "min_by", SORT_MIN, block);
+    @JRubyMethod
+    public static IRubyObject min(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
+        RubyArray sorted = (RubyArray)sort(context, self, block);
+        return sorted.first(arg);
+    }
+
+    @JRubyMethod
+    public static IRubyObject max_by(ThreadContext context, IRubyObject self, final Block block) {
+        return singleExtentBy(context, self, "max", SORT_MAX, block);
+    }
+
+    @JRubyMethod
+    public static IRubyObject max_by(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
+        RubyArray sorted = (RubyArray)sort_by(context, self, block);
+        return ((RubyArray) sorted.last(arg)).reverse();
+    }
+
+    @JRubyMethod
+    public static IRubyObject min_by(ThreadContext context, IRubyObject self, final Block block) {
+        return singleExtentBy(context, self, "min", SORT_MIN, block);
+    }
+
+    @JRubyMethod
+    public static IRubyObject min_by(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
+        RubyArray sorted = (RubyArray)sort_by(context, self, block);
+        return sorted.first(arg);
     }
 
     private static final int SORT_MAX =  1;
     private static final int SORT_MIN = -1;
-
     private static IRubyObject singleExtent(ThreadContext context, IRubyObject self, final String op, final int sortDirection, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { null };
@@ -1170,20 +1197,6 @@ public class RubyEnumerable {
         return result[0] == null ? runtime.getNil() : result[0];
     }
 
-    private static IRubyObject getExtent(ThreadContext context, IRubyObject self, IRubyObject[] args, String op, int sortDirection, final Block block) {
-        if (args.length == 0) {
-            return singleExtent(context, self, op, sortDirection, block);
-        } else {
-            // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
-            RubyArray sorted = (RubyArray)sort(context, self, block);
-            if(sortDirection == SORT_MAX) {
-                return ((RubyArray) sorted.last(args[0])).reverse();
-            } else {
-                return sorted.first(args[0]);
-            }
-        }
-    }
-
     private static IRubyObject singleExtentBy(ThreadContext context, IRubyObject self, final String op, final int sortDirection, final Block block) {
         final Ruby runtime = context.runtime;
 
@@ -1206,20 +1219,6 @@ public class RubyEnumerable {
             }
         });
         return result[0];
-    }
-
-    private static IRubyObject getExtentBy(ThreadContext context, IRubyObject self, IRubyObject[] args, String op, int dir, Block block) {
-        if(args.length == 0) {
-            return singleExtentBy(context, self, op, dir, block);
-        } else {
-            // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
-            RubyArray sorted = (RubyArray)sort_by(context, self, block);
-            if(dir == SORT_MAX) {
-                return ((RubyArray) sorted.last(args[0])).reverse();
-            } else {
-                return sorted.first(args[0]);
-            }
-        }
     }
 
     @JRubyMethod
