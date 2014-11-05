@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+import org.jcodings.specific.BIG5Encoding;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -309,7 +310,7 @@ public class CoreLibrary {
         objectClass.setConstant(null, "FALSE", false);
         objectClass.setConstant(null, "NIL", nilObject);
 
-        final RubyHash configHash = new RubyHash(hashClass, null, configHashMap, 0);
+        final RubyHash configHash = new RubyHash(hashClass, null, null, configHashMap, 0);
         configModule.setConstant(null, "CONFIG", configHash);
 
         objectClass.setConstant(null, "RbConfig", configModule);
@@ -375,11 +376,12 @@ public class CoreLibrary {
     }
 
     public void initializeEncodingConstants() {
-        encodingClass.setConstant(null, "US_ASCII", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant(null, "ASCII_8BIT", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant(null, "UTF_8", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant(null, "EUC_JP", new RubyEncoding(encodingClass, EUCJPEncoding.INSTANCE));
-        encodingClass.setConstant(null, "Windows_31J", new RubyEncoding(encodingClass, SJISEncoding.INSTANCE));
+        encodingClass.setConstant(null, "US_ASCII", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant(null, "ASCII_8BIT", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant(null, "UTF_8", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant(null, "EUC_JP", RubyEncoding.getEncoding(context, EUCJPEncoding.INSTANCE));
+        encodingClass.setConstant(null, "Windows_31J", RubyEncoding.getEncoding(context, SJISEncoding.INSTANCE));
+        encodingClass.setConstant(null, "Big5", RubyEncoding.getEncoding(context, BIG5Encoding.INSTANCE));
 
     }
 
@@ -748,7 +750,7 @@ public class CoreLibrary {
         return nilObject;
     }
 
-    public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }
+    public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding(context, "US-ASCII"); }
 
     public RubyHash getEnv() {
         final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
@@ -757,7 +759,7 @@ public class CoreLibrary {
             storage.put(context.makeString(variable.getKey()), context.makeString(variable.getValue()));
         }
 
-        return new RubyHash(context.getCoreLibrary().getHashClass(), null, storage, 0);
+        return new RubyHash(context.getCoreLibrary().getHashClass(), null, null, storage, 0);
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

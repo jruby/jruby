@@ -119,7 +119,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public RubyBasicObject translate(Throwable throwable) {
-        if (throwable instanceof NullPointerException || throwable instanceof UnsupportedOperationException || Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             throwable.printStackTrace();
         }
 

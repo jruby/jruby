@@ -11,10 +11,14 @@ package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
+import org.jcodings.transcode.EConv;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 public class RubyEncodingConverter extends RubyObject {
+
+    public EConv getEConv() {
+        return econv;
+    }
 
     public static class RubyEncodingConverterClass extends RubyClass {
 
@@ -24,24 +28,20 @@ public class RubyEncodingConverter extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyEncodingConverter(this, null, null);
+            return new RubyEncodingConverter(this, null);
         }
 
     }
 
-    private Object source;
-    private Object destination;
+    private EConv econv;
 
-    public RubyEncodingConverter(RubyClass rubyClass, Object source, Object destination) {
+    public RubyEncodingConverter(RubyClass rubyClass, EConv econv) {
         super(rubyClass);
-        this.source = source;
-        this.destination = destination;
+        this.econv = econv;
     }
 
-    @Override
-    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        getContext().getCoreLibrary().box(source).visitObjectGraph(visitor);
-        getContext().getCoreLibrary().box(destination).visitObjectGraph(visitor);
+    public void setEConv(EConv econv) {
+        this.econv = econv;
     }
 
 }

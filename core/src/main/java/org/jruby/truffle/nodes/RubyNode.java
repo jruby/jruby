@@ -194,6 +194,10 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubiniusChannel(execute(frame));
     }
 
+    public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
+    }
+
     public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) {
         throw new UnsupportedOperationException();
     }

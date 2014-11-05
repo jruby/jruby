@@ -27,34 +27,6 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
 
-    // TODO(cs): this should not exist, Encoding instances should be unique.
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
-            notDesignedForCompilation();
-
-            return false;
-        }
-
-        @Specialization
-        public boolean equal(RubyEncoding a, RubyEncoding b) {
-            notDesignedForCompilation();
-
-            return a.compareTo(b);
-        }
-
-    }
-
     @CoreMethod(names = "default_external", onSingleton = true)
     public abstract static class DefaultExternalNode extends CoreMethodNode {
 
@@ -76,7 +48,7 @@ public abstract class EncodingNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), encoding);
+            return RubyEncoding.getEncoding(getContext(), encoding);
         }
 
     }
@@ -102,7 +74,7 @@ public abstract class EncodingNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), encoding);
+            return RubyEncoding.getEncoding(getContext(), encoding);
         }
 
     }
@@ -119,12 +91,10 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public Object find(RubyString name) {
+        public RubyEncoding find(RubyString name) {
             notDesignedForCompilation();
 
-            // TODO(CS): isn't this a JRuby object?
-
-            return RubyEncoding.findEncodingByName(name);
+            return RubyEncoding.getEncoding(getContext(), name.toString());
         }
 
     }

@@ -35,16 +35,17 @@ public class RubyHash extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyHash(this, null, null, 0);
+            return new RubyHash(this, null, null, null, 0);
         }
 
     }
 
     private RubyProc defaultBlock;
+    private Object defaultValue;
     private Object store;
     private int storeSize;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object store, int storeSize) {
+    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int storeSize) {
         super(rubyClass);
 
         assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
@@ -52,12 +53,17 @@ public class RubyHash extends RubyObject {
         assert !(store instanceof Object[]) || storeSize <= HASHES_SMALL;
 
         this.defaultBlock = defaultBlock;
+        this.defaultValue = defaultValue;
         this.store = store;
         this.storeSize = storeSize;
     }
 
     public RubyProc getDefaultBlock() {
         return defaultBlock;
+    }
+
+    public Object getDefaultValue() {
+        return defaultValue;
     }
 
     public Object getStore() {
@@ -70,6 +76,10 @@ public class RubyHash extends RubyObject {
 
     public void setDefaultBlock(RubyProc defaultBlock) {
         this.defaultBlock = defaultBlock;
+    }
+
+    public void setDefaultValue(Object defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public void setStore(Object store, int storeSize) {
