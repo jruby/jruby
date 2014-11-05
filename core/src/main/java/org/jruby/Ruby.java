@@ -790,7 +790,7 @@ public final class Ruby implements Constantizable {
                     LOG.error(e);
                 }
             }
-            return new ScriptAndCode(null, null);
+            return null;
         }
     }
     
