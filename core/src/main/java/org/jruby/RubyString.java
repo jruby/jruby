@@ -5832,22 +5832,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
-        return enumerateBytes(context, block, false);
+        return enumerateBytes(context, "each_bytes", block, false);
     }
 
     @JRubyMethod
     public IRubyObject bytes(ThreadContext context, Block block) {
-        return enumerateBytes(context, block, true);
+        return enumerateBytes(context, "bytes", block, true);
     }
 
     @JRubyMethod(name = "each_char")
     public IRubyObject each_char19(ThreadContext context, Block block) {
-        return enumerateChars(context, block, false);
+        return enumerateChars(context, "each_char", block, false);
     }
 
     @JRubyMethod(name = "chars")
     public IRubyObject chars19(ThreadContext context, Block block) {
-        return enumerateChars(context, block, true);
+        return enumerateChars(context, "chars", block, true);
     }
 
     private SizeFn eachCharSizeFn() {
@@ -5865,16 +5865,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @JRubyMethod
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
-        return enumerateCodepoints(context, block, false);
+        return enumerateCodepoints(context, "each_codepoint", block, false);
     }
 
     @JRubyMethod
     public IRubyObject codepoints(ThreadContext context, Block block) {
-        return enumerateCodepoints(context, block, true);
+        return enumerateCodepoints(context, "codepoints", block, true);
     }
 
     // MRI: rb_str_enumerate_chars
-    private IRubyObject enumerateChars(ThreadContext context, Block block, boolean wantarray) {
+    private IRubyObject enumerateChars(ThreadContext context, String name, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
         RubyString str = this;
         IRubyObject orig = str;
@@ -5908,7 +5908,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (wantarray)
                 ary = RubyArray.newArray(runtime, str.length().getLongValue());
             else
-                return enumeratorizeWithSize(context, this, "chars", eachCharSizeFn());
+                return enumeratorizeWithSize(context, this, name, eachCharSizeFn());
         }
 
         switch (getCodeRange()) {
@@ -5940,7 +5940,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // MRI: rb_str_enumerate_codepoints
-    private IRubyObject enumerateCodepoints(ThreadContext context, Block block, boolean wantarray) {
+    private IRubyObject enumerateCodepoints(ThreadContext context, String name, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
         RubyString str = this;
         IRubyObject orig = str;
@@ -5952,7 +5952,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyArray ary = null;
 
         if (singleByteOptimizable())
-            return enumerateBytes(context, block, wantarray);
+            return enumerateBytes(context, name, block, wantarray);
 
         str = RubyString.newString(runtime, str.getByteList().dup());
         ByteList strByteList = str.getByteList();
@@ -5977,7 +5977,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (wantarray)
                 ary = RubyArray.newArray(runtime, str.length().getLongValue());
             else
-                return enumeratorizeWithSize(context, str, "codepoints", eachCodepointSizeFn());
+                return enumeratorizeWithSize(context, str, name, eachCodepointSizeFn());
         }
 
         while (ptr < end) {
@@ -5995,7 +5995,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return orig;
     }
 
-    private IRubyObject enumerateBytes(ThreadContext context, Block block, boolean wantarray) {
+    private IRubyObject enumerateBytes(ThreadContext context, String name, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
         RubyString str = this;
         int i;
@@ -6017,7 +6017,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (wantarray)
                 ary = RubyArray.newArray(runtime, str.size());
             else
-                return enumeratorizeWithSize(context, str, "bytes", eachByteSizeFn());
+                return enumeratorizeWithSize(context, str, name, eachByteSizeFn());
         }
 
         for (i=0; i<str.size(); i++) {
