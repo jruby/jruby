@@ -170,15 +170,15 @@ public abstract class ProfilePrinter {
         }
     }
 
-    private static final String PROFILER_START_METHOD = "JRuby::ProfilingService.start";
-    private static final String PROFILER_STOP_METHOD = "JRuby::ProfilingService.stop";
+    private static final String PROFILER_START_METHOD = "JRuby::Profiler.start";
+    private static final String PROFILER_STOP_METHOD = "JRuby::Profiler.stop";
     
     /*
      * Here to keep these in one place if the hash format gets updated
      * @see ProfileData#computeResults()
      */
-    static final String PROFILER_PROFILE_METHOD = "JRuby::ProfilingService.profile";
-    static final String PROFILER_PROFILED_CODE_METHOD = "JRuby::ProfilingService.profiled_code";
+    static final String PROFILER_PROFILE_METHOD = "JRuby::Profiler.profile";
+    static final String PROFILER_PROFILED_CODE_METHOD = "JRuby::Profiler.profiled_code";
     
     private static String moduleHashMethod(RubyModule module, String name) {
         if (module instanceof MetaClass) {
