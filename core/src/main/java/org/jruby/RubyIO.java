@@ -45,7 +45,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
 import static org.jruby.util.io.EncodingUtils.vmodeVperm;
-import static org.jruby.util.io.EncodingUtils.vmode;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
 import org.jruby.util.io.FilenoUtil;
