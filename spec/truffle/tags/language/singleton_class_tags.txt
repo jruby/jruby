@@ -1,4 +1,3 @@
-fails:A singleton class is a singleton Class instance
 fails:A singleton class is a subclass of Class's singleton class
 fails(inherited):A singleton class is a subclass of the same level of Class's singleton class
 fails(inherited):A singleton class doesn't have singleton class
