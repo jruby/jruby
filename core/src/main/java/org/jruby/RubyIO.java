@@ -1299,7 +1299,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return ioWriteNonblock(context, runtime, str, no_exceptions);
     }
 
-    private IRubyObject ioWriteNonblock(ThreadContext context, Ruby runtime, IRubyObject str, boolean no_exception) {
+    // MRI: io_write_nonblock
+    private synchronized IRubyObject ioWriteNonblock(ThreadContext context, Ruby runtime, IRubyObject str, boolean no_exception) {
         OpenFile fptr;
         long n;
 
@@ -1479,7 +1480,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // rb_io_set_pos
     @JRubyMethod(name = "pos=", required = 1)
-    public RubyFixnum pos_set(ThreadContext context, IRubyObject offset) {
+    public synchronized RubyFixnum pos_set(ThreadContext context, IRubyObject offset) {
         OpenFile fptr;
         long pos;
 
@@ -1588,7 +1589,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // rb_io_seek
-    private RubyFixnum doSeek(ThreadContext context, IRubyObject offset, int whence) {
+    private synchronized RubyFixnum doSeek(ThreadContext context, IRubyObject offset, int whence) {
         OpenFile fptr;
         long pos;
 
@@ -1603,7 +1604,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // This was a getOpt with one mandatory arg, but it did not work
     // so I am parsing it for now.
     @JRubyMethod(required = 1, optional = 1)
-    public RubyFixnum sysseek(ThreadContext context, IRubyObject[] args) {
+    public synchronized RubyFixnum sysseek(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject offset = context.nil, ptrname = context.nil;
         int whence = PosixShim.SEEK_SET;
@@ -1647,7 +1648,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // rb_io_rewind
     @JRubyMethod
-    public RubyFixnum rewind(ThreadContext context) {
+    public synchronized RubyFixnum rewind(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
 
@@ -1667,7 +1668,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // rb_io_fsync
     @JRubyMethod
-    public RubyFixnum fsync(ThreadContext context) {
+    public synchronized RubyFixnum fsync(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
 
@@ -1691,7 +1692,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * @param sync The new sync mode.
      */
     @JRubyMethod(name = "sync=", required = 1)
-    public IRubyObject sync_set(IRubyObject sync) {
+    public synchronized IRubyObject sync_set(IRubyObject sync) {
         OpenFile fptr;
 
         RubyIO io = GetWriteIO();
@@ -1702,7 +1703,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // rb_io_eof
     @JRubyMethod(name = {"eof?", "eof"})
-    public RubyBoolean eof_p(ThreadContext context) {
+    public synchronized RubyBoolean eof_p(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
 
@@ -1738,7 +1739,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_init_copy
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     @Override
-    public IRubyObject initialize_copy(IRubyObject _io){
+    public synchronized IRubyObject initialize_copy(IRubyObject _io){
         RubyIO dest = this;
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -1846,7 +1847,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     // rb_io_close  
-    protected IRubyObject rbIoClose(Ruby runtime) {
+    protected synchronized IRubyObject rbIoClose(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         OpenFile fptr;
         RubyIO write_io;
@@ -1992,7 +1993,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // rb_io_flush_raw
-    protected RubyIO flushRaw(ThreadContext context, boolean sync) {
+    protected synchronized RubyIO flushRaw(ThreadContext context, boolean sync) {
         OpenFile fptr;
 
         // not possible here
@@ -2187,7 +2188,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return ctl(context.runtime, cmd, arg);
     }
 
-    public IRubyObject ctl(Ruby runtime, IRubyObject cmd, IRubyObject arg) {
+    public synchronized IRubyObject ctl(Ruby runtime, IRubyObject cmd, IRubyObject arg) {
         long realCmd = cmd.convertToInteger().getLongValue();
         long nArg = 0;
 
@@ -2375,7 +2376,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     @Override
-    public IRubyObject inspect() {
+    public synchronized IRubyObject inspect() {
         Ruby runtime = getRuntime();
         
         if (openFile == null) return super.inspect();
@@ -2454,7 +2455,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // rb_io_getbyte
-    public int getByte(ThreadContext context) {
+    public synchronized int getByte(ThreadContext context) {
         int c;
 
         OpenFile fptr = getOpenFileChecked();
@@ -2489,7 +2490,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // rb_io_getc
     @JRubyMethod(name = "getc")
-    public IRubyObject getc19(ThreadContext context) {
+    public synchronized IRubyObject getc19(ThreadContext context) {
         Ruby runtime = context.runtime;
         Encoding enc;
 
@@ -2504,7 +2505,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // rb_io_ungetbyte
     @JRubyMethod
-    public IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
+    public synchronized IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
         OpenFile fptr = getOpenFileChecked();
         fptr.checkByteReadable(context);
         if (b.isNil()) return context.nil;
@@ -2521,7 +2522,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // MRI: rb_io_ungetc
     @JRubyMethod
-    public IRubyObject ungetc(ThreadContext context, IRubyObject c)
+    public synchronized IRubyObject ungetc(ThreadContext context, IRubyObject c)
     {
         Ruby runtime = context.runtime;
         OpenFile fptr;
@@ -2607,8 +2608,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return value;
     }
 
-    // implements io_getpartial in io.c
-    private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean nonblock, boolean noException) {
+    // MRI: io_getpartial
+    private synchronized IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean nonblock, boolean noException) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         IRubyObject length, str;
@@ -2816,7 +2817,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     @JRubyMethod
-    public IRubyObject stat(ThreadContext context) {
+    public synchronized IRubyObject stat(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr = getOpenFileChecked();
         fptr.checkClosed();
@@ -2833,7 +2834,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      *
      * MRI: rb_io_each_byte
      */
-    public IRubyObject each_byteInternal(ThreadContext context, Block block) {
+    public synchronized IRubyObject each_byteInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
 
@@ -2867,7 +2868,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // rb_io_each_char
-    public IRubyObject each_charInternal(ThreadContext context, Block block) {
+    public synchronized IRubyObject each_charInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         Encoding enc;
@@ -2908,7 +2909,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // rb_io_each_codepoint
-    private IRubyObject eachCodePointCommon(ThreadContext context, Block block, String methodName) {
+    private synchronized IRubyObject eachCodePointCommon(ThreadContext context, Block block, String methodName) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         Encoding enc;
