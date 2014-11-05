@@ -1317,6 +1317,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (arg0 instanceof RubyRange) {
             long[] beglen = ((RubyRange) arg0).begLen(realLength, 0);
             return beglen == null ? getRuntime().getNil() : subseq(beglen[0], beglen[1]);
+        } else if (arg0.respondsTo("begin") && arg0.respondsTo("end")) {
+            IRubyObject begin = arg0.callMethod(getRuntime().getCurrentContext(), "begin");
+            IRubyObject end   = arg0.callMethod(getRuntime().getCurrentContext(), "end");
+            IRubyObject excl  = arg0.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
+            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+
+            long[] beglen = rng.begLen(realLength, 0);
+            return beglen == null ? getRuntime().getNil() : subseq(beglen[0], beglen[1]);
         }
         return entry(RubyNumeric.num2long(arg0));
     }
@@ -1364,6 +1372,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             RubyRange range = (RubyRange)arg0;
             long beg = range.begLen0(realLength);
             splice(beg, range.begLen1(realLength, beg), arg1, true);
+        } else if (arg0.respondsTo("begin") && arg0.respondsTo("end")) {
+            IRubyObject begin = arg0.callMethod(getRuntime().getCurrentContext(), "begin");
+            IRubyObject end   = arg0.callMethod(getRuntime().getCurrentContext(), "end");
+            IRubyObject excl  = arg0.callMethod(getRuntime().getCurrentContext(), "exclude_end?");
+            RubyRange rng = RubyRange.newRange(getRuntime(), getRuntime().getCurrentContext(), begin, end, ((RubyBoolean)excl).isTrue() );
+
+            long beg = rng.begLen0(realLength);
+            splice(beg, rng.begLen1(realLength, beg), arg1, true);
         } else {
             store(RubyNumeric.num2long(arg0), arg1);
         }
