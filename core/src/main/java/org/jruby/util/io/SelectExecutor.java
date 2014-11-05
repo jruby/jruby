@@ -142,7 +142,7 @@ public class SelectExecutor {
                 IRubyObject obj = readAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 fptr = io.getOpenFileChecked();
-                if (fdIsSet(fds, 0, fptr.fd()) || fdIsSet(fds, 3, fptr.fd())) {
+                if (fdIsSet(fds, 0, fptr.fd(), READ_ACCEPT_OPS) || fdIsSet(fds, 3, fptr.fd(), READ_ACCEPT_OPS)) {
                     list.push(obj);
                 }
             }
@@ -166,7 +166,7 @@ public class SelectExecutor {
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
-                if (fdIsSet(fds, 1, fptr.fd())) {
+                if (fdIsSet(fds, 1, fptr.fd(), WRITE_CONNECT_OPS)) {
                     list.push(obj);
                 }
             }
@@ -190,12 +190,12 @@ public class SelectExecutor {
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = io.getOpenFileChecked();
-                if (fdIsSet(fds, 2, fptr.fd())) {
+                if (fds[2].contains(fptr.fd())) {
                     list.push(obj);
                 }
                 else if (io != write_io) {
                     fptr = write_io.getOpenFileChecked();
-                    if (fdIsSet(fds, 2, fptr.fd())) {
+                    if (fds[2].contains(fptr.fd())) {
                         list.push(obj);
                     }
                 }
@@ -236,13 +236,13 @@ public class SelectExecutor {
         fds[offset].add(key);
     }
 
-    private boolean fdIsSet(List[] fds, int offset, ChannelFD fd) {
+    private boolean fdIsSet(List[] fds, int offset, ChannelFD fd, int operations) {
         if ((List<SelectionKey>)fds[offset] == null) return false;
 
         for (Object obj : fds[offset]) {
             if (obj == fd) return true;
             SelectionKey key = (SelectionKey)obj;
-            if (key.isValid() && key.readyOps() != 0 && key.attachment() == fd) return true;
+            if (key.isValid() && key.attachment() == fd && (key.readyOps() & operations) != 0) return true;
         }
         return false;
     }
