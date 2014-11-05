@@ -158,7 +158,7 @@ public class SelectExecutor {
 
         int n = threadFdSelect(context);
 
-        if (pendingReadFDs != null && n == 0 && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
+        if (pendingReadFDs == null && n == 0 && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
 
         res = RubyArray.newArray(runtime, 3);
         res.push(runtime.newArray());
