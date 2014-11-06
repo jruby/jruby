@@ -79,14 +79,16 @@ public abstract class ModuleOperations {
         final RubyContext context = module.getContext();
         final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
 
-        while (lexicalScope != null && lexicalScope != context.getRootLexicalScope()) { // TODO: looking twice self ?
-            constant = lexicalScope.getLiveModule().getConstants().get(name);
+        if (lexicalScope != null) {
+            while (lexicalScope != context.getRootLexicalScope()) { // TODO: looking twice self ?
+                constant = lexicalScope.getLiveModule().getConstants().get(name);
 
-            if (constant != null) {
-                return constant;
+                if (constant != null) {
+                    return constant;
+                }
+
+                lexicalScope = lexicalScope.getParent();
             }
-
-            lexicalScope = lexicalScope.getParent();
         }
 
         // Look in ancestors
