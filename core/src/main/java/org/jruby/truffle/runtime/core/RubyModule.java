@@ -296,11 +296,10 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         if (rubyConstant != null) {
             rubyConstant.setPrivate(isPrivate);
+            newLexicalVersion();
         } else {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString(), currentNode));
         }
-
-        newLexicalVersion();
     }
 
     public void appendFeatures(RubyNode currentNode, RubyModule other) {
