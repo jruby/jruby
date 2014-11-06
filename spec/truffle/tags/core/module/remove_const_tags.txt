@@ -4,3 +4,7 @@ fails:Module#remove_const raises a NameError if the name contains non-alphabetic
 fails:Module#remove_const calls #to_str to convert the given name to a String
 fails:Module#remove_const raises a TypeError if conversion to a String by calling #to_str fails
 fails:Module#remove_const is a private method
+fails:Module#remove_const raises a NameError if the name starts with a non-alphabetic character
+fails:Module#remove_const raises a NameError if the name does not start with a capital letter
+fails:Module#remove_const raises a NameError and does not call #const_missing if the constant is not defined directly in the module
+fails:Module#remove_const raises a NameError and does not call #const_missing if the constant is not defined
