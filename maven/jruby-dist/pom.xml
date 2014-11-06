@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
+    <version>9.0.0.0.dev-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
@@ -27,7 +27,7 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>jruby-dist-9000.dev</finalName>
+    <finalName>jruby-dist-9.0.0.0.dev</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
