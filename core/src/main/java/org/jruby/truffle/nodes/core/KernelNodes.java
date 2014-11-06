@@ -798,7 +798,7 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        @SlowPath
+        @TruffleBoundary
         @Specialization
         public boolean instanceOf(Object self, RubyClass rubyClass) {
             // TODO(CS): fast path
