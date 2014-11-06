@@ -7,6 +7,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Symbol extends Reference {
+    public static final Symbol KW_REST_ARG_DUMMY = new Symbol("");
+
     public Symbol(String name) {
         super(OperandType.SYMBOL, name);
     }

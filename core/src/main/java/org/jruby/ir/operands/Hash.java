@@ -11,6 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KeyValuePair;
 
 import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
@@ -21,10 +22,19 @@ import java.util.Map;
 public class Hash extends Operand {
     final public List<KeyValuePair<Operand, Operand>> pairs;
 
-    public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
+    // Is this a hash used to represent a keyword hash to be setup for ZSuper?
+    // SSS FIXME: Quick hack for now - this should probably be done with an overloaded operand.
+    final public boolean isKWArgsHash;
+
+    public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean isKWArgsHash) {
         super(OperandType.HASH);
 
         this.pairs = pairs;
+        this.isKWArgsHash = isKWArgsHash;
+    }
+
+    public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
+        this(pairs, false);
     }
 
     public boolean isBlank() {
@@ -49,7 +59,7 @@ public class Hash extends Operand {
                     .getValue().getSimplifiedOperand(valueMap, force)));
         }
 
-        return new Hash(newPairs);
+        return new Hash(newPairs, isKWArgsHash);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -71,20 +81,28 @@ public class Hash extends Operand {
             newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii), pair.getValue()
                     .cloneForInlining(ii)));
         }
-        return new Hash(newPairs);
+        return new Hash(newPairs, isKWArgsHash);
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope,
-                           Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         Ruby runtime = context.runtime;
-        RubyHash hash = RubyHash.newHash(runtime);
+        RubyHash hash;
+        Iterator<KeyValuePair<Operand, Operand>> it = pairs.iterator();
 
-        for (KeyValuePair<Operand, Operand> pair : pairs) {
-            IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currScope, currDynScope,
-                    temp);
-            IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope,
-                    temp);
+        if (isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY) {
+            // Dup the rest args hash and use that as the basis for inserting the non-rest args
+            hash = (RubyHash)((RubyHash) pairs.get(0).getValue().retrieve(context, self, currScope, currDynScope, temp)).dup(context);
+            // Skip the first pair
+            it.next();
+        } else {
+            hash = RubyHash.newHash(runtime);
+        }
+
+        while (it.hasNext()) {
+            KeyValuePair<Operand, Operand> pair = (KeyValuePair<Operand, Operand>) it.next();
+            IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currScope, currDynScope, temp);
+            IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope, temp);
 
             hash.fastASetCheckString(runtime, key, value);
         }
