@@ -598,16 +598,6 @@ public class BodyTranslator extends Translator {
         return openModule(sourceSection, defineOrGetClass, name, node.getBodyNode());
     }
 
-    private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
-        if (node instanceof Colon2ImplicitNode) { // use current lexical scope
-            return new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
-        } else if (node instanceof Colon2ConstNode) { // A::B
-            return node.childNodes().get(0).accept(this);
-        } else { // Colon3Node: on top-level (Object)
-            return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
-        }
-    }
-
     @Override
     public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
@@ -653,6 +643,16 @@ public class BodyTranslator extends Translator {
         final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
         return new ReadConstantNode(context, sourceSection, node.getName(), root);
+    }
+
+    private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
+        if (node instanceof Colon2ImplicitNode) { // use current lexical scope
+            return new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
+        } else if (node instanceof Colon2ConstNode) { // A::B
+            return node.childNodes().get(0).accept(this);
+        } else { // Colon3Node: on top-level (Object)
+            return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
+        }
     }
 
     @Override
