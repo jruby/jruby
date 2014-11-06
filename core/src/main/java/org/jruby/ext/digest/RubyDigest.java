@@ -270,8 +270,10 @@ public class RubyDigest {
         /* instance methods that may be overridden */
         @JRubyMethod(name = "==", required = 1)
         public static IRubyObject op_equal(ThreadContext ctx, IRubyObject self, IRubyObject oth) {
+            if(oth.isNil()) return ctx.runtime.getFalse();
+
             RubyString str1, str2;
-            RubyModule instance = (RubyModule)self.getRuntime().getModule("Digest").getConstantAt("Instance");
+            RubyModule instance = (RubyModule)ctx.runtime.getModule("Digest").getConstantAt("Instance");
             if (oth.getMetaClass().getRealClass().hasModuleInHierarchy(instance)) {
                 str1 = digest(ctx, self, null).convertToString();
                 str2 = digest(ctx, oth, null).convertToString();
@@ -280,7 +282,7 @@ public class RubyDigest {
                 str2 = oth.convertToString();
             }
             boolean ret = str1.bytesize().eql(str2.bytesize()) && (str1.eql(str2));
-            return ret ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
+            return ret ? ctx.runtime.getTrue() : ctx.runtime.getFalse();
         }
 
         @JRubyMethod()
