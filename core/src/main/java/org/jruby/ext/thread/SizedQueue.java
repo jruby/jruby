@@ -82,8 +82,10 @@ public class SizedQueue extends Queue {
     }
 
     @JRubyMethod(name = "max=")
-    public IRubyObject max_set(ThreadContext context, IRubyObject arg) {
+    public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
+        BlockingQueue<IRubyObject> oldQueue = this.queue;
         initialize(context, arg);
+        oldQueue.drainTo(this.queue);
         return arg;
     }
 
