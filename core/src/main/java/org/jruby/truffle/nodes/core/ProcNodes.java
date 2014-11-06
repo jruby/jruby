@@ -68,7 +68,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true)
+    @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true, needsBlock = true)
     public abstract static class CallNode extends CoreMethodNode {
 
         @Child protected YieldDispatchHeadNode yieldNode;
@@ -84,8 +84,13 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyProc proc, Object[] args) {
+        public Object call(VirtualFrame frame, RubyProc proc, Object[] args, UndefinedPlaceholder block) {
             return yieldNode.dispatch(frame, proc, args);
+        }
+
+        @Specialization
+        public Object call(VirtualFrame frame, RubyProc proc, Object[] args, RubyProc block) {
+            return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
         }
 
     }
