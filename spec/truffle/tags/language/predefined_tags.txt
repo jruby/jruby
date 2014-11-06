@@ -35,10 +35,6 @@ fails:Global variable $-w is an alias of $VERBOSE
 fails(inherited):Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:The predefined standard objects includes ARGF
 fails:The predefined global constants includes TOPLEVEL_BINDING
-fails:Processing RUBYOPT sets $VERBOSE to true for '-w'
-fails:Processing RUBYOPT sets $VERBOSE to true for '-W'
-fails:Processing RUBYOPT sets $VERBOSE to false for '-W1'
-fails:Processing RUBYOPT sets $VERBOSE to true for '-W2'
 fails:The predefined global constant STDERR has nil for the external encoding despite Encoding.default_external being changed
 fails:The predefined global constant STDERR has the encodings set by #set_encoding
 fails:The predefined global constant ARGV contains Strings encoded in locale Encoding

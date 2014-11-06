@@ -336,6 +336,10 @@ public class CoreLibrary {
         errnoModule.setConstant(null, "EEXIST", new RubyClass(null, null, systemCallErrorClass, "EEXIST"));
         errnoModule.setConstant(null, "EXDEV", new RubyClass(null, null, systemCallErrorClass, "EXDEV"));
         errnoModule.setConstant(null, "EACCES", new RubyClass(null, null, systemCallErrorClass, "EACCES"));
+
+        globalVariablesObject.setInstanceVariable("$DEBUG", context.getRuntime().isDebug());
+        globalVariablesObject.setInstanceVariable("$VERBOSE", context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject);
+
     }
 
     public void initializeAfterMethodsAdded() {
