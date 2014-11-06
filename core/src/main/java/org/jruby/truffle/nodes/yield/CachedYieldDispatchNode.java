@@ -61,4 +61,9 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
         return callNode.call(frame, RubyArguments.pack(block, block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
     }
 
+    @Override
+    public String toString() {
+        return String.format("CachedYieldDispatchNode(%s)", callNode.getCallTarget());
+    }
+
 }
