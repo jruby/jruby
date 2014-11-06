@@ -5832,7 +5832,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
-        return enumerateBytes(context, "each_bytes", block, false);
+        return enumerateBytes(context, "each_byte", block, false);
     }
 
     @JRubyMethod
