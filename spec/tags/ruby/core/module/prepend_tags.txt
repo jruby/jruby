@@ -1,16 +1,1 @@
-prepend:Module#prepend calls #prepend_features(self) in reversed order on each module
-prepend:Module#prepend raises a TypeError when the argument is not a Module
-prepend:Module#prepend imports instance methods
-prepend:Module#prepend allows wrapping methods
-prepend:Module#prepend also prepends included modules
-prepend:Module#prepend prepends multiple modules in the right order
-prepend:Module#prepend includes prepended modules in ancestors
-prepend:Module#prepend sees an instance of a prepended class as kind of the prepended module
-prepend:Module#prepend keeps the module in the chain when dupping the class
-prepend:Module#prepend keeps the module in the chain when dupping an intermediate module
-prepend:Module#prepend inserts a later prepended module into the chain
-prepend:Module#prepend works with subclasses
-prepend:Module#prepend calls prepended after prepend_features
-prepend:Module#prepend detects cyclic prepends
-prepend:Module#prepend returns the class it's included into
-prepend:Module#prepend clears any caches
+fails:Module#prepend throws a NoMethodError when there is no more superclass
