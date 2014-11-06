@@ -425,7 +425,9 @@ public class RubyBigDecimal extends RubyNumeric {
         if (must) {
             String err;
             
-            if (v.isImmediate()) {
+            if (v == null) {
+            	err = "nil";
+            } else if (v.isImmediate()) {
                 err = RubyObject.inspect(context, v).toString();
             } else {
                 err = v.getMetaClass().getBaseName();
