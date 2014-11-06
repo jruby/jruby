@@ -16,13 +16,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -58,20 +53,24 @@ public class SelectExecutor {
         fdTerm(writeKeyList);
         fdTerm(errorKeyList);
 
-        for (Selector selector : selectors.values()) {
-            // if it is a JDK selector, cache it
-            if (selector.provider() == SelectorProvider.provider()) {
-                // clear cancelled keys (with selectNow) and return to pool
-                selector.selectNow();
-                context.runtime.getSelectorPool().put(selector);
-            } else {
-                selector.close();
+        if (selectors != null) {
+            for (int i = 0; i < selectors.size(); i++) {
+                Selector selector = selectors.get(i);
+                // if it is a JDK selector, cache it
+                if (selector.provider() == SelectorProvider.provider()) {
+                    // clear cancelled keys (with selectNow) and return to pool
+                    selector.selectNow();
+                    context.runtime.getSelectorPool().put(selector);
+                } else {
+                    selector.close();
+                }
             }
-        }
 
-        for (ENXIOSelector enxioSelector : enxioSelectors) {
-            enxioSelector.pipe.sink().close();
-            enxioSelector.pipe.source().close();
+            // TODO: pool ENXIOSelector impls
+            for (ENXIOSelector enxioSelector : enxioSelectors) {
+                enxioSelector.pipe.sink().close();
+                enxioSelector.pipe.source().close();
+            }
         }
 
         // TODO: reset blocking status
@@ -112,7 +111,7 @@ public class SelectExecutor {
             readAry = read.convertToArray();
             for (i = 0; i < readAry.size(); i++) {
                 fptr = TypeConverter.ioGetIO(runtime, readAry.eltOk(i)).getOpenFileChecked();
-                fdSetRead(context, fptr.fd());
+                fdSetRead(context, fptr.fd(), readAry.size());
                 if (fptr.READ_DATA_PENDING() || fptr.READ_CHAR_PENDING()) { /* check for buffered data */
                     if (pendingReadFDs == null) pendingReadFDs = new ArrayList(1);
                     pendingReadFDs.add(fptr.fd());
@@ -121,9 +120,6 @@ public class SelectExecutor {
             if (pendingReadFDs != null) {		/* no blocking if there's buffered data */
                 timeout = (long) 0;
             }
-            readKeys = keyListToArray(readKeyList);
-        } else {
-            readKeys = null;
         }
 
         RubyArray writeAry = null;
@@ -132,16 +128,14 @@ public class SelectExecutor {
             for (i = 0; i < writeAry.size(); i++) {
                 RubyIO write_io = TypeConverter.ioGetIO(runtime, writeAry.eltOk(i)).GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
-                fdSetWrite(context, fptr.fd());
+                fdSetWrite(context, fptr.fd(), writeAry.size());
             }
-            writeKeys = keyListToArray(writeKeyList);
-        } else {
-            writeKeys = null;
         }
 
         RubyArray exceptAry = null;
         if (!except.isNil()) {
-            // most of this is commented out since we can't select for error with JDK
+            // This does not actually register anything because we do not have a way to select for error on JDK.
+            // We make the calls for their side effects.
             exceptAry = except.convertToArray();
             for (i = 0; i < exceptAry.size(); i++) {
                 RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
@@ -151,21 +145,19 @@ public class SelectExecutor {
                     fptr = write_io.getOpenFileChecked();
                 }
             }
-            errorKeys = keyListToArray(errorKeyList);
-        } else {
-            errorKeys = null;
         }
 
         int n = threadFdSelect(context);
 
-        if (pendingReadFDs == null && n == 0 && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
+        if (n == 0 && pendingReadFDs == null && n == 0 && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
 
         res = RubyArray.newArray(runtime, 3);
-        res.push(runtime.newArray());
-        res.push(runtime.newArray());
-        res.push(runtime.newArray());
+        res.push(runtime.newArray(Math.min(n, maxReadReadySize())));
+        res.push(runtime.newArray(Math.min(n, maxWriteReadySize())));
+        // we never add anything for error since JDK does not provide a way to select for error
+        res.push(runtime.newArray(0));
 
-        if (readKeys != null) {
+        if (readKeyList != null) {
             list = (RubyArray) res.eltOk(0);
             for (i = 0; i < readAry.size(); i++) {
                 IRubyObject obj = readAry.eltOk(i);
@@ -188,7 +180,7 @@ public class SelectExecutor {
             }
         }
 
-        if (writeKeys != null) {
+        if (writeKeyList != null) {
             list = (RubyArray) res.eltOk(1);
             for (i = 0; i < writeAry.size(); i++) {
                 IRubyObject obj = writeAry.eltOk(i);
@@ -212,7 +204,7 @@ public class SelectExecutor {
             }
         }
 
-        if (errorKeys != null) {
+        if (errorKeyList != null) {
             list = (RubyArray) res.eltOk(2);
             for (i = 0; i < exceptAry.size(); i++) {
                 IRubyObject obj = exceptAry.eltOk(i);
@@ -233,7 +225,21 @@ public class SelectExecutor {
         return res;			/* returns an empty array on interrupt */
     }
 
-    private void fdSetRead(ThreadContext context, ChannelFD fd) throws IOException {
+    private int maxReadReadySize() {
+        int size = 0;
+        if (readKeyList != null) size += readKeyList.size();
+        if (unselectableReadFDs != null) size += unselectableReadFDs.size();
+        return size;
+    }
+
+    private int maxWriteReadySize() {
+        int size = 0;
+        if (writeKeyList != null) size += readKeyList.size();
+        if (unselectableWriteFDs != null) size += unselectableWriteFDs.size();
+        return size;
+    }
+
+    private void fdSetRead(ThreadContext context, ChannelFD fd, int maxSize) throws IOException {
         if (fd.chFile != null || fd.isNativeFile) {
             // files are not selectable, so we treat them as ready
             if (unselectableReadFDs == null) unselectableReadFDs = new ArrayList(1);
@@ -246,7 +252,7 @@ public class SelectExecutor {
         readKeyList.add(key);
     }
 
-    private void fdSetWrite(ThreadContext context, ChannelFD fd) throws IOException {
+    private void fdSetWrite(ThreadContext context, ChannelFD fd, int maxSize) throws IOException {
         if (fd.chFile != null || fd.isNativeFile) {
             // files are not selectable, so we treat them as ready
             if (unselectableWriteFDs == null) unselectableWriteFDs = new ArrayList(1);
@@ -263,7 +269,7 @@ public class SelectExecutor {
         if (fds == null) return false;
 
         for (SelectionKey key : fds) {
-            if (key.isValid() && (key.readyOps() & operations) != 0 && ((Set<ChannelFD>)key.attachment()).contains(fd)) return true;
+            if (key.isValid() && (key.readyOps() & operations) != 0 && ((List<ChannelFD>)key.attachment()).contains(fd)) return true;
         }
         return false;
     }
@@ -297,13 +303,23 @@ public class SelectExecutor {
     }
 
     private Selector getSelector(ThreadContext context, SelectableChannel channel) throws IOException {
-        Selector selector = selectors.get(channel.provider());
+        Selector selector = null;
+        // using a linear search because there should never be more than a couple selector providers in flight
+        if (selectors == null) {
+            selectors = new ArrayList<>(1);
+        } else {
+            for (int i = 0; i < selectors.size(); i++) {
+                Selector sel = selectors.get(i);
+                if (sel.provider() == channel.provider()) {
+                    selector = sel;
+                    break;
+                }
+            }
+        }
+
         if (selector == null) {
             selector = context.runtime.getSelectorPool().get(channel.provider());
-            if (selectors.isEmpty()) {
-                selectors = new HashMap<SelectorProvider, Selector>();
-            }
-            selectors.put(channel.provider(), selector);
+            selectors.add(selector);
 
             if (!selector.provider().equals(SelectorProvider.provider())) {
                 // need to create pipe between alt impl selector and native NIO selector
@@ -327,34 +343,22 @@ public class SelectExecutor {
         int real_ops = channel.validOps() & ops;
 
         SelectionKey key = channel.keyFor(selector);
+        List<ChannelFD> attachmentSet;
         if (key != null) {
             key.interestOps(key.interestOps() | real_ops);
-            ((Set<ChannelFD>)key.attachment()).add(attachment);
+            attachmentSet = (List<ChannelFD>)key.attachment();
+            if (!attachmentSet.contains(attachment)) attachmentSet.add(attachment);
             return key;
         } else {
-            Set<ChannelFD> attachmentSet = new HashSet<>();
+            attachmentSet = new ArrayList(1);
             attachmentSet.add(attachment);
             return channel.register(selector, real_ops, attachmentSet);
         }
-
-//        } else {
-//            key.interestOps(key.interestOps() | real_ops);
-//            Map<Character,Integer> att = (Map<Character,Integer>)key.attachment();
-//            att.putAll(attachment);
-//            key.attach(att);
-//        }
-//
-//        return true;
-    }
-
-    private static SelectionKey[] keyListToArray(List<SelectionKey> fds) {
-        if (fds == null) return null;
-        return fds.toArray(new SelectionKey[fds.size()]);
     }
 
     // MRI: rb_thread_fd_select
     private int threadFdSelect(ThreadContext context) throws IOException {
-        if (readKeys == null && writeKeys == null && errorKeys == null) {
+        if (readKeyList == null && writeKeyList == null && errorKeyList == null) {
             if (timeout == null) { // sleep forever
                 try {
                     context.getThread().sleep(0);
@@ -371,13 +375,13 @@ public class SelectExecutor {
             return 0;
         }
 
-        if (readKeys != null) {
+        if (readKeyList != null) {
 //            rb_fd_resize(max - 1, read);
         }
-        if (writeKeys != null) {
+        if (writeKeyList != null) {
 //            rb_fd_resize(max - 1, write);
         }
-        if (errorKeys != null) {
+        if (errorKeyList != null) {
 //            rb_fd_resize(max - 1, except);
         }
         return doSelect(context);
@@ -440,12 +444,12 @@ public class SelectExecutor {
 //        }
 
         // we don't kill the keys here because that breaks them
-//        if (readKeys != null)
-//            fdTerm(readKeys);
-//        if (writeKeys != null)
-//            fdTerm(writeKeys);
-//        if (errorKeys != null);
-//            fdTerm(errorKeys);
+//        if (readKeyList != null)
+//            fdTerm(readKeyList);
+//        if (writeKeyList != null)
+//            fdTerm(writeKeyList);
+//        if (errorKeyList != null);
+//            fdTerm(errorKeyList);
 
         return result;
     }
@@ -458,10 +462,14 @@ public class SelectExecutor {
                 if (s.mainSelector != null) {
                     if (s.pendingReadFDs == null) {
                         if (s.timeout != null && s.timeout == 0) {
-                            for (Selector selector : s.selectors.values()) ready += selector.selectNow();
+                            for (int i = 0; i < s.selectors.size(); i++) {
+                                Selector selector = s.selectors.get(i);
+                                ready += selector.selectNow();
+                            }
                         } else {
                             List<Future> futures = new ArrayList<Future>(s.enxioSelectors.size());
-                            for (ENXIOSelector enxioSelector : s.enxioSelectors) {
+                            for (int i = 0; i < s.enxioSelectors.size(); i++) {
+                                ENXIOSelector enxioSelector = s.enxioSelectors.get(i);
                                 futures.add(context.runtime.getExecutor().submit(enxioSelector));
                             }
 
@@ -469,10 +477,14 @@ public class SelectExecutor {
 
                             // enxio selectors use a thread pool, since we can't select on multiple types
                             // of selector at once.
-                            for (ENXIOSelector enxioSelector : s.enxioSelectors) enxioSelector.selector.wakeup();
+                            for (int i = 0; i < s.enxioSelectors.size(); i++) {
+                                ENXIOSelector enxioSelector = s.enxioSelectors.get(i);
+                                enxioSelector.selector.wakeup();
+                            }
 
                             // ensure all the enxio threads have finished
-                            for (Future f : futures) try {
+                            for (int i = 0; i < futures.size(); i++) try {
+                                Future f = futures.get(i);
                                 f.get();
                             } catch (InterruptedException iex) {
                             } catch (ExecutionException eex) {
@@ -482,12 +494,16 @@ public class SelectExecutor {
                             }
                         }
                     } else {
-                        for (Selector selector : s.selectors.values()) ready += selector.selectNow();
+                        for (int i = 0; i < s.selectors.size(); i++) {
+                            Selector selector = s.selectors.get(i);
+                            ready += selector.selectNow();
+                        }
                     }
                 }
 
                 // If any enxio selectors woke up, remove them from the selected key set of the main selector
-                for (ENXIOSelector enxioSelector : s.enxioSelectors) {
+                for (int i = 0; i < s.enxioSelectors.size(); i++) {
+                    ENXIOSelector enxioSelector = s.enxioSelectors.get(i);
                     Pipe.SourceChannel source = enxioSelector.pipe.source();
                     SelectionKey key = source.keyFor(s.mainSelector);
                     if (key != null && s.mainSelector.selectedKeys().contains(key)) {
@@ -509,7 +525,10 @@ public class SelectExecutor {
             thread.getNativeThread().interrupt();
 
             // wake up all selectors too
-            for (Selector selector : selectExecutor.selectors.values()) selector.wakeup();
+            for (int i = 0; i < selectExecutor.selectors.size(); i++) {
+                Selector selector = selectExecutor.selectors.get(i);
+                selector.wakeup();
+            }
         }
     };
 
@@ -544,12 +563,9 @@ public class SelectExecutor {
     List<ChannelFD> unselectableWriteFDs;
     List<ChannelFD> pendingReadFDs;
     Selector mainSelector = null;
-    Map<SelectorProvider, Selector> selectors = Collections.emptyMap();
-    Collection<ENXIOSelector> enxioSelectors = Collections.emptyList();
+    List<Selector> selectors = null;
+    List<ENXIOSelector> enxioSelectors = Collections.emptyList();
 
-    SelectionKey[] readKeys;
-    SelectionKey[] writeKeys;
-    SelectionKey[] errorKeys;
     Long timeout;
     final Ruby runtime;
 
