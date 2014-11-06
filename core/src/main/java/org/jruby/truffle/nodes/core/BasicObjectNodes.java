@@ -20,6 +20,8 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyCallNode;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.UnboxingNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -102,52 +104,51 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        public abstract boolean executeEqual(VirtualFrame frame, Object a, Object b);
+        // The @CreateCast is not applied when using this, so the caller needs to unbox itself.
+        protected abstract boolean executeEqualWithUnboxed(VirtualFrame frame, Object a, Object b);
+
+        @CreateCast("arguments") public RubyNode[] createCast(RubyNode[] arguments) {
+            return new RubyNode[]{
+                UnboxingNodeFactory.create(getContext(), getSourceSection(), arguments[0]),
+                UnboxingNodeFactory.create(getContext(), getSourceSection(), arguments[1])
+            };
+        }
 
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
         @Specialization public boolean equal(double a, double b) { return a == b; }
-        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a == b; }
+        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a == b; } // On purpose, Bignum are not #equal?
 
-        @Specialization(guards = {"firstUnboxable", "secondUnboxable"})
-        public boolean equalUnboxable(Object a, Object b) {
-            return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
+        @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            assert !(a instanceof Unboxable) && !(b instanceof Unboxable);
+            return a == b;
         }
 
-        @Specialization(guards = {"firstUnboxable", "!secondUnboxable"})
-        public boolean equalFirstUnboxable(Object a, Object b) {
-            return ((Unboxable) a).unbox().equals(b);
-        }
-
-        @Specialization(guards = {"!firstUnboxable", "secondUnboxable"})
-        public boolean equalSecondUnboxable(Object a, Object b) {
-            return a.equals(((Unboxable) b).unbox());
-        }
-
-        @Specialization
+        @Specialization(guards = {"isNotRubyBasicObject(arguments[0])", "isNotRubyBasicObject(arguments[1])", "notSameClass"})
         public boolean equal(Object a, Object b) {
-            if (a instanceof Unboxable) {
-                if (b instanceof Unboxable) {
-                    return ((Unboxable) a).unbox().equals(((Unboxable) b).unbox());
-                } else {
-                    return ((Unboxable) a).unbox().equals(b);
-                }
-            } else {
-                if (b instanceof Unboxable) {
-                    return a.equals(((Unboxable) b).unbox());
-                } else {
-                    return a == b;
-                }
-            }
+            assert !(a instanceof Unboxable) && !(b instanceof Unboxable);
+            return false;
         }
 
-        protected boolean firstUnboxable(Object a, Object b) {
-            return a instanceof Unboxable;
+        @Specialization(guards = "isNotRubyBasicObject(arguments[0])")
+        public boolean equal(Object a, RubyBasicObject b) {
+            assert !(b instanceof Unboxable);
+            return false;
         }
 
-        protected boolean secondUnboxable(Object a, Object b) {
-            return b instanceof Unboxable;
+        @Specialization(guards = "isNotRubyBasicObject(arguments[1])")
+        public boolean equal(RubyBasicObject a, Object b) {
+            assert !(a instanceof Unboxable);
+            return false;
+        }
+
+        protected boolean isNotRubyBasicObject(Object value) {
+            return !(value instanceof RubyBasicObject);
+        }
+
+        protected boolean notSameClass(Object a, Object b) {
+            return a.getClass() != b.getClass();
         }
 
     }

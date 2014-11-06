@@ -46,28 +46,58 @@ public abstract class KernelNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
+        @Child protected UnboxingNode unboxLeftNode;
+        @Child protected UnboxingNode unboxRightNode;
         @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
         @Child protected DispatchHeadNode equalNode;
 
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            equalNode = new DispatchHeadNode(context);
         }
 
         public SameOrEqualNode(SameOrEqualNode prev) {
             super(prev);
-            referenceEqualNode = prev.referenceEqualNode;
-            equalNode = prev.equalNode;
+        }
+
+        protected Object unboxLeft(VirtualFrame frame, Object value) {
+            if (unboxLeftNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                unboxLeftNode = insert(UnboxingNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return unboxLeftNode.executeUnbox(frame, value);
+        }
+
+        protected Object unboxRight(VirtualFrame frame, Object value) {
+            if (unboxRightNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                unboxRightNode = insert(UnboxingNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return unboxRightNode.executeUnbox(frame, value);
+        }
+
+        protected boolean areSame(VirtualFrame frame, Object left, Object right) {
+            if (referenceEqualNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+            }
+            return referenceEqualNode.executeEqualWithUnboxed(frame, left, right);
+        }
+
+        protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
+            if (equalNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                equalNode = insert(new DispatchHeadNode(getContext()));
+            }
+            return equalNode.callIsTruthy(frame, left, "==", null, right);
         }
 
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
         public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
-            if (referenceEqualNode.executeEqual(frame, a, b))
+            if (areSame(frame, unboxLeft(frame, a), unboxRight(frame, b)))
                 return true;
-            return equalNode.callIsTruthy(frame, a, "==", null, b);
+            return areEqual(frame, a, b);
         }
 
     }
