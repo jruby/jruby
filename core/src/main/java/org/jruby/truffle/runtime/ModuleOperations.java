@@ -80,7 +80,12 @@ public abstract class ModuleOperations {
         final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
 
         if (lexicalScope != null) {
-            while (lexicalScope != context.getRootLexicalScope()) { // TODO: looking twice self ?
+            if (lexicalScope.getLiveModule() == module && lexicalScope != context.getRootLexicalScope()) {
+                // Already looked in module.
+                lexicalScope = lexicalScope.getParent();
+            }
+
+            while (lexicalScope != context.getRootLexicalScope()) {
                 constant = lexicalScope.getLiveModule().getConstants().get(name);
 
                 if (constant != null) {
