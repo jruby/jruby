@@ -58,6 +58,11 @@ public abstract class ModuleOperations {
         return constants;
     }
 
+    /**
+     * @param lexicalScope The surrounding LexicalScope, null if it is ignored (as in Mod::Constant)
+     * @param module The receiver of the constant lookup.
+     *               Identical to lexicalScope.getLiveModule() if there no qualifier (Constant).
+     */
     public static RubyConstant lookupConstant(LexicalScope lexicalScope, RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
