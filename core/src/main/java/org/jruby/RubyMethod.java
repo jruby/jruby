@@ -299,5 +299,10 @@ public class RubyMethod extends RubyObject implements DataType {
     public IRubyObject parameters(ThreadContext context) {
         return JRubyLibrary.MethodExtensions.methodArgs(this);
     }
+
+    @JRubyMethod(optional = 1)
+    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
+        return to_proc(context, null).callMethod(context, "curry", args);
+    }
 }
 

@@ -2,21 +2,21 @@ class Proc
   def curry(curried_arity = nil)
     if lambda? && curried_arity
       if arity > 0 && curried_arity != arity
-        raise ArgumentError, "Wrong number of arguments (%i for %i)" % [
+        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
           curried_arity,
           arity
         ]
       end
 
       if arity < 0 && curried_arity < (-arity - 1)
-        raise ArgumentError, "Wrong number of arguments (%i for %i)" % [
+        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
           curried_arity,
           -arity - 1
         ]
       end
     end
 
-    Proc.__make_curry_proc__(self, [], arity)
+    Proc.__make_curry_proc__(self, [], curried_arity || arity)
   end
 
   # Create a singleton class based on Proc that re-defines these methods but
