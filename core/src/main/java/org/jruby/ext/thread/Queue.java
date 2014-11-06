@@ -90,6 +90,7 @@ public class Queue extends RubyObject {
                 return new Queue(runtime, klass);
             }
         });
+        cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
     }
