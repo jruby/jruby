@@ -77,6 +77,7 @@ import java.util.concurrent.Callable;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.memchr;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -3453,24 +3454,50 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
         } else if (n >= 0 && realLength >= n) {
             int stack[] = new int[n + 1];
-            IRubyObject chosen[] = new IRubyObject[n];
-            int lev = 0;
+            RubyArray values = makeShared();
 
-            stack[0] = -1;
-            for (;;) {
-                chosen[lev] = eltOk(stack[lev + 1]);
-                for (lev++; lev < n; lev++) {
-                    chosen[lev] = eltOk(stack[lev + 1] = stack[lev] + 1);
-                }
-                block.yield(context, newArray(runtime, chosen));
-                do {
-                    if (lev == 0) return this;
-                    stack[lev--]++;
-                } while (stack[lev + 1] + n == realLength + lev + 1);
-            }
+            combinate(context, size(), n, stack, values, block);
         }
 
         return this;
+    }
+
+    private static void combinate(ThreadContext context, int len, int n, int[] stack, RubyArray values, Block block) {
+        int lev = 0;
+
+        Arrays.fill(stack, 1, 1 + n, 0);
+        stack[0] = -1;
+        for (;;) {
+            for (lev++; lev < n; lev++) {
+                stack[lev+1] = stack[lev]+1;
+            }
+            // TODO: MRI has a weird reentrancy check that depends on having a null class in values
+            yieldValues(context, n, stack, 1, values, block);
+            do {
+                if (lev == 0) return;
+                stack[lev--]++;
+            } while (stack[lev+1]+n == len+lev+1);
+        }
+    }
+
+    private static void rcombinate(ThreadContext context, int n, int r, int[] p, RubyArray values, Block block) {
+        int i = 0, index = 0;
+
+        p[index] = i;
+        for (;;) {
+            if (++index < r-1) {
+                p[index] = i;
+                continue;
+            }
+            for (; i < n; ++i) {
+                p[index] = i;
+                // TODO: MRI has a weird reentrancy check that depends on having a null class in values
+                yieldValues(context, r, p, 0, values, block);
+            }
+            do {
+                if (index <= 0) return;
+            } while ((i = ++p[--index]) >= n);
+        }
     }
 
     private SizeFn combinationSize(final ThreadContext context) {
@@ -3508,46 +3535,23 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "repeated_combination", new IRubyObject[] { num }, repeatedCombinationSize(context));
 
         int n = RubyNumeric.num2int(num);
-        int myRealLength = realLength;
-        IRubyObject[] myValues = new IRubyObject[realLength];
-        safeArrayCopy(values, begin, myValues, 0, realLength);
+        int len = realLength;
 
         if (n < 0) {
             // yield nothing
         } else if (n == 0) {
             block.yield(context, newEmptyArray(runtime));
         } else if (n == 1) {
-            for (int i = 0; i < myRealLength; i++) {
-                block.yield(context, newArray(runtime, myValues[i]));
+            for (int i = 0; i < len; i++) {
+                block.yield(context, newArray(runtime, eltOk(i)));
             }
         } else {
-            int[] stack = new int[n];
-            repeatCombination(context, runtime, myValues, stack, 0, myRealLength - 1, block);
+            int[] p = new int[n];
+            RubyArray values = makeShared();
+            rcombinate(context, len, n, p, values, block);
         }
 
         return this;
-    }
-
-    private static void repeatCombination(ThreadContext context, Ruby runtime, IRubyObject[] values, int[] stack, int index, int max, Block block) {
-        if (index == stack.length) {
-            IRubyObject[] obj = new IRubyObject[stack.length];
-            
-            for (int i = 0; i < obj.length; i++) {
-                int idx = stack[i];
-                obj[i] = values[idx];
-            }
-
-            block.yield(context, newArray(runtime, obj));
-        } else {
-            int minValue = 0;
-            if (index > 0) {
-                minValue = stack[index - 1];
-            }
-            for (int i = minValue; i <= max; i++) {
-                stack[index] = i;
-                repeatCombination(context, runtime, values, stack, index + 1, max, block);
-            }
-        }
     }
 
     private SizeFn repeatedCombinationSize(final ThreadContext context) {
@@ -3568,25 +3572,61 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         };
     }
 
-    private void permute(ThreadContext context, int n, int r, int[]p, int index, boolean[]used, boolean repeat, RubyArray values, Block block) {
-        for (int i = 0; i < n; i++) {
-            if (repeat || !used[i]) {
+    private static void permute(ThreadContext context, int n, int r, int[] p, boolean[] used, RubyArray values, Block block) {
+        int i = 0, index = 0;
+        for (;;) {
+            int unused = Helpers.memchr(used, i, n - i, false);
+            if (unused == -1) {
+                if (index == 0) break;
+                i = p[--index];
+                used[i++] = false;
+            } else {
+                i = unused;
                 p[index] = i;
+                used[i] = true;
+                index++;
                 if (index < r - 1) {
-                    used[i] = true;
-                    permute(context, n, r, p, index + 1, used, repeat, values, block);
-                    used[i] = false;
-                } else {
-                    RubyArray result = newArray(context.runtime, r);
-
-                    for (int j = 0; j < r; j++) {
-                        result.values[result.begin + j] = values.values[values.begin + p[j]];
-                    }
-
-                    result.realLength = r;
-                    block.yield(context, result);
+                    p[index] = i = 0;
+                    continue;
+                }
+                for (i = 0; i < n; i++) {
+                    if (used[i]) continue;
+                    p[index] = i;
+                    // TODO: MRI has a weird reentrancy check that depends on having a null class in values
+                    yieldValues(context, r, p, 0, values, block);
                 }
             }
+        }
+    }
+
+    private static void yieldValues(ThreadContext context, int r, int[] p, int pStart, RubyArray values, Block block) {
+        RubyArray result = newArray(context.runtime, r);
+
+        for (int j = 0; j < r; j++) {
+            result.values[result.begin + j] = values.values[values.begin + p[j + pStart]];
+        }
+
+        result.realLength = r;
+        block.yield(context, result);
+    }
+
+    private static void rpermute(ThreadContext context, int n, int r, int[] p, RubyArray values, Block block) {
+        int i = 0, index = 0;
+
+        p[index] = i;
+        for (;;) {
+            if (++index < r-1) {
+                p[index] = i = 0;
+                continue;
+            }
+            for (i = 0; i < n; ++i) {
+                p[index] = i;
+                // TODO: MRI has a weird reentrancy check that depends on having a null class in values
+                yieldValues(context, r, p, 0, values, block);
+            }
+            do {
+                if (index <= 0) return;
+            } while ((i = ++p[--index]) >= n);
         }
     }
 
@@ -3638,11 +3678,17 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
         } else if (r >= 0) {
             int n = realLength;
-            permute(context, n, r,
-                    new int[r], 0,
-                    new boolean[n],
-                    repeat,
-                    makeShared(begin, n, getMetaClass()), block);
+            if (repeat) {
+                rpermute(context, n, r,
+                        new int[r],
+                        makeShared(begin, n, getMetaClass()), block);
+            } else {
+                permute(context, n, r,
+                        new int[r],
+                        new boolean[n],
+                        makeShared(begin, n, getMetaClass()),
+                        block);
+            }
         }
         return this;
     }

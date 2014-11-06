@@ -3125,6 +3125,13 @@ public class Helpers {
         return ary;
     }
 
+    public static int memchr(boolean[] ary, int start, int len, boolean find) {
+        for (int i = 0; i < len; i++) {
+            if (ary[i + start] == find) return i + start;
+        }
+        return -1;
+    }
+
     @Deprecated
     public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
         return decodeScope(context, null, scopeString);
