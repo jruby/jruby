@@ -477,7 +477,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyHash env = (RubyHash) ModuleOperations.lookupConstant(null, context.getCoreLibrary().getObjectClass(), "ENV").getValue();
+            final RubyHash env = context.getCoreLibrary().getENV();
 
             // TODO(CS): cast
             for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
@@ -787,6 +787,26 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "instance_of?", required = 1)
+    public abstract static class InstanceOfNode extends CoreMethodNode {
+
+        public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceOfNode(InstanceOfNode prev) {
+            super(prev);
+        }
+
+        @SlowPath
+        @Specialization
+        public boolean instanceOf(Object self, RubyClass rubyClass) {
+            // TODO(CS): fast path
+            return getContext().getCoreLibrary().box(self).getLogicalClass() == rubyClass;
+        }
+
+    }
+
     @CoreMethod(names = "instance_variable_defined?", required = 1)
     public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
@@ -942,7 +962,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"is_a?", "instance_of?", "kind_of?"}, required = 1)
+    @CoreMethod(names = {"is_a?", "kind_of?"}, required = 1)
     public abstract static class IsANode extends CoreMethodNode {
 
         public IsANode(RubyContext context, SourceSection sourceSection) {
@@ -962,7 +982,7 @@ public abstract class KernelNodes {
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
             // TODO(CS): fast path
-            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getLogicalClass(), rubyClass);
+            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getMetaClass(), rubyClass);
         }
 
     }

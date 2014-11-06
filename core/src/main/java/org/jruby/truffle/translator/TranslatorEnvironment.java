@@ -24,6 +24,8 @@ public class TranslatorEnvironment {
 
     private final RubyContext context;
 
+    private final ParseEnvironment parseEnvironment;
+
     private final FrameDescriptor frameDescriptor;
 
     private final List<FrameSlot> flipFlopStates = new ArrayList<>();
@@ -58,11 +60,24 @@ public class TranslatorEnvironment {
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
         this.isBlock = isBlock;
+        this.parseEnvironment = (parent != null ? parent.parseEnvironment : new ParseEnvironment(context));
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
                     SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock) {
         this(context, parent, new FrameDescriptor(context.getCoreLibrary().getNilObject()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock);
+    }
+
+    public LexicalScope getLexicalScope() {
+        return parseEnvironment.getLexicalScope();
+    }
+
+    public LexicalScope pushLexicalScope() {
+        return parseEnvironment.pushLexicalScope();
+    }
+
+    public void popLexicalScope() {
+        parseEnvironment.popLexicalScope();
     }
 
     public TranslatorEnvironment getParent() {

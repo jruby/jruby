@@ -11,6 +11,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
+import org.jruby.util.KeyValuePair;
 import org.objectweb.asm.Handle;
 
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ public class IRClosure extends IRScope {
 
     // Block parameters
     private List<Operand> blockArgs;
+    private List<KeyValuePair<Operand, Operand>> keywordArgs;
 
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
@@ -79,6 +81,7 @@ public class IRClosure extends IRScope {
             this.body = new InterpretedIRBlockBody(this, c.body.arity());
         }
         this.blockArgs = new ArrayList<>();
+        this.keywordArgs = new ArrayList<>();
         this.arity = c.arity;
     }
 
@@ -93,6 +96,7 @@ public class IRClosure extends IRScope {
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
         this.blockArgs = new ArrayList<>();
+        this.keywordArgs = new ArrayList<>();
         this.argumentType = argumentType;
         this.arity = arity;
         lexicalParent.addClosure(this);
@@ -182,14 +186,33 @@ public class IRClosure extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate block arguments
-        if (i instanceof ReceiveRestArgInstr) blockArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
-        else if (i instanceof ReceiveArgBase) blockArgs.add(((ReceiveArgBase) i).getResult());
+        if (i instanceof ReceiveKeywordRestArgInstr) {
+            // Always add the keyword rest arg to the beginning
+            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) i).getResult()));
+        } else if (i instanceof ReceiveKeywordArgInstr) {
+            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr)i;
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName), rkai.getResult()));
+        } else if (i instanceof ReceiveRestArgInstr) {
+            blockArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
+        } else if (i instanceof ReceiveArgBase) {
+            blockArgs.add(((ReceiveArgBase) i).getResult());
+        }
 
         super.addInstr(i);
     }
 
     public Operand[] getBlockArgs() {
-        return blockArgs.toArray(new Operand[blockArgs.size()]);
+        if (receivesKeywordArgs()) {
+            int i = 0;
+            Operand[] args = new Operand[blockArgs.size() + 1];
+            for (Operand arg: blockArgs) {
+                args[i++] = arg;
+            }
+            args[i] = new Hash(keywordArgs, true);
+            return args;
+        } else {
+            return blockArgs.toArray(new Operand[blockArgs.size()]);
+        }
     }
 
     public String toStringBody() {

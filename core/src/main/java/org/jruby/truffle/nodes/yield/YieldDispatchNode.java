@@ -25,6 +25,8 @@ public abstract class YieldDispatchNode extends Node {
 
     public abstract Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects);
 
+    public abstract Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object[] argumentsObjects);
+
     public abstract Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects);
 
     public RubyContext getContext() {

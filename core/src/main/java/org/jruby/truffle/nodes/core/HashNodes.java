@@ -474,7 +474,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "each", needsBlock = true)
-    public abstract static class EachNode extends YieldingHashCoreMethodNode {
+    @ImportGuards(HashGuards.class)
+    public abstract static class EachNode extends YieldingCoreMethodNode {
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -727,7 +728,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
-    public abstract static class MapNode extends YieldingHashCoreMethodNode {
+    @ImportGuards(HashGuards.class)
+    public abstract static class MapNode extends YieldingCoreMethodNode {
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

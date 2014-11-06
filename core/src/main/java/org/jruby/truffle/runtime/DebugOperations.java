@@ -26,6 +26,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class DebugOperations {
@@ -118,7 +119,9 @@ public abstract class DebugOperations {
     }
 
     private static void printMethodASTBacktrace(Node currentNode) {
-        final List<Node> activeNodes = NodeUtil.findAllParents(currentNode, Node.class);
+        final List<Node> activeNodes = new ArrayList<>();
+        activeNodes.addAll(NodeUtil.findAllParents(currentNode, Node.class));
+        activeNodes.add(currentNode);
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
     }
 

@@ -47,6 +47,24 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
+    public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object[] argumentsObjects) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        depth++;
+
+        if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
+            final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
+            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
+            dispatchHead.getDispatch().replace(newGeneralYield);
+            return newGeneralYield.dispatch(frame, block, argumentsObjects);
+        }
+
+        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
+        replace(dispatch);
+        return dispatch.dispatchWithModifiedBlock(frame, block, modifiedBlock, argumentsObjects);
+    }
+
+    @Override
     public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 

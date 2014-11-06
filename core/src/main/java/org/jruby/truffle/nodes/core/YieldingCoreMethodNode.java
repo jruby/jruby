@@ -34,4 +34,8 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
         return dispatchNode.dispatch(frame, block, arguments);
     }
 
+    public boolean yieldIsTruthy(VirtualFrame frame, RubyProc block, Object... arguments) {
+        return getContext().getCoreLibrary().isTruthy(yield(frame, block, arguments));
+    }
+
 }
