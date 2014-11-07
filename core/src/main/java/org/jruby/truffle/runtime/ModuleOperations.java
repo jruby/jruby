@@ -105,9 +105,9 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Look in Object and its ancestors for modules
+        // Look in Object and its included modules
         if (module.isOnlyAModule()) {
-            for (RubyModule ancestor : objectClass.ancestors()) {
+            for (RubyModule ancestor : objectClass.selfAndIncludedModules()) {
                 constant = ancestor.getConstants().get(name);
 
                 if (constant != null) {

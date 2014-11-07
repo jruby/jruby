@@ -9,12 +9,17 @@
  */
 package org.jruby.truffle.runtime;
 
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
+
 public class RubyConstant {
 
+    private final RubyModule declaringModule;
     private final Object value;
     private boolean isPrivate;
 
-    public RubyConstant(Object value, boolean isPrivate) {
+    public RubyConstant(RubyModule declaringModule, Object value, boolean isPrivate) {
+        this.declaringModule = declaringModule;
         this.value = value;
         this.isPrivate = isPrivate;
     }
@@ -29,6 +34,42 @@ public class RubyConstant {
 
     public void setPrivate(boolean isPrivate) {
         this.isPrivate = isPrivate;
+    }
+
+    public boolean isVisibleTo(LexicalScope lexicalScope, RubyModule module) {
+        if (!isPrivate) {
+            return true;
+        }
+
+        final RubyContext context = module.getContext();
+        final LexicalScope topLexicalScope = lexicalScope;
+
+        // Look in lexical scope
+        if (lexicalScope != null) {
+            while (lexicalScope != context.getRootLexicalScope()) {
+                if (lexicalScope.getLiveModule() == declaringModule) {
+                    return true;
+                }
+                lexicalScope = lexicalScope.getParent();
+            }
+        }
+
+        // Look in included modules
+        if (module instanceof RubyClass) {
+            for (RubyModule included : module.includedModules()) {
+                if (included == declaringModule) {
+                    return true;
+                }
+            }
+        }
+
+        // Look in Object if there is no qualifier (just CONST, neither Mod::CONST nor ::CONST).
+        if (topLexicalScope != null && topLexicalScope.getLiveModule() == module && // This is a guess, we should have that info from AST
+            context.getCoreLibrary().getObjectClass() == declaringModule) {
+            return true;
+        }
+
+        return false;
     }
 
 }
