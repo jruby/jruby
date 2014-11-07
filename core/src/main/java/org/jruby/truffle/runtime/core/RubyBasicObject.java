@@ -161,10 +161,6 @@ public class RubyBasicObject extends ObjectStorage {
         return hasPrivateLayout;
     }
 
-    public boolean isTrue() {
-        return true;
-    }
-
     public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
             metaClass.visitObjectGraph(visitor);
