@@ -258,7 +258,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         if (method == null) {
             throw new UnsupportedOperationException();
         } else {
-            undefMethod(currentNode, ModuleOperations.lookupMethod(this, methodName));
+            undefMethod(currentNode, method);
         }
     }
 
