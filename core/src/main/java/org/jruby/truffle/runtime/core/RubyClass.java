@@ -54,15 +54,16 @@ public class RubyClass extends RubyModule {
         return new RubyClass(context, classClass, null, null, name, false);
     }
 
-    public static RubyClass createSingletonClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name) {
-        return new RubyClass(context, context.getCoreLibrary().getClassClass(), lexicalParent, superclass, name, true);
-    }
-
     public RubyClass(RubyModule lexicalParent, RubyClass superclass, String name) {
         this(superclass.getContext(), superclass.getContext().getCoreLibrary().getClassClass(), lexicalParent, superclass, name, false);
-
         // Always create a class singleton class for normal classes for consistency.
-        createSingletonClass();
+        ensureSingletonConsistency();
+    }
+
+    protected static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, String name) {
+        // We also need to create the singleton class of a singleton class for proper lookup and consistency.
+        // See rb_singleton_class() documentation in MRI.
+        return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, superclass, name, true).ensureSingletonConsistency();
     }
 
     protected RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
@@ -84,18 +85,19 @@ public class RubyClass extends RubyModule {
         this.objectLayoutForInstances = otherClass.objectLayoutForInstances;
     }
 
-    @Override
-    public RubyClass getSingletonClass(Node currentNode) {
-        RubyClass singletonClass = createSingletonClass();
-
-        // We also need to create the singleton class of singletonClass for proper lookup and consistency.
-        // See rb_singleton_class() documentation in MRI.
-        singletonClass.createSingletonClass();
-
-        return singletonClass;
+    private RubyClass ensureSingletonConsistency() {
+        createOneSingletonClass();
+        return this;
     }
 
-    private RubyClass createSingletonClass() {
+    @Override
+    public RubyClass getSingletonClass(Node currentNode) {
+        // We also need to create the singleton class of a singleton class for proper lookup and consistency.
+        // See rb_singleton_class() documentation in MRI.
+        return createOneSingletonClass().ensureSingletonConsistency();
+    }
+
+    private RubyClass createOneSingletonClass() {
         CompilerAsserts.neverPartOfCompilation();
 
         if (metaClass.isSingleton()) {
@@ -107,11 +109,11 @@ public class RubyClass extends RubyModule {
         if (getSuperClass() == null) {
             singletonSuperclass = getLogicalClass();
         } else {
-            singletonSuperclass = getSuperClass().createSingletonClass();
+            singletonSuperclass = getSuperClass().createOneSingletonClass();
         }
 
-        metaClass = RubyClass.createSingletonClass(getContext(), null,
-                singletonSuperclass, String.format("#<Class:%s>", getName()));
+        metaClass = new RubyClass(getContext(), getContext().getCoreLibrary().getClassClass(),
+                null, singletonSuperclass, String.format("#<Class:%s>", getName()), true);
 
         return metaClass;
     }
