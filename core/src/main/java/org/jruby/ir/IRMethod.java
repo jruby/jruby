@@ -3,10 +3,15 @@ package org.jruby.ir;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
+import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
+import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Splat;
+import org.jruby.util.KeyValuePair;
 import org.jruby.parser.StaticScope;
 
 import java.lang.invoke.MethodType;
@@ -24,6 +29,7 @@ public class IRMethod extends IRScope {
     //
     // Call parameters
     private List<Operand> callArgs;
+    private List<KeyValuePair<Operand, Operand>> keywordArgs;
 
     // Argument description of the form [:req, "a"], [:opt, "b"] ..
     private List<String[]> argDesc;
@@ -39,8 +45,9 @@ public class IRMethod extends IRScope {
         super(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
 
         this.isInstanceMethod = isInstanceMethod;
-        this.callArgs = new ArrayList<Operand>();
-        this.argDesc = new ArrayList<String[]>();
+        this.callArgs = new ArrayList<>();
+        this.keywordArgs = new ArrayList<>();
+        this.argDesc = new ArrayList<>();
         this.signatures = new HashMap<>();
 
         if (!getManager().isDryRun() && staticScope != null) {
@@ -57,8 +64,17 @@ public class IRMethod extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        if (i instanceof ReceiveRestArgInstr) callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
-        else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
+        if (i instanceof ReceiveKeywordRestArgInstr) {
+            // Always add the keyword rest arg to the beginning
+            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) i).getResult()));
+        } else if (i instanceof ReceiveKeywordArgInstr) {
+            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr)i;
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName), rkai.getResult()));
+        } else if (i instanceof ReceiveRestArgInstr) {
+            callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
+        } else if (i instanceof ReceiveArgBase) {
+            callArgs.add(((ReceiveArgBase) i).getResult());
+        }
 
         super.addInstr(i);
     }
@@ -72,7 +88,17 @@ public class IRMethod extends IRScope {
     }
 
     public Operand[] getCallArgs() {
-        return callArgs.toArray(new Operand[callArgs.size()]);
+        if (receivesKeywordArgs()) {
+            int i = 0;
+            Operand[] args = new Operand[callArgs.size() + 1];
+            for (Operand arg: callArgs) {
+                args[i++] = arg;
+            }
+            args[i] = new Hash(keywordArgs, true);
+            return args;
+        } else {
+            return callArgs.toArray(new Operand[callArgs.size()]);
+        }
     }
 
     @Override

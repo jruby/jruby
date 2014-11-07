@@ -1,1 +1,1 @@
-fails:Module#prepended is a private method
+prepend:Module#prepended is a private method

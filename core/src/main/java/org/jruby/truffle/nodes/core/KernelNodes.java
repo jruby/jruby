@@ -46,28 +46,58 @@ public abstract class KernelNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
+        @Child protected UnboxingNode unboxLeftNode;
+        @Child protected UnboxingNode unboxRightNode;
         @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
         @Child protected DispatchHeadNode equalNode;
 
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            referenceEqualNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            equalNode = new DispatchHeadNode(context);
         }
 
         public SameOrEqualNode(SameOrEqualNode prev) {
             super(prev);
-            referenceEqualNode = prev.referenceEqualNode;
-            equalNode = prev.equalNode;
+        }
+
+        protected Object unboxLeft(VirtualFrame frame, Object value) {
+            if (unboxLeftNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                unboxLeftNode = insert(UnboxingNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return unboxLeftNode.executeUnbox(frame, value);
+        }
+
+        protected Object unboxRight(VirtualFrame frame, Object value) {
+            if (unboxRightNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                unboxRightNode = insert(UnboxingNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return unboxRightNode.executeUnbox(frame, value);
+        }
+
+        protected boolean areSame(VirtualFrame frame, Object left, Object right) {
+            if (referenceEqualNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+            }
+            return referenceEqualNode.executeEqualWithUnboxed(frame, left, right);
+        }
+
+        protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
+            if (equalNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                equalNode = insert(new DispatchHeadNode(getContext()));
+            }
+            return equalNode.callIsTruthy(frame, left, "==", null, right);
         }
 
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
         public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
-            if (referenceEqualNode.executeEqual(frame, a, b))
+            if (areSame(frame, unboxLeft(frame, a), unboxRight(frame, b)))
                 return true;
-            return equalNode.callIsTruthy(frame, a, "==", null, b);
+            return areEqual(frame, a, b);
         }
 
     }
@@ -477,7 +507,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyHash env = (RubyHash) ModuleOperations.lookupConstant(null, context.getCoreLibrary().getObjectClass(), "ENV").getValue();
+            final RubyHash env = context.getCoreLibrary().getENV();
 
             // TODO(CS): cast
             for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
@@ -787,6 +817,26 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "instance_of?", required = 1)
+    public abstract static class InstanceOfNode extends CoreMethodNode {
+
+        public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceOfNode(InstanceOfNode prev) {
+            super(prev);
+        }
+
+        @SlowPath
+        @Specialization
+        public boolean instanceOf(Object self, RubyClass rubyClass) {
+            // TODO(CS): fast path
+            return getContext().getCoreLibrary().box(self).getLogicalClass() == rubyClass;
+        }
+
+    }
+
     @CoreMethod(names = "instance_variable_defined?", required = 1)
     public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
@@ -942,7 +992,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"is_a?", "instance_of?", "kind_of?"}, required = 1)
+    @CoreMethod(names = {"is_a?", "kind_of?"}, required = 1)
     public abstract static class IsANode extends CoreMethodNode {
 
         public IsANode(RubyContext context, SourceSection sourceSection) {
@@ -962,7 +1012,7 @@ public abstract class KernelNodes {
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
             // TODO(CS): fast path
-            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getLogicalClass(), rubyClass);
+            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getMetaClass(), rubyClass);
         }
 
     }

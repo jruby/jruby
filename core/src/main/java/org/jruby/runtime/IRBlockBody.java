@@ -92,8 +92,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
-
-
         int blockArity = arity().getValue();
         if (blockArity == 0) {
             args = IRubyObject.NULL_ARRAY; // discard args
@@ -101,7 +99,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
         }
 
-        if (type == Type.LAMBDA)  arity().checkArity(context.runtime, args);
+        if (type == Type.LAMBDA) arity().checkArity(context.runtime, args);
 
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
@@ -121,7 +119,10 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         IRubyObject[] args;
 
         int blockArity = arity().getValue();
-        if (blockArity >= -1 && blockArity <= 1) {
+
+        // For lambdas, independent of whether there is a REST arg or not, if # required args is 1,
+        // the value is passed through unmodified even when it is an array!
+        if ((type == Type.LAMBDA && arity().required() == 1) || (blockArity >= -1 && blockArity <= 1)) {
             args = new IRubyObject[] { value };
         } else {
             IRubyObject val0 = Helpers.aryToAry(value);

@@ -158,7 +158,7 @@ public abstract class HashNodes {
                                 }
                             }
 
-                            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, newStore, size);
+                            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, newStore, size);
                         } else {
                             largeObjectArray.enter();
                             throw new UnsupportedOperationException();
@@ -186,7 +186,7 @@ public abstract class HashNodes {
                 store.put(args[n], args[n + 1]);
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, store, 0);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, store, 0);
         }
 
     }
@@ -216,10 +216,12 @@ public abstract class HashNodes {
         public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            if (hash.getDefaultBlock() == null) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
+            if (hash.getDefaultBlock() != null) {
                 return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
+            } else if (hash.getDefaultValue() != null) {
+                return hash.getDefaultValue();
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
             }
         }
 
@@ -237,13 +239,17 @@ public abstract class HashNodes {
 
             notInHashProfile.enter();
 
-            if (hash.getDefaultBlock() == null) {
-                return getContext().getCoreLibrary().getNilObject();
+            if (hash.getDefaultBlock() != null) {
+                useDefaultProfile.enter();
+                return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
             }
 
-            useDefaultProfile.enter();
+            if (hash.getDefaultValue() != null) {
+                return hash.getDefaultValue();
+            }
 
-            return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
+            return getContext().getCoreLibrary().getNilObject();
+
         }
 
         @Specialization(guards = "isObjectLinkedHashMap")
@@ -257,10 +263,12 @@ public abstract class HashNodes {
             final Object value = store.get(key);
 
             if (value == null) {
-                if (hash.getDefaultBlock() == null) {
-                    return getContext().getCoreLibrary().getNilObject();
-                } else {
+                if (hash.getDefaultBlock() != null) {
                     return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
+                } else if (hash.getDefaultValue() != null) {
+                    return hash.getDefaultValue();
+                } else {
+                    return getContext().getCoreLibrary().getNilObject();
                 }
             }
 
@@ -440,7 +448,7 @@ public abstract class HashNodes {
         public RubyHash dupNull(RubyHash hash) {
             notDesignedForCompilation();
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, 0);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0);
         }
 
         @Specialization(guards = "isObjectArray")
@@ -450,7 +458,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, RubyHash.HASHES_SMALL * 2);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy, hash.getStoreSize());
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, copy, hash.getStoreSize());
         }
 
         @Specialization(guards = "isObjectLinkedHashMap")
@@ -460,13 +468,14 @@ public abstract class HashNodes {
             final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
             final LinkedHashMap<Object, Object> copy = new LinkedHashMap<>(store);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy, 0);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, copy, 0);
         }
 
     }
 
     @CoreMethod(names = "each", needsBlock = true)
-    public abstract static class EachNode extends YieldingHashCoreMethodNode {
+    @ImportGuards(HashGuards.class)
+    public abstract static class EachNode extends YieldingCoreMethodNode {
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -602,7 +611,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 1)
     public abstract static class InitializeNode extends HashCoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -614,7 +623,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             hash.setStore(null, 0);
             hash.setDefaultBlock(null);
@@ -622,10 +631,17 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, RubyProc block) {
+        public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
             notDesignedForCompilation();
             hash.setStore(null, 0);
             hash.setDefaultBlock(block);
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public RubyNilClass initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+            hash.setDefaultValue(defaultValue);
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -712,7 +728,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
-    public abstract static class MapNode extends YieldingHashCoreMethodNode {
+    @ImportGuards(HashGuards.class)
+    public abstract static class MapNode extends YieldingCoreMethodNode {
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -811,7 +828,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, RubyHash.HASHES_SMALL * 2);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), copy, hash.getStoreSize());
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getStoreSize());
         }
 
         @ExplodeLoop
@@ -851,14 +868,14 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyHash.HASHES_SMALL * 2), storeBSize);
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, RubyHash.HASHES_SMALL * 2), storeBSize);
             }
 
             considerNothingFromSecondProfile.enter();
 
             if (mergeFromACount == storeB.length) {
                 nothingFromSecondProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyHash.HASHES_SMALL * 2), storeBSize);
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, RubyHash.HASHES_SMALL * 2), storeBSize);
             }
 
             considerResultIsSmallProfile.enter();
@@ -886,7 +903,7 @@ public abstract class HashNodes {
                     index += 2;
                 }
 
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), merged, mergedSize);
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), merged, mergedSize);
             }
 
             CompilerDirectives.transferToInterpreter();
@@ -919,10 +936,11 @@ public abstract class HashNodes {
         public boolean keyObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
+            final int size = hash.getStoreSize();
             final Object[] store = (Object[]) hash.getStore();
 
             for (int n = 0; n < store.length; n += 2) {
-                if (eqlNode.callIsTruthy(frame, store[n], "eql?", null, key)) {
+                if (n < size && eqlNode.callIsTruthy(frame, store[n], "eql?", null, key)) {
                     return true;
                 }
             }

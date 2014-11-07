@@ -28,8 +28,11 @@ import java.util.Map.Entry;
  */
 public class RubyBasicObject extends ObjectStorage {
 
+    /** The class of the object, not a singleton class. */
     @CompilationFinal protected RubyClass logicalClass;
+    /** Either the singleton class if it exists or the logicalClass. */
     @CompilationFinal protected RubyClass metaClass;
+
     protected long objectID = -1;
     public boolean hasPrivateLayout = false;
 

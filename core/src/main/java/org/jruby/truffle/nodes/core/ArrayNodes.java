@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -40,8 +41,10 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.Memo;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
@@ -891,7 +894,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "all?", needsBlock = true)
-    public abstract static class AllNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class AllNode extends YieldingCoreMethodNode {
 
         public AllNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -961,7 +965,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "any?", needsBlock = true)
-    public abstract static class AnyNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class AnyNode extends YieldingCoreMethodNode {
 
         public AnyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1332,7 +1337,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each", needsBlock = true)
-    public abstract static class EachNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class EachNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
         private final BranchProfile nextProfile = new BranchProfile();
@@ -1502,7 +1508,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each_with_index", needsBlock = true)
-    public abstract static class EachWithIndexNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
         private final BranchProfile nextProfile = new BranchProfile();
@@ -1514,6 +1521,11 @@ public abstract class ArrayNodes {
 
         public EachWithIndexNode(EachWithIndexNode prev) {
             super(prev);
+        }
+
+        @Specialization(guards = "isNull")
+        public RubyArray eachWithEmpty(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return array;
         }
 
         @Specialization(guards = "isObject")
@@ -1574,7 +1586,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "find", needsBlock = true)
-    public abstract static class FindNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class FindNode extends YieldingCoreMethodNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1839,7 +1852,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 1)
-    public abstract static class InjectNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class InjectNode extends YieldingCoreMethodNode {
 
         @Child protected DispatchHeadNode dispatch;
 
@@ -2062,7 +2076,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
-    public abstract static class MapNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
 
@@ -2158,7 +2173,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
-    public abstract static class MapInPlaceNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
 
@@ -2482,6 +2498,68 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "permutation", required = 1)
+    public abstract static class PermutationNode extends ArrayCoreMethodNode {
+
+        public PermutationNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PermutationNode(PermutationNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray permutation(RubyArray array, int n) {
+            notDesignedForCompilation();
+
+            final List<RubyArray> permutations = new ArrayList<>();
+            permutationCommon(n, false, array.slowToArray(), permutations);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), permutations.toArray(), permutations.size());
+        }
+
+        // Apdapted from JRuby's RubyArray - see attribution there
+
+        private void permutationCommon(int r, boolean repeat, Object[] values, List<RubyArray> permutations) {
+            if (r == 0) {
+                permutations.add(new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0));
+            } else if (r == 1) {
+                for (int i = 0; i < values.length; i++) {
+                    permutations.add(new RubyArray(getContext().getCoreLibrary().getArrayClass(), values[i], 1));
+                }
+            } else if (r >= 0) {
+                int n = values.length;
+                permute(n, r,
+                        new int[r], 0,
+                        new boolean[n],
+                        repeat,
+                        values, permutations);
+            }
+        }
+
+        private void permute(int n, int r, int[]p, int index, boolean[]used, boolean repeat, Object[] values, List<RubyArray> permutations) {
+            for (int i = 0; i < n; i++) {
+                if (repeat || !used[i]) {
+                    p[index] = i;
+                    if (index < r - 1) {
+                        used[i] = true;
+                        permute(n, r, p, index + 1, used, repeat, values, permutations);
+                        used[i] = false;
+                    } else {
+                        Object[] result = new Object[r];
+
+                        for (int j = 0; j < r; j++) {
+                            result[j] = values[p[j]];
+                        }
+
+                        permutations.add(new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, r));
+                    }
+                }
+            }
+        }
+
+    }
+
     @CoreMethod(names = "pop")
     public abstract static class PopNode extends ArrayCoreMethodNode {
 
@@ -2794,7 +2872,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "reject!", needsBlock = true)
-    public abstract static class RejectInPlaceNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
         public RejectInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2887,7 +2966,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "select", needsBlock = true)
-    public abstract static class SelectNode extends YieldingArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class SelectNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
 

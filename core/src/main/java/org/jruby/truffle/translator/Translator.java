@@ -44,7 +44,13 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             }
         } else if (sourcePosition instanceof DetailedSourcePosition) {
             final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;
-            return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
+
+            try {
+                return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
+            } catch (IllegalArgumentException e) {
+                // In some cases we still get bad offsets with the detailed source positions
+                return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
+            }
         } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
             return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);

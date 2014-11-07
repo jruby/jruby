@@ -9,12 +9,11 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyHash;
 
-import java.util.LinkedHashMap;
-
+@ImportGuards(HashGuards.class)
 public abstract class HashCoreMethodNode extends CoreMethodNode {
 
     public HashCoreMethodNode(RubyContext context, SourceSection sourceSection) {
@@ -23,30 +22,6 @@ public abstract class HashCoreMethodNode extends CoreMethodNode {
 
     public HashCoreMethodNode(HashCoreMethodNode prev) {
         super(prev);
-    }
-
-    protected boolean isNull(RubyHash hash) {
-        return hash.getStore() == null;
-    }
-
-    protected boolean isObjectArray(RubyHash hash) {
-        return hash.getStore() instanceof Object[];
-    }
-
-    protected boolean isObjectLinkedHashMap(RubyHash hash) {
-        return hash.getStore() instanceof LinkedHashMap<?, ?>;
-    }
-
-    protected boolean isOtherNull(RubyHash hash, RubyHash other) {
-        return other.getStore() == null;
-    }
-
-    protected boolean isOtherObjectArray(RubyHash hash, RubyHash other) {
-        return other.getStore() instanceof Object[];
-    }
-
-    protected boolean isOtherObjectLinkedHashMap(RubyHash hash, RubyHash other) {
-        return other.getStore() instanceof LinkedHashMap<?, ?>;
     }
 
 }

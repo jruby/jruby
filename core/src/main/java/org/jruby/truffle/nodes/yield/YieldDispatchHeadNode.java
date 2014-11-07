@@ -10,22 +10,27 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 
-public class YieldDispatchHeadNode extends YieldDispatchNode {
+public class YieldDispatchHeadNode extends Node {
 
     @Child protected YieldDispatchNode dispatch;
 
     public YieldDispatchHeadNode(RubyContext context) {
-        super(context);
         dispatch = new UninitializedYieldDispatchNode(context);
 
     }
 
     public Object dispatch(VirtualFrame frame, RubyProc block, Object... argumentsObjects) {
         return dispatch.dispatch(frame, block, argumentsObjects);
+    }
+
+    public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object... argumentsObjects) {
+        return dispatch.dispatchWithModifiedBlock(frame, block, modifiedBlock, argumentsObjects);
     }
 
     public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {

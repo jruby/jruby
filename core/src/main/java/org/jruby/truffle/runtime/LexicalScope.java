@@ -12,8 +12,8 @@ package org.jruby.truffle.runtime;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 public class LexicalScope {
-    final LexicalScope parent;
-    RubyModule liveModule;
+    private final LexicalScope parent;
+    private RubyModule liveModule;
 
     public LexicalScope(LexicalScope parent, RubyModule liveModule) {
         this.parent = parent;

@@ -12,42 +12,20 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.TranscoderDB;
+import org.jcodings.util.CaseInsensitiveBytesHash;
+import org.jcodings.util.Hash;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
-
-    // TODO(cs): this should not exist, Encoding instances should be unique.
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
-            notDesignedForCompilation();
-
-            return false;
-        }
-
-        @Specialization
-        public boolean equal(RubyEncoding a, RubyEncoding b) {
-            notDesignedForCompilation();
-
-            return a.compareTo(b);
-        }
-
-    }
 
     @CoreMethod(names = "default_external", onSingleton = true)
     public abstract static class DefaultExternalNode extends CoreMethodNode {
@@ -70,7 +48,7 @@ public abstract class EncodingNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), encoding);
+            return RubyEncoding.getEncoding(getContext(), encoding);
         }
 
     }
@@ -96,7 +74,7 @@ public abstract class EncodingNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), encoding);
+            return RubyEncoding.getEncoding(getContext(), encoding);
         }
 
     }
@@ -113,14 +91,62 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public Object find(RubyString name) {
+        public RubyEncoding find(RubyString name) {
             notDesignedForCompilation();
 
-            // TODO(CS): isn't this a JRuby object?
-
-            return RubyEncoding.findEncodingByName(name);
+            return RubyEncoding.getEncoding(getContext(), name.toString());
         }
 
     }
+
+    @CoreMethod(names = "name_list", onSingleton = true)
+    public abstract static class NameListNode extends CoreMethodNode {
+
+        public NameListNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NameListNode(NameListNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray find() {
+            notDesignedForCompilation();
+
+            final EncodingService service = getContext().getRuntime().getEncodingService();
+
+            final Object[] array = new Object[service.getEncodings().size() + service.getAliases().size() + 2];
+            int n = 0;
+
+            Hash.HashEntryIterator i;
+            
+            i = service.getEncodings().entryIterator();
+
+            while (i.hasNext()) {
+                CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+                array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(e.bytes, e.p, e.end - e.p));
+            }
+
+            i = service.getAliases().entryIterator();
+
+            while (i.hasNext()) {
+                CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+                array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(e.bytes, e.p, e.end - e.p));
+            }
+
+            array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.EXTERNAL);
+            //array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.INTERNAL);
+            array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.LOCALE);
+            //array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.FILESYSTEM);
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
+        }
+
+    }
+
+
 
 }
