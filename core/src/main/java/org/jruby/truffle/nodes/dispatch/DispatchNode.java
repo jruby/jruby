@@ -60,14 +60,14 @@ public abstract class DispatchNode extends RubyNode {
             String name,
             boolean ignoreVisibility,
             Dispatch.DispatchAction dispatchAction) {
-        RubyConstant constant = ModuleOperations.lookupConstant(lexicalScope, module, name);
+        RubyConstant constant = ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
 
         // If no constant was found, use #const_missing
         if (constant == null) {
             return null;
         }
 
-        if (!ignoreVisibility && !constant.isVisibleTo(lexicalScope, module)) {
+        if (!ignoreVisibility && !constant.isVisibleTo(getContext(), lexicalScope, module)) {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
         }
 

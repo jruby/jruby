@@ -36,12 +36,11 @@ public class RubyConstant {
         this.isPrivate = isPrivate;
     }
 
-    public boolean isVisibleTo(LexicalScope lexicalScope, RubyModule module) {
+    public boolean isVisibleTo(RubyContext context, LexicalScope lexicalScope, RubyModule module) {
         if (!isPrivate) {
             return true;
         }
 
-        final RubyContext context = module.getContext();
         final LexicalScope topLexicalScope = lexicalScope;
 
         // Look in lexical scope

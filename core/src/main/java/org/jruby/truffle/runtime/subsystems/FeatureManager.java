@@ -34,7 +34,7 @@ public class FeatureManager {
     }
 
     public boolean require(String feature, RubyNode currentNode) throws IOException {
-        final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(null, context.getCoreLibrary().getObjectClass(), "DATA");
+        final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, null, context.getCoreLibrary().getObjectClass(), "DATA");
 
         try {
             // Some features are handled specially

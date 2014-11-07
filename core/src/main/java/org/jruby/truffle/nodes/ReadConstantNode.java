@@ -91,9 +91,9 @@ public class ReadConstantNode extends RubyNode {
         }
 
         RubyModule module = (RubyModule) receiverObject; // TODO(cs): cast
-        RubyConstant constant = ModuleOperations.lookupConstant(lexicalScope, module, name);
+        RubyConstant constant = ModuleOperations.lookupConstant(context, lexicalScope, module, name);
 
-        if (constant == null || !constant.isVisibleTo(lexicalScope, module)) {
+        if (constant == null || !constant.isVisibleTo(context, lexicalScope, module)) {
             return getContext().getCoreLibrary().getNilObject();
         } else {
             return context.makeString("constant");
