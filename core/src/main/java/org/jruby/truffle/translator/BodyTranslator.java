@@ -1723,15 +1723,21 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitOpAsgnOrNode(org.jruby.ast.OpAsgnOrNode node) {
         /*
-         * De-sugar x ||= y into x || x = y. No repeated evaluations there so it's easy. It's also
-         * basically how jruby-parser represents it already. We'll do it directly, rather than via
-         * another JRuby AST node.
+         * De-sugar x ||= y into ([defined?(x) &&] x) || x = y.
+         * The defined? check is only needed for some expressions.
+         * It's also basically how jruby-parser represents it already.
+         * We'll do it directly, rather than via another JRuby AST node.
          */
 
-        final org.jruby.ast.Node lhs = node.getFirstNode();
-        final org.jruby.ast.Node rhs = node.getSecondNode();
+        RubyNode lhs = node.getFirstNode().accept(this);
+        RubyNode rhs = node.getSecondNode().accept(this);
 
-        return new OrNode(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
+        if (node.getFirstNode().needsDefinitionCheck()) {
+            RubyNode defined = new DefinedNode(context, lhs.getSourceSection(), lhs);
+            lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
+        }
+
+        return new OrNode(context, translate(node.getPosition()), lhs, rhs);
     }
 
     @Override

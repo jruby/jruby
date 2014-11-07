@@ -1,1 +1,0 @@
-fails:Constant resolution within methods with ||= assignes constant if previously undefined
