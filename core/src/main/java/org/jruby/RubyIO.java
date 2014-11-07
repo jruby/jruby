@@ -1105,11 +1105,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } finally {
                 IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
                 try {
-                    port.getMetaClass().finvoke(context, port, "close", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                    if(!(port.respondsTo("closed?") && port.callMethod(context, "closed?").isTrue())) {
+                        if(port.respondsTo("close")) {
+                            port.getMetaClass().finvoke(context, port, "close", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                        }
+                    }
                 } catch (RaiseException re) {
-                    RubyException rubyEx = re.getException();
-                    if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                        // MRI behavior: swallow StandardErorrs
+                    // MRI behavior: Ignore "closed stream"
+                    if (re.getException().message.asJavaString().equals("closed stream")) {
                         runtime.getGlobalVariables().set("$!", oldExc);
                     } else {
                         throw re;

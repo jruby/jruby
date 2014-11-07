@@ -464,10 +464,12 @@ public class Helpers {
                 return Errno.ECONNABORTED;
             } else if (t.getMessage().equals("Broken pipe")) {
                 return Errno.EPIPE;
-            } else if ("Connection reset by peer".equals(t.getMessage())
-                    || "An existing connection was forcibly closed by the remote host".equals(t.getMessage()) ||
-                    (Platform.IS_WINDOWS && t.getMessage().contains("connection was aborted"))) {
+            } else if ("Connection reset by peer".equals(errorMessage) ||
+                       "An existing connection was forcibly closed by the remote host".equals(errorMessage) ||
+                    (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted"))) {
                 return Errno.ECONNRESET;
+            } else if (errorMessage.equals("No space left on device")) {
+                return Errno.ENOSPC;
             }
         }
         return null;
