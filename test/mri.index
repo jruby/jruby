@@ -79,7 +79,8 @@ ruby/test_readpartial.rb
 #ruby/test_regexp.rb
 ruby/test_require.rb
 ruby/test_rubyoptions.rb
-ruby/test_settracefunc.rb
+# Removed until we can implement the remaining features (#2143)
+#ruby/test_settracefunc.rb
 ruby/test_signal.rb
 ruby/test_sleep.rb
 ruby/test_sprintf.rb
