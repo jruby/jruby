@@ -912,6 +912,12 @@ public class RubyModule extends RubyObject {
     public void addMethod(String name, DynamicMethod method) {
         testFrozen("class/module");
 
+        if (this instanceof MetaClass) {
+            // FIXME: Gross and not quite right. See MRI's rb_frozen_class_p logic
+            RubyBasicObject attached = (RubyBasicObject)((MetaClass)this).getAttached();
+            attached.testFrozen();
+        }
+
         addMethodInternal(name, method);
     }
 
