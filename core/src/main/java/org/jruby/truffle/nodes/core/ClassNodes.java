@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -52,6 +53,9 @@ public abstract class ClassNodes {
         }
 
         private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
+            if (rubyClass.isSingleton()) {
+                throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+            }
             final RubyBasicObject instance = rubyClass.newInstance(this);
             initialize.call(frame, instance, "initialize", block, args);
             return instance;

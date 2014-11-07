@@ -1,5 +1,4 @@
 fails:Defining instance methods on a singleton class define public methods
 fails:Class methods of a singleton class include ones of the object's class
-fails:Instantiating a singleton class raises a TypeError when new is called
 fails:Instantiating a singleton class raises a TypeError when allocate is called
 fails:A constant on a singleton class is preserved when the object is cloned
