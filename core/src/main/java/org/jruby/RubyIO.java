@@ -112,6 +112,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it)
     public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
     public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
+    public static final String CLOSED_STREAM_MSG = "closed stream";
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
@@ -1103,21 +1104,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             try {
                 return block.yield(context, port);
             } finally {
-                IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
-                try {
-                    if(!(port.respondsTo("closed?") && port.callMethod(context, "closed?").isTrue())) {
-                        if(port.respondsTo("close")) {
-                            port.getMetaClass().finvoke(context, port, "close", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-                        }
-                    }
-                } catch (RaiseException re) {
-                    // MRI behavior: Ignore "closed stream"
-                    if (re.getException().message.asJavaString().equals("closed stream")) {
-                        runtime.getGlobalVariables().set("$!", oldExc);
-                    } else {
-                        throw re;
-                    }
-                }
+                ioClose(runtime, port);
             }
         }
         return port;
@@ -1934,12 +1921,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // io_close
     protected static IRubyObject ioClose(Ruby runtime, IRubyObject io) {
         ThreadContext context = runtime.getCurrentContext();
+        IRubyObject closed = io.checkCallMethod(context, "closed?");
+        if (closed.isTrue()) return io;
         try {
-            return io.callMethod(runtime.getCurrentContext(), "close");
+            return io.checkCallMethod(runtime.getCurrentContext(), "close");
         } catch (RaiseException re) {
-            // ignore
-            context.setErrorInfo(context.nil);
-            return context.nil;
+            if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
+                // ignore
+                context.setErrorInfo(context.nil);
+                return context.nil;
+            } else {
+                throw re;
+            }
         }
     }
     

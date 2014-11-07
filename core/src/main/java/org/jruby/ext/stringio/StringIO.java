@@ -1278,7 +1278,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     private void checkOpen() {
         if (closed()) {
-            throw getRuntime().newIOError("closed stream");
+            throw getRuntime().newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
     }
 }

@@ -479,7 +479,7 @@ public class RubyArgsFile {
 
         data.next_argv(context);
         if (isClosed(context, data.currentFile)) {
-            throw context.runtime.newIOError("closed stream");
+            throw context.runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
         
         argf_close(context, data.currentFile);

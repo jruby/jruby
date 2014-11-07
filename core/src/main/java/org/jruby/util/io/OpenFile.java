@@ -434,7 +434,7 @@ public class OpenFile implements Finalizable {
 
         if (posix.errno == null) return false;
 
-        if (fd == null) throw runtime.newIOError("closed stream");
+        if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
 
         switch (posix.errno) {
             case EINTR:
@@ -461,7 +461,7 @@ public class OpenFile implements Finalizable {
 
         if (posix.errno == null) return false;
 
-        if (fd == null) throw runtime.newIOError("closed stream");
+        if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
 
         switch (posix.errno) {
             case EINTR:
@@ -665,7 +665,7 @@ public class OpenFile implements Finalizable {
 
     public void checkClosed() {
         if (fd == null) {
-            throw runtime.newIOError("closed stream");
+            throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
     }
 
@@ -1369,7 +1369,7 @@ public class OpenFile implements Finalizable {
      */
     boolean waitReadable(ThreadContext context, ChannelFD fd) {
         if (fd == null) {
-            throw context.runtime.newIOError("closed stream");
+            throw context.runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
 
         boolean locked = lock();
@@ -2280,7 +2280,7 @@ public class OpenFile implements Finalizable {
                             }
                             if (waitWritable(context)) {
                                 if (fd == null)
-                                    return noalloc ? runtime.getTrue() : runtime.newIOError("closed stream").getException();
+                                    return noalloc ? runtime.getTrue() : runtime.newIOError(RubyIO.CLOSED_STREAM_MSG).getException();
                                 continue retry;
                             }
                             break retry;
