@@ -139,6 +139,29 @@ project 'JRuby Integration Tests' do
 
   end
 
+  profile 'jruby_complete_jar_jruby' do
+
+    jar 'org.jruby:jruby-complete', '${project.version}', :scope => :provided
+
+    rake = Dir[File.join(basedir, "../lib/ruby/gems/shared/gems/rake-*/lib/rake/rake_test_loader.rb")].first
+    files = ""
+    File.open(File.join(basedir, 'jruby.index')) do |f|
+      f.each_line.each do |line|
+        filename = "test/#{line.chomp}.rb"
+        next unless File.exist? filename
+        files << "<arg value='#{filename}'/>"
+      end
+    end
+
+    plugin :antrun do
+      execute_goals( 'run',
+                     :id => 'jruby_complete_jar_jruby',
+                     :phase => 'test',
+                     :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='#{rake}'/>#{files}<arg value='-v'/></exec></target>" ) ] )
+    end
+
+  end
+
   profile 'truffle-specs-language' do
 
     plugin :antrun do
