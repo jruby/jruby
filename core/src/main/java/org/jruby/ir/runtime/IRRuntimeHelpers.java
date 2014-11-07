@@ -941,8 +941,8 @@ public class IRRuntimeHelpers {
     }
 
     // Used by JIT
-    public static RubyString newStringFromRaw(Ruby runtime, String str, String encoding) {
-        return new RubyString(runtime, runtime.getString(), newByteListFromRaw(runtime, str, encoding));
+    public static RubyString newFrozenStringFromRaw(Ruby runtime, String str, String encoding) {
+        return runtime.freezeAndDedupString(new RubyString(runtime, runtime.getString(), newByteListFromRaw(runtime, str, encoding)));
     }
 
     // Used by JIT

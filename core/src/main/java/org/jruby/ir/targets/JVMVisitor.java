@@ -1914,6 +1914,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void FrozenString(FrozenString frozen) {
+        jvmMethod().pushFrozenString(frozen.getByteList());
+    }
+
+    @Override
     public void UnboxedFixnum(UnboxedFixnum fixnum) {
         jvmAdapter().ldc(fixnum.getValue());
     }

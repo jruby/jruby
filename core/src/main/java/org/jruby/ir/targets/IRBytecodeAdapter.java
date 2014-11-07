@@ -211,6 +211,13 @@ public abstract class IRBytecodeAdapter {
     /**
      * Stack required: none
      *
+     * @param bl ByteList for the String to push
+     */
+    public abstract void pushFrozenString(ByteList bl);
+
+    /**
+     * Stack required: none
+     *
      * @param bl ByteList to push
      */
     public abstract void pushByteList(ByteList bl);

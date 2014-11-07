@@ -68,16 +68,49 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     public void pushString(ByteList bl) {
         loadRuntime();
+        pushByteList(bl);
+        adapter.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class));
+    }
+
+    /**
+     * Stack required: none
+     *
+     * @param bl ByteList for the String to push
+     */
+    public void pushFrozenString(ByteList bl) {
+        // FIXME: too much bytecode
+        String cacheField = "frozenString" + getClassData().callSiteCount.getAndIncrement();
+        Label done = new Label();
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyString.class), null, null).visitEnd();
+        adapter.getstatic(getClassData().clsName, cacheField, ci(RubyString.class));
+        adapter.dup();
+        adapter.ifnonnull(done);
+        adapter.pop();
+        loadRuntime();
         adapter.ldc(bl.toString());
         adapter.ldc(bl.getEncoding().toString());
-        invokeIRHelper("newStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class));
+        invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class));
+        adapter.dup();
+        adapter.putstatic(getClassData().clsName, cacheField, ci(RubyString.class));
+        adapter.label(done);
     }
 
     public void pushByteList(ByteList bl) {
+        // FIXME: too much bytecode
+        String cacheField = "byteList" + getClassData().callSiteCount.getAndIncrement();
+        Label done = new Label();
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(ByteList.class), null, null).visitEnd();
+        adapter.getstatic(getClassData().clsName, cacheField, ci(ByteList.class));
+        adapter.dup();
+        adapter.ifnonnull(done);
+        adapter.pop();
         loadRuntime();
         adapter.ldc(bl.toString());
         adapter.ldc(bl.getEncoding().toString());
         invokeIRHelper("newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+        adapter.dup();
+        adapter.putstatic(getClassData().clsName, cacheField, ci(ByteList.class));
+        adapter.label(done);
     }
 
     public void pushRegexp(int options) {

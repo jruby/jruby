@@ -47,6 +47,7 @@ public enum OperandType {
     UNDEFINED_VALUE((byte) 'u'),
     UNEXECUTABLE_NIL((byte) 'n'),
     WRAPPED_IR_CLOSURE((byte) 'w'),
+    FROZEN_STRING((byte) 'z')
     ;
 
     private final byte coded;

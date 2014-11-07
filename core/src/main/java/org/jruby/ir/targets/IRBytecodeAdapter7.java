@@ -57,6 +57,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
     }
 
+    public void pushFrozenString(ByteList bl) {
+        loadContext();
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
+    }
+
     public void pushByteList(ByteList bl) {
         adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
     }

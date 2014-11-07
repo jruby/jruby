@@ -4606,14 +4606,14 @@ public final class Ruby implements Constantizable {
      * existing copy already prepared. This is used to reduce in-memory
      * duplication of pre-frozen or known-frozen strings.
      *
-     * Note that this cache is synchronized against the Ruby instance. This
+     * Note that this cache does some sync against the Ruby instance. This
      * could cause contention under heavy concurrent load, so a reexamination
      * of this design might be warranted.
      *
      * @param string the string to freeze-dup if an equivalent does not already exist
      * @return the freeze-duped version of the string
      */
-    public synchronized RubyString freezeAndDedupString(RubyString string) {
+    public RubyString freezeAndDedupString(RubyString string) {
         if (string.getMetaClass().isSingleton()) {
             // never cache a singleton
             RubyString duped = string.strDup(this);
