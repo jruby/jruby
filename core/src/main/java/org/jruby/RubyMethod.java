@@ -36,11 +36,13 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.CompiledBlockLight19;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
@@ -303,6 +305,25 @@ public class RubyMethod extends RubyObject implements DataType {
     @JRubyMethod(optional = 1)
     public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
         return to_proc(context, null).callMethod(context, "curry", args);
+    }
+
+    @JRubyMethod
+    public IRubyObject super_method(ThreadContext context) {
+        RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), implementationModule).getSuperClass();
+        return super_method(context, receiver, superClass);
+    }
+
+    protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
+        if (superClass == null) return context.runtime.getNil();
+
+        DynamicMethod newMethod = superClass.searchMethod(methodName);
+        if (newMethod == UndefinedMethod.INSTANCE) return context.runtime.getNil();
+
+        if (receiver == null) {
+            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, newMethod);
+        } else {
+            return newMethod(superClass, methodName, superClass, originName, newMethod, receiver);
+        }
     }
 }
 
