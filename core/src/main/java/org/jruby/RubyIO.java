@@ -852,7 +852,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ChannelFD fd;
 
         if (!FilenoUtil.isFake(fileno)) {
-            fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+            // try using existing ChannelFD, then fall back on creating a new one
+            fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
+
+            if (fd == null) {
+                fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+            }
         } else {
             ChannelFD descriptor = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
