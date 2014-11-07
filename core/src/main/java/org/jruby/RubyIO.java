@@ -3254,7 +3254,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @Override
     public String toString() {
-        return "RubyIO(" + openFile.getMode() + ", " + openFile.fd().bestFileno() + ")";
+        return inspect().toString();
     }
     
     /* class methods for IO */
