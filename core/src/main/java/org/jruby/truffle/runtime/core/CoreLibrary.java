@@ -21,7 +21,6 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -121,16 +120,18 @@ public class CoreLibrary {
         // Create the cyclic classes and modules
 
         classClass = new RubyClass.RubyClassClass(context);
-        basicObjectClass = new RubyClass(null, context, classClass, null, null, "BasicObject");
-        objectClass = new RubyClass(null, null, basicObjectClass, "Object");
+        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject");
+        objectClass = RubyClass.createBootClass(context, classClass, "Object");
         moduleClass = new RubyModule.RubyModuleClass(context);
 
         // Close the cycles
 
-        moduleClass.unsafeSetLogicalClass(classClass);
-        classClass.unsafeSetSuperclass(null, moduleClass);
-        moduleClass.unsafeSetSuperclass(null, objectClass);
         classClass.unsafeSetLogicalClass(classClass);
+        moduleClass.unsafeSetLogicalClass(classClass);
+
+        objectClass.unsafeSetSuperclass(basicObjectClass);
+        moduleClass.unsafeSetSuperclass(objectClass);
+        classClass.unsafeSetSuperclass(moduleClass);
 
         // Create all other classes and modules
 
