@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,18 +28,44 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
 
+    @CoreMethod(names = "allocate")
+    public abstract static class AllocateNode extends CoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AllocateNode(AllocateNode prev) {
+            super(prev);
+        }
+
+        public abstract RubyBasicObject executeAllocate(VirtualFrame frame, RubyClass rubyClass);
+
+        @Specialization
+        public RubyBasicObject allocate(RubyClass rubyClass) {
+            if (rubyClass.isSingleton()) {
+                throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+            }
+            return rubyClass.newInstance(this);
+        }
+
+    }
+
     @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
     public abstract static class NewNode extends CoreMethodNode {
 
+        @Child protected AllocateNode allocateNode;
         @Child protected DispatchHeadNode initialize;
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = ClassNodesFactory.AllocateNodeFactory.create(context, sourceSection, new RubyNode[]{null});
             initialize = DispatchHeadNode.onSelf(context);
         }
 
         public NewNode(NewNode prev) {
             super(prev);
+            allocateNode = prev.allocateNode;
             initialize = prev.initialize;
         }
 
@@ -53,10 +80,7 @@ public abstract class ClassNodes {
         }
 
         private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
-            if (rubyClass.isSingleton()) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
-            }
-            final RubyBasicObject instance = rubyClass.newInstance(this);
+            final RubyBasicObject instance = allocateNode.executeAllocate(frame, rubyClass);
             initialize.call(frame, instance, "initialize", block, args);
             return instance;
         }
