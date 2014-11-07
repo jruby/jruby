@@ -35,6 +35,19 @@ module Test
         end
         @test_methods[name] = true
       end
+
+      # Override include so that tests pulled out of modules can also be excluded
+      def self.include(mod)
+        result = super(mod)
+
+        mod.public_instance_methods.each do |method|
+          if @excludes && @excludes[method]
+            undef_method method
+          end
+        end
+
+        result
+      end
     end
   end
 end
