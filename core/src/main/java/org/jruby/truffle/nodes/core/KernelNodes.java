@@ -1083,7 +1083,7 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "methods", optional = 1)
-    public abstract static class MethodsNode extends ModuleNodes.InstanceMethodsNode {
+    public abstract static class MethodsNode extends CoreMethodNode {
 
         public MethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1102,7 +1102,23 @@ public abstract class KernelNodes {
         public RubyArray methods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
-            return super.instanceMethods(self.getMetaClass(), includeInherited);
+            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
+
+            Map<String, RubyMethod> methods;
+
+            if (includeInherited) {
+                methods = ModuleOperations.getAllMethods(self.getMetaClass());
+            } else {
+                methods = self.getMetaClass().getMethods();
+            }
+
+            for (RubyMethod method : methods.values()) {
+                if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
+                    array.slowPush(self.getContext().newSymbol(method.getName()));
+                }
+            }
+
+            return array;
         }
 
     }
