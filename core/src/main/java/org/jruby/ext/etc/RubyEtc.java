@@ -140,13 +140,15 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         try {
             Passwd pwd = runtime.getPosix().getpwnam(nam);
-            if(pwd == null) {
+            if (pwd == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior
                     return runtime.getNil();
                 }
                 throw runtime.newArgumentError("can't find user for " + nam);
             }
             return setupPasswd(recv.getRuntime(), pwd);
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwnam is not supported by JRuby on this platform");
@@ -267,13 +269,15 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         try {
             Group grp = runtime.getPosix().getgrnam(nam);
-            if(grp == null) {
+            if (grp == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior
                     return runtime.getNil();
                 }
                 throw runtime.newArgumentError("can't find group for " + nam);
             }
             return setupGroup(runtime, grp);
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform");
