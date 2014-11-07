@@ -1,3 +1,2 @@
-fails:Defining instance methods on a singleton class define public methods
 fails:Class methods of a singleton class include ones of the object's class
 fails:A constant on a singleton class is preserved when the object is cloned
