@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.NullMethod;
 
 import java.util.regex.Pattern;
 
@@ -25,7 +26,7 @@ public class BlankSlateWrapper extends IncludedModuleWrapper {
     }
 
     @Override
-    public DynamicMethod searchMethodInner(String name) {
+    protected DynamicMethod searchMethodCommon(String name) {
         // this module is special and only searches itself; do not go to superclasses
         // except for special methods
 
@@ -41,7 +42,7 @@ public class BlankSlateWrapper extends IncludedModuleWrapper {
             return superClass.searchMethodInner(name);
         }
 
-        return null;
+        return NullMethod.getInstance();
     }
 
     private static final Pattern KEEP = Pattern.compile("^(__|<|>|=)|^(class|initialize_copy|singleton_method_added|const_missing|inspect|method_missing|to_s)$|(\\?|!|=)$");

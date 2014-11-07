@@ -58,7 +58,12 @@ public abstract class ModuleOperations {
         return constants;
     }
 
-    public static RubyConstant lookupConstant(LexicalScope lexicalScope, RubyModule module, String name) {
+    /**
+     * @param lexicalScope The surrounding LexicalScope, null if it is ignored (as in Mod::Constant)
+     * @param module The receiver of the constant lookup.
+     *               Identical to lexicalScope.getLiveModule() if there no qualifier (Constant).
+     */
+    public static RubyConstant lookupConstant(RubyContext context, LexicalScope lexicalScope, RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
         RubyConstant constant;
@@ -71,17 +76,23 @@ public abstract class ModuleOperations {
         }
 
         // Look in lexical scope
-        final RubyContext context = module.getContext();
         final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
 
-        while (lexicalScope != null && lexicalScope != context.getRootLexicalScope()) { // TODO: looking twice self ?
-            constant = lexicalScope.getLiveModule().getConstants().get(name);
-
-            if (constant != null) {
-                return constant;
+        if (lexicalScope != null) {
+            if (lexicalScope.getLiveModule() == module && lexicalScope != context.getRootLexicalScope()) {
+                // Already looked in module.
+                lexicalScope = lexicalScope.getParent();
             }
 
-            lexicalScope = lexicalScope.getParent();
+            while (lexicalScope != context.getRootLexicalScope()) {
+                constant = lexicalScope.getLiveModule().getConstants().get(name);
+
+                if (constant != null) {
+                    return constant;
+                }
+
+                lexicalScope = lexicalScope.getParent();
+            }
         }
 
         // Look in ancestors
@@ -93,9 +104,9 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Look in Object and its ancestors for modules
+        // Look in Object and its included modules
         if (module.isOnlyAModule()) {
-            for (RubyModule ancestor : objectClass.ancestors()) {
+            for (RubyModule ancestor : objectClass.selfAndIncludedModules()) {
                 constant = ancestor.getConstants().get(name);
 
                 if (constant != null) {

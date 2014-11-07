@@ -192,13 +192,20 @@ public class RubyModule extends RubyObject implements ModuleChain {
     /**
      * Set the value of a constant, possibly redefining it.
      */
-    public void setConstant(RubyNode currentNode, String constantName, Object value) {
+    public void setConstant(RubyNode currentNode, String name, Object value) {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-        getConstants().put(constantName, new RubyConstant(value, false));
+
+        RubyConstant previous = getConstants().get(name);
+        if (previous == null) {
+            getConstants().put(name, new RubyConstant(this, value, false));
+        } else {
+            // TODO(CS): warn when redefining a constant
+            getConstants().put(name, new RubyConstant(this, value, previous.isPrivate()));
+        }
+
         newLexicalVersion();
-        // TODO(CS): warn when redefining a constant
     }
 
     public void removeConstant(RubyNode currentNode, String data) {
@@ -291,16 +298,15 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void changeConstantVisibility(RubyNode currentNode, RubySymbol constant, boolean isPrivate) {
         RubyNode.notDesignedForCompilation();
 
-        RubyConstant rubyConstant = ModuleOperations.lookupConstant(null, this, constant.toString());
+        RubyConstant rubyConstant = ModuleOperations.lookupConstant(getContext(), null, this, constant.toString());
         checkFrozen(currentNode);
 
         if (rubyConstant != null) {
             rubyConstant.setPrivate(isPrivate);
+            newLexicalVersion();
         } else {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString(), currentNode));
         }
-
-        newLexicalVersion();
     }
 
     public void appendFeatures(RubyNode currentNode, RubyModule other) {
@@ -488,6 +494,17 @@ public class RubyModule extends RubyObject implements ModuleChain {
         }
     }
 
+    private class IncludedModulesIterator extends AncestorIterator {
+        public IncludedModulesIterator(ModuleChain top) {
+            super(top);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return module instanceof RubyModule;
+        }
+    }
+
     public Iterable<RubyModule> ancestors() {
         final RubyModule top = this;
         return new Iterable<RubyModule>() {
@@ -499,6 +516,26 @@ public class RubyModule extends RubyObject implements ModuleChain {
     }
 
     public Iterable<RubyModule> parentAncestors() {
+        final ModuleChain top = parentModule;
+        return new Iterable<RubyModule>() {
+            @Override
+            public Iterator<RubyModule> iterator() {
+                return new AncestorIterator(top);
+            }
+        };
+    }
+
+    public Iterable<RubyModule> selfAndIncludedModules() {
+        final ModuleChain top = this;
+        return new Iterable<RubyModule>() {
+            @Override
+            public Iterator<RubyModule> iterator() {
+                return new AncestorIterator(top);
+            }
+        };
+    }
+
+    public Iterable<RubyModule> includedModules() {
         final ModuleChain top = parentModule;
         return new Iterable<RubyModule>() {
             @Override

@@ -20,16 +20,12 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Define a new class, or get the existing one of the same name.
  */
-public class DefineOrGetClassNode extends RubyNode {
+public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
-    private final String name;
-    @Child protected RubyNode lexicalParentModule;
     @Child protected RubyNode superClass;
 
     public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParentModule, RubyNode superClass) {
-        super(context, sourceSection);
-        this.name = name;
-        this.lexicalParentModule = lexicalParentModule;
+        super(context, sourceSection, name, lexicalParentModule);
         this.superClass = superClass;
     }
 
@@ -39,17 +35,10 @@ public class DefineOrGetClassNode extends RubyNode {
 
         final RubyContext context = getContext();
 
-        RubyModule lexicalParentModuleObject;
-
-        try {
-            lexicalParentModuleObject = lexicalParentModule.executeRubyModule(frame);
-        } catch (UnexpectedResultException e) {
-            throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
-        }
-
         // Look for a current definition of the class, or create a new one
 
-        final RubyConstant constant = lexicalParentModuleObject.getConstants().get(name);
+        RubyModule lexicalParent = getLexicalParentModule(frame);
+        final RubyConstant constant = lookupForExistingModule(frame, lexicalParent);
 
         RubyClass definingClass;
         RubyClass superClassObject = getRubySuperClass(frame, context);
@@ -60,15 +49,14 @@ public class DefineOrGetClassNode extends RubyNode {
             } else if (superClassObject instanceof RubyString.RubyStringClass) {
                 definingClass = new RubyString.RubyStringClass(superClassObject);
             } else {
-                definingClass = new RubyClass(this, lexicalParentModuleObject, superClassObject, name);
+                definingClass = new RubyClass(this, lexicalParent, superClassObject, name);
             }
 
-            lexicalParentModuleObject.setConstant(this, name, definingClass);
+            lexicalParent.setConstant(this, name, definingClass);
         } else {
             if (constant.getValue() instanceof RubyClass) {
                 definingClass = (RubyClass) constant.getValue();
                 checkSuperClassCompatibility(context, superClassObject, definingClass);
-
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.getValue().toString(), "class", this));
             }

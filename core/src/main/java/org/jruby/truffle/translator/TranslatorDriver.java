@@ -43,7 +43,8 @@ public class TranslatorDriver {
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, RubyNode currentNode) {
         final SourceSection sourceSection = null;
 
-        final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, null, "(unknown)", false, parseTree);
+        final LexicalScope lexicalScope = context.getRootLexicalScope(); // TODO(eregon): figure out how to get the lexical scope from JRuby
+        final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, lexicalScope, "(unknown)", false, parseTree);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
                 context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
@@ -116,7 +117,7 @@ public class TranslatorDriver {
 
     public RubyRootNode parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, "<main>", false, rootNode);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), "<main>", false, rootNode);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
 
@@ -210,7 +211,8 @@ public class TranslatorDriver {
         if (frame == null) {
             return null;
         } else {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(new NullSourceSection("Unknown source section", "(unknown)"), null, "(unknown)", false, null);
+            SourceSection sourceSection = new NullSourceSection("Unknown source section", "(unknown)");
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), "(unknown)", false, null);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);

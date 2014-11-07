@@ -491,7 +491,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(null, module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
         }
 
         @Specialization
@@ -499,7 +499,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (inherit) {
-                return ModuleOperations.lookupConstant(null, module, name.toString()) != null;
+                return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
             } else {
                 return module.getConstants().containsKey(name.toString());
             }
@@ -509,7 +509,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(null, module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
         }
 
     }

@@ -26,7 +26,7 @@ project 'JRuby Artifacts' do
   map = { 'jruby' => [ :release, :main, :osgi, :j2ee ],
     'jruby-noasm' => [ :release, :main ],
     'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars', :osgi, :j2ee ],
-    'jruby-complete' => [ :release, :complete, :osgi ],
+    'jruby-complete' => [ :release, :complete, :osgi, :'jruby_complete_jar_jruby'],
     'jruby-jars' => [ :release, 'jruby-jars' ],
     'jruby-dist' => [ :release, :dist ]
   }

@@ -37,11 +37,6 @@ public class RubyFalseClass extends RubyObject implements Unboxable {
     }
 
     @Override
-    public boolean isTrue() {
-        return false;
-    }
-
-    @Override
     public boolean hasClassAsSingleton() {
         return true;
     }

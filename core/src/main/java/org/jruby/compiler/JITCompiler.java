@@ -190,7 +190,7 @@ public class JITCompiler implements JITCompilerMBean {
                 // Check if the method has been explicitly excluded
                 if (config.getExcludedMethods().size() > 0) {
                     String excludeModuleName = className;
-                    if (method.getImplementationClass().isSingleton()) {
+                    if (method.getImplementationClass().getMethodLocation().isSingleton()) {
                         IRubyObject possibleRealClass = ((MetaClass) method.getImplementationClass()).getAttached();
                         if (possibleRealClass instanceof RubyModule) {
                             excludeModuleName = "Meta:" + ((RubyModule) possibleRealClass).getName();

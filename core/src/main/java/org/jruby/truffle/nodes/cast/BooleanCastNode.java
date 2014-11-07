@@ -21,8 +21,7 @@ import org.jruby.truffle.runtime.core.*;
 import java.math.BigInteger;
 
 /**
- * Casts a value into a boolean. Works at the language level, so doesn't call any Ruby methods to
- * cast non-core or monkey-patched objects.
+ * Casts a value into a boolean.
  */
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class BooleanCastNode extends RubyNode {
@@ -37,6 +36,11 @@ public abstract class BooleanCastNode extends RubyNode {
 
     @Specialization
     public boolean doNil(@SuppressWarnings("unused") RubyNilClass nil) {
+        return false;
+    }
+
+    @Specialization
+    public boolean doFalse(@SuppressWarnings("unused") RubyFalseClass falseObject) {
         return false;
     }
 
@@ -65,9 +69,14 @@ public abstract class BooleanCastNode extends RubyNode {
         return true;
     }
 
-    @Specialization
+    @Specialization(guards = "neitherNilNorFalse")
     public boolean doBasicObject(RubyBasicObject object) {
-        return object.isTrue();
+        return true;
+    }
+
+    protected boolean neitherNilNorFalse(RubyBasicObject object) {
+        return object != getContext().getCoreLibrary().getNilObject() &&
+                object != getContext().getCoreLibrary().getFalseObject();
     }
 
     @Override

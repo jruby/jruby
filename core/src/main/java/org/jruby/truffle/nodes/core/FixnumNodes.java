@@ -1098,77 +1098,66 @@ public abstract class FixnumNodes {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile bAboveZeroProfile = BranchProfile.create();
-        private final BranchProfile bNotAboveZeroProfile = BranchProfile.create();
-        private final BranchProfile useBignumProfile = BranchProfile.create();
-
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public LeftShiftNode(LeftShiftNode prev) {
             super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization(guards = "canShiftIntoInt")
-        public int leftShift(int a, int b) {
-            if (b > 0) {
-                bAboveZeroProfile.enter();
-
-                return a << b;
-            } else {
-                bNotAboveZeroProfile.enter();
-                if (-b >= Integer.SIZE) {
-                    return 0;
-                } else {
-                    return a >> -b;
-                }
+        protected Object lower(BigInteger value) {
+            if (fixnumOrBignum == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                fixnumOrBignum = insert(new FixnumOrBignumNode());
             }
+            return fixnumOrBignum.fixnumOrBignum(value);
         }
 
-        @Specialization
+        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoInt"})
+        public int leftShift(int a, int b) {
+            return a << b;
+        }
+
+        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoLong"})
+        public long leftShiftToLong(int a, int b) {
+            return leftShiftToLong((long) a, b);
+        }
+
+        @Specialization(guards = {"isPositive(arguments[1])"})
         public Object leftShiftWithOverflow(int a, int b) {
             return leftShiftWithOverflow((long) a, b);
         }
 
-        @Specialization(guards = "canShiftIntoLong")
-        public long leftShift(long a, int b) {
-            if (b > 0) {
-                bAboveZeroProfile.enter();
-
-                return a << b;
+        @Specialization(guards = "isStrictlyNegative(arguments[1])")
+        public int leftShiftNeg(int a, int b) {
+            if (-b >= Integer.SIZE) {
+                return 0;
             } else {
-                bNotAboveZeroProfile.enter();
-
-                if (-b >= Long.SIZE) {
-                    return 0;
-                } else {
-                    return a >> -b;
-                }
+                return a >> -b;
             }
         }
 
-        @Specialization
+        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoLong"})
+        public long leftShiftToLong(long a, int b) {
+            return a << b;
+        }
+
+        @Specialization(guards = {"isPositive(arguments[1])"})
         public Object leftShiftWithOverflow(long a, int b) {
-            if (b > 0) {
-                bAboveZeroProfile.enter();
-
-                if (canShiftIntoLong(a, b)) {
-                    return a << b;
-                } else {
-                    useBignumProfile.enter();
-                    return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.shiftLeft(BigInteger.valueOf(a), b));
-                }
+            if (canShiftIntoLong(a, b)) {
+                return leftShiftToLong(a, b);
             } else {
-                bNotAboveZeroProfile.enter();
+                return lower(RuntimeBigInteger.shiftLeft(BigInteger.valueOf(a), b));
+            }
+        }
 
-                if (-b >= Long.SIZE) {
-                    return 0;
-                } else {
-                    return a >> -b;
-                }
+        @Specialization(guards = "isStrictlyNegative(arguments[1])")
+        public long leftShiftNeg(long a, int b) {
+            if (-b >= Integer.SIZE) {
+                return 0;
+            } else {
+                return a >> -b;
             }
         }
 
@@ -1176,8 +1165,20 @@ public abstract class FixnumNodes {
             return Integer.numberOfLeadingZeros(a) - b > 0;
         }
 
+        static boolean canShiftIntoLong(int a, int b) {
+            return canShiftIntoLong((long) a, b);
+        }
+
         static boolean canShiftIntoLong(long a, int b) {
             return Long.numberOfLeadingZeros(a) - b > 0;
+        }
+
+        static boolean isPositive(int value) {
+            return value >= 0;
+        }
+
+        static boolean isStrictlyNegative(int value) {
+            return value < 0;
         }
 
     }
