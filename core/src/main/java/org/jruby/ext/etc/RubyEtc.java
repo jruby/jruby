@@ -1,6 +1,10 @@
 package org.jruby.ext.etc;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
@@ -20,6 +24,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -434,6 +439,30 @@ public class RubyEtc {
     public static IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
         int nprocs = Runtime.getRuntime().availableProcessors();
         return RubyFixnum.newFixnum(context.getRuntime(), nprocs);
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject uname(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        RubyHash uname = RubyHash.newHash(runtime);
+
+        uname.op_aset(context,
+                runtime.newSymbol("sysname"),
+                runtime.newString(SafePropertyAccessor.getProperty("os.name", "unknown")));
+        try {
+            uname.op_aset(context,
+                    runtime.newSymbol("nodename"),
+                    runtime.newString(InetAddress.getLocalHost().getHostName()));
+        } catch (UnknownHostException uhe) {
+            uname.op_aset(context,
+                    runtime.newSymbol("nodename"),
+                    runtime.newString("unknown"));
+        }
+        uname.put(runtime.newSymbol("release"), runtime.newString("unknown"));
+        uname.put(runtime.newSymbol("version"), runtime.newString(SafePropertyAccessor.getProperty("os.version")));
+        uname.put(runtime.newSymbol("machine"), runtime.newString(SafePropertyAccessor.getProperty("os.arch")));
+
+        return uname;
     }
     
     private static final AtomicBoolean iteratingPasswd = new AtomicBoolean(false);
