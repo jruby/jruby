@@ -154,6 +154,10 @@ public class RubyDigest {
         return toHexString(recv.getRuntime(), arg.convertToString().getBytes());
     }
 
+    @JRubyMethod(name = "bubblebabble", required = 1, meta = true)
+    public static IRubyObject bubblebabble(IRubyObject recv, IRubyObject arg) {
+        return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(arg.convertToString().getBytes()));
+    }
 
     private static class Metadata {
 
@@ -326,6 +330,12 @@ public class RubyDigest {
             return toHexString(ctx.runtime, digest_bang(ctx, self).convertToString().getBytes());
         }
 
+        @JRubyMethod(name = "bubblebabble", required = 1, optional = 1, meta = true)
+        public static IRubyObject bubblebabble(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+            byte[] digest = recv.callMethod(ctx, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
+            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest));
+        }
+
         @JRubyMethod()
         public static IRubyObject to_s(ThreadContext ctx, IRubyObject self) {
             return self.callMethod(ctx, "hexdigest");
@@ -463,6 +473,11 @@ public class RubyDigest {
         public IRubyObject reset() {
             algo.reset();
             return this;
+        }
+
+        @JRubyMethod()
+        public IRubyObject bubblebabble() {
+            return RubyString.newString(getRuntime(), BubbleBabble.bubblebabble(algo.digest()));
         }
 
         private void setAlgorithm(Metadata metadata) throws NoSuchAlgorithmException {
