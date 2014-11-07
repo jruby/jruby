@@ -135,4 +135,9 @@ public class RubyUnboundMethod extends RubyMethod {
     public IRubyObject owner(ThreadContext context) {
         return implementationModule;
     }
+
+    @JRubyMethod
+    public IRubyObject super_method(ThreadContext context ) {
+        return super_method(context, null, implementationModule.getSuperClass());
+    }
 }
