@@ -1095,7 +1095,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
-            return methods(self, false);
+            return methods(self, true);
         }
 
         @Specialization
