@@ -1072,10 +1072,7 @@ public class EncodingUtils {
             RubyString s = str.convertToString();
             int clen = s.size();
             if (clen >= len) {
-                if (clen != len) {
-                    s.modify();
-                    s.getByteList().setRealSize(len);
-                }
+                s.modify();
                 return s;
             }
             str = s;

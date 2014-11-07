@@ -2972,7 +2972,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         boolean locked = fptr.lock();
         try {
             fptr.checkByteReadable(context);
-            if (len == 0) return str;
+            if (len == 0) {
+                ((RubyString)str).setReadLength(0);
+                return str;
+            }
 
             fptr.READ_CHECK(context);
             //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
@@ -2982,6 +2985,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         } finally {
             if (locked) fptr.unlock();
         }
+
         ((RubyString)str).setReadLength(n);
 //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
 //        if (previous_mode == O_TEXT) {
