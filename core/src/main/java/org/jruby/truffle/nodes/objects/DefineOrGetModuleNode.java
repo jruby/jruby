@@ -71,6 +71,17 @@ public class DefineOrGetModuleNode extends RubyNode {
     protected RubyConstant lookupForExistingModule(VirtualFrame frame, RubyModule lexicalParent) {
         RubyConstant constant = lexicalParent.getConstants().get(name);
 
+        final RubyClass objectClass = getContext().getCoreLibrary().getObjectClass();
+
+        if (constant == null && lexicalParent == objectClass) {
+            for (RubyModule included : objectClass.includedModules()) {
+                constant = included.getConstants().get(name);
+                if (constant != null) {
+                    break;
+                }
+            }
+        }
+
         if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
         }
