@@ -1112,7 +1112,7 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
             notDesignedForCompilation();
 
-            return instanceMethods(module, false);
+            return instanceMethods(module, true);
         }
 
         @Specialization
