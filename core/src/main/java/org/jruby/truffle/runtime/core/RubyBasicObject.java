@@ -69,7 +69,7 @@ public class RubyBasicObject extends ObjectStorage {
 
         final RubyClass logicalClass = metaClass;
 
-        metaClass = RubyClass.createSingletonClass(currentNode, getContext(), null, logicalClass,
+        metaClass = RubyClass.createSingletonClass(getContext(), null, logicalClass,
                     String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
 
         return metaClass;

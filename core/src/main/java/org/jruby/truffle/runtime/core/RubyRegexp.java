@@ -20,7 +20,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.nio.ByteBuffer;
@@ -40,7 +39,7 @@ public class RubyRegexp extends RubyObject {
     public static class RubyRegexpClass extends RubyClass {
 
         public RubyRegexpClass(RubyClass objectClass) {
-            super(null, null, objectClass, "Regexp");
+            super(null, objectClass, "Regexp");
         }
 
         @Override

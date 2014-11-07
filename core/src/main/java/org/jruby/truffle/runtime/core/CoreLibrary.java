@@ -135,57 +135,57 @@ public class CoreLibrary {
 
         // Create all other classes and modules
 
-        numericClass = new RubyClass(null, null, objectClass, "Numeric");
-        integerClass = new RubyClass(null, null, numericClass, "Integer");
+        numericClass = new RubyClass(null, objectClass, "Numeric");
+        integerClass = new RubyClass(null, numericClass, "Integer");
 
         exceptionClass = new RubyException.RubyExceptionClass(objectClass, "Exception");
         standardErrorClass = new RubyException.RubyExceptionClass(exceptionClass, "StandardError");
 
-        ioClass = new RubyClass(null, null, objectClass, "IO");
+        ioClass = new RubyClass(null, objectClass, "IO");
 
         argumentErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ArgumentError");
         arrayClass = new RubyArray.RubyArrayClass(objectClass);
-        bignumClass = new RubyClass(null, null, integerClass, "Bignum");
-        bindingClass = new RubyClass(null, null, objectClass, "Binding");
+        bignumClass = new RubyClass(null, integerClass, "Bignum");
+        bindingClass = new RubyClass(null, objectClass, "Binding");
         comparableModule = new RubyModule(moduleClass, null, "Comparable");
         configModule = new RubyModule(moduleClass, null, "Config");
-        continuationClass = new RubyClass(null, null, objectClass, "Continuation");
-        dirClass = new RubyClass(null, null, objectClass, "Dir");
+        continuationClass = new RubyClass(null, objectClass, "Continuation");
+        dirClass = new RubyClass(null, objectClass, "Dir");
         encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         errnoModule = new RubyModule(moduleClass, null, "Errno");
         enumerableModule = new RubyModule(moduleClass, null, "Enumerable");
-        falseClass = new RubyClass(null, null, objectClass, "FalseClass");
+        falseClass = new RubyClass(null, objectClass, "FalseClass");
         fiberClass = new RubyFiber.RubyFiberClass(objectClass);
-        fileClass = new RubyClass(null, null, ioClass, "File");
-        fixnumClass = new RubyClass(null, null, integerClass, "Fixnum");
-        floatClass = new RubyClass(null, null, numericClass, "Float");
+        fileClass = new RubyClass(null, ioClass, "File");
+        fixnumClass = new RubyClass(null, integerClass, "Fixnum");
+        floatClass = new RubyClass(null, numericClass, "Float");
         gcModule = new RubyModule(moduleClass, null, "GC");
         hashClass = new RubyHash.RubyHashClass(objectClass);
         kernelModule = new RubyModule(moduleClass, null, "Kernel");
         loadErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LoadError");
         localJumpErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LocalJumpError");
-        matchDataClass = new RubyClass(null, null, objectClass, "MatchData");
+        matchDataClass = new RubyClass(null, objectClass, "MatchData");
         mathModule = new RubyModule(moduleClass, null, "Math");
-        nameErrorClass = new RubyClass(null, null, standardErrorClass, "NameError");
-        nilClass = new RubyClass(null, null, objectClass, "NilClass");
+        nameErrorClass = new RubyClass(null, standardErrorClass, "NameError");
+        nilClass = new RubyClass(null, objectClass, "NilClass");
         noMethodErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "NoMethodError");
         objectSpaceModule = new RubyModule(moduleClass, null, "ObjectSpace");
         procClass = new RubyProc.RubyProcClass(objectClass);
-        processClass = new RubyClass(null, null, objectClass, "Process");
-        rangeClass = new RubyClass(null, null, objectClass, "Range");
+        processClass = new RubyClass(null, objectClass, "Process");
+        rangeClass = new RubyClass(null, objectClass, "Range");
         rangeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RangeError");
         regexpClass = new RubyRegexp.RubyRegexpClass(objectClass);
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
         signalModule = new RubyModule(moduleClass, null, "Signal");
         stringClass = new RubyString.RubyStringClass(objectClass);
-        symbolClass = new RubyClass(null, null, objectClass, "Symbol");
+        symbolClass = new RubyClass(null, objectClass, "Symbol");
         syntaxErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SyntaxError");
         systemCallErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SystemCallError");
         systemExitClass = new RubyException.RubyExceptionClass(exceptionClass, "SystemExit");
         threadClass = new RubyThread.RubyThreadClass(objectClass);
         timeClass = new RubyTime.RubyTimeClass(objectClass);
-        trueClass = new RubyClass(null, null, objectClass, "TrueClass");
+        trueClass = new RubyClass(null, objectClass, "TrueClass");
         truffleModule = new RubyModule(moduleClass, null, "Truffle");
         truffleDebugModule = new RubyModule(moduleClass, null, "Debug");
         typeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "TypeError");
@@ -331,12 +331,12 @@ public class CoreLibrary {
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
-        errnoModule.setConstant(null, "ENOENT", new RubyClass(null, null, systemCallErrorClass, "ENOENT"));
-        errnoModule.setConstant(null, "EPERM", new RubyClass(null, null, systemCallErrorClass, "EPERM"));
-        errnoModule.setConstant(null, "ENOTEMPTY", new RubyClass(null, null, systemCallErrorClass, "ENOTEMPTY"));
-        errnoModule.setConstant(null, "EEXIST", new RubyClass(null, null, systemCallErrorClass, "EEXIST"));
-        errnoModule.setConstant(null, "EXDEV", new RubyClass(null, null, systemCallErrorClass, "EXDEV"));
-        errnoModule.setConstant(null, "EACCES", new RubyClass(null, null, systemCallErrorClass, "EACCES"));
+        errnoModule.setConstant(null, "ENOENT", new RubyClass(null, systemCallErrorClass, "ENOENT"));
+        errnoModule.setConstant(null, "EPERM", new RubyClass(null, systemCallErrorClass, "EPERM"));
+        errnoModule.setConstant(null, "ENOTEMPTY", new RubyClass(null, systemCallErrorClass, "ENOTEMPTY"));
+        errnoModule.setConstant(null, "EEXIST", new RubyClass(null, systemCallErrorClass, "EEXIST"));
+        errnoModule.setConstant(null, "EXDEV", new RubyClass(null, systemCallErrorClass, "EXDEV"));
+        errnoModule.setConstant(null, "EACCES", new RubyClass(null, systemCallErrorClass, "EACCES"));
 
         globalVariablesObject.setInstanceVariable("$DEBUG", context.getRuntime().isDebug());
         globalVariablesObject.setInstanceVariable("$VERBOSE", context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject);

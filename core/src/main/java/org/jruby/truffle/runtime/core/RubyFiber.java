@@ -13,7 +13,6 @@ import java.util.concurrent.*;
 
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.subsystems.*;
 
 /**
@@ -28,7 +27,7 @@ public class RubyFiber extends RubyObject {
     public static class RubyFiberClass extends RubyClass {
 
         public RubyFiberClass(RubyClass objectClass) {
-            super(null, null, objectClass, "Fiber");
+            super(null, objectClass, "Fiber");
         }
 
         @Override
