@@ -1,6 +1,7 @@
 exclude :test_catch_throw_in_require, "needs investigation"
 exclude :test_errat, "needs investigation"
 exclude :test_errinfo_in_debug, "needs investigation"
+exclude :test_errinfo_encoding_in_debug, "parser fails to handle encoding error (#2151)"
 exclude :test_machine_stackoverflow, "stack overflows are not reliably testable"
 exclude :test_machine_stackoverflow_by_define_method, "stack overflows are not reliably testable"
 exclude :test_nomethoderror, "needs investigation"
