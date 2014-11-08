@@ -904,8 +904,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
             shared = new RubyString(runtime, meta, value.makeShared(index, len));
             shared.shareLevel = SHARE_LEVEL_BUFFER;
-            shared.copyCodeRangeForSubstr(this, enc); // no need to assign encoding, same bytelist shared
         }
+        shared.copyCodeRangeForSubstr(this, enc); // no need to assign encoding, same bytelist shared
         shared.infectBy(this);
         return shared;
     }
