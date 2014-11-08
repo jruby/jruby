@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class DefineOrGetModuleNode extends RubyNode {
 
-    private final String name;
+    protected final String name;
     @Child protected RubyNode lexicalParentModule;
 
     public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParentModule) {
@@ -35,35 +35,58 @@ public class DefineOrGetModuleNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyContext context = getContext();
-
         // Look for a current definition of the module, or create a new one
 
-        RubyModule lexicalParentModuleObject;
-
-        try {
-            lexicalParentModuleObject = lexicalParentModule.executeRubyModule(frame);
-        } catch (UnexpectedResultException e) {
-            throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
-        }
-
-        final RubyConstant constant = lexicalParentModuleObject.getConstants().get(name);
+        RubyModule lexicalParent = getLexicalParentModule(frame);
+        final RubyConstant constant = lookupForExistingModule(frame, lexicalParent);
 
         RubyModule definingModule;
 
         if (constant == null) {
-            definingModule = new RubyModule(context.getCoreLibrary().getModuleClass(), lexicalParentModuleObject, name);
-            lexicalParentModuleObject.setConstant(this, name, definingModule);
+            definingModule = new RubyModule(getContext().getCoreLibrary().getModuleClass(), lexicalParent, name);
+            lexicalParent.setConstant(this, name, definingModule);
         } else {
-            Object constantValue = constant.getValue();
-            if (!(constantValue instanceof RubyModule) || !((RubyModule) constantValue).isOnlyAModule()) {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(name, "module", this));
+            Object module = constant.getValue();
+            if (!(module instanceof RubyModule) || !((RubyModule) module).isOnlyAModule()) {
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
-
-            definingModule = (RubyModule) constantValue;
+            definingModule = (RubyModule) module;
         }
 
         return definingModule;
+    }
+
+    protected RubyModule getLexicalParentModule(VirtualFrame frame) {
+        RubyModule lexicalParent;
+
+        try {
+            lexicalParent = lexicalParentModule.executeRubyModule(frame);
+        } catch (UnexpectedResultException e) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
+        }
+
+        return lexicalParent;
+    }
+
+    protected RubyConstant lookupForExistingModule(VirtualFrame frame, RubyModule lexicalParent) {
+        RubyConstant constant = lexicalParent.getConstants().get(name);
+
+        final RubyClass objectClass = getContext().getCoreLibrary().getObjectClass();
+
+        if (constant == null && lexicalParent == objectClass) {
+            for (RubyModule included : objectClass.includedModules()) {
+                constant = included.getConstants().get(name);
+                if (constant != null) {
+                    break;
+                }
+            }
+        }
+
+        if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
+        }
+
+        return constant;
     }
 
 }

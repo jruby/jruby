@@ -63,7 +63,7 @@ public abstract class ModuleOperations {
      * @param module The receiver of the constant lookup.
      *               Identical to lexicalScope.getLiveModule() if there no qualifier (Constant).
      */
-    public static RubyConstant lookupConstant(LexicalScope lexicalScope, RubyModule module, String name) {
+    public static RubyConstant lookupConstant(RubyContext context, LexicalScope lexicalScope, RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
         RubyConstant constant;
@@ -76,7 +76,6 @@ public abstract class ModuleOperations {
         }
 
         // Look in lexical scope
-        final RubyContext context = module.getContext();
         final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
 
         if (lexicalScope != null) {
@@ -105,9 +104,9 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Look in Object and its ancestors for modules
+        // Look in Object and its included modules
         if (module.isOnlyAModule()) {
-            for (RubyModule ancestor : objectClass.ancestors()) {
+            for (RubyModule ancestor : objectClass.selfAndIncludedModules()) {
                 constant = ancestor.getConstants().get(name);
 
                 if (constant != null) {

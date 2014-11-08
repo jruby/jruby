@@ -683,6 +683,16 @@
       </modules>
     </profile>
     <profile>
+      <id>jruby_complete_jar_jruby</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
       <id>clean</id>
       <build>
         <defaultGoal>clean</defaultGoal>

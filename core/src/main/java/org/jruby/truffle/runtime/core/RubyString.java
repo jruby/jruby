@@ -30,7 +30,7 @@ public class RubyString extends RubyObject {
     public static class RubyStringClass extends RubyClass {
 
         public RubyStringClass(RubyClass objectClass) {
-            super(null, null, objectClass, "String");
+            super(null, objectClass, "String");
         }
 
         @Override

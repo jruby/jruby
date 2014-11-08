@@ -625,24 +625,25 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitColon2Node(org.jruby.ast.Colon2Node node) {
+        // Qualified constant access, as in Mod::CONST
         if (!(node instanceof Colon2ConstNode)) {
             throw new UnsupportedOperationException(node.toString());
         }
 
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        return new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs);
+        return new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs, environment.getLexicalScope());
     }
 
     @Override
     public RubyNode visitColon3Node(org.jruby.ast.Colon3Node node) {
-        // Colon3 means the root namespace, as in ::Foo
+        // Root namespace constant access, as in ::Foo
 
         final SourceSection sourceSection = translate(node.getPosition());
 
         final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
-        return new ReadConstantNode(context, sourceSection, node.getName(), root);
+        return new ReadConstantNode(context, sourceSection, node.getName(), root, LexicalScope.NONE);
     }
 
     private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
@@ -677,11 +678,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
+        // Unqualified constant access, as in CONST
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
 
-        return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode);
+        return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, environment.getLexicalScope());
     }
 
     @Override
@@ -1721,15 +1723,21 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitOpAsgnOrNode(org.jruby.ast.OpAsgnOrNode node) {
         /*
-         * De-sugar x ||= y into x || x = y. No repeated evaluations there so it's easy. It's also
-         * basically how jruby-parser represents it already. We'll do it directly, rather than via
-         * another JRuby AST node.
+         * De-sugar x ||= y into ([defined?(x) &&] x) || x = y.
+         * The defined? check is only needed for some expressions.
+         * It's also basically how jruby-parser represents it already.
+         * We'll do it directly, rather than via another JRuby AST node.
          */
 
-        final org.jruby.ast.Node lhs = node.getFirstNode();
-        final org.jruby.ast.Node rhs = node.getSecondNode();
+        RubyNode lhs = node.getFirstNode().accept(this);
+        RubyNode rhs = node.getSecondNode().accept(this);
 
-        return new OrNode(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
+        if (node.getFirstNode().needsDefinitionCheck()) {
+            RubyNode defined = new DefinedNode(context, lhs.getSourceSection(), lhs);
+            lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
+        }
+
+        return new OrNode(context, translate(node.getPosition()), lhs, rhs);
     }
 
     @Override

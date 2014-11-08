@@ -27,11 +27,6 @@ public class RubyNilClass extends RubyObject {
     }
 
     @Override
-    public boolean isTrue() {
-        return false;
-    }
-
-    @Override
     public boolean hasClassAsSingleton() {
         return true;
     }

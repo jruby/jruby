@@ -18,6 +18,7 @@ env:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.cext.enabled=false"
   matrix:
     - TARGET='-Ptest'
+    - TARGET='-Pjruby_complete_jar_jruby'
     - TARGET='-Prake -Dtask=test:rubicon'
     - TARGET='-Prake -Dtask=test:jruby'
     - TARGET='-Prake -Dtask=test:mri'
@@ -53,6 +54,7 @@ matrix:
   allow_failures:
     - env: TARGET='-Pcomplete'
     - env: TARGET='-Prake -Dtask=spec:jrubyc'
+    - env: TARGET='-Pjruby_complete_jar_jruby'
     - env: TARGET='-Pj2ee'
     - env: TARGET='-Prake -Dtask=spec:profiler'
 

@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.core.TruffleDebugNodes;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -23,22 +24,16 @@ import org.jruby.truffle.runtime.LexicalScope;
 public class ReadConstantNode extends RubyNode {
 
     private final String name;
+    private final LexicalScope lexicalScope;
     @Child protected RubyNode receiver;
     @Child protected DispatchHeadNode dispatch;
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.name = name;
+        this.lexicalScope = lexicalScope;
         this.receiver = receiver;
         dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
-    }
-
-    private LexicalScope getLexicalScope(VirtualFrame frame) {
-        MethodLike method = RubyArguments.getMethod(frame.getArguments());
-        if (method != null) {
-            return method.getSharedMethodInfo().getLexicalScope();
-        }
-        return null;
     }
 
     @Override
@@ -49,8 +44,6 @@ public class ReadConstantNode extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
-
-        LexicalScope lexicalScope = getLexicalScope(frame);
 
         return dispatch.dispatch(
                 frame,
@@ -97,10 +90,10 @@ public class ReadConstantNode extends RubyNode {
             throw e;
         }
 
-        LexicalScope lexicalScope = getLexicalScope(frame);
-        RubyConstant constant = ModuleOperations.lookupConstant(lexicalScope, (RubyModule) receiverObject, name);
+        RubyModule module = (RubyModule) receiverObject; // TODO(cs): cast
+        RubyConstant constant = ModuleOperations.lookupConstant(context, lexicalScope, module, name);
 
-        if (constant == null) {
+        if (constant == null || !constant.isVisibleTo(context, lexicalScope, module)) {
             return getContext().getCoreLibrary().getNilObject();
         } else {
             return context.makeString("constant");

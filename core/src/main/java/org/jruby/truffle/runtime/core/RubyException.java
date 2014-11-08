@@ -25,7 +25,7 @@ public class RubyException extends RubyObject {
     public static class RubyExceptionClass extends RubyClass {
 
         public RubyExceptionClass(RubyClass superClass, String name) {
-            super(null, null, superClass, name);
+            super(null, superClass, name);
         }
 
         @Override

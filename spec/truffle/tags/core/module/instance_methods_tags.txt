@@ -1,2 +1,0 @@
-fails:Module#instance_methods does not return methods undefined in a superclass
-fails:Module#instance_methods returns the public and protected methods of self and it's ancestors

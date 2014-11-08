@@ -230,12 +230,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   all_modules = [ 'test', 'maven' ]
 
-  profile 'all' do
+  [ 'all', 'jruby_complete_jar_jruby' ].each do |name|
+    profile name do
 
-    modules all_modules
+      modules all_modules
 
-    build do
-      default_goal 'install'
+      build do
+        default_goal 'install'
+      end
     end
   end
 

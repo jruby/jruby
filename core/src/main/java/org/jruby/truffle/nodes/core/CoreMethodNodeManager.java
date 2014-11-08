@@ -64,7 +64,7 @@ public abstract class CoreMethodNodeManager {
             module = rubyObjectClass;
 
             for (String moduleName : methodDetails.getClassAnnotation().name().split("::")) {
-                module = (RubyModule) ModuleOperations.lookupConstant(null, module, moduleName).getValue();
+                module = (RubyModule) ModuleOperations.lookupConstant(context, null, module, moduleName).getValue();
             }
         }
 

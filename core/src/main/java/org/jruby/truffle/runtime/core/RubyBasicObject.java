@@ -69,8 +69,8 @@ public class RubyBasicObject extends ObjectStorage {
 
         final RubyClass logicalClass = metaClass;
 
-        metaClass = new RubyClass(currentNode, null, logicalClass,
-                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()), true);
+        metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass,
+                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
 
         return metaClass;
     }
@@ -159,10 +159,6 @@ public class RubyBasicObject extends ObjectStorage {
 
     public boolean hasPrivateLayout() {
         return hasPrivateLayout;
-    }
-
-    public boolean isTrue() {
-        return true;
     }
 
     public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
