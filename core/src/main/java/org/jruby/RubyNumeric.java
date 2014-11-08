@@ -36,6 +36,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -463,6 +464,9 @@ public class RubyNumeric extends RubyObject {
         try {
             result = coerceBody(context, other);
         } catch (RaiseException e) {
+            RubyWarnings warnings = context.runtime.getWarnings();
+            warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
+            warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
             if (err) {
                 throw getRuntime().newTypeError(
                         other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
@@ -475,6 +479,10 @@ public class RubyNumeric extends RubyObject {
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2) {
             if (err) {
                 throw getRuntime().newTypeError("coerce must return [x, y]");
+            } else if (!result.isNil()) {
+                RubyWarnings warnings = context.runtime.getWarnings();
+                warnings.warn("Bad return value for #coerce, called by numerical comparison operators.");
+                warnings.warn("#coerce must return [x, y]. The next release will raise an error for this.");
             }
             return null;
         }
