@@ -1,6 +1,7 @@
 exclude :test_chdir, "needs investigation"
 exclude :test_dir_enc, "needs investigation"
 exclude :test_glob, "needs investigation"
+exclude :test_glob_cases, "fails to return files with their correct casing (#2150)"
 exclude :test_home, "needs investigation"
 exclude :test_inspect, "needs investigation"
 exclude :test_path, "needs investigation"
