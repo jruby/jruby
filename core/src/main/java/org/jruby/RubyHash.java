@@ -1437,7 +1437,7 @@ public class RubyHash extends RubyObject implements Map {
     }
     
     public boolean keep_ifCommon(final ThreadContext context, final Block block) {
-        testFrozen("hash");
+        testFrozen("Hash");
         final boolean[] modified = {false};
         iteratorVisitAll(new Visitor() {
             @Override
