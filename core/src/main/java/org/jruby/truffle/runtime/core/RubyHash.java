@@ -30,7 +30,7 @@ public class RubyHash extends RubyObject {
     public static class RubyHashClass extends RubyClass {
 
         public RubyHashClass(RubyClass objectClass) {
-            super(null, null, objectClass, "Hash");
+            super(null, objectClass, "Hash");
         }
 
         @Override

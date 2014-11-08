@@ -15,8 +15,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -31,7 +29,7 @@ public final class RubyArray extends RubyObject {
     public static class RubyArrayClass extends RubyClass {
 
         public RubyArrayClass(RubyClass objectClass) {
-            super(null, null, objectClass, "Array");
+            super(null, objectClass, "Array");
         }
 
         @Override

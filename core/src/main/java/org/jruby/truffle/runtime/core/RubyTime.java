@@ -28,7 +28,7 @@ public class RubyTime extends RubyObject {
     public static class RubyTimeClass extends RubyClass {
 
         public RubyTimeClass(RubyClass objectClass) {
-            super(null, null, objectClass, "Time");
+            super(null, objectClass, "Time");
         }
 
         @Override

@@ -10,13 +10,11 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This is a bridge between JRuby encoding and Truffle encoding
@@ -35,7 +33,7 @@ public class RubyEncoding extends RubyObject {
     public static class RubyEncodingClass extends RubyClass {
 
         public RubyEncodingClass(RubyClass objectClass) {
-            super(null, null, objectClass, "Encoding");
+            super(null, objectClass, "Encoding");
         }
 
         @Override

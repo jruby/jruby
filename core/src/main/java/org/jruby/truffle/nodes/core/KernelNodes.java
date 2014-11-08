@@ -1094,23 +1094,23 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray methods(RubyObject self, boolean includeInherited) {
-            notDesignedForCompilation();
-
-            if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
-            }
-
-            return methods(self, UndefinedPlaceholder.INSTANCE);
+        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
+            return methods(self, true);
         }
 
         @Specialization
-        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        public RubyArray methods(RubyObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            final Map<String, RubyMethod> methods = ModuleOperations.getAllMethods(self.getMetaClass());
+            Map<String, RubyMethod> methods;
+
+            if (includeInherited) {
+                methods = ModuleOperations.getAllMethods(self.getMetaClass());
+            } else {
+                methods = self.getMetaClass().getMethods();
+            }
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {

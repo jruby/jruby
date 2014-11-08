@@ -66,4 +66,8 @@ public class RubyBignum extends RubyObject implements Unboxable {
         return true;
     }
 
+    @Override
+    public boolean hasNoSingleton() {
+        return true;
+    }
 }

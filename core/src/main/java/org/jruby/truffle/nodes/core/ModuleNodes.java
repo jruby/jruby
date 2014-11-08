@@ -37,6 +37,7 @@ import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
@@ -1112,28 +1113,29 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
             notDesignedForCompilation();
 
-            return instanceMethods(module, false);
+            return instanceMethods(module, true);
         }
 
         @Specialization
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             notDesignedForCompilation();
 
-            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
+            Map<String, RubyMethod> methods;
+
             if (includeAncestors) {
-                for (RubyModule parent : module.parentAncestors()) {
-                    methods.addAll(parent.getMethods().values());
-                }
+                methods = ModuleOperations.getAllMethods(module);
+            } else {
+                methods = module.getMethods();
             }
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            for (RubyMethod method : methods) {
-                if (method.getVisibility() != Visibility.PRIVATE){
-                    RubySymbol m = getContext().newSymbol(method.getName());
+            for (RubyMethod method : methods.values()) {
+                if (method.getVisibility() != Visibility.PRIVATE && !method.isUndefined()) {
                     // TODO(CS): shoudln't be using this
-                    array.slowPush(m);
+                    array.slowPush(getContext().newSymbol(method.getName()));
                 }
             }
+
             return array;
         }
     }

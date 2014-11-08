@@ -116,7 +116,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public static class RubyModuleClass extends RubyClass {
 
         public RubyModuleClass(RubyContext context) {
-            super(null, context, null, null, null, "Module");
+            super(context, null, null, null, "Module", false);
         }
 
         @Override
@@ -258,7 +258,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         if (method == null) {
             throw new UnsupportedOperationException();
         } else {
-            undefMethod(currentNode, ModuleOperations.lookupMethod(this, methodName));
+            undefMethod(currentNode, method);
         }
     }
 

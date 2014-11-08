@@ -48,18 +48,18 @@ public class RubiniusLibrary {
 
 	public RubiniusLibrary(CoreLibrary coreLib) {
 		rubiniusModule = new RubyModule(coreLib.getModuleClass(), null, "Rubinius");
-		tupleClass = new RubyClass(null, rubiniusModule, coreLib.getObjectClass(), "Tuple");
+		tupleClass = new RubyClass(rubiniusModule, coreLib.getObjectClass(), "Tuple");
         typeModule = new RubyModule(coreLib.getModuleClass(), rubiniusModule, "Type");
         environmentAccessModule = new RubyModule(coreLib.getModuleClass(), rubiniusModule, "EnvironmentAccess");
-        channelClass = new RubyClass(null, rubiniusModule, coreLib.getObjectClass(), "Channel");
-        byteArrayCLass = new RubyClass(null, rubiniusModule, coreLib.getObjectClass(), "ByteArray");
+        channelClass = new RubyClass(rubiniusModule, coreLib.getObjectClass(), "Channel");
+        byteArrayCLass = new RubyClass(rubiniusModule, coreLib.getObjectClass(), "ByteArray");
 
         //TODO: how is Rubinius.LookupTable specified?
         // rubinius.setConstant("LookupTable", currentNode.getHash());
 
-        vmExceptionClass = new RubyClass(null, rubiniusModule, coreLib.getExceptionClass(), "VMException");
-        objectBoundsExceededErrorClass = new RubyClass(null, rubiniusModule, vmExceptionClass, "ObjectBoundsExceededError");
-        assertionErrorClass = new RubyClass(null, rubiniusModule, vmExceptionClass, "AssertionError");
+        vmExceptionClass = new RubyClass(rubiniusModule, coreLib.getExceptionClass(), "VMException");
+        objectBoundsExceededErrorClass = new RubyClass(rubiniusModule, vmExceptionClass, "ObjectBoundsExceededError");
+        assertionErrorClass = new RubyClass(rubiniusModule, vmExceptionClass, "AssertionError");
 
         coreLib.getObjectClass().setConstant(null, rubiniusModule.getName(), rubiniusModule);
 

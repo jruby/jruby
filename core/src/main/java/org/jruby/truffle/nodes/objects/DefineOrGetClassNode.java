@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
@@ -49,7 +48,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
             } else if (superClassObject instanceof RubyString.RubyStringClass) {
                 definingClass = new RubyString.RubyStringClass(superClassObject);
             } else {
-                definingClass = new RubyClass(this, lexicalParent, superClassObject, name);
+                definingClass = new RubyClass(lexicalParent, superClassObject, name);
             }
 
             lexicalParent.setConstant(this, name, definingClass);
