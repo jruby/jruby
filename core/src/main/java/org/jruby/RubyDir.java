@@ -602,6 +602,11 @@ public class RubyDir extends RubyObject {
         return exist(context, recv, arg);
     }
 
+    @JRubyMethod(name = "fileno", notImplemented = true)
+    public IRubyObject fileno(ThreadContext context) {
+        throw context.runtime.newNotImplementedError("Dir#fileno");
+    }
+
 // ----- Helper Methods --------------------------------------------------------
     /** Returns a Java <code>File</code> object for the specified path.  If
      * <code>path</code> is not a directory, throws <code>IOError</code>.
