@@ -29,6 +29,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
@@ -585,6 +586,8 @@ public class EncodingUtils {
                 ecflags |= EConvFlags.CR_NEWLINE_DECORATOR;
             } else if (v.toString().equals("lf")) {
 //                ecflags |= ECONV_LF_NEWLINE_DECORATOR;
+            } else if (v instanceof RubySymbol) {
+                throw runtime.newArgumentError("unexpected value for newline option: " + ((RubySymbol) v).to_s(context).toString());
             } else {
                 throw runtime.newArgumentError("unexpected value for newline option");
             }
