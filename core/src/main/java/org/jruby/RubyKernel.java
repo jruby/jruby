@@ -854,7 +854,7 @@ public class RubyKernel {
         } else {
             // FIXME: Pass block down?
             RaiseException raise;
-            switch (args.length) {
+            switch (argc) {
                 case 0:
                     IRubyObject lastException = runtime.getGlobalVariables().get("$!");
                     if (lastException.isNil()) {
