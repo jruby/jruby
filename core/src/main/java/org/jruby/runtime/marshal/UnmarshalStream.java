@@ -48,6 +48,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -134,7 +135,7 @@ public class UnmarshalStream extends InputStream {
             result = unmarshalObjectDirectly(type, state, callProc);
         }
 
-        result.setTaint(taint);
+        if (!(result instanceof RubyNumeric)) result.setTaint(taint);
 
         return result;
     }
