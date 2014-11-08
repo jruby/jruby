@@ -1213,4 +1213,48 @@ public class IRRuntimeHelpers {
 
         return re;
     }
+
+    public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
+        return Helpers.splatValue19(maybeAry);
+    }
+
+    public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyArray) {
+            return value;
+        } else {
+            IRubyObject newValue = TypeConverter.convertToType19(value, context.runtime.getArray(), "to_ary", false);
+            if (newValue.isNil()) {
+                return RubyArray.newArrayLight(context.runtime, value);
+            }
+
+            // must be array by now, or error
+            if (!(newValue instanceof RubyArray)) {
+                throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
+            }
+
+            return newValue;
+        }
+    }
+
+    public static int irReqdArgMultipleAsgnIndex(int n,  int preArgsCount, int index, int postArgsCount) {
+        if (preArgsCount == -1) {
+            return index < n ? index : -1;
+        } else {
+            int remaining = n - preArgsCount;
+            if (remaining <= index) {
+                return -1;
+            } else {
+                return (remaining > postArgsCount) ? n - postArgsCount + index : preArgsCount + index;
+            }
+        }
+    }
+
+    public static IRubyObject irReqdArgMultipleAsgn(ThreadContext context, RubyArray rubyArray, int preArgsCount, int index, int postArgsCount) {
+        int i = irReqdArgMultipleAsgnIndex(rubyArray.getLength(), preArgsCount, index, postArgsCount);
+        return i == -1 ? context.nil : rubyArray.entry(i);
+    }
+
+    public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
+        return context.runtime.newBoolean(!(obj.isTrue()));
+    }
 }

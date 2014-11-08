@@ -8,10 +8,10 @@ import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -51,7 +51,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
         if (val instanceof Array) {
             Array a = (Array)val;
             int n = a.size();
-            int i = Helpers.irReqdArgMultipleAsgnIndex(n, preArgsCount, index, postArgsCount);
+            int i = IRRuntimeHelpers.irReqdArgMultipleAsgnIndex(n, preArgsCount, index, postArgsCount);
             return i == -1 ? scope.getManager().getNil() : a.get(i);
         } else {
             return null;
@@ -67,7 +67,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
-        return Helpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);
+        return IRRuntimeHelpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);
     }
 
     @Override
