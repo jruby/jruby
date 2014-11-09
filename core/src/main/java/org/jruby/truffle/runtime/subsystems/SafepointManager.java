@@ -77,7 +77,7 @@ public class SafepointManager {
     }
 
     public void pauseAllThreadsAndExecute(final Consumer<Boolean> action) {
-        CompilerAsserts.neverPartOfCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         try {
             lock.lock();

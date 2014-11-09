@@ -9,9 +9,11 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
@@ -189,6 +191,48 @@ public abstract class ThreadNodes {
             } finally {
                 getContext().getThreadManager().enterGlobalLock(runningThread);
             }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "raise", required = 1, optional = 1)
+    public abstract static class RaiseNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode initialize;
+
+        public RaiseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            initialize = new DispatchHeadNode(context);
+        }
+
+        public RaiseNode(RaiseNode prev) {
+            super(prev);
+            initialize = prev.initialize;
+        }
+
+        @Specialization
+        public RubyNilClass raise(VirtualFrame frame, RubyThread thread, RubyString message, UndefinedPlaceholder undefined) {
+            return raise(frame, thread, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
+        }
+
+        @Specialization
+        public RubyNilClass raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyString message) {
+            final RubyBasicObject exception = exceptionClass.newInstance(this);
+            initialize.call(frame, exception, "initialize", null, message);
+            final RaiseException exceptionWrapper = new RaiseException(exception);
+
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
+
+                @Override
+                public void accept(Boolean isPausingThread) {
+                    if (getContext().getThreadManager().getCurrentThread() == thread) {
+                        throw exceptionWrapper;
+                    }
+                }
+
+            });
 
             return getContext().getCoreLibrary().getNilObject();
         }
