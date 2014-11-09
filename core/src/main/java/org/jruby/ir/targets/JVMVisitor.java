@@ -2034,7 +2034,7 @@ public class JVMVisitor extends IRVisitor {
     public void Splat(Splat splat) {
         jvmMethod().loadContext();
         visit(splat.getArray());
-        jvmMethod().invokeHelper("irSplat", RubyArray.class, ThreadContext.class, IRubyObject.class);
+        jvmMethod().invokeIRHelper("irSplat", sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
     }
 
     @Override
