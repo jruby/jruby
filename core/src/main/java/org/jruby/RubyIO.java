@@ -407,24 +407,37 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 throw runtime.newArgumentError(fptr.PREP_STDIO_NAME() + " can't change access mode from \"" + fptr.getModeAsString(runtime) + "\" to \"" + orig.getModeAsString(runtime) + "\"");
             }
         }
-        if (fptr.isWritable()) {
-            if (fptr.io_fflush(context) < 0)
-                throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+        // FIXME: three lock acquires...trying to reduce risk of deadlock, but not sure it's possible.
+
+        boolean locked = fptr.lock();
+        try {
+            if (fptr.isWritable()) {
+                if (fptr.io_fflush(context) < 0)
+                    throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+            } else {
+                fptr.tell(context);
+            }
+        } finally {
+            if (locked) fptr.unlock();
         }
-        else {
-            fptr.tell(context);
-        }
-        if (orig.isReadable()) {
-            pos = orig.tell(context);
-        }
-        if (orig.isWritable()) {
-            if (orig.io_fflush(context) < 0)
-                throw runtime.newErrnoFromErrno(orig.errno(), fptr.getPath());
+
+        locked = orig.lock();
+        try {
+            if (orig.isReadable()) {
+                pos = orig.tell(context);
+            }
+            if (orig.isWritable()) {
+                if (orig.io_fflush(context) < 0)
+                    throw runtime.newErrnoFromErrno(orig.errno(), fptr.getPath());
+            }
+        } finally {
+            if (locked) orig.unlock();
         }
 
         /* copy rb_io_t structure */
         // NOTE: MRI does not copy sync here, but I can find no way to make stdout/stderr stay sync through a reopen
-        boolean locked = fptr.lock();
+        locked = fptr.lock();
+        boolean locked2 = orig.lock(); // TODO: This WILL deadlock if two threads try to reopen the same IOs in opposite directions. Fix?
         try {
             fptr.setMode(orig.getMode() | (fptr.getMode() & (OpenFile.PREP | OpenFile.SYNC)));
             fptr.setProcess(orig.getProcess());
@@ -476,6 +489,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 setBinmode();
             }
         } finally {
+            if (locked2) orig.unlock();
             if (locked) fptr.unlock();
         }
 
@@ -1836,8 +1850,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         orig = io.getOpenFileChecked();
         fptr = dest.MakeOpenFile();
 
-        // orig is the visible one here
-        orig.lock();
+        // orig is the visible one here but we lock both anyway
+        boolean locked1 = orig.lock();
+        boolean locked2 = fptr.lock();
         try {
             io.flush(context);
 
@@ -1860,7 +1875,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (0 <= pos)
                 fptr.seek(context, pos, PosixShim.SEEK_SET);
         } finally {
-            orig.unlock();
+            if (locked2) fptr.unlock();
+            if (locked1) orig.unlock();
         }
 
         if (fptr.isBinmode()) {
