@@ -77,8 +77,8 @@ public class BuildCompoundStringInstr extends Instr implements ResultInstr {
         return new BuildCompoundStringInstr(ii.getRenamedVariable(result), newPieces, encoding);
     }
 
-    public boolean isSameEncoding(StringLiteral str) {
-        return str.bytelist.getEncoding() == encoding;
+    public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
+        return newStr.bytelist.getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
     }
 
     public RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
@@ -97,11 +97,12 @@ public class BuildCompoundStringInstr extends Instr implements ResultInstr {
         bytes.setEncoding(encoding);
         RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
         for (Operand p : pieces) {
-            if ((p instanceof StringLiteral) && (isSameEncoding((StringLiteral)p))) {
+            if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p).bytelist);
+                str.setCodeRange(str.scanForCodeRange());
             } else {
-               IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
-               str.append19(pval);
+                IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
+                str.append19(pval);
             }
         }
 

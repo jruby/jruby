@@ -3290,7 +3290,7 @@ public class IRBuilder {
     }
 
     public Operand buildStr(StrNode strNode, IRScope s) {
-        return copyAndReturnValue(s, new StringLiteral(strNode.getValue()));
+        return copyAndReturnValue(s, new StringLiteral(strNode.getValue(), strNode.getCodeRange()));
     }
 
     private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args, int linenumber) {

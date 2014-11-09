@@ -9,6 +9,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
@@ -25,11 +26,17 @@ public class StringLiteral extends Operand {
 
     final public ByteList bytelist;
     final public String   string;
+    final public int      coderange;
 
     public StringLiteral(ByteList val) {
+        this(val, StringSupport.CR_7BIT);
+    }
+
+    public StringLiteral(ByteList val, int coderange) {
         super(OperandType.STRING_LITERAL);
 
         bytelist = val;
+        this.coderange = coderange;
         String stringTemp;
         try {
             stringTemp = Helpers.byteListToString(bytelist);
@@ -43,11 +50,12 @@ public class StringLiteral extends Operand {
         this(s, ByteList.create(s));
     }
 
-    private StringLiteral(String string, ByteList byteList ) {
+    private StringLiteral(String string, ByteList byteList) {
         super(OperandType.STRING_LITERAL);
 
         this.bytelist = byteList;
         this.string = string;
+        this.coderange = StringSupport.CR_7BIT;
      }
 
     @Override
@@ -98,4 +106,6 @@ public class StringLiteral extends Operand {
     public String getString() {
         return string;
     }
+
+    public int getCodeRange() { return coderange; }
 }

@@ -279,10 +279,20 @@ public class RubyRange extends RubyObject {
         }, value);
     }
 
-    @JRubyMethod(name = {"inspect", "to_s"})
+    @JRubyMethod(name = "inspect")
     public IRubyObject inspect(final ThreadContext context) {
         RubyString i1 = ((RubyString) inspectValue(context, begin)).strDup(context.runtime);
         RubyString i2 = (RubyString) inspectValue(context, end);
+        i1.cat(isExclusive ? DOTDOTDOT : DOTDOT);
+        i1.append(i2);
+        i1.infectBy(i2);
+        return i1;
+    }
+
+    @JRubyMethod(name = "to_s")
+    public IRubyObject to_s(final ThreadContext context) {
+        RubyString i1 = begin.asString().strDup(context.runtime);
+        RubyString i2 = end.asString();
         i1.cat(isExclusive ? DOTDOTDOT : DOTDOT);
         i1.append(i2);
         i1.infectBy(i2);

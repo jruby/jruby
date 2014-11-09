@@ -66,18 +66,18 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-
             waitOnBarrier();
 
-            action.accept(false);
-
-
-            waitOnBarrier();
+            try {
+                action.accept(false);
+            } finally {
+                waitOnBarrier();
+            }
         }
     }
 
     public void pauseAllThreadsAndExecute(final Consumer<Boolean> action) {
-        CompilerAsserts.neverPartOfCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         try {
             lock.lock();
@@ -90,11 +90,13 @@ public class SafepointManager {
 
             waitOnBarrier();
 
-            action.accept(true);
-
-            waitOnBarrier();
-
             assumption = Truffle.getRuntime().createAssumption();
+
+            try {
+                action.accept(true);
+            } finally {
+                waitOnBarrier();
+            }
         } finally {
             lock.unlock();
         }
