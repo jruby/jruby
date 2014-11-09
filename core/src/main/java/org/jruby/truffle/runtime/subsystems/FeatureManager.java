@@ -64,6 +64,10 @@ public class FeatureManager {
                 return true;
             }
 
+            if (feature.equals("thread")) {
+                return true;
+            }
+
             // Get the load path
 
             // Try as a full path
