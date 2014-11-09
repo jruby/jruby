@@ -3180,6 +3180,16 @@ public final class Ruby implements Constantizable {
             }
         }
 
+        // Fetches (and unsets) the SIGEXIT handler, if one exists.
+        IRubyObject trapResult = RubySignal.__jtrap_osdefault_kernel(this.getNil(), this.newString("EXIT"));
+        if (trapResult instanceof RubyArray) {
+            IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
+            IRubyObject exitHandlerProc = trapResultEntries[0];
+            if (exitHandlerProc instanceof RubyProc) {
+                ((RubyProc) exitHandlerProc).call(this.getCurrentContext(), this.getSingleNilArray());
+            }
+        }
+
         if (finalizers != null) {
             synchronized (finalizersMutex) {
                 for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(finalizers.keySet()).iterator(); finalIter.hasNext();) {
