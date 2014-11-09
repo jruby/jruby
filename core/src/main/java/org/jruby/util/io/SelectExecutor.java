@@ -234,7 +234,7 @@ public class SelectExecutor {
 
     private int maxWriteReadySize() {
         int size = 0;
-        if (writeKeyList != null) size += readKeyList.size();
+        if (writeKeyList != null) size += writeKeyList.size();
         if (unselectableWriteFDs != null) size += unselectableWriteFDs.size();
         return size;
     }
