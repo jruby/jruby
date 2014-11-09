@@ -1476,11 +1476,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFileChecked();
-        fptr.lockReadOnly();
+        fptr.lock();
         try {
             return (fptr.getMode() & OpenFile.SYNC) != 0 ? runtime.getTrue() : runtime.getFalse();
         } finally {
-            fptr.unlockReadOnly();
+            fptr.unlock();
         }
     }
     
@@ -1806,13 +1806,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = getOpenFileChecked();
 
-        fptr.lockReadOnly();
+        fptr.lock();
         try {
             if (fptr.isStdio()) return runtime.getTrue();
             if (runtime.getPosix().isNative() && runtime.getPosix().libc().isatty(fptr.getFileno()) != 0)
                 return runtime.getTrue();
         } finally {
-            fptr.unlockReadOnly();
+            fptr.unlock();
         }
 
         return runtime.getFalse();
@@ -1837,7 +1837,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr = dest.MakeOpenFile();
 
         // orig is the visible one here
-        orig.lockReadOnly();
+        orig.lock();
         try {
             io.flush(context);
 
@@ -1860,7 +1860,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (0 <= pos)
                 fptr.seek(context, pos, PosixShim.SEEK_SET);
         } finally {
-            orig.unlockReadOnly();
+            orig.unlock();
         }
 
         if (fptr.isBinmode()) {

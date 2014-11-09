@@ -41,6 +41,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class OpenFile implements Finalizable {
@@ -130,9 +131,7 @@ public class OpenFile implements Finalizable {
     public boolean writeconvInitialized;
 
     public volatile ReentrantReadWriteLock write_lock;
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     public final Buffer wbuf = new Buffer(), rbuf = new Buffer(), cbuf = new Buffer();
 
@@ -410,7 +409,7 @@ public class OpenFile implements Finalizable {
 
     // io_fflush
     public int io_fflush(ThreadContext context) {
-        assert writeLock.isHeldByCurrentThread();
+        assert lock.isHeldByCurrentThread();
 
         checkClosed();
 
@@ -430,7 +429,7 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_writable
     public boolean waitWritable(ThreadContext context, long timeout) {
-        assert writeLock.isHeldByCurrentThread();
+        assert lock.isHeldByCurrentThread();
 
         if (posix.errno == null) return false;
 
@@ -457,7 +456,7 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_readable
     public boolean waitReadable(ThreadContext context, long timeout) {
-        assert writeLock.isHeldByCurrentThread();
+        assert lock.isHeldByCurrentThread();
 
         if (posix.errno == null) return false;
 
@@ -495,7 +494,7 @@ public class OpenFile implements Finalizable {
      * @return
      */
     public boolean ready(Ruby runtime, RubyThread thread, int ops, long timeout) {
-        assert writeLock.isHeldByCurrentThread();
+        assert lock.isHeldByCurrentThread();
 
         try {
             if (fd.chSelect != null) {
@@ -637,7 +636,7 @@ public class OpenFile implements Finalizable {
 
     // io_seek
     public long seek(ThreadContext context, long offset, int whence) {
-        assert writeLock.isHeldByCurrentThread();
+        assert lock.isHeldByCurrentThread();
 
         flushBeforeSeek(context);
         return posix.lseek(fd, offset, whence);
@@ -645,7 +644,7 @@ public class OpenFile implements Finalizable {
 
     // flush_before_seek
     private void flushBeforeSeek(ThreadContext context) {
-        assert writeLock.isHeldByCurrentThread();
+        assert lock.isHeldByCurrentThread();
 
         if (io_fflush(context) < 0)
             throw context.runtime.newErrnoFromErrno(posix.errno, "");
@@ -2393,12 +2392,12 @@ public class OpenFile implements Finalizable {
     }
 
     public int readPending() {
-        lockReadOnly();
+        lock();
         try {
             if (READ_CHAR_PENDING()) return 1;
             return READ_DATA_PENDING_COUNT();
         } finally {
-            unlockReadOnly();
+            unlock();
         }
     }
 
@@ -2618,30 +2617,22 @@ public class OpenFile implements Finalizable {
         return siz;
     }
 
-    public void lockReadOnly() {
-        readLock.lock();
-    }
-
-    public void unlockReadOnly() {
-        readLock.unlock();
-    }
-
     public boolean lock() {
-        if (writeLock.isHeldByCurrentThread()) {
+        if (lock.isHeldByCurrentThread()) {
             return false;
         } else {
-            writeLock.lock();
+            lock.lock();
             return true;
         }
     }
 
     public void unlock() {
-        assert writeLock.isHeldByCurrentThread();
+        assert lock.isHeldByCurrentThread();
 
-        writeLock.unlock();
+        lock.unlock();
     }
 
     public boolean lockedByMe() {
-        return writeLock.isHeldByCurrentThread();
+        return lock.isHeldByCurrentThread();
     }
 }
