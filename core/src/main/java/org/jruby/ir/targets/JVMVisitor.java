@@ -732,13 +732,13 @@ public class JVMVisitor extends IRVisitor {
         csByteList.setEncoding(compoundstring.getEncoding());
         jvmMethod().pushString(csByteList);
         for (Operand p : compoundstring.getPieces()) {
-            if ((p instanceof StringLiteral) && (compoundstring.isSameEncoding((StringLiteral)p))) {
-                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
-                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
-            } else {
+//            if ((p instanceof StringLiteral) && (compoundstring.isSameEncodingAndCodeRange((StringLiteral)p))) {
+//                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
+//                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
+//            } else {
                 visit(p);
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
-            }
+//            }
         }
         jvmStoreLocal(compoundstring.getResult());
     }
