@@ -219,7 +219,7 @@ public class ObjectSpaceManager {
         context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
 
             @Override
-            public void accept(Boolean pausingThread) {
+            public void accept(Boolean isPausingThread) {
                 synchronized (liveObjects) {
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
                     context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);

@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.util.Consumer;
 
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
@@ -93,6 +94,35 @@ public abstract class ThreadNodes {
         @Specialization
         public RubyNilClass exit() {
             throw new ThreadExitException();
+        }
+
+    }
+
+    @CoreMethod(names = "kill")
+    public abstract static class KillNode extends CoreMethodNode {
+
+        public KillNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public KillNode(KillNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyThread kill(final RubyThread thread) {
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
+
+                @Override
+                public void accept(Boolean isPausingThread) {
+                    if (getContext().getThreadManager().getCurrentThread() == thread) {
+                        throw new ThreadExitException();
+                    }
+                }
+
+            });
+
+            return thread;
         }
 
     }
