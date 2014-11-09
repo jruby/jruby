@@ -1,6 +1,6 @@
 exclude :test_bad_initialize_copy, "needs investigation"
-exclude :assert_no_memory_leak, "uses MRI-specific code in memory_status.rb"
 exclude :test_convert_type, "needs investigation"
+exclude :test_copied_ivar_memory_leak, "uses MRI-specific code in memory_status.rb"
 exclude :test_freeze_immediate, "needs investigation"
 exclude :test_implicit_respond_to, "encoding mismatch on symbol"
 exclude :test_implicit_respond_to_arity_3, "encoding mismatch on symbol"
