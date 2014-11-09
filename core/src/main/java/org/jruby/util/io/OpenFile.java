@@ -99,6 +99,12 @@ public class OpenFile implements Finalizable {
         clearCodeConversion();
     }
 
+    public void checkReopenSeek(ThreadContext context, Ruby runtime, long pos) {
+        if (seek(context, pos, PosixShim.SEEK_SET) < 0 && errno() != null) {
+            throw runtime.newErrnoFromErrno(errno(), getPath());
+        }
+    }
+
     public static interface Finalizer {
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
@@ -409,19 +415,22 @@ public class OpenFile implements Finalizable {
 
     // io_fflush
     public int io_fflush(ThreadContext context) {
-        assert lock.isHeldByCurrentThread();
-
-        checkClosed();
-
-        if (wbuf.len == 0) return 0;
-
-        checkClosed();
-
-        while (wbuf.len > 0 && flushBuffer() != 0) {
-            if (!waitWritable(context)) {
-                return -1;
-            }
+        boolean locked = lock();
+        try {
             checkClosed();
+
+            if (wbuf.len == 0) return 0;
+
+            checkClosed();
+
+            while (wbuf.len > 0 && flushBuffer() != 0) {
+                if (!waitWritable(context)) {
+                    return -1;
+                }
+                checkClosed();
+            }
+        } finally {
+            if (locked) unlock();
         }
 
         return 0;
@@ -429,23 +438,26 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_writable
     public boolean waitWritable(ThreadContext context, long timeout) {
-        assert lock.isHeldByCurrentThread();
+        boolean locked = lock();
+        try {
+            if (posix.errno == null) return false;
 
-        if (posix.errno == null) return false;
+            if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
 
-        if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
-
-        switch (posix.errno) {
-            case EINTR:
-//            case ERESTART: // not defined in jnr-constants
-                runtime.getCurrentContext().pollThreadEvents();
-                return true;
-            case EAGAIN:
-            case EWOULDBLOCK:
-                ready(runtime, context.getThread(), SelectExecutor.WRITE_CONNECT_OPS, timeout);
-                return true;
-            default:
-                return false;
+            switch (posix.errno) {
+                case EINTR:
+                    //            case ERESTART: // not defined in jnr-constants
+                    runtime.getCurrentContext().pollThreadEvents();
+                    return true;
+                case EAGAIN:
+                case EWOULDBLOCK:
+                    ready(runtime, context.getThread(), SelectExecutor.WRITE_CONNECT_OPS, timeout);
+                    return true;
+                default:
+                    return false;
+            }
+        } finally {
+            if (locked) unlock();
         }
     }
 
@@ -456,33 +468,32 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_readable
     public boolean waitReadable(ThreadContext context, long timeout) {
-        assert lock.isHeldByCurrentThread();
+        boolean locked = lock();
+        try {
+            if (posix.errno == null) return false;
 
-        if (posix.errno == null) return false;
+            if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
 
-        if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
-
-        switch (posix.errno) {
-            case EINTR:
-//            case ERESTART: // not defined in jnr-constants
-                runtime.getCurrentContext().pollThreadEvents();
-                return true;
-            case EAGAIN:
-            case EWOULDBLOCK:
-                ready(runtime, context.getThread(), SelectionKey.OP_READ, timeout);
-                return true;
-            default:
-                return false;
+            switch (posix.errno) {
+                case EINTR:
+                    //            case ERESTART: // not defined in jnr-constants
+                    runtime.getCurrentContext().pollThreadEvents();
+                    return true;
+                case EAGAIN:
+                case EWOULDBLOCK:
+                    ready(runtime, context.getThread(), SelectionKey.OP_READ, timeout);
+                    return true;
+                default:
+                    return false;
+            }
+        } finally {
+            if (locked) unlock();
         }
     }
 
     // rb_io_wait_readable
     public boolean waitReadable(ThreadContext context) {
         return waitReadable(context, 0);
-    }
-
-    public boolean ready(ThreadContext context, int ops) {
-        return ready(runtime, context.getThread(), ops, 0);
     }
 
     /**
@@ -494,8 +505,7 @@ public class OpenFile implements Finalizable {
      * @return
      */
     public boolean ready(Ruby runtime, RubyThread thread, int ops, long timeout) {
-        assert lock.isHeldByCurrentThread();
-
+        boolean locked = lock();
         try {
             if (fd.chSelect != null) {
                 int ready_stat = 0;
@@ -511,6 +521,13 @@ public class OpenFile implements Finalizable {
                         } else {
                             addedThread = true;
                             addBlockingThread(thread);
+                            // release lock while selecting
+                            unlock();
+                            try {
+                                sel.select(timeout);
+                            } finally {
+                                lock();
+                            }
                         }
                         sel.close();
                     } finally {
@@ -535,6 +552,8 @@ public class OpenFile implements Finalizable {
             }
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
+        } finally {
+            if (locked) unlock();
         }
 
     }
@@ -562,7 +581,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_flush_buffer_sync2
-    public int flushBufferSync2() {
+    private int flushBufferSync2() {
         int result = flushBufferSync();
 
         return result;
@@ -570,8 +589,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_flush_buffer_sync
-    public int flushBufferSync()
-    {
+    private int flushBufferSync() {
         int l = writableLength(wbuf.len);
         int r = posix.write(fd, wbuf.ptr, wbuf.off, l, nonblock);
 
@@ -589,8 +607,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_writable_length
-    public int writableLength(int l)
-    {
+    private int writableLength(int l) {
         // We don't use wsplit mode, so we just pass length back directly.
 //        if (PIPE_BUF < l &&
 //                // we should always assume other threads, so we don't use rb_thread_alone
@@ -615,7 +632,7 @@ public class OpenFile implements Finalizable {
      * @return
      */
     // wsplit_p
-    boolean wsplit()
+    private boolean wsplit()
     {
         int r;
 
@@ -636,29 +653,40 @@ public class OpenFile implements Finalizable {
 
     // io_seek
     public long seek(ThreadContext context, long offset, int whence) {
-        assert lock.isHeldByCurrentThread();
-
-        flushBeforeSeek(context);
-        return posix.lseek(fd, offset, whence);
+        boolean locked = lock();
+        try {
+            flushBeforeSeek(context);
+            return posix.lseek(fd, offset, whence);
+        } finally {
+            if (locked) unlock();
+        }
     }
 
     // flush_before_seek
     private void flushBeforeSeek(ThreadContext context) {
-        assert lock.isHeldByCurrentThread();
-
-        if (io_fflush(context) < 0)
-            throw context.runtime.newErrnoFromErrno(posix.errno, "");
-        unread(context);
-        posix.errno = null;
+        boolean locked = lock();
+        try {
+            if (io_fflush(context) < 0)
+                throw context.runtime.newErrnoFromErrno(posix.errno, "");
+            unread(context);
+            posix.errno = null;
+        } finally {
+            if (locked) unlock();
+        }
     }
 
     public void checkWritable(ThreadContext context) {
-        checkClosed();
-        if ((mode & WRITABLE) == 0) {
-            throw context.runtime.newIOError("not opened for writing");
-        }
-        if (rbuf.len != 0) {
-            unread(context);
+        boolean locked = lock();
+        try {
+            checkClosed();
+            if ((mode & WRITABLE) == 0) {
+                throw context.runtime.newIOError("not opened for writing");
+            }
+            if (rbuf.len != 0) {
+                unread(context);
+            }
+        } finally {
+            if (locked) unlock();
         }
     }
 
@@ -2491,7 +2519,7 @@ public class OpenFile implements Finalizable {
         posix.errno = newErrno;
     }
 
-    public int cloexecDup2(Ruby runtime, ChannelFD oldfd, ChannelFD newfd) {
+    public static int cloexecDup2(PosixShim posix, ChannelFD oldfd, ChannelFD newfd) {
         int ret;
         /* When oldfd == newfd, dup2 succeeds but dup3 fails with EINVAL.
          * rb_cloexec_dup2 succeeds as dup2.  */

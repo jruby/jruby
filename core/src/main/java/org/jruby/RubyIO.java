@@ -480,8 +480,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 // TODO: clear interrupts waiting on this IO?
                 //            rb_thread_fd_close(fd);
                 if (orig.isReadable() && pos >= 0) {
-                    checkReopenSeek(context, runtime, fptr, pos);
-                    checkReopenSeek(context, runtime, orig, pos);
+                    fptr.checkReopenSeek(context, runtime, pos);
+                    orig.checkReopenSeek(context, runtime, pos);
                 }
             }
 
@@ -498,14 +498,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return this;
     }
 
-    private void checkReopenSeek(ThreadContext context, Ruby runtime, OpenFile fptr, long pos) {
-        if (fptr.seek(context, pos, PosixShim.SEEK_SET) < 0 && fptr.errno() != null) {
-            throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
-        }
-    }
-
     private void checkReopenCloexecDup2(Ruby runtime, OpenFile orig, ChannelFD oldfd, ChannelFD newfd) {
-        orig.cloexecDup2(runtime, oldfd, newfd);
+        OpenFile.cloexecDup2(new PosixShim(runtime.getPosix()), oldfd, newfd);
     }
 
     // rb_io_binmode
@@ -641,7 +635,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } else {
                 ChannelFD tmpfd = sysopen(runtime, fptr.getPath(), oflags_p[0], 0666);
                 Errno err = null;
-                if (fptr.cloexecDup2(runtime, tmpfd, fptr.fd()) < 0)
+                if (fptr.cloexecDup2(fptr.posix, tmpfd, fptr.fd()) < 0)
                     err = fptr.errno();
 
                 if (err != null) {
