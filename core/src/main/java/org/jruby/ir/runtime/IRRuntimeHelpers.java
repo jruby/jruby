@@ -1214,6 +1214,7 @@ public class IRRuntimeHelpers {
         return re;
     }
 
+    @JIT
     public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
         return Helpers.splatValue19(maybeAry);
     }
