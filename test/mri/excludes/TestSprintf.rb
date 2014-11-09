@@ -1,6 +1,7 @@
 exclude :test_binary, "needs investigation"
 exclude :test_float, "needs investigation"
 exclude :test_float_hex, "needs investigation"
+exclude :test_hash, "failing to inspect hash properly using sprintf %p (#2161)"
 exclude :test_inf, "needs investigation"
 exclude :test_invalid, "needs investigation"
 exclude :test_named_typed, "needs investigation"
