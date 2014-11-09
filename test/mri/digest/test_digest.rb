@@ -69,6 +69,9 @@ module TestDigest
 
     assert_equal(md1, md1.clone, self.class::ALGO)
 
+    bug9913 = '[ruby-core:62967] [Bug #9913]'
+    assert_not_equal(md1, nil, bug9913)
+
     md2 = self.class::ALGO.new
     md2 << "A"
 
@@ -193,6 +196,18 @@ module TestDigest
     def test_base
       bug3810 = '[ruby-core:32231]'
       assert_raise(NotImplementedError, bug3810) {Digest::Base.new}
+    end
+  end
+
+  class TestInitCopy < Test::Unit::TestCase
+    if defined?(Digest::MD5) and defined?(Digest::RMD160)
+      def test_initialize_copy_md5_rmd160
+        assert_separately(%w[-rdigest], <<-'end;')
+          md5 = Digest::MD5.allocate
+          rmd160 = Digest::RMD160.allocate
+          assert_raise(TypeError) {md5.__send__(:initialize_copy, rmd160)}
+        end;
+      end
     end
   end
 end

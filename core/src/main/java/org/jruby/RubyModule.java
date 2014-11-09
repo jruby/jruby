@@ -912,6 +912,12 @@ public class RubyModule extends RubyObject {
     public void addMethod(String name, DynamicMethod method) {
         testFrozen("class/module");
 
+        if (this instanceof MetaClass) {
+            // FIXME: Gross and not quite right. See MRI's rb_frozen_class_p logic
+            RubyBasicObject attached = (RubyBasicObject)((MetaClass)this).getAttached();
+            attached.testFrozen();
+        }
+
         addMethodInternal(name, method);
     }
 
@@ -1860,7 +1866,14 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        return super.op_equal(context, other);
+        if(!(other instanceof RubyModule))
+            return context.runtime.getFalse();
+        RubyModule otherModule = (RubyModule)other;
+        if(otherModule.isIncluded()) {
+            return context.runtime.newBoolean(otherModule.isSame(this));
+        } else {
+            return context.runtime.newBoolean(isSame(otherModule));
+        }
     }
 
     /** rb_mod_freeze

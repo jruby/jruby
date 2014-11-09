@@ -10,6 +10,15 @@ class TestVector < Test::Unit::TestCase
     @w1 = Vector[2,3,4]
   end
 
+  def test_basis
+    assert_equal(Vector[1, 0, 0], Vector.basis(size: 3, index: 0))
+    assert_raise(ArgumentError) { Vector.basis(size: -1, index: 2) }
+    assert_raise(ArgumentError) { Vector.basis(size: 4, index: -1) }
+    assert_raise(ArgumentError) { Vector.basis(size: 3, index: 3) }
+    assert_raise(ArgumentError) { Vector.basis(size: 3) }
+    assert_raise(ArgumentError) { Vector.basis(index: 3) }
+  end
+
   def test_identity
     assert_same @v1, @v1
     assert_not_same @v1, @v2
@@ -111,6 +120,15 @@ class TestVector < Test::Unit::TestCase
     assert_equal(0, Vector[1, 2, 3] - o)
   end
 
+  def test_uplus
+    assert_equal(@v1, +@v1)
+  end
+
+  def test_negate
+    assert_equal(Vector[-1, -2, -3], -@v1)
+    assert_equal(@v1, -(-@v1))
+  end
+
   def test_inner_product
     assert_equal(1+4+9, @v1.inner_product(@v1))
   end
@@ -145,5 +163,10 @@ class TestVector < Test::Unit::TestCase
   def test_rational_magnitude
     v = Vector[Rational(1,2), 0]
     assert_equal(0.5, v.norm)
+  end
+
+  def test_cross_product
+    v = Vector[1, 0, 0].cross_product Vector[0, 1, 0]
+    assert_equal(Vector[0, 0, 1], v)
   end
 end

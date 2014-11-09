@@ -144,6 +144,7 @@ public abstract class IRVisitor {
     public void CurrentScope(CurrentScope currentscope) { error(currentscope); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { error(dynamicsymbol); }
     public void Fixnum(Fixnum fixnum) { error(fixnum); }
+    public void FrozenString(FrozenString frozen) { error(frozen); }
     public void UnboxedFixnum(UnboxedFixnum fixnum) { error(fixnum); }
     public void Float(org.jruby.ir.operands.Float flote) { error(flote); }
     public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { error(flote); }

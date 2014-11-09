@@ -480,6 +480,9 @@ class TestM17N < Test::Unit::TestCase
     assert_regexp_fixed_ascii8bit(eval(a(%{/\xc2\xa1/n})))
     assert_regexp_fixed_ascii8bit(eval(a(%q{/\xc2\xa1/})))
 
+    s = '\xc2\xa1'
+    assert_regexp_fixed_ascii8bit(/#{s}/)
+
     assert_raise(SyntaxError) { eval("/\xa1\xa1/n".force_encoding("euc-jp")) }
 
     [/\xc2\xa1/n, eval(a(%{/\xc2\xa1/})), eval(a(%{/\xc2\xa1/n}))].each {|r|
@@ -1035,6 +1038,11 @@ class TestM17N < Test::Unit::TestCase
     assert_equal(0, e("\xa1\xa2").count("z"))
     s = e("\xa3\xb0\xa3\xb1\xa3\xb2\xa3\xb3\xa3\xb4")
     assert_raise(Encoding::CompatibilityError){s.count(a("\xa3\xb0"))}
+  end
+
+  def test_count_sjis_trailing_byte
+    bug10078 = '[ruby-dev:48442] [Bug #10078]'
+    assert_equal(0, s("\x98\x61").count("a"), bug10078)
   end
 
   def test_delete

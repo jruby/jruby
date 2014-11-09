@@ -973,6 +973,13 @@ public class IRBuilder {
     public Operand buildCall(CallNode callNode, IRScope s) {
         Node          callArgsNode = callNode.getArgsNode();
         Node          receiverNode = callNode.getReceiverNode();
+
+        // check for "string".freeze
+        if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
+            // frozen string optimization
+            return new FrozenString(((StrNode)receiverNode).getValue());
+        }
+
         // Though you might be tempted to move this build into the CallInstr as:
         //    new Callinstr( ... , build(receiverNode, s), ...)
         // that is incorrect IR because the receiver has to be built *before* call arguments are built

@@ -897,18 +897,6 @@ class TestBigDecimal < Test::Unit::TestCase
     end
   end
 
-  def test_round_with_nan_and_infinity
-    [BigDecimal::NAN, BigDecimal::INFINITY, -BigDecimal::INFINITY].each do |number|
-      assert_raise(FloatDomainError) { number.round }
-    end
-  end
-
-  def test_round_with_precision_on_nan_and_infinity
-    assert_equal(true, BigDecimal::NAN.round(1).nan?)
-    assert_equal(BigDecimal::INFINITY, BigDecimal::INFINITY.round(1))
-    assert_equal(-BigDecimal::INFINITY, -BigDecimal::INFINITY.round(1))
-  end
-
   def test_truncate
     assert_equal(3, BigDecimal.new("3.14159").truncate)
     assert_equal(8, BigDecimal.new("8.7").truncate)

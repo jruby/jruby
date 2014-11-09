@@ -1144,8 +1144,8 @@ public class StringIO extends RubyObject implements EncodingCapable {
             strioExtend(ptr.pos, len);
             ByteList ptrByteList = ptr.string.getByteList();
             System.arraycopy(str.getByteList().getUnsafeBytes(), str.getByteList().getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin + ptr.pos, len);
-            ptr.string.infectBy(str);
         }
+        ptr.string.infectBy(str);
         ptr.string.infectBy(this);
         ptr.pos += len;
         return RubyFixnum.newFixnum(runtime, len);
@@ -1278,7 +1278,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     private void checkOpen() {
         if (closed()) {
-            throw getRuntime().newIOError("closed stream");
+            throw getRuntime().newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
     }
 }

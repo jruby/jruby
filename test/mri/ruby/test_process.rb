@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'tempfile'
 require 'timeout'
+require 'io/wait'
 require_relative 'envutil'
 require 'rbconfig'
 
@@ -65,8 +66,11 @@ class TestProcess < Test::Unit::TestCase
     return unless rlimit_exist?
     with_tmpchdir {
       write_file 's', <<-"End"
-	# if limit=0, this test freeze pn OpenBSD
-	limit = /openbsd/ =~ RUBY_PLATFORM ? 1 : 0
+        # Too small RLIMIT_NOFILE, such as zero, causes problems.
+        # [OpenBSD] Setting to zero freezes this test.
+        # [GNU/Linux] EINVAL on poll().  EINVAL on ruby's internal poll() ruby with "[ASYNC BUG] thread_timer: select".
+        pipes = IO.pipe
+	limit = pipes.map {|io| io.fileno }.min
 	result = 1
 	begin
 	  Process.setrlimit(Process::RLIMIT_NOFILE, limit)
@@ -116,11 +120,15 @@ class TestProcess < Test::Unit::TestCase
     }
     assert_raise(ArgumentError) { Process.getrlimit(:FOO) }
     assert_raise(ArgumentError) { Process.getrlimit("FOO") }
+    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.getrlimit("\u{30eb 30d3 30fc}") }
   end
 
   def test_rlimit_value
     return unless rlimit_exist?
+    assert_raise(ArgumentError) { Process.setrlimit(:FOO, 0) }
     assert_raise(ArgumentError) { Process.setrlimit(:CORE, :FOO) }
+    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.setrlimit("\u{30eb 30d3 30fc}", 0) }
+    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.setrlimit(:CORE, "\u{30eb 30d3 30fc}") }
     with_tmpchdir do
       s = run_in_child(<<-'End')
         cur, max = Process.getrlimit(:NOFILE)
@@ -131,7 +139,7 @@ class TestProcess < Test::Unit::TestCase
           exit false
         end
       End
-      assert_not_equal(0, s.exitstatus)
+      assert_not_predicate(s, :success?)
       s = run_in_child(<<-'End')
         cur, max = Process.getrlimit(:NOFILE)
         Process.setrlimit(:NOFILE, [max-10, cur].min)
@@ -141,7 +149,7 @@ class TestProcess < Test::Unit::TestCase
           exit false
         end
       End
-      assert_not_equal(0, s.exitstatus)
+      assert_not_predicate(s, :success?)
     end
   end
 
@@ -606,6 +614,27 @@ class TestProcess < Test::Unit::TestCase
     }
   end
 
+  def test_execopts_redirect_nonascii_path
+    bug9946 = '[ruby-core:63185] [Bug #9946]'
+    with_tmpchdir {|d|
+      path = "t-\u{30c6 30b9 30c8 f6}.txt"
+      system(*ECHO["a"], out: path)
+      assert_file.for(bug9946).exist?(path)
+      assert_equal("a\n", File.read(path), bug9946)
+    }
+  end
+
+  def test_execopts_redirect_to_out_and_err
+    with_tmpchdir {|d|
+      ret = system(RUBY, "-e", 'STDERR.print "e"; STDOUT.print "o"', [:out, :err] => "foo")
+      assert_equal(true, ret)
+      assert_equal("eo", File.read("foo"))
+      ret = system(RUBY, "-e", 'STDERR.print "E"; STDOUT.print "O"', [:err, :out] => "bar")
+      assert_equal(true, ret)
+      assert_equal("EO", File.read("bar"))
+    }
+  end
+
   def test_execopts_redirect_dup2_child
     with_tmpchdir {|d|
       Process.wait spawn(RUBY, "-e", "STDERR.print 'err'; STDOUT.print 'out'",
@@ -715,11 +744,14 @@ class TestProcess < Test::Unit::TestCase
     }
     with_pipe {|r, w|
       io = IO.popen([RUBY, "-e", "STDERR.reopen(STDOUT); IO.new(#{w.fileno}, 'w').puts('me')"])
-      w.close
-      errmsg = io.read
-      assert_equal("", r.read)
-      assert_not_equal("", errmsg)
-      Process.wait
+      begin
+        w.close
+        errmsg = io.read
+        assert_equal("", r.read)
+        assert_not_equal("", errmsg)
+      ensure
+        io.close
+      end
     }
     with_pipe {|r, w|
       errmsg = `#{RUBY} -e "STDERR.reopen(STDOUT); IO.new(#{w.fileno}, 'w').puts(123)"`
@@ -767,29 +799,38 @@ class TestProcess < Test::Unit::TestCase
       }
       with_pipe {|r, w|
         io = IO.popen([RUBY, "-e", "STDERR.reopen(STDOUT); IO.new(#{w.fileno}, 'w').puts('me')", :close_others=>true])
-        w.close
-        errmsg = io.read
-        assert_equal("", r.read)
-        assert_not_equal("", errmsg)
-        Process.wait
+        begin
+          w.close
+          errmsg = io.read
+          assert_equal("", r.read)
+          assert_not_equal("", errmsg)
+        ensure
+          io.close
+        end
       }
       with_pipe {|r, w|
         w.close_on_exec = false
         io = IO.popen([RUBY, "-e", "STDERR.reopen(STDOUT); IO.new(#{w.fileno}, 'w').puts('mo')", :close_others=>false])
-        w.close
-        errmsg = io.read
-        assert_equal("mo\n", r.read)
-        assert_equal("", errmsg)
-        Process.wait
+        begin
+          w.close
+          errmsg = io.read
+          assert_equal("mo\n", r.read)
+          assert_equal("", errmsg)
+        ensure
+          io.close
+        end
       }
       with_pipe {|r, w|
         w.close_on_exec = false
         io = IO.popen([RUBY, "-e", "STDERR.reopen(STDOUT); IO.new(#{w.fileno}, 'w').puts('mo')", :close_others=>nil])
-        w.close
-        errmsg = io.read
-        assert_equal("mo\n", r.read)
-        assert_equal("", errmsg)
-        Process.wait
+        begin
+          w.close
+          errmsg = io.read
+          assert_equal("mo\n", r.read)
+          assert_equal("", errmsg)
+        ensure
+          io.close
+        end
       }
 
     }
@@ -1113,8 +1154,7 @@ class TestProcess < Test::Unit::TestCase
       Process.wait spawn([RUBY, "poiu"], "-e", "exit 4")
       assert_equal(4, $?.exitstatus)
 
-      assert_equal("1", IO.popen([[RUBY, "qwerty"], "-e", "print 1"]).read)
-      Process.wait
+      assert_equal("1", IO.popen([[RUBY, "qwerty"], "-e", "print 1"]) {|f| f.read })
 
       write_file("s", <<-"End")
         exec([#{RUBY.dump}, "lkjh"], "-e", "exit 5")
@@ -1183,6 +1223,23 @@ class TestProcess < Test::Unit::TestCase
 
   def test_status_kill
     return unless Process.respond_to?(:kill)
+    return unless Signal.list.include?("KILL")
+
+    # assume the system supports signal if SIGQUIT is available
+    expected = Signal.list.include?("QUIT") ? [false, true, false, nil] : [true, false, false, true]
+
+    with_tmpchdir do
+      write_file("foo", "Process.kill(:KILL, $$); exit(42)")
+      system(RUBY, "foo")
+      s = $?
+      assert_equal(expected,
+                   [s.exited?, s.signaled?, s.stopped?, s.success?],
+                   "[s.exited?, s.signaled?, s.stopped?, s.success?]")
+    end
+  end
+
+  def test_status_quit
+    return unless Process.respond_to?(:kill)
     return unless Signal.list.include?("QUIT")
 
     with_tmpchdir do
@@ -1191,21 +1248,20 @@ class TestProcess < Test::Unit::TestCase
       IO.pipe do |r, w|
         pid = spawn(RUBY, "foo", out: w)
         w.close
-        Thread.new { r.read(1); Process.kill(:SIGQUIT, pid) }
+        th = Thread.new { r.read(1); Process.kill(:SIGQUIT, pid) }
         Process.wait(pid)
+        th.join
       end
       t = Time.now
       s = $?
-      assert_equal([false, true, false],
-                   [s.exited?, s.signaled?, s.stopped?],
-                   "[s.exited?, s.signaled?, s.stopped?]")
+      assert_equal([false, true, false, nil],
+                   [s.exited?, s.signaled?, s.stopped?, s.success?],
+                   "[s.exited?, s.signaled?, s.stopped?, s.success?]")
       assert_send(
         [["#<Process::Status: pid #{ s.pid } SIGQUIT (signal #{ s.termsig })>",
           "#<Process::Status: pid #{ s.pid } SIGQUIT (signal #{ s.termsig }) (core dumped)>"],
          :include?,
          s.inspect])
-      assert_equal(false, s.exited?)
-      assert_equal(nil, s.success?)
       EnvUtil.diagnostic_reports("QUIT", RUBY, pid, t)
     end
   end
@@ -1621,9 +1677,9 @@ class TestProcess < Test::Unit::TestCase
   def test_setsid
     return unless Process.respond_to?(:setsid)
     return unless Process.respond_to?(:getsid)
-    # OpenBSD doesn't allow Process::getsid(pid) when pid is in
+    # OpenBSD and AIX don't allow Process::getsid(pid) when pid is in
     # different session.
-    return if /openbsd/ =~ RUBY_PLATFORM
+    return if /openbsd|aix/ =~ RUBY_PLATFORM
 
     IO.popen([RUBY, "-e", <<EOS]) do|io|
 	Marshal.dump(Process.getsid, STDOUT)
@@ -1777,6 +1833,8 @@ EOS
 
   def test_clock_getres
     r = Process.clock_getres(Process::CLOCK_REALTIME, :nanosecond)
+  rescue Errno::EINVAL
+  else
     assert_kind_of(Integer, r)
     assert_raise(Errno::EINVAL) { Process.clock_getres(:foo) }
   end
@@ -1860,4 +1918,67 @@ EOS
     assert_kind_of(Float, t, "Process.clock_getres(:#{n})")
   end
 
+  def test_deadlock_by_signal_at_forking
+    GC.start # reduce garbage
+    buf = ''
+    ruby = EnvUtil.rubybin
+    er, ew = IO.pipe
+    unless runner = IO.popen("-".freeze)
+      er.close
+      status = true
+      GC.disable # avoid triggering CoW after forks
+      begin
+        $stderr.reopen($stdout)
+        trap(:QUIT) {}
+        parent = $$
+        100.times do |i|
+          pid = fork {Process.kill(:QUIT, parent)}
+          IO.popen(ruby, 'r+'.freeze){}
+          Process.wait(pid)
+          $stdout.puts
+          $stdout.flush
+        end
+      ensure
+        if $!
+          ew.puts([Marshal.dump($!)].pack("m0"))
+          status = false
+        end
+        ew.close
+        exit!(status)
+      end
+    end
+    ew.close
+    begin
+      loop do
+        runner.wait_readable(5)
+        runner.read_nonblock(100, buf)
+      end
+    rescue EOFError => e
+      _, status = Process.wait2(runner.pid)
+    rescue IO::WaitReadable => e
+      Process.kill(:INT, runner.pid)
+      raise Marshal.load(er.read.unpack("m")[0])
+    end
+    assert_predicate(status, :success?)
+  ensure
+    er.close unless er.closed?
+    ew.close unless ew.closed?
+    if runner
+      begin
+        Process.kill(:TERM, runner.pid)
+        sleep 1
+        Process.kill(:KILL, runner.pid)
+      rescue Errno::ESRCH
+      end
+      runner.close
+    end
+  end if defined?(fork)
+
+  def test_process_detach
+    pid = fork {}
+    th = Process.detach(pid)
+    assert_equal pid, th.pid
+    status = th.value
+    assert status.success?, status.inspect
+  end if defined?(fork)
 end

@@ -1,13 +1,16 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Binder;
+import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
+import com.headius.invokebinder.SmartHandle;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.Constantizable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -43,11 +46,17 @@ public class Bootstrap {
         if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
         encoding = entry.getEncoding();
         ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
-        MethodHandle handle = Binder
+        MutableCallSite site = new MutableCallSite(type);
+        Binder binder = Binder
                 .from(RubyString.class, ThreadContext.class)
-                .insert(0, ByteList.class, byteList)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "string");
-        return new ConstantCallSite(handle);
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class), site, byteList);
+        if (name.equals("frozen")) {
+            site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
+        } else {
+            site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "string"));
+        }
+
+        return site;
     }
 
     public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
@@ -137,8 +146,37 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
-    public static RubyString string(ByteList value, ThreadContext context) {
+    public static RubyString string(MutableCallSite site, ByteList value, ThreadContext context) throws Throwable {
+        MethodHandle handle = SmartBinder
+                .from(STRING_SIGNATURE)
+                .invoke(NEW_STRING_SHARED_HANDLE.apply("byteList", value))
+                .handle();
+
+        site.setTarget(handle);
+
         return RubyString.newStringShared(context.runtime, value);
+    }
+
+    public static RubyString frozenString(MutableCallSite site, ByteList value, ThreadContext context) throws Throwable {
+        RubyString frozen = context.runtime.freezeAndDedupString(RubyString.newStringShared(context.runtime, value));
+        MethodHandle handle = Binder.from(RubyString.class, ThreadContext.class)
+                .dropAll()
+                .constant(frozen);
+
+        site.setTarget(handle);
+
+        return frozen;
+    }
+
+    private static final Signature STRING_SIGNATURE = Signature.from(RubyString.class, arrayOf(ThreadContext.class), "context");
+    private static final Signature NEW_STRING_SHARED_SIGNATURE = Signature.from(RubyString.class, arrayOf(ThreadContext.class, ByteList.class), "context", "byteList");
+
+    private static final SmartHandle NEW_STRING_SHARED_HANDLE =
+            SmartBinder.from(NEW_STRING_SHARED_SIGNATURE)
+                    .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "newStringShared");
+    @JIT
+    private static RubyString newStringShared(ThreadContext context, ByteList byteList) {
+        return RubyString.newStringShared(context.runtime, byteList);
     }
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {

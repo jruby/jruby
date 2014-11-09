@@ -20,22 +20,6 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
 
 class LibrarySearcher {
-    static class Ruby18 extends LibrarySearcher {
-        public Ruby18(LoadService loadService) {
-            super(loadService);
-        }
-
-        @Override
-        protected String resolveLoadName(FileResource unused, String ruby18Path) {
-            return ruby18Path;
-        }
-
-        @Override
-        protected String resolveScriptName(FileResource unused, String ruby18Path) {
-            return ruby18Path;
-        }
-    }
-
     static class FoundLibrary implements Library {
         private final Library delegate;
         private final String loadName;

@@ -644,7 +644,7 @@ public class RubyKernel {
 
     @JRubyMethod(required = 1, optional = 3, module = true, visibility = PRIVATE)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return RubyIO.select_static(context, context.runtime, args);
+        return RubyIO.select(context, recv, args);
     }
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
@@ -816,11 +816,19 @@ public class RubyKernel {
     @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
+        int argc = args.length;
+
+        RubyHash opts = extract_raise_opts(context, args);
+        if (opts != null) argc--;
 
         // Check for a Java exception
         ConcreteJavaProxy exception = null;
-        switch (args.length) {
+        switch (argc) {
             case 0:
+                if (opts != null) {
+                    throw runtime.newArgumentError("only cause is given with no arguments");
+                }
+
                 if (runtime.getGlobalVariables().get("$!") instanceof ConcreteJavaProxy) {
                     exception = (ConcreteJavaProxy)runtime.getGlobalVariables().get("$!");
                 }
@@ -846,7 +854,7 @@ public class RubyKernel {
         } else {
             // FIXME: Pass block down?
             RaiseException raise;
-            switch (args.length) {
+            switch (argc) {
                 case 0:
                     IRubyObject lastException = runtime.getGlobalVariables().get("$!");
                     if (lastException.isNil()) {
@@ -873,6 +881,11 @@ public class RubyKernel {
 
             if (runtime.getDebug().isTrue()) {
                 printExceptionSummary(context, runtime, raise.getException());
+            }
+
+            if (opts != null) {
+                IRubyObject cause = opts.op_aref(context, runtime.newSymbol("cause"));
+                raise.getException().setCause(cause);
             }
 
             throw raise;
@@ -905,6 +918,21 @@ public class RubyKernel {
                 TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));
 
         runtime.getErrorStream().print(msg);
+    }
+
+    private static RubyHash extract_raise_opts(ThreadContext context, IRubyObject[] args) {
+        int i;
+        if (args.length > 0) {
+            IRubyObject opt = args[args.length-1];
+            if (opt instanceof RubyHash) {
+                if (!((RubyHash)opt).isEmpty()) {
+                    if (!((RubyHash)opt).op_aref(context, context.runtime.newSymbol("cause")).isNil()) {
+                        return (RubyHash) opt;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**

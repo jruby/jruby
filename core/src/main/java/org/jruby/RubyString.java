@@ -904,8 +904,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
             shared = new RubyString(runtime, meta, value.makeShared(index, len));
             shared.shareLevel = SHARE_LEVEL_BUFFER;
-            shared.copyCodeRangeForSubstr(this, enc); // no need to assign encoding, same bytelist shared
         }
+        shared.copyCodeRangeForSubstr(this, enc); // no need to assign encoding, same bytelist shared
         shared.infectBy(this);
         return shared;
     }
@@ -3056,6 +3056,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum) {
             index = RubyNumeric.fix2int((RubyFixnum)idx);
+        } else if (idx.respondsTo("begin") && idx.respondsTo("end")) {
+            ThreadContext context = runtime.getCurrentContext();
+            IRubyObject begin = idx.callMethod(context, "begin");
+            IRubyObject end   = idx.callMethod(context, "end");
+            IRubyObject excl  = idx.callMethod(context, "exclude_end?");
+            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
+
+            int[] begLen = range.begLenInt(getByteList().length(), 0);
+            return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else {
             index = RubyNumeric.num2int(idx);
         }
@@ -3211,6 +3220,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
+        } else if (arg.respondsTo("begin") && arg.respondsTo("end")) {
+            int len = strLength();
+            IRubyObject begin = arg.callMethod(context, "begin");
+            IRubyObject end   = arg.callMethod(context, "end");
+            IRubyObject excl  = arg.callMethod(context, "exclude_end?");
+            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
+
+            int[] begLen = range.begLenInt(len, 0);
+            return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
         }
         return op_aref19(runtime, RubyNumeric.num2int(arg));
     }
@@ -3327,6 +3345,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         } else if (arg0 instanceof RubyRange) {
             int[] begLen = ((RubyRange) arg0).begLenInt(strLength(), 2);
             replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
+            return arg1;
+        } else if (arg0.respondsTo("begin") && arg0.respondsTo("end")) {
+            IRubyObject begin = arg0.callMethod(context, "begin");
+            IRubyObject end   = arg0.callMethod(context, "end");
+            IRubyObject excl  = arg0.callMethod(context, "exclude_end?");
+            RubyRange rng = RubyRange.newRange(context, begin, end, excl.isTrue());
+
+            int[] begLen = rng.begLenInt(strLength(), 2);
+            replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
+
             return arg1;
         }
         return op_aset19(context, RubyNumeric.num2int(arg0), arg1);
@@ -5700,14 +5728,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, Block block) {
-        // Inefficient; build array manually rather than via Enumerator
+        // FIXME: Inefficient; build array manually rather than via Enumerator
         return block.isGiven() ? each_lineCommon19(context, block) :
             enumeratorize(context.runtime, this, "lines").callMethod(context, "to_a");
     }
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
-        // Inefficient; build array manually rather than via Enumerator
+        // FIXME: Inefficient; build array manually rather than via Enumerator
         return block.isGiven() ? each_lineCommon19(context, arg, block) :
             enumeratorize(context.runtime, this, "lines", arg).callMethod(context, "to_a");
     }
@@ -5804,22 +5832,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
-        return enumerateBytes(context, block, false);
+        return enumerateBytes(context, "each_byte", block, false);
     }
 
     @JRubyMethod
     public IRubyObject bytes(ThreadContext context, Block block) {
-        return enumerateBytes(context, block, true);
+        return enumerateBytes(context, "bytes", block, true);
     }
 
     @JRubyMethod(name = "each_char")
     public IRubyObject each_char19(ThreadContext context, Block block) {
-        return enumerateChars(context, block, false);
+        return enumerateChars(context, "each_char", block, false);
     }
 
     @JRubyMethod(name = "chars")
     public IRubyObject chars19(ThreadContext context, Block block) {
-        return enumerateChars(context, block, true);
+        return enumerateChars(context, "chars", block, true);
     }
 
     private SizeFn eachCharSizeFn() {
@@ -5837,16 +5865,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @JRubyMethod
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
-        return enumerateCodepoints(context, block, false);
+        return enumerateCodepoints(context, "each_codepoint", block, false);
     }
 
     @JRubyMethod
     public IRubyObject codepoints(ThreadContext context, Block block) {
-        return enumerateCodepoints(context, block, true);
+        return enumerateCodepoints(context, "codepoints", block, true);
     }
 
     // MRI: rb_str_enumerate_chars
-    private IRubyObject enumerateChars(ThreadContext context, Block block, boolean wantarray) {
+    private IRubyObject enumerateChars(ThreadContext context, String name, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
         RubyString str = this;
         IRubyObject orig = str;
@@ -5880,7 +5908,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (wantarray)
                 ary = RubyArray.newArray(runtime, str.length().getLongValue());
             else
-                return enumeratorizeWithSize(context, this, "chars", eachCharSizeFn());
+                return enumeratorizeWithSize(context, this, name, eachCharSizeFn());
         }
 
         switch (getCodeRange()) {
@@ -5912,7 +5940,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // MRI: rb_str_enumerate_codepoints
-    private IRubyObject enumerateCodepoints(ThreadContext context, Block block, boolean wantarray) {
+    private IRubyObject enumerateCodepoints(ThreadContext context, String name, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
         RubyString str = this;
         IRubyObject orig = str;
@@ -5924,7 +5952,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyArray ary = null;
 
         if (singleByteOptimizable())
-            return enumerateBytes(context, block, wantarray);
+            return enumerateBytes(context, name, block, wantarray);
 
         str = RubyString.newString(runtime, str.getByteList().dup());
         ByteList strByteList = str.getByteList();
@@ -5949,7 +5977,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (wantarray)
                 ary = RubyArray.newArray(runtime, str.length().getLongValue());
             else
-                return enumeratorizeWithSize(context, str, "codepoints", eachCodepointSizeFn());
+                return enumeratorizeWithSize(context, str, name, eachCodepointSizeFn());
         }
 
         while (ptr < end) {
@@ -5967,7 +5995,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return orig;
     }
 
-    private IRubyObject enumerateBytes(ThreadContext context, Block block, boolean wantarray) {
+    private IRubyObject enumerateBytes(ThreadContext context, String name, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
         RubyString str = this;
         int i;
@@ -5989,7 +6017,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (wantarray)
                 ary = RubyArray.newArray(runtime, str.size());
             else
-                return enumeratorizeWithSize(context, str, "bytes", eachByteSizeFn());
+                return enumeratorizeWithSize(context, str, name, eachByteSizeFn());
         }
 
         for (i=0; i<str.size(); i++) {

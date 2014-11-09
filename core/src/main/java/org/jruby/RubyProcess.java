@@ -573,7 +573,16 @@ public class RubyProcess {
 
     @JRubyMethod(name = "groups", module = true, visibility = PRIVATE)
     public static IRubyObject groups(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
+        if(Platform.IS_WINDOWS) {
+            throw recv.getRuntime().newNotImplementedError("groups() function is unimplemented on this machine");
+        } else {
+            long[] groups = (new com.sun.security.auth.module.UnixSystem()).getGroups();
+            RubyArray ary = RubyArray.newArray(recv.getRuntime(), groups.length);
+            for(int i = 0; i < groups.length; i++) {
+                ary.push(RubyFixnum.newFixnum(recv.getRuntime(), groups[i]));
+            }
+            return ary;
+        }
     }
 
     @JRubyMethod(name = "setrlimit", rest = true, module = true, visibility = PRIVATE)
@@ -1089,7 +1098,7 @@ public class RubyProcess {
                 Ruby runtime = context.runtime;
                 int result = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, 0));
                 
-                return runtime.newFixnum(result);
+                return RubyStatus.newProcessStatus(runtime, result, pid);
             }
         };
         

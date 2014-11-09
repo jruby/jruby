@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
+    <version>9.0.0.0.dev-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-lib</artifactId>
   <packaging>pom</packaging>
@@ -20,7 +20,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>9000.dev-SNAPSHOT</version>
+      <version>9.0.0.0.dev-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
@@ -95,6 +95,24 @@
       <type>gem</type>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>minitest</artifactId>
+      <version>${minitest.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>test-unit</artifactId>
+      <version>${test-unit.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>power_assert</artifactId>
+      <version>${power_assert.version}</version>
+      <type>gem</type>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -115,7 +133,7 @@
               </includes>
             </fileset>
             <fileset>
-              <directory>${basedir}/ruby/shared</directory>
+              <directory>${basedir}/ruby/stdlib</directory>
               <includes>
                 <include>**/bouncycastle/**/*.jar</include>
               </includes>

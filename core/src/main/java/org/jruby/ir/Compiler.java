@@ -11,6 +11,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -72,11 +73,14 @@ public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
                     return (IRubyObject) compiledMethod.invoke(null,
                             runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, IRubyObject.NULL_ARRAY, block, runtimeTopSelf.getMetaClass());
                 } catch (InvocationTargetException ite) {
-                    if (ite.getCause() instanceof JumpException) {
-                        throw (JumpException) ite.getCause();
-                    } else {
-                        throw new RuntimeException(ite);
-                    }
+                    Throwable cause = ite.getCause();
+
+                    // can this happen?
+                    if (cause == null) throw runtime.newRuntimeError(ite.getMessage());
+
+                    Helpers.throwException(cause);
+                    return null; // not reached
+
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

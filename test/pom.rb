@@ -41,8 +41,6 @@ project 'JRuby Integration Tests' do
        :scope => 'system',
        :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
   gem 'rubygems:rspec:${rspec.version}'
-  gem 'rubygems:minitest:${minitest.version}'
-  gem 'rubygems:minitest-excludes:${minitest-excludes.version}'
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',

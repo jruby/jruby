@@ -573,7 +573,7 @@ public class ScriptingContainerTest {
         String filename = "";
         int[] lines = null;
 
-        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/2.1"};
+        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/stdlib"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -795,7 +795,7 @@ public class ScriptingContainerTest {
         logger1.info("runScriptlet(type, filename)");
         PathType type = null;
         String filename = "";
-        String[] paths = {basedir + "/lib/ruby/2.1"};
+        String[] paths = {basedir + "/lib/ruby/stdlib"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -905,7 +905,7 @@ public class ScriptingContainerTest {
         Object receiver = null;
         String methodName = "";
         Class<Object> returnType = null;
-        String[] paths = {basedir + "/lib/ruby/2.1"};
+        String[] paths = {basedir + "/lib/ruby/stdlib"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);

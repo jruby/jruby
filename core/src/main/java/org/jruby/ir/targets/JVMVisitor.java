@@ -769,12 +769,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildRangeInstr(BuildRangeInstr instr) {
-        jvmMethod().loadRuntime();
         jvmMethod().loadContext();
         visit(instr.getBegin());
         visit(instr.getEnd());
         jvmAdapter().ldc(instr.isExclusive());
-        jvmAdapter().invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, Ruby.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
+        jvmAdapter().invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1889,6 +1888,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Complex(Complex complex) {
+        jvmMethod().loadRuntime();
+        jvmMethod().pushFixnum(0);
+        visit(complex.getNumber());
+        jvmAdapter().invokestatic(p(RubyComplex.class), "newComplexRaw", sig(RubyComplex.class, Ruby.class, IRubyObject.class, IRubyObject.class));
+    }
+
+    @Override
     public void CurrentScope(CurrentScope currentscope) {
         jvmMethod().loadStaticScope();
     }
@@ -1904,6 +1911,11 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void Fixnum(Fixnum fixnum) {
         jvmMethod().pushFixnum(fixnum.getValue());
+    }
+
+    @Override
+    public void FrozenString(FrozenString frozen) {
+        jvmMethod().pushFrozenString(frozen.getByteList());
     }
 
     @Override
@@ -1980,6 +1992,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Rational(Rational rational) {
+        jvmMethod().loadRuntime();
+        jvmAdapter().ldc(rational.getNumerator());
+        jvmAdapter().ldc(rational.getDenominator());
+        jvmAdapter().invokevirtual(p(Ruby.class), "newRational", sig(RubyRational.class, long.class, long.class));
+    }
+
+    @Override
     public void Regexp(Regexp regexp) {
         if (!regexp.hasKnownValue() && !regexp.options.isOnce()) {
             jvmMethod().loadRuntime();
@@ -2014,7 +2034,7 @@ public class JVMVisitor extends IRVisitor {
     public void Splat(Splat splat) {
         jvmMethod().loadContext();
         visit(splat.getArray());
-        jvmMethod().invokeHelper("irSplat", RubyArray.class, ThreadContext.class, IRubyObject.class);
+        jvmMethod().invokeIRHelper("irSplat", sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
     }
 
     @Override

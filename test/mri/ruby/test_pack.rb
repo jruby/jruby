@@ -181,7 +181,7 @@ class TestPack < Test::Unit::TestCase
     assert_equal a[0], a.pack("p").unpack("p")[0]
     assert_equal a, a.pack("p").freeze.unpack("p*")
     assert_raise(ArgumentError) { (a.pack("p") + "").unpack("p*") }
-    assert_raise(ArgumentError) { (a.pack("p") << "d").unpack("p*") }
+    assert_equal a, (a.pack("p") << "d").unpack("p*")
   end
 
   def test_format_string_modified
@@ -526,6 +526,11 @@ EXPECTED
     assert_equal(["a"*46], "M86%A86%A86%A86%A86%A86%A86%A86%A86%A86%A86%A86%A86%A86%A86%A\n!80``\n".unpack("u"))
     assert_equal(["abcdefghi"], "&86)C9&5F\n#9VAI\n".unpack("u"))
 
+    assert_equal(["abcdef"], "#86)C\n#9&5F\n".unpack("u"))
+    assert_equal(["abcdef"], "#86)CX\n#9&5FX\n".unpack("u")) # X is a (dummy) checksum.
+    assert_equal(["abcdef"], "#86)C\r\n#9&5F\r\n".unpack("u"))
+    assert_equal(["abcdef"], "#86)CX\r\n#9&5FX\r\n".unpack("u")) # X is a (dummy) checksum.
+
     assert_equal(["\x00"], "\"\n".unpack("u"))
     assert_equal(["\x00"], "! \r \n".unpack("u"))
   end
@@ -550,6 +555,14 @@ EXPECTED
     assert_equal(["\0"], "AA\n".unpack("m"))
     assert_equal(["\0"], "AA=\n".unpack("m"))
     assert_equal(["\0\0"], "AAA\n".unpack("m"))
+
+    bug10019 = '[ruby-core:63604] [Bug #10019]'
+    size = ((4096-4)/4*3+1)
+    assert_separately(%W[- #{size} #{bug10019}], <<-'end;')
+      size = ARGV.shift.to_i
+      bug = ARGV.shift
+      assert_equal(size, ["a"*size].pack("m#{size+2}").unpack("m")[0].size, bug)
+    end;
   end
 
   def test_pack_unpack_m0

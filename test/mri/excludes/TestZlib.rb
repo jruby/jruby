@@ -1,1 +1,1 @@
-exclude :test_deflate_stream, "needs investigation"
+exclude :test_deflate_stream, "stream support is new in 2.2 (#2128)"

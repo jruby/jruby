@@ -202,6 +202,10 @@ public class RubyException extends RubyObject {
         return nil;
     }
 
+    public void setCause(IRubyObject cause) {
+        this.cause = cause;
+    }
+
     public void setBacktraceData(BacktraceData backtraceData) {
         this.backtraceData = backtraceData;
     }

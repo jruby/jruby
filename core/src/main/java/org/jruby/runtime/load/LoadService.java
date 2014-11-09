@@ -208,9 +208,7 @@ public class LoadService {
             loadTimer = new LoadTimer();
         }
 
-        this.librarySearcher = runtime.is1_8() ?
-            new LibrarySearcher.Ruby18(this) :
-            new LibrarySearcher(this);
+        this.librarySearcher = new LibrarySearcher(this);
     }
 
     /**

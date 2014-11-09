@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
+    <version>9.0.0.0.dev-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Stdlib</name>
@@ -44,15 +44,14 @@
           <include>bin/ri*</include>
           <include>bin/rdoc*</include>
           <include>bin/testrb*</include>
-          <include>lib/ruby/2.1/**</include>
-          <include>lib/ruby/shared/**</include>
+          <include>lib/ruby/stdlib/**</include>
         </includes>
         <excludes>
           <exclude>bin/jruby</exclude>
           <exclude>bin/jruby*_*</exclude>
           <exclude>bin/jruby*-*</exclude>
           <exclude>**/.*</exclude>
-          <exclude>lib/ruby/shared/rubygems/defaults/jruby_native.rb</exclude>
+          <exclude>lib/ruby/stdlib/rubygems/defaults/jruby_native.rb</exclude>
         </excludes>
       </resource>
       <resource>

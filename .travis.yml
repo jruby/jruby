@@ -29,6 +29,8 @@ env:
     - TARGET='-Prake -Dtask=spec:ffi'
     - TARGET='-Prake -Dtask=spec:regression'
     - TARGET='-Prake -Dtask=spec:ruby:fast'
+    - TARGET='-Prake -Dtask=spec:jruby'
+    - TARGET='-Prake -Dtask=spec:jrubyc'
     - TARGET='-Prake -Dtask=spec:profiler'
     - TARGET='-Ptruffle-specs-language'
     - TARGET='-Ptruffle-specs-core'
@@ -51,8 +53,8 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: TARGET='-Pcomplete'
+    - env: TARGET='-Prake -Dtask=spec:jrubyc'
     - env: TARGET='-Pjruby_complete_jar_jruby'
-    - env: TARGET='-Prake -Dtask=spec:compiler'
     - env: TARGET='-Pj2ee'
     - env: TARGET='-Prake -Dtask=spec:profiler'
 

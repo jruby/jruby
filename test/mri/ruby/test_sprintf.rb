@@ -148,6 +148,31 @@ class TestSprintf < Test::Unit::TestCase
     assert_equal(" Inf", sprintf("% e", inf), '[ruby-dev:34002]')
   end
 
+  def test_rational
+    assert_match(/\A0\.10+\z/, sprintf("%.60f", 0.1r))
+    assert_match(/\A0\.010+\z/, sprintf("%.60f", 0.01r))
+    assert_match(/\A0\.0010+\z/, sprintf("%.60f", 0.001r))
+    assert_match(/\A0\.3+\z/, sprintf("%.60f", 1/3r))
+    assert_match(/\A1\.20+\z/, sprintf("%.60f", 1.2r))
+
+    0.upto(9) do |len|
+      -1.upto(9) do |prec|
+        ['', '+', '-', ' ', '0', '+0', '-0', ' 0', '+ ', '- ', '+ 0', '- 0'].each do |flags|
+          fmt = "%#{flags}#{len > 0 ? len : ''}#{prec >= 0 ? ".#{prec}" : ''}f"
+          [0, 0.1, 0.01, 0.001, 1.001, 100.0, 100.001, 10000000000.0, 0.00000000001, 1/3r, 2/3r, 1.2r, 10r].each do |num|
+            assert_equal(sprintf(fmt, num.to_f), sprintf(fmt, num.to_r), "sprintf(#{fmt.inspect}, #{num.inspect}.to_r)")
+            assert_equal(sprintf(fmt, -num.to_f), sprintf(fmt, -num.to_r), "sprintf(#{fmt.inspect}, #{(-num).inspect}.to_r)") if num > 0
+          end
+        end
+      end
+    end
+  end
+
+  def test_hash
+    options = {:capture=>/\d+/}
+    assert_equal("with options {:capture=>/\\d+/}", sprintf("with options %p" % options))
+  end
+
   def test_invalid
     # Star precision before star width:
     assert_raise(ArgumentError, "[ruby-core:11569]") {sprintf("%.**d", 5, 10, 1)}
@@ -179,6 +204,10 @@ class TestSprintf < Test::Unit::TestCase
     assert_raise(ArgumentError) { sprintf("%!", 1) }
     assert_raise(ArgumentError) { sprintf("%1$1$d", 1) }
     assert_raise(ArgumentError) { sprintf("%0%") }
+
+    assert_raise_with_message(ArgumentError, /unnumbered\(1\) mixed with numbered/) { sprintf("%1$*d", 3) }
+    assert_raise_with_message(ArgumentError, /unnumbered\(1\) mixed with numbered/) { sprintf("%1$.*d", 3) }
+
     verbose, $VERBOSE = $VERBOSE, nil
     assert_nothing_raised { sprintf("", 1) }
   ensure
@@ -304,6 +333,12 @@ class TestSprintf < Test::Unit::TestCase
 
   def test_star
     assert_equal("-1 ", sprintf("%*d", -3, -1))
+    assert_raise_with_message(ArgumentError, /width too big/) {
+      sprintf("%*999999999999999999999999999999999999999999999999999999999999$d", 1)
+    }
+    assert_raise_with_message(ArgumentError, /prec too big/) {
+      sprintf("%.*999999999999999999999999999999999999999999999999999999999999$d", 1)
+    }
   end
 
   def test_escape

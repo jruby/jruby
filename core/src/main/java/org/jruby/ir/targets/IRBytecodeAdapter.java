@@ -192,14 +192,14 @@ public abstract class IRBytecodeAdapter {
      *
      * @param l long value to push as a Fixnum
      */
-    public abstract void pushFixnum(Long l);
+    public abstract void pushFixnum(long l);
 
     /**
      * Stack required: none
      *
      * @param d double value to push as a Float
      */
-    public abstract void pushFloat(Double d);
+    public abstract void pushFloat(double d);
 
     /**
      * Stack required: none
@@ -207,6 +207,13 @@ public abstract class IRBytecodeAdapter {
      * @param bl ByteList for the String to push
      */
     public abstract void pushString(ByteList bl);
+
+    /**
+     * Stack required: none
+     *
+     * @param bl ByteList for the String to push
+     */
+    public abstract void pushFrozenString(ByteList bl);
 
     /**
      * Stack required: none

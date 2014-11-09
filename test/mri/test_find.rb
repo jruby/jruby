@@ -94,11 +94,31 @@ class TestFind < Test::Unit::TestCase
     skip "no meaning test on Windows" if /mswin|mingw/ =~ RUBY_PLATFORM
     Dir.mktmpdir {|d|
       Dir.mkdir(dir = "#{d}/dir")
-      File.open(file = "#{dir}/foo", "w"){}
+      File.open("#{dir}/foo", "w"){}
       begin
         File.chmod(0300, dir)
         a = []
         Find.find(d) {|f| a << f }
+        assert_equal([d, dir], a)
+
+        a = []
+        Find.find(d, ignore_error: true) {|f| a << f }
+        assert_equal([d, dir], a)
+
+        a = []
+        Find.find(d, ignore_error: true).each {|f| a << f }
+        assert_equal([d, dir], a)
+
+        a = []
+        assert_raise_with_message(Errno::EACCES, /#{Regexp.quote(dir)}/) do
+          Find.find(d, ignore_error: false) {|f| a << f }
+        end
+        assert_equal([d, dir], a)
+
+        a = []
+        assert_raise_with_message(Errno::EACCES, /#{Regexp.quote(dir)}/) do
+          Find.find(d, ignore_error: false).each {|f| a << f }
+        end
         assert_equal([d, dir], a)
       ensure
         File.chmod(0700, dir)
@@ -115,7 +135,28 @@ class TestFind < Test::Unit::TestCase
         a = []
         Find.find(d) {|f| a << f }
         assert_equal([d, dir, file], a)
+
+        a = []
+        Find.find(d, ignore_error: true) {|f| a << f }
+        assert_equal([d, dir, file], a)
+
+        a = []
+        Find.find(d, ignore_error: true).each {|f| a << f }
+        assert_equal([d, dir, file], a)
+
         skip "no meaning test on Windows" if /mswin|mingw/ =~ RUBY_PLATFORM
+        a = []
+        assert_raise_with_message(Errno::EACCES, /#{Regexp.quote(file)}/) do
+          Find.find(d, ignore_error: false) {|f| a << f }
+        end
+        assert_equal([d, dir, file], a)
+
+        a = []
+        assert_raise_with_message(Errno::EACCES, /#{Regexp.quote(file)}/) do
+          Find.find(d, ignore_error: false).each {|f| a << f }
+        end
+        assert_equal([d, dir, file], a)
+
         assert_raise(Errno::EACCES) { File.lstat(file) }
       ensure
         File.chmod(0700, dir)
@@ -157,7 +198,7 @@ class TestFind < Test::Unit::TestCase
       File.open(file_b = "#{dir_1}/b", "w"){}
       File.open(file_c = "#{dir_1}/c", "w"){}
       Dir.mkdir(dir_d = "#{dir_1}/d")
-      File.open(file_de = "#{dir_d}/e", "w"){}
+      File.open("#{dir_d}/e", "w"){}
       dir_2 = "#{d}/d2"
       a = []
       Find.find(d) {|f|
@@ -178,7 +219,7 @@ class TestFind < Test::Unit::TestCase
       File.open(file_b = "#{dir_1}/b", "w"){}
       File.open(file_c = "#{dir_1}/c", "w"){}
       Dir.mkdir(dir_d = "#{dir_1}/d")
-      File.open(file_de = "#{dir_d}/e", "w"){}
+      File.open("#{dir_d}/e", "w"){}
       dir_2 = "#{d}/d2"
       a = []
       Find.find(d) {|f|

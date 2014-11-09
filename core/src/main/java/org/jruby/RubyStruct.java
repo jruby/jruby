@@ -544,19 +544,36 @@ public class RubyStruct extends RubyObject {
     /** inspect_struct
     *
     */
-    private IRubyObject inspectStruct(final ThreadContext context) {
+    private IRubyObject inspectStruct(final ThreadContext context, boolean recur) {
+        Ruby runtime = context.runtime;
         RubyArray member = __member__();
         ByteList buffer = new ByteList("#<struct ".getBytes());
+        String cpath = getMetaClass().getRealClass().getName();
+        char first = cpath.charAt(0);
 
-        if (getMetaClass().getRealClass().getBaseName() != null) {
-            buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
+        if (recur || first != '#') {
+            buffer.append(cpath.getBytes());
             buffer.append(' ');
         }
 
+        if (recur) {
+            buffer.append(":...>".getBytes());
+            return runtime.newString(buffer);
+        }
+
         for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (i > 0) buffer.append(',').append(' ');
-            // FIXME: MRI has special case for constants here
-            buffer.append(RubyString.objAsString(context, member.eltInternal(i)).getByteList());
+            if (i > 0) {
+                buffer.append(',').append(' ');
+            } else if (first != '#') {
+                buffer.append(' ');
+            }
+            RubySymbol slot = (RubySymbol)member.eltInternal(i);
+            String name = slot.toString();
+            if (IdUtil.isLocal(name) || IdUtil.isConstant(name)) {
+                buffer.append(RubyString.objAsString(context, slot).getByteList());
+            } else {
+                buffer.append(((RubyString) slot.inspect(context)).getByteList());
+            }
             buffer.append('=');
             buffer.append(inspect(context, values[i]).getByteList());
         }
@@ -566,15 +583,16 @@ public class RubyStruct extends RubyObject {
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
-    public IRubyObject inspect(ThreadContext context) {
-        if (getRuntime().isInspecting(this)) return getRuntime().newString("#<struct " + getMetaClass().getRealClass().getName() + ":...>");
+    public IRubyObject inspect(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
 
-        try {
-            getRuntime().registerInspecting(this);
-            return inspectStruct(context);
-        } finally {
-            getRuntime().unregisterInspecting(this);
-        }
+        // recursion guard
+        return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            @Override
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                return inspectStruct(context, recur);
+            }
+        }, this);
     }
 
     @JRubyMethod(name = {"to_a", "values"})

@@ -9,13 +9,10 @@ end
 
 class TestRipper::ParserEvents < Test::Unit::TestCase
 
-  # should be enabled
   def test_event_coverage
-    dispatched = Ripper::PARSER_EVENTS.map {|event,*| event }
-    dispatched.each do |e|
-      assert_equal true, respond_to?("test_#{e}", true),
-                   "event not tested: #{e.inspect}"
-    end
+    dispatched = Ripper::PARSER_EVENTS
+    tested = self.class.instance_methods(false).grep(/\Atest_(\w+)/) {$1.intern}
+    assert_empty dispatched-tested
   end
 
   def parse(str, nm = nil, &bl)
@@ -183,29 +180,48 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
   end
 
   def test_assign_error
+    # for test_coverage
+  end
+
+  def test_assign_error_backref
     thru_assign_error = false
     parse('$` = 1', :on_assign_error) {thru_assign_error = true}
     assert_equal true, thru_assign_error
     thru_assign_error = false
     parse('$`, _ = 1', :on_assign_error) {thru_assign_error = true}
     assert_equal true, thru_assign_error
+  end
 
+  def test_assign_error_const_qualified
     thru_assign_error = false
     parse('self::X = 1', :on_assign_error) {thru_assign_error = true}
     assert_equal false, thru_assign_error
-    parse('def m\n self::X = 1\nend', :on_assign_error) {thru_assign_error = true}
+    parse("def m\n self::X = 1\nend", :on_assign_error) {thru_assign_error = true}
     assert_equal true, thru_assign_error
+    thru_assign_error = false
+    parse("def m\n self::X, a = 1, 2\nend", :on_assign_error) {thru_assign_error = true}
+    assert_equal true, thru_assign_error
+  end
 
+  def test_assign_error_const
     thru_assign_error = false
     parse('X = 1', :on_assign_error) {thru_assign_error = true}
     assert_equal false, thru_assign_error
-    parse('def m\n X = 1\nend', :on_assign_error) {thru_assign_error = true}
+    parse("def m\n X = 1\nend", :on_assign_error) {thru_assign_error = true}
     assert_equal true, thru_assign_error
+    thru_assign_error = false
+    parse("def m\n X, a = 1, 2\nend", :on_assign_error) {thru_assign_error = true}
+    assert_equal true, thru_assign_error
+  end
 
+  def test_assign_error_const_toplevel
     thru_assign_error = false
     parse('::X = 1', :on_assign_error) {thru_assign_error = true}
     assert_equal false, thru_assign_error
-    parse('def m\n ::X = 1\nend', :on_assign_error) {thru_assign_error = true}
+    parse("def m\n ::X = 1\nend", :on_assign_error) {thru_assign_error = true}
+    assert_equal true, thru_assign_error
+    thru_assign_error = false
+    parse("def m\n ::X, a = 1, 2\nend", :on_assign_error) {thru_assign_error = true}
     assert_equal true, thru_assign_error
   end
 
@@ -230,9 +246,8 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     assert_equal true, thru_begin
   end
 
-  def test_binary
-    thru_binary = nil
-    %w"and or + - * / % ** | ^ & <=> > >= < <= == === != =~ !~ << >> && ||".each do |op|
+  %w"and or + - * / % ** | ^ & <=> > >= < <= == === != =~ !~ << >> && ||".each do |op|
+    define_method("test_binary(#{op})") do
       thru_binary = false
       parse("a #{op} b", :on_binary) {thru_binary = true}
       assert_equal true, thru_binary
@@ -528,6 +543,10 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
   def test_dyna_symbol
     thru_dyna_symbol = false
     parse(':"#{foo}"', :on_dyna_symbol) {thru_dyna_symbol = true}
+    assert_equal true, thru_dyna_symbol
+
+    thru_dyna_symbol = false
+    parse('{"#{foo}": 1}', :on_dyna_symbol) {thru_dyna_symbol = true}
     assert_equal true, thru_dyna_symbol
   end
 

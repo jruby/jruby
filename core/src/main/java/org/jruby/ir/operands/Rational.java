@@ -32,11 +32,11 @@ public class Rational extends ImmutableLiteral {
         visitor.Rational(this);
     }
 
-    public double getNumerator() {
+    public long getNumerator() {
         return numerator;
     }
 
-    public double getDenominator() {
+    public long getDenominator() {
         return denominator;
     }
 }

@@ -45,7 +45,15 @@ import java.io.Reader;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.Enumeration;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -366,10 +374,34 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.runtime.newFileStat(getPath(), false).atime();
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "ctime")
     public IRubyObject ctime(ThreadContext context) {
         checkClosed(context);
         return context.runtime.newFileStat(getPath(), false).ctime();
+    }
+
+    @JRubyMethod(name = "birthtime")
+    public IRubyObject birthtime(ThreadContext context) {
+        checkClosed(context);
+
+        FileTime btime = getBirthtimeWithNIO(getPath());
+        if (btime != null) return context.runtime.newTime(btime.toMillis()); // btime comes in nanos
+        return ctime(context);
+    }
+
+    public static final FileTime getBirthtimeWithNIO(String pathString) {
+        // FIXME: birthtime is in stat, so we should use that if platform supports it (#2152)
+        // TODO: This requires Java 7 APIs and may not work on Android
+        Path path = Paths.get(pathString);
+        PosixFileAttributeView view = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+        try {
+            if (view != null) {
+                return view.readAttributes().creationTime();
+            }
+        } catch (IOException ioe) {
+            // ignore, just fall back on ctime
+        }
+        return null;
     }
 
     @JRubyMethod(required = 1)
@@ -819,6 +851,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = get_path(context, filename).getUnicodeValue();
         return context.runtime.newFileStat(f, false).ctime();
+    }
+
+    @JRubyMethod(name = "birthtime", required = 1, meta = true)
+    public static IRubyObject birthtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        String f = get_path(context, filename).getUnicodeValue();
+        return context.runtime.newFileStat(f, false).birthtime();
     }
 
     @JRubyMethod(required = 1, rest = true, meta = true)

@@ -791,7 +791,7 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     gz.finish
     # 14: magic(2) + method(1) + flag(1) + mtime(4) + exflag(1) + os(1) + orig_name(2) + comment(2)
     1.upto(14) do |idx|
-      assert_raise(Zlib::BufError, idx) do
+      assert_raise(Zlib::BufError) do
         z = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
         p z.inflate(s[0, idx]) + z.finish
       end

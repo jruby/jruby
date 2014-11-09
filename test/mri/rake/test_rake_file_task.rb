@@ -1,5 +1,6 @@
 require File.expand_path('../helper', __FILE__)
 require 'fileutils'
+require 'pathname'
 
 class TestRakeFileTask < Rake::TestCase
   include Rake
@@ -96,6 +97,84 @@ class TestRakeFileTask < Rake::TestCase
     Task[OLDFILE].invoke
 
     assert @ran
+  end
+
+  def test_needed_eh_build_all
+    create_file 'a'
+
+    file 'a'
+
+    a_task = Task['a']
+
+    refute a_task.needed?
+
+    Rake.application.options.build_all = true
+
+    assert a_task.needed?
+  ensure
+    delete_file 'a'
+  end
+
+  def test_needed_eh_dependency
+    create_file 'a', Time.now
+    create_file 'b', Time.now - 60
+
+    create_file 'c', Time.now
+    create_file 'd', Time.now - 60
+
+    file 'b' => 'a'
+
+    b_task = Task['b']
+
+    assert b_task.needed?
+
+    file 'c' => 'd'
+
+    c_task = Task['c']
+
+    refute c_task.needed?
+  ensure
+    delete_file 'old'
+    delete_file 'new'
+  end
+
+  def test_needed_eh_exists
+    name = "dummy"
+    file name
+
+    ftask = Task[name]
+
+    assert ftask.needed?
+
+    create_file name
+
+    refute ftask.needed?
+  ensure
+    delete_file name
+  end
+
+  def test_source_is_first_prerequisite
+    t = file :f => ["preqA", "preqB"]
+    assert_equal "preqA", t.source
+  end
+
+  def test_sources_is_all_prerequisites
+    t = file :f => ["preqA", "preqB"]
+    assert_equal ["preqA", "preqB"], t.sources
+  end
+
+  def test_task_can_be_pathname
+      name = "dummy"
+      file Pathname.new name
+
+      ftask = Task[name]
+
+      assert_equal name.to_s, ftask.name
+  end
+
+  def test_prerequisite_can_be_pathname
+    t = file :f => Pathname.new("preq")
+    assert_equal "preq", t.source
   end
 
   # I have currently disabled this test.  I'm not convinced that

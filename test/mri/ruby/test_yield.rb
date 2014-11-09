@@ -66,7 +66,7 @@ class TestRubyYield < Test::Unit::TestCase
   end
 
   def test_with_enum
-    obj = Object
+    obj = Object.new
     def obj.each
       yield(*[])
     end
@@ -244,7 +244,7 @@ class TestRubyYieldGen < Test::Unit::TestCase
           throw :emuerror, ArgumentError
         end
       else
-        if args.length != params.length
+        if args.length != params.length and !(args.length == 1 and Array === args[0] and args[0].length == params.length)
           throw :emuerror, ArgumentError
         end
       end

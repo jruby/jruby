@@ -45,7 +45,7 @@ project 'JRuby Core' do
   jar 'org.jruby.extras:bytelist:1.0.12-SNAPSHOT'
   jar 'org.jruby.jcodings:jcodings:1.0.12-SNAPSHOT'
 
-  jar 'com.headius:invokebinder:1.4'
+  jar 'com.headius:invokebinder:1.5-SNAPSHOT'
   jar 'com.headius:options:1.1'
   jar 'com.headius:coro-mock:1.0', :scope => 'provided'
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
@@ -59,7 +59,7 @@ project 'JRuby Core' do
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
-  jar 'org.yaml:snakeyaml:1.13'  
+  jar 'org.yaml:snakeyaml:1.14'  
 
   # joda timezone must be before joda-time to be packed correctly
   jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'

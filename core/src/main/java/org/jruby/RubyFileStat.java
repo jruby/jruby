@@ -35,6 +35,8 @@ package org.jruby;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.nio.file.attribute.FileTime;
+import java.util.concurrent.TimeUnit;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -186,6 +188,13 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ctime")
     public IRubyObject ctime() {
         return getRuntime().newTime(stat.ctime() * 1000);
+    }
+
+    @JRubyMethod(name = "birthtime")
+    public IRubyObject birthtime() {
+        FileTime btime = RubyFile.getBirthtimeWithNIO(file.absolutePath());
+        if (btime != null) return getRuntime().newTime(btime.toMillis());
+        return ctime();
     }
 
     @JRubyMethod(name = "dev")

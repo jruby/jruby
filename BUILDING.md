@@ -31,7 +31,7 @@ This will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
-* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/shared/` and `lib/ruby/2.1/`.
+* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/stdlib/`.
 
 The environment is now suitable for running Ruby applications.
 
@@ -58,12 +58,8 @@ executable for your platform; otherwise, it will be a copy of the
 
 Bootstrapping will install the following gems:
 
-* `rake`
 * `rspec`
 * `jruby-launcher`
-* `minitest`
-* `minitest-excludes`
-* `rdoc`
 
 and dependencies of these gems. A list of the gem versions can be found in
 `test/pom.xml` in the `dependencies` section.
@@ -331,7 +327,7 @@ rake maven:dump_poms
 
 about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documentation to come).
 
-regular maven uses the the jruby from the installation, i.e. 9000.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
+regular maven uses the the jruby from the installation, i.e. 9.0.0.0.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
 
 at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which will work directly with regular maven where there is a special plugin running those ruby parts. see **./lib/pom.rb**.
 

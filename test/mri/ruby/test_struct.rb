@@ -158,6 +158,8 @@ module TestStruct
     assert_equal(1, o[0])
     assert_raise(IndexError) { o[-2] }
     assert_raise(IndexError) { o[1] }
+    assert_raise_with_message(NameError, /foo/) {o["foo"]}
+    assert_raise_with_message(NameError, /foo/) {o[:foo]}
   end
 
   def test_aset
@@ -167,6 +169,8 @@ module TestStruct
     assert_equal(2, o[:a])
     assert_raise(IndexError) { o[-2] = 3 }
     assert_raise(IndexError) { o[1] = 3 }
+    assert_raise_with_message(NameError, /foo/) {o["foo"] = 3}
+    assert_raise_with_message(NameError, /foo/) {o[:foo] = 3}
   end
 
   def test_values_at
@@ -289,6 +293,8 @@ module TestStruct
     x = Object.new
     o = klass.new("test", x)
     assert_same(x, o.b?)
+    o.send("b?=", 42)
+    assert_equal(42, o.b?)
   end
 
   def test_bang_mark_in_member
@@ -296,6 +302,8 @@ module TestStruct
     x = Object.new
     o = klass.new("test", x)
     assert_same(x, o.b!)
+    o.send("b!=", 42)
+    assert_equal(42, o.b!)
   end
 
   def test_setter_method_returns_value

@@ -325,7 +325,9 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_equal([[:keyreq, :a], [:keyrest, :b]], o.method(:bar).parameters, feature7701)
     assert_raise_with_message(ArgumentError, /missing keyword/, bug8139) {o.bar(c: bug8139)}
     assert_raise_with_message(ArgumentError, /missing keyword/, bug8139) {o.bar}
+  end
 
+  def test_required_keyword_with_newline
     bug9669 = '[ruby-core:61658] [Bug #9669]'
     assert_nothing_raised(SyntaxError, bug9669) do
       eval(<<-'end;', nil, __FILE__, __LINE__)
@@ -335,6 +337,7 @@ class TestKeywordArguments < Test::Unit::TestCase
       end;
     end
     assert_equal(42, bug9669.foo(a: 42))
+    o = nil
     assert_nothing_raised(SyntaxError, bug9669) do
       eval(<<-'end;', nil, __FILE__, __LINE__)
         o = {
@@ -346,10 +349,21 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_equal({a: 1}, o, bug9669)
   end
 
+  def test_required_keyword_with_reserved
+    bug10279 = '[ruby-core:65211] [Bug #10279]'
+    h = nil
+    assert_nothing_raised(SyntaxError, bug10279) do
+      break eval(<<-'end;', nil, __FILE__, __LINE__)
+        h = {a: if true then 42 end}
+      end;
+    end
+    assert_equal({a: 42}, h, bug10279)
+  end
+
   def test_block_required_keyword
     feature7701 = '[ruby-core:51454] [Feature #7701] required keyword argument'
     b = assert_nothing_raised(SyntaxError, feature7701) do
-      break eval("proc {|a:| a}")
+      break eval("proc {|a:| a}", nil, __FILE__, __LINE__)
     end
     assert_raise_with_message(ArgumentError, /missing keyword/, feature7701) {b.call}
     assert_raise_with_message(ArgumentError, /unknown keyword/, feature7701) {b.call(a:0, b:1)}
@@ -358,11 +372,11 @@ class TestKeywordArguments < Test::Unit::TestCase
 
     bug8139 = '[ruby-core:53608] [Bug #8139] required keyword argument with rest hash'
     b = assert_nothing_raised(SyntaxError, feature7701) do
-      break eval("proc {|a:, **b| [a, b]}")
+      break eval("proc {|a:, **bl| [a, bl]}", nil, __FILE__, __LINE__)
     end
     assert_equal([42, {}], b.call(a: 42), feature7701)
     assert_equal([42, {c: feature7701}], b.call(a: 42, c: feature7701), feature7701)
-    assert_equal([[:keyreq, :a], [:keyrest, :b]], b.parameters, feature7701)
+    assert_equal([[:keyreq, :a], [:keyrest, :bl]], b.parameters, feature7701)
     assert_raise_with_message(ArgumentError, /missing keyword/, bug8139) {b.call(c: bug8139)}
     assert_raise_with_message(ArgumentError, /missing keyword/, bug8139) {b.call}
   end
@@ -426,7 +440,7 @@ class TestKeywordArguments < Test::Unit::TestCase
       end
     end
     assert_equal([{}, {}], a.new.foo({}))
-    assert_equal([{}, {:bar=>"x"}], a.new.foo({}, bar: "x"))
+    assert_equal([{}, {:bar=>"x"}], a.new.foo({}, bar: "x"), bug8040)
   end
 
   def test_precedence_of_keyword_arguments_with_post_argument
@@ -452,6 +466,27 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_equal({a: 1}, h, bug9776)
   end
 
+  def test_splat_hash_conversion
+    bug9898 = '[ruby-core:62921] [Bug #9898]'
+
+    o = Object.new
+    def o.to_hash() { a: 1 } end
+    assert_equal({a: 1}, m1(**o) {|x| break x}, bug9898)
+    o2 = Object.new
+    def o2.to_hash() { b: 2 } end
+    assert_equal({a: 1, b: 2}, m1(**o, **o2) {|x| break x}, bug9898)
+  end
+
+  def test_implicit_hash_conversion
+    bug10016 = '[ruby-core:63593] [Bug #10016]'
+
+    o = Object.new
+    def o.to_hash() { k: 9 } end
+    assert_equal([1, 42, [], o, :key, {}, nil], f9(1, o))
+    assert_equal([1, 9], m1(1, o) {|a, k: 0| break [a, k]}, bug10016)
+    assert_equal([1, 9], m1(1, o, &->(a, k: 0) {break [a, k]}), bug10016)
+  end
+
   def test_gced_object_in_stack
     bug8964 = '[ruby-dev:47729] [Bug #8964]'
     assert_normal_exit %q{
@@ -469,5 +504,29 @@ class TestKeywordArguments < Test::Unit::TestCase
       GC.start
       tap { prc.call }
     }, bug8964
+  end
+
+  def test_dynamic_symbol_keyword
+    bug10266 = '[ruby-dev:48564] [Bug #10266]'
+    assert_separately(['-', bug10266], <<-'end;') #    do
+      bug = ARGV.shift
+      "hoge".to_sym
+      assert_nothing_raised(bug) {eval("def a(hoge:); end")}
+    end;
+  end
+
+  def test_unknown_keyword_with_block
+    bug10413 = '[ruby-core:65837] [Bug #10413]'
+    class << (o = Object.new)
+      def bar(k2: 'v2')
+      end
+
+      def foo
+        bar(k1: 1)
+      end
+    end
+    assert_raise_with_message(ArgumentError, /unknown keyword: k1/, bug10413) {
+      o.foo {raise "unreachable"}
+    }
   end
 end

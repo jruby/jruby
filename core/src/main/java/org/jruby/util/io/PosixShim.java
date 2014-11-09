@@ -246,22 +246,19 @@ public class PosixShim {
 
     public Channel[] pipe() {
         clear();
-        if (posix.isNative()) {
-            int[] fds = new int[2];
-            int ret = posix.pipe(fds);
-            if (ret == -1) {
-                errno = Errno.valueOf(posix.errno());
-                return null;
-            }
-            setCloexec(fds[0], true);
-            setCloexec(fds[1], true);
-            return new Channel[]{new NativeDeviceChannel(fds[0]), new NativeDeviceChannel(fds[1])};
-        }
-
-        // otherwise, Java pipe. Note Java pipe is not FD_CLOEXEC, but we can't use posix_spawn anyway
         try {
             Pipe pipe = Pipe.open();
-            return new Channel[]{pipe.source(), pipe.sink()};
+            Channel source = pipe.source(), sink = pipe.sink();
+
+            if (posix.isNative()) {
+                // set cloexec if possible
+                int read = FilenoUtil.filenoFrom(source);
+                int write = FilenoUtil.filenoFrom(sink);
+                setCloexec(read, true);
+                setCloexec(write, true);
+            }
+
+            return new Channel[]{source, sink};
         } catch (IOException ioe) {
             errno = Helpers.errnoFromException(ioe);
             return null;

@@ -63,6 +63,16 @@ module Fiddle
       assert_equal(SIZEOF_VOIDP, LIBC.sizeof("FILE*"))
       assert_equal(LIBC::MyStruct.size(), LIBC.sizeof(LIBC::MyStruct))
       assert_equal(LIBC::MyStruct.size(), LIBC.sizeof(LIBC::MyStruct.malloc()))
+      assert_equal(SIZEOF_LONG_LONG, LIBC.sizeof("long long"))
+    end
+
+    Fiddle.constants.grep(/\ATYPE_(?!VOID\z)(.*)/) do
+      type = $&
+      size = Fiddle.const_get("SIZEOF_#{$1}")
+      name = $1.sub(/P\z/,"*").gsub(/_(?!T\z)/, " ").downcase
+      define_method("test_sizeof_#{name}") do
+        assert_equal(size, Fiddle::Importer.sizeof(name), type)
+      end
     end
 
     def test_unsigned_result()

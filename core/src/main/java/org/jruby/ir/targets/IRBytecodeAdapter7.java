@@ -42,12 +42,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         super(adapter, signature, classData);
     }
 
-    public void pushFixnum(Long l) {
+    public void pushFixnum(long l) {
         loadContext();
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), FixnumObjectSite.BOOTSTRAP, l);
     }
 
-    public void pushFloat(Double d) {
+    public void pushFloat(double d) {
         loadContext();
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), FloatObjectSite.BOOTSTRAP, d);
     }
@@ -55,6 +55,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
     public void pushString(ByteList bl) {
         loadContext();
         adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
+    }
+
+    public void pushFrozenString(ByteList bl) {
+        loadContext();
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
     }
 
     public void pushByteList(ByteList bl) {

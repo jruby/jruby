@@ -55,4 +55,8 @@ namespace :spec do
   permute_specs "regression", compile_flags do |t|
     t.pattern = 'spec/regression/**/*_spec.rb'
   end
+
+  permute_specs "jruby", compile_flags do |t|
+    t.pattern = 'spec/jruby/**/*_spec.rb'
+  end
 end

@@ -12,6 +12,12 @@ class TestObject < Test::Unit::TestCase
     $VERBOSE = @verbose
   end
 
+  def test_itself
+    feature6373 = '[ruby-core:44704] [Feature #6373]'
+    object = Object.new
+    assert_same(object, object.itself, feature6373)
+  end
+
   def test_dup
     assert_raise(TypeError) { 1.dup }
     assert_raise(TypeError) { true.dup }
@@ -29,8 +35,8 @@ class TestObject < Test::Unit::TestCase
     end
 
     obj = cls.new
-    assert_throws(:initialize_clone) {obj.clone}
-    assert_throws(:initialize_dup) {obj.dup}
+    assert_throw(:initialize_clone) {obj.clone}
+    assert_throw(:initialize_dup) {obj.dup}
   end
 
   def test_instance_of
@@ -57,6 +63,20 @@ class TestObject < Test::Unit::TestCase
     1.freeze
     assert_equal(true, 1.frozen?)
     assert_equal(true, 2.frozen?)
+    assert_equal(true, true.frozen?)
+    assert_equal(true, false.frozen?)
+    assert_equal(true, nil.frozen?)
+  end
+
+  def test_frozen_error_message
+    name = "C\u{30c6 30b9 30c8}"
+    klass = EnvUtil.labeled_class(name) {
+      attr_accessor :foo
+    }
+    obj = klass.new.freeze
+    assert_raise_with_message(RuntimeError, /#{name}/) {
+      obj.foo = 1
+    }
   end
 
   def test_nil_to_f
@@ -289,14 +309,23 @@ class TestObject < Test::Unit::TestCase
   end
 
   def test_redefine_method_which_may_case_serious_problem
-    assert_in_out_err([], <<-INPUT, [], /warning: redefining `object_id' may cause serious problems$/)
+    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining `object_id' may cause serious problems$")
       $VERBOSE = false
       def (Object.new).object_id; end
     INPUT
 
-    assert_in_out_err([], <<-INPUT, [], /warning: redefining `__send__' may cause serious problems$/)
+    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining `__send__' may cause serious problems$")
       $VERBOSE = false
       def (Object.new).__send__; end
+    INPUT
+
+    bug10421 = '[ruby-dev:48691] [Bug #10421]'
+    assert_in_out_err([], <<-INPUT, ["1"], [], bug10421)
+      $VERBOSE = false
+      class C < BasicObject
+        def object_id; 1; end
+      end
+      puts C.new.object_id
     INPUT
   end
 
@@ -328,7 +357,7 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NoMethodError, bug2202) {o2.meth2}
 
     %w(object_id __send__ initialize).each do |m|
-      assert_in_out_err([], <<-INPUT, %w(:ok), /warning: removing `#{m}' may cause serious problems$/)
+      assert_in_out_err([], <<-INPUT, %w(:ok), %r"warning: removing `#{m}' may cause serious problems$")
         $VERBOSE = false
         begin
           Class.new.instance_eval { remove_method(:#{m}) }
@@ -801,8 +830,18 @@ class TestObject < Test::Unit::TestCase
   end
 
   def test_type_error_message
-    issue = "Bug #7539"
+    _issue = "Bug #7539"
     assert_raise_with_message(TypeError, "can't convert Array into Integer") {Integer([42])}
     assert_raise_with_message(TypeError, 'no implicit conversion of Array into Integer') {[].first([42])}
+  end
+
+  def test_copied_ivar_memory_leak
+    bug10191 = '[ruby-core:64700] [Bug #10191]'
+    assert_no_memory_leak([], <<-"end;", <<-"end;", bug10191, rss: true, timeout: 60, limit: 1.8)
+      def (a = Object.new).set; @v = nil; end
+      num = 500_000
+    end;
+      num.times {a.clone.set}
+    end;
   end
 end

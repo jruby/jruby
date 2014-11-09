@@ -88,6 +88,24 @@ File modes expected to be equal:
  <#{'%0*o' % [width, mode2]}>: "#{file2}"
 EOT
       end
+
+      def assert_ownership_group(expected, file)
+        actual = File.stat(file).gid
+        assert expected == actual, <<EOT
+File group ownership of "#{file}" unexpected:
+ Expected: <#{expected}>
+   Actual: <#{actual}>
+EOT
+      end
+
+      def assert_ownership_user(expected, file)
+        actual = File.stat(file).uid
+        assert expected == actual, <<EOT
+File user ownership of "#{file}" unexpected:
+ Expected: <#{expected}>
+   Actual: <#{actual}>
+EOT
+      end
     end
   end
 end

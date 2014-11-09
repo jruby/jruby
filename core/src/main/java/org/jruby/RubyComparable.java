@@ -35,6 +35,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -144,6 +145,7 @@ public class RubyComparable {
 
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
+            cmpFailed(context);
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
                 // clear error info resulting from failure to compare (JRUBY-3292)
                 runtime.getGlobalVariables().set("$!", savedError);
@@ -153,6 +155,13 @@ public class RubyComparable {
                 throw e;
             }
         }
+    }
+
+    private static void cmpFailed(ThreadContext context) {
+        RubyWarnings warnings = context.runtime.getWarnings();
+
+        warnings.warn("Comparable#== will no more rescue exceptions of #<=> in the next release.");
+        warnings.warn("Return nil in #<=> if the comparison is inappropriate or avoid such comparison.");
     }
 
     /** cmp_gt

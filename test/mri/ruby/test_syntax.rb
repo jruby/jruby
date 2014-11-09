@@ -37,7 +37,8 @@ class TestSyntax < Test::Unit::TestCase
       make_tmpsrc(f, "# -*- coding: #{enc.name} -*-")
       assert_raise(ArgumentError, enc.name) {load(f.path)}
     end
-    f.close!
+  ensure
+    f.close! if f
   end
 
   def test_script_lines
@@ -53,7 +54,8 @@ class TestSyntax < Test::Unit::TestCase
         assert_equal([enc, enc], debug_lines[f.path].map(&:encoding), bug4361)
       end
     end
-    f.close!
+  ensure
+    f.close! if f
   end
 
   def test_newline_in_block_parameters
@@ -107,26 +109,69 @@ class TestSyntax < Test::Unit::TestCase
     def o.kw(k1: 1, k2: 2) [k1, k2] end
     h = {k1: 11, k2: 12}
     assert_equal([11, 12], o.kw(**h))
-    assert_equal([11, 22], o.kw(k2: 22, **h))
-    assert_equal([11, 12], o.kw(**h, **{k2: 22}))
-    assert_equal([11, 22], o.kw(**{k2: 22}, **h))
+    assert_equal([11, 12], o.kw(k2: 22, **h))
+    assert_equal([11, 22], o.kw(**h, **{k2: 22}))
+    assert_equal([11, 12], o.kw(**{k2: 22}, **h))
+
+    bug10315 = '[ruby-core:65368] [Bug #10315]'
+    assert_equal([23, 2], o.kw(**{k1: 22}, **{k1: 23}), bug10315)
+
     h = {k3: 31}
     assert_raise(ArgumentError) {o.kw(**h)}
     h = {"k1"=>11, k2: 12}
     assert_raise(TypeError) {o.kw(**h)}
+
+    bug10315 = '[ruby-core:65625] [Bug #10315]'
+    a = []
+    def a.add(x) push(x); x; end
+    def a.f(k:) k; end
+    a.clear
+    r = nil
+    assert_warn(/duplicated/) {r = eval("a.f(k: a.add(1), k: a.add(2))")}
+    assert_equal(2, r)
+    assert_equal([1, 2], a, bug10315)
+    a.clear
+    r = nil
+    assert_warn(/duplicated/) {r = eval("a.f({k: a.add(1), k: a.add(2)})")}
+    assert_equal(2, r)
+    assert_equal([1, 2], a, bug10315)
+  end
+
+  def test_keyword_self_reference
+    bug9593 = '[ruby-core:61299] [Bug #9593]'
+    o = Object.new
+    def o.foo(var: defined?(var)) var end
+    assert_equal(42, o.foo(var: 42))
+    assert_equal("local-variable", o.foo, bug9593)
+
+    o = Object.new
+    def o.foo(var: var) var end
+    assert_nil(o.foo, bug9593)
+  end
+
+  def test_optional_self_reference
+    bug9593 = '[ruby-core:61299] [Bug #9593]'
+    o = Object.new
+    def o.foo(var = defined?(var)) var end
+    assert_equal(42, o.foo(42))
+    assert_equal("local-variable", o.foo, bug9593)
+
+    o = Object.new
+    def o.foo(var = var) var end
+    assert_nil(o.foo, bug9593)
   end
 
   def test_warn_grouped_expression
     bug5214 = '[ruby-core:39050]'
     assert_warning("", bug5214) do
-      assert_valid_syntax("foo \\\n(\n  true)", "test") {$VERBOSE = true}
+      assert_valid_syntax("foo \\\n(\n  true)", "test", verbose: true)
     end
   end
 
   def test_warn_unreachable
     assert_warning("test:3: warning: statement not reached\n") do
       code = "loop do\n" "break\n" "foo\n" "end"
-      assert_valid_syntax(code, "test") {$VERBOSE = true}
+      assert_valid_syntax(code, "test", verbose: true)
     end
   end
 
@@ -146,7 +191,7 @@ WARN
      [:%, "string literal"],
     ].each do |op, syn|
       assert_warning(warning % [op, syn]) do
-        assert_valid_syntax("puts 1 #{op}0", "test") {$VERBOSE = true}
+        assert_valid_syntax("puts 1 #{op}0", "test", verbose: true)
       end
     end
   end
@@ -178,18 +223,22 @@ WARN
 
   def test_duplicated_arg
     assert_syntax_error("def foo(a, a) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_, _) end }
   end
 
   def test_duplicated_rest
     assert_syntax_error("def foo(a, *a) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_, *_) end }
   end
 
   def test_duplicated_opt
     assert_syntax_error("def foo(a, a=1) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_, _=1) end }
   end
 
   def test_duplicated_opt_rest
     assert_syntax_error("def foo(a=1, *a) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_=1, *_) end }
   end
 
   def test_duplicated_rest_opt
@@ -202,30 +251,37 @@ WARN
 
   def test_duplicated_opt_post
     assert_syntax_error("def foo(a=1, a) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_=1, _) end }
   end
 
   def test_duplicated_kw
     assert_syntax_error("def foo(a, a: 1) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_, _: 1) end }
   end
 
   def test_duplicated_rest_kw
     assert_syntax_error("def foo(*a, a: 1) end", /duplicated argument name/)
+    assert_nothing_raised {def foo(*_, _: 1) end}
   end
 
   def test_duplicated_opt_kw
     assert_syntax_error("def foo(a=1, a: 1) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_=1, _: 1) end }
   end
 
   def test_duplicated_kw_kwrest
     assert_syntax_error("def foo(a: 1, **a) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_: 1, **_) end }
   end
 
   def test_duplicated_rest_kwrest
     assert_syntax_error("def foo(*a, **a) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(*_, **_) end }
   end
 
   def test_duplicated_opt_kwrest
     assert_syntax_error("def foo(a=1, **a) end", /duplicated argument name/)
+    assert_nothing_raised { def foo(_=1, **_) end }
   end
 
   def test_duplicated_when
@@ -400,6 +456,21 @@ eom
     assert_warning(/encountered \\r/, feature8699) do
       eval("\r""__id__\r")
     end
+  end
+
+  def test_unexpected_fraction
+    msg = /unexpected fraction/
+    assert_syntax_error("0x0.0", msg)
+    assert_syntax_error("0b0.0", msg)
+    assert_syntax_error("0d0.0", msg)
+    assert_syntax_error("0o0.0", msg)
+    assert_syntax_error("0.0.0", msg)
+  end
+
+  def test_error_message_encoding
+    bug10114 = '[ruby-core:64228] [Bug #10114]'
+    code = "# -*- coding: utf-8 -*-\n" "def n \"\u{2208}\"; end"
+    assert_syntax_error(code, /def n "\u{2208}"; end/, bug10114)
   end
 
   private

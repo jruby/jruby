@@ -1,1 +1,1 @@
-ENV['EXCLUDE_DIR']='test/mri/excludes'
+ENV['EXCLUDES']='test/mri/excludes'

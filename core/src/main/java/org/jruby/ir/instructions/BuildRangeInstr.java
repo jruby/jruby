@@ -79,7 +79,7 @@ public class BuildRangeInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return RubyRange.newRange(context.runtime, context,
+        return RubyRange.newRange(context,
                 (IRubyObject) begin.retrieve(context, self, currScope, currDynScope, temp),
                 (IRubyObject) end.retrieve(context, self, currScope, currDynScope, temp), exclusive);
     }

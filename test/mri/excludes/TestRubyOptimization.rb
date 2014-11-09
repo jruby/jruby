@@ -1,4 +1,5 @@
 exclude :test_fixnum_minus, "needs investigation"
 exclude :test_fixnum_plus, "needs investigation"
+exclude :test_string_freeze, "frozen string literal should be a new object if String#freeze is redefined (#2156)"
 exclude :test_tailcall, "needs investigation"
 exclude :test_tailcall_with_block, "needs investigation"

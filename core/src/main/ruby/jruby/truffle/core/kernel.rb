@@ -34,3 +34,8 @@ module Kernel
   end
 
 end
+
+# Here temporarily while we adapt to the newly imported specs
+
+class Channel
+end

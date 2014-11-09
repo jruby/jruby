@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestComparable < Test::Unit::TestCase
   def setup
@@ -17,8 +18,12 @@ class TestComparable < Test::Unit::TestCase
     assert_equal(true, @o == nil)
     cmp->(x) do 1; end
     assert_equal(false, @o == nil)
-    cmp->(x) do raise; end
-    assert_equal(false, @o == nil)
+    cmp->(x) do raise NotImplementedError, "Not a RuntimeError" end
+    assert_raise(NotImplementedError) { @o == nil }
+    bug7688 = '[ruby-core:51389] [Bug #7688]'
+    cmp->(x) do raise StandardError, "A standard error should be rescued"; end
+    warn = /Comparable#== will no more rescue exceptions .+ in the next release/
+    assert_warn(warn, bug7688) { @o == nil }
   end
 
   def test_gt
@@ -68,6 +73,10 @@ class TestComparable < Test::Unit::TestCase
   def test_err
     assert_raise(ArgumentError) { 1.0 < nil }
     assert_raise(ArgumentError) { 1.0 < Object.new }
+    e = EnvUtil.labeled_class("E\u{30a8 30e9 30fc}")
+    assert_raise_with_message(ArgumentError, /E\u{30a8 30e9 30fc}/) {
+      1.0 < e.new
+    }
   end
 
   def test_inversed_compare

@@ -3,17 +3,21 @@ require_relative 'envutil'
 
 class TestSetTraceFunc < Test::Unit::TestCase
   def setup
-    @original_compile_option = RubyVM::InstructionSequence.compile_option
-    RubyVM::InstructionSequence.compile_option = {
-      :trace_instruction => true,
-      :specialized_instruction => false
-    }
+    if defined?(RubyVM)
+      @original_compile_option = RubyVM::InstructionSequence.compile_option
+      RubyVM::InstructionSequence.compile_option = {
+        :trace_instruction => true,
+        :specialized_instruction => false
+      }
+    end
     @target_thread = Thread.current
   end
 
   def teardown
     set_trace_func(nil)
-    RubyVM::InstructionSequence.compile_option = @original_compile_option
+    if defined?(RubyVM)
+      RubyVM::InstructionSequence.compile_option = @original_compile_option
+    end
     @target_thread = nil
   end
 
@@ -285,11 +289,9 @@ class TestSetTraceFunc < Test::Unit::TestCase
 
     [["c-return", 1, :set_trace_func, Kernel],
      ["line", 4, __method__, self.class],
-     ["c-call", 4, :any?, Enumerable],
-     ["c-call", 4, :each, Array],
+     ["c-call", 4, :any?, Array],
      ["line", 4, __method__, self.class],
-     ["c-return", 4, :each, Array],
-     ["c-return", 4, :any?, Enumerable],
+     ["c-return", 4, :any?, Array],
      ["line", 5, __method__, self.class],
      ["c-call", 5, :set_trace_func, Kernel]].each{|e|
       assert_equal(e, events.shift)
@@ -383,7 +385,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
 
     [["c-return", 3, :set_trace_func, Kernel],
      ["line", 6, __method__, self.class],
-     ["call", 6, :foobar, FooBar],
+     ["call", 1, :foobar, FooBar],
      ["return", 6, :foobar, FooBar],
      ["line", 7, __method__, self.class],
      ["c-call", 7, :set_trace_func, Kernel]].each{|e|
@@ -1028,6 +1030,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
   def test_a_call
     events = []
     TracePoint.new(:a_call){|tp|
+      next if !target_thread?
       events << tp.event
     }.enable{
       1.times{
@@ -1049,6 +1052,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
   def test_a_return
     events = []
     TracePoint.new(:a_return){|tp|
+      next if !target_thread?
       events << tp.event
     }.enable{
       1.times{
@@ -1066,6 +1070,94 @@ class TestSetTraceFunc < Test::Unit::TestCase
       :b_return
     ], events)
   end
+
+  def test_const_missing
+    bug59398 = '[ruby-core:59398]'
+    events = []
+    assert !defined?(MISSING_CONSTANT_59398)
+    TracePoint.new(:c_call, :c_return, :call, :return){|tp|
+      next if !target_thread?
+      next unless tp.defined_class == Module
+      # rake/ext/module.rb aliases :const_missing and Ruby uses the aliased name
+      # but this only happens when running the full test suite
+      events << [tp.event,tp.method_id] if tp.method_id == :const_missing || tp.method_id == :rake_original_const_missing
+    }.enable{
+      MISSING_CONSTANT_59398 rescue nil
+    }
+    if events.map{|e|e[1]}.include?(:rake_original_const_missing)
+      assert_equal([
+        [:call, :const_missing],
+        [:c_call, :rake_original_const_missing],
+        [:c_return, :rake_original_const_missing],
+        [:return, :const_missing],
+      ], events, bug59398)
+    else
+      assert_equal([
+        [:c_call, :const_missing],
+        [:c_return, :const_missing]
+      ], events, bug59398)
+    end
+  end
+
+  class AliasedRubyMethod
+    def foo; 1; end;
+    alias bar foo
+  end
+  def test_aliased_ruby_method
+    events = []
+    aliased = AliasedRubyMethod.new
+    TracePoint.new(:call, :return){|tp|
+      next if !target_thread?
+      events << [tp.event, tp.method_id]
+    }.enable{
+      aliased.bar
+    }
+    assert_equal([
+      [:call, :foo],
+      [:return, :foo]
+    ], events, "should use original method name for tracing ruby methods")
+  end
+  class AliasedCMethod < Hash
+    alias original_size size
+    def size; original_size; end
+  end
+
+  def test_aliased_c_method
+    events = []
+    aliased = AliasedCMethod.new
+    TracePoint.new(:call, :return, :c_call, :c_return){|tp|
+      next if !target_thread?
+      events << [tp.event, tp.method_id]
+    }.enable{
+      aliased.size
+    }
+    assert_equal([
+      [:call, :size],
+      [:c_call, :original_size],
+      [:c_return, :original_size],
+      [:return, :size]
+    ], events, "should use alias method name for tracing c methods")
+  end
+
+  def test_method_missing
+    bug59398 = '[ruby-core:59398]'
+    events = []
+    assert !respond_to?(:missing_method_59398)
+    TracePoint.new(:c_call, :c_return, :call, :return){|tp|
+      next if !target_thread?
+      next unless tp.defined_class == BasicObject
+      # rake/ext/module.rb aliases :const_missing and Ruby uses the aliased name
+      # but this only happens when running the full test suite
+      events << [tp.event,tp.method_id] if tp.method_id == :method_missing
+    }.enable{
+      missing_method_59398 rescue nil
+    }
+    assert_equal([
+      [:c_call, :method_missing],
+      [:c_return, :method_missing]
+    ], events, bug59398)
+  end
+
   class C9759
     define_method(:foo){
       raise
@@ -1098,6 +1190,113 @@ class TestSetTraceFunc < Test::Unit::TestCase
       assert_equal([['call', :foo], ['return', :foo]], events, 'Bug #9759')
     ensure
     end
+  end
 
+  def test_recursive
+    assert_ruby_status [], %q{
+      stack = []
+      TracePoint.new(:c_call){|tp|
+        p 2
+        stack << tp.method_id
+      }.enable{
+        p 1
+      }
+      raise if stack != [:p, :hash, :inspect]
+    }, '[Bug #9940]'
+  end
+
+  def method_prefix event
+    case event
+    when :call, :return
+      :n
+    when :c_call, :c_return
+      :c
+    when :b_call, :b_return
+      :b
+    end
+  end
+
+  def method_label tp
+    "#{method_prefix(tp.event)}##{tp.method_id}"
+  end
+
+  def assert_consistent_call_return message='', check_events: nil
+    check_events ||= %i(a_call a_return)
+    call_stack = []
+
+    TracePoint.new(*check_events){|tp|
+      next unless target_thread?
+
+      case tp.event.to_s
+      when /call/
+        call_stack << method_label(tp)
+      when /return/
+        frame = call_stack.pop
+        assert_equal(frame, method_label(tp))
+      end
+    }.enable do
+      yield
+    end
+
+    assert_equal true, call_stack.empty?
+  end
+
+  def method_test_rescue_should_not_cause_b_return
+    begin
+      raise
+    rescue
+      return
+    end
+  end
+
+  def method_test_ensure_should_not_cause_b_return
+    begin
+      raise
+    ensure
+      return
+    end
+  end
+
+  def test_rescue_and_ensure_should_not_cause_b_return
+    assert_consistent_call_return '[Bug #9957]' do
+      method_test_rescue_should_not_cause_b_return
+      begin
+        method_test_ensure_should_not_cause_b_return
+      rescue
+        # ignore
+      end
+    end
+  end
+
+  define_method(:method_test_argument_error_on_bmethod){|correct_key: 1|}
+
+  def test_argument_error_on_bmethod
+    assert_consistent_call_return '[Bug #9959]' do
+      begin
+        method_test_argument_error_on_bmethod(wrong_key: 2)
+      rescue => e
+        # ignore
+      end
+    end
+  end
+
+  def test_rb_rescue
+    assert_consistent_call_return '[Bug #9961]' do
+      begin
+        -Numeric.new
+      rescue => e
+        # ignore
+      end
+    end
+  end
+
+  def test_b_call_with_redo
+    assert_consistent_call_return '[Bug #9964]' do
+      i = 0
+      1.times{
+        break if (i+=1) > 10
+        redo
+      }
+    end
   end
 end
