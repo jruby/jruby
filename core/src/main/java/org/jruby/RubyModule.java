@@ -854,6 +854,19 @@ public class RubyModule extends RubyObject {
         if (name.equals("__id__") || name.equals("__send__") || name.equals("object_id")) {
             runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problem");
         }
+
+        if (name.equals("method_missing")) {
+
+            try {
+                removeMethod(context, name);
+            } catch (RaiseException t) {
+                if(!(t.getException() instanceof RubyNameError)) {
+                    throw t;
+                }
+            }
+            return;
+        }
+
         DynamicMethod method = searchMethod(name);
         if (method.isUndefined()) {
             String s0 = " class";
