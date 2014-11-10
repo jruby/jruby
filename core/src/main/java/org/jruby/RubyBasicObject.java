@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -579,16 +580,31 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public final boolean respondsTo(String name) {
+        Ruby runtime = getRuntime();
+
         DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if(method.equals(getRuntime().getRespondToMethod())) {
+        if(method.equals(runtime.getRespondToMethod())) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
         } else if (!method.isUndefined()) {
             // medium path, invoke user's respond_to? if defined
-            return method.call(getRuntime().getCurrentContext(), this, metaClass, "respond_to?", getRuntime().newSymbol(name)).isTrue();
+
+            // We have to check and enforce arity
+            Arity arity = method.getArity();
+            ThreadContext context = runtime.getCurrentContext();
+            if (arity.isFixed() && arity.required() == 1) {
+                return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name)).isTrue();
+            } else if (arity.isFixed() && arity.required() != 2) {
+                throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
+            } else {
+
+            }
+
+            return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
+
         } else {
             // slowest path, full callMethod to hit method_missing if present, or produce error
-            return callMethod(getRuntime().getCurrentContext(), "respond_to?", getRuntime().newSymbol(name)).isTrue();
+            return callMethod(runtime.getCurrentContext(), "respond_to?", runtime.newSymbol(name)).isTrue();
         }
     }
 
