@@ -1249,21 +1249,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "pretty_inspect")
     public abstract static class PrettyInspectNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child protected DispatchHeadNode inspectNode;
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = DispatchHeadNode.onSelf(context);
+            inspectNode = DispatchHeadNode.onSelf(context);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
             super(prev);
-            toS = prev.toS;
+            inspectNode = prev.inspectNode;
         }
 
         @Specialization
         public Object prettyInspect(VirtualFrame frame, Object self) {
-            return toS.call(frame, self, "to_s", null);
+            return inspectNode.call(frame, self, "inspect", null);
         }
     }
 
