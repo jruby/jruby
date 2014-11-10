@@ -528,6 +528,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (getMetaClass().isSingleton() && ((MetaClass)getMetaClass()).getAttached() == this) {
             klass = getMetaClass();
         } else {
+            if(isFrozen()) {
+                throw getRuntime().newFrozenError("object");
+            }
             klass = makeMetaClass(getMetaClass());
         }
 
