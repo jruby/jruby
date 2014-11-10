@@ -632,7 +632,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        return new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs, environment.getLexicalScope());
+        return new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs, LexicalScope.NONE);
     }
 
     @Override
@@ -681,9 +681,10 @@ public class BodyTranslator extends Translator {
         // Unqualified constant access, as in CONST
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
+        final LexicalScope lexicalScope = environment.getLexicalScope();
+        final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
 
-        return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, environment.getLexicalScope());
+        return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, lexicalScope);
     }
 
     @Override

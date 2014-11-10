@@ -305,7 +305,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
             rubyConstant.setPrivate(isPrivate);
             newLexicalVersion();
         } else {
-            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString(), currentNode));
+            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(this, constant.toString(), currentNode));
         }
     }
 

@@ -510,6 +510,7 @@ public class CoreLibrary {
     }
 
     public RubyException typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return typeErrorCantConvertInto(box(from).getLogicalClass().getName(), to.getName(), currentNode);
     }
 
@@ -523,9 +524,9 @@ public class CoreLibrary {
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException nameErrorUninitializedConstant(String name, Node currentNode) {
+    public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("uninitialized constant %s", name), currentNode);
+        return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), currentNode);
     }
 
     public RubyException nameErrorPrivateConstant(RubyModule module, String name, Node currentNode) {
