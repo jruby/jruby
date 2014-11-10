@@ -144,6 +144,11 @@ public class RubyFloat extends RubyNumeric {
     }
 
     @Override
+    public RubyClass getSingletonClass() {
+        throw getRuntime().newTypeError("can't define singleton");
+    }
+
+    @Override
     public Class<?> getJavaClass() {
         return double.class;
     }
