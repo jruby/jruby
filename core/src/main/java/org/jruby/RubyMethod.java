@@ -304,7 +304,7 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(optional = 1)
     public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
-        return to_proc(context, null).callMethod(context, "curry", args);
+        return to_proc(context, Block.NULL_BLOCK).callMethod(context, "curry", args);
     }
 
     @JRubyMethod
