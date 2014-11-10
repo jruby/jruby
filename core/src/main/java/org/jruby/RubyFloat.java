@@ -60,7 +60,6 @@ import java.lang.Math;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
-import static org.jruby.RubyNumeric.dbl2num;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
@@ -141,6 +140,7 @@ public class RubyFloat extends RubyNumeric {
     public RubyFloat(Ruby runtime, double value) {
         super(runtime.getFloat());
         this.value = value;
+        this.flags |= FROZEN_F;
     }
 
     @Override

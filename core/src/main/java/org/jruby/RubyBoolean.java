@@ -108,7 +108,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         falseClass.defineAnnotatedMethods(RubyBoolean.class);
         
         falseClass.getMetaClass().undefineMethod("new");
-        
+
         return falseClass;
     }
     
@@ -135,7 +135,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
             super(runtime,
                     false); // Don't put in object space
 
-            flags = FALSE_F;
+            flags = FALSE_F | FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
@@ -163,6 +163,8 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         True(Ruby runtime) {
             super(runtime,
                     true); // Don't put in object space
+
+            flags |= FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
