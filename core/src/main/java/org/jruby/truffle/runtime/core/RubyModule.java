@@ -232,14 +232,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         classVariables.remove(variableName);
     }
 
-    public void setModuleConstant(RubyNode currentNode, String constantName, Object value) {
-        RubyNode.notDesignedForCompilation();
-
-        checkFrozen(currentNode);
-
-        setConstant(currentNode, constantName, value);
-    }
-
     public void addMethod(RubyNode currentNode, RubyMethod method) {
         RubyNode.notDesignedForCompilation();
 
