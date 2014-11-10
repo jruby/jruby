@@ -781,6 +781,8 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject arg) {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;
+
+        checkFrozen();
         
         System.arraycopy(original.values, 0, values, 0, original.values.length);
 
