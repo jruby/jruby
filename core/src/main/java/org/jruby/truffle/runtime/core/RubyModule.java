@@ -298,7 +298,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public void changeConstantVisibility(RubyNode currentNode, RubySymbol constant, boolean isPrivate) {
         RubyNode.notDesignedForCompilation();
 
-        RubyConstant rubyConstant = ModuleOperations.lookupConstant(getContext(), null, this, constant.toString());
+        RubyConstant rubyConstant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, this, constant.toString());
         checkFrozen(currentNode);
 
         if (rubyConstant != null) {
