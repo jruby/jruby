@@ -584,7 +584,7 @@ public class BodyTranslator extends Translator {
 
         final String name = node.getCPath().getName();
 
-        RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
+        RubyNode lexicalParent = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
 
         RubyNode superClass;
         if (node.getSuperNode() != null) {
@@ -644,16 +644,6 @@ public class BodyTranslator extends Translator {
         final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
         return new ReadConstantNode(context, sourceSection, node.getName(), root, LexicalScope.NONE);
-    }
-
-    private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
-        if (node instanceof Colon2ImplicitNode) { // use current lexical scope
-            return new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
-        } else if (node instanceof Colon2ConstNode) { // A::B
-            return node.childNodes().get(0).accept(this);
-        } else { // Colon3Node: on top-level (Object)
-            return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
-        }
     }
 
     @Override
@@ -1317,7 +1307,7 @@ public class BodyTranslator extends Translator {
 
         final String name = node.getCPath().getName();
 
-        RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
+        RubyNode lexicalParent = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
 
         final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, lexicalParent);
 
