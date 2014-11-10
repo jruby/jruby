@@ -789,12 +789,17 @@ public abstract class KernelNodes {
         public Object initializeCopy(RubyObject self, RubyObject other) {
             notDesignedForCompilation();
 
-            return getContext().getCoreLibrary().getNilObject();
+            if (self.getLogicalClass() != other.getLogicalClass()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("initialize_copy should take same class object", this));
+            }
+
+            return self;
         }
 
     }
 
-    @CoreMethod(names = "initialize_dup", visibility = Visibility.PRIVATE, required = 1)
+    @CoreMethod(names = {"initialize_dup", "initialize_clone"}, visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeDupNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initializeCopyNode;
