@@ -201,7 +201,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(getRuntime(), 2);
+            return RubyFixnum.newFixnum(getRuntime(), 20);
         } else {
             return RubyFixnum.zero(getRuntime());
         }

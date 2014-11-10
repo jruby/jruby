@@ -206,7 +206,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @Override
     public RubyFixnum id() {
-        return getRuntime().newFixnum(4);
+        return getRuntime().newFixnum(8);
     }
     
     @Override

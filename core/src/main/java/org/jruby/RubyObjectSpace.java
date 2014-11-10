@@ -98,9 +98,9 @@ public class RubyObjectSpace {
         long longId = idFixnum.getLongValue();
         if (longId == 0) {
             return runtime.getFalse();
-        } else if (longId == 2) {
+        } else if (longId == 20) {
             return runtime.getTrue();
-        } else if (longId == 4) {
+        } else if (longId == 8) {
             return runtime.getNil();
         } else if (longId % 2 != 0) {
             // odd
