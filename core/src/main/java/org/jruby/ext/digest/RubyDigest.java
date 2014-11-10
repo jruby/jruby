@@ -334,8 +334,8 @@ public class RubyDigest {
         }
 
         @JRubyMethod(name = "bubblebabble", required = 1, optional = 1, meta = true)
-        public static IRubyObject bubblebabble(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-            byte[] digest = recv.callMethod(ctx, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
+        public static IRubyObject bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+            byte[] digest = recv.callMethod(context, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
             return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest));
         }
 
@@ -479,8 +479,8 @@ public class RubyDigest {
         }
 
         @JRubyMethod()
-        public IRubyObject bubblebabble() {
-            return RubyString.newString(getRuntime(), BubbleBabble.bubblebabble(algo.digest()));
+        public IRubyObject bubblebabble(ThreadContext context) {
+            return RubyString.newString(context.runtime, BubbleBabble.bubblebabble(algo.digest()));
         }
 
         private void setAlgorithm(Metadata metadata) throws NoSuchAlgorithmException {
