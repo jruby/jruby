@@ -15,15 +15,19 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
+import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -37,6 +41,7 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class Bootstrap {
+    private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName) {
@@ -453,28 +458,48 @@ public class Bootstrap {
     }
 
     public static IRubyObject ivarGet(VariableSite site, IRubyObject self) throws Throwable {
-        VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForRead(site.name());
+        RubyClass realClass = self.getMetaClass().getRealClass();
+        VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = findStatic(Bootstrap.class, "instVarNullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
-        IRubyObject nil = self.getRuntime().getNil();
-        nullToNil = insertArguments(nullToNil, 1, nil, site.name());
+        MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        nullToNil = insertArguments(nullToNil, 1, self.getRuntime().getNil());
         nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
 
         // get variable value and filter with nullToNil
-        MethodHandle getValue = findVirtual(IRubyObject.class, "getVariable", methodType(Object.class, int.class));
-        getValue = insertArguments(getValue, 1, accessor.getIndex());
+        MethodHandle getValue;
+        boolean direct = false;
+
+        if (accessor instanceof FieldVariableAccessor) {
+            direct = true;
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            Class cls = REIFIED_OBJECT_CLASSES[offset];
+            getValue = lookup().findGetter(cls, "var" + offset, Object.class);
+            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
+        } else {
+            getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
+            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class, int.class));
+            getValue = insertArguments(getValue, 1, accessor.getIndex());
+        }
+
         getValue = filterReturnValue(getValue, nullToNil);
 
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.getTarget() == null || site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
-//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tget triggered site rebind " + self.getMetaClass().id);
-            fallback = findStatic(Bootstrap.class, "ivarGet", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
+        if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
+            fallback = findStatic(Bootstrap.class, "ivarGetFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
-            site.clearChainCount();
+            site.setTarget(fallback);
+            return (IRubyObject)fallback.invokeWithArguments(self);
         } else {
-//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tget added to PIC " + self.getMetaClass().id);
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                if (direct) {
+                    LOG.info(site.name() + "\tget field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                } else {
+                    LOG.info(site.name() + "\tget on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                }
+            }
             fallback = site.getTarget();
             site.incrementChainCount();
         }
@@ -485,29 +510,52 @@ public class Bootstrap {
 
         getValue = guardWithTest(test, getValue, fallback);
 
-//        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tget on class " + self.getMetaClass().id + " bound directly");
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(getValue);
 
-        return Bootstrap.instVarNullToNil((IRubyObject)accessor.get(self), nil, site.name());
+        return (IRubyObject)getValue.invokeExact(self);
+    }
+
+    public static IRubyObject ivarGetFail(VariableSite site, IRubyObject self) throws Throwable {
+        return site.getVariable(self);
     }
 
     public static void ivarSet(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
-        VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForWrite(site.name());
+        RubyClass realClass = self.getMetaClass().getRealClass();
+        VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name());
 
         // set variable value and fold by returning value
-        MethodHandle setValue = findVirtual(IRubyObject.class, "setVariable", methodType(void.class, int.class, Object.class));
-        setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, int.class, IRubyObject.class));
-        setValue = insertArguments(setValue, 1, accessor.getIndex());
+        MethodHandle setValue;
+        boolean direct = false;
+
+        if (accessor instanceof FieldVariableAccessor) {
+            direct = true;
+            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            Class cls = REIFIED_OBJECT_CLASSES[offset];
+            setValue = findStatic(cls, "setVariableChecked", methodType(void.class, cls, Object.class));
+            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
+        } else {
+            setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
+            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
+            setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
+        }
 
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.getTarget() == null || site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
-//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tset triggered site rebind " + self.getMetaClass().id);
-            fallback = findStatic(Bootstrap.class, "ivarSet", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
+        if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
+            fallback = findStatic(Bootstrap.class, "ivarSetFail", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
-            site.clearChainCount();
+            site.setTarget(fallback);
+            fallback.invokeExact(self, value);
         } else {
-//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tset added to PIC " + self.getMetaClass().id);
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                if (direct) {
+                    LOG.info(site.name() + "\tset field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                } else {
+                    LOG.info(site.name() + "\tset on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
+                }
+            }
             fallback = site.getTarget();
             site.incrementChainCount();
         }
@@ -519,10 +567,14 @@ public class Bootstrap {
 
         setValue = guardWithTest(test, setValue, fallback);
 
-//        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tset on class " + self.getMetaClass().id + " bound directly");
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(setValue);
 
-        accessor.set(self, value);
+        setValue.invokeExact(self, value);
+    }
+
+    public static void ivarSetFail(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
+        site.setVariable(self, value);
     }
 
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
@@ -660,5 +712,9 @@ public class Bootstrap {
 
     public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
+    }
+
+    private static String extractSourceInfo(VariableSite site) {
+        return " (" + site.file() + ":" + site.line() + ")";
     }
 }
