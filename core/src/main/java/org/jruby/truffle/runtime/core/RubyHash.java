@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.util.cli.Options;
 
@@ -29,8 +30,8 @@ public class RubyHash extends RubyObject {
      */
     public static class RubyHashClass extends RubyClass {
 
-        public RubyHashClass(RubyClass objectClass) {
-            super(null, objectClass, "Hash");
+        public RubyHashClass(RubyContext context, RubyClass objectClass) {
+            super(context, objectClass, objectClass, "Hash");
         }
 
         @Override

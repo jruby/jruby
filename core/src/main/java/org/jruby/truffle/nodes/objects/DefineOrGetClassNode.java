@@ -23,8 +23,8 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     @Child protected RubyNode superClass;
 
-    public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParentModule, RubyNode superClass) {
-        super(context, sourceSection, name, lexicalParentModule);
+    public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
+        super(context, sourceSection, name, lexicalParent);
         this.superClass = superClass;
     }
 
@@ -44,14 +44,12 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
         if (constant == null) {
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
-                definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
+                definingClass = new RubyException.RubyExceptionClass(context, lexicalParent, superClassObject, name);
             } else if (superClassObject instanceof RubyString.RubyStringClass) {
-                definingClass = new RubyString.RubyStringClass(superClassObject);
+                definingClass = new RubyString.RubyStringClass(context, lexicalParent, superClassObject, name);
             } else {
-                definingClass = new RubyClass(lexicalParent, superClassObject, name);
+                definingClass = new RubyClass(context, lexicalParent, superClassObject, name);
             }
-
-            lexicalParent.setConstant(this, name, definingClass);
         } else {
             if (constant.getValue() instanceof RubyClass) {
                 definingClass = (RubyClass) constant.getValue();

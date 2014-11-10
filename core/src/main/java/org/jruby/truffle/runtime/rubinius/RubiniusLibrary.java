@@ -30,6 +30,7 @@
 package org.jruby.truffle.runtime.rubinius;
 
 import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -47,21 +48,21 @@ public class RubiniusLibrary {
     private final RubyClass assertionErrorClass;
 
 	public RubiniusLibrary(CoreLibrary coreLib) {
-		rubiniusModule = new RubyModule(coreLib.getModuleClass(), null, "Rubinius");
-		tupleClass = new RubyClass(rubiniusModule, coreLib.getObjectClass(), "Tuple");
-        typeModule = new RubyModule(coreLib.getModuleClass(), rubiniusModule, "Type");
-        environmentAccessModule = new RubyModule(coreLib.getModuleClass(), rubiniusModule, "EnvironmentAccess");
-        channelClass = new RubyClass(rubiniusModule, coreLib.getObjectClass(), "Channel");
-        byteArrayCLass = new RubyClass(rubiniusModule, coreLib.getObjectClass(), "ByteArray");
+        final RubyContext context = coreLib.getContext();
+
+        rubiniusModule = new RubyModule(context, coreLib.getObjectClass(), "Rubinius");
+        tupleClass = new RubyClass(context, rubiniusModule, coreLib.getObjectClass(), "Tuple");
+        typeModule = new RubyModule(context, rubiniusModule, "Type");
+        environmentAccessModule = new RubyModule(context, rubiniusModule, "EnvironmentAccess");
+        channelClass = new RubyClass(context, rubiniusModule, coreLib.getObjectClass(), "Channel");
+        byteArrayCLass = new RubyClass(context, rubiniusModule, coreLib.getObjectClass(), "ByteArray");
 
         //TODO: how is Rubinius.LookupTable specified?
         // rubinius.setConstant("LookupTable", currentNode.getHash());
 
-        vmExceptionClass = new RubyClass(rubiniusModule, coreLib.getExceptionClass(), "VMException");
-        objectBoundsExceededErrorClass = new RubyClass(rubiniusModule, vmExceptionClass, "ObjectBoundsExceededError");
-        assertionErrorClass = new RubyClass(rubiniusModule, vmExceptionClass, "AssertionError");
-
-        coreLib.getObjectClass().setConstant(null, rubiniusModule.getName(), rubiniusModule);
+        vmExceptionClass = new RubyClass(context, rubiniusModule, coreLib.getExceptionClass(), "VMException");
+        objectBoundsExceededErrorClass = new RubyClass(context, rubiniusModule, vmExceptionClass, "ObjectBoundsExceededError");
+        assertionErrorClass = new RubyClass(context, rubiniusModule, vmExceptionClass, "AssertionError");
 
         final String[] files = new String[]{
                 "jruby/truffle/core/rubinius/api/bootstrap/channel.rb",

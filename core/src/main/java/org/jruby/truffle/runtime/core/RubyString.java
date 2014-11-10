@@ -13,6 +13,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
@@ -29,8 +30,8 @@ public class RubyString extends RubyObject {
      */
     public static class RubyStringClass extends RubyClass {
 
-        public RubyStringClass(RubyClass objectClass) {
-            super(null, objectClass, "String");
+        public RubyStringClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name) {
+            super(context, lexicalParent, superclass, name);
         }
 
         @Override

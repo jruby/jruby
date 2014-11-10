@@ -44,8 +44,8 @@ public class RubyThread extends RubyObject {
      */
     public static class RubyThreadClass extends RubyClass {
 
-        public RubyThreadClass(RubyClass objectClass) {
-            super(null, objectClass, "Thread");
+        public RubyThreadClass(RubyContext context, RubyClass objectClass) {
+            super(context, objectClass, objectClass, "Thread");
         }
 
         @Override

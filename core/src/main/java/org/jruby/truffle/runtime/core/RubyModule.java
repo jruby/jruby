@@ -116,34 +116,42 @@ public class RubyModule extends RubyObject implements ModuleChain {
     public static class RubyModuleClass extends RubyClass {
 
         public RubyModuleClass(RubyContext context) {
-            super(context, null, null, null, "Module", false);
+            super(context, null, null, "Module", false);
         }
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyModule(this, null, "(unnamed module)");
+            return new RubyModule(getContext(), getContext().getCoreLibrary().getObjectClass(), "(unnamed module)");
         }
 
     }
 
-    public RubyModule(RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
-        this(moduleClass.getContext(), moduleClass, lexicalParentModule, name);
+    public RubyModule(RubyContext context, RubyModule lexicalParent, String name) {
+        this(context, lexicalParent, name, null);
     }
 
-    public RubyModule(RubyContext context, RubyClass moduleClass, RubyModule lexicalParentModule, String name) {
-        super(moduleClass);
+    public RubyModule(RubyContext context, RubyModule lexicalParent, String name, RubyNode currentNode) {
+        this(context, context.getCoreLibrary().getModuleClass(), lexicalParent, name, currentNode);
+    }
+
+    protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, RubyNode currentNode) {
+        super(selfClass);
         this.context = context;
-
-        if (lexicalParentModule != null && lexicalParentModule != context.getCoreLibrary().getObjectClass()) {
-            name = lexicalParentModule.getName() + "::" + name;
-        }
         this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
 
-        // Constant invalidation for lexical scope.
-        if (lexicalParentModule != null) {
-            lexicalParentModule.addLexicalDependent(this);
+        getAdoptedByLexicalParent(lexicalParent, currentNode);
+    }
+
+    protected void getAdoptedByLexicalParent(RubyModule lexicalParent, RubyNode currentNode) {
+        if (lexicalParent != null) {
+            lexicalParent.setConstant(currentNode, name, this);
+            lexicalParent.addLexicalDependent(this);
+
+            if (lexicalParent != context.getCoreLibrary().getObjectClass()) {
+                name = lexicalParent.getName() + "::" + name;
+            }
         }
     }
 

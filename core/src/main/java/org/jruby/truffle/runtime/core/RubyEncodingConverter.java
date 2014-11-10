@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import org.jcodings.transcode.EConv;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 public class RubyEncodingConverter extends RubyObject {
 
@@ -20,8 +21,8 @@ public class RubyEncodingConverter extends RubyObject {
 
     public static class RubyEncodingConverterClass extends RubyClass {
 
-        public RubyEncodingConverterClass(RubyClass objectClass) {
-            super(null, objectClass, "Converter");
+        public RubyEncodingConverterClass(RubyContext context, RubyClass encodingClass, RubyClass objectClass) {
+            super(context, encodingClass, objectClass, "Converter");
         }
 
         @Override

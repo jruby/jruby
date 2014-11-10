@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 
 /**
@@ -24,8 +25,8 @@ public class RubyException extends RubyObject {
      */
     public static class RubyExceptionClass extends RubyClass {
 
-        public RubyExceptionClass(RubyClass superClass, String name) {
-            super(null, superClass, name);
+        public RubyExceptionClass(RubyContext context, RubyModule lexicalParent, RubyClass superClass, String name) {
+            super(context, lexicalParent, superClass, name);
         }
 
         @Override
