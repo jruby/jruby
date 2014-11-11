@@ -52,7 +52,7 @@ project 'JRuby Core' do
   jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
-  jar 'com.jcraft:jzlib:1.1.2'
+  jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'com.oracle:truffle:0.5'
   jar 'com.oracle:truffle-dsl-processor:0.5', :scope => 'provided'
@@ -294,7 +294,7 @@ project 'JRuby Core' do
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'copy',
-                     :phase => 'package',
+                     :phase => 'initialize',
                      'tasks' => {
                        'exec' => {
                          '@executable' =>  '/bin/sh',

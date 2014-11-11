@@ -114,8 +114,6 @@
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <minitest.version>5.4.1</minitest.version>
-    <test-unit.version>3.0.3</test-unit.version>
-    <power_assert.version>0.1.4</power_assert.version>
     <ant.version>1.9.2</ant.version>
     <diff-lcs.version>1.1.3</diff-lcs.version>
     <jffi.version>1.2.7</jffi.version>
@@ -127,6 +125,7 @@
     <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.7</base.javac.version>
     <krypt.version>0.0.2.rc1</krypt.version>
+    <test-unit.version>3.0.3</test-unit.version>
     <rdoc.version>4.1.0</rdoc.version>
     <rspec.version>2.14.1</rspec.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
@@ -136,6 +135,7 @@
     <jruby.plugins.version>1.0.7-SNAPSHOT</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>
+    <power_assert.version>0.1.4</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <main.basedir>${project.basedir}</main.basedir>
@@ -536,7 +536,7 @@
     <profile>
       <id>rake</id>
       <build>
-        <defaultGoal>test</defaultGoal>
+        <defaultGoal>package</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -545,7 +545,7 @@
     <profile>
       <id>exec</id>
       <build>
-        <defaultGoal>test</defaultGoal>
+        <defaultGoal>package</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -554,7 +554,7 @@
     <profile>
       <id>truffle-specs-language</id>
       <build>
-        <defaultGoal>test</defaultGoal>
+        <defaultGoal>package</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -563,7 +563,7 @@
     <profile>
       <id>truffle-specs-core</id>
       <build>
-        <defaultGoal>test</defaultGoal>
+        <defaultGoal>package</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -572,7 +572,7 @@
     <profile>
       <id>truffle-test-pe</id>
       <build>
-        <defaultGoal>test</defaultGoal>
+        <defaultGoal>package</defaultGoal>
       </build>
       <modules>
         <module>test</module>
