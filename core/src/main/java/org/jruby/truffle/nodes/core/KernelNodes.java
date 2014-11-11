@@ -812,10 +812,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object initializeCopy(RubyBasicObject self, RubyBasicObject other) {
+        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
             notDesignedForCompilation();
 
-            if (self.getLogicalClass() != other.getLogicalClass()) {
+            if (self.getLogicalClass() != from.getLogicalClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("initialize_copy should take same class object", this));
             }
