@@ -472,11 +472,6 @@ public class CoreLibrary {
         return nameError(String.format("private constant %s::%s referenced", module.getName(), name), currentNode);
     }
 
-    public RubyException nameErrorNoMethod(String name, String object, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined method `%s' for %s", name, object), currentNode);
-    }
-
     public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("`%s' is not allowable as an instance variable name", name), currentNode);
