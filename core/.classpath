@@ -21,8 +21,8 @@
 	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jnr-unixsocket/0.3/jnr-unixsocket-0.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jnr-posix/3.0.2/jnr-posix-3.0.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/jruby/joni/joni/2.1.3/joni-2.1.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/jruby/jcodings/jcodings/1.0.12-SNAPSHOT/jcodings-1.0.12-SNAPSHOT.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/jruby/extras/bytelist/1.0.12-SNAPSHOT/bytelist-1.0.12-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/jruby/jcodings/jcodings/1.0.12-SNAPSHOT/jcodings-1.0.12.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/jruby/extras/bytelist/1.0.12-SNAPSHOT/bytelist-1.0.12.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/jruby/yecht/1.0/yecht-1.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/headius/invokebinder/1.4/invokebinder-1.4.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/headius/options/1.1/options-1.1.jar"/>
