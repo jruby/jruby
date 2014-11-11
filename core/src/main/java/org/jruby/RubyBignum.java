@@ -252,7 +252,7 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", alias = "inspect")
     @Override
     public IRubyObject to_s() {
         int base = 10;

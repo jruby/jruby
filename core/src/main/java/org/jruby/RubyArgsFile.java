@@ -760,7 +760,7 @@ public class RubyArgsFile {
         return context.runtime.getGlobalVariables().get("$FILENAME");
     }
 
-    @JRubyMethod(name = "to_s") 
+    @JRubyMethod(name = "to_s", alias = "inspect")
     public static IRubyObject to_s(IRubyObject recv) {
         return recv.getRuntime().newString("ARGF");
     }

@@ -1842,7 +1842,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_to_s
      *
      */
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", alias = "inspect")
     @Override
     public IRubyObject to_s() {
         if(isSingleton()){            

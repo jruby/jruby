@@ -106,7 +106,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         
         falseClass.defineAnnotatedMethods(False.class);
         falseClass.defineAnnotatedMethods(RubyBoolean.class);
-        
+
         falseClass.getMetaClass().undefineMethod("new");
 
         return falseClass;
@@ -122,7 +122,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         trueClass.defineAnnotatedMethods(RubyBoolean.class);
         
         trueClass.getMetaClass().undefineMethod("new");
-        
+
         return trueClass;
     }
     
@@ -153,7 +153,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
             return oth.isTrue() ? f.getRuntime().getTrue() : f;
         }
 
-        @JRubyMethod(name = "to_s")
+        @JRubyMethod(name = "to_s", alias = "inspect")
         public static IRubyObject false_to_s(IRubyObject f) {
             return RubyString.newUSASCIIString(f.getRuntime(), "false");
         }
@@ -182,7 +182,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
             return oth.isTrue() ? t.getRuntime().getFalse() : t;
         }
 
-        @JRubyMethod(name = "to_s")
+        @JRubyMethod(name = "to_s", alias = "inspect")
         public static IRubyObject true_to_s(IRubyObject t) {
             return RubyString.newUSASCIIString(t.getRuntime(), "true");
         }

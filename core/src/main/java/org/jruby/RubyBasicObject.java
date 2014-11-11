@@ -1061,10 +1061,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Ruby runtime = getRuntime();
         if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
             return hashyInspect();
+        } else {
+            if (isNil()) return RubyNil.inspect(runtime.getCurrentContext(), this);
+            return to_s();
         }
-
-        if (isNil()) return RubyNil.inspect(runtime.getCurrentContext(), this);
-        return Helpers.invoke(runtime.getCurrentContext(), this, "to_s");
     }
 
     public IRubyObject hashyInspect() {
