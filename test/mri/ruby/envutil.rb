@@ -32,7 +32,7 @@ module EnvUtil
   LANG_ENVS = %w"LANG LC_ALL LC_CTYPE"
 
   def invoke_ruby(args, stdin_data = "", capture_stdout = false, capture_stderr = false,
-                  encoding: nil, timeout: 10, reprieve: 1,
+                  encoding: nil, timeout: 20, reprieve: 1,
                   stdout_filter: nil, stderr_filter: nil,
                   rubybin: EnvUtil.rubybin,
                   **opt)
