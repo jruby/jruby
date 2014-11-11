@@ -401,7 +401,6 @@ module Test
         unless @terminal_width ||= nil
           begin
             require 'io/console'
-            puts "acquiring winsize for stdout (fd #{$stdout.fileno})"
             width = $stdout.winsize[1]
           rescue LoadError, NoMethodError, Errno::ENOTTY, Errno::EBADF, Errno::EINVAL
             width = ENV["COLUMNS"].to_i.nonzero? || 80
