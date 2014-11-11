@@ -181,7 +181,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         return ArrayNodesFactory.PushOneNodeFactory.create(context, sourceSection, new RubyNode[]{
-                ArrayNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[]{
+                KernelNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[]{
                         node.getFirstNode().accept(this)
                 }),
                 node.getSecondNode().accept(this)
