@@ -8,9 +8,6 @@ task :test => "test:short"
 
 ADDITIONAL_TEST_OPTIONS = ENV['CI'] ? "-v --color=never --tty=no" : ""
 
-ENV['TESTOPT'] ||= ''
-ENV['TESTOPT'] += ADDITIONAL_TEST_OPTIONS
-
 namespace :test do
   desc "Compile test code"
   task :compile do
