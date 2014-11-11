@@ -421,13 +421,11 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
-            clone(frame, self, newObject);
-            return newObject;
-        }
 
-        private void clone(VirtualFrame frame, RubyBasicObject self, RubyBasicObject newObject) {
             newObject.setInstanceVariables(self.getFields());
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
+
+            return newObject;
         }
 
     }
@@ -453,13 +451,11 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
-            dup(frame, self, newObject);
-            return newObject;
-        }
 
-        private void dup(VirtualFrame frame, RubyBasicObject self, RubyBasicObject newObject) {
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
+
+            return newObject;
         }
 
     }
