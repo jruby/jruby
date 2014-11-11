@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -433,46 +434,6 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "dup")
-    public abstract static class DupNode extends HashCoreMethodNode {
-
-        public DupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DupNode(DupNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull")
-        public RubyHash dupNull(RubyHash hash) {
-            notDesignedForCompilation();
-
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0);
-        }
-
-        @Specialization(guards = "isObjectArray")
-        public RubyHash dupObjectArray(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] store = (Object[]) hash.getStore();
-            final Object[] copy = Arrays.copyOf(store, RubyHash.HASHES_SMALL * 2);
-
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, copy, hash.getStoreSize());
-        }
-
-        @Specialization(guards = "isObjectLinkedHashMap")
-        public RubyHash dupObjectLinkedHashMap(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
-            final LinkedHashMap<Object, Object> copy = new LinkedHashMap<>(store);
-
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, copy, 0);
-        }
-
-    }
-
     @CoreMethod(names = "each", needsBlock = true)
     @ImportGuards(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
@@ -643,6 +604,66 @@ public abstract class HashNodes {
             notDesignedForCompilation();
             hash.setDefaultValue(defaultValue);
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    public abstract static class InitializeCopyNode extends HashCoreMethodNode {
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeCopyNode(InitializeCopyNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isOtherNull")
+        public RubyHash dupNull(RubyHash self, RubyHash from) {
+            notDesignedForCompilation();
+
+            if (self == from) {
+                return self;
+            }
+
+            self.setDefaultBlock(from.getDefaultBlock());
+            self.setDefaultValue(from.getDefaultValue());
+            self.setStore(null, 0);
+
+            return self;
+        }
+
+        @Specialization(guards = "isOtherObjectArray")
+        public RubyHash dupObjectArray(RubyHash self, RubyHash from) {
+            notDesignedForCompilation();
+
+            if (self == from) {
+                return self;
+            }
+
+            final Object[] store = (Object[]) from.getStore();
+            self.setStore(Arrays.copyOf(store, RubyHash.HASHES_SMALL * 2), store.length);
+            self.setDefaultBlock(from.getDefaultBlock());
+            self.setDefaultValue(from.getDefaultValue());
+
+            return self;
+        }
+
+        @Specialization(guards = "isOtherObjectLinkedHashMap")
+        public RubyHash dupObjectLinkedHashMap(RubyHash self, RubyHash from) {
+            notDesignedForCompilation();
+
+            if (self == from) {
+                return self;
+            }
+
+            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) from.getStore();
+            self.setStore(new LinkedHashMap<>(store), store.size());
+            self.setDefaultBlock(from.getDefaultBlock());
+            self.setDefaultValue(from.getDefaultValue());
+
+            return self;
         }
 
     }
