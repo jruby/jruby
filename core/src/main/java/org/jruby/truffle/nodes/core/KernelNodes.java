@@ -841,9 +841,9 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object initializeDup(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object initializeDup(VirtualFrame frame, RubyBasicObject self, RubyBasicObject from) {
             notDesignedForCompilation();
-            return initializeCopyNode.call(frame, self, "initialize_copy", null, other);
+            return initializeCopyNode.call(frame, self, "initialize_copy", null, from);
         }
 
     }

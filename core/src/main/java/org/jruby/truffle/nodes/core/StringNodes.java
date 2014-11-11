@@ -15,6 +15,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
+import org.jruby.runtime.Visibility;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -357,26 +359,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "dup")
-    public abstract static class DupNode extends CoreMethodNode {
-
-        public DupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DupNode(DupNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object dup(RubyString string) {
-            notDesignedForCompilation();
-
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), string.getBytes().dup());
-        }
-
-    }
-
     @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodNode {
 
@@ -543,6 +525,32 @@ public abstract class StringNodes {
             self.set(from.getBytes());
             return self;
         }
+    }
+
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    public abstract static class InitializeCopyNode extends CoreMethodNode {
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeCopyNode(InitializeCopyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object initializeCopy(RubyString self, RubyString from) {
+            notDesignedForCompilation();
+
+            if (self == from) {
+                return self;
+            }
+
+            self.getBytes().replace(from.getBytes().bytes());
+
+            return self;
+        }
+
     }
 
     @CoreMethod(names = "ljust", required = 1, optional = 1, lowerFixnumParameters = 0)
