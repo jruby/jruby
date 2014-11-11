@@ -540,38 +540,6 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "to_a")
-    public abstract static class ToArrayNode extends HashCoreMethodNode {
-
-        public ToArrayNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToArrayNode(ToArrayNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isObjectLinkedHashMap")
-        public RubyArray toArray(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
-
-            final Object[] array = new Object[store.size() * 2];
-
-            int n = 0;
-
-            for (Map.Entry<Object, Object> keyValues : store.entrySet()) {
-                array[n] = keyValues.getKey();
-                array[n + 1] = keyValues.getValue();
-                n += 2;
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
-        }
-
-    }
-
     @CoreMethod(names = "initialize", needsBlock = true, optional = 1)
     public abstract static class InitializeNode extends HashCoreMethodNode {
 
@@ -744,6 +712,106 @@ public abstract class HashNodes {
             builder.append("}");
 
             return getContext().makeString(builder.toString());
+        }
+
+    }
+
+    @CoreMethod(names = "key?", required = 1)
+    public abstract static class KeyNode extends HashCoreMethodNode {
+
+        @Child protected DispatchHeadNode eqlNode;
+
+        public KeyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            eqlNode = new DispatchHeadNode(context);
+        }
+
+        public KeyNode(KeyNode prev) {
+            super(prev);
+            eqlNode = prev.eqlNode;
+        }
+
+        @Specialization(guards = "isNull")
+        public boolean keyNull(RubyHash hash, Object key) {
+            return false;
+        }
+
+        @Specialization(guards = "isObjectArray")
+        public boolean keyObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
+            notDesignedForCompilation();
+
+            final int size = hash.getStoreSize();
+            final Object[] store = (Object[]) hash.getStore();
+
+            for (int n = 0; n < store.length; n += 2) {
+                if (n < size && eqlNode.callIsTruthy(frame, store[n], "eql?", null, key)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Specialization(guards = "isObjectLinkedHashMap")
+        public boolean keyObjectLinkedHashMap(RubyHash hash, Object key) {
+            notDesignedForCompilation();
+
+            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
+
+            // TODO(CS): seriously not correct - using Java's Object#equals
+
+            return store.containsKey(key);
+        }
+
+    }
+
+    @CoreMethod(names = "keys")
+    public abstract static class KeysNode extends HashCoreMethodNode {
+
+        public KeysNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public KeysNode(KeysNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isNull")
+        public RubyArray keysNull(RubyHash hash) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
+        @Specialization(guards = "isObjectArray")
+        public RubyArray keysObjectArray(RubyHash hash) {
+            notDesignedForCompilation();
+
+            final Object[] store = (Object[]) hash.getStore();
+
+            final Object[] keys = new Object[hash.getStoreSize()];
+
+            for (int n = 0; n < keys.length; n++) {
+                keys[n] = store[n * 2];
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
+        }
+
+        @Specialization(guards = "isObjectLinkedHashMap")
+        public RubyArray keysObjectLinkedHashMap(RubyHash hash) {
+            notDesignedForCompilation();
+
+            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
+
+            final Object[] keys = new Object[store.size()];
+
+            int n = 0;
+
+            for (Object key : store.keySet()) {
+                keys[n] = key;
+                n++;
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
         }
 
     }
@@ -933,106 +1001,6 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "key?", required = 1)
-    public abstract static class KeyNode extends HashCoreMethodNode {
-
-        @Child protected DispatchHeadNode eqlNode;
-
-        public KeyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context);
-        }
-
-        public KeyNode(KeyNode prev) {
-            super(prev);
-            eqlNode = prev.eqlNode;
-        }
-
-        @Specialization(guards = "isNull")
-        public boolean keyNull(RubyHash hash, Object key) {
-            return false;
-        }
-
-        @Specialization(guards = "isObjectArray")
-        public boolean keyObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
-            final int size = hash.getStoreSize();
-            final Object[] store = (Object[]) hash.getStore();
-
-            for (int n = 0; n < store.length; n += 2) {
-                if (n < size && eqlNode.callIsTruthy(frame, store[n], "eql?", null, key)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        @Specialization(guards = "isObjectLinkedHashMap")
-        public boolean keyObjectLinkedHashMap(RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
-            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
-
-            // TODO(CS): seriously not correct - using Java's Object#equals
-
-            return store.containsKey(key);
-        }
-
-    }
-
-    @CoreMethod(names = "keys")
-    public abstract static class KeysNode extends HashCoreMethodNode {
-
-        public KeysNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public KeysNode(KeysNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull")
-        public RubyArray keysNull(RubyHash hash) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-        }
-
-        @Specialization(guards = "isObjectArray")
-        public RubyArray keysObjectArray(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] store = (Object[]) hash.getStore();
-
-            final Object[] keys = new Object[hash.getStoreSize()];
-
-            for (int n = 0; n < keys.length; n++) {
-                keys[n] = store[n * 2];
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
-        }
-
-        @Specialization(guards = "isObjectLinkedHashMap")
-        public RubyArray keysObjectLinkedHashMap(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
-
-            final Object[] keys = new Object[store.size()];
-
-            int n = 0;
-
-            for (Object key : store.keySet()) {
-                keys[n] = key;
-                n++;
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
-        }
-
-    }
-
     @CoreMethod(names = "size")
     public abstract static class SizeNode extends HashCoreMethodNode {
 
@@ -1107,6 +1075,38 @@ public abstract class HashNodes {
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, values.length);
+        }
+
+    }
+
+    @CoreMethod(names = "to_a")
+    public abstract static class ToArrayNode extends HashCoreMethodNode {
+
+        public ToArrayNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToArrayNode(ToArrayNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isObjectLinkedHashMap")
+        public RubyArray toArray(RubyHash hash) {
+            notDesignedForCompilation();
+
+            final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
+
+            final Object[] array = new Object[store.size() * 2];
+
+            int n = 0;
+
+            for (Map.Entry<Object, Object> keyValues : store.entrySet()) {
+                array[n] = keyValues.getKey();
+                array[n + 1] = keyValues.getValue();
+                n += 2;
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
         }
 
     }
