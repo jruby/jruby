@@ -468,8 +468,7 @@ public class RubyNumeric extends RubyObject {
             warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
             warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
             if (err) {
-                throw getRuntime().newTypeError(
-                        other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
+                coerceFailed(context, other);
             } else {
                 context.runtime.getGlobalVariables().set("$!", savedError);
             }
@@ -487,6 +486,14 @@ public class RubyNumeric extends RubyObject {
             return null;
         }
         return (RubyArray) result;
+    }
+
+    /** coerce_failed
+     *
+     */
+    protected final void coerceFailed(ThreadContext context, IRubyObject other) {
+        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s",
+                (other.isSpecialConst() ? other.inspect() : other.getMetaClass().getName()), getMetaClass()));
     }
 
     /** rb_num_coerce_bin

@@ -100,13 +100,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return x;
     }
     
-    private static IRubyObject bitCoerce(IRubyObject x) {
-        do {
-            if (x instanceof RubyFloat)
-                throw x.getRuntime().newTypeError("can't convert Float to Integer");
-            x = x.convertToInteger("to_int");
-        } while (!(x instanceof RubyFixnum) && !(x instanceof RubyBignum));
-        return x;
+    private IRubyObject bitCoerce(ThreadContext context, IRubyObject y) {
+        if(!(y instanceof RubyFixnum || y instanceof RubyBignum)) {
+            RubyArray ary = doCoerce(context, y, true);
+            y = ary.last();
+            if(!(y instanceof RubyFixnum || y instanceof RubyBignum)) {
+                coerceFailed(context, y);
+            }
+        }
+        return y;
     }
     
     public RubyFixnum(Ruby runtime) {
@@ -1075,7 +1077,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     private IRubyObject op_and19(ThreadContext context, IRubyObject other) {
-        if (!((other = bitCoerce(other)) instanceof RubyFixnum)) {
+        if (!((other = bitCoerce(context, other)) instanceof RubyFixnum)) {
             return ((RubyBignum) other).op_and(context, this);
         }
 
@@ -1087,7 +1089,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @JRubyMethod(name = "|")
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
-        if ((other = bitCoerce(other)) instanceof RubyFixnum) {
+        if ((other = bitCoerce(context, other)) instanceof RubyFixnum) {
             return newFixnum(context.runtime, value | ((RubyFixnum) other).value);
         }
 
@@ -1118,7 +1120,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     private IRubyObject op_xor19(ThreadContext context, IRubyObject other) {
-        if (!((other = bitCoerce(other)) instanceof RubyFixnum)) {
+        if (!((other = bitCoerce(context, other)) instanceof RubyFixnum)) {
             return ((RubyBignum) other).op_xor(context, this);
         }
         return op_xor18(context, other);
