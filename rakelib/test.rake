@@ -6,6 +6,11 @@ task :spec => "spec:ci"
 desc "Alias for test:short"
 task :test => "test:short"
 
+ADDITIONAL_TEST_OPTIONS = ENV['CI'] ? "-v --color=never --tty=no" : ""
+
+ENV['TESTOPT'] ||= ''
+ENV['TESTOPT'] += ADDITIONAL_TEST_OPTIONS
+
 namespace :test do
   desc "Compile test code"
   task :compile do
@@ -55,15 +60,15 @@ namespace :test do
   namespace :mri do
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     task :int do
-      ruby "-X-C -r ./test/mri_test_env.rb test/mri/runner.rb -q -- #{mri_test_files}"
+      ruby "-X-C -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :jit do
-      ruby "-Xjit.threshold=0 -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb -q -- #{mri_test_files}"
+      ruby "-Xjit.threshold=0 -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :aot do
-      ruby "-X+C -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb -q -- #{mri_test_files}"
+      ruby "-X+C -Xjit.background=false -r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task all: %s[int jit aot]
@@ -72,7 +77,6 @@ namespace :test do
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     files = []
-    ENV['TESTOPT'] = '-v'
     File.open('test/jruby.index') do |f|
       f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
