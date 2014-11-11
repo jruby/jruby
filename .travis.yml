@@ -19,7 +19,6 @@ env:
   matrix:
     - TARGET='-Ptest'
     - TARGET='-Pjruby_complete_jar_jruby'
-    - TARGET='-Prake -Dtask=test:rubicon'
     - TARGET='-Prake -Dtask=test:jruby'
     - TARGET='-Prake -Dtask=test:mri'
     - TARGET='-Prake -Dtask=test:slow_suites'

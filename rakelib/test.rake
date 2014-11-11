@@ -20,7 +20,7 @@ namespace :test do
     sh "javac -cp lib/jruby.jar:test/target/junit.jar -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
   end
 
-  short_tests = ['jruby', 'mri', 'rubicon']
+  short_tests = ['jruby', 'mri']
   slow_tests = ['test:slow', 'test:objectspace']
   specs = ['spec:ji', 'spec:compiler', 'spec:ffi', 'spec:regression'];
   long_tests = ["test:tracing"] + short_tests + slow_tests + specs
@@ -91,21 +91,6 @@ namespace :test do
     t.verbose = true
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
-  end
-
-  permute_tests(:rubicon, compile_flags) do |t|
-    files = []
-    File.open('test/rubicon.index') do |f|
-      f.each_line.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
-    t.verbose = true
-    t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-X+O'
   end
 
   permute_tests(:slow, compile_flags) do |t|
