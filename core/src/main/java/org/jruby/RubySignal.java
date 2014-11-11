@@ -100,10 +100,15 @@ public class RubySignal {
     }
 
     @JRubyMethod(required = 1, module = true)
-    public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
-        String signame = signo2signm(sig.convertToInteger().getLongValue());
+    public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject rubySig) {
+        long sig = rubySig.convertToInteger().getLongValue();
+        String signame = signo2signm(sig);
         if (signame == null) {
-            throw context.runtime.newArgumentError("invalid signal number: " + sig);
+            if(sig == 0) {
+                return RubyString.newString(context.runtime, "EXIT");
+            } else {
+                throw context.runtime.newArgumentError("invalid signal number: " + rubySig);
+            }
         }
         return context.runtime.newString(signame);
     }
