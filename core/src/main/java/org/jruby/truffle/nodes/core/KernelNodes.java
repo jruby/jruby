@@ -417,19 +417,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object clone(VirtualFrame frame, RubyModule self) {
-            notDesignedForCompilation();
-
-            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
-            clone(frame, self, newObject);
-            return newObject;
-        }
-
-        @Specialization
         public Object clone(VirtualFrame frame, RubyBasicObject self) {
             notDesignedForCompilation();
 
-            final RubyBasicObject newObject = new RubyBasicObject(self.getLogicalClass());
+            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
             clone(frame, self, newObject);
             return newObject;
         }
@@ -458,19 +449,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object dup(VirtualFrame frame, RubyModule self) {
-            notDesignedForCompilation();
-
-            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
-            dup(frame, self, newObject);
-            return newObject;
-        }
-
-        @Specialization
         public Object dup(VirtualFrame frame, RubyBasicObject self) {
             notDesignedForCompilation();
 
-            final RubyBasicObject newObject = new RubyObject(self.getLogicalClass());
+            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
             dup(frame, self, newObject);
             return newObject;
         }
