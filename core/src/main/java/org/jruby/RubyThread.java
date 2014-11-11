@@ -1417,27 +1417,98 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static RubyThread mainThread(IRubyObject receiver) {
         return receiver.getRuntime().getThreadService().getMainThread();
     }
-    
+
+    /**
+     * Perform an interruptible select operation on the given channel and fptr,
+     * waiting for the requested operations or the given timeout.
+     *
+     * @param io the RubyIO that contains the channel, for managing blocked threads list.
+     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @return true if the IO's channel became ready for the requested operations, false if
+     *         it was not selectable.
+     */
     public boolean select(RubyIO io, int ops) {
         return select(io.getChannel(), io.getOpenFile(), ops);
     }
-    
+
+    /**
+     * Perform an interruptible select operation on the given channel and fptr,
+     * waiting for the requested operations or the given timeout.
+     *
+     * @param io the RubyIO that contains the channel, for managing blocked threads list.
+     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
+     *                zero selects and returns ready channels or nothing immediately, and
+     *                greater than zero selects for at most that many ms.
+     * @return true if the IO's channel became ready for the requested operations, false if
+     *         it timed out or was not selectable.
+     */
     public boolean select(RubyIO io, int ops, long timeout) {
         return select(io.getChannel(), io.getOpenFile(), ops, timeout);
     }
 
+    /**
+     * Perform an interruptible select operation on the given channel and fptr,
+     * waiting for the requested operations.
+     *
+     * @param channel the channel to perform a select against. If this is not
+     *                a selectable channel, then this method will just return true.
+     * @param fptr the fptr that contains the channel, for managing blocked threads list.
+     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @return true if the channel became ready for the requested operations, false if
+     *         it was not selectable.
+     */
     public boolean select(Channel channel, OpenFile fptr, int ops) {
         return select(channel, fptr, ops, -1);
     }
 
+    /**
+     * Perform an interruptible select operation on the given channel and fptr,
+     * waiting for the requested operations.
+     *
+     * @param channel the channel to perform a select against. If this is not
+     *                a selectable channel, then this method will just return true.
+     * @param io the RubyIO that contains the channel, for managing blocked threads list.
+     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @return true if the channel became ready for the requested operations, false if
+     *         it was not selectable.
+     */
     public boolean select(Channel channel, RubyIO io, int ops) {
         return select(channel, io == null ? null : io.getOpenFile(), ops, -1);
     }
 
+    /**
+     * Perform an interruptible select operation on the given channel and fptr,
+     * waiting for the requested operations or the given timeout.
+     *
+     * @param channel the channel to perform a select against. If this is not
+     *                a selectable channel, then this method will just return true.
+     * @param io the RubyIO that contains the channel, for managing blocked threads list.
+     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
+     *                zero selects and returns ready channels or nothing immediately, and
+     *                greater than zero selects for at most that many ms.
+     * @return true if the channel became ready for the requested operations, false if
+     *         it timed out or was not selectable.
+     */
     public boolean select(Channel channel, RubyIO io, int ops, long timeout) {
         return select(channel, io == null ? null : io.getOpenFile(), ops, timeout);
     }
 
+    /**
+     * Perform an interruptible select operation on the given channel and fptr,
+     * waiting for the requested operations or the given timeout.
+     * 
+     * @param channel the channel to perform a select against. If this is not
+     *                a selectable channel, then this method will just return true.
+     * @param fptr the fptr that contains the channel, for managing blocked threads list.
+     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
+     *                zero selects and returns ready channels or nothing immediately, and
+     *                greater than zero selects for at most that many ms.
+     * @return true if the channel became ready for the requested operations, false if
+     *         it timed out or was not selectable.
+     */
     public boolean select(Channel channel, OpenFile fptr, int ops, long timeout) {
         // Use selectables but only if they're not associated with a file (which has odd select semantics)
         if (channel instanceof SelectableChannel && (fptr == null || !fptr.fd().isNativeFile)) {
@@ -1449,7 +1520,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 SelectionKey key = null;
                 try {
                     selectable.configureBlocking(false);
-                    
+
                     if (fptr != null) fptr.addBlockingThread(this);
                     currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
 

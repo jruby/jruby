@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 
@@ -37,11 +38,12 @@ public class RubyConstant {
     }
 
     public boolean isVisibleTo(RubyContext context, LexicalScope lexicalScope, RubyModule module) {
+        CompilerAsserts.neverPartOfCompilation();
+        assert lexicalScope == null || lexicalScope.getLiveModule() == module;
+
         if (!isPrivate) {
             return true;
         }
-
-        final LexicalScope topLexicalScope = lexicalScope;
 
         // Look in lexical scope
         if (lexicalScope != null) {
@@ -62,9 +64,8 @@ public class RubyConstant {
             }
         }
 
-        // Look in Object if there is no qualifier (just CONST, neither Mod::CONST nor ::CONST).
-        if (topLexicalScope != null && topLexicalScope.getLiveModule() == module && // This is a guess, we should have that info from AST
-            context.getCoreLibrary().getObjectClass() == declaringModule) {
+        // Allow Object constants if looking with lexical scope.
+        if (lexicalScope != null && context.getCoreLibrary().getObjectClass() == declaringModule) {
             return true;
         }
 

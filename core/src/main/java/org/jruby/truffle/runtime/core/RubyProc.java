@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.util.cli.Options;
@@ -32,8 +33,8 @@ public class RubyProc extends RubyObject implements MethodLike {
      */
     public static class RubyProcClass extends RubyClass {
 
-        public RubyProcClass(RubyClass objectClass) {
-            super(null, objectClass, "Proc");
+        public RubyProcClass(RubyContext context, RubyClass objectClass) {
+            super(context, objectClass, objectClass, "Proc");
         }
 
         @Override

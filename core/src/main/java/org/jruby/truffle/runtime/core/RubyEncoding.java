@@ -32,8 +32,8 @@ public class RubyEncoding extends RubyObject {
      */
     public static class RubyEncodingClass extends RubyClass {
 
-        public RubyEncodingClass(RubyClass objectClass) {
-            super(null, objectClass, "Encoding");
+        public RubyEncodingClass(RubyContext context, RubyClass objectClass) {
+            super(context, objectClass, objectClass, "Encoding");
         }
 
         @Override

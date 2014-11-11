@@ -1866,9 +1866,9 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if(!(other instanceof RubyModule))
-            return context.runtime.getFalse();
-        RubyModule otherModule = (RubyModule)other;
+        if(!(other instanceof RubyModule)) return context.runtime.getFalse();
+
+        RubyModule otherModule = (RubyModule) other;
         if(otherModule.isIncluded()) {
             return context.runtime.newBoolean(otherModule.isSame(this));
         } else {

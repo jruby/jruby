@@ -3503,6 +3503,14 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("ELOOP"), "Too many levels of symbolic links");
     }
 
+    public RaiseException newErrnoEMFILEError() {
+        return newRaiseException(getErrno().getClass("EMFILE"), "Too many open files");
+    }
+
+    public RaiseException newErrnoENFILEError() {
+        return newRaiseException(getErrno().getClass("ENFILE"), "Too many open files in system");
+    }
+
     public RaiseException newErrnoENOENTError() {
         return newRaiseException(getErrno().getClass("ENOENT"), "File not found");
     }
@@ -3862,6 +3870,10 @@ public final class Ruby implements Constantizable {
                 return newErrnoECONNRESETError();
             } else if ("Too many levels of symbolic links".equals(e.getMessage())) {
                 return newErrnoELOOPError();
+            } else if ("Too many open files".equals(e.getMessage())) {
+                return newErrnoEMFILEError();
+            } else if ("Too many open files in system".equals(e.getMessage())) {
+                return newErrnoENFILEError();
             }
             return newRaiseException(getIOError(), e.getMessage());
         } else {

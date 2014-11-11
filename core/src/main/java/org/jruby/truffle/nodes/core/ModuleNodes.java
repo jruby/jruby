@@ -492,7 +492,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
 
         @Specialization
@@ -500,7 +500,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (inherit) {
-                return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
+                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
             } else {
                 return module.getConstants().containsKey(name.toString());
             }
@@ -510,7 +510,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
 
     }
@@ -561,7 +561,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "const_missing", needsSelf = false, required = 1)
+    @CoreMethod(names = "const_missing", required = 1)
     public abstract static class ConstMissingNode extends CoreMethodNode {
 
         public ConstMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -573,8 +573,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object methodMissing(RubySymbol name) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(name.toString(), this));
+        public Object methodMissing(RubyModule module, RubySymbol name) {
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name.toString(), this));
         }
 
     }

@@ -25,10 +25,10 @@ public class DefineOrGetModuleNode extends RubyNode {
     protected final String name;
     @Child protected RubyNode lexicalParentModule;
 
-    public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParentModule) {
+    public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
         super(context, sourceSection);
         this.name = name;
-        this.lexicalParentModule = lexicalParentModule;
+        this.lexicalParentModule = lexicalParent;
     }
 
     @Override
@@ -43,8 +43,7 @@ public class DefineOrGetModuleNode extends RubyNode {
         RubyModule definingModule;
 
         if (constant == null) {
-            definingModule = new RubyModule(getContext().getCoreLibrary().getModuleClass(), lexicalParent, name);
-            lexicalParent.setConstant(this, name, definingModule);
+            definingModule = new RubyModule(getContext(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
             if (!(module instanceof RubyModule) || !((RubyModule) module).isOnlyAModule()) {
