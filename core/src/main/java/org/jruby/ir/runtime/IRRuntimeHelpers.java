@@ -1175,8 +1175,7 @@ public class IRRuntimeHelpers {
             throw context.runtime.newTypeError("can't define singleton method \"" + method.getName() + "\" for " + obj.getMetaClass().getBaseName());
         }
 
-        if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
-
+        // Frozen checks should happen individually in getSingletonClass
         return obj.getSingletonClass();
     }
 

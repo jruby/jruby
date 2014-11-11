@@ -253,6 +253,8 @@ public class RubyFileStat extends RubyObject {
         if (!(original instanceof RubyFileStat)) {
             throw getRuntime().newTypeError("wrong argument class");
         }
+
+        checkFrozen();
         
         RubyFileStat originalFileStat = (RubyFileStat) original;
         

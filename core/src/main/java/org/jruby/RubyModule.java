@@ -46,6 +46,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.common.RubyWarnings;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -850,9 +851,22 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         testFrozen("module");
-        if (name.equals("__id__") || name.equals("__send__")) {
+        if (name.equals("__id__") || name.equals("__send__") || name.equals("object_id")) {
             runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problem");
         }
+
+        if (name.equals("method_missing")) {
+
+            try {
+                removeMethod(context, name);
+            } catch (RaiseException t) {
+                if(!(t.getException() instanceof RubyNameError)) {
+                    throw t;
+                }
+            }
+            return;
+        }
+
         DynamicMethod method = searchMethod(name);
         if (method.isUndefined()) {
             String s0 = " class";
@@ -949,6 +963,10 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         testFrozen("class/module");
+
+        if(name.equals("object_id") || name.equals("__send__") || name.equals("initialize")) {
+            runtime.getWarnings().warn(ID.UNDEFINING_BAD, "removing `" + name + "' may cause serious problems");
+        }
 
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModule.
@@ -1824,7 +1842,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_to_s
      *
      */
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", alias = "inspect")
     @Override
     public IRubyObject to_s() {
         if(isSingleton()){            

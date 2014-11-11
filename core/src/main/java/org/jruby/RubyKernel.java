@@ -2044,7 +2044,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).instance_variable_set(name, value);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(name = "remove_instance_variable", required = 1)
     public static IRubyObject remove_instance_variable(ThreadContext context, IRubyObject self, IRubyObject name, Block block) {
         return ((RubyBasicObject)self).remove_instance_variable(context, name, block);
     }

@@ -53,7 +53,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     public RubyNil(Ruby runtime) {
         super(runtime, runtime.getNilClass(), false);
-        flags |= NIL_F | FALSE_F;
+        flags |= NIL_F | FALSE_F | FROZEN_F;
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
             // default to a fixed value
@@ -206,7 +206,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @Override
     public RubyFixnum id() {
-        return getRuntime().newFixnum(4);
+        return getRuntime().newFixnum(8);
     }
     
     @Override

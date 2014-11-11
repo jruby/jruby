@@ -116,11 +116,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public RubyFixnum(Ruby runtime, long value) {
         super(runtime.getFixnum());
         this.value = value;
+        this.flags |= FROZEN_F;
     }
     
     private RubyFixnum(RubyClass klazz, long value) {
         super(klazz);
         this.value = value;
+        this.flags |= FROZEN_F;
     }
     
     @Override
