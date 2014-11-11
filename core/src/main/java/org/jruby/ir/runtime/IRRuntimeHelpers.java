@@ -67,12 +67,8 @@ public class IRRuntimeHelpers {
         return blockType == Block.Type.PROC;
     }
 
-    /*
-     * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
-     */
-    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, boolean maybeLambda, IRubyObject returnValue) {
-        // If not in a lambda, check if this was a non-local return
-        if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
+    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, Block.Type blockType) {
+        if (IRRuntimeHelpers.inLambda(blockType)) return;
 
         StaticScope scope = dynScope.getStaticScope();
         IRScopeType scopeType = scope.getScopeType();
@@ -108,6 +104,32 @@ public class IRRuntimeHelpers {
         {
             // Cannot return from the call that we have long since exited.
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
+        }
+    }
+
+    /*
+     * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
+     */
+    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, IRubyObject returnValue) {
+        // If not in a lambda, check if this was a non-local return
+        if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
+
+        IRScopeType scopeType = dynScope.getStaticScope().getScopeType();
+        while (dynScope != null) {
+            StaticScope ss = dynScope.getStaticScope();
+            // SSS FIXME: Why is scopeType empty? Looks like this static-scope
+            // was not associated with the AST scope that got converted to IR.
+            //
+            // Ruby code: lambda { Thread.new { return }.join }.call
+            //
+            // To be investigated.
+            IRScopeType ssType = ss.getScopeType();
+            if (ssType != null) {
+                if (ssType.isMethodType() || (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT)) {
+                    break;
+                }
+            }
+            dynScope = dynScope.getParentScope();
         }
 
         // methodtoReturnFrom will not be -1 for explicit returns from class/module/sclass bodies

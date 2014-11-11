@@ -24,7 +24,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, CHECK_FOR_LJE
     };
 
     Variable  result;
@@ -150,6 +150,9 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
                 return IRRuntimeHelpers.mergeKeywordArguments(context,
                         (IRubyObject) args[0].retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) args[1].retrieve(context, self, currScope, currDynScope, temp));
+            case CHECK_FOR_LJE:
+                IRRuntimeHelpers.checkForLJE(context, currDynScope, ((Boolean)args[0]).isTrue(), blockType);
+                return null;
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);

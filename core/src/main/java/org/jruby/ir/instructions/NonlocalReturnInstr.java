@@ -11,22 +11,20 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public final String methodName; // Primarily a debugging aid
-    public final boolean maybeLambda;
 
-    public NonlocalReturnInstr(Operand returnValue, String methodName, boolean maybeLambda) {
+    public NonlocalReturnInstr(Operand returnValue, String methodName) {
         super(Operation.NONLOCAL_RETURN, returnValue);
         this.methodName = methodName;
-        this.maybeLambda = maybeLambda;
     }
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { returnValue, new StringLiteral(methodName), new Boolean(maybeLambda) };
+        return new Operand[] { returnValue, new StringLiteral(methodName) };
     }
 
     @Override
     public String toString() {
-        return getOperation() + "(" + returnValue + ", <" + methodName + ":" + maybeLambda + ">" + ")";
+        return getOperation() + "(" + returnValue + ", <" + methodName + ">" + ")";
     }
 
     public boolean computeScopeFlags(IRScope scope) {
@@ -36,7 +34,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(returnValue.cloneForInlining(info), methodName, maybeLambda);
+        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(returnValue.cloneForInlining(info), methodName);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.isClosure()) {
@@ -46,7 +44,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
                 return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
             }
 
-            return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName, maybeLambda);
+            return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName);
         } else {
             throw new UnsupportedOperationException("Nonlocal returns shouldn't show up outside closures.");
         }

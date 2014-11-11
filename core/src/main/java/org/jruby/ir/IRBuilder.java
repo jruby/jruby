@@ -3205,9 +3205,7 @@ public class IRBuilder {
         return manager.getNil();
     }
 
-    public Operand buildReturn(ReturnNode returnNode, IRScope s) {
-        Operand retVal = (returnNode.getValueNode() == null) ? manager.getNil() : build(returnNode.getValueNode(), s);
-
+    private Operand processEnsureRescueBlocks(IRScope s, Operand retVal) { 
         // Before we return,
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
@@ -3220,20 +3218,29 @@ public class IRBuilder {
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
             addInstr(s, new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
         }
+       return retVal;
+    }
+
+    public Operand buildReturn(ReturnNode returnNode, IRScope s) {
+        Operand retVal = (returnNode.getValueNode() == null) ? manager.getNil() : build(returnNode.getValueNode(), s);
 
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
             // If this happens to be a module body, the runtime throws a local jump error if the
             // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             IRMethod m = s.getNearestMethod();
-            addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName(), m == null));
+            addInstr(s, new RuntimeHelperCall(null, CHECK_FOR_LJE, new Operand[] { new Boolean(m == null) }));
+            retVal = processEnsureRescueBlocks(s, retVal);
+            addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName()));
         } else if (s.isModuleBody()) {
             IRMethod sm = s.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(s, new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else addInstr(s, new NonlocalReturnInstr(retVal, sm.getName(), false));
+            retVal = processEnsureRescueBlocks(s, retVal);
+            if (sm != null) addInstr(s, new NonlocalReturnInstr(retVal, sm.getName()));
         } else {
+            retVal = processEnsureRescueBlocks(s, retVal);
             addInstr(s, new ReturnInstr(retVal));
         }
 
