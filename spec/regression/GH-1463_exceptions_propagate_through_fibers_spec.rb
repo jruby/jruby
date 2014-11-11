@@ -39,7 +39,7 @@ if (RUBY_VERSION >= '1.9')
           ex.should be_kind_of(StandardError)
         end
 
-        thread_exceptions.should be_empty
+        expect(thread_exceptions).to eq []
       end
     end
 
@@ -79,7 +79,7 @@ if (RUBY_VERSION >= '1.9')
           ex.should be_kind_of(StandardError)
         end
 
-        fiber_exceptions.should be_empty
+        expect(fiber_exceptions).to eq []
       end
     end
   end
