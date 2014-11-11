@@ -45,9 +45,6 @@ class TestKernel < Test::Unit::TestCase
   def test_stuff_seemingly_out_of_context
     assert !Kernel.eval("defined? some_unknown_variable")
     assert_equal nil, true && defined?(unknownConstant)
-
-    # JRUBY-117 - remove_instance_variable should be private
-    assert_equal [:remove_instance_variable], Object.private_instance_methods.grep(:remove_instance_variable)
   end
 
 
