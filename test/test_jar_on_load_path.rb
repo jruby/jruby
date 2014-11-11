@@ -6,4 +6,10 @@ class TestJarOnLoadPath < Test::Unit::TestCase
     require 'test_jruby_1332.rb'
     assert($jruby_1332)
   end
+
+  def test_jar_on_load_path_with_trailing_slash
+    $LOAD_PATH << "test/test_jruby_1332.jar!/"
+    require 'test_jruby_1332.rb'
+    assert($jruby_1332)
+  end
 end
