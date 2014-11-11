@@ -631,7 +631,7 @@ public class RubyNumeric extends RubyObject {
     */
     @JRubyMethod(name = "quo")
     public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
-        return RubyRational.newRationalRaw(context.runtime, this).callMethod(context, "/", other);
+        return RubyRational.numericQuo(context, this, other);
     }
 
     /** num_div

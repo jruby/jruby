@@ -75,6 +75,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -1058,5 +1059,21 @@ public class RubyRational extends RubyNumeric {
             throw context.runtime.newArgumentError("invalid value for convert(): " + s.convertToString());
         }
         return a.eltInternal(0);
-    }    
+    }
+
+    /**
+     * numeric_quo
+     */
+    public static IRubyObject numericQuo(ThreadContext context, IRubyObject x, IRubyObject y) {
+        if (y instanceof RubyFloat) {
+            return ((RubyNumeric)x).fdiv(context, y);
+        }
+
+        if (Numeric.CANON && canonicalization) {
+            x = newRationalRaw(context.runtime, x);
+        } else {
+            x = TypeConverter.convertToType(x, context.runtime.getRational(), "to_r");
+        }
+        return x.callMethod(context, "/", y);
+    }
 }
