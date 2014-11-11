@@ -875,7 +875,7 @@ public class IRRuntimeHelpers {
         // method = method == null ? UndefinedMethod.getInstance() : method;
 
         IRubyObject rVal = null;
-        if (method.isUndefined()|| (superClass.isPrepended() && (method.getImplementationClass() == self.getType()))) {
+        if (method.isUndefined()|| (superClass.isPrepended() && (method.isImplementedBy(self.getType())))) {
             rVal = Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block);
         } else {
             rVal = method.call(context, self, superClass, methodName, args, block);

@@ -1,1 +1,1 @@
-fails:Module#prepend throws a NoMethodError when there is no more superclass
+prepend:Module#prepend throws a NoMethodError when there is no more superclass

@@ -2023,7 +2023,7 @@ public class Helpers {
 
         RubyClass metaClass = value.getMetaClass();
         DynamicMethod method = metaClass.searchMethod("to_a");
-        if (method.isUndefined() || method.getImplementationClass() == runtime.getKernel()) {
+        if (method.isUndefined() || method.isImplementedBy(runtime.getKernel())) {
             return new IRubyObject[] {value};
         }
 

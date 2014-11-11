@@ -1538,7 +1538,7 @@ public class RubyModule extends RubyObject {
             RespondToMissingMethod rtmm = (RespondToMissingMethod)other;
 
             return this.site.methodName.equals(rtmm.site.methodName) &&
-                    getImplementationClass() == rtmm.getImplementationClass();
+                    isImplementedBy(rtmm.getImplementationClass());
         }
     }
 
@@ -1707,7 +1707,7 @@ public class RubyModule extends RubyObject {
             DynamicMethod method = entry.getValue();
             // Do not clone cached methods
             // FIXME: MRI copies all methods here
-            if (method.getImplementationClass() == realType || method.isUndefined()) {
+            if (method.isImplementedBy(realType) || method.isUndefined()) {
                 
                 // A cloned method now belongs to a new class.  Set it.
                 // TODO: Make DynamicMethod immutable
@@ -2111,7 +2111,7 @@ public class RubyModule extends RubyObject {
                     seen.add(methodName);
 
                     DynamicMethod method = (DynamicMethod) entry.getValue();
-                    if ((method.getImplementationClass() == realType || method.getImplementationClass() == type) &&
+                    if ((method.isImplementedBy(realType) || method.isImplementedBy(type)) &&
                         (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
                         ! method.isUndefined()) {
 
