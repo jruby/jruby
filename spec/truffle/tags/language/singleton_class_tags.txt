@@ -1,1 +1,0 @@
-fails:A constant on a singleton class is preserved when the object is cloned

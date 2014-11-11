@@ -422,6 +422,11 @@ public abstract class KernelNodes {
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
 
+            // Copy the singleton class if any.
+            if (self.getMetaClass().isSingleton()) {
+                newObject.getSingletonClass(this).initCopy(self.getMetaClass());
+            }
+
             newObject.setInstanceVariables(self.getFields());
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
 
