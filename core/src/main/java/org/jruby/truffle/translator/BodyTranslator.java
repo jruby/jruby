@@ -212,7 +212,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitAttrAssignNodeExtraArgument(org.jruby.ast.AttrAssignNode node, RubyNode extraArgument) {
         final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), node.getArgsNode(), null);
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
-        return visitCallNodeExtraArgument(callNode, extraArgument, isAccessorOnSelf, false);
+        return visitCallNodeExtraArgument(callNode, extraArgument, isAccessorOnSelf);
     }
 
     @Override
@@ -289,13 +289,13 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitCallNode(CallNode node) {
-        return visitCallNodeExtraArgument(node, null, false, false);
+        return visitCallNodeExtraArgument(node, null, false);
     }
 
     /**
      * See translateDummyAssignment to understand what this is for.
      */
-    public RubyNode visitCallNodeExtraArgument(CallNode node, RubyNode extraArgument, boolean ignoreVisibility, boolean isVCall) {
+    public RubyNode visitCallNodeExtraArgument(CallNode node, RubyNode extraArgument, boolean ignoreVisibility) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
@@ -318,7 +318,7 @@ public class BodyTranslator extends Translator {
                     new RescueNode[] {new RescueAnyNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()))},
                     new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
         } else {
-            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), isVCall, ignoreVisibility, false, argumentsAndBlock.getArguments());
+            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), ignoreVisibility, false, argumentsAndBlock.getArguments());
         }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
@@ -855,7 +855,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
 
-        return visitCallNodeExtraArgument(callNode, null, true, false);
+        return visitCallNodeExtraArgument(callNode, null, true);
     }
 
     @Override
@@ -2037,7 +2037,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node args = null;
         final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), args, null);
 
-        return visitCallNodeExtraArgument(callNode, null, true, true);
+        return visitCallNodeExtraArgument(callNode, null, true);
     }
 
     @Override

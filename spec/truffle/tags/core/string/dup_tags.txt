@@ -2,5 +2,3 @@ fails:String#dup calls #initialize_copy on the new instance
 fails:String#dup copies instance variables
 fails:String#dup does not modify the original string when changing dupped string
 fails:String#dup does not copy constants defined in the singleton class
-fails:String#dup does not copy modules included in the singleton class
-fails:String#dup does not copy singleton methods
