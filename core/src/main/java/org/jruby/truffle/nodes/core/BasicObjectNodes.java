@@ -239,7 +239,7 @@ public abstract class BasicObjectNodes {
         }
 
         private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name.toString(), self.toString(), this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
         }
 
     }
