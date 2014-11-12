@@ -1631,7 +1631,7 @@ public class JVMVisitor extends IRVisitor {
             case CHECK_FOR_LJE:
                 jvmMethod().loadContext();
                 jvmLoadLocal(DYNAMIC_SCOPE);
-                jvmMethod().pushBoolean(((Boolean)runtimehelpercall.getArgs()[0]).isTrue());
+                jvmAdapter().ldc(((Boolean)runtimehelpercall.getArgs()[0]).isTrue());
                 jvmMethod().loadBlockType();
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.Type.class));
                 break;
