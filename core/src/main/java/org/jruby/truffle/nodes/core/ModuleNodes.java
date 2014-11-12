@@ -371,7 +371,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "class_eval", optional = 3, needsBlock = true)
+    @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
         @Child protected YieldDispatchHeadNode yield;
@@ -776,26 +776,6 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
-        }
-    }
-
-    @CoreMethod(names = "module_eval", required = 1, optional = 2)
-    public abstract static class ModuleEvalNode extends CoreMethodNode {
-
-        public ModuleEvalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ModuleEvalNode(ModuleEvalNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyModule moduleEval(RubyModule module, RubyString code, @SuppressWarnings("unused") Object file, @SuppressWarnings("unused") Object line) {
-            notDesignedForCompilation();
-
-            module.moduleEval(this, code.toString());
-            return module;
         }
     }
 

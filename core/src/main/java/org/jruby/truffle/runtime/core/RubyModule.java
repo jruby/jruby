@@ -430,12 +430,6 @@ public class RubyModule extends RubyObject implements ModuleChain {
         }
     }
 
-    public void moduleEval(RubyNode currentNode, String source) {
-        RubyNode.notDesignedForCompilation();
-
-        getContext().eval(source, this, currentNode);
-    }
-
     public Map<String, RubyConstant> getConstants() {
         return constants;
     }
