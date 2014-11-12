@@ -124,6 +124,9 @@ public class UndefinedValue extends Operand implements IRubyObject {
      */
     public boolean isImmediate() { throw undefinedOperation(); }
 
+    @Override
+    public boolean isSpecialConst() { throw undefinedOperation(); }
+
     /**
      * RubyMethod getRubyClass.
      * @return

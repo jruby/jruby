@@ -504,6 +504,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     	return false;
     }
 
+    @Override
+    public boolean isSpecialConst() {
+        return isImmediate() || !isTrue();
+    }
+
     /**
      * if exist return the meta-class else return the type of the object.
      *

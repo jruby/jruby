@@ -33,8 +33,14 @@ package org.jruby.ast.util;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyHash;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
+
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  *
@@ -144,5 +150,48 @@ public final class ArgsUtil {
             
         }
         return runtime.getNil();
+    }
+
+    /**
+     * Check that the given kwargs hash doesn't contain any keys other than those which are given as valid.
+     * @param context The context to execute in
+     * @param options A RubyHash of options to extract kwargs from
+     * @param validKeys A list of valid kwargs keys.
+     * @return an array of objects corresponding to the given keys.
+     */
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, RubyHash options, String[] validKeys) {
+        IRubyObject[] ret = new IRubyObject[validKeys.length];
+        int index = 0;
+        HashSet<RubySymbol> validKeySet = new HashSet<RubySymbol>();
+
+        // Build the return values
+        for(String key : validKeys) {
+            RubySymbol keySym = context.runtime.newSymbol(key);
+            if (options.containsKey(keySym)) {
+                ret[index] = options.fastARef(keySym);
+            } else {
+                ret[index] = context.runtime.getNil();
+            }
+            index++;
+            validKeySet.add(keySym);
+        }
+
+        // Check for any unknown keys
+        for(Object obj : options.keySet()) {
+            if (!validKeySet.contains(obj)) {
+                throw context.runtime.newArgumentError("unknown keyword: " + obj);
+            }
+        }
+
+        return ret;
+    }
+
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String[] validKeys) {
+        IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, args);
+        if(options instanceof RubyHash) {
+            return extractKeywordArgs(context, (RubyHash)options, validKeys);
+        } else {
+            return null;
+        }
     }
 }
