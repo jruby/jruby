@@ -5,8 +5,6 @@ exclude :test_signal2, "SignalException needs to be its own class which provides
 exclude :test_trap, "SignalException needs to be its own class which provides a #signo accessor"
 exclude :test_signal_exception, "SignalException needs to be its own class which enforces args"
 exclude :test_signame, "needs investigation - OutOfMemoryError"
-
-# exclude :test_ignored_interrupt, "uses SIGINT which is already in use on the JVM"
 exclude :test_trap_uncatchable_KILL, "uses SIGKILL which is already in use on the JVM"
 exclude :test_trap_uncatchable_STOP, "uses SIGSTOP which is already in use on the JVM"
 exclude :test_trap_puts, "fails due to use of INT. Works when the test uses SIGUSR2"
