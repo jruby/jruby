@@ -41,8 +41,8 @@ class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
 
   def test_loading_compiled_ruby_class_from_classpath
     create_compiled_class
-
     append_to_classpath @jruby_home
+
     result = nil
 
     FileUtils.cd("..") do
@@ -91,7 +91,7 @@ public class #{StarterName} {
   end
 
   def remove_test_artifacts
-    remove_ruby_source_files
+    #remove_ruby_source_files
     FileUtils.rm_rf [JarFile, StarterSource, StarterClass, Manifest]
   end
 

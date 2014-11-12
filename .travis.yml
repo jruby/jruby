@@ -24,6 +24,10 @@ env:
 
 matrix:
   fast_finish: true
+  include:
+    # these profile do no need to run for all JDKs
+    - env: TARGET='test-jruby-jars'
+      jdk: openjdk7
 
 branches:
   only:

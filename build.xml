@@ -16,6 +16,7 @@
 
     <import file="netbeans-ant.xml" optional="true"/>
     <import file="ivy/build.xml"/>
+    <import file="antlib/extra.xml"/>
     <import file="antlib/test.xml"/>
     <import file="antlib/spec.xml"/>
     <import file="antlib/util.xml"/>

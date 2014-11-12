@@ -6,7 +6,19 @@ module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SEPARATOR = WINDOWS ? '\\' : '/'
-  RUBY = '"' + File.join([RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']]) << RbConfig::CONFIG['EXEEXT'] + '"'
+  RUBY = if RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
+           exe = 'java'
+           exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
+           file = File.expand_path('maven/jruby-complete/target/jruby-complete-*.jar')
+           file = Dir[ file ].first
+           exe += " -cp .:#{file} org.jruby.Main"
+           exe
+         else
+           exe = '"' + File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['RUBY_INSTALL_NAME'])
+           exe += RbConfig::CONFIG['EXEEXT']  if RbConfig::CONFIG['EXEEXT']
+           exe += '"'
+           exe
+         end
 
   if (WINDOWS)
     RUBY.gsub!('/', '\\')
@@ -27,7 +39,8 @@ module TestHelper
   end
 
   def jruby(*args)
-    with_jruby_shell_spawning { `#{RUBY} #{args.join(' ')}` }
+    ruby = RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}")
+    with_jruby_shell_spawning { `#{ruby} #{args.join(' ')}` }
   end
 
   def jruby_with_pipe(pipe, *args)
@@ -66,6 +79,7 @@ module TestHelper
 
   def run_in_sub_runtime(script)
     container = org.jruby.embed.ScriptingContainer.new(org.jruby.embed.LocalContextScope::SINGLETHREAD)
+    container.setLoadPaths(['.'])
     container.runScriptlet("require 'java'")
     container.runScriptlet(script)
   end

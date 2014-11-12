@@ -1,15 +1,11 @@
 # coding: utf-8
 require 'test/unit'
+require 'test/test_helper'
 require 'rbconfig'
 
 class TestDir < Test::Unit::TestCase
+  include TestHelper
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
-
-  def jruby
-    exe = File.join RbConfig::CONFIG['bindir'], RbConfig::CONFIG['RUBY_INSTALL_NAME']
-    exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
-    exe
-  end
 
   def setup
     @save_dir = Dir.pwd
@@ -120,18 +116,21 @@ class TestDir < Test::Unit::TestCase
 
   # http://jira.codehaus.org/browse/JRUBY-300
   def test_chdir_and_pwd
-    java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../target/test-classes')
-    java_test_classes = java_test_classes + ":" + File.expand_path(File.dirname(__FILE__) + '/../core/target/test-classes')
+    java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../test/target/test-classes')
+    java_test_classes = java_test_classes + File::PATH_SEPARATOR + File.expand_path(File.dirname(__FILE__) + '/../core/target/test-classes')
     Dir.mkdir("testDir_4")
     Dir.chdir("testDir_4") do
-      pwd = `#{jruby} -e "puts Dir.pwd"`
+      pwd = `#{RUBY} -e "puts Dir.pwd"`
       pwd.gsub! '\\', '/'
       assert_equal("testDir_4", pwd.split("/")[-1].strip)
 
-      pwd = `#{ENV_JAVA['jruby.home']}/bin/jruby -e "puts Dir.pwd"`
-      pwd.gsub! '\\', '/'
-      assert_equal("testDir_4", pwd.split("/")[-1].strip)
-
+      if (ENV_JAVA['jruby.home'] and not 
+          ENV_JAVA['jruby.home'].match( /!\// ) and not
+          ENV_JAVA['jruby.home'].match( /:\// ))
+        pwd = `#{ENV_JAVA['jruby.home']}/bin/jruby -e "puts Dir.pwd"`
+        pwd.gsub! '\\', '/'
+        assert_equal("testDir_4", pwd.split("/")[-1].strip)
+      end
       pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
       pwd.gsub! '\\', '/'
       assert_equal("testDir_4", pwd.split("/")[-1].strip)

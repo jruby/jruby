@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 require 'test/unit'
+require 'test/test_helper'
 require 'rbconfig'
 require 'stringio'
 require 'java'
 require 'jruby'
 
 class TestIO < Test::Unit::TestCase
+  include TestHelper
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SOLARIS = RbConfig::CONFIG['host_os'] =~ /solaris/
 
@@ -473,7 +475,7 @@ class TestIO < Test::Unit::TestCase
   #JRUBY-3012
   def test_io_reopen
     quiet_script = File.dirname(__FILE__) + '/quiet.rb'
-    result = `#{ENV_JAVA['jruby.home']}/bin/jruby #{quiet_script}`.chomp
+    result = `#{RUBY} #{quiet_script}`.chomp
     assert_equal("foo", result)
   end
 
