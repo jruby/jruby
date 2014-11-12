@@ -2421,13 +2421,13 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_class_method", rest = true)
     public RubyModule public_class_method(IRubyObject[] args) {
-        getMetaClass().setMethodVisibility(args, PUBLIC);
+        getSingletonClass().setMethodVisibility(args, PUBLIC);
         return this;
     }
 
     @JRubyMethod(name = "private_class_method", rest = true)
     public RubyModule private_class_method(IRubyObject[] args) {
-        getMetaClass().setMethodVisibility(args, PRIVATE);
+        getSingletonClass().setMethodVisibility(args, PRIVATE);
         return this;
     }
 
