@@ -426,6 +426,34 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = {"class_exec","module_exec"}, argumentsAsArray = true, needsBlock = true)
+    public abstract static class ClassExecNode extends CoreMethodNode {
+
+        @Child protected YieldDispatchHeadNode yield;
+
+        public ClassExecNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
+        }
+
+        public ClassExecNode(ClassExecNode prev) {
+            super(prev);
+            yield = prev.yield;
+        }
+
+        public abstract Object executeClassEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
+
+        @Specialization
+        public Object classEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
+            notDesignedForCompilation();
+
+            // TODO: deal with args
+
+            return yield.dispatchWithModifiedSelf(frame, block, self);
+        }
+
+    }
+
     @CoreMethod(names = "class_variable_defined?")
     public abstract static class ClassVariableDefinedNode extends CoreMethodNode {
 
@@ -687,6 +715,42 @@ public abstract class ModuleNodes {
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
             final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
+        }
+
+    }
+
+    @CoreMethod(names = "initialize", needsBlock = true)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        @Child protected ModuleNodes.ClassExecNode classExecNode;
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        public abstract RubyModule executeInitialize(VirtualFrame frame, RubyModule module, RubyProc block);
+
+        void classEval(VirtualFrame frame, RubyModule module, RubyProc block) {
+            if (classExecNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null,null}));
+            }
+            classExecNode.executeClassEval(frame, module, new Object[]{}, block);
+        }
+
+        @Specialization
+        public RubyModule initialize(RubyModule module, UndefinedPlaceholder block) {
+            return module;
+        }
+
+        @Specialization
+        public RubyModule initialize(VirtualFrame frame, RubyModule module, RubyProc block) {
+            classEval(frame, module, block);
+            return module;
         }
 
     }

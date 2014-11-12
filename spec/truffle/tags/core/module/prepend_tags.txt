@@ -17,3 +17,6 @@ fails:Module#prepend detects cyclic prepends
 fails:Module#prepend returns the class it's included into
 fails:Module#prepend clears any caches
 fails:Module#prepend includes prepended modules in ancestors
+fails:Module#prepend does not import constants
+fails:Module#prepend does not import methods to modules and classes
+fails:Module#prepend accepts no-arguments
