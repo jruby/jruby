@@ -1171,11 +1171,11 @@ public class IRRuntimeHelpers {
     }
 
     private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
-        if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
+        if (obj instanceof RubyFixnum || obj instanceof RubySymbol || obj instanceof RubyFloat) {
             throw context.runtime.newTypeError("can't define singleton method \"" + method.getName() + "\" for " + obj.getMetaClass().getBaseName());
         }
 
-        if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
+        // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
 
         return obj.getSingletonClass();
     }
