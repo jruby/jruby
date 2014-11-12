@@ -528,7 +528,7 @@ class ServerTest < Test::Unit::TestCase
     loop do
       sock.syswrite("2")
     end
-  rescue Errno::EPIPE
+  rescue Errno::EPIPE, Errno::ECONNRESET
     # ok
   rescue => ex
     # FIXME: make Windows behave the same?
