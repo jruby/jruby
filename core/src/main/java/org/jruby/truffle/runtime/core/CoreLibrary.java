@@ -407,6 +407,11 @@ public class CoreLibrary {
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
+    public RubyException argumentError(int passed, int required, int optional, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required+optional), currentNode);
+    }
+
     public RubyException localJumpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(localJumpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));

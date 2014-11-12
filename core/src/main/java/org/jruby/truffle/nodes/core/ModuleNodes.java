@@ -417,6 +417,13 @@ public abstract class ModuleNodes {
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
+        @Specialization
+        public Object classEval(RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
+        }
+
     }
 
     @CoreMethod(names = "class_variable_defined?")
