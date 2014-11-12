@@ -87,12 +87,12 @@ modes = []
 modes << InterpreterSpecUtils unless (ENV['INTERPRETER_TEST'] == 'false')
 modes << JITSpecUtils unless (ENV['COMPILER_TEST'] == 'false')
 
+Block = org.jruby.runtime.Block
+IRubyObject = org.jruby.runtime.builtin.IRubyObject
+
 modes.each do |mode|
   describe "JRuby's #{mode.name}" do
     include mode
-
-    Block = org.jruby.runtime.Block
-    IRubyObject = org.jruby.runtime.builtin.IRubyObject
 
     it "assigns literal values to locals" do
       run("a = 5; a") {|result| expect(result).to eq 5 }
