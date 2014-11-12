@@ -115,8 +115,12 @@ public class SunSignalFacade implements SignalFacade {
     public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
         SignalHandler handler;
         Ruby runtime = recv.getRuntime();
-        synchronized (original) {
-            handler = original.get(new Signal(sig.toString()));
+        try {
+            synchronized (original) {
+                handler = original.get(new Signal(sig.toString()));
+            }
+        } catch (IllegalArgumentException e) {
+            handler = null;
         }
         if (handler != null) {
             return trap(runtime, sig.toString(), handler);
@@ -188,12 +192,12 @@ public class SunSignalFacade implements SignalFacade {
                     return runtime.getNil();
                 }
             };
-            if (oldHandler == null) {
-                retVals[0] = runtime.newString("DEFAULT");
-            } else if (oldHandler == SignalHandler.SIG_DFL) {
+            if (oldHandler == SignalHandler.SIG_DFL) {
                 retVals[0] = runtime.newString("SYSTEM_DEFAULT");
             } else if (oldHandler == SignalHandler.SIG_IGN) {
                 retVals[0] = runtime.newString("IGNORE");
+            } else {
+                retVals[0] = runtime.newString("DEFAULT");
             }
         } else {
             final RubyModule signalModule = runtime.getModule("Signal");
