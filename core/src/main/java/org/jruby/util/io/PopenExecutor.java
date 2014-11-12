@@ -1762,6 +1762,12 @@ public class PopenExecutor {
             }
         }
 
+        // restructure command as a single string if chdir and has args
+        if (eargp.chdir_given() && argc > 1) {
+            RubyArray array = RubyArray.newArrayNoCopy(runtime, argv);
+            prog = (RubyString)array.join(context, RubyString.newString(runtime, " "));
+        }
+
         if (!env.isNil()) {
             eargp.env_modification = RubyIO.checkExecEnv(context, (RubyHash)env);
         }
