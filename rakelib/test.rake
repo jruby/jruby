@@ -12,6 +12,8 @@ if ENV['CI']
 
   # for normal test/unit tests
   ENV['TESTOPT'] = "-v --no-use-color"
+else
+  ADDITIONAL_TEST_OPTIONS = ""
 end
 
 namespace :test do
