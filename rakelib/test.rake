@@ -8,7 +8,7 @@ task :test => "test:short"
 
 if ENV['CI']
   # MRI tests have a different flag for color
-  ADDITIONAL_OPTIONS = "-v --color=never --tty=no"
+  ADDITIONAL_TEST_OPTIONS = "-v --color=never --tty=no"
 
   # for normal test/unit tests
   ENV['TESTOPT'] = "-v --no-use-color"
