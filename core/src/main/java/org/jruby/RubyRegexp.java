@@ -142,16 +142,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private static final class RegexpCache<K, V> {
         Map<K, WeakReference<V>> cache = new WeakHashMap<>();
-        public int misses = 0;
-        public int hits = 0;
 
         public synchronized V get(K key) {
             WeakReference<V> entry = cache.get(key);
             if(entry == null) {
-                misses += 1;
                 return null;
             } else {
-                hits += 1;
                 return entry.get();
             }
         }
