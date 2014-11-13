@@ -68,20 +68,8 @@ class ModuleTranslator extends BodyTranslator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-
-        /*
-         * The top-level translator puts methods into Object. We put ours into the self, which is
-         * the class being defined.
-         */
-
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), node.getName(), false, node.getBodyNode());
-
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, false, source);
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode(), false);
-
-        return new AddMethodNode(context, sourceSection, new SelfNode(context, sourceSection), functionExprNode);
+        final SelfNode classNode = new SelfNode(context, sourceSection);
+        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
     }
 
     @Override
