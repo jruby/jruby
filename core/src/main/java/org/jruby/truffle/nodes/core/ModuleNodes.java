@@ -371,7 +371,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "class_eval", optional = 3, needsBlock = true)
+    @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
         @Child protected YieldDispatchHeadNode yield;
@@ -415,6 +415,13 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             return yield.dispatchWithModifiedSelf(frame, block, self);
+        }
+
+        @Specialization
+        public Object classEval(RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
 
     }
@@ -492,7 +499,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
 
         @Specialization
@@ -500,7 +507,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (inherit) {
-                return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
+                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
             } else {
                 return module.getConstants().containsKey(name.toString());
             }
@@ -510,7 +517,7 @@ public abstract class ModuleNodes {
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupConstant(getContext(), null, module, name.toString()) != null;
+            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
 
     }
@@ -561,7 +568,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "const_missing", needsSelf = false, required = 1)
+    @CoreMethod(names = "const_missing", required = 1)
     public abstract static class ConstMissingNode extends CoreMethodNode {
 
         public ConstMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -573,8 +580,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object methodMissing(RubySymbol name) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(name.toString(), this));
+        public Object methodMissing(RubyModule module, RubySymbol name) {
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name.toString(), this));
         }
 
     }
@@ -776,26 +783,6 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
-        }
-    }
-
-    @CoreMethod(names = "module_eval", required = 1, optional = 2)
-    public abstract static class ModuleEvalNode extends CoreMethodNode {
-
-        public ModuleEvalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ModuleEvalNode(ModuleEvalNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyModule moduleEval(RubyModule module, RubyString code, @SuppressWarnings("unused") Object file, @SuppressWarnings("unused") Object line) {
-            notDesignedForCompilation();
-
-            module.moduleEval(this, code.toString());
-            return module;
         }
     }
 

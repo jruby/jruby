@@ -42,8 +42,8 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
   jar 'org.jruby.joni:joni:2.1.3'
-  jar 'org.jruby.extras:bytelist:1.0.12-SNAPSHOT'
-  jar 'org.jruby.jcodings:jcodings:1.0.12-SNAPSHOT'
+  jar 'org.jruby.extras:bytelist:1.0.12'
+  jar 'org.jruby.jcodings:jcodings:1.0.12'
 
   jar 'com.headius:invokebinder:1.5-SNAPSHOT'
   jar 'com.headius:options:1.1'
@@ -52,7 +52,7 @@ project 'JRuby Core' do
   jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
-  jar 'com.jcraft:jzlib:1.1.2'
+  jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'com.oracle:truffle:0.6-SNAPSHOT'
   jar 'com.oracle:truffle-dsl-processor:0.6-SNAPSHOT', :scope => 'provided'
@@ -294,7 +294,7 @@ project 'JRuby Core' do
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'copy',
-                     :phase => 'package',
+                     :phase => 'initialize',
                      'tasks' => {
                        'exec' => {
                          '@executable' =>  '/bin/sh',

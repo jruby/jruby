@@ -12,14 +12,10 @@ package org.jruby.truffle.nodes.core;
 import java.math.*;
 import java.util.*;
 
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.UnboxingNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
@@ -243,21 +239,7 @@ public abstract class BasicObjectNodes {
         }
 
         private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
-            if (lastCallWasVCall()) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name.toString(), self.toString(), this));
-            } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
-            }
-        }
-
-        private boolean lastCallWasVCall() {
-            final RubyCallNode callNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), RubyCallNode.class);
-
-            if (callNode == null) {
-                return false;
-            }
-
-            return callNode.isVCall();
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
         }
 
     }

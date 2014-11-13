@@ -160,11 +160,6 @@ public class RubyContext extends ExecutionContext {
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode);
     }
 
-    public Object eval(String code, RubyModule module, RubyNode currentNode) {
-        final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, TranslatorDriver.ParserContext.MODULE, module, null, currentNode);
-    }
-
     public Object eval(String code, RubyBinding binding, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);

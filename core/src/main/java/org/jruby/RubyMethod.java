@@ -158,7 +158,17 @@ public class RubyMethod extends RubyObject implements DataType {
         RubyMethod otherMethod = (RubyMethod)other;
         return context.runtime.newBoolean(receiver == otherMethod.receiver &&
                 originModule == otherMethod.originModule &&
-                method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber());
+                (isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) || isSerialMatch(otherMethod.getMethod().getRealMethod()))
+        );
+    }
+
+    private boolean isMethodMissingMatch(DynamicMethod other) {
+        return (method.getRealMethod() instanceof RubyModule.RespondToMissingMethod) &&
+                ((RubyModule.RespondToMissingMethod)method.getRealMethod()).equals(other);
+    }
+
+    private boolean isSerialMatch(DynamicMethod otherMethod) {
+        return method.getRealMethod().getSerialNumber() == otherMethod.getRealMethod().getSerialNumber();
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -304,7 +314,7 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(optional = 1)
     public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
-        return to_proc(context, null).callMethod(context, "curry", args);
+        return to_proc(context, Block.NULL_BLOCK).callMethod(context, "curry", args);
     }
 
     @JRubyMethod

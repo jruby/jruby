@@ -440,7 +440,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case NONLOCAL_RETURN: {
             NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
             IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-            return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, ri.maybeLambda, rv);
+            return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
         }
         }
         return null;
@@ -494,7 +494,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case RUNTIME_HELPER: {
             RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
             result = rhc.callHelper(context, currScope, currDynScope, self, temp, blockType);
-            setResult(temp, currDynScope, rhc.getResult(), result);
+            if (rhc.getResult() != null) {
+                setResult(temp, currDynScope, rhc.getResult(), result);
+            }
             break;
         }
 

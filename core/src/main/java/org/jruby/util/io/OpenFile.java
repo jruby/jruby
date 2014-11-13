@@ -508,40 +508,7 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if (fd.chSelect != null) {
-                int ready_stat = 0;
-                Selector sel = SelectorFactory.openWithRetryFrom(null, fd.chSelect.provider());
-                synchronized (fd.chSelect.blockingLock()) {
-                    boolean is_block = fd.chSelect.isBlocking();
-                    boolean addedThread = false;
-                    try {
-                        fd.chSelect.configureBlocking(false);
-                        fd.chSelect.register(sel, ops);
-                        if (timeout == -1) {
-                            ready_stat = sel.selectNow();
-                        } else {
-                            addedThread = true;
-                            addBlockingThread(thread);
-                            // release lock while selecting
-                            unlock();
-                            try {
-                                sel.select(timeout);
-                            } finally {
-                                lock();
-                            }
-                        }
-                        sel.close();
-                    } finally {
-                        if (addedThread) removeBlockingThread(thread);
-                        if (sel != null) {
-                            try {
-                                sel.close();
-                            } catch (Exception e) {
-                            }
-                        }
-                        fd.chSelect.configureBlocking(is_block);
-                    }
-                }
-                return ready_stat == 1;
+                return thread.select(fd.chSelect, this, ops, timeout);
             } else {
                 if (fd.chSeek != null) {
                     return fd.chSeek.position() != -1

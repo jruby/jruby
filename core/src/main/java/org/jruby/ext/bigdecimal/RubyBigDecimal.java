@@ -640,7 +640,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "mult", required = 2)
     public IRubyObject mult219(ThreadContext context, IRubyObject b, IRubyObject n) {
         RubyBigDecimal val = getVpValue19(context, b, false);
-        if (val == null) return cannotBeCoerced(context, val, true);
+        if (val == null) return cannotBeCoerced(context, b, true);
 
         return multInternal(context, val, b, n);
     }

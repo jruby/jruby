@@ -37,7 +37,6 @@ public class RubyCallNode extends RubyNode {
     @Children protected final RubyNode[] arguments;
 
     private final boolean isSplatted;
-    private final boolean isVCall;
 
     @Child protected DispatchHeadNode dispatchHead;
 
@@ -57,12 +56,7 @@ public class RubyCallNode extends RubyNode {
         this(context, section, methodName, receiver, block, isSplatted, false, false, arguments);
     }
 
-
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, boolean rubiniusPrimitive, RubyNode... arguments) {
-        this(context, section, methodName, receiver, block, isSplatted, false, ignoreVisibility, rubiniusPrimitive, arguments);
-    }
-
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean isVCall, boolean ignoreVisibility, boolean rubiniusPrimitive, RubyNode... arguments) {
         super(context, section);
 
         this.methodName = methodName;
@@ -77,7 +71,6 @@ public class RubyCallNode extends RubyNode {
 
         this.arguments = arguments;
         this.isSplatted = isSplatted;
-        this.isVCall = isVCall;
 
         dispatchHead = new DispatchHeadNode(context, ignoreVisibility, false, rubiniusPrimitive, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
         respondToMissing = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
@@ -216,10 +209,6 @@ public class RubyCallNode extends RubyNode {
 
     public String getName() {
         return methodName;
-    }
-
-    public boolean isVCall() {
-        return isVCall;
     }
 
 }

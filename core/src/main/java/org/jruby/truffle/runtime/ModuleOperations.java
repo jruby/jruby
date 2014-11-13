@@ -59,12 +59,14 @@ public abstract class ModuleOperations {
     }
 
     /**
-     * @param lexicalScope The surrounding LexicalScope, null if it is ignored (as in Mod::Constant)
+     * @param lexicalScope The surrounding LexicalScope (as in Constant),
+     *                     or null if it is ignored (as in Mod::Constant or ::Constant)
      * @param module The receiver of the constant lookup.
-     *               Identical to lexicalScope.getLiveModule() if there no qualifier (Constant).
+     *               Must be identical to lexicalScope.getLiveModule() if lexicalScope != null.
      */
     public static RubyConstant lookupConstant(RubyContext context, LexicalScope lexicalScope, RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
+        assert lexicalScope == null || lexicalScope.getLiveModule() == module;
 
         RubyConstant constant;
 
@@ -79,8 +81,8 @@ public abstract class ModuleOperations {
         final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
 
         if (lexicalScope != null) {
-            if (lexicalScope.getLiveModule() == module && lexicalScope != context.getRootLexicalScope()) {
-                // Already looked in module.
+            if (lexicalScope != context.getRootLexicalScope()) {
+                // Already looked in the top lexical scope, which is module.
                 lexicalScope = lexicalScope.getParent();
             }
 

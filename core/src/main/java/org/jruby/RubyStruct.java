@@ -564,8 +564,6 @@ public class RubyStruct extends RubyObject {
         for (int i = 0,k=member.getLength(); i < k; i++) {
             if (i > 0) {
                 buffer.append(',').append(' ');
-            } else if (first != '#') {
-                buffer.append(' ');
             }
             RubySymbol slot = (RubySymbol)member.eltInternal(i);
             String name = slot.toString();
@@ -783,6 +781,8 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject arg) {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;
+
+        checkFrozen();
         
         System.arraycopy(original.values, 0, values, 0, original.values.length);
 

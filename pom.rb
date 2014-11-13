@@ -85,7 +85,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'bouncy-castle.version' => '1.47',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'joda.time.version' => '2.3' )
+              'joda.time.version' => '2.3',
+              'test-unit.version' => '3.0.3',
+              'power_assert.version' => '0.1.4' )
 
   unless version =~ /-SNAPSHOT/
     properties 'jruby.home' => '${basedir}/..'
@@ -188,7 +190,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       modules [ 'test' ]
 
       build do
-        default_goal 'test'
+        default_goal 'package'
       end
     end
   end

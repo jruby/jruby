@@ -86,7 +86,7 @@ public class RubyProc extends RubyObject implements DataType {
         procClass.setReifiedClass(RubyProc.class);
         
         procClass.defineAnnotatedMethods(RubyProc.class);
-        
+
         return procClass;
     }
 
@@ -207,7 +207,7 @@ public class RubyProc extends RubyObject implements DataType {
         return to_s19();
     }
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
                 block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));

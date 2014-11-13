@@ -19,7 +19,6 @@ env:
   matrix:
     - TARGET='-Ptest'
     - TARGET='-Pjruby_complete_jar_jruby'
-    - TARGET='-Prake -Dtask=test:rubicon'
     - TARGET='-Prake -Dtask=test:jruby'
     - TARGET='-Prake -Dtask=test:mri'
     - TARGET='-Prake -Dtask=test:slow_suites'
@@ -67,7 +66,7 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-script: mvn package && travis_retry mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
+script: mvn -q clean package ; travis_retry mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
 install: /bin/true
 notifications:
   irc:

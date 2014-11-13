@@ -1,2 +1,0 @@
-fails(inherited):calling methods on the metaclass calls a method defined on the metaclass of the metaclass
-fails:A constant on a metaclass is preserved when the object is cloned

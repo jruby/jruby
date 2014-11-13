@@ -95,7 +95,7 @@ project 'JRuby Lib Setup' do
 
   gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
 
-  execute :install_gems, :package do |ctx|
+  execute :install_gems, :'package' do |ctx|
     require 'fileutils'
 
     puts "using jruby #{JRUBY_VERSION}"

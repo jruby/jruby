@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.Date;
 
@@ -27,8 +28,8 @@ public class RubyTime extends RubyObject {
      */
     public static class RubyTimeClass extends RubyClass {
 
-        public RubyTimeClass(RubyClass objectClass) {
-            super(null, objectClass, "Time");
+        public RubyTimeClass(RubyContext context, RubyClass objectClass) {
+            super(context, objectClass, objectClass, "Time");
         }
 
         @Override

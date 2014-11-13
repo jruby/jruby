@@ -38,4 +38,25 @@ public abstract class BindingNodes {
         }
     }
 
+    @CoreMethod(names = "local_variable_set", required = 2)
+    public abstract static class LocalVariableSetNode extends CoreMethodNode {
+
+        public LocalVariableSetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LocalVariableSetNode(LocalVariableSetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object localVariableSetNode(RubyBinding binding, RubySymbol symbol, Object value) {
+            notDesignedForCompilation();
+
+            final MaterializedFrame frame = binding.getFrame();
+            frame.setObject(frame.getFrameDescriptor().findFrameSlot(symbol.toString()), value);
+            return value;
+        }
+    }
+
 }

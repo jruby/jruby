@@ -38,8 +38,8 @@ public class RubyRegexp extends RubyObject {
      */
     public static class RubyRegexpClass extends RubyClass {
 
-        public RubyRegexpClass(RubyClass objectClass) {
-            super(null, objectClass, "Regexp");
+        public RubyRegexpClass(RubyContext context, RubyClass objectClass) {
+            super(context, objectClass, objectClass, "Regexp");
         }
 
         @Override

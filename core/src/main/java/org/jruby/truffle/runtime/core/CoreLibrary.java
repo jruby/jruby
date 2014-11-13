@@ -120,77 +120,84 @@ public class CoreLibrary {
         // Create the cyclic classes and modules
 
         classClass = new RubyClass.RubyClassClass(context);
-        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject");
-        objectClass = RubyClass.createBootClass(context, classClass, "Object");
+        basicObjectClass = RubyClass.createBootClass(context, "BasicObject");
+        objectClass = RubyClass.createBootClass(context, "Object");
         moduleClass = new RubyModule.RubyModuleClass(context);
 
         // Close the cycles
-
         classClass.unsafeSetLogicalClass(classClass);
-        moduleClass.unsafeSetLogicalClass(classClass);
 
         objectClass.unsafeSetSuperclass(basicObjectClass);
         moduleClass.unsafeSetSuperclass(objectClass);
         classClass.unsafeSetSuperclass(moduleClass);
 
+        classClass.getAdoptedByLexicalParent(objectClass, null);
+        basicObjectClass.getAdoptedByLexicalParent(objectClass, null);
+        objectClass.getAdoptedByLexicalParent(objectClass, null);
+        moduleClass.getAdoptedByLexicalParent(objectClass, null);
+
+        // BasicObject knows itself
+
+        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
+
         // Create all other classes and modules
 
-        numericClass = new RubyClass(null, objectClass, "Numeric");
-        integerClass = new RubyClass(null, numericClass, "Integer");
+        numericClass = new RubyClass(context, objectClass, objectClass, "Numeric");
+        integerClass = new RubyClass(context, objectClass, numericClass, "Integer");
 
-        exceptionClass = new RubyException.RubyExceptionClass(objectClass, "Exception");
-        standardErrorClass = new RubyException.RubyExceptionClass(exceptionClass, "StandardError");
+        exceptionClass = new RubyException.RubyExceptionClass(context, objectClass, objectClass, "Exception");
+        standardErrorClass = new RubyException.RubyExceptionClass(context, objectClass, exceptionClass, "StandardError");
 
-        ioClass = new RubyClass(null, objectClass, "IO");
+        ioClass = new RubyClass(context, objectClass, objectClass, "IO");
 
-        argumentErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ArgumentError");
-        arrayClass = new RubyArray.RubyArrayClass(objectClass);
-        bignumClass = new RubyClass(null, integerClass, "Bignum");
-        bindingClass = new RubyClass(null, objectClass, "Binding");
-        comparableModule = new RubyModule(moduleClass, null, "Comparable");
-        configModule = new RubyModule(moduleClass, null, "Config");
-        continuationClass = new RubyClass(null, objectClass, "Continuation");
-        dirClass = new RubyClass(null, objectClass, "Dir");
-        encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
-        errnoModule = new RubyModule(moduleClass, null, "Errno");
-        enumerableModule = new RubyModule(moduleClass, null, "Enumerable");
-        falseClass = new RubyClass(null, objectClass, "FalseClass");
-        fiberClass = new RubyFiber.RubyFiberClass(objectClass);
-        fileClass = new RubyClass(null, ioClass, "File");
-        fixnumClass = new RubyClass(null, integerClass, "Fixnum");
-        floatClass = new RubyClass(null, numericClass, "Float");
-        gcModule = new RubyModule(moduleClass, null, "GC");
-        hashClass = new RubyHash.RubyHashClass(objectClass);
-        kernelModule = new RubyModule(moduleClass, null, "Kernel");
-        loadErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LoadError");
-        localJumpErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LocalJumpError");
-        matchDataClass = new RubyClass(null, objectClass, "MatchData");
-        mathModule = new RubyModule(moduleClass, null, "Math");
-        nameErrorClass = new RubyClass(null, standardErrorClass, "NameError");
-        nilClass = new RubyClass(null, objectClass, "NilClass");
-        noMethodErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "NoMethodError");
-        objectSpaceModule = new RubyModule(moduleClass, null, "ObjectSpace");
-        procClass = new RubyProc.RubyProcClass(objectClass);
-        processClass = new RubyClass(null, objectClass, "Process");
-        rangeClass = new RubyClass(null, objectClass, "Range");
-        rangeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RangeError");
-        regexpClass = new RubyRegexp.RubyRegexpClass(objectClass);
-        rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
-        runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
-        signalModule = new RubyModule(moduleClass, null, "Signal");
-        stringClass = new RubyString.RubyStringClass(objectClass);
-        symbolClass = new RubyClass(null, objectClass, "Symbol");
-        syntaxErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SyntaxError");
-        systemCallErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SystemCallError");
-        systemExitClass = new RubyException.RubyExceptionClass(exceptionClass, "SystemExit");
-        threadClass = new RubyThread.RubyThreadClass(objectClass);
-        timeClass = new RubyTime.RubyTimeClass(objectClass);
-        trueClass = new RubyClass(null, objectClass, "TrueClass");
-        truffleModule = new RubyModule(moduleClass, null, "Truffle");
-        truffleDebugModule = new RubyModule(moduleClass, null, "Debug");
-        typeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "TypeError");
-        zeroDivisionErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ZeroDivisionError");
-        encodingConverterClass = new RubyEncodingConverter.RubyEncodingConverterClass(objectClass);
+        argumentErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "ArgumentError");
+        arrayClass = new RubyArray.RubyArrayClass(context, objectClass);
+        bignumClass = new RubyClass(context, objectClass, integerClass, "Bignum");
+        bindingClass = new RubyClass(context, objectClass, objectClass, "Binding");
+        comparableModule = new RubyModule(context, objectClass, "Comparable");
+        configModule = new RubyModule(context, objectClass, "Config");
+        continuationClass = new RubyClass(context, objectClass, objectClass, "Continuation");
+        dirClass = new RubyClass(context, objectClass, objectClass, "Dir");
+        encodingClass = new RubyEncoding.RubyEncodingClass(context, objectClass);
+        errnoModule = new RubyModule(context, objectClass, "Errno");
+        enumerableModule = new RubyModule(context, objectClass, "Enumerable");
+        falseClass = new RubyClass(context, objectClass, objectClass, "FalseClass");
+        fiberClass = new RubyFiber.RubyFiberClass(context, objectClass);
+        fileClass = new RubyClass(context, objectClass, ioClass, "File");
+        fixnumClass = new RubyClass(context, objectClass, integerClass, "Fixnum");
+        floatClass = new RubyClass(context, objectClass, numericClass, "Float");
+        gcModule = new RubyModule(context, objectClass, "GC");
+        hashClass = new RubyHash.RubyHashClass(context, objectClass);
+        kernelModule = new RubyModule(context, objectClass, "Kernel");
+        loadErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LoadError");
+        localJumpErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LocalJumpError");
+        matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
+        mathModule = new RubyModule(context, objectClass, "Math");
+        nameErrorClass = new RubyClass(context, objectClass, standardErrorClass, "NameError");
+        nilClass = new RubyClass(context, objectClass, objectClass, "NilClass");
+        noMethodErrorClass = new RubyException.RubyExceptionClass(context, objectClass, nameErrorClass, "NoMethodError");
+        objectSpaceModule = new RubyModule(context, objectClass, "ObjectSpace");
+        procClass = new RubyProc.RubyProcClass(context, objectClass);
+        processClass = new RubyClass(context, objectClass, objectClass, "Process");
+        rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
+        rangeErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "RangeError");
+        regexpClass = new RubyRegexp.RubyRegexpClass(context, objectClass);
+        rubyTruffleErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "RubyTruffleError");
+        runtimeErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "RuntimeError");
+        signalModule = new RubyModule(context, objectClass, "Signal");
+        stringClass = new RubyString.RubyStringClass(context, objectClass, objectClass, "String");
+        symbolClass = new RubyClass(context, objectClass, objectClass, "Symbol");
+        syntaxErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "SyntaxError");
+        systemCallErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "SystemCallError");
+        systemExitClass = new RubyException.RubyExceptionClass(context, objectClass, exceptionClass, "SystemExit");
+        threadClass = new RubyThread.RubyThreadClass(context, objectClass);
+        timeClass = new RubyTime.RubyTimeClass(context, objectClass);
+        trueClass = new RubyClass(context, objectClass, objectClass, "TrueClass");
+        truffleModule = new RubyModule(context, objectClass, "Truffle");
+        truffleDebugModule = new RubyModule(context, objectClass, "Debug");
+        typeErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "TypeError");
+        zeroDivisionErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "ZeroDivisionError");
+        encodingConverterClass = new RubyEncodingConverter.RubyEncodingConverterClass(context, encodingClass, objectClass);
 
         // Includes
 
@@ -210,79 +217,19 @@ public class CoreLibrary {
         configHashMap.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
         configHashMap.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
 
-        edomClass = new RubyException.RubyExceptionClass(systemCallErrorClass, "EDOM");
-        errnoModule.setConstant(null, edomClass.getName(), edomClass);
+        edomClass = new RubyException.RubyExceptionClass(context, errnoModule, systemCallErrorClass, "EDOM");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
+
+        // TODO(cs): this should be a separate exception
         mathModule.setConstant(null, "DomainError", edomClass);
 
-        // BasicObject knows itself
-
-        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
-
-        // Add all classes and modules as constants in Object
-
-        final RubyModule[] modules = {argumentErrorClass, //
-                        arrayClass, //
-                        basicObjectClass, //
-                        bignumClass, //
-                        bindingClass, //
-                        classClass, //
-                        continuationClass, //
-                        comparableModule, //
-                        configModule, //
-                        dirClass, //
-                        enumerableModule, //
-                        errnoModule, //
-                        exceptionClass, //
-                        falseClass, //
-                        fiberClass, //
-                        fileClass, //
-                        fixnumClass, //
-                        floatClass, //
-                        gcModule, //
-                        hashClass, //
-                        integerClass, //
-                        ioClass, //
-                        kernelModule, //
-                        loadErrorClass, //
-                        localJumpErrorClass, //
-                        matchDataClass, //
-                        mathModule, //
-                        moduleClass, //
-                        nameErrorClass, //
-                        nilClass, //
-                        noMethodErrorClass, //
-                        numericClass, //
-                        objectClass, //
-                        objectSpaceModule, //
-                        procClass, //
-                        processClass, //
-                        rangeClass, //
-                        rangeErrorClass, //
-                        regexpClass, //
-                        rubyTruffleErrorClass, //
-                        runtimeErrorClass, //
-                        signalModule, //
-                        standardErrorClass, //
-                        stringClass, //
-                        encodingClass, //
-                        symbolClass, //
-                        syntaxErrorClass, //
-                        systemCallErrorClass, //
-                        systemExitClass, //
-                        threadClass, //
-                        timeClass, //
-                        trueClass, //
-                        truffleModule, //
-                        typeErrorClass, //
-                        zeroDivisionErrorClass};
-
-        for (RubyModule module : modules) {
-            objectClass.setConstant(null, module.getName(), module);
-        }
-
-        encodingClass.setConstant(null, encodingConverterClass.getName(), encodingConverterClass);
-
-        truffleModule.setConstant(null, truffleDebugModule.getName(), truffleDebugModule);
+        // TODO(cs): the alias should be the other way round, Config is legacy (and should warn).
+        objectClass.setConstant(null, "RbConfig", configModule);
 
         // Create some key objects
 
@@ -316,8 +263,6 @@ public class CoreLibrary {
         final RubyHash configHash = new RubyHash(hashClass, null, null, configHashMap, 0);
         configModule.setConstant(null, "CONFIG", configHash);
 
-        objectClass.setConstant(null, "RbConfig", configModule);
-
         floatClass.setConstant(null, "EPSILON", org.jruby.RubyFloat.EPSILON);
         floatClass.setConstant(null, "INFINITY", org.jruby.RubyFloat.INFINITY);
         floatClass.setConstant(null, "NAN", org.jruby.RubyFloat.NAN);
@@ -330,13 +275,6 @@ public class CoreLibrary {
         fileClass.setConstant(null, "ALT_SEPARATOR", nilObject);
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
-
-        errnoModule.setConstant(null, "ENOENT", new RubyClass(null, systemCallErrorClass, "ENOENT"));
-        errnoModule.setConstant(null, "EPERM", new RubyClass(null, systemCallErrorClass, "EPERM"));
-        errnoModule.setConstant(null, "ENOTEMPTY", new RubyClass(null, systemCallErrorClass, "ENOTEMPTY"));
-        errnoModule.setConstant(null, "EEXIST", new RubyClass(null, systemCallErrorClass, "EEXIST"));
-        errnoModule.setConstant(null, "EXDEV", new RubyClass(null, systemCallErrorClass, "EXDEV"));
-        errnoModule.setConstant(null, "EACCES", new RubyClass(null, systemCallErrorClass, "EACCES"));
 
         globalVariablesObject.setInstanceVariable("$DEBUG", context.getRuntime().isDebug());
         globalVariablesObject.setInstanceVariable("$VERBOSE", context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject);
@@ -469,6 +407,11 @@ public class CoreLibrary {
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
+    public RubyException argumentError(int passed, int required, int optional, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required+optional), currentNode);
+    }
+
     public RubyException localJumpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(localJumpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
@@ -510,6 +453,7 @@ public class CoreLibrary {
     }
 
     public RubyException typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return typeErrorCantConvertInto(box(from).getLogicalClass().getName(), to.getName(), currentNode);
     }
 
@@ -523,19 +467,14 @@ public class CoreLibrary {
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException nameErrorUninitializedConstant(String name, Node currentNode) {
+    public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("uninitialized constant %s", name), currentNode);
+        return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), currentNode);
     }
 
     public RubyException nameErrorPrivateConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("private constant %s::%s referenced", module.getName(), name), currentNode);
-    }
-
-    public RubyException nameErrorNoMethod(String name, String object, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined method `%s' for %s", name, object), currentNode);
     }
 
     public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {

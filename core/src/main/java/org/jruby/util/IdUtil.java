@@ -99,34 +99,22 @@ public final class IdUtil {
         return false;
     }
     
-    // Pickaxe says @ must be followed by a name character, but MRI
-    // does not require this.
     public static boolean isValidInstanceVariableName(String id) {
         int len;
-        if ((len = id.length()) > 0 && '@' == id.charAt(0)) {
-            if (len > 1) {
-                if (isInitialCharacter(id.charAt(1))) {
-                    return isNameString(id, 2, len);
-                }
-                return false;
+        if ((len = id.length()) > 1 && '@' == id.charAt(0)) {
+            if (isInitialCharacter(id.charAt(1))) {
+                return isNameString(id, 2, len);
             }
-            return true;
         }
         return false;
     }
     
-    // Pickaxe says @@ must be followed by a name character, but MRI
-    // does not require this.
     public static boolean isValidClassVariableName(String id) {
         int len;
-        if ((len = id.length()) > 1 && '@' == id.charAt(0) && '@' == id.charAt(1)) {
-            if (len > 2) {
-                if (isInitialCharacter(id.charAt(2))) {
-                    return isNameString(id, 3, len);
-                }
-                return false;
+        if ((len = id.length()) > 2 && '@' == id.charAt(0) && '@' == id.charAt(1)) {
+            if (isInitialCharacter(id.charAt(2))) {
+                return isNameString(id, 3, len);
             }
-            return true;
         }
         return false;
     }

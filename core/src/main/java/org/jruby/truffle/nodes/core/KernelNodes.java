@@ -400,7 +400,42 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"dup", "clone"})
+    @CoreMethod(names = "clone")
+    public abstract static class CloneNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode initializeCloneNode;
+
+        public CloneNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            // Calls private initialize_clone on the new copy.
+            initializeCloneNode = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        }
+
+        public CloneNode(CloneNode prev) {
+            super(prev);
+            initializeCloneNode = prev.initializeCloneNode;
+        }
+
+        @Specialization
+        public Object clone(VirtualFrame frame, RubyBasicObject self) {
+            notDesignedForCompilation();
+
+            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
+
+            // Copy the singleton class if any.
+            if (self.getMetaClass().isSingleton()) {
+                newObject.getSingletonClass(this).initCopy(self.getMetaClass());
+            }
+
+            newObject.setInstanceVariables(self.getFields());
+            initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
+
+            return newObject;
+        }
+
+    }
+
+    @CoreMethod(names = "dup")
     public abstract static class DupNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initializeDupNode;
@@ -417,22 +452,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object dup(VirtualFrame frame, RubyModule self) {
+        public Object dup(VirtualFrame frame, RubyBasicObject self) {
             notDesignedForCompilation();
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
+
             newObject.setInstanceVariables(self.getFields());
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
-            return newObject;
-        }
 
-        @Specialization
-        public Object dup(VirtualFrame frame, RubyObject self) {
-            notDesignedForCompilation();
-
-            final RubyObject newObject = new RubyObject(self.getLogicalClass());
-            newObject.setInstanceVariables(self.getFields());
-            initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
             return newObject;
         }
 
@@ -786,33 +813,38 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object initializeCopy(RubyObject self, RubyObject other) {
+        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
             notDesignedForCompilation();
 
-            return getContext().getCoreLibrary().getNilObject();
+            if (self.getLogicalClass() != from.getLogicalClass()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("initialize_copy should take same class object", this));
+            }
+
+            return self;
         }
 
     }
 
-    @CoreMethod(names = "initialize_dup", visibility = Visibility.PRIVATE, required = 1)
-    public abstract static class InitializeDupNode extends CoreMethodNode {
+    @CoreMethod(names = {"initialize_dup", "initialize_clone"}, visibility = Visibility.PRIVATE, required = 1)
+    public abstract static class InitializeDupCloneNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode initializeCopyNode;
 
-        public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
+        public InitializeDupCloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             initializeCopyNode = DispatchHeadNode.onSelf(context);
         }
 
-        public InitializeDupNode(InitializeDupNode prev) {
+        public InitializeDupCloneNode(InitializeDupCloneNode prev) {
             super(prev);
             initializeCopyNode = prev.initializeCopyNode;
         }
 
         @Specialization
-        public Object initializeDup(VirtualFrame frame, RubyObject self, RubyObject other) {
+        public Object initializeDup(VirtualFrame frame, RubyBasicObject self, RubyBasicObject from) {
             notDesignedForCompilation();
-            return initializeCopyNode.call(frame, self, "initialize_copy", null, other);
+            return initializeCopyNode.call(frame, self, "initialize_copy", null, from);
         }
 
     }
@@ -1249,21 +1281,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "pretty_inspect")
     public abstract static class PrettyInspectNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child protected DispatchHeadNode inspectNode;
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = DispatchHeadNode.onSelf(context);
+            inspectNode = DispatchHeadNode.onSelf(context);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
             super(prev);
-            toS = prev.toS;
+            inspectNode = prev.inspectNode;
         }
 
         @Specialization
         public Object prettyInspect(VirtualFrame frame, Object self) {
-            return toS.call(frame, self, "to_s", null);
+            return inspectNode.call(frame, self, "inspect", null);
         }
     }
 

@@ -21,6 +21,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -1298,44 +1299,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"dup", "clone"})
-    public abstract static class DupNode extends ArrayCoreMethodNode {
-
-        public DupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DupNode(DupNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull")
-        public Object dupNull(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public Object dupIntegerFixnum(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) array.getStore(), array.getSize()), array.getSize());
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public Object dupLongFixnum(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) array.getStore(), array.getSize()), array.getSize());
-        }
-
-        @Specialization(guards = "isFloat")
-        public Object dupFloat(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((double[]) array.getStore(), array.getSize()), array.getSize());
-        }
-
-        @Specialization(guards = "isObject")
-        public Object dupObject(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) array.getStore(), array.getSize()), array.getSize());
-        }
-
-    }
-
     @CoreMethod(names = "each", needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
@@ -1847,6 +1810,65 @@ public abstract class ArrayNodes {
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
             return array;
+        }
+
+    }
+
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    public abstract static class InitializeCopyNode extends ArrayCoreMethodNode {
+        // TODO(cs): what about allocationSite ?
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeCopyNode(InitializeCopyNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isOtherNull")
+        public RubyArray initializeCopyNull(RubyArray self, RubyArray from) {
+            if (self == from) {
+                return self;
+            }
+            self.setStore(null, 0);
+            return self;
+        }
+
+        @Specialization(guards = "isOtherIntegerFixnum")
+        public RubyArray initializeCopyIntegerFixnum(RubyArray self, RubyArray from) {
+            if (self == from) {
+                return self;
+            }
+            self.setStore(Arrays.copyOf((int[]) from.getStore(), from.getSize()), from.getSize());
+            return self;
+        }
+
+        @Specialization(guards = "isOtherLongFixnum")
+        public RubyArray initializeCopyLongFixnum(RubyArray self, RubyArray from) {
+            if (self == from) {
+                return self;
+            }
+            self.setStore(Arrays.copyOf((long[]) from.getStore(), from.getSize()), from.getSize());
+            return self;
+        }
+
+        @Specialization(guards = "isOtherFloat")
+        public RubyArray initializeCopyFloat(RubyArray self, RubyArray from) {
+            if (self == from) {
+                return self;
+            }
+            self.setStore(Arrays.copyOf((double[]) from.getStore(), from.getSize()), from.getSize());
+            return self;
+        }
+
+        @Specialization(guards = "isOtherObject")
+        public RubyArray initializeCopyObject(RubyArray self, RubyArray from) {
+            if (self == from) {
+                return self;
+            }
+            self.setStore(Arrays.copyOf((Object[]) from.getStore(), from.getSize()), from.getSize());
+            return self;
         }
 
     }

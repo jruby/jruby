@@ -31,7 +31,7 @@ project 'JRuby Integration Tests' do
     jar 'junit:junit:4.11'
     jar 'commons-logging:commons-logging:1.1.3'
     jar 'org.livetribe:livetribe-jsr223:2.0.7'
-    jar 'org.jruby:jruby-core:${version}'
+    jar 'org.jruby:jruby-core', '${project.version}'
   end
   scope :provided do
     jar 'org.apache.ant:ant:${ant.version}'
@@ -40,7 +40,7 @@ project 'JRuby Integration Tests' do
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
        :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
-  gem 'rubygems:rspec:${rspec.version}'
+  gem 'rspec', '${rspec.version}'
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
