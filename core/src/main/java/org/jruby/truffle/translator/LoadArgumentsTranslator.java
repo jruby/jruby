@@ -140,10 +140,11 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode readNode;
 
+        int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
         if (useArray()) {
-            readNode = ArrayGetTailNodeFactory.create(context, sourceSection, argsNode.getPreCount(), loadArray(sourceSection));
+            readNode = ArrayGetTailNodeFactory.create(context, sourceSection, from, loadArray(sourceSection));
         } else {
-            readNode = new ReadRestArgumentNode(context, sourceSection, argsNode.getPreCount());
+            readNode = new ReadRestArgumentNode(context, sourceSection, from);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
