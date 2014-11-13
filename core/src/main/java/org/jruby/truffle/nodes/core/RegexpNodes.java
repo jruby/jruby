@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -128,6 +129,32 @@ public abstract class RegexpNodes {
 
             regexp.initialize(this, string.toString());
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    public abstract static class InitializeCopyNode extends CoreMethodNode {
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeCopyNode(InitializeCopyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object initializeCopy(RubyRegexp self, RubyRegexp from) {
+            notDesignedForCompilation();
+
+            if (self == from) {
+                return self;
+            }
+
+            self.initialize(from.getRegex(), from.getSource());
+
+            return self;
         }
 
     }
