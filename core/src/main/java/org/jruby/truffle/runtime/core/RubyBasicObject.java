@@ -35,7 +35,7 @@ public class RubyBasicObject extends ObjectStorage {
     @CompilationFinal protected RubyClass metaClass;
 
     protected long objectID = -1;
-    public boolean frozen = false;
+    private boolean frozen = false;
     public boolean hasPrivateLayout = false;
 
     public RubyBasicObject(RubyClass rubyClass) {
@@ -58,10 +58,14 @@ public class RubyBasicObject extends ObjectStorage {
         return frozen;
     }
 
+    public void freeze() {
+        frozen = true;
+    }
+
     public void checkFrozen(Node currentNode) {
         if (frozen) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName().toLowerCase(), currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
         }
     }
 
@@ -84,6 +88,10 @@ public class RubyBasicObject extends ObjectStorage {
 
         metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass,
                 String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
+
+        if (isFrozen()) {
+            metaClass.freeze();
+        }
 
         return metaClass;
     }

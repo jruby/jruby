@@ -675,7 +675,7 @@ public abstract class KernelNodes {
         public RubyObject freeze(RubyObject self) {
             notDesignedForCompilation();
 
-            self.frozen = true;
+            self.freeze();
             return self;
         }
 
@@ -696,7 +696,7 @@ public abstract class KernelNodes {
         public boolean isFrozen(RubyObject self) {
             notDesignedForCompilation();
 
-            return self.frozen;
+            return self.isFrozen();
         }
 
     }
