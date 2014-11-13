@@ -21,21 +21,8 @@ import org.jruby.truffle.runtime.control.RaiseException;
  */
 public class RubyObject extends RubyBasicObject {
 
-    public boolean frozen = false;
-
     public RubyObject(RubyClass rubyClass) {
         super(rubyClass);
-    }
-
-    public boolean isFrozen() {
-        return frozen;
-    }
-
-    public void checkFrozen(Node currentNode) {
-        if (frozen) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName().toLowerCase(), currentNode));
-        }
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, RubyNode currentNode) {

@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
@@ -34,6 +35,7 @@ public class RubyBasicObject extends ObjectStorage {
     @CompilationFinal protected RubyClass metaClass;
 
     protected long objectID = -1;
+    public boolean frozen = false;
     public boolean hasPrivateLayout = false;
 
     public RubyBasicObject(RubyClass rubyClass) {
@@ -50,6 +52,17 @@ public class RubyBasicObject extends ObjectStorage {
 
     public boolean hasClassAsSingleton() {
         return false;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void checkFrozen(Node currentNode) {
+        if (frozen) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName().toLowerCase(), currentNode));
+        }
     }
 
     public RubyClass getMetaClass() {
