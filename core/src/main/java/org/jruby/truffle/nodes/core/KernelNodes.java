@@ -15,6 +15,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.SlowPathException;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -29,6 +30,10 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Activation;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -320,6 +325,44 @@ public abstract class KernelNodes {
 
             final RubyContinuation continuation = new RubyContinuation(context.getCoreLibrary().getContinuationClass());
             return continuation.enter(block);
+        }
+    }
+
+    @CoreMethod(names = "caller", isModuleFunction = true, optional = 1)
+    public abstract static class CallerNode extends CoreMethodNode {
+
+        public CallerNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CallerNode(CallerNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object caller(UndefinedPlaceholder omit) {
+            return caller(1);
+        }
+
+        @Specialization
+        public Object caller(int omit) {
+            notDesignedForCompilation();
+
+            omit += 1; // Always ignore this node
+
+            Backtrace backtrace = RubyCallStack.getBacktrace(this);
+            List<Activation> activations = backtrace.getActivations();
+            int size = activations.size() - omit;
+
+            if (size < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            Object[] callers = new Object[size];
+            for (int n = 0; n < size; n++) {
+                callers[n] = getContext().makeString(MRIBacktraceFormatter.formatCallerLine(activations, n + omit));
+            }
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), callers, callers.length);
         }
     }
 
