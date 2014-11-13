@@ -50,7 +50,9 @@ public class RubyProc extends RubyObject implements MethodLike {
 
     private final Type type;
     @CompilationFinal private SharedMethodInfo sharedMethodInfo;
+    /** Call target for procs, which have special arguments destructuring */
     @CompilationFinal private CallTarget callTarget;
+    /** Call target for lambdas and methods, which have strict arguments destructuring */
     @CompilationFinal private CallTarget callTargetForMethods;
     @CompilationFinal private MaterializedFrame declarationFrame;
     @CompilationFinal private Object self;
