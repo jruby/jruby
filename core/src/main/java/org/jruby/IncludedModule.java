@@ -48,11 +48,6 @@ public class IncludedModule extends RubyClass {
         return origin;
     }
 
-    // @Override
-    // public RubyModule getNonPrependedClass() {
-    //     return origin;
-    // }
-
    /**
     * We don't want to reveal ourselves to Ruby code, so origin this
     * operation.

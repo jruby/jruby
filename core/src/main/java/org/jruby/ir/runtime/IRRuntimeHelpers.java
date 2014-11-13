@@ -235,7 +235,7 @@ public class IRRuntimeHelpers {
     public static void defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, IRScope irScope) {
         Ruby runtime = context.runtime;
 
-        RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self).getMethodLocation();
+        RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
@@ -722,7 +722,7 @@ public class IRRuntimeHelpers {
                         switch (scopeType) {
                             case MODULE_BODY:
                             case CLASS_BODY:
-                                return ((RubyModule)self).getMethodLocation();
+                                return (RubyModule)self;
                             case METACLASS_BODY:
                                 return (RubyModule) self;
 
@@ -861,18 +861,6 @@ public class IRRuntimeHelpers {
         RubyModule implMod = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz);
         RubyClass superClass = implMod.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
-        // DynamicMethod method = superClass == null ? null : superClass.searchWithCache(methodName, false).method;
-        //
-        // if (method == null || !superClass.isIncluded()) {
-        //     for (RubyModule implClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz); implClass != null; implClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), superClass)) {
-        //         superClass = implClass == null ? null : implClass.getSuperClass();
-        //
-        //         method = superClass != null ? superClass.searchWithCache(methodName, false).method : null;
-        //         if (!(method == null || method.isUndefined() ) || superClass == null) break;
-        //     }
-        // }
-        //
-        // method = method == null ? UndefinedMethod.getInstance() : method;
 
         IRubyObject rVal = null;
         if (method.isUndefined()|| (superClass.isPrepended() && (method.isImplementedBy(self.getType())))) {
