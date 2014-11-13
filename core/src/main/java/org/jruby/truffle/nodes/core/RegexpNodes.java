@@ -124,11 +124,19 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyRegexp regexp, RubyString string) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
             regexp.initialize(this, string.toString());
-            return getContext().getCoreLibrary().getNilObject();
+            return regexp;
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from) {
+            notDesignedForCompilation();
+
+            regexp.initialize(this, from.getSource()); // TODO: is copying needed?
+            return regexp;
         }
 
     }
@@ -152,7 +160,7 @@ public abstract class RegexpNodes {
                 return self;
             }
 
-            self.initialize(from.getRegex(), from.getSource());
+            self.initialize(this, from.getSource()); // TODO: is copying needed?
 
             return self;
         }
