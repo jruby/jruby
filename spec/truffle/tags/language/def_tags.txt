@@ -8,4 +8,3 @@ fails:A method definition inside an instance_eval creates a class method when th
 fails:A method definition in an eval creates an instance method
 fails:A method definition in an eval creates a class method
 fails(inherited):The def keyword within a closure looks outside the closure for the visibility
-fails:Defining a method returns a symbol of the method name

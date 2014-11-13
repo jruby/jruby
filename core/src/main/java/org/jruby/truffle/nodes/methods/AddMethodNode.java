@@ -29,7 +29,7 @@ public class AddMethodNode extends RubyNode {
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
+    public RubySymbol execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
         final Object receiverObject = receiver.execute(frame);
@@ -53,7 +53,7 @@ public class AddMethodNode extends RubyNode {
             module.addMethod(this, methodWithDeclaringModule);
         }
 
-        return getContext().getCoreLibrary().getNilObject();
+        return getContext().newSymbol(method.getName());
     }
 
     private boolean moduleFunctionFlag(VirtualFrame frame) {
