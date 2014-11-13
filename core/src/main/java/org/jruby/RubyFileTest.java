@@ -128,9 +128,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "file?", required = 1, module = true)
     public static RubyBoolean file_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        FileStat stat = fileResource(filename).stat();
-
-        return context.runtime.newBoolean(stat != null && stat.isFile());
+        return context.runtime.newBoolean(fileResource(filename).isFile());
     }
 
     @JRubyMethod(name = "grpowned?", required = 1, module = true)
