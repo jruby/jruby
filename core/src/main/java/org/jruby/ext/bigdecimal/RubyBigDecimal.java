@@ -406,11 +406,21 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     private static RubyBigDecimal cannotBeCoerced(ThreadContext context, IRubyObject v, boolean must) {
-        if (!must) return null;
+        if (must) {
+            String err;
 
-        String err = v.isImmediate() ? RubyObject.inspect(context, v).toString() : v.getMetaClass().getBaseName();
-            
-        throw context.runtime.newArgumentError(err + " can't be coerced into BigDecimal");
+            if (v == null) {
+                err = "nil";
+            } else if (v.isImmediate()) {
+                err = RubyObject.inspect(context, v).toString();
+            } else {
+                err = v.getMetaClass().getBaseName();
+            }
+
+            throw context.runtime.newTypeError(err + " can't be coerced into BigDecimal");
+        }
+
+        return null;
     }
     
     private static RubyBigDecimal unableToCoerceWithoutPrec(ThreadContext context, IRubyObject v, boolean must) {
