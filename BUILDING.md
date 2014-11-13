@@ -131,12 +131,19 @@ bin/jruby -S rake test:mri
 This suite takes a while to complete, so if you want to run an individual file
 from MRI's tests (under test/mri), use one of the following commands:
 
-```
 # Run a specific test method in a specific file
+```
 jruby <test file> -n <specific test method>
+```
 
 # Run a test file with known-failing tests excluded
-EXCLUDE_DIR=test/mri/excludes jruby -r minitest/excludes <test file>
+```
+EXCLUDES=test/mri/excludes bin/jruby -r test/mri_test_env.rb test/mri/runner.rb -q -- <test file>
+```
+
+Additional tests may be run through mspec.
+```
+bin/jruby -S mspec -B spec/jruby.2.2.mspec -t bin/jruby -G fails ci <test files>
 ```
 
 For more complete assurance, you can also run 1.9 RubySpecs via the
