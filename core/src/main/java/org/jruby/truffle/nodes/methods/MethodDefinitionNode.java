@@ -55,17 +55,30 @@ public class MethodDefinitionNode extends RubyNode {
             declarationFrame = null;
         }
 
-        Visibility visibility;
+        return executeMethod(frame, declarationFrame);
+    }
 
+    public RubyMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
+        notDesignedForCompilation();
+
+        Visibility visibility = getVisibility(frame);
+
+        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+
+        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
+    }
+
+    private Visibility getVisibility(VirtualFrame frame) {
         if (ignoreLocalVisibility) {
-            visibility = Visibility.PUBLIC;
+            return Visibility.PUBLIC;
         } else if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
-            visibility = Visibility.PRIVATE;
+            return Visibility.PRIVATE;
         } else {
             final FrameSlot visibilitySlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
 
             if (visibilitySlot == null) {
-                visibility = Visibility.PUBLIC;
+                return Visibility.PUBLIC;
             } else {
                 Object visibilityObject;
 
@@ -76,16 +89,12 @@ public class MethodDefinitionNode extends RubyNode {
                 }
 
                 if (visibilityObject instanceof Visibility) {
-                    visibility = (Visibility) visibilityObject;
+                    return  (Visibility) visibilityObject;
                 } else {
-                    visibility = Visibility.PUBLIC;
+                    return Visibility.PUBLIC;
                 }
             }
         }
-
-        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
-        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
     }
 
     @Override
