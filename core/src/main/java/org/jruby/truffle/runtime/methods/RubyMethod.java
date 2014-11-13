@@ -71,7 +71,11 @@ public class RubyMethod implements MethodLike {
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
-        return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+        if (newDeclaringModule == declaringModule) {
+            return this;
+        } else {
+            return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+        }
     }
 
     public RubyMethod withNewName(String newName) {
