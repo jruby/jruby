@@ -57,7 +57,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         if (method == null || method.isUndefined()) {
             method = null;
             // TODO: should add " for #{receiver.inspect}" in error message
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError("super: no superclass method `"+method.getName()+"'", this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError("super: no superclass method `"+name+"'", this));
         }
 
         final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());

@@ -41,7 +41,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyClass(getContext(), null, getContext().getCoreLibrary().getObjectClass(), "(unnamed class)");
+            return new RubyClass(getContext(), null, null, "(unnamed class)", false);
         }
 
     }
@@ -75,6 +75,11 @@ public class RubyClass extends RubyModule {
         } else {
             unsafeSetSuperclass(superclass);
         }
+    }
+
+    public void initialize(RubyClass superclass) {
+        unsafeSetSuperclass(superclass);
+        ensureSingletonConsistency();
     }
 
     @Override

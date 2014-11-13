@@ -131,24 +131,23 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyClass initialize(RubyClass rubyClass, UndefinedPlaceholder superclass, UndefinedPlaceholder block) {
-            return rubyClass;
+            return initialize(rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
         }
 
         @Specialization
         public RubyClass initialize(RubyClass rubyClass, RubyClass superclass, UndefinedPlaceholder block) {
-            rubyClass.unsafeSetSuperclass(superclass);
+            rubyClass.initialize(superclass);
             return rubyClass;
         }
 
         @Specialization
         public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, UndefinedPlaceholder superclass, RubyProc block) {
-            moduleInitialize(frame, rubyClass, block);
-            return rubyClass;
+            return initialize(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
         }
 
         @Specialization
         public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
-            rubyClass.unsafeSetSuperclass(superclass);
+            rubyClass.initialize(superclass);
             moduleInitialize(frame, rubyClass, block);
             return rubyClass;
         }
