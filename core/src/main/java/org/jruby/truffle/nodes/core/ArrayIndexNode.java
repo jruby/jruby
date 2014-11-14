@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
  * class.
  */
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
+@ImportGuards(ArrayGuards.class)
 public abstract class ArrayIndexNode extends RubyNode {
 
     final int index;
@@ -117,68 +118,6 @@ public abstract class ArrayIndexNode extends RubyNode {
         } else {
             return ((Object[]) array.getStore())[normalisedIndex];
         }
-    }
-
-    // TODO(CS): copied and pasted from ArrayCoreMethodNode - need a way to use statics from other classes in the DSL
-
-    protected boolean isNull(RubyArray array) {
-        return array.getStore() == null;
-    }
-
-    protected boolean isIntegerFixnum(RubyArray array) {
-        return array.getStore() instanceof int[];
-    }
-
-    protected boolean isLongFixnum(RubyArray array) {
-        return array.getStore() instanceof long[];
-    }
-
-    protected boolean isFloat(RubyArray array) {
-        return array.getStore() instanceof double[];
-    }
-
-    protected boolean isObject(RubyArray array) {
-        return array.getStore() instanceof Object[];
-    }
-
-    protected boolean isOtherNull(RubyArray array, RubyArray other) {
-        return other.getStore() == null;
-    }
-
-    protected boolean isOtherIntegerFixnum(RubyArray array, RubyArray other) {
-        return other.getStore() instanceof int[];
-    }
-
-    protected boolean isOtherLongFixnum(RubyArray array, RubyArray other) {
-        return other.getStore() instanceof long[];
-    }
-
-    protected boolean isOtherFloat(RubyArray array, RubyArray other) {
-        return other.getStore() instanceof double[];
-    }
-
-    protected boolean isOtherObject(RubyArray array, RubyArray other) {
-        return other.getStore() instanceof Object[];
-    }
-
-    protected boolean areBothNull(RubyArray a, RubyArray b) {
-        return a.getStore() == null && b.getStore() == null;
-    }
-
-    protected boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
-        return a.getStore() instanceof int[] && b.getStore() instanceof int[];
-    }
-
-    protected boolean areBothLongFixnum(RubyArray a, RubyArray b) {
-        return a.getStore() instanceof long[] && b.getStore() instanceof long[];
-    }
-
-    protected boolean areBothFloat(RubyArray a, RubyArray b) {
-        return a.getStore() instanceof double[] && b.getStore() instanceof double[];
-    }
-
-    protected boolean areBothObject(RubyArray a, RubyArray b) {
-        return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
     }
 
 }
