@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.IllegalFieldValueException;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
@@ -1061,9 +1062,13 @@ public class RubyTime extends RubyObject {
 	    try {
 		time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
 	    }
-	    // joda-time 2.5 cab throw this exception
-	    catch( ArithmeticException e ) {
-		throw runtime.newRangeError(e.getMessage());
+	    // joda-time 2.5 can throw this exception - seen locally
+	    catch(ArithmeticException e1) {
+		throw runtime.newRangeError(e1.getMessage());
+	    }
+	    // joda-time 2.5 can throw this exception - seen on travis
+	    catch(IllegalFieldValueException e2) {
+		throw runtime.newRangeError(e2.getMessage());
 	    }
         }
 
