@@ -109,6 +109,11 @@ public class SexpMaker {
             b.append(d);
             return this;
         }
+
+        @Override
+        public String toString() {
+            return b.toString();
+        }
     }
 
     private static class DigestBuilder implements Builder {
