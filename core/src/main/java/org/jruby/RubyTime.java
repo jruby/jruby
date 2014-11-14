@@ -1058,7 +1058,13 @@ public class RubyTime extends RubyObject {
                 nanosecs = nano % 1000000;
             }
             time.setNSec(nanosecs);
-            time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
+	    try {
+		time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
+	    }
+	    // joda-time 2.5 cab throw this exception
+	    catch( ArithmeticException e ) {
+		throw runtime.newRangeError(e.getMessage());
+	    }
         }
 
         time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);
