@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'test/test_helper'
 require 'tempfile'
 require 'rbconfig'
 require 'jruby'
@@ -6,12 +7,13 @@ require 'jruby'
 #
 # Find the name of the interpreter.
 #  FIXME: This should be moved to a common location.
-WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
-SEPARATOR = WINDOWS ? '\\' : '/'
-bin = RbConfig::CONFIG['bindir'].gsub('/', SEPARATOR)
-$interpreter = [bin, RbConfig::CONFIG['ruby_install_name']].join(SEPARATOR)
+#WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
+#SEPARATOR = WINDOWS ? '\\' : '/'
+#bin = RbConfig::CONFIG['bindir'].gsub('/', SEPARATOR)
+#$interpreter = [bin, RbConfig::CONFIG['ruby_install_name']].join(SEPARATOR)
 
 class TestObjectSpace < Test::Unit::TestCase
+    include TestHelper
 
     #
     # Check that two arrays contain the same "bag" of elements.
@@ -42,6 +44,7 @@ class TestObjectSpace < Test::Unit::TestCase
     end
 
   def test_s__id2ref
+    skip("object space is not enabled") unless JRuby.runtime.object_space_enabled?
     s = "hello"
     t = ObjectSpace._id2ref(s.__id__)
     assert_equal(s, t)
@@ -59,9 +62,9 @@ class TestObjectSpace < Test::Unit::TestCase
       }
       tf.close
       if ENV['OS'] =~ /\AWin/
-        command = %{#$interpreter "#{tf.path}"}
+        command = %{#{interpreter} "#{tf.path}"}
       else
-        command = %{#$interpreter #{tf.path}}
+        command = %{#{interpreter} #{tf.path}}
       end
       IO.popen(command) do |p|
 	assert_equal("OK", p.gets.chomp)
@@ -77,6 +80,7 @@ class TestObjectSpace < Test::Unit::TestCase
   class D < C;  end
 
   def test_s_each_object
+    skip("object space is not enabled") unless JRuby.runtime.object_space_enabled?
     a = A.new
     b = B.new
     c = C.new

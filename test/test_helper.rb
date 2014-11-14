@@ -39,19 +39,23 @@ module TestHelper
     WINDOWS ? '"' : '\''
   end
 
+  def interpreter( options = {} )
+    options = options.collect { |k,v| "-D#{k}=\"#{v}\"" }
+    if RUBY =~ /-cp /
+      RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}").sub(/-cp /, options.join(' ') + ' -cp ')
+    else
+      RUBY
+    end
+  end
+
   def jruby(*args)
     options = []
     if args.last.is_a? Hash
-      options = args.last.collect { |k,v| "-D#{k}=\"#{v}\"" }
+      options = args.last
       args = args[0..-2]
     end
-    if RUBY =~ /-cp /
-      ruby = RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}").sub(/-cp /, options.join(' ') + ' -cp ')
-    else
-      options.each { |a| args.unshift "-J#{a}" }
-      ruby = RUBY
-    end
-    with_jruby_shell_spawning { `#{ruby} #{args.join(' ')}` }
+    options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
+    with_jruby_shell_spawning { `#{interpreter(options)} #{args.join(' ')}` }
   end
 
   def jruby_with_pipe(pipe, *args)

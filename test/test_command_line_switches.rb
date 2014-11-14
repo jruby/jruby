@@ -252,6 +252,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   if java.lang.System.get_property('java.vm.name') =~ /HotSpot/
     # JRUBY-2648 [Note: jre6 on windows does not ship server VM - use jdk]
     def test_server_vm_option
+      skip("test needs fix for jruby-complete.jar") if IS_JAR_EXECUTION
       # server VM when explicitly set --server
       result = jruby(%Q{--server -rjava \
         -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
@@ -407,6 +408,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_inproc_execute_with_globs
+    skip("test needs fix for jruby-complete.jar") if IS_JAR_EXECUTION
     args = %{-Xlaunch.inproc=true -e 'system %{jruby -e "p ARGV.sort" test/dir{1,2}/target*}'}
     assert_equal %{["test/dir1/target.rb", "test/dir2/target.class"]\n}, jruby(args)
   end

@@ -1,5 +1,41 @@
-project 'JRuby Integration Tests' do
+class TargetBuilder
+  attr_reader :targets
+  def initialize( version, basedir )
+    @version = version
+    @basedir = basedir
+    @names = ""
+    @targets = ""
+    @rake = Dir[File.join(@basedir, "../lib/ruby/gems/shared/gems/rake-*/lib/rake/rake_test_loader.rb")].first.sub( /.*\/..\/lib\//, 'lib/' )
+  end
+  def names
+    @names[0..-2]
+  end
+  def create_target( name, complete )
+    files = ""
+    File.open(File.join(@basedir, name + '.index')) do |f|
+      f.each_line.each do |line|
+        filename = "#{@basedir}/#{line.chomp}.rb"
+        next unless File.exist? filename
+        filename.sub!( /.*\/test\//, 'test/' )
+        files << "<arg value='#{filename}'/>\n"
+      end
+    end
 
+    if complete
+      name = "test-jruby-complete-#{name}"
+      jars = "maven/jruby-complete/target/jruby-complete-#{@version}.jar"
+    else
+      name = "test-jruby-jars-#{name}"
+      jars = "lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-#{@version}.jar"
+    end
+    @names << name + ","
+    # 
+    @targets << "<target name='#{name}' depends='mvn'>\n<exec executable='java' failonerror='true'>\n<arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>\n<arg value='-cp'/>\n<arg value='core/target/test-classes:test/target/test-classes:#{jars}'/>\n<arg value='org.jruby.Main'/>\n<arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>\n<arg value='#{@rake}'/>\n#{files}<arg value='-v'/>\n</exec>\n</target>\n"
+  end
+end
+
+project 'JRuby Integration Tests' do
+  
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
@@ -101,21 +137,13 @@ project 'JRuby Integration Tests' do
     test_source_directory '.'
   end
 
-
-  rake = Dir[File.join(basedir, "../lib/ruby/gems/shared/gems/rake-*/lib/rake/rake_test_loader.rb")].first.sub( /.*\/..\/lib\//, 'lib/' )
-  files = ""
-  File.open(File.join(basedir, 'jruby.1.9.index')) do |f|
-    f.each_line.each do |line|
-      filename = "#{basedir}/#{line.chomp}.rb"
-      next unless File.exist? filename
-      filename.sub!( /.*\/test\//, 'test/' )
-      files << "<arg value='#{filename}'/>\n"
-    end
-  end
-
-  target1 = "<target name='test-jruby-complete-jar'>\n<exec executable='java' failonerror='true'>\n<arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>\n<arg value='-cp'/>\n<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-#{version}.jar'/>\n<arg value='org.jruby.Main'/>\n<arg value='-I.'/>\n<arg value='#{rake}'/>\n#{files}<arg value='-v'/>\n</exec>\n</target>\n"
-  target2 = "<target name='test-jruby-core-stdlib-jars'>\n<exec executable='java' failonerror='true'>\n<arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>\n<arg value='-cp'/>\n<arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-#{version}.jar'/>\n<arg value='org.jruby.Main'/>\n<arg value='-I.'/>\n<arg value='#{rake}'/>\n#{files}<arg value='-v'/>\n</exec>\n</target>\n"
-
-  File.write(File.join(basedir, '..', 'antlib', 'extra.xml'), "<project basedir='..'>\n#{target1}#{target2}<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='test-jruby-complete-jar,test-jruby-core-stdlib-jars'/></project>")
+  builder = TargetBuilder.new( version, basedir )
+  builder.create_target( 'jruby.1.9', false )
+  builder.create_target( 'slow', true )
+  builder.create_target( 'objectspace', false )
+  #TODO builder.create_target( 'mri.1.9', false )
+  builder.create_target( 'rubicon.1.9', true )
+        
+  File.write(File.join(basedir, '..', 'antlib', 'extra.xml'), "<project basedir='..'>\n<target name='mvn'>\n<exec executable='mvn'>\n<arg line='-q'/>\n<arg line='-Pmain,complete'/>\n</exec>\n</target>\n#{builder.targets}<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='#{builder.names}'/></project>")
 
 end

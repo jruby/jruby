@@ -79,7 +79,7 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
   if (!WINDOWS)
     # JRUBY-2295
     def test_java_props_with_spaces
-      res = jruby(%q{-J-Dfoo='a b c' -e "require 'java'; puts java.lang.System.getProperty('foo')"}).chomp
+      res = jruby(%q{-e "require 'java'; puts java.lang.System.getProperty('foo')"}, 'foo' => 'a b c').chomp
       assert_equal("a b c", res)
     end
     
@@ -180,7 +180,9 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
   end
 
   def test_launch_inproc_ignores_dash_J_with_warning
-    output = `#{ENV_JAVA['jruby.home']}/bin/jruby -J-Xmx256m -e "puts true"`
-    assert_equal "true\n", output
+    unless IS_JAR_EXECUTION
+      output = `#{ENV_JAVA['jruby.home']}/bin/jruby -J-Xmx256m -e "puts true"`
+      assert_equal "true\n", output
+    end
   end
 end
