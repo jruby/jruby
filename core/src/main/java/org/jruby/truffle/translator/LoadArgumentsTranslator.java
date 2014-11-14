@@ -18,12 +18,11 @@ import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.ArrayGetTailNodeFactory;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
+import org.jruby.truffle.nodes.core.ArraySliceNodeFactory;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.*;
@@ -59,36 +58,37 @@ public class LoadArgumentsTranslator extends Translator {
 
         final List<RubyNode> sequence = new ArrayList<>();
 
-        int localIndex = 0;
-
         if (node.getPre() != null) {
             state = State.PRE;
+            index = 0;
             for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
                 sequence.add(arg.accept(this));
-                index = ++localIndex;
+                ++index;
             }
         }
 
         if (node.getOptArgs() != null) {
             // (BlockNode 0, (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0))), ...)
             state = State.OPT;
+            index = argsNode.getPreCount();
             for (org.jruby.ast.Node arg : node.getOptArgs().childNodes()) {
                 sequence.add(arg.accept(this));
-                index = ++localIndex;
-            }
-        }
-
-        if (node.getPost() != null) {
-            state = State.POST;
-            for (org.jruby.ast.Node arg : node.getPost().childNodes()) {
-                sequence.add(arg.accept(this));
-                index = ++localIndex;
+                ++index;
             }
         }
 
         if (node.getRestArgNode() != null) {
             methodBodyTranslator.getEnvironment().hasRestParameter = true;
             sequence.add(node.getRestArgNode().accept(this));
+        }
+
+        if (node.getPost() != null) {
+            state = State.POST;
+            index = -argsNode.getPostCount();
+            for (org.jruby.ast.Node arg : node.getPost().childNodes()) {
+                sequence.add(arg.accept(this));
+                ++index;
+            }
         }
 
         if (node.getBlock() != null) {
@@ -102,32 +102,19 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitArgumentNode(org.jruby.ast.ArgumentNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode readNode;
-
-        if (useArray()) {
-            readNode = readArgument(sourceSection, index);
-        } else {
-            if (state == State.PRE) {
-                readNode = readArgument(sourceSection, index);
-            } else if (state == State.POST) {
-                readNode = readArgument(sourceSection, (argsNode.getPreCount() + argsNode.getOptionalArgsCount() + argsNode.getPostCount()) - index - 1);
-            } else {
-                throw new IllegalStateException();
-            }
-        }
-
+        final RubyNode readNode = readArgument(sourceSection);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
     }
 
-    private RubyNode readArgument(SourceSection sourceSection, int index) {
+    private RubyNode readArgument(SourceSection sourceSection) {
         if (useArray()) {
             return ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
         } else {
             if (state == State.PRE) {
                 return new ReadPreArgumentNode(context, sourceSection, index, isBlock ? MissingArgumentBehaviour.NIL : MissingArgumentBehaviour.RUNTIME_ERROR);
             } else if (state == State.POST) {
-                return new ReadPostArgumentNode(context, sourceSection, (argsNode.getPreCount() + argsNode.getOptionalArgsCount() + argsNode.getPostCount()) - index - 1);
+                return new ReadPostArgumentNode(context, sourceSection, index);
             } else {
                 throw new IllegalStateException();
             }
@@ -141,10 +128,11 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode readNode;
 
         int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
+        int to = -argsNode.getPostCount();
         if (useArray()) {
-            readNode = ArrayGetTailNodeFactory.create(context, sourceSection, from, loadArray(sourceSection));
+            readNode = ArraySliceNodeFactory.create(context, sourceSection, from, to, loadArray(sourceSection));
         } else {
-            readNode = new ReadRestArgumentNode(context, sourceSection, from);
+            readNode = new ReadRestArgumentNode(context, sourceSection, from, to);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
@@ -163,7 +151,7 @@ public class LoadArgumentsTranslator extends Translator {
     @Override
     public RubyNode visitOptArgNode(org.jruby.ast.OptArgNode node) {
         // (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0)))
-        return node.childNodes().get(0).accept(this);
+        return node.getValue().accept(this);
     }
 
     @Override
@@ -187,12 +175,12 @@ public class LoadArgumentsTranslator extends Translator {
             if (useArray()) {
                 readNode = ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
             } else {
-                readNode = readArgument(sourceSection, index);
+                readNode = readArgument(sourceSection);
             }
         } else {
             // Optional argument
             final RubyNode defaultValue = valueNode.accept(this);
-            readNode = new ReadOptionalArgumentNode(context, sourceSection, index, index + argsNode.getPostCount() + 1, defaultValue);
+            readNode = new ReadOptionalArgumentNode(context, sourceSection, index, index + 1 + argsNode.getPostCount(), defaultValue);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(name);
@@ -251,7 +239,7 @@ public class LoadArgumentsTranslator extends Translator {
         return SequenceNode.sequence(context, sourceSection,
                 WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot,
                         ArrayCastNodeFactory.create(context, sourceSection,
-                                readArgument(sourceSection, arrayIndex))),
+                                readArgument(sourceSection))),
                 new IfNode(context, sourceSection,
                         BooleanCastNodeFactory.create(context, sourceSection,
                                 new IsNilNode(context, sourceSection, ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlot))),
