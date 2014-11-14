@@ -6,7 +6,8 @@ module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SEPARATOR = WINDOWS ? '\\' : '/'
-  RUBY = if RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
+  IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
+  RUBY = if IS_JAR_EXECUTION
            exe = 'java'
            exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
            file = File.expand_path('maven/jruby-complete/target/jruby-complete-*.jar')
@@ -39,7 +40,18 @@ module TestHelper
   end
 
   def jruby(*args)
-    ruby = RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}")
+    options = []
+    if args.last.is_a? Hash
+      options = args.last.collect { |k,v| "-D#{k}=\"#{v}\"" }
+      args = args[0..-2]
+    end
+    if RUBY =~ /-cp /
+      ruby = RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}")
+        .sub(/-cp /, options.join(' ') + ' -cp ')
+    else
+      options.each { |a| args.unshift "-J#{a}" }
+      ruby = RUBY
+    end
     with_jruby_shell_spawning { `#{ruby} #{args.join(' ')}` }
   end
 
