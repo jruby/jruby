@@ -46,8 +46,7 @@ module TestHelper
       args = args[0..-2]
     end
     if RUBY =~ /-cp /
-      ruby = RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}")
-        .sub(/-cp /, options.join(' ') + ' -cp ')
+      ruby = RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}").sub(/-cp /, options.join(' ') + ' -cp ')
     else
       options.each { |a| args.unshift "-J#{a}" }
       ruby = RUBY
