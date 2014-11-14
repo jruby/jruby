@@ -145,6 +145,6 @@ project 'JRuby Integration Tests' do
   #TODO builder.create_target( 'mri.1.9', false )
   builder.create_target( 'rubicon.1.9', true )
         
-  File.write(File.join(basedir, '..', 'antlib', 'extra.xml'), "<project basedir='..'>\n<target name='mvn'>\n<exec executable='mvn'>\n<arg line='-q'/>\n<arg line='-Ptest,bootstrap,main,complete'/>\n</exec>\n</target>\n#{builder.targets}<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='#{builder.names}'/></project>")
+  File.write(File.join(basedir, '..', 'antlib', 'extra.xml'), "<project basedir='..'>\n<target name='mvn'>\n<exec executable='mvn'>\n<arg line='-q'/>\n<arg line='-Ptest,bootstrap,main,complete'/>\n<arg line='-Dmaven.test.skip'/>\n</exec>\n</target>\n#{builder.targets}<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='#{builder.names}'/></project>")
 
 end
