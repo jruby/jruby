@@ -172,7 +172,9 @@ public class BodyTranslator extends Translator {
         if (node.getSecondNode() instanceof org.jruby.ast.ArgsCatNode) {
             collectArgsCatNodes(nodes, (org.jruby.ast.ArgsCatNode) node.getSecondNode());
         } else {
-            nodes.add(node.getSecondNode());
+            // ArgsCatNode implicitly splat its second argument. See Helpers.argsCat.
+            Node secondNode = new SplatNode(node.getSecondNode().getPosition(), node.getSecondNode());
+            nodes.add(secondNode);
         }
     }
 
