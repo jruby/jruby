@@ -3,7 +3,7 @@
 <exec executable='mvn'>
 <arg line='-q'/>
 <arg line='-Ptest,bootstrap,main,complete'/>
-<arg line='-Dmaven.test.skip'/>
+<arg line='-DskipTests'/>
 </exec>
 </target>
 <target name='test-jruby-jars-jruby.1.9' depends='mvn'>
