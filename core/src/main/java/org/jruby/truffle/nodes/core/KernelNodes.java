@@ -1869,24 +1869,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "truffelized?", isModuleFunction = true)
-    public abstract static class TruffelizedNode extends CoreMethodNode {
-
-        public TruffelizedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public TruffelizedNode(TruffelizedNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean truffelized() {
-            return true;
-        }
-
-    }
-
     // Rubinius API
     @CoreMethod(names = "undefined", isModuleFunction = true)
     public abstract static class UndefinedNode extends CoreMethodNode {

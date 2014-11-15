@@ -27,8 +27,6 @@ public interface TruffleBridge {
 
     void init();
 
-    TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode);
-
     Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode);
 
     IRubyObject toJRuby(Object object);
