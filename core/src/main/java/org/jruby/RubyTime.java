@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -683,7 +684,7 @@ public class RubyTime extends RubyObject {
             simpleDateFormat = TWO_DAY_CTIME_FORMATTER;
         }
         String result = simpleDateFormat.print(dt);
-        return getRuntime().newString(result);
+        return RubyString.newString(getRuntime(), result, USASCIIEncoding.INSTANCE);
     }
 
     @Override
@@ -716,7 +717,7 @@ public class RubyTime extends RubyObject {
             result = simpleDateFormat.print(invertedDT);
         }
 
-        return getRuntime().newString(result);
+        return RubyString.newString(getRuntime(), result, USASCIIEncoding.INSTANCE);
     }
 
     @JRubyMethod
