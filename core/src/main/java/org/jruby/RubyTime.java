@@ -93,10 +93,10 @@ public class RubyTime extends RubyObject {
     // the legacy TZ format in order to convert it to the newer format
     // understood by Java API.
     private static final Pattern TZ_PATTERN
-            = Pattern.compile("([^-\\+\\d]+)?([\\+-]?)(\\d+)(?::(\\d+))?(?::\\d+)?");
+            = Pattern.compile("([^-\\+\\d]+)?([\\+-]?)(\\d+)(?::(\\d+))?(?::(\\d+))?");
     
     private static final Pattern TIME_OFFSET_PATTERN
-            = Pattern.compile("([\\+-])(\\d\\d):(\\d\\d)");
+            = Pattern.compile("([\\+-])(\\d\\d):(\\d\\d)(?::(\\d\\d))?");
 
     private static final ByteList TZ_STRING = ByteList.create("TZ");
     
@@ -170,13 +170,14 @@ public class RubyTime extends RubyObject {
             String sign = tzMatcher.group(2);
             String hours = tzMatcher.group(3);
             String minutes = tzMatcher.group(4);
+            String seconds= tzMatcher.group(5);
 
             if (zoneName == null) {
                 zoneName = "";
             }
 
             // Sign is reversed in legacy TZ notation
-            return getTimeZoneFromHHMM(runtime, zoneName, sign.equals("-"), hours, minutes);
+            return getTimeZoneFromHHMM(runtime, zoneName, sign.equals("-"), hours, minutes, seconds);
         } else {
             if (LONG_TZNAME.containsKey(upZone)) {
                 zone = LONG_TZNAME.get(upZone);
@@ -229,7 +230,8 @@ public class RubyTime extends RubyObject {
             String sign = offsetMatcher.group(1);
             String hours = offsetMatcher.group(2);
             String minutes = offsetMatcher.group(3);
-            dtz = getTimeZoneFromHHMM(runtime, "", !sign.equals("-"), hours, minutes);
+            String seconds = offsetMatcher.group(4);
+            dtz = getTimeZoneFromHHMM(runtime, "", !sign.equals("-"), hours, minutes, seconds);
         } else {
             IRubyObject numericOffset = numExact(runtime, utcOffset);
             int newOffset = (int)Math.round(numericOffset.convertToFloat().getDoubleValue() * 1000);
@@ -293,18 +295,23 @@ public class RubyTime extends RubyObject {
                 String.format("Can't convert %s into an exact number", received.getMetaClass().getRealClass()));
     }
 
-    private static DateTimeZone getTimeZoneFromHHMM(Ruby runtime, String name, boolean positive, String hours, String minutes) {
+    private static DateTimeZone getTimeZoneFromHHMM(Ruby runtime, String name, boolean positive, String hours, String minutes, String seconds) {
         int h = Integer.parseInt(hours);
         int m = 0;
+        int s = 0;
         if (minutes != null) {
             m = Integer.parseInt(minutes);
+        }
+
+        if (seconds != null) {
+            s = Integer.parseInt(seconds);
         }
 
         if (h > 23 || m > 59) {
             throw runtime.newArgumentError("utc_offset out of range");
         }
 
-        int offset = (positive ? +1 : -1) * ((h * 60) + m) * 60 * 1000;
+        int offset = (positive ? +1 : -1) * ((h * 3600) + m * 60 + s)  * 1000;
         return timeZoneWithOffset(name, offset);
     }
 
