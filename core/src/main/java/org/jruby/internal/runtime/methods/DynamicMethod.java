@@ -310,6 +310,10 @@ public abstract class DynamicMethod {
         return implementationClass;
     }
 
+    public boolean isImplementedBy(RubyModule other) {
+        return implementationClass == other;
+    }
+
     /**
      * Set the class on which this method is implemented, used for 'super'
      * logic, among others.

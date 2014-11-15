@@ -437,7 +437,7 @@ public class MarshalStream extends FilterOutputStream {
     private boolean hasSingletonMethods(RubyClass type) {
         for(DynamicMethod method : type.getMethods().values()) {
             // We do not want to capture cached methods
-            if(method.getImplementationClass() == type) {
+            if(method.isImplementedBy(type)) {
                 return true;
             }
         }

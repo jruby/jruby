@@ -903,11 +903,6 @@ public class RubyModule extends RubyObject {
         RubyModule moduleToCompare = (RubyModule) arg;
 
         // See if module is in chain...Cannot match against itself so start at superClass.
-        // for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
-        //     if (p.isSame(moduleToCompare)) {
-        //         return context.runtime.getTrue();
-        //     }
-        // }
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isSame(moduleToCompare)) {
                 return context.runtime.getTrue();
@@ -998,7 +993,6 @@ public class RubyModule extends RubyObject {
         return searchWithCache(name).method;
     }
 
-    // FIXME should this be deprecated?
     public CacheEntry searchWithCache(String name) {
         return searchWithCache(name, true);
     }
@@ -1185,7 +1179,7 @@ public class RubyModule extends RubyObject {
         // This flattens some of the recursion that would be otherwise be necessary.
         // Used to recurse up the class hierarchy which got messy with prepend.
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
-            // Only recurses if module is an IncludedModuleWrapper.
+            // Only recurs if module is an IncludedModuleWrapper.
             // This way only the recursion needs to be handled differently on
             // IncludedModuleWrapper.
             DynamicMethod method = module.searchMethodCommon(name);
@@ -1538,7 +1532,7 @@ public class RubyModule extends RubyObject {
             RespondToMissingMethod rtmm = (RespondToMissingMethod)other;
 
             return this.site.methodName.equals(rtmm.site.methodName) &&
-                    getImplementationClass() == rtmm.getImplementationClass();
+                    isImplementedBy(rtmm.getImplementationClass());
         }
     }
 
@@ -1707,7 +1701,7 @@ public class RubyModule extends RubyObject {
             DynamicMethod method = entry.getValue();
             // Do not clone cached methods
             // FIXME: MRI copies all methods here
-            if (method.getImplementationClass() == realType || method.isUndefined()) {
+            if (method.isImplementedBy(realType) || method.isUndefined()) {
                 
                 // A cloned method now belongs to a new class.  Set it.
                 // TODO: Make DynamicMethod immutable
@@ -2111,7 +2105,7 @@ public class RubyModule extends RubyObject {
                     seen.add(methodName);
 
                     DynamicMethod method = (DynamicMethod) entry.getValue();
-                    if ((method.getImplementationClass() == realType || method.getImplementationClass() == type) &&
+                    if ((method.isImplementedBy(realType) || method.isImplementedBy(type)) &&
                         (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
                         ! method.isUndefined()) {
 
@@ -2662,10 +2656,7 @@ public class RubyModule extends RubyObject {
         // build a list of all modules to consider for inclusion
         List<RubyModule> modulesToInclude = new ArrayList<RubyModule>();
         while (baseModule != null) {
-            // if (baseModule.isPrepended())
-                // modulesToInclude.add(baseModule.getDelegate());
-            // else
-                modulesToInclude.add(baseModule.getDelegate());
+            modulesToInclude.add(baseModule.getDelegate());
             baseModule = baseModule.getSuperClass();
         }
 
