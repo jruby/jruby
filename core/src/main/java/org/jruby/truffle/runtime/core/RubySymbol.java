@@ -9,12 +9,10 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.FrameDescriptor;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
@@ -47,7 +45,7 @@ public class RubySymbol extends RubyObject {
 
         final RubyContext context = getContext();
 
-        final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generatedBlock(sourceSection, symbol);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, symbol, true, null, false);
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, new FrameDescriptor(), sharedMethodInfo,
                 new SymbolProcNode(context, sourceSection, symbol));

@@ -273,6 +273,18 @@ public class RubyContext extends ExecutionContext {
             return ((org.jruby.RubyFloat) object).getDoubleValue();
         } else if (object instanceof org.jruby.RubyString) {
             return toTruffle((org.jruby.RubyString) object);
+        } else if (object instanceof org.jruby.RubySymbol) {
+            return getSymbolTable().getSymbol(object.toString());
+        } else if (object instanceof org.jruby.RubyArray) {
+            final org.jruby.RubyArray jrubyArray = (org.jruby.RubyArray) object;
+
+            final Object[] truffleArray = new Object[jrubyArray.size()];
+
+            for (int n = 0; n < truffleArray.length; n++) {
+                truffleArray[n] = toTruffle((IRubyObject) jrubyArray.get(n));
+            }
+
+            return new RubyArray(coreLibrary.getArrayClass(), truffleArray, truffleArray.length);
         } else {
             throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
         }
