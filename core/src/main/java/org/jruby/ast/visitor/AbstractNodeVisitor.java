@@ -44,6 +44,20 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
         }
     }
 
+    protected T visitFirstChild(Node node) {
+        for (Node child: node.childNodes()) {
+            if (child != null) {
+                final T result = child.accept(this);
+
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+
+        return null;
+    }
+
     @Override
     public T visitAliasNode(AliasNode node) {
         return defaultVisit(node);
