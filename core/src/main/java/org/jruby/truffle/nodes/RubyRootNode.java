@@ -66,4 +66,9 @@ public class RubyRootNode extends RootNode {
     public RubyNode getBody() {
         return body;
     }
+
+    @Override
+    public ExecutionContext getExecutionContext() {
+        return context;
+    }
 }
