@@ -118,7 +118,7 @@ public class RubyBasicObject extends ObjectStorage {
         return objectID;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public void setInstanceVariables(Map<String, Object> instanceVariables) {
         updateLayoutToMatchClass();
         setFields(instanceVariables);

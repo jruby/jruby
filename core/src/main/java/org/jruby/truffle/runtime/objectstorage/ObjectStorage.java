@@ -62,7 +62,7 @@ public class ObjectStorage {
         }
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public Map<String, Object> getFields() {
         if (getObjectLayout() == null) {
             return Collections.emptyMap();
