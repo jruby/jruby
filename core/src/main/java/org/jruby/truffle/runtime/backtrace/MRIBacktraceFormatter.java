@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.RubyContext;
@@ -88,10 +89,10 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     }
 
     private static String formatFromLine(List<Activation> activations, int n) {
-        final StringBuilder builder = new StringBuilder();
+        return "\tfrom " + formatCallerLine(activations, n);
+    }
 
-        builder.append("\tfrom ");
-
+    public static String formatCallerLine(List<Activation> activations, int n) {
         final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
@@ -104,9 +105,14 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             reportedName = sourceSection.getIdentifier();
         }
 
-        builder.append(reportedSourceSection.getSource().getName());
-        builder.append(":");
-        builder.append(reportedSourceSection.getStartLine());
+        final StringBuilder builder = new StringBuilder();
+        if (reportedSourceSection instanceof NullSourceSection) {
+            builder.append("NullSourceSection");
+        } else {
+            builder.append(reportedSourceSection.getSource().getName());
+            builder.append(":");
+            builder.append(reportedSourceSection.getStartLine());
+        }
         builder.append(":in `");
         builder.append(reportedName);
         builder.append("'");

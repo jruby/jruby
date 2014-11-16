@@ -121,7 +121,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyModule(getContext(), getContext().getCoreLibrary().getObjectClass(), "(unnamed module)");
+            return new RubyModule(getContext(), null, "(unnamed module)");
         }
 
     }
@@ -239,7 +239,7 @@ public class RubyModule extends RubyObject implements ModuleChain {
         assert getMethods() != null;
 
         checkFrozen(currentNode);
-        getMethods().put(method.getName(), method);
+        getMethods().put(method.getName(), method.withDeclaringModule(this));
         newVersion();
     }
 

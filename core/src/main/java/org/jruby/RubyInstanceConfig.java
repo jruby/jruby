@@ -302,7 +302,7 @@ public class RubyInstanceConfig {
             newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
-                newJRubyHome = SystemPropertyCatcher.findFromJar(this);
+                newJRubyHome = SystemPropertyCatcher.findJRubyHome(this);
             } catch (Exception e) {}
 
             if (newJRubyHome != null) {
@@ -329,12 +329,21 @@ public class RubyInstanceConfig {
 
     // We require the home directory to be absolute
     private static String verifyHome(String home, PrintStream error) {
+        if (home.equals("uri:classloader:/META-INF/jruby.home" )) {
+            return home;
+        }
         if (home.equals(".")) {
             home = SafePropertyAccessor.getProperty("user.dir");
         }
-        if (home.startsWith("cp:")) {
+        else if (home.startsWith("cp:")) {
             home = home.substring(3);
-        } else if (!home.startsWith("file:") && !home.startsWith("classpath:") && !home.startsWith("uri:")) {
+        }
+        if (home.startsWith("jar:") || ( home.startsWith("file:") && home.contains(".jar!/") ) ||
+                home.startsWith("classpath:") || home.startsWith("uri:")) {
+            error.println("Warning: JRuby home with uri like pathes may not have full functionality - use at your own risk");
+        }
+        // do not normalize on plain jar like pathes coming from jruby-rack
+        else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
             NormalizedFile f = new NormalizedFile(home);
             if (!f.isAbsolute()) {
                 home = f.getAbsolutePath();

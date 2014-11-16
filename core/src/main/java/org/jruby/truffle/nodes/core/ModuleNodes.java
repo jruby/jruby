@@ -270,7 +270,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_reader)";
 
-            final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, indicativeName);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
@@ -323,7 +323,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_writer)";
 
-            final SharedMethodInfo sharedMethodInfo = SharedMethodInfo.generated(sourceSection, indicativeName);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
@@ -422,6 +422,34 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
+        }
+
+    }
+
+    @CoreMethod(names = {"class_exec","module_exec"}, argumentsAsArray = true, needsBlock = true)
+    public abstract static class ClassExecNode extends CoreMethodNode {
+
+        @Child protected YieldDispatchHeadNode yield;
+
+        public ClassExecNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context);
+        }
+
+        public ClassExecNode(ClassExecNode prev) {
+            super(prev);
+            yield = prev.yield;
+        }
+
+        public abstract Object executeClassEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
+
+        @Specialization
+        public Object classEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
+            notDesignedForCompilation();
+
+            // TODO: deal with args
+
+            return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
     }
@@ -685,8 +713,44 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
+        }
+
+    }
+
+    @CoreMethod(names = "initialize", needsBlock = true)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        @Child protected ModuleNodes.ClassExecNode classExecNode;
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        public abstract RubyModule executeInitialize(VirtualFrame frame, RubyModule module, RubyProc block);
+
+        void classEval(VirtualFrame frame, RubyModule module, RubyProc block) {
+            if (classExecNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null,null}));
+            }
+            classExecNode.executeClassEval(frame, module, new Object[]{}, block);
+        }
+
+        @Specialization
+        public RubyModule initialize(RubyModule module, UndefinedPlaceholder block) {
+            return module;
+        }
+
+        @Specialization
+        public RubyModule initialize(VirtualFrame frame, RubyModule module, RubyProc block) {
+            classEval(frame, module, block);
+            return module;
         }
 
     }

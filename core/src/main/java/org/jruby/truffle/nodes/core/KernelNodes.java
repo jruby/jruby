@@ -15,6 +15,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.SlowPathException;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -29,6 +30,10 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Activation;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -323,6 +328,44 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "caller", isModuleFunction = true, optional = 1)
+    public abstract static class CallerNode extends CoreMethodNode {
+
+        public CallerNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CallerNode(CallerNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object caller(UndefinedPlaceholder omit) {
+            return caller(1);
+        }
+
+        @Specialization
+        public Object caller(int omit) {
+            notDesignedForCompilation();
+
+            omit += 1; // Always ignore this node
+
+            Backtrace backtrace = RubyCallStack.getBacktrace(this);
+            List<Activation> activations = backtrace.getActivations();
+            int size = activations.size() - omit;
+
+            if (size < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            Object[] callers = new Object[size];
+            for (int n = 0; n < size; n++) {
+                callers[n] = getContext().makeString(MRIBacktraceFormatter.formatCallerLine(activations, n + omit));
+            }
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), callers, callers.length);
+        }
+    }
+
     @CoreMethod(names = "catch", isModuleFunction = true, needsBlock = true, required = 1)
     public abstract static class CatchNode extends YieldingCoreMethodNode {
 
@@ -453,7 +496,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object dup(VirtualFrame frame, RubyBasicObject self) {
-            notDesignedForCompilation();
+            // This method is pretty crappy for compilation - it should improve with the OM
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
 
@@ -675,7 +718,7 @@ public abstract class KernelNodes {
         public RubyObject freeze(RubyObject self) {
             notDesignedForCompilation();
 
-            self.frozen = true;
+            self.freeze();
             return self;
         }
 
@@ -696,7 +739,7 @@ public abstract class KernelNodes {
         public boolean isFrozen(RubyObject self) {
             notDesignedForCompilation();
 
-            return self.frozen;
+            return self.isFrozen();
         }
 
     }
@@ -843,7 +886,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object initializeDup(VirtualFrame frame, RubyBasicObject self, RubyBasicObject from) {
-            notDesignedForCompilation();
             return initializeCopyNode.call(frame, self, "initialize_copy", null, from);
         }
 
@@ -1822,24 +1864,6 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             return getContext().makeString("#<" + self.getLogicalClass().getName() + ":0x" + Long.toHexString(self.getObjectID()) + ">");
-        }
-
-    }
-
-    @CoreMethod(names = "truffelized?", isModuleFunction = true)
-    public abstract static class TruffelizedNode extends CoreMethodNode {
-
-        public TruffelizedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public TruffelizedNode(TruffelizedNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean truffelized() {
-            return true;
         }
 
     }

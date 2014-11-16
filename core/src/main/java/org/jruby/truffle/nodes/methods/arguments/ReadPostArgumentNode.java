@@ -9,10 +9,8 @@
  */
 package org.jruby.truffle.nodes.methods.arguments;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
@@ -21,11 +19,11 @@ import org.jruby.truffle.runtime.*;
  */
 public class ReadPostArgumentNode extends RubyNode {
 
-    private final int indexFromEnd;
+    private final int negativeIndex;
 
-    public ReadPostArgumentNode(RubyContext context, SourceSection sourceSection, int indexFromEnd) {
+    public ReadPostArgumentNode(RubyContext context, SourceSection sourceSection, int negativeIndex) {
         super(context, sourceSection);
-        this.indexFromEnd = indexFromEnd;
+        this.negativeIndex = negativeIndex;
     }
 
     @Override
@@ -33,7 +31,7 @@ public class ReadPostArgumentNode extends RubyNode {
         notDesignedForCompilation();
 
         int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
-        final int effectiveIndex = count - 1 - indexFromEnd;
+        final int effectiveIndex = count + negativeIndex;
         assert effectiveIndex < count;
         return RubyArguments.getUserArgument(frame.getArguments(), effectiveIndex);
     }

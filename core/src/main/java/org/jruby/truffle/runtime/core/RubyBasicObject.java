@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
@@ -34,6 +35,7 @@ public class RubyBasicObject extends ObjectStorage {
     @CompilationFinal protected RubyClass metaClass;
 
     protected long objectID = -1;
+    private boolean frozen = false;
     public boolean hasPrivateLayout = false;
 
     public RubyBasicObject(RubyClass rubyClass) {
@@ -50,6 +52,21 @@ public class RubyBasicObject extends ObjectStorage {
 
     public boolean hasClassAsSingleton() {
         return false;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void freeze() {
+        frozen = true;
+    }
+
+    public void checkFrozen(Node currentNode) {
+        if (frozen) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
+        }
     }
 
     public RubyClass getMetaClass() {
@@ -71,6 +88,10 @@ public class RubyBasicObject extends ObjectStorage {
 
         metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass,
                 String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
+
+        if (isFrozen()) {
+            metaClass.freeze();
+        }
 
         return metaClass;
     }
@@ -97,10 +118,8 @@ public class RubyBasicObject extends ObjectStorage {
         return objectID;
     }
 
+    @CompilerDirectives.SlowPath
     public void setInstanceVariables(Map<String, Object> instanceVariables) {
-        RubyNode.notDesignedForCompilation();
-
-        assert instanceVariables != null;
         updateLayoutToMatchClass();
         setFields(instanceVariables);
     }

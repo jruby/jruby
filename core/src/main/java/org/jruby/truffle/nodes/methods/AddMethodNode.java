@@ -29,34 +29,12 @@ public class AddMethodNode extends RubyNode {
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
+    public RubySymbol execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
         final Object receiverObject = receiver.execute(frame);
 
         final RubyMethod methodObject = (RubyMethod) method.execute(frame);
-
-        final FrameSlot moduleFunctionFlagSlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
-
-        boolean moduleFunctionFlag;
-
-        if (moduleFunctionFlagSlot == null) {
-            moduleFunctionFlag = false;
-        } else {
-            Object moduleFunctionObject;
-
-            try {
-                moduleFunctionObject = frame.getObject(moduleFunctionFlagSlot);
-            } catch (FrameSlotTypeException e) {
-                throw new RuntimeException(e);
-            }
-
-            if (moduleFunctionObject instanceof Boolean) {
-                moduleFunctionFlag = (boolean) moduleFunctionObject;
-            } else {
-                moduleFunctionFlag = false;
-            }
-        }
 
         RubyModule module;
 
@@ -68,13 +46,31 @@ public class AddMethodNode extends RubyNode {
 
         final RubyMethod methodWithDeclaringModule = methodObject.withDeclaringModule(module);
 
-        if (moduleFunctionFlag) {
+        if (moduleFunctionFlag(frame)) {
             module.addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PRIVATE));
             module.getSingletonClass(this).addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PUBLIC));
         } else {
             module.addMethod(this, methodWithDeclaringModule);
         }
 
-        return getContext().getCoreLibrary().getNilObject();
+        return getContext().newSymbol(method.getName());
+    }
+
+    private boolean moduleFunctionFlag(VirtualFrame frame) {
+        final FrameSlot moduleFunctionFlagSlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
+
+        if (moduleFunctionFlagSlot == null) {
+            return false;
+        } else {
+            Object moduleFunctionObject;
+
+            try {
+                moduleFunctionObject = frame.getObject(moduleFunctionFlagSlot);
+            } catch (FrameSlotTypeException e) {
+                throw new RuntimeException(e);
+            }
+
+            return (moduleFunctionObject instanceof Boolean) && (boolean) moduleFunctionObject;
+        }
     }
 }

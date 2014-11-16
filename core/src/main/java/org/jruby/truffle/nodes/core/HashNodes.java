@@ -82,12 +82,15 @@ public abstract class HashNodes {
             throw new UnsupportedOperationException();
         }
 
-        @Specialization
-        public boolean equal(RubyHash a, RubySymbol b) {
+        @Specialization(guards = "!isHash(arguments[1])")
+        public boolean equal(RubyHash a, Object b) {
             notDesignedForCompilation();
             return false;
         }
 
+        protected boolean isHash(Object object) {
+            return object instanceof RubyHash;
+        }
     }
 
     @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true)
@@ -1090,23 +1093,43 @@ public abstract class HashNodes {
             super(prev);
         }
 
+        @Specialization(guards = "isNull")
+        public RubyArray toArrayNull(RubyHash hash) {
+            notDesignedForCompilation();
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
+        @Specialization(guards = "isObjectArray")
+        public RubyArray toArrayObjectArray(RubyHash hash) {
+            notDesignedForCompilation();
+
+            final Object[] store = (Object[]) hash.getStore();
+            final int size = hash.getStoreSize();
+            final Object[] pairs = new Object[size];
+
+            for (int n = 0; n < size; n++) {
+                pairs[n] = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), store[n * 2], store[n * 2 + 1]);
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, size);
+        }
+
         @Specialization(guards = "isObjectLinkedHashMap")
-        public RubyArray toArray(RubyHash hash) {
+        public RubyArray toArrayLinkedHashMap(RubyHash hash) {
             notDesignedForCompilation();
 
             final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
-
-            final Object[] array = new Object[store.size() * 2];
-
+            final int size = hash.getStoreSize();
+            final Object[] pairs = new Object[size];
             int n = 0;
 
-            for (Map.Entry<Object, Object> keyValues : store.entrySet()) {
-                array[n] = keyValues.getKey();
-                array[n + 1] = keyValues.getValue();
-                n += 2;
+            for (Map.Entry<Object, Object> pair : store.entrySet()) {
+                pairs[n] = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), pair.getKey(), pair.getValue());
+                n += 1;
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, size);
         }
 
     }

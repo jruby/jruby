@@ -1,2 +1,0 @@
-fails:->(){} sets parameters appropriately when a combination of parameter types is given between the parenthesis
-fails:->(){} uses lambda's 'rigid' argument handling

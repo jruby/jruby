@@ -9,3 +9,4 @@ fails:Module#include returns the class it's included into
 fails:Module#include? returns true if the given module is included by self or one of it's ancestors
 fails:Module#include? returns false if given module is equal to self
 fails:Module#include? raises a TypeError when no module was given
+fails:Module#include accepts no-arguments

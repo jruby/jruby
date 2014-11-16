@@ -19,12 +19,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -111,6 +106,52 @@ public abstract class ClassNodes {
             }
             return array;
         }
+    }
+
+    @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        @Child protected ModuleNodes.InitializeNode moduleInitializeNode;
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        void moduleInitialize(VirtualFrame frame, RubyClass rubyClass, RubyProc block) {
+            if (moduleInitializeNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null}));
+            }
+            moduleInitializeNode.executeInitialize(frame, rubyClass, block);
+        }
+
+        @Specialization
+        public RubyClass initialize(RubyClass rubyClass, UndefinedPlaceholder superclass, UndefinedPlaceholder block) {
+            return initialize(rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
+        }
+
+        @Specialization
+        public RubyClass initialize(RubyClass rubyClass, RubyClass superclass, UndefinedPlaceholder block) {
+            rubyClass.initialize(superclass);
+            return rubyClass;
+        }
+
+        @Specialization
+        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, UndefinedPlaceholder superclass, RubyProc block) {
+            return initialize(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
+        }
+
+        @Specialization
+        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
+            rubyClass.initialize(superclass);
+            moduleInitialize(frame, rubyClass, block);
+            return rubyClass;
+        }
+
     }
 
     @CoreMethod(names = "superclass")

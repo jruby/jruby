@@ -10,11 +10,10 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.ImportGuards;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -23,68 +22,77 @@ import java.util.Arrays;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportGuards(ArrayGuards.class)
-public abstract class ArrayGetTailNode extends RubyNode {
+public abstract class ArraySliceNode extends RubyNode {
 
-    final int index;
+    final int from; // positive
+    final int to; // negative, exclusive
 
-    public ArrayGetTailNode(RubyContext context, SourceSection sourceSection, int index) {
+    public ArraySliceNode(RubyContext context, SourceSection sourceSection, int from, int to) {
         super(context, sourceSection);
-        this.index = index;
+        assert from >= 0;
+        assert to <= 0;
+        this.from = from;
+        this.to = to;
     }
 
-    public ArrayGetTailNode(ArrayGetTailNode prev) {
+    public ArraySliceNode(ArraySliceNode prev) {
         super(prev);
-        index = prev.index;
+        from = prev.from;
+        to = prev.to;
     }
 
     @Specialization(guards = "isNull")
-    public RubyArray getTailNull(RubyArray array) {
+    public RubyArray sliceNull(RubyArray array) {
         notDesignedForCompilation();
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
     @Specialization(guards = "isIntegerFixnum")
-    public RubyArray getTailIntegerFixnum(RubyArray array) {
+    public RubyArray sliceIntegerFixnum(RubyArray array) {
         notDesignedForCompilation();
+        final int to = array.getSize() + this.to;
 
-        if (index >= array.getSize()) {
+        if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.getStore(), from, to), to - from);
         }
     }
 
     @Specialization(guards = "isLongFixnum")
-    public RubyArray getTailLongFixnum(RubyArray array) {
+    public RubyArray sliceLongFixnum(RubyArray array) {
         notDesignedForCompilation();
+        final int to = array.getSize() + this.to;
 
-        if (index >= array.getSize()) {
+        if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), from, to), to - from);
         }
     }
 
     @Specialization(guards = "isFloat")
-    public RubyArray getTailFloat(RubyArray array) {
+    public RubyArray sliceFloat(RubyArray array) {
         notDesignedForCompilation();
+        final int to = array.getSize() + this.to;
 
-        if (index >= array.getSize()) {
+        if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), from, to), to - from);
         }
     }
 
     @Specialization(guards = "isObject")
-    public RubyArray getTailObject(RubyArray array) {
+    public RubyArray sliceObject(RubyArray array) {
         notDesignedForCompilation();
+        final int to = array.getSize() + this.to;
 
-        if (index >= array.getSize()) {
+        if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), from, to), to - from);
         }
     }
 

@@ -172,7 +172,9 @@ public class BodyTranslator extends Translator {
         if (node.getSecondNode() instanceof org.jruby.ast.ArgsCatNode) {
             collectArgsCatNodes(nodes, (org.jruby.ast.ArgsCatNode) node.getSecondNode());
         } else {
-            nodes.add(node.getSecondNode());
+            // ArgsCatNode implicitly splat its second argument. See Helpers.argsCat.
+            Node secondNode = new SplatNode(node.getSecondNode().getPosition(), node.getSecondNode());
+            nodes.add(secondNode);
         }
     }
 
@@ -563,7 +565,7 @@ public class BodyTranslator extends Translator {
     private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, Node bodyNode) {
         LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, name, false, bodyNode);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, name, false, bodyNode, false);
 
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(),
                     environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, name, false);
@@ -794,8 +796,8 @@ public class BodyTranslator extends Translator {
         return translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), true);
     }
 
-    private RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), methodName, false, parseTree);
+    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), methodName, false, parseTree, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName, false);
@@ -1180,7 +1182,7 @@ public class BodyTranslator extends Translator {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), currentCallMethodName, true, node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), currentCallMethodName, true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
@@ -1823,6 +1825,11 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitPreExeNode(PreExeNode node) {
+        return node.getBodyNode().accept(this);
+    }
+
+    @Override
     public RubyNode visitRedoNode(org.jruby.ast.RedoNode node) {
         return new RedoNode(context, translate(node.getPosition()));
     }
@@ -2122,7 +2129,7 @@ public class BodyTranslator extends Translator {
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), "(lambda)", true, node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), "(lambda)", true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);

@@ -696,7 +696,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return interpret(context, self, ic, method.getVisibility(), method.getImplementationClass(), name, args, block, null);
+            return interpret(context, self, ic, method.getVisibility(), method.getImplementationClass().getMethodLocation(), name, args, block, null);
         } finally {
             if (!isSynthetic) ThreadContext.popBacktrace(context);
         }

@@ -167,6 +167,26 @@ public abstract class ModuleOperations {
         return null;
     }
 
+    public static RubyMethod lookupSuperMethod(RubyModule declaringModule, String name, RubyClass objectMetaClass) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        boolean foundDeclaringModule = false;
+        for (RubyModule module : objectMetaClass.ancestors()) {
+            if (module == declaringModule) {
+                foundDeclaringModule = true;
+            } else if (foundDeclaringModule) {
+                RubyMethod method = module.getMethods().get(name);
+
+                if (method != null) {
+                    return method;
+                }
+            }
+        }
+        assert foundDeclaringModule : "Did not find the declaring module in "+objectMetaClass.getName()+" ancestors";
+
+        return null;
+    }
+
     public static Map<String, Object> getAllClassVariables(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 

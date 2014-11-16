@@ -62,9 +62,8 @@ public class ObjectStorage {
         }
     }
 
+    @CompilerDirectives.SlowPath
     public Map<String, Object> getFields() {
-        CompilerAsserts.neverPartOfCompilation();
-
         if (getObjectLayout() == null) {
             return Collections.emptyMap();
         }

@@ -41,30 +41,25 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         return method != null && unmodifiedAssumption.isValid();
     }
 
-    protected void lookup() {
+    protected void lookup(VirtualFrame frame) {
         CompilerAsserts.neverPartOfCompilation();
 
+        // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
         final RubyModule declaringModule = RubyCallStack.getCurrentMethod().getDeclaringModule();
+        final RubyClass selfMetaClass = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
 
-        if (!(declaringModule instanceof RubyClass)) {
-            method = null;
-            throw new RaiseException(getContext().getCoreLibrary().typeError("wasn't a class: "+name, this));
-        }
-
-        assert declaringModule instanceof RubyClass;
-        method = ModuleOperations.lookupMethod(((RubyClass) declaringModule).getSuperClass(), name);
+        method = ModuleOperations.lookupSuperMethod(declaringModule, name, selfMetaClass);
 
         if (method == null || method.isUndefined()) {
             method = null;
             // TODO: should add " for #{receiver.inspect}" in error message
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError("super: no superclass method `"+method.getName()+"'", this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError("super: no superclass method `"+name+"'", this));
         }
 
         final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
         if (callNode == null) {
-            callNode = newCallNode;
-            adoptChildren();
+            callNode = insert(newCallNode);
         } else {
             callNode.replace(newCallNode);
         }
@@ -82,7 +77,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
             final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
             if (!guard()) {
-                lookup();
+                lookup(frame);
             }
 
             if (method == null || method.isUndefined() || !method.isVisibleTo(this, self.getMetaClass())) {

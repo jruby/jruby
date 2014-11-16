@@ -38,6 +38,7 @@ import java.util.List;
 
 import org.jruby.ParseResult;
 import org.jruby.ast.types.INameNode;
+import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
@@ -180,6 +181,21 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
         int i = name.lastIndexOf('.');
         String nodeType = name.substring(i + 1);
         return nodeType;
+    }
+
+    public <T extends org.jruby.ast.Node> T findFirstChild(final Class<T> nodeClass) {
+        return accept(new AbstractNodeVisitor<T>() {
+
+            @Override
+            protected T defaultVisit(Node node) {
+                if (nodeClass.isAssignableFrom(node.getClass())) {
+                    return (T) node;
+                } else {
+                    return visitFirstChild(node);
+                }
+            }
+
+        });
     }
 
     /**

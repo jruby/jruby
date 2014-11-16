@@ -72,7 +72,7 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
         if (!guard()) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            lookup();
+            lookup(frame);
         }
 
         // Call the method

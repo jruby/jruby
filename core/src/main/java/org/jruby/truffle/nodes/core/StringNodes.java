@@ -685,7 +685,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "size")
+    @CoreMethod(names = {"size", "length"})
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {

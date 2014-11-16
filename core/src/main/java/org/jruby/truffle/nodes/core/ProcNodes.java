@@ -9,10 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.visitor.AbstractNodeVisitor;
+import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -109,6 +115,30 @@ public abstract class ProcNodes {
         @Specialization
         public boolean lambda(RubyProc proc) {
             return proc.getType() == RubyProc.Type.LAMBDA;
+        }
+
+    }
+
+    @CoreMethod(names = "parameters")
+    public abstract static class ParametersNode extends CoreMethodNode {
+
+        public ParametersNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ParametersNode(ParametersNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public RubyArray parameters(RubyProc proc) {
+            final ArgsNode argsNode = proc.getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+
+            final String[] parameters = Helpers.encodeParameterList((ArgsNode) argsNode).split(";");
+
+            return (RubyArray) getContext().toTruffle(Helpers.parameterListToParameters(getContext().getRuntime(),
+                    parameters, proc.getType() == RubyProc.Type.LAMBDA));
         }
 
     }

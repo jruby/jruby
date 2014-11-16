@@ -41,3 +41,4 @@ fails:Module#define_method passed { |a, b, *c|  } creates a method that raises a
 fails:Module#define_method passed { |a, b, *c|  } creates a method that raises an ArgumentError when passed one argument and a block
 fails:Module#define_method passed { |a, b, *c|  } creates a method that receives an empty array as the third argument when passed two arguments
 fails:Module#define_method passed { |a, b, *c|  } creates a method that receives the third argument in an array when passed three arguments
+fails:Module#define_method when name is :initialize given an UnboundMethod sets the visibility to private when method is named :initialize

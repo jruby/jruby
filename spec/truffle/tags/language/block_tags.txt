@@ -1,9 +1,2 @@
-fails:Post-args appear after a splat
 fails:Block-local variables override shadowed variables from the outer scope
-fails:Post-args with required args gathers remaining args in the splat
-fails:Post-args with required args has an empty splat when there are no remaining args
-fails:Post-args with optional args gathers remaining args in the splat
-fails:Post-args with optional args overrides the optional arg before gathering in the splat
-fails:Post-args with optional args uses the required arg before the optional and the splat
-fails:Post-args with optional args overrides the optional args from left to right before gathering the splat
 fails:Post-args with pattern matching extracts matched blocks with post arguments
