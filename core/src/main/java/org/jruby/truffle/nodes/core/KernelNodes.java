@@ -496,7 +496,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object dup(VirtualFrame frame, RubyBasicObject self) {
-            notDesignedForCompilation();
+            // This method is pretty crappy for compilation - it should improve with the OM
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
 
@@ -886,7 +886,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object initializeDup(VirtualFrame frame, RubyBasicObject self, RubyBasicObject from) {
-            notDesignedForCompilation();
             return initializeCopyNode.call(frame, self, "initialize_copy", null, from);
         }
 

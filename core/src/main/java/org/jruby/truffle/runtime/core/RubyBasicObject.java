@@ -118,10 +118,8 @@ public class RubyBasicObject extends ObjectStorage {
         return objectID;
     }
 
+    @CompilerDirectives.SlowPath
     public void setInstanceVariables(Map<String, Object> instanceVariables) {
-        RubyNode.notDesignedForCompilation();
-
-        assert instanceVariables != null;
         updateLayoutToMatchClass();
         setFields(instanceVariables);
     }
