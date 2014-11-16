@@ -56,7 +56,7 @@ function pack {
     chmod -R +w graalvm-jdk1.8.0
     cp -r graalvm-jdk1.8.0 jruby-$version_dir || exit $?
     rm -rf jruby-$version_dir/graalvm-jdk1.8.0/src.zip jruby-$version_dir/graalvm-jdk1.8.0/demo jruby-$version_dir/graalvm-jdk1.8.0/include jruby-$version_dir/graalvm-jdk1.8.0/sample || exit $?
-    targetname=jruby-dist-$version_file+graal-$1-x86_64.dev-bin.tar.gz
+    targetname=jruby-dist-$version_file+graal-$1-x86_64-bin.tar.gz
     tar -zcf $targetname jruby-$version_dir || exit $?
     shasum -a 1 $targetname > $targetname.sha1 || exit $?
 }
