@@ -85,7 +85,7 @@ public class Bootstrap {
 
     public static CallSite hash(Lookup lookup, String name, MethodType type) {
         MethodHandle handle = Binder
-                .from(type)
+                .from(lookup, type)
                 .collect(1, IRubyObject[].class)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "hash");
         CallSite site = new ConstantCallSite(handle);
