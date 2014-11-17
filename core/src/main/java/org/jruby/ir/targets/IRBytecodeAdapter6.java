@@ -487,7 +487,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void hash(int length) {
-        if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
+        if (length > MAX_ARGUMENTS / 2) throw new NotCompilableException("literal hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
 
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2));
@@ -517,7 +517,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void kwargsHash(int length) {
-        if (length > MAX_ARGUMENTS) throw new NotCompilableException("kwargs hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
+        if (length > MAX_ARGUMENTS / 2) throw new NotCompilableException("kwargs hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
 
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, RubyHash.class, IRubyObject.class, length * 2));
