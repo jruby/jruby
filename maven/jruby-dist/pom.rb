@@ -79,10 +79,6 @@ project 'JRuby Dist' do
 
   plugin( :invoker )
 
-  build do
-    final_name "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}"
-  end
-
   # for the release we do some extra IT by unzipping a source dist file
   # and run the $ mvn -Pall from there and check a few things to be in place.
   # add check for SNAPSHOT version in any of the modules !!!!
@@ -136,7 +132,7 @@ project 'JRuby Dist' do
 
         revision = `git show`.gsub( /\n.*|commit /, '' )
       
-        basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src".sub(/-SNAPSHOT/, '')
+        basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
         
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
           [ 'tar', 'zip' ].each do |format|
