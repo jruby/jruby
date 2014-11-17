@@ -15,6 +15,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -88,11 +89,18 @@ public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
 
             @Override
             public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
-                Helpers.preLoadCommon(context, staticScope, false);
+                DynamicScope tlbScope = scope.getTopLevelBindingScope();
+                if (tlbScope == null) {
+                    context.preMethodScopeOnly(staticScope);
+                } else {
+                    context.preScopedBody(tlbScope);
+                    tlbScope.growIfNeeded();
+                }
+
                 try {
                     return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                 } finally {
-                    Helpers.postLoad(context);
+                    context.popScope();
                 }
             }
         };
