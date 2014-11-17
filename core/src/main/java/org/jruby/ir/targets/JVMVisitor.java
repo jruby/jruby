@@ -38,6 +38,7 @@ import org.objectweb.asm.commons.Method;
 
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -1940,17 +1941,29 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Hash(Hash hash) {
+        List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
+        Iterator<KeyValuePair<Operand, Operand>> iter = pairs.iterator();
+        boolean kwargs = hash.isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY;
+
         jvmMethod().loadContext();
-        for (KeyValuePair<Operand, Operand> pair: hash.getPairs()) {
+        if (kwargs) {
+            visit(pairs.get(0).getValue());
+            jvmAdapter().checkcast(p(RubyHash.class));
+
+            iter.next();
+        }
+
+        for (; iter.hasNext() ;) {
+            KeyValuePair<Operand, Operand> pair = iter.next();
             visit(pair.getKey());
             visit(pair.getValue());
         }
-        jvmMethod().hash(hash.getPairs().size());
-    }
 
-    @Override
-    public void IRException(IRException irexception) {
-        super.IRException(irexception);    //To change body of overridden methods use File | Settings | File Templates.
+        if (kwargs) {
+            jvmMethod().kwargsHash(pairs.size() - 1);
+        } else {
+            jvmMethod().hash(pairs.size());
+        }
     }
 
     @Override

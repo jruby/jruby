@@ -516,6 +516,37 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, "hash:" + length, incomingSig);
     }
 
+    public void kwargsHash(int length) {
+        if (length > MAX_ARGUMENTS) throw new NotCompilableException("kwargs hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
+
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, RubyHash.class, IRubyObject.class, length * 2));
+
+        if (!getClassData().kwargsHashMethodsDefined.contains(length)) {
+            adapter2 = new SkinnyMethodAdapter(
+                    adapter.getClassVisitor(),
+                    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                    "kwargsHash:" + length,
+                    incomingSig,
+                    null,
+                    null);
+
+            adapter2.aload(0);
+            adapter2.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+            adapter2.aload(1);
+            buildArrayFromLocals(adapter2, 2, length * 2);
+
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), "constructHashFromArray", sig(RubyHash.class, Ruby.class, RubyHash.class, IRubyObject[].class));
+            adapter2.areturn();
+            adapter2.end();
+
+            getClassData().hashMethodsDefined.add(length);
+        }
+
+        // now call it
+        adapter.invokestatic(getClassData().clsName, "kwargsHash:" + length, incomingSig);
+    }
+
     public void checkpoint() {
         loadContext();
         adapter.invokevirtual(

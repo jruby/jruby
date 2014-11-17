@@ -424,11 +424,20 @@ public abstract class IRBytecodeAdapter {
     /**
      * Construct a Hash from elements on stack.
      *
-     * Stack required: all elements of hash
+     * Stack required: context, all elements of hash
      *
      * @param length number of element pairs
      */
     public abstract void hash(int length);
+
+    /**
+     * Construct a Hash based on keyword arguments pasesd to this method, for use in zsuper
+     *
+     * Stack required: context, kwargs hash to dup, remaining elements of hash
+     *
+     * @param length number of element pairs
+     */
+    public abstract void kwargsHash(int length);
 
     /**
      * Perform a thread event checkpoint.
