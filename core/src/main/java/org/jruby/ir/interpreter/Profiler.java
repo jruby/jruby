@@ -21,7 +21,7 @@ public class Profiler {
         long     count;
         InterpretedIRMethod tgtM;
 
-        public IRCallSite() { }
+        public IRCallSite() {}
 
         public IRCallSite(IRCallSite cs) {
             this.s     = cs.s;
@@ -86,7 +86,7 @@ public class Profiler {
             IRCallSite      cs  = csp.cs;
 
             if (cs.v != scopeVersionMap.get(cs.s).intValue()) {
-                // System.out.println("Skipping callsite: <" + cs.s + "," + cs.v + "> with compiled version: " + scopeVersionMap.get(cs.s));
+                System.out.println("Skipping callsite: <" + cs.s + "," + cs.v + "> with compiled version: " + scopeVersionMap.get(cs.s));
                 continue;
             }
 
@@ -149,8 +149,8 @@ public class Profiler {
             // This check is arbitrary
             if (i == 100 || freq > 99.0) break;
 
-            // System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
-            // " in scope " + ircs.s + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
+            System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
+            " in scope " + ircs.s + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
             // Now inline here!
             CallBase call = ircs.call;
@@ -166,8 +166,8 @@ public class Profiler {
             // Dont inline large methods -- 500 is arbitrary
             // Can be null if a previously inlined method hasn't been rebuilt
             if ((instrs == null) || instrs.length > 500) {
-                // if (instrs == null) System.out.println("no instrs!");
-                // else System.out.println("large method with " + instrs.length + " instrs. skipping!");
+                if (instrs == null) System.out.println("no instrs!");
+                else System.out.println("large method with " + instrs.length + " instrs. skipping!");
                 continue;
             }
 
@@ -179,7 +179,7 @@ public class Profiler {
                 Operand clArg = call.getClosureArg(null);
                 inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
             }
-
+/*
             if (inlineCall) {
                 noInlining = false;
                 long start = new java.util.Date().getTime();
@@ -194,6 +194,7 @@ public class Profiler {
             } else {
                 //System.out.println("--no inlining--");
             }
+*/
         }
 
         for (IRScope x: inlinedScopes) {
@@ -277,6 +278,8 @@ public class Profiler {
     }
 
     public static Integer initProfiling(IRScope scope) {
+        if (scope == null) return null;
+
         /* SSS: Not being used currently
         tpCount = scopeThreadPollCounts.get(scope);
         if (tpCount == null) {
@@ -311,6 +314,8 @@ public class Profiler {
     }
 
     public static void updateCallSite(Instr instr, IRScope scope, Integer scopeVersion) {
+        if (scope == null) return;
+
         if (instr instanceof CallBase) {
             callerSite.s = scope;
             callerSite.v = scopeVersion;
@@ -319,8 +324,7 @@ public class Profiler {
     }
 
     public static void clockTick() {
-        // SSS: Not being used currently
-        // tpCount.count++;
+        // tpCount.count++; // SSS: Not being used currently
         globalThreadPollCount++;
 
         // 20K is arbitrary
