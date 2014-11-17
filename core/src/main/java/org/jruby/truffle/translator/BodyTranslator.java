@@ -1830,6 +1830,11 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitPostExeNode(PostExeNode node) {
+        return node.getBodyNode().accept(this);
+    }
+
+    @Override
     public RubyNode visitRedoNode(org.jruby.ast.RedoNode node) {
         return new RedoNode(context, translate(node.getPosition()));
     }
