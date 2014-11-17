@@ -1,7 +1,6 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.*;
-import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -149,7 +148,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         scope.setModule(currModule);
-        DynamicScope tlbScope = irScope.getTopLevelBindingScope();
+        DynamicScope tlbScope = irScope.getToplevelScope();
         if (tlbScope == null) {
             context.preMethodScopeOnly(scope);
         } else {
@@ -381,11 +380,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
-                                             RubyModule implClass, Visibility visibility) {
+                                             RubyModule implClass) {
         switch(operation) {
         case PUSH_FRAME:
             context.preMethodFrameOnly(implClass, name, self, block);
-            context.setCurrentVisibility(visibility);
+            // Only the top-level script scope has PRIVATE visibility.
+            // This is already handled as part of Interpreter.execute above.
+            // Everything else is PUBLIC by default.
+            context.setCurrentVisibility(Visibility.PUBLIC);
             break;
         case POP_FRAME:
             context.popFrame();
@@ -549,7 +551,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            InterpreterContext interpreterContext, Visibility visibility, RubyModule implClass,
+            InterpreterContext interpreterContext, RubyModule implClass,
             String name, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp           = interpreterContext.allocateTemporaryVariables();
@@ -561,12 +563,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Object   exception      = null;
         DynamicScope currDynScope = context.getCurrentScope();
         StaticScope currScope = interpreterContext.getStaticScope();
+        IRScope scope = currScope.getIRScope();
+        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        //Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
-        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+        Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
 
         // Enter the looooop!
         while (ipc < n) {
@@ -593,7 +596,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
                     break;
                 case CALL_OP:
-                    //if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
+                    if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
                     processCall(context, instr, operation, currDynScope, currScope, temp, self);
                     break;
                 case RET_OP:
@@ -612,7 +615,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         currDynScope = interpreterContext.newDynamicScope(context);
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, visibility);
+                        processBookKeepingOp(context, instr, operation, name, args, self, block, implClass);
                     }
                     break;
                 case OTHER_OP:
@@ -661,7 +664,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
            InterpreterContext ic, RubyModule clazz, String name) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return interpret(context, self, ic, null, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
+            return interpret(context, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -671,7 +674,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
            InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return interpret(context, self, ic, null, clazz, name, args, block, blockType);
+            return interpret(context, self, ic, clazz, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -681,7 +684,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             InterpreterContext ic, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return interpret(context, self, ic, null, null, name, args, block, blockType);
+            return interpret(context, self, ic, null, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -696,7 +699,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return interpret(context, self, ic, method.getVisibility(), method.getImplementationClass().getMethodLocation(), name, args, block, null);
+            return interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, args, block, null);
         } finally {
             if (!isSynthetic) ThreadContext.popBacktrace(context);
         }

@@ -487,7 +487,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void hash(int length) {
-        if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
+        if (length > MAX_ARGUMENTS / 2) throw new NotCompilableException("literal hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
 
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2));
@@ -514,6 +514,36 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
         // now call it
         adapter.invokestatic(getClassData().clsName, "hash:" + length, incomingSig);
+    }
+
+    public void kwargsHash(int length) {
+        if (length > MAX_ARGUMENTS / 2) throw new NotCompilableException("kwargs hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
+
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, RubyHash.class, IRubyObject.class, length * 2));
+
+        if (!getClassData().kwargsHashMethodsDefined.contains(length)) {
+            adapter2 = new SkinnyMethodAdapter(
+                    adapter.getClassVisitor(),
+                    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                    "kwargsHash:" + length,
+                    incomingSig,
+                    null,
+                    null);
+
+            adapter2.aload(0);
+            adapter2.aload(1);
+            buildArrayFromLocals(adapter2, 2, length * 2);
+
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), "dupKwargsHashAndPopulateFromArray", sig(RubyHash.class, ThreadContext.class, RubyHash.class, IRubyObject[].class));
+            adapter2.areturn();
+            adapter2.end();
+
+            getClassData().hashMethodsDefined.add(length);
+        }
+
+        // now call it
+        adapter.invokestatic(getClassData().clsName, "kwargsHash:" + length, incomingSig);
     }
 
     public void checkpoint() {

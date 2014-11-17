@@ -985,6 +985,16 @@ public class IRRuntimeHelpers {
     }
 
     // Used by JIT
+    public static RubyHash dupKwargsHashAndPopulateFromArray(ThreadContext context, RubyHash dupHash, IRubyObject[] pairs) {
+        Ruby runtime = context.runtime;
+        RubyHash hash = dupHash.dupFast(context);
+        for (int i = 0; i < pairs.length;) {
+            hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+        }
+        return hash;
+    }
+
+    // Used by JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
@@ -1267,5 +1277,10 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
         return context.runtime.newBoolean(!(obj.isTrue()));
+    }
+
+    @JIT
+    public static RaiseException newRequiredKeywordArgumentError(ThreadContext context, String name) {
+        return context.runtime.newArgumentError("missing keyword: " + name);
     }
 }

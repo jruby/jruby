@@ -927,5 +927,40 @@ modes.each do |mode|
         expect(x).to eq 1
       end
     end
+
+    it "passes kwargs through zsuper correctly" do
+      run 'class X1; def foo(a:1, b:2); [a, b]; end; end; class X2 < X1; def foo(a:1, b:2); a = 5; super; end; end; X2.new.foo(a:3, b:4)' do |x|
+        expect(x).to eq [5,4]
+      end
+    end
+
+    it "raises errors for missing required keyword arguments" do
+      expect {run('def foo(a:); end; foo'){}}.to raise_error(ArgumentError)
+    end
+
+    it "passes keyrest arguments through zsuper correctly" do
+      run '
+        class C
+          def foo(str: "foo", num: 42, **opts)
+          [str, num, opts]
+          end
+        end
+
+        class D < C
+          def foo(str: "bar", num: 45, **opts)
+          super
+          end
+        end
+
+        [C.new.foo, D.new.foo, D.new.foo(str: "d", num:75, a:1, b:2)]
+      ' do |x|
+        
+        expect(x).to eq [
+            ["foo", 42, {}],
+            ["bar", 45, {}],
+            ["d",   75, {a:1,b:2}]
+                        ]
+      end
+    end
   end
 end

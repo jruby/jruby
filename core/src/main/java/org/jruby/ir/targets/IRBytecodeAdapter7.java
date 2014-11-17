@@ -10,6 +10,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyHash;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
@@ -245,6 +246,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         if (length > MAX_ARGUMENTS / 2) throw new NotCompilableException("literal hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
 
         adapter.invokedynamic("hash", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2)), Bootstrap.hash());
+    }
+
+    public void kwargsHash(int length) {
+        if (length > MAX_ARGUMENTS / 2) throw new NotCompilableException("kwargs hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
+
+        adapter.invokedynamic("kwargsHash", sig(JVM.OBJECT, params(ThreadContext.class, RubyHash.class, JVM.OBJECT, length * 2)), Bootstrap.kwargsHash());
     }
 
     public void checkpoint() {
