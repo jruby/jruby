@@ -92,6 +92,15 @@ public class Bootstrap {
         return site;
     }
 
+    public static CallSite kwargsHash(Lookup lookup, String name, MethodType type) {
+        MethodHandle handle = Binder
+                .from(lookup, type)
+                .collect(2, IRubyObject[].class)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "kwargsHash");
+        CallSite site = new ConstantCallSite(handle);
+        return site;
+    }
+
     public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
         String[] names = name.split(":");
         String operation = names[0];
@@ -137,6 +146,10 @@ public class Bootstrap {
 
     public static Handle hash() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "hash", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle kwargsHash() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "kwargsHash", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static Handle invokeSuper() {
@@ -262,6 +275,10 @@ public class Bootstrap {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
         return hash;
+    }
+
+    public static IRubyObject kwargsHash(ThreadContext context, RubyHash hash, IRubyObject[] pairs) {
+        return IRRuntimeHelpers.dupKwargsHashAndPopulateFromArray(context, hash, pairs);
     }
 
     static MethodHandle buildGenericHandle(InvokeSite site, DynamicMethod method, RubyClass dispatchClass) {

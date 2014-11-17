@@ -532,11 +532,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                     null);
 
             adapter2.aload(0);
-            adapter2.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
             adapter2.aload(1);
             buildArrayFromLocals(adapter2, 2, length * 2);
 
-            adapter2.invokestatic(p(IRRuntimeHelpers.class), "constructHashFromArray", sig(RubyHash.class, Ruby.class, RubyHash.class, IRubyObject[].class));
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), "dupKwargsHashAndPopulateFromArray", sig(RubyHash.class, ThreadContext.class, RubyHash.class, IRubyObject[].class));
             adapter2.areturn();
             adapter2.end();
 
