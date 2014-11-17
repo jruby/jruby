@@ -1268,4 +1268,9 @@ public class IRRuntimeHelpers {
     public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
         return context.runtime.newBoolean(!(obj.isTrue()));
     }
+
+    @JIT
+    public static RaiseException newRequiredKeywordArgumentError(ThreadContext context, String name) {
+        return context.runtime.newArgumentError("missing keyword: " + name);
+    }
 }

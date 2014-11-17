@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -19,6 +20,10 @@ public class RaiseRequiredKeywordArgumentError extends Instr implements FixedAri
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public Operand[] getOperands() {
         return new Operand[0];
@@ -31,7 +36,7 @@ public class RaiseRequiredKeywordArgumentError extends Instr implements FixedAri
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        throw context.runtime.newArgumentError("missing keyword: " + name);
+        throw IRRuntimeHelpers.newRequiredKeywordArgumentError(context, name);
     }
 
     @Override
