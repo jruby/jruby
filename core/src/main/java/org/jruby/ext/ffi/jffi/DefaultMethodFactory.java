@@ -159,14 +159,14 @@ public final class DefaultMethodFactory extends MethodFactory {
         
         } else if (type instanceof org.jruby.ext.ffi.MappedType) {
             MappedType ctype = (MappedType) type;
-            if (enums instanceof Enums)
+            if (enums == null || enums instanceof Enums)
                 return new ConvertingMarshaller(
                     getMarshaller(ctype.getRealType(), convention, (Enums)enums), 
                     DataConverters.getParameterConverter(type, (Enums)enums));
             else
                 return new ConvertingMarshaller(
-                    getMarshaller(ctype.getRealType(), convention, enums.isNil() ? null : (Enums)enums), 
-                    DataConverters.getParameterConverter(type, enums.isNil() ? null : (Enums)enums));
+                    getMarshaller(ctype.getRealType(), convention, enums.isNil() ? null : (RubyHash)enums),
+                    DataConverters.getParameterConverter(type, enums.isNil() ? null : (RubyHash)enums));
 
         } else {
             return null;
