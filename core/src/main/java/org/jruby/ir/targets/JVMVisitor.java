@@ -1396,11 +1396,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) {
-        super.RaiseArgumentErrorInstr(raiseargumenterrorinstr);
-    }
-
-    @Override
     public void ReceiveClosureInstr(ReceiveClosureInstr receiveclosureinstr) {
         jvmMethod().loadRuntime();
         jvmLoadLocal("$block");
@@ -1492,11 +1487,6 @@ public class JVMVisitor extends IRVisitor {
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) {
         jvmMethod().loadSelf();
         jvmStoreLocal(receiveselfinstr.getResult());
-    }
-
-    @Override
-    public void RecordEndBlockInstr(RecordEndBlockInstr recordendblockinstr) {
-        super.RecordEndBlockInstr(recordendblockinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override
@@ -1937,11 +1927,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) {
         jvmAdapter().ldc(flote.getValue());
-    }
-
-    @Override
-    public void GlobalVariable(GlobalVariable globalvariable) {
-        super.GlobalVariable(globalvariable);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override
