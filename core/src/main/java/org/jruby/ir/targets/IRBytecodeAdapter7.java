@@ -247,6 +247,10 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         adapter.invokedynamic("hash", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2)), Bootstrap.hash());
     }
 
+    public void kwargsHash(int length) {
+        throw new RuntimeException("kwargsHash not implemented in IRBytecodeAdapter7");
+    }
+
     public void checkpoint() {
         loadContext();
         adapter.invokedynamic(
