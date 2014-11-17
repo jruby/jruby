@@ -89,7 +89,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, JRubyClassLoader> {
 
             @Override
             public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
-                DynamicScope tlbScope = scope.getTopLevelBindingScope();
+                DynamicScope tlbScope = scope.getToplevelScope();
                 if (tlbScope == null) {
                     context.preMethodScopeOnly(staticScope);
                 } else {

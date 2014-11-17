@@ -12,23 +12,23 @@ import java.util.List;
 public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
-    private DynamicScope tlbScope;
+    private DynamicScope toplevelScope;
 
     public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
-        this.tlbScope = null;
+        this.toplevelScope = null;
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
         }
     }
 
-    public DynamicScope getTopLevelBindingScope() {
-        return tlbScope;
+    public DynamicScope getToplevelScope() {
+        return toplevelScope;
     }
 
     public void setTopLevelBindingScope(DynamicScope tlbScope) {
-        this.tlbScope = tlbScope;
+        this.toplevelScope = tlbScope;
     }
 
     @Override

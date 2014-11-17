@@ -149,7 +149,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         scope.setModule(currModule);
-        DynamicScope tlbScope = irScope.getTopLevelBindingScope();
+        DynamicScope tlbScope = irScope.getToplevelScope();
         if (tlbScope == null) {
             context.preMethodScopeOnly(scope);
         } else {
