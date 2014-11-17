@@ -63,6 +63,7 @@ public class RubyContext extends ExecutionContext {
     private final SafepointManager safepointManager;
     private final Random random = new Random();
     private final LexicalScope rootLexicalScope;
+    private final CompilerOptions compilerOptions;
 
     private SourceCallback sourceCallback = null;
 
@@ -79,6 +80,16 @@ public class RubyContext extends ExecutionContext {
 
     public RubyContext(Ruby runtime) {
         assert runtime != null;
+
+        compilerOptions = Truffle.getRuntime().createCompilerOptions();
+
+        if (compilerOptions.supportsOption("MinTimeThreshold")) {
+            compilerOptions.setOption("MinTimeThreshold", Integer.MAX_VALUE);
+        }
+
+        if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
+            compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
+        }
 
         safepointManager = new SafepointManager(this);
 
@@ -388,4 +399,9 @@ public class RubyContext extends ExecutionContext {
     public LexicalScope getRootLexicalScope() {
         return rootLexicalScope;
     }
+
+    public CompilerOptions getCompilerOptions() {
+        return compilerOptions;
+    }
+
 }
