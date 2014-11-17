@@ -165,8 +165,8 @@ public final class DefaultMethodFactory extends MethodFactory {
                     DataConverters.getParameterConverter(type, (Enums)enums));
             else
                 return new ConvertingMarshaller(
-                    getMarshaller(ctype.getRealType(), convention, enums.isNil() ? null : (Enums)enums), 
-                    DataConverters.getParameterConverter(type, enums.isNil() ? null : (Enums)enums));
+                    getMarshaller(ctype.getRealType(), convention, (enums != null && !enums.isNil()) ? (Enums)enums : null), 
+                    DataConverters.getParameterConverter(type, (enums != null && !enums.isNil()) ? (Enums)enums : null));
 
         } else {
             return null;
