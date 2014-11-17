@@ -1,7 +1,6 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.*;
-import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
