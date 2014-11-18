@@ -107,15 +107,17 @@ public class RubyFileStat extends RubyObject {
     }
     
     private void setup(String filename, boolean lstat) {
+        Ruby runtime = getRuntime();
+
         if (Platform.IS_WINDOWS && filename.length() == 2
                 && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
             filename += "/";
         }
 
-        file = JRubyFile.createResource(getRuntime().getPosix(), getRuntime().getCurrentDirectory(), filename);
+        file = JRubyFile.createResource(runtime.getPosix(), runtime.getCurrentDirectory(), filename);
         stat = lstat ? file.lstat() : file.stat();
 
-        if (stat == null) throw getRuntime().newErrnoFromInt(getRuntime().getPosix().errno());
+        if (stat == null) throw runtime.newErrnoFromInt(runtime.getPosix().errno(), filename);
     }
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
