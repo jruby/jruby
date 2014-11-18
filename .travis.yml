@@ -49,6 +49,7 @@ matrix:
       jdk: openjdk7
     - env: TARGET='-Pj2ee'
       jdk: oraclejdk7
+    - script: test/check_versions.sh
   fast_finish: true
   allow_failures:
     - env: TARGET='-Pcomplete'
