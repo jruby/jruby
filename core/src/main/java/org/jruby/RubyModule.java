@@ -1190,11 +1190,7 @@ public class RubyModule extends RubyObject {
 
     // The local method resolution logic. Overridden in IncludedModuleWrapper for recursion.
     protected DynamicMethod searchMethodCommon(String name) {
-        DynamicMethod method = getMethods().get(name);
-
-        if (method != null) return method;
-
-        return superClass == null ? null : superClass.searchMethodInner(name);
+        return getMethods().get(name);
     }
 
     public void invalidateCacheDescendants() {
