@@ -253,8 +253,6 @@ public class Options {
 
     // After PROPERTIES so it doesn't show up in --properties
     @Deprecated
-    public static final Option<Boolean> CEXT_ENABLED = bool(NATIVE, "cext.enabled", false, "Enable or disable C extension support.");
-    @Deprecated
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");
     
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
