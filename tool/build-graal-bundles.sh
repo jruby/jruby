@@ -13,15 +13,13 @@
 
 # Run in the root directory. Run -Pdist first.
 
-#version=`cat VERSION`
-version_file=9.0.0.0.dev
-version_dir=9.0.0.0.dev-SNAPSHOT
+version=`cat VERSION`
 
-tar -zxf maven/jruby-dist/target/jruby-dist-$version_file-bin.tar.gz || exit $?
+tar -zxf maven/jruby-dist/target/jruby-dist-$version-bin.tar.gz || exit $?
 
 # Remove files we aren't going to patch so people don't use them by mistake
 
-rm jruby-$version_dir/bin/*.bat jruby-$version_dir/bin/*.sh jruby-$version_dir/bin/*.bash jruby-$version_dir/bin/*.exe jruby-$version_dir/bin/*.dll || exit $?
+rm jruby-$version/bin/*.bat jruby-$version/bin/*.sh jruby-$version/bin/*.bash jruby-$version/bin/*.exe jruby-$version/bin/*.dll || exit $?
 
 # Patch the jruby bash script to set JAVACMD and JRUBY_OPTS
 
@@ -29,16 +27,16 @@ sed -i.backup 's|if \[ -z "\$JAVACMD" \] ; then|# Modifications for distribution
 JAVACMD=\"\$JRUBY_HOME/graalvm-jdk1.8.0/bin/java\"\
 JRUBY_OPTS=\"-J-server -J-d64 \$JRUBY_OPTS\"\
 \
-if [ -z "$JAVACMD" ] ; then|' jruby-$version_dir/bin/jruby || exit $?
+if [ -z "$JAVACMD" ] ; then|' jruby-$version/bin/jruby || exit $?
 
-if diff jruby-$version_dir/bin/jruby jruby-$version_dir/bin/jruby.backup >/dev/null ; then
+if diff jruby-$version/bin/jruby jruby-$version/bin/jruby.backup >/dev/null ; then
   echo "patch didn't work"
   exit 1
 fi
 
-rm jruby-$version_dir/bin/jruby.backup || exit $?
+rm jruby-$version/bin/jruby.backup || exit $?
 
-chmod +x jruby-$version_dir/bin/jruby || exit $?
+chmod +x jruby-$version/bin/jruby || exit $?
 
 function pack {
     # $1 ... platform (linux, ...)
@@ -54,10 +52,10 @@ function pack {
 
     tar -zxf $buildname || exit $?
     chmod -R +w graalvm-jdk1.8.0
-    cp -r graalvm-jdk1.8.0 jruby-$version_dir || exit $?
-    rm -rf jruby-$version_dir/graalvm-jdk1.8.0/src.zip jruby-$version_dir/graalvm-jdk1.8.0/demo jruby-$version_dir/graalvm-jdk1.8.0/include jruby-$version_dir/graalvm-jdk1.8.0/sample || exit $?
-    targetname=jruby-dist-$version_file+graal-$1-x86_64-bin.tar.gz
-    tar -zcf $targetname jruby-$version_dir || exit $?
+    cp -r graalvm-jdk1.8.0 jruby-$version || exit $?
+    rm -rf jruby-$version/graalvm-jdk1.8.0/src.zip jruby-$version/graalvm-jdk1.8.0/demo jruby-$version/graalvm-jdk1.8.0/include jruby-$version/graalvm-jdk1.8.0/sample || exit $?
+    targetname=jruby-dist-$version+graal-$1-x86_64-bin.tar.gz
+    tar -zcf $targetname jruby-$version || exit $?
     shasum -a 1 $targetname > $targetname.sha1 || exit $?
 }
 
