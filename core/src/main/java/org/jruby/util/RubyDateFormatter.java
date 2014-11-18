@@ -619,16 +619,11 @@ public class RubyDateFormatter {
                 after = ":" + mm + ":" + ss;
                 break;
             case 3: // %:::z -> +hh[:mm[:ss]]
-                if (minutes == 0) {
-                    if (seconds == 0) { // +hh
-                        defaultWidth = 3;
-                        after = "";
-                    } else { // +hh:mm
-                        return formatZone(1, value, formatter);
-                    }
-                } else { // +hh:mm:ss
-                    return formatZone(2, value, formatter);
-                }
+                StringBuilder sb = new StringBuilder();
+                if (minutes != 0 || seconds != 0) sb.append(":").append(mm);
+                if (seconds != 0) sb.append(":").append(ss);
+                after = sb.toString();
+                defaultWidth = after.length() + 3;
                 break;
         }
 
