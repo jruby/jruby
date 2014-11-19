@@ -2168,6 +2168,31 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
+        @Specialization(guards = "isFloat")
+        public RubyArray mapFloat(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final double[] store = (double[]) array.getStore();
+            final int arraySize = array.getSize();
+            Object mappedStore = arrayBuilder.start(arraySize);
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
+        }
+
         @Specialization(guards = "isObject")
         public RubyArray mapObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
