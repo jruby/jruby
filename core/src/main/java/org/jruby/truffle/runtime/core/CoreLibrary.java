@@ -202,6 +202,7 @@ public class CoreLibrary {
         // Includes
 
         objectClass.include(null, kernelModule);
+        numericClass.include(null, comparableModule);
 
         // Set constants
 
