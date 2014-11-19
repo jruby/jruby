@@ -79,6 +79,50 @@ public abstract class EncodingNodes {
 
     }
 
+    @CoreMethod(names = "default_external=", onSingleton = true, required = 1)
+    public abstract static class SetDefaultExternalNode extends CoreMethodNode {
+
+        public SetDefaultExternalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetDefaultExternalNode(SetDefaultExternalNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyEncoding defaultExternal(RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            getContext().getRuntime().setDefaultExternalEncoding(encoding.getEncoding());
+
+            return encoding;
+        }
+
+    }
+
+    @CoreMethod(names = "default_internal=", onSingleton = true, required = 1)
+    public abstract static class SetDefaultInternalNode extends CoreMethodNode {
+
+        public SetDefaultInternalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetDefaultInternalNode(SetDefaultInternalNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyEncoding defaultExternal(RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            getContext().getRuntime().setDefaultInternalEncoding(encoding.getEncoding());
+
+            return encoding;
+        }
+
+    }
+
     @CoreMethod(names = "find", onSingleton = true, required = 1)
     public abstract static class FindNode extends CoreMethodNode {
 
