@@ -291,8 +291,8 @@ public class CoreLibrary {
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
         objectClass.setConstant(null, "STDIN", new RubyBasicObject(objectClass));
-        objectClass.setConstant(null, "STDOUT", globalVariablesObject.getInstanceVariable("$stdout"));
-        objectClass.setConstant(null, "STDERR", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant(null, "STDOUT", stdout);
+        objectClass.setConstant(null, "STDERR", stdout);
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 
