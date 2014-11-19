@@ -368,6 +368,23 @@ public abstract class FloatNodes {
         }
     }
 
+    @CoreMethod(names = "<=>", required = 1)
+    public abstract static class CompareNode extends CoreMethodNode {
+
+        public CompareNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CompareNode(CompareNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int compare(double a, double b) {
+            return Double.compare(a, b);
+        }
+    }
+
     @CoreMethod(names = ">=", required = 1)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 
