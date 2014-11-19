@@ -132,7 +132,7 @@ project 'JRuby Integration Tests' do
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
-                     :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
+                     :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><env key="JRUBY_OPTS" value=""/><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
     end
 
   end
