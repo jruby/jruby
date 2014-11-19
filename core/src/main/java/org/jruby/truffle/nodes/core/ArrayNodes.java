@@ -1765,7 +1765,8 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true, required = 1, optional = 1)
-    public abstract static class InitializeNode extends ArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1776,12 +1777,12 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue) {
-            return initialize(array, size, getContext().getCoreLibrary().getNilObject());
+        public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            return initialize(array, size, getContext().getCoreLibrary().getNilObject(), block);
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, int defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1789,7 +1790,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, long defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1797,7 +1798,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, double defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1805,9 +1806,21 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, Object defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
+            array.setStore(store, size);
+            return array;
+        }
+
+        @Specialization
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            notDesignedForCompilation();
+
+            final Object[] store = new Object[size];
+            for (int n = 0; n < size; n++) {
+                store[n] = yield(frame, block, n);
+            }
             array.setStore(store, size);
             return array;
         }
