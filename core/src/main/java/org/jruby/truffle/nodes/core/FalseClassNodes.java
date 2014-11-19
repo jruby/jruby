@@ -33,6 +33,20 @@ public abstract class FalseClassNodes {
             return false ^ other;
         }
 
+        @Specialization
+        public boolean xor(RubyNilClass other) {
+            return false;
+        }
+
+        @Specialization(guards = "isNotNull")
+        public boolean xor(RubyObject other) {
+            return true;
+        }
+
+        static boolean isNotNull(RubyObject o) {
+            return ! (o instanceof RubyNilClass);
+        }
+
     }
 
     @CoreMethod(names = {"to_s", "inspect"}, needsSelf = false)
