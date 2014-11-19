@@ -1765,23 +1765,28 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true, required = 1, optional = 1)
-    public abstract static class InitializeNode extends ArrayCoreMethodNode {
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class InitializeNode extends YieldingCoreMethodNode {
+
+        @Child protected ArrayBuilderNode arrayBuilder;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public InitializeNode(InitializeNode prev) {
             super(prev);
+            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue) {
-            return initialize(array, size, getContext().getCoreLibrary().getNilObject());
+        public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            return initialize(array, size, getContext().getCoreLibrary().getNilObject(), block);
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, int defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1789,7 +1794,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, long defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1797,7 +1802,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, double defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1805,10 +1810,33 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, int size, Object defaultValue) {
+        public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
+            return array;
+        }
+
+        @Specialization
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            Object store = arrayBuilder.start(size);
+
+            int count = 0;
+            try {
+                for (int n = 0; n < size; n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    store = arrayBuilder.append(store, n, yield(frame, block, n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            array.setStore(arrayBuilder.finish(store, size), size);
             return array;
         }
 
@@ -2162,6 +2190,31 @@ public abstract class ArrayNodes {
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
                     ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
+        }
+
+        @Specialization(guards = "isFloat")
+        public RubyArray mapFloat(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final double[] store = (double[]) array.getStore();
+            final int arraySize = array.getSize();
+            Object mappedStore = arrayBuilder.start(arraySize);
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 
