@@ -451,6 +451,15 @@
       </modules>
     </profile>
     <profile>
+      <id>test</id>
+      <properties>
+	<invoker.skip>false</invoker.skip>
+      </properties>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>gems</id>
       <modules>
         <module>maven</module>
@@ -469,6 +478,17 @@
       </modules>
       <build>
 	<defaultGoal>install</defaultGoal>
+	<pluginManagement>
+	  <plugins>
+            <plugin>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <version>2.15</version>
+	      <configuration>
+		<skipTests>true</skipTests>
+	      </configuration>
+            </plugin>
+	  </plugins>
+	</pluginManagement>
       </build>
     </profile>
     <profile>
@@ -533,6 +553,20 @@
       <modules>
         <module>maven</module>
       </modules>
+      <build>
+	<defaultGoal>install</defaultGoal>
+	<pluginManagement>
+	  <plugins>
+            <plugin>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <version>2.15</version>
+	      <configuration>
+		<skipTests>true</skipTests>
+	      </configuration>
+            </plugin>
+	  </plugins>
+	</pluginManagement>
+      </build>
     </profile>
     <profile>
       <id>complete</id>
@@ -541,6 +575,17 @@
       </modules>
       <build>
 	<defaultGoal>install</defaultGoal>
+	<pluginManagement>
+	  <plugins>
+            <plugin>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <version>2.15</version>
+	      <configuration>
+		<skipTests>true</skipTests>
+	      </configuration>
+            </plugin>
+	  </plugins>
+	</pluginManagement>
       </build>
     </profile>
     <profile>
