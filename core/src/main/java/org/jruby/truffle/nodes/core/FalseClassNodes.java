@@ -38,12 +38,12 @@ public abstract class FalseClassNodes {
             return false;
         }
 
-        @Specialization(guards = "isNotNull")
+        @Specialization(guards = "isNotNil")
         public boolean xor(RubyObject other) {
             return true;
         }
 
-        static boolean isNotNull(RubyObject o) {
+        static boolean isNotNil(RubyObject o) {
             return ! (o instanceof RubyNilClass);
         }
 
