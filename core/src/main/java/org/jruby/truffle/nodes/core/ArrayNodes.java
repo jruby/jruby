@@ -1768,12 +1768,16 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
+        @Child protected ArrayBuilderNode arrayBuilder;
+
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public InitializeNode(InitializeNode prev) {
             super(prev);
+            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization
@@ -1815,13 +1819,24 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
-            notDesignedForCompilation();
+            Object store = arrayBuilder.start(size);
 
-            final Object[] store = new Object[size];
-            for (int n = 0; n < size; n++) {
-                store[n] = yield(frame, block, n);
+            int count = 0;
+            try {
+                for (int n = 0; n < size; n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    store = arrayBuilder.append(store, n, yield(frame, block, n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
-            array.setStore(store, size);
+
+            array.setStore(arrayBuilder.finish(store, size), size);
             return array;
         }
 
