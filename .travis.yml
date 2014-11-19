@@ -13,8 +13,9 @@ os:
   - osx
 
 env:
+  # disable cext
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.cext.enabled=false"
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Pjruby_complete_jar_jruby'
