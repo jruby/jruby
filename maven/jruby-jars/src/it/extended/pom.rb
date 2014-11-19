@@ -1,5 +1,6 @@
 # jruby scripting container
-pom 'org.jruby:jruby', '@project.version@'
+jar 'org.jruby:jruby-core', '@project.version@'
+jar 'org.jruby:jruby-stdlib', '@project.version@'
 
 # unit tests
 jar 'junit:junit', '4.8.2', :scope => :test
