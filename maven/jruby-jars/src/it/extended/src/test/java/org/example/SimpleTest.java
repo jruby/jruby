@@ -14,7 +14,7 @@ import org.junit.Test;
 
 public class SimpleTest {
 
-    private final String basedir = "/home/christian/projects/active/maven/jruby17/";//new File( "../../../../../" ).getAbsolutePath();
+    private final String basedir = new File( "../../../../../" ).getAbsolutePath();
 
     private ScriptingContainer newScriptingContainer() {
 	ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
