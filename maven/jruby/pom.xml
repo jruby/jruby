@@ -118,6 +118,7 @@
             <artifactId>maven-invoker-plugin</artifactId>
             <configuration>
               <pomExcludes>
+                <pomExclude>extended/pom.xml</pomExclude>
                 <pomExclude>osgi_all_inclusive_felix-3.2/pom.xml</pomExclude>
                 <pomExclude>${its.j2ee}</pomExclude>
                 <pomExclude>${its.osgi}</pomExclude>
@@ -138,6 +139,7 @@
             <artifactId>maven-invoker-plugin</artifactId>
             <configuration>
               <pomExcludes>
+                <pomExclude>extended/pom.xml</pomExclude>
                 <pomExclude>jetty/pom.xml</pomExclude>
                 <pomExclude>j2ee_jetty/pom.xml</pomExclude>
                 <pomExclude>j2ee_wildfly/pom.xml</pomExclude>

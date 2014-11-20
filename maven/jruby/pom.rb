@@ -59,13 +59,13 @@ project 'JRuby Main Maven Artifact' do
     activation do
       jdk '1.8'
     end
-    plugin :invoker, :pomExcludes => ['osgi_all_inclusive_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
+    plugin :invoker, :pomExcludes => ['extended/pom.xml', 'osgi_all_inclusive_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
   profile :id => :jdk6 do
     activation do
       jdk '1.6'
     end
-    plugin :invoker, :pomExcludes => ['jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml', '${its.j2ee}', '${its.osgi}']
+    plugin :invoker, :pomExcludes => ['extended/pom.xml', 'jetty/pom.xml','j2ee_jetty/pom.xml','j2ee_wildfly/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
 
   profile :id => :wlp do
