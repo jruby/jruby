@@ -10,9 +10,12 @@ module TestHelper
   RUBY = if IS_JAR_EXECUTION
            exe = 'java'
            exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
-           file = File.expand_path('maven/jruby-complete/target/jruby-complete-*.jar')
-           file = Dir[ file ].first
-           exe += " -cp .:#{file} org.jruby.Main"
+           # assume the parent CL of jruby-classloader has a getUrls method
+           urls = JRuby.runtime.getJRubyClassLoader.parent.get_ur_ls.collect do |u|
+             u.path
+           end
+           urls.unshift '.'
+           exe += " -cp #{urls.join(File::PATH_SEPARATOR)} org.jruby.Main"
            exe
          else
            exe = '"' + File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['RUBY_INSTALL_NAME'])
