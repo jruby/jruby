@@ -85,7 +85,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'bouncy-castle.version' => '1.47',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'joda.time.version' => '2.3',
+              'joda.time.version' => '2.5',
               'test-unit.version' => '3.0.3',
               'power_assert.version' => '0.1.4' )
 
@@ -137,7 +137,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
             'localRepositoryPath' =>  '${project.build.directory}/local-repo',
             'properties' => { 'project.version' => '${project.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
-            'pomExcludes' => [ '${its.j2ee}', '${its.osgi}' ],
+            'pomExcludes' => [ 'extended/pom.xml', '${its.j2ee}', '${its.osgi}' ],
             'projectsDirectory' =>  'src/it',
             'cloneProjectsTo' =>  '${project.build.directory}/it',
             'preBuildHookScript' =>  'setup.bsh',
@@ -184,6 +184,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
+  profile 'test' do
+    properties 'invoker.skip' => false
+    modules [ 'test' ]
+  end
+
   [ 'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core', 'truffle-test-pe' ].each do |name|
     profile name do
 
@@ -211,6 +216,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
       build do
         default_goal 'install'
+	plugin_management do
+          plugin :surefire, '2.15', :skipTests => true
+        end
       end
     end
   end

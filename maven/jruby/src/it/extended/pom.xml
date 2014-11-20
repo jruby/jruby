@@ -3,14 +3,18 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>no_group_id_given</groupId>
-  <artifactId>app</artifactId>
+  <artifactId>extended</artifactId>
   <version>0.0.0</version>
-  <name>app</name>
+  <name>extended</name>
+  <properties>
+    <tesla.dump.readOnly>true</tesla.dump.readOnly>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby</artifactId>
-      <version>1.7.17-SNAPSHOT</version>
+      <version>@project.version@</version>
       <type>pom</type>
     </dependency>
     <dependency>
@@ -23,13 +27,14 @@
   <build>
     <plugins>
       <plugin>
-	<artifactId>maven-surefire-plugin</artifactId>
-	<configuration>
-	  <additionalClasspathElements>
-	    <additionalClasspathElement>../../../../../core/target/test-classes</additionalClasspathElement>
-	    <additionalClasspathElement>../../../../../test/target/test-classes</additionalClasspathElement>
-	  </additionalClasspathElements>
-	</configuration>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.15</version>
+        <configuration>
+          <additionalClasspathElements>
+            <additionalClasspathElement>${basedir}/../../../../../core/target/test-classes</additionalClasspathElement>
+            <additionalClasspathElement>${basedir}/../../../../../test/target/test-classes</additionalClasspathElement>
+          </additionalClasspathElements>
+        </configuration>
       </plugin>
     </plugins>
   </build>

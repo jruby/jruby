@@ -49,7 +49,6 @@ import java.util.regex.Pattern;
 import org.jcodings.specific.USASCIIEncoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.IllegalFieldValueException;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
@@ -965,7 +964,6 @@ public class RubyTime extends RubyObject {
             if (!TIME_OFFSET_PATTERN.matcher(zone).matches()) {
                 string.setInternalVariable("zone", runtime.newString(zone));
             }
-
         }
 
         return string;
@@ -1052,17 +1050,7 @@ public class RubyTime extends RubyObject {
                 nanosecs = nano % 1000000;
             }
             time.setNSec(nanosecs);
-	    try {
-		time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
-	    }
-	    // joda-time 2.5 can throw this exception - seen locally
-	    catch(ArithmeticException e1) {
-		throw runtime.newRangeError(e1.getMessage());
-	    }
-	    // joda-time 2.5 can throw this exception - seen on travis
-	    catch(IllegalFieldValueException e2) {
-		throw runtime.newRangeError(e2.getMessage());
-	    }
+            time.dt = time.dt.withMillis(seconds * 1000 + millisecs);
         }
 
         time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);
@@ -1239,16 +1227,6 @@ public class RubyTime extends RubyObject {
                 zone = zoneVar.convertToString().toString();
             } catch (RaiseException typeError) {
             }
-
-            String zone = "";
-            if (zoneVar != null && zoneVar.respondsTo("to_str")) {
-                try {
-                    zone = zoneVar.convertToString().toString();
-                } catch (RaiseException typeError) {
-                }
-            }
-
-            time.dt = dt.withZone(getTimeZoneWithOffset(runtime, zone, offset));
         }
 
         time.dt = dt.withZone(getTimeZoneWithOffset(runtime, zone, offset));

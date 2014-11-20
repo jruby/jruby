@@ -104,26 +104,8 @@
             <artifactId>maven-invoker-plugin</artifactId>
             <configuration>
               <pomExcludes>
+                <pomExclude>extended/pom.xml</pomExclude>
                 <pomExclude>osgi_all_inclusive_felix-3.2/pom.xml</pomExclude>
-                <pomExclude>${its.j2ee}</pomExclude>
-                <pomExclude>${its.osgi}</pomExclude>
-              </pomExcludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jdk6</id>
-      <activation>
-        <jdk>1.6</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-invoker-plugin</artifactId>
-            <configuration>
-              <pomExcludes>
                 <pomExclude>${its.j2ee}</pomExclude>
                 <pomExclude>${its.osgi}</pomExclude>
               </pomExcludes>

@@ -14,7 +14,7 @@ class TestCacheMapLeak < Test::Unit::TestCase
   end
   
   def test_objects_are_released_by_cache_map
-    skip("object space is not enabled") unless JRuby.runtime.object_space_enabled?
+    return unless JRuby.runtime.object_space_enabled?
     setup_test
     assert(@num != ObjectSpace.each_object(TestMe){}, "Objects not being release by CacheMap" )
   end

@@ -48,6 +48,10 @@ matrix:
       jdk: openjdk7
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk7
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+      jdk: oraclejdk7
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+      jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
   fast_finish: true
@@ -57,6 +61,8 @@ matrix:
     - env: PHASE='-Pjruby_complete_jar_jruby'
     - env: PHASE='-Pj2ee'
     - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
 
 branches:
   only:

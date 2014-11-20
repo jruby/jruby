@@ -14,13 +14,13 @@ import org.junit.Test;
 
 public class SimpleTest {
 
-    private final String basedir = "/home/christian/projects/active/maven/jruby17/";//new File( "../../../../../" ).getAbsolutePath();
+    private final String basedir = new File( "../../../../../" ).getAbsolutePath();
 
     private ScriptingContainer newScriptingContainer() {
 	ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
 	container.setCurrentDirectory(basedir);
     	container.getProvider().getRubyInstanceConfig().setJRubyHome("uri:classloader://META-INF/jruby.home");
-    	container.getProvider().getRubyInstanceConfig().setLoadPaths(Arrays.asList(".", "test", "test/externals/ruby1.9", "test/externals/ruby1.9/ruby"));
+    	container.getProvider().getRubyInstanceConfig().setLoadPaths(Arrays.asList(".", "test", "test/mri", "test/mri/ruby"));
 	container.runScriptlet("ENV['GEM_PATH']='lib/ruby/gems/shared'");
 	return container;
     }
@@ -33,12 +33,16 @@ public class SimpleTest {
     private void collectTests(ScriptingContainer container, String index) throws Exception {
 	container.runScriptlet("File.open(File.join('test', '" + index + ".index')) do |f|\n" +
 "      f.each_line.each do |line|\n" +
-"        filename = \"test/#{line.chomp}.rb\"\n" +
-"        next unless File.exist? filename\n" +
-"        next if filename =~ /externals\\/ruby1.9\\/ruby\\/test_class/\n" +
-"        next if filename =~ /externals\\/ruby1.9\\/ruby\\/test_io/\n" +
-"        next if filename =~ /externals\\/ruby1.9\\/ruby\\/test_econv/\n" +
-"        next if filename =~ /externals\\/ruby1.9\\/test_open3/\n" +
+"        next if line =~ /^#/ or line.strip.empty?\n" +
+"        filename = \"test/mri/#{line.chomp}\"\n" +
+"        filename = \"test/jruby/#{line.chomp}.rb\" unless File.exist? filename\n" +
+"        filename = \"test/#{line.chomp}.rb\" unless File.exist? filename\n" +
+"        next unless File.file? filename\n" +
+"        next if filename =~ /mri\\/net\\/http\\//\n" +
+"        next if filename =~ /mri\\/ruby\\/test_class/\n" +
+"        next if filename =~ /mri\\/ruby\\/test_io/\n" +
+"        next if filename =~ /mri\\/ruby\\/test_econv/\n" +
+"        next if filename =~ /nru\\/test_open3/\n" +
 	 // TODO file an issue or so
 "        next if filename =~ /test_load_compiled_ruby.rb/\n" +
          // TODO remove the following after fix of #2215
@@ -82,17 +86,12 @@ public class SimpleTest {
 
     @Test
     public void testMRI() throws Exception {
-	runIt("mri.1.9", "ENV['EXCLUDE_DIR']='test/externals/ruby1.9/excludes';require 'minitest/excludes'");
-    }
-
-    @Test
-    public void testRubicon() throws Exception {
-	runIt("rubicon.1.9");
+	runIt("mri", "ENV['EXCLUDE_DIR']='test/mri/excludes';");
     }
 
     @Test
     public void testJRuby() throws Exception {
-	runIt("jruby.1.9");
+	runIt("jruby");
     }
 
     // @Test
