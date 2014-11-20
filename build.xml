@@ -465,7 +465,13 @@
 
     <target name="jruby-jars" description="Create the jruby-jars GEM">
         <exec executable="mvn" failonerror="true">
-          <arg line="-Pjruby-jars,test"/>
+          <arg line="-Pjruby-jars -Dinvoker.skip=false"/>
+        </exec>
+    </target>
+
+    <target name="jruby-jars-extended" description="extended tests of the jruby-jars">
+        <exec executable="mvn" failonerror="true">
+          <arg line="-Pjruby-jars,test -Dinvoker.test=extended"/>
         </exec>
     </target>
 
@@ -483,13 +489,19 @@
 
     <target name="complete" description="Create the jruby-complete.jar">
         <exec executable="mvn" failonerror="true">
-          <arg line="-Pcomplete,test"/>
+          <arg line="-Pcomplete -Dinvoker.skip=false"/>
         </exec>
     </target>
 
     <target name="main" description="Create the jruby maven artifacts">
         <exec executable="mvn" failonerror="true">
-          <arg line="-Pmain,test"/>
+          <arg line="-Pmain -Dinvoker.skip=false"/>
+        </exec>
+    </target>
+
+    <target name="main-extended" description="extended tests for the jruby maven artifacts">
+        <exec executable="mvn" failonerror="true">
+          <arg line="-Pmain,test -Dinvoker.test=extended"/>
         </exec>
     </target>
 </project>

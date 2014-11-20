@@ -28,6 +28,10 @@ matrix:
     # these profile do no need to run for all JDKs
     - env: TARGET='test-jruby-jars'
       jdk: openjdk7
+    - env: TARGET='jruby-jars-extended'
+      jdk: oraclejdk7
+    - env: TARGET='main-extended'
+      jdk: oraclejdk8
 
 branches:
   only:

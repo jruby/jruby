@@ -2,15 +2,25 @@
 <target name='mvn'>
 <exec executable='mvn' vmlauncher='false'>
 <arg line='-q'/>
-<arg line='-Ptest,bootstrap,main'/>
+<arg line='-Ptest,bootstrap'/>
 <arg line='-DskipTests'/>
 </exec>
+<echo>
+build jruby maven artifact
+</echo>
+<exec executable='mvn' vmlauncher='false'>
+<arg line='-q'/>
+<arg line='-Pmain'/>
+</exec>
+<echo>
+build jruby-complete.jar
+</echo>
 <exec executable='mvn' vmlauncher='false'>
 <arg line='-q'/>
 <arg line='-Pcomplete'/>
 </exec>
 </target>
-<target name='test-jruby-jars-jruby.1.9' depends='mvn'>
+<target name='test-jruby-jars-jruby.1.9'>
 <exec executable='java' failonerror='true' vmlauncher='false'>
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
@@ -118,10 +128,10 @@
 <arg value='test/test_instantiating_interfaces.rb'/>
 <arg value='test/test_openssl.rb'/>
 <arg value='test/test_tempfile_cleanup.rb'/>
-<arg value='-v'/>
+<!--arg value='-v'/-->
 </exec>
 </target>
-<target name='test-jruby-complete-slow' depends='mvn'>
+<target name='test-jruby-complete-slow'>
 <exec executable='java' failonerror='true' vmlauncher='false'>
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
@@ -134,10 +144,10 @@
 <arg value='lib/ruby/gems/shared/gems/rake-10.1.0/lib/rake/rake_test_loader.rb'/>
 <arg value='test/test_command_line_switches.rb'/>
 <arg value='test/test_launching_by_shell_script.rb'/>
-<arg value='-v'/>
+<!--arg value='-v'/-->
 </exec>
 </target>
-<target name='test-jruby-jars-objectspace' depends='mvn'>
+<target name='test-jruby-jars-objectspace'>
 <exec executable='java' failonerror='true' vmlauncher='false'>
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
@@ -150,10 +160,10 @@
 <arg value='lib/ruby/gems/shared/gems/rake-10.1.0/lib/rake/rake_test_loader.rb'/>
 <arg value='test/test_objectspace.rb'/>
 <arg value='test/test_cache_map_leak.rb'/>
-<arg value='-v'/>
+<!--arg value='-v'/-->
 </exec>
 </target>
-<target name='test-jruby-jars-mri.1.9' depends='mvn'>
+<target name='test-jruby-jars-mri.1.9'>
 <exec executable='java' failonerror='true' vmlauncher='false'>
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
@@ -442,10 +452,10 @@
 <arg value='test/externals/ruby1.9/ruby/enc/test_utf16.rb'/>
 <arg value='test/externals/ruby1.9/ruby/enc/test_utf32.rb'/>
 <arg value='test/externals/ruby1.9/ruby/enc/test_windows_1251.rb'/>
-<arg value='-v'/>
+<!--arg value='-v'/-->
 </exec>
 </target>
-<target name='test-jruby-complete-rubicon.1.9' depends='mvn'>
+<target name='test-jruby-complete-rubicon.1.9'>
 <exec executable='java' failonerror='true' vmlauncher='false'>
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
@@ -501,7 +511,7 @@
 <arg value='test/rubicon/test_symbol.rb'/>
 <arg value='test/rubicon/test_thread_group.rb'/>
 <arg value='test/rubicon/test_true_class.rb'/>
-<arg value='-v'/>
+<!--arg value='-v'/-->
 </exec>
 </target>
-<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='test-jruby-jars-jruby.1.9,test-jruby-complete-slow,test-jruby-jars-objectspace,test-jruby-jars-mri.1.9,test-jruby-complete-rubicon.1.9'/></project>
+<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='mvn,test-jruby-jars-jruby.1.9,test-jruby-complete-slow,test-jruby-jars-objectspace,test-jruby-jars-mri.1.9,test-jruby-complete-rubicon.1.9'/></project>

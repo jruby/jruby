@@ -35,7 +35,7 @@ class TargetBuilder
       jars = "lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-#{@version}.jar"
     end
     @names << name + ","
-    @targets << "<target name='#{name}' depends='mvn'>\n<exec executable='java' failonerror='true' vmlauncher='false'>\n<env key='GEM_PATH' value='lib/ruby/gems/shared'/>\n<arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>\n<arg value='-cp'/>\n<arg value='core/target/test-classes:test/target/test-classes:#{jars}'/>\n<arg value='org.jruby.Main'/>\n<arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>\n<arg value='-r./test/ruby19_env.rb'/>\n<arg value='-rminitest/excludes'/>\n<arg value='#{@rake}'/>\n#{files}<!--arg value='-v'/-->\n</exec>\n</target>\n"
+    @targets << "<target name='#{name}'>\n<exec executable='java' failonerror='true' vmlauncher='false'>\n<env key='GEM_PATH' value='lib/ruby/gems/shared'/>\n<arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>\n<arg value='-cp'/>\n<arg value='core/target/test-classes:test/target/test-classes:#{jars}'/>\n<arg value='org.jruby.Main'/>\n<arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>\n<arg value='-r./test/ruby19_env.rb'/>\n<arg value='-rminitest/excludes'/>\n<arg value='#{@rake}'/>\n#{files}<!--arg value='-v'/-->\n</exec>\n</target>\n"
   end
 end
 
@@ -149,6 +149,6 @@ project 'JRuby Integration Tests' do
   builder.create_target( 'mri.1.9', false )
   builder.create_target( 'rubicon.1.9', true )
         
-  File.write(File.join(basedir, '..', 'antlib', 'extra.xml'), "<project basedir='..'>\n<target name='mvn'>\n<exec executable='mvn' vmlauncher='false'>\n<arg line='-q'/>\n<arg line='-Ptest,bootstrap,main'/>\n<arg line='-DskipTests'/>\n</exec>\n<exec executable='mvn' vmlauncher='false'>\n<arg line='-q'/>\n<arg line='-Pcomplete'/>\n</exec>\n</target>\n#{builder.targets}<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='#{builder.names}'/></project>")
+  File.write(File.join(basedir, '..', 'antlib', 'extra.xml'), "<project basedir='..'>\n<target name='mvn'>\n<exec executable='mvn' vmlauncher='false'>\n<arg line='-q'/>\n<arg line='-Ptest,bootstrap'/>\n<arg line='-DskipTests'/>\n</exec>\n<echo>\nbuild jruby maven artifact\n</echo>\n<exec executable='mvn' vmlauncher='false'>\n<arg line='-q'/>\n<arg line='-Pmain'/>\n</exec>\n<echo>\nbuild jruby-complete.jar\n</echo>\n<exec executable='mvn' vmlauncher='false'>\n<arg line='-q'/>\n<arg line='-Pcomplete'/>\n</exec>\n</target>\n#{builder.targets}<target description='test using jruby-complete or jruby-core/jruby-stdlib jars' name='test-jruby-jars' depends='mvn,#{builder.names}'/></project>")
 
 end

@@ -355,6 +355,7 @@
               <pomInclude>*/pom.xml</pomInclude>
             </pomIncludes>
             <pomExcludes>
+              <pomExclude>extended/pom.xml</pomExclude>
               <pomExclude>${its.j2ee}</pomExclude>
               <pomExclude>${its.osgi}</pomExclude>
             </pomExcludes>
