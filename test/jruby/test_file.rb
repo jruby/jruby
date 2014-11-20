@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 require 'test/unit'
+require 'test/jruby/test_helper'
 require 'rbconfig'
 require 'fileutils'
 require 'tempfile'
@@ -7,6 +8,7 @@ require 'pathname'
 require 'jruby'
 
 class TestFile < Test::Unit::TestCase
+  include TestHelper
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def setup
@@ -461,13 +463,31 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
+  def test_directory_query # - directory?
+    begin
+      Dir.mkdir("dir_tmp")
+      assert(File.directory?("dir_tmp"))
+      assert(! File.directory?("test/test_file.rb"))
+      assert(! File.directory?("dir_not_tmp"))
+      result = jruby("-e 'print File.directory?(\"dir_not_tmp\");print File.directory?(\"dir_tmp\");print File.directory?(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false')
+      assert(result == 'falsetruefalse')
+    ensure
+      Dir.rmdir("dir_tmp")
+    end
+  end
+
   def test_file_query # - file?
     assert(File.file?('test/jruby/test_file.rb'))
     assert(! File.file?('test'))
+    assert(! File.file?('test_not'))
+    result = jruby("-e 'print File.file?(\"test_not\");print File.file?(\"test\");print File.file?(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
+    assert(result == 'falsefalsetrue')
   end
 
   def test_file_exist_query
     assert(File.exist?('test'))
+    assert(! File.exist?('test_not'))
+    assert(jruby("-e 'print File.exists?(\"test_not\");print File.exists?(\"test\")'", 'jruby.native.enabled' => 'false' ) == 'falsetrue')
   end
 
   def test_file_exist_in_jar_file

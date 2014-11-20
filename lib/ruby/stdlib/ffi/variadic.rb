@@ -28,17 +28,11 @@
 
 module FFI
   class VariadicInvoker
-    def VariadicInvoker.new(arg_types, ret_type, function, options)
-      invoker = self.__new(function, ret_type, options[:convention].to_s)
-      invoker.init(arg_types, options[:type_map])
-      invoker
-    end
-
     def init(arg_types, type_map)
       @fixed = Array.new
       @type_map = type_map
       arg_types.each_with_index do |type, i|
-        @fixed << FFI.find_type(type, @type_map) unless type == FFI::NativeType::VARARGS
+        @fixed << type unless type == FFI::NativeType::VARARGS
       end
     end
 
@@ -57,10 +51,10 @@ module FFI
       invoke(param_types, param_values, &block)
     end
 
+    #
+    # Attach the invoker to module +mod+ as +mname+
+    #
     def attach(mod, mname)
-      #
-      # Attach the invoker to this module as 'mname'.
-      #
       invoker = self
       params = "*args"
       call = "call"

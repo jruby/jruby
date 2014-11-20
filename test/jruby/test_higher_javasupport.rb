@@ -691,7 +691,11 @@ CLASSDEF
   
   # JRUBY-2169
   def test_java_class_resource_methods
-    $CLASSPATH << 'test/org/jruby/javasupport/test/'
+    path = 'test/org/jruby/javasupport/test/'
+    # workaround for https://github.com/jruby/jruby/issues/2216
+    path = File.expand_path(path) if ENV_JAVA['user.dir'] != Dir.pwd
+    $CLASSPATH << path
+
     file = 'test_java_class_resource_methods.properties'
 
     jc = JRuby.runtime.jruby_class_loader
