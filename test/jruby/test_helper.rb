@@ -45,7 +45,7 @@ module TestHelper
   def interpreter( options = {} )
     options = options.collect { |k,v| "-D#{k}=\"#{v}\"" }
     if RUBY =~ /-cp /
-      RUBY.sub(/-cp [.]/, "-cp #{ENV["CLASSPATH"]}").sub(/-cp /, options.join(' ') + ' -cp ')
+      RUBY.sub(/-cp [.]/, "-cp .#{File::PATH_SEPARATOR}#{ENV['CLASSPATH']}").sub(/-cp /, options.join(' ') + ' -cp ')
     else
       RUBY
     end
