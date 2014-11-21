@@ -48,6 +48,28 @@ public abstract class TrueClassNodes {
         }
     }
 
+    @CoreMethod(names = "|", needsSelf = false, required = 1)
+    public abstract static class OrNode extends CoreMethodNode {
+
+        public OrNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OrNode(OrNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean or(boolean other) {
+            return true;
+        }
+
+        @Specialization
+        public boolean or(RubyObject other) {
+            return true;
+        }
+    }
+
     @CoreMethod(names = "^", needsSelf = false, required = 1)
     public abstract static class XorNode extends CoreMethodNode {
 
