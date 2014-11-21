@@ -328,6 +328,7 @@ public class CoreLibrary {
         encodingClass.setConstant(null, "EUC_JP", RubyEncoding.getEncoding(context, EUCJPEncoding.INSTANCE));
         encodingClass.setConstant(null, "Windows_31J", RubyEncoding.getEncoding(context, SJISEncoding.INSTANCE));
         encodingClass.setConstant(null, "Big5", RubyEncoding.getEncoding(context, BIG5Encoding.INSTANCE));
+        encodingClass.setConstant(null, "IBM437", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
 
     }
 
