@@ -29,8 +29,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
@@ -38,7 +40,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.WeakHashSet;
 
 /**
  * Implementation of Ruby's <code>ThreadGroup</code> class. This is currently
@@ -49,7 +50,7 @@ import org.jruby.util.collections.WeakHashSet;
  */
 @JRubyClass(name="ThreadGroup")
 public class RubyThreadGroup extends RubyObject {
-    private final Set<RubyThread> rubyThreadList = Collections.synchronizedSet(new WeakHashSet<RubyThread>());
+    private final List<WeakReference<RubyThread>> rubyThreadList = Collections.synchronizedList(new ArrayList<WeakReference<RubyThread>>());
     private boolean enclosed = false;
 
     public static RubyClass createThreadGroupClass(Ruby runtime) {
@@ -115,18 +116,18 @@ public class RubyThreadGroup extends RubyObject {
             IRubyObject oldGroup = rubyThread.group();
             if (!oldGroup.isNil()) {
                 RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
-                threadGroup.rubyThreadList.remove(rubyThread);
+                threadGroup.rubyThreadList.remove(new WeakReference<RubyThread>(rubyThread));
             }
 
             rubyThread.setThreadGroup(this);
-            rubyThreadList.add(rubyThread);
+            rubyThreadList.add(new WeakReference<RubyThread>(rubyThread));
         }
     }
     
     public void remove(RubyThread rubyThread) {
         synchronized (rubyThread) {
             rubyThread.setThreadGroup(null);
-            rubyThreadList.remove(rubyThread);
+            rubyThreadList.remove(new WeakReference<RubyThread>(rubyThread));
         }
     }
     
@@ -146,9 +147,10 @@ public class RubyThreadGroup extends RubyObject {
     public IRubyObject list(Block block) {
         RubyArray ary = RubyArray.newArray(getRuntime());
             synchronized (ary) {
-            for (RubyThread thread : rubyThreadList) {
+            for (WeakReference<RubyThread> ref : rubyThreadList) {
+                RubyThread thread = ref.get();
                 if (thread != null) {
-                    ary.append(thread);
+                    ary.add(thread);
                 }
             }
             return ary;
