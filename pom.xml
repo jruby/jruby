@@ -119,7 +119,7 @@
     <jffi.version>1.2.7</jffi.version>
     <rake.version>10.1.0</rake.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby-launcher.version>1.0.19</jruby-launcher.version>
+    <jruby-launcher.version>1.1.1</jruby-launcher.version>
     <rspec-expectations.version>2.14.0</rspec-expectations.version>
     <asm.version>5.0.3</asm.version>
     <its.osgi>osgi*/pom.xml</its.osgi>

@@ -67,7 +67,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jffi.version' => '1.2.7',
               'rake.version' => '10.1.0',
               'project.build.sourceEncoding' => 'utf-8',
-              'jruby-launcher.version' => '1.0.19',
+              'jruby-launcher.version' => '1.1.1',
               'asm.version' => '5.0.3',
               'rspec-expectations.version' => '2.14.0',
               'base.javac.version' => '1.7',
