@@ -202,6 +202,7 @@ public class CoreLibrary {
         // Includes
 
         objectClass.include(null, kernelModule);
+        numericClass.include(null, comparableModule);
 
         // Set constants
 
@@ -290,8 +291,8 @@ public class CoreLibrary {
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
         objectClass.setConstant(null, "STDIN", new RubyBasicObject(objectClass));
-        objectClass.setConstant(null, "STDOUT", globalVariablesObject.getInstanceVariable("$stdout"));
-        objectClass.setConstant(null, "STDERR", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant(null, "STDOUT", stdout);
+        objectClass.setConstant(null, "STDERR", stdout);
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 
@@ -327,6 +328,7 @@ public class CoreLibrary {
         encodingClass.setConstant(null, "EUC_JP", RubyEncoding.getEncoding(context, EUCJPEncoding.INSTANCE));
         encodingClass.setConstant(null, "Windows_31J", RubyEncoding.getEncoding(context, SJISEncoding.INSTANCE));
         encodingClass.setConstant(null, "Big5", RubyEncoding.getEncoding(context, BIG5Encoding.INSTANCE));
+        encodingClass.setConstant(null, "IBM437", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
 
     }
 

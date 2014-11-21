@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -316,7 +317,8 @@ public class RubyInstanceConfig {
 
         // RegularFileResource absolutePath will canonicalize resources so that will change c: paths to C:.
         // We will cannonicalize on windows so that jruby.home is also C:.
-        if (Platform.IS_WINDOWS) {
+        // assume all those uri-like pathnames are already in absolute form
+        if (Platform.IS_WINDOWS && !newJRubyHome.startsWith("jar:") && !newJRubyHome.startsWith("file:") && !newJRubyHome.startsWith("classpath:") && !newJRubyHome.startsWith("uri:")) {
             File file = new File(newJRubyHome);
 
             try {
@@ -1531,6 +1533,15 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     // Static configuration fields, used as defaults for new JRuby instances.
     ////////////////////////////////////////////////////////////////////////////
+
+    // NOTE: These BigDecimal fields must be initialized before calls to initGlobalJavaVersion
+
+    /** A BigDecimal representing 1.5, for Java spec version matching */
+    private static final BigDecimal BIGDECIMAL_1_5 = new BigDecimal("1.5");
+    /** A BigDecimal representing 1.6, for Java spec version matching */
+    private static final BigDecimal BIGDECIMAL_1_6 = new BigDecimal("1.6");
+    /** A BigDecimal representing 1.7, for Java spec version matching */
+    private static final BigDecimal BIGDECIMAL_1_7 = new BigDecimal("1.7");
     
     /**
      * The version to use for generated classes. Set to current JVM version by default

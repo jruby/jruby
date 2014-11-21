@@ -35,6 +35,10 @@ module Kernel
 
 end
 
+def STDOUT.internal_encoding
+  nil # FIXME
+end
+
 # Here temporarily while we adapt to the newly imported specs
 
 class Channel

@@ -38,11 +38,7 @@ fails:The predefined global constants includes TOPLEVEL_BINDING
 fails:The predefined global constant STDERR has nil for the external encoding despite Encoding.default_external being changed
 fails:The predefined global constant STDERR has the encodings set by #set_encoding
 fails:The predefined global constant ARGV contains Strings encoded in locale Encoding
-fails:The predefined global constant STDERR has nil for the internal encoding despite Encoding.default_internal being changed
-fails:The predefined global constant STDERR has nil for the internal encoding
 fails:The predefined global constant STDERR has nil for the external encoding
-fails:The predefined global constant STDOUT has nil for the internal encoding despite Encoding.default_internal being changed
-fails:The predefined global constant STDOUT has nil for the internal encoding
 fails:The predefined global constant STDOUT has the encodings set by #set_encoding
 fails:The predefined global constant STDOUT has nil for the external encoding despite Encoding.default_external being changed
 fails:The predefined global constant STDOUT has nil for the external encoding

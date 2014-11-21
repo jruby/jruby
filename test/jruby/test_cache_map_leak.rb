@@ -5,7 +5,7 @@ class TestMe; end
 
 class TestCacheMapLeak < Test::Unit::TestCase
 
-  def setup
+  def setup_test
     @num = 100
     @num.times { class << TestMe.new; def foo; end; end }
     
@@ -14,6 +14,8 @@ class TestCacheMapLeak < Test::Unit::TestCase
   end
   
   def test_objects_are_released_by_cache_map
+    return unless JRuby.runtime.object_space_enabled?
+    setup_test
     assert(@num != ObjectSpace.each_object(TestMe){}, "Objects not being release by CacheMap" )
   end
   

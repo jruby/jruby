@@ -13,50 +13,56 @@ os:
   - osx
 
 env:
-  # disable cext
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.cext.enabled=false"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
   matrix:
-    - TARGET='-Ptest'
-    - TARGET='-Pjruby_complete_jar_jruby'
-    - TARGET='-Prake -Dtask=test:jruby'
-    - TARGET='-Prake -Dtask=test:mri'
-    - TARGET='-Prake -Dtask=test:slow_suites'
-    - TARGET='-Prake -Dtask=test:tracing'
-    - TARGET='-Prake -Dtask=spec:ji'
-    - TARGET='-Prake -Dtask=spec:compiler'
-    - TARGET='-Prake -Dtask=spec:ffi'
-    - TARGET='-Prake -Dtask=spec:regression'
-    - TARGET='-Prake -Dtask=spec:ruby:fast'
-    - TARGET='-Prake -Dtask=spec:jruby'
-    - TARGET='-Prake -Dtask=spec:jrubyc'
-    - TARGET='-Prake -Dtask=spec:profiler'
-    - TARGET='-Ptruffle-specs-language'
-    - TARGET='-Ptruffle-specs-core'
+    - PHASE='-Ptest'
+    - PHASE='-Pjruby_complete_jar_jruby'
+    - PHASE='-Prake -Dtask=test:jruby'
+    - PHASE='-Prake -Dtask=test:mri'
+    - PHASE='-Prake -Dtask=test:slow_suites'
+    - PHASE='-Prake -Dtask=test:tracing'
+    - PHASE='-Prake -Dtask=spec:ji'
+    - PHASE='-Prake -Dtask=spec:compiler'
+    - PHASE='-Prake -Dtask=spec:ffi'
+    - PHASE='-Prake -Dtask=spec:regression'
+    - PHASE='-Prake -Dtask=spec:ruby:fast'
+    - PHASE='-Prake -Dtask=spec:jruby'
+    - PHASE='-Prake -Dtask=spec:jrubyc'
+    - PHASE='-Prake -Dtask=spec:profiler'
+    - PHASE='-Ptruffle-specs-language'
+    - PHASE='-Ptruffle-specs-core'
 
 matrix:
   include:
     # these profile do no need to run for all JDKs
-    - env: TARGET='-Pdist'
+    - env: PHASE='-Pdist'
       jdk: oraclejdk8
-    - env: TARGET='-Pjruby-jars'
+    - env: PHASE='-Pjruby-jars'
       jdk: openjdk7
-    - env: TARGET='-Pmain'
+    - env: PHASE='-Pmain'
       jdk: oraclejdk7
-    - env: TARGET='-Pcomplete'
+    - env: PHASE='-Pcomplete'
       jdk: oraclejdk8
-    - env: TARGET='-Posgi'
+    - env: PHASE='-Posgi'
       jdk: openjdk7
-    - env: TARGET='-Pj2ee'
+    - env: PHASE='-Pj2ee'
       jdk: oraclejdk7
-    - script: test/check_versions.sh
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+      jdk: oraclejdk7
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+      jdk: oraclejdk8
+    - env: COMMAND=test/check_versions.sh
+      jdk: oraclejdk8
   fast_finish: true
   allow_failures:
-    - env: TARGET='-Pcomplete'
-    - env: TARGET='-Prake -Dtask=spec:jrubyc'
-    - env: TARGET='-Pjruby_complete_jar_jruby'
-    - env: TARGET='-Pj2ee'
-    - env: TARGET='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Pcomplete'
+    - env: PHASE='-Prake -Dtask=spec:jrubyc'
+    - env: PHASE='-Pjruby_complete_jar_jruby'
+    - env: PHASE='-Pj2ee'
+    - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
 
 branches:
   only:
@@ -67,7 +73,7 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-script: travis_retry mvn -q -Pbootstrap clean package ; mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
+script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn -q -Pbootstrap clean package ; mvn install $PHASE -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
 install: /bin/true
 notifications:
   irc:

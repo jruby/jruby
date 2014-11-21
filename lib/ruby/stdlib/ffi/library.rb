@@ -228,7 +228,7 @@ module FFI
             raise LoadError unless function
 
             invokers << if arg_types.length > 0 && arg_types[arg_types.length - 1] == FFI::NativeType::VARARGS
-              FFI::VariadicInvoker.new(arg_types, find_type(ret_type), function, options)
+              FFI::VariadicInvoker.new(find_type(ret_type), arg_types, function, options)
             else
               FFI::Function.new(find_type(ret_type), arg_types, function, options)
             end

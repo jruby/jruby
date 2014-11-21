@@ -31,6 +31,8 @@ abstract class JarResource implements FileResource {
         int bang = sanitized.indexOf('!');
         String jarPath = sanitized.substring(0, bang);
         String entryPath = sanitized.substring(bang + 1);
+        // normalize path -- issue #2017
+        if (entryPath.startsWith("//")) entryPath = entryPath.substring(1);
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
