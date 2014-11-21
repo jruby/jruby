@@ -467,9 +467,9 @@ class TestFile < Test::Unit::TestCase
     begin
       Dir.mkdir("dir_tmp")
       assert(File.directory?("dir_tmp"))
-      assert(! File.directory?("test/test_file.rb"))
+      assert(! File.directory?("test/jruby/test_file.rb"))
       assert(! File.directory?("dir_not_tmp"))
-      result = jruby("-e 'print File.directory?(\"dir_not_tmp\");print File.directory?(\"dir_tmp\");print File.directory?(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false')
+      result = jruby("-e 'print File.directory?(\"dir_not_tmp\");print File.directory?(\"dir_tmp\");print File.directory?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false')
       assert(result == 'falsetruefalse')
     ensure
       Dir.rmdir("dir_tmp")
@@ -480,7 +480,7 @@ class TestFile < Test::Unit::TestCase
     assert(File.file?('test/jruby/test_file.rb'))
     assert(! File.file?('test'))
     assert(! File.file?('test_not'))
-    result = jruby("-e 'print File.file?(\"test_not\");print File.file?(\"test\");print File.file?(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
+    result = jruby("-e 'print File.file?(\"test_not\");print File.file?(\"test\");print File.file?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
     assert(result == 'falsefalsetrue')
   end
 

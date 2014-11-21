@@ -113,7 +113,7 @@
       </modules>
     </profile>
     <profile>
-      <id>jruby_complete_jar_jruby</id>
+      <id>jruby_complete_jar_extended</id>
       <modules>
         <module>jruby-complete</module>
       </modules>

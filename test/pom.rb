@@ -137,25 +137,31 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'jruby_complete_jar_jruby' do
+  profile 'jruby_complete_jar_extended' do
 
     jar 'org.jruby:jruby-complete', '${project.version}', :scope => :provided
 
-    rake = Dir[File.join(basedir, "../lib/ruby/gems/shared/gems/rake-*/lib/rake/rake_test_loader.rb")].first
-    files = ""
-    File.open(File.join(basedir, 'jruby.index')) do |f|
-      f.each_line.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << "<arg value='#{filename}'/>"
-      end
-    end
-
     plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'jruby_complete_jar_jruby',
-                     :phase => 'test',
-                     :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='#{rake}'/>#{files}<arg value='-v'/></exec></target>" ) ] )
+      [ 'mri', 'jruby','objectspace', 'slow' ].each do |index|
+        files = ""
+        File.open(File.join(basedir, index + '.index')) do |f|
+          f.each_line.each do |line|
+            next if line =~ /^#/ or line.strip.empty?
+            filename = "mri/#{line.chomp}"
+            filename = "jruby/#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
+            filename = "#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
+            next if filename =~ /mri\/psych\//
+            next if filename =~ /mri\/net\/http\//
+            next unless File.exist? File.join(basedir, filename)
+            files << "<arg value='test/#{filename}'/>"
+          end
+        end
+
+        execute_goals( 'run',
+                       :id => 'jruby_complete_jar_' + index,
+                       :phase => 'test',
+                       :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='-Itest/mri/ruby'/><arg value='-Itest/mri'/><arg value='-Itest'/><arg value='-rtest/mri_test_env'/><arg value='lib/ruby/stdlib/rake/rake_test_loader.rb'/>#{files}<arg value='-v'/></exec></target>" ) ] )
+      end
     end
 
   end

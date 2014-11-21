@@ -255,12 +255,249 @@
       </build>
     </profile>
     <profile>
-      <id>jruby_complete_jar_jruby</id>
+      <id>jruby_complete_jar_extended</id>
       <build>
         <plugins>
           <plugin>
             <artifactId>maven-antrun-plugin</artifactId>
             <executions>
+              <execution>
+                <id>jruby_complete_jar_mri</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                      <arg value="-cp" />
+                      <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
+                      <arg value="org.jruby.Main" />
+                      <arg value="-I." />
+                      <arg value="-Itest/mri/ruby" />
+                      <arg value="-Itest/mri" />
+                      <arg value="-Itest" />
+                      <arg value="-rtest/mri_test_env" />
+                      <arg value="lib/ruby/stdlib/rake/rake_test_loader.rb" />
+                      <arg value="test/mri/ruby/test_alias.rb" />
+                      <arg value="test/mri/ruby/test_array.rb" />
+                      <arg value="test/mri/ruby/test_assignment.rb" />
+                      <arg value="test/mri/ruby/test_autoload.rb" />
+                      <arg value="test/mri/ruby/test_basicinstructions.rb" />
+                      <arg value="test/mri/ruby/test_beginendblock.rb" />
+                      <arg value="test/mri/ruby/test_bignum.rb" />
+                      <arg value="test/mri/ruby/test_call.rb" />
+                      <arg value="test/mri/ruby/test_case.rb" />
+                      <arg value="test/mri/ruby/test_class.rb" />
+                      <arg value="test/mri/ruby/test_clone.rb" />
+                      <arg value="test/mri/ruby/test_comparable.rb" />
+                      <arg value="test/mri/ruby/test_complex.rb" />
+                      <arg value="test/mri/ruby/test_complex2.rb" />
+                      <arg value="test/mri/ruby/test_complexrational.rb" />
+                      <arg value="test/mri/ruby/test_condition.rb" />
+                      <arg value="test/mri/ruby/test_const.rb" />
+                      <arg value="test/mri/ruby/test_continuation.rb" />
+                      <arg value="test/mri/ruby/test_defined.rb" />
+                      <arg value="test/mri/ruby/test_dir.rb" />
+                      <arg value="test/mri/ruby/test_dir_m17n.rb" />
+                      <arg value="test/mri/ruby/test_econv.rb" />
+                      <arg value="test/mri/ruby/test_encoding.rb" />
+                      <arg value="test/mri/ruby/test_enum.rb" />
+                      <arg value="test/mri/ruby/test_enumerator.rb" />
+                      <arg value="test/mri/ruby/test_env.rb" />
+                      <arg value="test/mri/ruby/test_eval.rb" />
+                      <arg value="test/mri/ruby/test_exception.rb" />
+                      <arg value="test/mri/ruby/test_file.rb" />
+                      <arg value="test/mri/ruby/test_file_exhaustive.rb" />
+                      <arg value="test/mri/ruby/test_fixnum.rb" />
+                      <arg value="test/mri/ruby/test_flip.rb" />
+                      <arg value="test/mri/ruby/test_float.rb" />
+                      <arg value="test/mri/ruby/test_fnmatch.rb" />
+                      <arg value="test/mri/ruby/test_gc.rb" />
+                      <arg value="test/mri/ruby/test_hash.rb" />
+                      <arg value="test/mri/ruby/test_ifunless.rb" />
+                      <arg value="test/mri/ruby/test_integer.rb" />
+                      <arg value="test/mri/ruby/test_integer_comb.rb" />
+                      <arg value="test/mri/ruby/test_io.rb" />
+                      <arg value="test/mri/ruby/test_io_m17n.rb" />
+                      <arg value="test/mri/ruby/test_iterator.rb" />
+                      <arg value="test/mri/ruby/test_lambda.rb" />
+                      <arg value="test/mri/ruby/test_literal.rb" />
+                      <arg value="test/mri/ruby/test_m17n.rb" />
+                      <arg value="test/mri/ruby/test_m17n_comb.rb" />
+                      <arg value="test/mri/ruby/test_marshal.rb" />
+                      <arg value="test/mri/ruby/test_math.rb" />
+                      <arg value="test/mri/ruby/test_metaclass.rb" />
+                      <arg value="test/mri/ruby/test_method.rb" />
+                      <arg value="test/mri/ruby/test_mixed_unicode_escapes.rb" />
+                      <arg value="test/mri/ruby/test_module.rb" />
+                      <arg value="test/mri/ruby/test_notimp.rb" />
+                      <arg value="test/mri/ruby/test_numeric.rb" />
+                      <arg value="test/mri/ruby/test_object.rb" />
+                      <arg value="test/mri/ruby/test_objectspace.rb" />
+                      <arg value="test/mri/ruby/test_optimization.rb" />
+                      <arg value="test/mri/ruby/test_pack.rb" />
+                      <arg value="test/mri/ruby/test_parse.rb" />
+                      <arg value="test/mri/ruby/test_path.rb" />
+                      <arg value="test/mri/ruby/test_pipe.rb" />
+                      <arg value="test/mri/ruby/test_primitive.rb" />
+                      <arg value="test/mri/ruby/test_rand.rb" />
+                      <arg value="test/mri/ruby/test_range.rb" />
+                      <arg value="test/mri/ruby/test_rational.rb" />
+                      <arg value="test/mri/ruby/test_rational2.rb" />
+                      <arg value="test/mri/ruby/test_readpartial.rb" />
+                      <arg value="test/mri/ruby/test_require.rb" />
+                      <arg value="test/mri/ruby/test_rubyoptions.rb" />
+                      <arg value="test/mri/ruby/test_signal.rb" />
+                      <arg value="test/mri/ruby/test_sleep.rb" />
+                      <arg value="test/mri/ruby/test_sprintf.rb" />
+                      <arg value="test/mri/ruby/test_string.rb" />
+                      <arg value="test/mri/ruby/test_stringchar.rb" />
+                      <arg value="test/mri/ruby/test_struct.rb" />
+                      <arg value="test/mri/ruby/test_super.rb" />
+                      <arg value="test/mri/ruby/test_symbol.rb" />
+                      <arg value="test/mri/ruby/test_syntax.rb" />
+                      <arg value="test/mri/ruby/test_system.rb" />
+                      <arg value="test/mri/ruby/test_thread.rb" />
+                      <arg value="test/mri/ruby/test_time.rb" />
+                      <arg value="test/mri/ruby/test_time_tz.rb" />
+                      <arg value="test/mri/ruby/test_trace.rb" />
+                      <arg value="test/mri/ruby/test_transcode.rb" />
+                      <arg value="test/mri/ruby/test_undef.rb" />
+                      <arg value="test/mri/ruby/test_unicode_escape.rb" />
+                      <arg value="test/mri/ruby/test_variable.rb" />
+                      <arg value="test/mri/ruby/test_whileuntil.rb" />
+                      <arg value="test/mri/ruby/test_yield.rb" />
+                      <arg value="test/mri/test_pp.rb" />
+                      <arg value="test/mri/test_cmath.rb" />
+                      <arg value="test/mri/test_delegate.rb" />
+                      <arg value="test/mri/test_find.rb" />
+                      <arg value="test/mri/test_ipaddr.rb" />
+                      <arg value="test/mri/test_open3.rb" />
+                      <arg value="test/mri/test_pp.rb" />
+                      <arg value="test/mri/test_prettyprint.rb" />
+                      <arg value="test/mri/test_prime.rb" />
+                      <arg value="test/mri/test_pstore.rb" />
+                      <arg value="test/mri/test_pty.rb" />
+                      <arg value="test/mri/test_securerandom.rb" />
+                      <arg value="test/mri/test_set.rb" />
+                      <arg value="test/mri/test_shellwords.rb" />
+                      <arg value="test/mri/test_singleton.rb" />
+                      <arg value="test/mri/test_syslog.rb" />
+                      <arg value="test/mri/test_tempfile.rb" />
+                      <arg value="test/mri/test_time.rb" />
+                      <arg value="test/mri/test_timeout.rb" />
+                      <arg value="test/mri/test_tsort.rb" />
+                      <arg value="test/mri/base64/test_base64.rb" />
+                      <arg value="test/mri/benchmark/test_benchmark.rb" />
+                      <arg value="test/mri/bigdecimal/test_bigdecimal.rb" />
+                      <arg value="test/mri/bigdecimal/test_bigdecimal_util.rb" />
+                      <arg value="test/mri/bigdecimal/test_bigmath.rb" />
+                      <arg value="test/mri/cgi/test_cgi_cookie.rb" />
+                      <arg value="test/mri/cgi/test_cgi_core.rb" />
+                      <arg value="test/mri/cgi/test_cgi_header.rb" />
+                      <arg value="test/mri/cgi/test_cgi_modruby.rb" />
+                      <arg value="test/mri/cgi/test_cgi_multipart.rb" />
+                      <arg value="test/mri/cgi/test_cgi_session.rb" />
+                      <arg value="test/mri/cgi/test_cgi_tag_helper.rb" />
+                      <arg value="test/mri/cgi/test_cgi_util.rb" />
+                      <arg value="test/mri/coverage/test_coverage.rb" />
+                      <arg value="test/mri/csv/test_csv_parsing.rb" />
+                      <arg value="test/mri/csv/test_csv_writing.rb" />
+                      <arg value="test/mri/csv/test_data_converters.rb" />
+                      <arg value="test/mri/csv/test_encodings.rb" />
+                      <arg value="test/mri/csv/test_features.rb" />
+                      <arg value="test/mri/csv/test_headers.rb" />
+                      <arg value="test/mri/csv/test_interface.rb" />
+                      <arg value="test/mri/csv/test_row.rb" />
+                      <arg value="test/mri/csv/test_table.rb" />
+                      <arg value="test/mri/date/test_date.rb" />
+                      <arg value="test/mri/date/test_date_arith.rb" />
+                      <arg value="test/mri/date/test_date_attr.rb" />
+                      <arg value="test/mri/date/test_date_base.rb" />
+                      <arg value="test/mri/date/test_date_compat.rb" />
+                      <arg value="test/mri/date/test_date_conv.rb" />
+                      <arg value="test/mri/date/test_date_marshal.rb" />
+                      <arg value="test/mri/date/test_date_new.rb" />
+                      <arg value="test/mri/date/test_date_parse.rb" />
+                      <arg value="test/mri/date/test_date_strftime.rb" />
+                      <arg value="test/mri/date/test_date_strptime.rb" />
+                      <arg value="test/mri/date/test_date_parse.rb" />
+                      <arg value="test/mri/date/test_switch_hitter.rb" />
+                      <arg value="test/mri/digest/test_digest.rb" />
+                      <arg value="test/mri/digest/test_digest_extend.rb" />
+                      <arg value="test/mri/erb/test_erb.rb" />
+                      <arg value="test/mri/erb/test_erb_m17n.rb" />
+                      <arg value="test/mri/etc/test_etc.rb" />
+                      <arg value="test/mri/fileutils/test_dryrun.rb" />
+                      <arg value="test/mri/fileutils/test_fileutils.rb" />
+                      <arg value="test/mri/fileutils/test_nowrite.rb" />
+                      <arg value="test/mri/fileutils/test_verbose.rb" />
+                      <arg value="test/mri/json/test_json.rb" />
+                      <arg value="test/mri/json/test_json_addition.rb" />
+                      <arg value="test/mri/json/test_json_encoding.rb" />
+                      <arg value="test/mri/json/test_json_fixtures.rb" />
+                      <arg value="test/mri/json/test_json_generate.rb" />
+                      <arg value="test/mri/json/test_json_generic_object.rb" />
+                      <arg value="test/mri/json/test_json_string_matching.rb" />
+                      <arg value="test/mri/json/test_json_unicode.rb" />
+                      <arg value="test/mri/logger/test_logger.rb" />
+                      <arg value="test/mri/matrix/test_matrix.rb" />
+                      <arg value="test/mri/matrix/test_vector.rb" />
+                      <arg value="test/mri/monitor/test_monitor.rb" />
+                      <arg value="test/mri/net/ftp/test_ftp.rb" />
+                      <arg value="test/mri/net/imap/test_imap_response_parser.rb" />
+                      <arg value="test/mri/net/pop/test_pop.rb" />
+                      <arg value="test/mri/net/protocol/test_protocol.rb" />
+                      <arg value="test/mri/net/smtp/test_response.rb" />
+                      <arg value="test/mri/net/smtp/test_smtp.rb" />
+                      <arg value="test/mri/net/smtp/test_ssl_socket.rb" />
+                      <arg value="test/mri/nkf/test_kconv.rb" />
+                      <arg value="test/mri/nkf/test_nkf.rb" />
+                      <arg value="test/mri/optparse/test_bash_completion.rb" />
+                      <arg value="test/mri/optparse/test_getopts.rb" />
+                      <arg value="test/mri/optparse/test_noarg.rb" />
+                      <arg value="test/mri/optparse/test_optarg.rb" />
+                      <arg value="test/mri/optparse/test_optparse.rb" />
+                      <arg value="test/mri/optparse/test_placearg.rb" />
+                      <arg value="test/mri/optparse/test_reqarg.rb" />
+                      <arg value="test/mri/optparse/test_summary.rb" />
+                      <arg value="test/mri/optparse/test_zsh_completion.rb" />
+                      <arg value="test/mri/ostruct/test_ostruct.rb" />
+                      <arg value="test/mri/pathname/test_pathname.rb" />
+                      <arg value="test/mri/ripper/test_files.rb" />
+                      <arg value="test/mri/ripper/test_filter.rb" />
+                      <arg value="test/mri/ripper/test_parser_events.rb" />
+                      <arg value="test/mri/ripper/test_ripper.rb" />
+                      <arg value="test/mri/ripper/test_scanner_events.rb" />
+                      <arg value="test/mri/scanf/test_scanf.rb" />
+                      <arg value="test/mri/scanf/test_scanfblocks.rb" />
+                      <arg value="test/mri/socket/test_basicsocket.rb" />
+                      <arg value="test/mri/socket/test_nonblock.rb" />
+                      <arg value="test/mri/socket/test_socket.rb" />
+                      <arg value="test/mri/stringio/test_stringio.rb" />
+                      <arg value="test/mri/strscan/test_stringscanner.rb" />
+                      <arg value="test/mri/thread/test_queue.rb" />
+                      <arg value="test/mri/zlib/test_zlib.rb" />
+                      <arg value="test/mri/ruby/enc/test_big5.rb" />
+                      <arg value="test/mri/ruby/enc/test_cp949.rb" />
+                      <arg value="test/mri/ruby/enc/test_emoji.rb" />
+                      <arg value="test/mri/ruby/enc/test_euc_jp.rb" />
+                      <arg value="test/mri/ruby/enc/test_euc_kr.rb" />
+                      <arg value="test/mri/ruby/enc/test_euc_tw.rb" />
+                      <arg value="test/mri/ruby/enc/test_gb18030.rb" />
+                      <arg value="test/mri/ruby/enc/test_gbk.rb" />
+                      <arg value="test/mri/ruby/enc/test_iso_8859.rb" />
+                      <arg value="test/mri/ruby/enc/test_koi8.rb" />
+                      <arg value="test/mri/ruby/enc/test_shift_jis.rb" />
+                      <arg value="test/mri/ruby/enc/test_utf16.rb" />
+                      <arg value="test/mri/ruby/enc/test_utf32.rb" />
+                      <arg value="test/mri/ruby/enc/test_windows_1251.rb" />
+                      <arg value="-v" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
               <execution>
                 <id>jruby_complete_jar_jruby</id>
                 <phase>test</phase>
@@ -274,7 +511,11 @@
                       <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
                       <arg value="org.jruby.Main" />
                       <arg value="-I." />
-                      <arg value="" />
+                      <arg value="-Itest/mri/ruby" />
+                      <arg value="-Itest/mri" />
+                      <arg value="-Itest" />
+                      <arg value="-rtest/mri_test_env" />
+                      <arg value="lib/ruby/stdlib/rake/rake_test_loader.rb" />
                       <arg value="test/jruby/test_globals.rb" />
                       <arg value="test/jruby/test_argf.rb" />
                       <arg value="test/jruby/test_array.rb" />
@@ -368,6 +609,56 @@
                       <arg value="test/jruby/test_instantiating_interfaces.rb" />
                       <arg value="test/jruby/test_openssl.rb" />
                       <arg value="test/jruby/test_tempfile_cleanup.rb" />
+                      <arg value="-v" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>jruby_complete_jar_objectspace</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                      <arg value="-cp" />
+                      <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
+                      <arg value="org.jruby.Main" />
+                      <arg value="-I." />
+                      <arg value="-Itest/mri/ruby" />
+                      <arg value="-Itest/mri" />
+                      <arg value="-Itest" />
+                      <arg value="-rtest/mri_test_env" />
+                      <arg value="lib/ruby/stdlib/rake/rake_test_loader.rb" />
+                      <arg value="test/jruby/test_objectspace.rb" />
+                      <arg value="test/jruby/test_cache_map_leak.rb" />
+                      <arg value="-v" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>jruby_complete_jar_slow</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                      <arg value="-cp" />
+                      <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
+                      <arg value="org.jruby.Main" />
+                      <arg value="-I." />
+                      <arg value="-Itest/mri/ruby" />
+                      <arg value="-Itest/mri" />
+                      <arg value="-Itest" />
+                      <arg value="-rtest/mri_test_env" />
+                      <arg value="lib/ruby/stdlib/rake/rake_test_loader.rb" />
+                      <arg value="test/jruby/test_command_line_switches.rb" />
+                      <arg value="test/jruby/test_launching_by_shell_script.rb" />
                       <arg value="-v" />
                     </exec>
                   </target>

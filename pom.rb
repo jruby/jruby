@@ -240,7 +240,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   all_modules = [ 'test', 'maven' ]
 
-  [ 'all', 'jruby_complete_jar_jruby' ].each do |name|
+  [ 'all', 'jruby_complete_jar_extended' ].each do |name|
     profile name do
 
       modules all_modules
