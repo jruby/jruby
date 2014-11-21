@@ -17,6 +17,28 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "FalseClass")
 public abstract class FalseClassNodes {
 
+    @CoreMethod(names = "&", needsSelf = false, required = 1)
+    public abstract static class AndNode extends CoreMethodNode {
+
+        public AndNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AndNode(AndNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean and(boolean other) {
+            return false;
+        }
+
+        @Specialization
+        public boolean and(RubyObject other) {
+            return false;
+        }
+    }
+
     @CoreMethod(names = "^", needsSelf = false, required = 1)
     public abstract static class XorNode extends CoreMethodNode {
 

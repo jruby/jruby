@@ -1,1 +1,0 @@
-fails:TrueClass#& returns false if other is nil or false, otherwise true
