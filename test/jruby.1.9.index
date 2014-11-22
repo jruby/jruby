@@ -2,6 +2,7 @@
 # NOTE: test_globals comes first here because it has tests that $? be nil
 test_globals
 
+test_adding_pem_to_x509store
 test_argf
 test_array
 test_autoload
