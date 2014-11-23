@@ -32,15 +32,52 @@ package org.jruby.util.collections;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A Map that holds its values weakly and uses object identity for keys.
  */
-public class WeakValuedIdentityMap<Key, Value> extends WeakValuedMap<Key, Value> {
+public class WeakValuedMap<Key, Value> {
+    private final ReferenceQueue deadReferences = new ReferenceQueue();
+    private final Map<Key, KeyedReference<Key, Value>> references = newMap();
+
+    public void put(Key key, Value value) {
+        cleanReferences();
+        references.put(key, new KeyedReference(value, key, deadReferences));
+    }
+
+    public Value get(Key key) {
+        cleanReferences();
+        KeyedReference<Key, Value> reference = references.get(key);
+        if (reference == null) {
+            return null;
+        }
+        return reference.get();
+    }
+
     protected Map<Key, KeyedReference<Key, Value>> newMap() {
-        return Collections.synchronizedMap(new IdentityHashMap());
+        return new ConcurrentHashMap();
+    }
+
+    protected static class KeyedReference<Key, Value> extends WeakReference<Value> {
+        private final Key key;
+
+        public KeyedReference(Value object, Key key, ReferenceQueue queue) {
+            super(object, queue);
+            this.key = key;
+        }
+
+        public Key key() {
+            return key;
+        }
+    }
+
+    private void cleanReferences() {
+        KeyedReference ref;
+        while ((ref = (KeyedReference) deadReferences.poll()) != null) {
+            references.remove((ref.key()));
+        }
     }
 }
