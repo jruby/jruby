@@ -138,9 +138,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return getEncoding();
     }
     // FIXME: Maybe these should not be static?
-    private static final WeakValuedMap<ByteList, Regex> patternCache = new WeakValuedMap();
-    private static final WeakValuedMap<ByteList, Regex> quotedPatternCache = new WeakValuedMap();
-    private static final WeakValuedMap<ByteList, Regex> preprocessedPatternCache = new WeakValuedMap();
+    static final WeakValuedMap<ByteList, Regex> patternCache = new WeakValuedMap();
+    static final WeakValuedMap<ByteList, Regex> quotedPatternCache = new WeakValuedMap();
+    static final WeakValuedMap<ByteList, Regex> preprocessedPatternCache = new WeakValuedMap();
 
     private static Regex makeRegexp(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
         try {
