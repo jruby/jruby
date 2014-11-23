@@ -1,17 +1,17 @@
 import java.io.*;
-import org.codehaus.plexus.util.FileUtils;
+import org.codehaus.plexus.util.fileutils;
 
 
-String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
-String expected = "rake (10.1.0)";
+string log = fileutils.fileread( new file( basedir, "build.log" ) );
+string expected = "rake (10.1.0)";
 if ( !log.contains( expected ) )
 {
-    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+    throw new runtimeexception( "log file does not contain '" + expected + "'" );
 }
 expected = "4.1.0";
 if ( !log.contains( expected ) )
 {
-    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+    throw new runtimeexception( "log file does not contain '" + expected + "'" );
 }
 expected = "json (1.8.0 java)";
 if ( !log.contains( expected ) )
@@ -34,6 +34,11 @@ if ( !log.contains( expected ) )
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
 expected = "ffi,jar-dependencies,jruby-openssl,krypt,krypt-core,krypt-provider-jdk";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "there is NO org.objectweb.asm.ClassWriter on the classpath";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
