@@ -247,7 +247,7 @@ public class JITCompiler implements JITCompilerMBean {
                     // only variable-arity
                     method.switchToJitted(
                             new CompiledIRMethod(
-                                    MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                    MethodHandles.publicLookup().in(Ruby.class).findStatic(sourceClass, jittedName, signatures.get(-1)),
                                     method.getIRMethod(),
                                     method.getVisibility(),
                                     method.getImplementationClass()));
@@ -258,8 +258,8 @@ public class JITCompiler implements JITCompilerMBean {
 
                         method.switchToJitted(
                                 new CompiledIRMethod(
-                                        MethodHandles.publicLookup().findStatic(sourceClass, jittedName, signatures.get(-1)),
-                                        MethodHandles.publicLookup().findStatic(sourceClass, jittedName, entry.getValue()),
+                                        MethodHandles.publicLookup().in(Ruby.class).findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                        MethodHandles.publicLookup().in(Ruby.class).findStatic(sourceClass, jittedName, entry.getValue()),
                                         entry.getKey(),
                                         method.getIRMethod(),
                                         method.getVisibility(),
