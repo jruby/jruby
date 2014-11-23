@@ -173,18 +173,20 @@ public class JITCompiler implements JITCompilerMBean {
             jitTask.run();
         }
     }
-    
+
+    private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup().in(Ruby.class);
+
     private class JITTask implements Runnable {
         private final String className;
         private final InterpretedIRMethod method;
         private final String methodName;
-        
+
         public JITTask(String className, InterpretedIRMethod method, String methodName) {
             this.className = className;
             this.method = method;
             this.methodName = methodName;
         }
-        
+
         public void run() {
             try {
                 // Check if the method has been explicitly excluded
@@ -247,7 +249,7 @@ public class JITCompiler implements JITCompilerMBean {
                     // only variable-arity
                     method.switchToJitted(
                             new CompiledIRMethod(
-                                    MethodHandles.publicLookup().in(Ruby.class).findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                    PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, signatures.get(-1)),
                                     method.getIRMethod(),
                                     method.getVisibility(),
                                     method.getImplementationClass()));
@@ -258,8 +260,8 @@ public class JITCompiler implements JITCompilerMBean {
 
                         method.switchToJitted(
                                 new CompiledIRMethod(
-                                        MethodHandles.publicLookup().in(Ruby.class).findStatic(sourceClass, jittedName, signatures.get(-1)),
-                                        MethodHandles.publicLookup().in(Ruby.class).findStatic(sourceClass, jittedName, entry.getValue()),
+                                        PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, signatures.get(-1)),
+                                        PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, entry.getValue()),
                                         entry.getKey(),
                                         method.getIRMethod(),
                                         method.getVisibility(),
