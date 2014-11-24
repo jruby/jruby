@@ -75,6 +75,7 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.URLUtil.getPath;
 import org.jruby.util.cli.Options;
 
@@ -149,7 +150,8 @@ public class LoadService {
 
         private static final String[] emptySuffixes = { "" };
         // NOTE: always search .rb first for speed
-        public static final String[] sourceSuffixes = { ".rb", ".class" };
+        public static final String[] sourceSuffixes =
+                Options.AOT_LOADCLASSES.load() ? arrayOf(".rb", ".class") : arrayOf(".rb");
         public static final String[] extensionSuffixes;
         private static final String[] allSuffixes;
 
