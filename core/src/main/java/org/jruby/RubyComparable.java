@@ -102,7 +102,7 @@ public class RubyComparable {
         IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
             @Override
             public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur || !other.respondsTo("<=>")) return context.runtime.getNil();
+                if (recur || !other.respondsTo(OP_CMP)) return context.runtime.getNil();
                 return invokedynamic(context, other, OP_CMP, recv);
             }
         }, recv);
@@ -144,6 +144,8 @@ public class RubyComparable {
             }
 
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
+        } catch (StackOverflowError soe) {
+            throw context.runtime.newSystemStackError("stack level too deep", soe);
         } catch (RaiseException e) {
             cmpFailed(context);
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
