@@ -29,12 +29,7 @@ public abstract class FalseClassNodes {
         }
 
         @Specialization
-        public boolean and(boolean other) {
-            return false;
-        }
-
-        @Specialization
-        public boolean and(RubyObject other) {
+        public boolean and(Object other) {
             return false;
         }
     }

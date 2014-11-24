@@ -60,12 +60,7 @@ public abstract class TrueClassNodes {
         }
 
         @Specialization
-        public boolean or(boolean other) {
-            return true;
-        }
-
-        @Specialization
-        public boolean or(RubyObject other) {
+        public boolean or(Object other) {
             return true;
         }
     }
