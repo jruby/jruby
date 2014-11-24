@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name="ThreadGroup")
 public class RubyThreadGroup extends RubyObject {
+    private final ReferenceQueue deadReferences = new ReferenceQueue();
     private final List<WeakReference<RubyThread>> rubyThreadList = Collections.synchronizedList(new ArrayList<WeakReference<RubyThread>>());
     private boolean enclosed = false;
 
@@ -113,21 +115,23 @@ public class RubyThreadGroup extends RubyObject {
     
     void addDirectly(RubyThread rubyThread) {
         synchronized (rubyThread) {
+            cleanRubyThreadList();
             IRubyObject oldGroup = rubyThread.group();
             if (!oldGroup.isNil()) {
                 RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
-                threadGroup.rubyThreadList.remove(new WeakReference<RubyThread>(rubyThread));
+                threadGroup.rubyThreadList.remove(newWeakReference(rubyThread));
             }
 
             rubyThread.setThreadGroup(this);
-            rubyThreadList.add(new WeakReference<RubyThread>(rubyThread));
+            rubyThreadList.add(newWeakReference(rubyThread));
         }
     }
     
     public void remove(RubyThread rubyThread) {
         synchronized (rubyThread) {
+            cleanRubyThreadList();
             rubyThread.setThreadGroup(null);
-            rubyThreadList.remove(new WeakReference<RubyThread>(rubyThread));
+            rubyThreadList.remove(newWeakReference(rubyThread));
         }
     }
     
@@ -171,4 +175,14 @@ public class RubyThreadGroup extends RubyObject {
         super(runtime, type);
     }
 
+    private void cleanRubyThreadList() {
+        WeakReference<RubyThread> ref;
+        while ((ref = (WeakReference<RubyThread>) deadReferences.poll()) != null) {
+            rubyThreadList.remove(ref);
+        }
+    }
+
+    private WeakReference<RubyThread> newWeakReference(RubyThread rubyThread) {
+        return new WeakReference<RubyThread>(rubyThread, deadReferences);
+    }
 }
