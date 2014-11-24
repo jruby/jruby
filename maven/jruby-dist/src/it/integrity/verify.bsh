@@ -1,9 +1,9 @@
 import java.io.*;
-import org.codehaus.plexus.util.fileutils;
+import org.codehaus.plexus.util.FileUtils;
 
 
-string log = fileutils.fileread( new file( basedir, "build.log" ) );
-string expected = "rake (10.1.0)";
+String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
+String expected = "rake (10.1.0)";
 if ( !log.contains( expected ) )
 {
     throw new runtimeexception( "log file does not contain '" + expected + "'" );

@@ -157,10 +157,8 @@
             <configuration>          
 	      <executable>java</executable> 
               <arguments>
-		<argument>-classpath</argument>
-		<!-- automatically creates the classpath using all project dependencies,
-		     also adding the project build directory -->
-		<classpath/>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
 		<argument>org.jruby.Main</argument>
 		<argument>-e</argument>
 		<!-- make sure openssl loads -->
