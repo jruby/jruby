@@ -38,13 +38,9 @@ public abstract class TrueClassNodes {
             return false;
         }
 
-        @Specialization(guards = "isNotNil")
+        @Specialization(guards = "!isNil")
         public boolean and(RubyObject other) {
             return true;
-        }
-
-        static boolean isNotNil(RubyObject o) {
-            return ! (o instanceof RubyNilClass);
         }
     }
 

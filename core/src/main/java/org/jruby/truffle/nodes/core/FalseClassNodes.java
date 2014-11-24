@@ -55,14 +55,11 @@ public abstract class FalseClassNodes {
             return false;
         }
 
-        @Specialization(guards = "isNotNil")
+        @Specialization(guards = "!isNil")
         public boolean or(RubyObject other) {
             return true;
         }
 
-        static boolean isNotNil(RubyObject o) {
-            return ! (o instanceof RubyNilClass);
-        }
     }
 
     @CoreMethod(names = "^", needsSelf = false, required = 1)
@@ -86,13 +83,9 @@ public abstract class FalseClassNodes {
             return false;
         }
 
-        @Specialization(guards = "isNotNil")
+        @Specialization(guards = "!isNil")
         public boolean xor(RubyObject other) {
             return true;
-        }
-
-        static boolean isNotNil(RubyObject o) {
-            return ! (o instanceof RubyNilClass);
         }
 
     }
