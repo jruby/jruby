@@ -144,6 +144,8 @@ public class RubyComparable {
             }
 
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
+        } catch (StackOverflowError soe) {
+            throw context.runtime.newSystemStackError("stack level too deep", soe);
         } catch (RaiseException e) {
             cmpFailed(context);
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
