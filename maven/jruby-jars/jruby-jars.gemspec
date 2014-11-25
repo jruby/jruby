@@ -7,7 +7,7 @@ require 'rexml/xpath'
 version = File.read( File.join( File.dirname(File.expand_path(__FILE__)), '..', '..', 'VERSION' ) ).strip
 
 # this regexp can be refined to work with pre, rc1, rc2 and such cases
-ruby_version = version.sub( /-SNAPSHOT$/, '.snapshot' )
+ruby_version = version.sub( /-SNAPSHOT$/, '.SNAPSHOT' )
 
 File.open( 'lib/jruby-jars/version.rb', 'w' ) do |f|
   f.print <<EOF
