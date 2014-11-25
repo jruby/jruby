@@ -29,8 +29,6 @@ package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
 
-import java.net.URL;
-
 /**
  * The ClassExtensionLibrary wraps a class which implements BasicLibraryService,
  * and when asked to load the service, does a basicLoad of the BasicLibraryService.
@@ -64,16 +62,10 @@ public class ClassExtensionLibrary implements Library {
 
             // We don't want a package name beginning with dots, so we remove them
             String className = finName.toString().replaceAll("^\\.*", "");
-            String classFile = className.replaceAll("\\.", "/") + ".class";
 
-            // quietly try to load the class, which must be reachable as a .class resource
-            URL resource = runtime.getJRubyClassLoader().getResource(classFile);
-            if (resource != null) {
-                Class theClass = runtime.getJavaSupport().loadJavaClass(className);
-                return new ClassExtensionLibrary(className + ".java", theClass);
-            }
-
-            return null;
+            // quietly try to load the class
+            Class theClass = runtime.getJavaSupport().loadJavaClass(className);
+            return new ClassExtensionLibrary(className + ".java", theClass);
         } catch (ClassNotFoundException cnfe) {
             if (runtime.isDebug()) cnfe.printStackTrace();
 
