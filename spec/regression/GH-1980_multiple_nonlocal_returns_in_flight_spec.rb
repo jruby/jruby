@@ -11,6 +11,6 @@ describe 'Multiple non-local returns in-flight' do
       baz
     end
 
-    expect(foo).to eq(10)
+    expect(o.foo).to eq(10)
   end
 end
