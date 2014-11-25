@@ -283,7 +283,7 @@ public class LoadService {
             addPath(dir);
         }
     }
-    
+
     protected boolean isFeatureInIndex(String shortName) {
         return loadedFeaturesIndex.containsKey(shortName);
     }
@@ -295,10 +295,10 @@ public class LoadService {
 
     protected void addLoadedFeature(String shortName, String name) {
         loadedFeatures.append(RubyString.newString(runtime, name));
-        
+
         addFeatureToIndex(shortName, name);
     }
-    
+
     protected void addFeatureToIndex(String shortName, String name) {
         loadedFeaturesDup = (RubyArray)loadedFeatures.dup();
         loadedFeaturesIndex.put(shortName, name);
@@ -431,7 +431,7 @@ public class LoadService {
             requireLocks.unlock(requireName);
         }
     }
-    
+
     protected final RequireLocks requireLocks = new RequireLocks();
 
     private class RequireLocks {
@@ -448,7 +448,7 @@ public class LoadService {
          * Get exclusive lock for the specified requireName. Acquire sync object
          * for the requireName from the pool, then try to lock it. NOTE: This
          * lock is not fair for now.
-         * 
+         *
          * @param requireName
          *            just a name for the lock.
          * @return If the sync object already locked by current thread, it just
@@ -488,7 +488,7 @@ public class LoadService {
 
         /**
          * Unlock the lock for the specified requireName.
-         * 
+         *
          * @param requireName
          *            name of the lock to be unlocked.
          */
@@ -631,7 +631,7 @@ public class LoadService {
         RubyString nameRubyString = runtime.newString(name);
         loadedFeatures.delete(runtime.getCurrentContext(), nameRubyString, Block.NULL_BLOCK);
     }
-    
+
     private boolean isFeaturesIndexUpToDate() {
         // disable tracing during index check
         runtime.getCurrentContext().preTrace();
@@ -644,13 +644,13 @@ public class LoadService {
 
     protected boolean featureAlreadyLoaded(String name) {
         if (loadedFeatures.containsString(name)) return true;
-        
+
         // Bail if our features index fell out of date.
-        if (!isFeaturesIndexUpToDate()) { 
+        if (!isFeaturesIndexUpToDate()) {
             loadedFeaturesIndex.clear();
             return false;
         }
-        
+
         return isFeatureInIndex(name);
     }
 
@@ -1099,9 +1099,9 @@ public class LoadService {
 
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
-            
+
             foundResource = tryResourceAsIs(namePlusSuffix, "resourceFromDotSlash");
-            
+
             if (foundResource != null) break;
         }
 
@@ -1288,7 +1288,7 @@ public class LoadService {
 
         return foundResource;
     }
-    
+
     protected String getLoadPathEntry(IRubyObject entry) {
         return RubyFile.get_path(entry.getRuntime().getCurrentContext(), entry).asJavaString();
     }
@@ -1347,7 +1347,7 @@ public class LoadService {
     protected boolean loadPathLooksLikeClasspathURL(String loadPathEntry) {
         return loadPathEntry.startsWith("classpath:");
     }
-    
+
     private String[] splitJarUrl(String loadPathEntry) {
         String unescaped = loadPathEntry;
 
@@ -1368,11 +1368,11 @@ public class LoadService {
         if(filename.startsWith("jar:")) {
             filename = filename.substring(4);
         }
-        
+
         if(filename.startsWith("file:")) {
             filename = filename.substring(5);
         }
-        
+
         return new String[]{filename, entry};
     }
 
@@ -1421,7 +1421,7 @@ public class LoadService {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = namePlusSuffix;
                 File actualPath;
-                
+
                 if (new File(reportedPath).isAbsolute()) {
                     // it's an absolute path, use it as-is
                     actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
@@ -1433,9 +1433,9 @@ public class LoadService {
 
                     actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 }
-                
+
                 debugLogTry(debugName, actualPath.toString());
-                
+
                 if (reportedPath.contains("..")) {
                     // try to canonicalize if path contains ..
                     try {
@@ -1443,7 +1443,7 @@ public class LoadService {
                     } catch (IOException ioe) {
                     }
                 }
-                
+
                 if (actualPath.isFile() && actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath);
                     debugLogFound(foundResource);
@@ -1588,7 +1588,7 @@ public class LoadService {
                 path = getPath(loc);
                 // On windows file: urls converted to names will return /C:/foo from
                 // getPath versus C:/foo.  Since getPath is used in a million places
-                // putting the newFile.getPath broke some file with-in Jar loading. 
+                // putting the newFile.getPath broke some file with-in Jar loading.
                 // So I moved it to only this site.
                 if (Platform.IS_WINDOWS && loc.getProtocol().equals("file")) {
                     path = new File(path).getPath();
