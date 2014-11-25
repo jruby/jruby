@@ -62,6 +62,7 @@ matrix:
     - env: PHASE='-Prake -Dtask=spec:profiler'
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pj2ee'
 
 branches:
   only:
