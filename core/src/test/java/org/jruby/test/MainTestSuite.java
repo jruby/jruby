@@ -95,7 +95,8 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(ParameterizedWriterTest.class);
         suite.addTestSuite(TestRubyRational.class);
         suite.addTestSuite(TestRecursiveCheck.class);
-        suite.addTestSuite(TestRegexpCache.class);
+        // Disabled test due to difficulty of making WeakRef logic deterministic
+//        suite.addTestSuite(TestRegexpCache.class);
         return suite;
     }
 }
