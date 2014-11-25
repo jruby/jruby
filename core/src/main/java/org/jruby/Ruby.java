@@ -43,11 +43,13 @@ import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRScriptBody;
 import org.objectweb.asm.util.TraceClassVisitor;
+
 import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
 import org.jruby.RubyInstanceConfig.CompileMode;
@@ -128,6 +130,7 @@ import org.jruby.truffle.TruffleBridgeImpl;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.util.DynamicJRubyClassLoader;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
@@ -2566,10 +2569,10 @@ public final class Ruby implements Constantizable {
      *
      * @return
      */
-    public synchronized JRubyClassLoader getJRubyClassLoader() {
+    public synchronized DynamicJRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
-            jrubyClassLoader = new JRubyClassLoader(config.getLoader());
+            jrubyClassLoader = new DynamicJRubyClassLoader(config.getLoader());
 
             // if jit code cache is used, we need to add the cache directory to the classpath
             // so the previously generated class files can be reused.
@@ -4828,7 +4831,7 @@ public final class Ruby implements Constantizable {
 
     // Java support
     private JavaSupport javaSupport;
-    private JRubyClassLoader jrubyClassLoader;
+    private DynamicJRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
     private BeanManager beanManager;

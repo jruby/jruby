@@ -31,6 +31,7 @@ package org.jruby.runtime;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -44,6 +45,7 @@ import org.jruby.internal.runtime.methods.MethodNodes;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -79,10 +81,11 @@ public abstract class MethodFactory {
                 baos.write(buf, 0, bytesRead);
             }
 
-            OneShotClassLoader oscl = new OneShotClassLoader(Ruby.getClassLoader());
-            Class unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
+            JRubyClassLoader oscl = new JRubyClassLoader(Ruby.getClassLoader());
+            Class<?> unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
             unloaderClass.newInstance();
             can = true;
+            oscl.close();
         } catch (Throwable t) {
             LOG.debug("MethodFactory: failed to load bytecode at runtime, falling back on reflection", t);
         }
