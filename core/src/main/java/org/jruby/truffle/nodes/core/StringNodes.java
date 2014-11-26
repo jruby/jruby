@@ -751,6 +751,33 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "sub", required = 2)
+    public abstract static class SubNode extends CoreMethodNode {
+
+        public SubNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SubNode(SubNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString gsub(RubyString string, RubyString regexpString, RubyString replacement) {
+            notDesignedForCompilation();
+
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            return sub(string, regexp, replacement);
+        }
+
+        @Specialization
+        public RubyString sub(RubyString string, RubyRegexp regexp, RubyString replacement) {
+            notDesignedForCompilation();
+
+            return regexp.sub(string.toString(), replacement.toString());
+        }
+    }
+
     @CoreMethod(names = "sum")
     public abstract static class SumNode extends CoreMethodNode {
 

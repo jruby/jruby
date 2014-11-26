@@ -232,6 +232,26 @@ public class RubyRegexp extends RubyObject {
     }
 
     @CompilerDirectives.SlowPath
+    public RubyString sub(String string, String replacement) {
+        final RubyContext context = getContext();
+
+        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final Matcher matcher = regex.matcher(stringBytes);
+
+        final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
+
+        if (match == -1) {
+            return context.makeString(string);
+        } else {
+            final StringBuilder builder = new StringBuilder();
+            builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, 0, matcher.getBegin())));
+            builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
+            builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, matcher.getEnd(), stringBytes.length - matcher.getEnd())));
+            return context.makeString(builder.toString());
+        }
+    }
+
+    @CompilerDirectives.SlowPath
     public RubyString[] split(String string) {
         final RubyContext context = getContext();
 
