@@ -10,11 +10,11 @@ class TestJarredGemsWithSpacesInDirectory < Test::Unit::TestCase
 
     cp = ENV['CLASSPATH']
     begin
-      if RUBY.match( /.jar/) # uses jruby-complete.jar
-        ENV['CLASSPATH'] = cp.to_s + File::PATH_SEPARATOR + '"test/dir with spaces/testgem.jar"'
+      if IS_JAR_EXECUTION
+        ENV['CLASSPATH'] = cp.to_s + File::PATH_SEPARATOR + '"test/jruby/dir with spaces/testgem.jar"'
         out = jruby(%q{-e "p require 'testgem'"})
       else
-        out = jruby(%q{-J-cp "test/dir with spaces/testgem.jar" -e "p require 'testgem'"})
+        out = jruby(%q{-J-cp "test/jruby/dir with spaces/testgem.jar" -e "p require 'testgem'"})
       end
     ensure
       ENV['CLASSPATH'] = cp if cp

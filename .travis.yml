@@ -58,11 +58,11 @@ matrix:
   allow_failures:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
-    - env: PHASE='-Pjruby_complete_jar_jruby'
-    - env: PHASE='-Pj2ee'
+    - env: PHASE='-Pjruby_complete_jar_extended'
     - env: PHASE='-Prake -Dtask=spec:profiler'
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pj2ee'
 
 branches:
   only:

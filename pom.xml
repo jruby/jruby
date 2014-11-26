@@ -737,7 +737,7 @@
       </modules>
     </profile>
     <profile>
-      <id>jruby_complete_jar_jruby</id>
+      <id>jruby_complete_jar_extended</id>
       <build>
         <defaultGoal>install</defaultGoal>
       </build>

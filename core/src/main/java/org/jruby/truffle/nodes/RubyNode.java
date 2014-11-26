@@ -222,4 +222,7 @@ public abstract class RubyNode extends Node {
         CompilerAsserts.neverPartOfCompilation();
     }
 
+    public static boolean isNil(RubyObject o) {
+        return o instanceof RubyNilClass;
+    }
 }

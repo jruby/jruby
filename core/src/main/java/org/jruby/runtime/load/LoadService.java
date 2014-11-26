@@ -44,9 +44,7 @@ import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,12 +67,12 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.URLUtil.getPath;
 import org.jruby.util.cli.Options;
 
@@ -149,7 +147,8 @@ public class LoadService {
 
         private static final String[] emptySuffixes = { "" };
         // NOTE: always search .rb first for speed
-        public static final String[] sourceSuffixes = { ".rb", ".class" };
+        public static final String[] sourceSuffixes =
+                Options.AOT_LOADCLASSES.load() ? arrayOf(".rb", ".class") : arrayOf(".rb");
         public static final String[] extensionSuffixes;
         private static final String[] allSuffixes;
 

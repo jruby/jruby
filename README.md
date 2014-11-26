@@ -29,7 +29,9 @@ See the [docs](docs) directory for more information.
 
 ## Prerequisites
 
-JRuby 1.7.x requires Java 6 or greater.
+* A Java 7-compatible (or higher) Java development kit (JDK)
+* Maven 3+
+* Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
 
 ## Run
 
