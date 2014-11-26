@@ -102,4 +102,20 @@ public abstract class NilClassNodes {
         }
     }
 
+    @CoreMethod(names = "&", needsSelf = false, required = 1)
+    public abstract static class AndNode extends CoreMethodNode {
+
+        public AndNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AndNode(AndNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean and(Object other) {
+            return false;
+        }
+    }
 }
