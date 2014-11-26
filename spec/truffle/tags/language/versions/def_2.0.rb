@@ -1,9 +1,3 @@
-fails:A nested method definition creates an instance method when evaluated in an instance method
-fails:A nested method definition creates a class method when evaluated in a class method
-fails:A method definition inside an instance_eval creates a class method when the receiver is a class
-fails:A method definition in an eval creates an instance method
-fails:A method definition in an eval creates a class method
-fails(inherited):The def keyword within a closure looks outside the closure for the visibility
 fails:An instance method with keyword arguments treats a sole hash argument correctly
 fails:An instance method with keyword arguments correctly distinguishes between optional and keyword arguments
 fails:An instance method with keyword arguments correctly distinguishes between rest and keyword arguments
