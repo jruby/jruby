@@ -8,7 +8,6 @@ gem_version=${jar_version/-/.}
 
 rm -rf maven/*/target/*
 
-mvn install -Pbootstrap
 mvn -Pcomplete
 mvn -Pdist
 mvn -Pjruby-jars
