@@ -1,154 +1,570 @@
 require File.expand_path('../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../fixtures/literal_lambda', __FILE__)
 
-describe "->(){}" do
-  it "can be specified as a literal" do
-    lambda { ->(){} }.should_not raise_error
+describe "A lambda literal -> () { }" do
+  SpecEvaluate.desc = "for definition"
+
+  it "returns a Proc object when used in a BasicObject method" do
+    klass = Class.new(BasicObject) do
+      def create_lambda
+        -> () { }
+      end
+    end
+
+    klass.new.create_lambda.should be_an_instance_of(Proc)
   end
 
-  # Temporarily disable until parser is fixed
-  # it "allows a space between the -> and ()" do
-  #   lambda { -> () {} }.should_not raise_error
-  # end
-
-  it "returns a Proc object" do
-    ->(){}.should be_an_instance_of(Proc)
+  it "does not execute the block" do
+    ->() { fail }.should be_an_instance_of(Proc)
   end
 
   it "returns a lambda" do
-    ->(){}.lambda?.should be_true
+    -> () { }.lambda?.should be_true
   end
 
-  it "can be assigned to a variable" do
-    var = ->(){}
-    var.lambda?.should be_true
-  end
-
-  it "understands a do/end block in place of {}" do
-    lambda do
-      ->() do
+  it "searches lexical scope for constants" do
+    klass = Class.new do
+      X = 1
+      def m
+        -> { X }
       end
-    end.should_not raise_error(SyntaxError)
-  end
-
-  it "requires an associated block" do
-    lambda { eval "->()" }.should raise_error(SyntaxError)
-    lambda { eval "->" }.should raise_error(SyntaxError)
-  end
-
-  it "can be interpolated into a String" do
-    "1+2=#{->{ 1 + 2}.call}".should == "1+2=3"
-  end
-
-  it "can be be used as a Hash key" do
-    h = new_hash
-    h[->(one=1){ one + 2}.call] = :value
-    h.key?(3).should be_true
-  end
-
-  it "can be used in method parameter lists" do
-    def glark7654(a=-> { :foo   })
-      a.call
     end
-    glark7654.should == :foo
+
+    klass.new.m.().should == 1
   end
 
-  it "accepts an parameter list between the parenthesis" do
-    lambda { ->(a) {} }.should_not raise_error(SyntaxError)
-    lambda { ->(a,b) {} }.should_not raise_error(SyntaxError)
-  end
+  it "searches inheritance hierarchy for constants" do
+    parent = Class.new do
+      X = 1
+    end
 
-  it "accepts an empty parameter list" do
-    lambda { ->() {} }.should_not raise_error(SyntaxError)
-  end
-
-  it "allows the parenthesis to be omitted entirely" do
-    lambda { -> {} }.should_not raise_error(SyntaxError)
-    lambda { ->{} }.should_not raise_error(SyntaxError)
-    lambda do
-      -> do
+    klass = Class.new(parent) do
+      def m
+        -> { X }
       end
-    end.should_not raise_error(SyntaxError)
-    ->{}.should be_an_instance_of(Proc)
+    end
+
+    klass.new.m.().should == 1
   end
 
-  it "aliases each argument to the corresponding parameter" do
-    ->(a) {a}.call(:sym).should == :sym
-    ->(a,b) {[a, b]}.call(:sym, :bol).should == [:sym, :bol]
+  context "assigns no local variables" do
+    evaluate <<-ruby do
+        @a = -> { }
+        @b = ->() { }
+        @c = -> () { }
+        @d = -> do end
+      ruby
+
+      @a.().should be_nil
+      @b.().should be_nil
+      @c.().should be_nil
+      @d.().should be_nil
+    end
   end
 
-  it "accepts parameters with default parameters between the parenthesis" do
-    lambda { ->(a=1) {} }.should_not raise_error(SyntaxError)
-    lambda { ->(x=1, b=[]) {} }.should_not raise_error(SyntaxError)
+  context "assigns variables from parameters" do
+    evaluate <<-ruby do
+        @a = -> (a) { a }
+      ruby
+
+      @a.(1).should == 1
+    end
+
+    evaluate <<-ruby do
+        @a = -> ((a)) { a }
+      ruby
+
+      @a.(1).should == 1
+      @a.([1, 2, 3]).should == 1
+    end
+
+    evaluate <<-ruby do
+        @a = -> ((*a, b)) { [a, b] }
+      ruby
+
+      @a.(1).should == [[], 1]
+      @a.([1, 2, 3]).should == [[1, 2], 3]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a={}) { a }
+      ruby
+
+      @a.().should == {}
+      @a.(2).should == 2
+    end
+
+    evaluate <<-ruby do
+        @a = -> (*) { }
+      ruby
+
+      @a.().should be_nil
+      @a.(1).should be_nil
+      @a.(1, 2, 3).should be_nil
+    end
+
+    evaluate <<-ruby do
+        @a = -> (*a) { a }
+      ruby
+
+      @a.().should == []
+      @a.(1).should == [1]
+      @a.(1, 2, 3).should == [1, 2, 3]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a:) { a }
+      ruby
+
+      lambda { @a.() }.should raise_error(ArgumentError)
+      @a.(a: 1).should == 1
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a: 1) { a }
+      ruby
+
+      @a.().should == 1
+      @a.(a: 2).should == 2
+    end
+
+    evaluate <<-ruby do
+        @a = -> (**) {  }
+      ruby
+
+      @a.().should be_nil
+      @a.(a: 1, b: 2).should be_nil
+      lambda { @a.(1) }.should raise_error(ArgumentError)
+    end
+
+    evaluate <<-ruby do
+        @a = -> (**k) { k }
+      ruby
+
+      @a.().should == {}
+      @a.(a: 1, b: 2).should == {a: 1, b: 2}
+    end
+
+    evaluate <<-ruby do
+        @a = -> (&b) { b  }
+      ruby
+
+      @a.().should be_nil
+      @a.() { }.should be_an_instance_of(Proc)
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a, b) { [a, b] }
+      ruby
+
+      @a.(1, 2).should == [1, 2]
+      lambda { @a.() }.should raise_error(ArgumentError)
+      lambda { @a.(1) }.should raise_error(ArgumentError)
+    end
+
+    evaluate <<-ruby do
+        @a = -> ((a, b, *c, d), (*e, f, g), (*h)) do
+          [a, b, c, d, e, f, g, h]
+        end
+      ruby
+
+      @a.(1, 2, 3).should == [1, nil, [], nil, [], 2, nil, [3]]
+      result = @a.([1, 2, 3], [4, 5, 6, 7, 8], [9, 10])
+      result.should == [1, 2, [], 3, [4, 5, 6], 7, 8, [9, 10]]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a, (b, (c, *d, (e, (*f)), g), (h, (i, j)))) do
+          [a, b, c, d, e, f, g, h, i, j]
+        end
+      ruby
+
+      @a.(1, 2).should == [1, 2, nil, [], nil, [nil], nil, nil, nil, nil]
+      result = @a.(1, [2, [3, 4, 5, [6, [7, 8]], 9], [10, [11, 12]]])
+      result.should == [1, 2, 3, [4, 5], 6, [7, 8], 9, 10, 11, 12]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (*, **k) { k }
+      ruby
+
+      @a.().should == {}
+      @a.(1, 2, 3, a: 4, b: 5).should == {a: 4, b: 5}
+
+      h = mock("keyword splat")
+      h.should_receive(:to_hash).and_return({a: 1})
+      @a.(h).should == {a: 1}
+    end
+
+    evaluate <<-ruby do
+        @a = -> (*, &b) { b }
+      ruby
+
+      @a.().should be_nil
+      @a.(1, 2, 3, 4).should be_nil
+      @a.(&(l = ->{})).should equal(l)
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a:, b:) { [a, b] }
+      ruby
+
+      @a.(a: 1, b: 2).should == [1, 2]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a:, b: 1) { [a, b] }
+      ruby
+
+      @a.(a: 1).should == [1, 1]
+      @a.(a: 1, b: 2).should == [1, 2]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a: 1, b:) { [a, b] }
+      ruby
+
+      @a.(b: 0).should == [1, 0]
+      @a.(b: 2, a: 3).should == [3, 2]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a: @a = -> (a: 1) { a }, b:) do
+          [a, b]
+        end
+      ruby
+
+      @a.(a: 2, b: 3).should == [2, 3]
+      @a.(b: 1).should == [@a, 1]
+
+      # Note the default value of a: in the original method.
+      @a.().should == 1
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a: 1, b: 2) { [a, b] }
+      ruby
+
+      @a.().should == [1, 2]
+      @a.(b: 3, a: 4).should == [4, 3]
+    end
+
+    evaluate <<-ruby do
+        @a = -> (a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l) do
+          [a, b, c, d, e, f, g, h, k, l]
+        end
+      ruby
+
+      result = @a.(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
+      result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
+    end
+
+    evaluate <<-ruby do
+        @a = -> a, b=1, *c, d, e:, f: 2, g:, **k, &l do
+          [a, b, c, d, e, f, g, k, l]
+        end
+      ruby
+
+      result = @a.(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
+      result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+    end
+  end
+end
+
+describe "A lambda expression 'lambda { ... }'" do
+  SpecEvaluate.desc = "for definition"
+
+  it "calls the #lambda method" do
+    obj = mock("lambda definition")
+    obj.should_receive(:lambda).and_return(obj)
+
+    def obj.define
+      lambda { }
+    end
+
+    obj.define.should equal(obj)
   end
 
-  it "aliases each argument with a default value to the corresponding parameter" do
-    ->(a=:cymbal) {a}.call(:sym).should == :sym
-    ->(a,b=:cymbal) {[a, b]}.call(:sym, :bol).should == [:sym, :bol]
+  it "does not execute the block" do
+    lambda { fail }.should be_an_instance_of(Proc)
   end
 
-  it "sets arguments to their default value if one wasn't supplied" do
-    ->(a=:cymbal) {a}.call.should == :cymbal
-    ->(a,b=:cymbal) {[a, b]}.call(:sym).should == [:sym, :cymbal]
+  it "returns a lambda" do
+    lambda { }.lambda?.should be_true
   end
 
-  it "accepts a parameter prefixed with an asterisk between the parenthesis" do
-    lambda { ->(*a) {} }.should_not raise_error(SyntaxError)
-    lambda { ->(x, *a) {} }.should_not raise_error(SyntaxError)
+  it "searches lexical scope for constants" do
+    klass = Class.new do
+      X = 1
+      def m
+        -> { X }
+      end
+    end
+
+    klass.new.m.().should == 1
   end
 
-  it "assigns all remaining arguments to the variable in the parameter list prefixed with an asterisk, if one exists" do
-    ->(*a) {a}.call(:per, :cus, :si, :on).should == [:per, :cus, :si, :on]
-    ->(a,*b) {b}.call(:per, :cus, :si, :on).should == [:cus, :si, :on]
+  it "searches inheritance hierarchy for constants" do
+    parent = Class.new do
+      X = 1
+    end
+
+    klass = Class.new(parent) do
+      def m
+        -> { X }
+      end
+    end
+
+    klass.new.m.().should == 1
   end
 
-  it "accepts a parameter prefixed with an ampersand between the parenthesis" do
-    lambda { ->(&a) {} }.should_not raise_error(SyntaxError)
-    lambda { ->(x, &a) {} }.should_not raise_error(SyntaxError)
+  context "assigns no local variables" do
+    evaluate <<-ruby do
+        @a = lambda { }
+        @b = lambda { || }
+      ruby
+
+      @a.().should be_nil
+      @b.().should be_nil
+    end
   end
 
-  it "assigns the given block to the parameter prefixed with an ampersand if such a parameter exists" do
-    l = ->(&a) { a }.call { :foo }
-    l.call.should == :foo
-  end
+  context "assigns variables from parameters" do
+    evaluate <<-ruby do
+        @a = lambda { |a| a }
+      ruby
 
-  it "assigns nil to the parameter prefixed with an ampersand unless a block was supplied" do
-    ->(&a) { a }.call.should be_nil
-  end
+      @a.(1).should == 1
+    end
 
-  it "accepts a combination of argument types between the parenthesis" do
-    lambda { ->(x, y={}, z  = Object.new, *a, &b) {} }.
-      should_not raise_error(SyntaxError)
-  end
+    evaluate <<-ruby do
+        def m(*a) yield(*a) end
+        @a = lambda { |a| a }
+      ruby
 
-  it "sets parameters appropriately when a combination of parameter types is given between the parenthesis" do
-    l = ->(x, y={}, z  = Object.new, *a, &b) { [x,y,z,a,b]}
-    l.call(1, [], [], 30, 40).should == [1, [], [], [30, 40], nil]
-    block = lambda { :lamb }
-    l.call(1, [], [], 30, 40, &block).last.should be_an_instance_of(Proc)
-    l2 = ->(x, y={}, *a) { [x, y, a]}
-    l2.call(:x).should == [:x, {}, []]
-  end
+      lambda { m(&@a) }.should raise_error(ArgumentError)
+      lambda { m(1, 2, &@a) }.should raise_error(ArgumentError)
+    end
 
-  it "uses lambda's 'rigid' argument handling" do
-    ->(a, b){}.parameters.first.first.should == :req
-    ->(a, b){}.parameters.last.first.should == :req
-    lambda { ->(a, b){}.call 1 }.should raise_error(ArgumentError)
-  end
+    evaluate <<-ruby do
+        @a = lambda { |a, | a }
+      ruby
 
-  it "does not call the associated block" do
-    @called = false
-    ->() { @called = true }
-    @called.should be_false
-  end
+      @a.(1).should == 1
+      @a.([1, 2]).should == [1, 2]
 
-  it "evaluates constants as normal blocks do" do
-    l = LiteralLambdaMethods.literal_lambda_with_constant
-    l.().should == "some value"
-  end
+      lambda { @a.() }.should raise_error(ArgumentError)
+      lambda { @a.(1, 2) }.should raise_error(ArgumentError)
+    end
 
-  it "returns a Proc object when used in a BasicObject method" do
-    LanguageSpecs::BasicObjectClass.new.create_lambda.should be_an_instance_of(Proc)
+    evaluate <<-ruby do
+        def m(a) yield a end
+        def m2() yield end
+
+        @a = lambda { |a, | a }
+      ruby
+
+      m(1, &@a).should == 1
+      m([1, 2], &@a).should == [1, 2]
+
+      lambda { m2(&@a) }.should raise_error(ArgumentError)
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |(a)| a }
+      ruby
+
+      @a.(1).should == 1
+      @a.([1, 2, 3]).should == 1
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |(*a, b)| [a, b] }
+      ruby
+
+      @a.(1).should == [[], 1]
+      @a.([1, 2, 3]).should == [[1, 2], 3]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a={}| a }
+      ruby
+
+      @a.().should == {}
+      @a.(2).should == 2
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |*| }
+      ruby
+
+      @a.().should be_nil
+      @a.(1).should be_nil
+      @a.(1, 2, 3).should be_nil
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |*a| a }
+      ruby
+
+      @a.().should == []
+      @a.(1).should == [1]
+      @a.(1, 2, 3).should == [1, 2, 3]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a:| a }
+      ruby
+
+      lambda { @a.() }.should raise_error(ArgumentError)
+      @a.(a: 1).should == 1
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a: 1| a }
+      ruby
+
+      @a.().should == 1
+      @a.(a: 2).should == 2
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |**|  }
+      ruby
+
+      @a.().should be_nil
+      @a.(a: 1, b: 2).should be_nil
+      lambda { @a.(1) }.should raise_error(ArgumentError)
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |**k| k }
+      ruby
+
+      @a.().should == {}
+      @a.(a: 1, b: 2).should == {a: 1, b: 2}
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |&b| b  }
+      ruby
+
+      @a.().should be_nil
+      @a.() { }.should be_an_instance_of(Proc)
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a, b| [a, b] }
+      ruby
+
+      @a.(1, 2).should == [1, 2]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda do |(a, b, *c, d), (*e, f, g), (*h)|
+          [a, b, c, d, e, f, g, h]
+        end
+      ruby
+
+      @a.(1, 2, 3).should == [1, nil, [], nil, [], 2, nil, [3]]
+      result = @a.([1, 2, 3], [4, 5, 6, 7, 8], [9, 10])
+      result.should == [1, 2, [], 3, [4, 5, 6], 7, 8, [9, 10]]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda do |a, (b, (c, *d, (e, (*f)), g), (h, (i, j)))|
+          [a, b, c, d, e, f, g, h, i, j]
+        end
+      ruby
+
+      @a.(1, 2).should == [1, 2, nil, [], nil, [nil], nil, nil, nil, nil]
+      result = @a.(1, [2, [3, 4, 5, [6, [7, 8]], 9], [10, [11, 12]]])
+      result.should == [1, 2, 3, [4, 5], 6, [7, 8], 9, 10, 11, 12]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |*, **k| k }
+      ruby
+
+      @a.().should == {}
+      @a.(1, 2, 3, a: 4, b: 5).should == {a: 4, b: 5}
+
+      h = mock("keyword splat")
+      h.should_receive(:to_hash).and_return({a: 1})
+      @a.(h).should == {a: 1}
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |*, &b| b }
+      ruby
+
+      @a.().should be_nil
+      @a.(1, 2, 3, 4).should be_nil
+      @a.(&(l = ->{})).should equal(l)
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a:, b:| [a, b] }
+      ruby
+
+      @a.(a: 1, b: 2).should == [1, 2]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a:, b: 1| [a, b] }
+      ruby
+
+      @a.(a: 1).should == [1, 1]
+      @a.(a: 1, b: 2).should == [1, 2]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a: 1, b:| [a, b] }
+      ruby
+
+      @a.(b: 0).should == [1, 0]
+      @a.(b: 2, a: 3).should == [3, 2]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda do |a: (@a = -> (a: 1) { a }), b:|
+          [a, b]
+        end
+      ruby
+
+      @a.(a: 2, b: 3).should == [2, 3]
+      @a.(b: 1).should == [@a, 1]
+
+      # Note the default value of a: in the original method.
+      @a.().should == 1
+    end
+
+    evaluate <<-ruby do
+        @a = lambda { |a: 1, b: 2| [a, b] }
+      ruby
+
+      @a.().should == [1, 2]
+      @a.(b: 3, a: 4).should == [4, 3]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda do |a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l|
+          [a, b, c, d, e, f, g, h, k, l]
+        end
+      ruby
+
+      result = @a.(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
+      result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
+    end
+
+    evaluate <<-ruby do
+        @a = lambda do |a, b=1, *c, d, e:, f: 2, g:, **k, &l|
+          [a, b, c, d, e, f, g, k, l]
+        end
+      ruby
+
+      result = @a.(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
+      result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+    end
   end
 end

@@ -33,6 +33,10 @@ describe "Array#first" do
     lambda { [1, 2].first(-1) }.should raise_error(ArgumentError)
   end
 
+  it "raises a RangeError when count is a Bignum" do
+    lambda { [].first(bignum_value) }.should raise_error(RangeError)
+  end
+
   it "returns the entire array when count > length" do
     [1, 2, 3, 4, 5, 9].first(10).should == [1, 2, 3, 4, 5, 9]
   end

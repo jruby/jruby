@@ -117,4 +117,32 @@ describe :process_exec, :shared => true do
       lambda { @object.exec([:a, :b, :c]) }.should raise_error(ArgumentError)
     end
   end
+
+  describe "with an options Hash" do
+    describe "with Integer option keys" do
+      before :each do
+        @name = tmp("exec_fd_map.txt")
+        @io = tmp("exec_fd_map_parent.txt")
+      end
+
+      after :each do
+        rm_r @name, @io
+      end
+
+      it "maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value" do
+        cmd = <<-EOC
+          f = File.open "#{@name}", "w+"
+          child_fd = f.fileno + 1
+          File.open("#{@io}", "w") { |io| io.print child_fd }
+          exec "#{RUBY_EXE}", "#{fixture __FILE__, "map_fd.rb"}", child_fd.to_s, { child_fd => f }
+          EOC
+
+        ruby_exe(cmd, :escape => true)
+        child_fd = IO.read(@io).to_i
+        child_fd.to_i.should > STDERR.fileno
+
+        @name.should have_data("writing to fd: #{child_fd}")
+      end
+    end
+  end
 end

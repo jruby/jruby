@@ -95,4 +95,10 @@ describe "Time#-" do
     x = c.now + 1
     x.should be_an_instance_of(Time)
   end
+
+  it "returns a time with nanoseconds precision between two time objects" do
+    time1 = Time.utc(2000, 1, 2, 23, 59, 59, Rational(999999999, 1000))
+    time2 = Time.utc(2000, 1, 2, 0, 0, 0, Rational(1, 1000))
+    (time1 - time2).should == 86_399.999999998
+  end
 end

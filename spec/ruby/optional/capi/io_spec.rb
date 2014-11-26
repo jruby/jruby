@@ -151,6 +151,20 @@ describe "C-API IO function" do
     end
   end
 
+  # NOTE: unlike the name might suggest in MRI this function checks if an
+  # object is frozen, *not* if it's tainted.
+  describe "rb_io_taint_check" do
+    it "does not raise an exception if the IO is not frozen" do
+      lambda { @o.rb_io_taint_check(@io) }.should_not raise_error
+    end
+
+    it "raises an exception if the IO is frozen" do
+      @io.freeze
+
+      lambda { @o.rb_io_taint_check(@io) }.should raise_error(RuntimeError)
+    end
+  end
+
   describe "GetOpenFile" do
     it "allows access to the system fileno" do
       @o.GetOpenFile_fd($stdin).should == 0

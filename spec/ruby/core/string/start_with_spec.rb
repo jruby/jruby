@@ -14,6 +14,10 @@ describe "String#start_with?" do
     "hello".start_with?('x', 'y', 'he', 'z').should be_true
   end
 
+  it "returns true if the search string is empty" do
+    "hello".start_with?("").should be_true
+  end
+
   it "converts its argument using :to_str" do
     s = "hello"
     find = mock('h')

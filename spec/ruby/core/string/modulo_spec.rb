@@ -205,14 +205,43 @@ describe "String#%" do
     ("%*.*d" % [w, p, 1]).should == "     00001"
   end
 
-  ruby_bug "#", "1.8.6.228" do
-    it "tries to convert the argument to Array by calling #to_ary" do
-      obj = mock('[1,2]')
-      def obj.to_ary() [1, 2] end
-      def obj.to_s() "obj" end
-      ("%s %s" % obj).should == "1 2"
-      ("%s" % obj).should == "1"
-    end
+  it "does not call #to_a to convert the argument" do
+    x = mock("string modulo to_a")
+    x.should_not_receive(:to_a)
+    x.should_receive(:to_s).and_return("x")
+
+    ("%s" % x).should == "x"
+  end
+
+  it "calls #to_ary to convert the argument" do
+    x = mock("string modulo to_ary")
+    x.should_not_receive(:to_s)
+    x.should_receive(:to_ary).and_return(["x"])
+
+    ("%s" % x).should == "x"
+  end
+
+  it "wraps the object in an Array if #to_ary returns nil" do
+    x = mock("string modulo to_ary")
+    x.should_receive(:to_ary).and_return(nil)
+    x.should_receive(:to_s).and_return("x")
+
+    ("%s" % x).should == "x"
+  end
+
+  it "raises a TypeError if #to_ary does not return an Array" do
+    x = mock("string modulo to_ary")
+    x.should_receive(:to_ary).and_return("x")
+
+    lambda { "%s" % x }.should raise_error(TypeError)
+  end
+
+  it "tries to convert the argument to Array by calling #to_ary" do
+    obj = mock('[1,2]')
+    def obj.to_ary() [1, 2] end
+    def obj.to_s() "obj" end
+    ("%s %s" % obj).should == "1 2"
+    ("%s" % obj).should == "1"
   end
 
   it "doesn't return subclass instances when called on a subclass" do

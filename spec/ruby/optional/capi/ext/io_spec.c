@@ -131,6 +131,15 @@ VALUE io_spec_rb_io_check_closed(VALUE self, VALUE io) {
 }
 #endif
 
+#ifdef HAVE_RB_IO_TAINT_CHECK
+VALUE io_spec_rb_io_taint_check(VALUE self, VALUE io) {
+  /*rb_io_t* fp;
+  GetOpenFile(io, fp);*/
+  rb_io_taint_check(io);
+  return io;
+}
+#endif
+
 #ifdef RUBY_VERSION_IS_1_9
 typedef int wait_bool;
 #define wait_bool_to_ruby_bool(x) (x ? Qtrue : Qfalse)
@@ -256,6 +265,10 @@ void Init_io_spec() {
 
 #ifdef HAVE_RB_IO_CHECK_CLOSED
   rb_define_method(cls, "rb_io_check_closed", io_spec_rb_io_check_closed, 1);
+#endif
+
+#ifdef HAVE_RB_IO_TAINT_CHECK
+  rb_define_method(cls, "rb_io_taint_check", io_spec_rb_io_taint_check, 1);
 #endif
 
 #ifdef HAVE_RB_IO_WAIT_READABLE

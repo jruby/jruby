@@ -11,6 +11,14 @@ static VALUE bignum_spec_rb_big2dbl(VALUE self, VALUE num) {
 }
 #endif
 
+#ifdef HAVE_RB_DBL2BIG
+static VALUE bignum_spec_rb_dbl2big(VALUE self, VALUE num) {
+  double dnum = NUM2DBL(num);
+
+  return rb_dbl2big(dnum);
+}
+#endif
+
 #ifdef HAVE_RB_BIG2LL
 static VALUE bignum_spec_rb_big2ll(VALUE self, VALUE num) {
   return rb_ll2inum(rb_big2ll(num));
@@ -32,6 +40,22 @@ static VALUE bignum_spec_rb_big2str(VALUE self, VALUE num, VALUE base) {
 #ifdef HAVE_RB_BIG2ULONG
 static VALUE bignum_spec_rb_big2ulong(VALUE self, VALUE num) {
   return ULONG2NUM(rb_big2ulong(num));
+}
+#endif
+
+#ifdef HAVE_RB_BIG_CMP
+static VALUE bignum_spec_rb_big_cmp(VALUE self, VALUE x, VALUE y) {
+  return rb_big_cmp(x, y);
+}
+#endif
+
+#ifdef HAVE_RB_BIG_PACK
+static VALUE bignum_spec_rb_big_pack(VALUE self, VALUE val) {
+  unsigned long buff;
+
+  rb_big_pack(val, &buff, 1);
+
+  return ULONG2NUM(buff);
 }
 #endif
 
@@ -67,6 +91,10 @@ void Init_bignum_spec() {
   rb_define_method(cls, "rb_big2dbl", bignum_spec_rb_big2dbl, 1);
 #endif
 
+#ifdef HAVE_RB_DBL2BIG
+  rb_define_method(cls, "rb_dbl2big", bignum_spec_rb_dbl2big, 1);
+#endif
+
 #ifdef HAVE_RB_BIG2LL
   rb_define_method(cls, "rb_big2ll", bignum_spec_rb_big2ll, 1);
 #endif
@@ -81,6 +109,14 @@ void Init_bignum_spec() {
 
 #ifdef HAVE_RB_BIG2ULONG
   rb_define_method(cls, "rb_big2ulong", bignum_spec_rb_big2ulong, 1);
+#endif
+
+#ifdef HAVE_RB_BIG_CMP
+  rb_define_method(cls, "rb_big_cmp", bignum_spec_rb_big_cmp, 2);
+#endif
+
+#ifdef HAVE_RB_BIG_PACK
+  rb_define_method(cls, "rb_big_pack", bignum_spec_rb_big_pack, 1);
 #endif
 
 #ifdef HAVE_RBIGNUM_SIGN

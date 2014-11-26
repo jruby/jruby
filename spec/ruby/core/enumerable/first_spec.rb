@@ -12,6 +12,11 @@ describe "Enumerable#first" do
     EnumerableSpecs::Empty.new.first.should == nil
   end
 
+  it "raises a RangeError when passed a Bignum" do
+    enum = EnumerableSpecs::Empty.new
+    lambda { enum.first(bignum_value) }.should raise_error(RangeError)
+  end
+
   describe "when passed an argument" do
     it_behaves_like :enumerable_take, :first
   end

@@ -1,6 +1,149 @@
 require File.expand_path('../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/block', __FILE__)
 
+describe "A block yielded a single" do
+  before :all do
+    def m(a) yield a end
+  end
+
+  context "Array" do
+    it "assigns the Array to a single argument" do
+      m([1, 2]) { |a| a }.should == [1, 2]
+    end
+
+    it "receives the identical Array object" do
+      ary = [1, 2]
+      m(ary) { |a| a }.should equal(ary)
+    end
+
+    it "assigns the Array to a single rest argument" do
+      m([1, 2, 3]) { |*a| a }.should == [[1, 2, 3]]
+    end
+
+    it "assigns the first element to a single argument with trailing comma" do
+      m([1, 2]) { |a, | a }.should == 1
+    end
+
+    it "assigns elements to required arguments" do
+      m([1, 2, 3]) { |a, b| [a, b] }.should == [1, 2]
+    end
+
+    it "assigns nil to unassigned required arguments" do
+      m([1, 2]) { |a, *b, c, d| [a, b, c, d] }.should == [1, [], 2, nil]
+    end
+
+    it "assigns elements to optional arguments" do
+      m([1, 2]) { |a=5, b=4, c=3| [a, b, c] }.should == [1, 2, 3]
+    end
+
+    it "assgins elements to post arguments" do
+      m([1, 2]) { |a=5, b, c, d| [a, b, c, d] }.should == [5, 1, 2, nil]
+    end
+
+    it "assigns elements to required arguments when a keyword rest argument is present" do
+      m([1, 2]) { |a, **k| [a, k] }.should == [1, {}]
+    end
+
+    it "assigns elements to mixed argument types" do
+      result = m([1, 2, 3, {x: 9}]) { |a, b=5, *c, d, e: 2, **k| [a, b, c, d, e, k] }
+      result.should == [1, 2, [], 3, 2, {x: 9}]
+    end
+
+    it "calls #to_hash on the last element if keyword arguments are present" do
+      obj = mock("destructure block keyword arguments")
+      obj.should_receive(:to_hash).and_return({x: 9})
+
+      result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
+      result.should == [1, [2], 3, {x: 9}]
+    end
+
+    it "assigns the last element to a non-keyword argument if #to_hash returns nil" do
+      obj = mock("destructure block keyword arguments")
+      obj.should_receive(:to_hash).and_return(nil)
+
+      result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
+      result.should == [1, [2, 3], obj, {}]
+    end
+
+    it "calls #to_hash on the element that maps to the keyword arguments" do
+      x = mock("destructure matching block keyword argument")
+      x.should_receive(:to_hash).and_return({x: 9})
+      y = mock("destructure non-matching block keyword argument")
+      y.should_not_receive(:to_hash)
+
+      result = m([1, 2, 3, x, 4, 5, y]) { |a, b=5, c, **k| [a, b, c, k] }
+      result.should == [1, 2, 3, {x: 9}]
+    end
+
+    it "raises a TypeError if #to_hash does not return a Hash" do
+      obj = mock("destructure block keyword arguments")
+      obj.should_receive(:to_hash).and_return(1)
+
+      lambda { m([1, 2, 3, obj]) { |a, *b, c, **k| } }.should raise_error(TypeError)
+    end
+
+    it "raises the error raised inside #to_hash" do
+      obj = mock("destructure block keyword arguments")
+      error = RuntimeError.new("error while converting to a hash")
+      obj.should_receive(:to_hash).and_raise(error)
+
+      lambda { m([1, 2, 3, obj]) { |a, *b, c, **k| } }.should raise_error(error)
+    end
+
+    it "does not call #to_ary on the Array" do
+      ary = [1, 2]
+      ary.should_not_receive(:to_ary)
+
+      m(ary) { |a, b, c| [a, b, c] }.should == [1, 2, nil]
+    end
+  end
+
+  context "Object" do
+    it "calls #to_ary on the object when taking multiple arguments" do
+      obj = mock("destructure block arguments")
+      obj.should_receive(:to_ary).and_return([1, 2])
+
+      m(obj) { |a, b, c| [a, b, c] }.should == [1, 2, nil]
+    end
+
+    it "does not call #to_ary when not taking any arguments" do
+      obj = mock("destructure block arguments")
+      obj.should_not_receive(:to_ary)
+
+      m(obj) { 1 }.should == 1
+    end
+
+    it "does not call #to_ary on the object when taking a single argument" do
+      obj = mock("destructure block arguments")
+      obj.should_not_receive(:to_ary)
+
+      m(obj) { |a| a }.should == obj
+    end
+
+    it "does not call #to_ary on the object when taking a single rest argument" do
+      obj = mock("destructure block arguments")
+      obj.should_not_receive(:to_ary)
+
+      m(obj) { |*a| a }.should == [obj]
+    end
+
+    it "receives the object if #to_ary returns nil" do
+      obj = mock("destructure block arguments")
+      obj.should_receive(:to_ary).and_return(nil)
+
+      m(obj) { |a, b, c| [a, b, c] }.should == [obj, nil, nil]
+    end
+
+    it "raises a TypeError if #to_ary does not return an Array" do
+      obj = mock("destructure block arguments")
+      obj.should_receive(:to_ary).and_return(1)
+
+      lambda { m(obj) { |a, b| } }.should raise_error(TypeError)
+    end
+  end
+end
+
+# TODO: rewrite
 describe "A block" do
   before :each do
     @y = BlockSpecs::Yielder.new

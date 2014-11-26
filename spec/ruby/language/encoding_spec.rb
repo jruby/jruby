@@ -30,38 +30,6 @@ describe "The __ENCODING__ pseudo-variable" do
     CodingUTF_8.encoding.should == Encoding::UTF_8
   end
 
-  it "is Encoding::ASCII_8BIT when the interpreter is invoked with -Ka" do
-    ruby_exe("print __ENCODING__", :options => '-Ka').should == Encoding::ASCII_8BIT.to_s
-  end
-
-  it "is Encoding::ASCII_8BIT when the interpreter is invoked with -KA" do
-    ruby_exe("print __ENCODING__", :options => '-KA').should == Encoding::ASCII_8BIT.to_s
-  end
-
-  it "is Encoding::EUC_JP when the interpreter is invoked with -Ke" do
-    ruby_exe("print __ENCODING__", :options => '-Ke').should == Encoding::EUC_JP.to_s
-  end
-
-  it "is Encoding::EUC_JP when the interpreter is invoked with -KE" do
-    ruby_exe("print __ENCODING__", :options => '-KE').should == Encoding::EUC_JP.to_s
-  end
-
-  it "is Encoding::UTF_8 when the interpreter is invoked with -Ku" do
-    ruby_exe("print __ENCODING__", :options => '-Ku').should == Encoding::UTF_8.to_s
-  end
-
-  it "is Encoding::UTF_8 when the interpreter is invoked with -KU" do
-    ruby_exe("print __ENCODING__", :options => '-KU').should == Encoding::UTF_8.to_s
-  end
-
-  it "is Encoding::Windows_31J when the interpreter is invoked with -Ks" do
-    ruby_exe("print __ENCODING__", :options => '-Ks').should == Encoding::Windows_31J.to_s
-  end
-
-  it "is Encoding::Windows_31J when the interpreter is invoked with -KS" do
-    ruby_exe("print __ENCODING__", :options => '-KS').should == Encoding::Windows_31J.to_s
-  end
-
   it "raises a SyntaxError if assigned to" do
     lambda { eval("__ENCODING__ = 1") }.should raise_error(SyntaxError)
   end
