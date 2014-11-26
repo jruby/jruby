@@ -17,7 +17,7 @@ env:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
   matrix:
     - PHASE='-Ptest'
-    - PHASE='-Pjruby_complete_jar_jruby'
+    - PHASE='-Pjruby_complete_jar_extended'
     - PHASE='-Prake -Dtask=test:jruby'
     - PHASE='-Prake -Dtask=test:mri'
     - PHASE='-Prake -Dtask=test:slow_suites'
@@ -60,8 +60,6 @@ matrix:
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Pjruby_complete_jar_extended'
     - env: PHASE='-Prake -Dtask=spec:profiler'
-    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
 
 branches:
   only:
