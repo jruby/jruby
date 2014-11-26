@@ -634,6 +634,32 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "rstrip")
+    public abstract static class RStripNode extends CoreMethodNode {
+
+        public RStripNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RStripNode(RStripNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString rstrip(RubyString string) {
+            notDesignedForCompilation();
+
+            String str = string.toString();
+            int last = str.length()-1;
+            while (last >= 0 && " \r\n\t".indexOf(str.charAt(last)) != -1) {
+                last--;
+            }
+
+            return getContext().makeString(str.substring(0, last+1));
+        }
+
+    }
+
     @CoreMethod(names = "scan", required = 1)
     public abstract static class ScanNode extends CoreMethodNode {
 
