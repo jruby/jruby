@@ -299,35 +299,6 @@ public abstract class KernelNodes {
         }
     }
 
-    // TODO(CS): should hide this in a feature
-
-    @CoreMethod(names = "callcc", isModuleFunction = true, needsBlock = true)
-    public abstract static class CallccNode extends CoreMethodNode {
-
-        public CallccNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public CallccNode(CallccNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object callcc(RubyProc block) {
-            notDesignedForCompilation();
-
-            final RubyContext context = getContext();
-
-            if (block == null) {
-                // TODO(CS): should really have acceptsBlock and needsBlock to do this automatically
-                throw new RaiseException(context.getCoreLibrary().localJumpError("no block given", this));
-            }
-
-            final RubyContinuation continuation = new RubyContinuation(context.getCoreLibrary().getContinuationClass());
-            return continuation.enter(block);
-        }
-    }
-
     @CoreMethod(names = "caller", isModuleFunction = true, optional = 1)
     public abstract static class CallerNode extends CoreMethodNode {
 

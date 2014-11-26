@@ -289,25 +289,6 @@ public abstract class ProxyNode extends RubyNode implements Wrapper {
     }
 
     @Override
-    public RubyContinuation executeRubyContinuation(VirtualFrame frame) throws UnexpectedResultException {
-        enter(frame);
-
-        final RubyContinuation result;
-
-        try {
-            result = child.executeRubyContinuation(frame);
-            leave(frame, result);
-        } catch (KillException e) {
-            throw (e);
-        } catch (Exception e) {
-            leaveExceptional(frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
     public RubyException executeRubyException(VirtualFrame frame) throws UnexpectedResultException {
         enter(frame);
 

@@ -45,7 +45,6 @@ import java.math.BigInteger;
                 RubyBignum.class, //
                 RubyBinding.class, //
                 RubyClass.class, //
-                RubyContinuation.class, //
                 RubyException.class, //
                 RubyFiber.class, //
                 RubyFile.class, //
