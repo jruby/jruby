@@ -1,6 +1,7 @@
 require 'mspec/mocks'
 require 'mspec/runner/mspec'
 require 'mspec/runner/context'
+require 'mspec/runner/evaluate'
 require 'mspec/runner/example'
 require 'mspec/runner/exception'
 require 'mspec/runner/object'

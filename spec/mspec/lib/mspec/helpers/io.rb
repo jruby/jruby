@@ -10,7 +10,11 @@ class IOStub < String
   end
 
   def puts(*str)
-    write(str.collect { |s| s.to_s.chomp }.concat([nil]).join("\n"))
+    if str.empty?
+      write "\n"
+    else
+      write(str.collect { |s| s.to_s.chomp }.concat([nil]).join("\n"))
+    end
   end
 
   def printf(format, *args)

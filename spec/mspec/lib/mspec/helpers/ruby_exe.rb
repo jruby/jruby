@@ -109,7 +109,7 @@ class Object
       # It has been reported that File.executable is not reliable
       # on Windows platforms (see commit 56bc555c). So, we check the
       # platform.
-      if File.exists?(exe) and (PlatformGuard.windows? or File.executable?(exe))
+      if File.exist?(exe) and (PlatformGuard.windows? or File.executable?(exe))
         return [File.expand_path(exe), *rest].join(" ")
       end
     end
@@ -142,7 +142,7 @@ class Object
   def ruby_cmd(code, opts = {})
     body = code
 
-    if code and not File.exists?(code)
+    if code and not File.exist?(code)
       if opts[:escape]
         code = "'#{code}'"
       else

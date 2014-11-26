@@ -309,6 +309,7 @@ class MSpecOptions
     doc "       a, *, spin               SpinnerFormatter"
     doc "       t, method                MethodFormatter"
     doc "       y, yaml                  YamlFormatter"
+    doc "       p, profile               ProfileFormatter"
     doc "       j, junit                 JUnitFormatter\n"
 
     on("-o", "--output", "FILE",
