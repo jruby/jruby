@@ -119,14 +119,14 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = "|", needsSelf = false, required = 1)
-    public abstract static class OrNode extends CoreMethodNode {
+    @CoreMethod(names = { "|", "^" }, needsSelf = false, required = 1)
+    public abstract static class OrXorNode extends CoreMethodNode {
 
-        public OrNode(RubyContext context, SourceSection sourceSection) {
+        public OrXorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public OrNode(OrNode prev) {
+        public OrXorNode(OrXorNode prev) {
             super(prev);
         }
 
