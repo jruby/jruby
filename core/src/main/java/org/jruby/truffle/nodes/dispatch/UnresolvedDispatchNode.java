@@ -120,10 +120,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         lookup(callerClass, getContext().getCoreLibrary().box(false), methodName.toString(),
                                 ignoreVisibility, dispatchAction);
 
-                if (falseMethod == null) {
-                    throw new UnsupportedOperationException();
-                }
-
                 final Assumption trueUnmodifiedAssumption =
                         getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
 
@@ -131,7 +127,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         lookup(callerClass, getContext().getCoreLibrary().box(true), methodName.toString(),
                                 ignoreVisibility, dispatchAction);
 
-                if (trueMethod == null) {
+                if ((falseMethod == null) && (trueMethod == null)) {
                     throw new UnsupportedOperationException();
                 }
 
