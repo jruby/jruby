@@ -118,4 +118,31 @@ public abstract class NilClassNodes {
             return false;
         }
     }
+
+    @CoreMethod(names = "|", needsSelf = false, required = 1)
+    public abstract static class OrNode extends CoreMethodNode {
+
+        public OrNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OrNode(OrNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean or(boolean other) {
+            return other;
+        }
+
+        @Specialization
+        public boolean or(RubyNilClass other) {
+            return false;
+        }
+
+        @Specialization(guards = "!isNil")
+        public boolean or(RubyObject other) {
+            return true;
+        }
+    }
 }
