@@ -18,13 +18,13 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class NilClassNodes {
 
     @CoreMethod(names = "inspect", needsSelf = false)
-    public abstract static class InpsectNode extends CoreMethodNode {
+    public abstract static class InspectNode extends CoreMethodNode {
 
-        public InpsectNode(RubyContext context, SourceSection sourceSection) {
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InpsectNode(InpsectNode prev) {
+        public InspectNode(InspectNode prev) {
             super(prev);
         }
 
