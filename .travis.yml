@@ -17,7 +17,6 @@ env:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
   matrix:
     - PHASE='-Ptest'
-    - PHASE='-Pjruby_complete_jar_extended'
     - PHASE='-Prake -Dtask=test:jruby'
     - PHASE='-Prake -Dtask=test:mri'
     - PHASE='-Prake -Dtask=test:slow_suites'
@@ -51,6 +50,8 @@ matrix:
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
       jdk: oraclejdk7
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+      jdk: openjdk7
+    - env: PHASE='-Pjruby_complete_jar_extended'
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
