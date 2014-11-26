@@ -77,6 +77,15 @@ public abstract class TrueClassNodes {
             return true ^ other;
         }
 
+        @Specialization
+        public boolean xor(RubyNilClass other) {
+            return true;
+        }
+
+        @Specialization(guards = "!isNil")
+        public boolean xor(RubyObject other) {
+            return false;
+        }
     }
 
     @CoreMethod(names = {"to_s", "inspect"}, needsSelf = false)

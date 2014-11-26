@@ -58,7 +58,6 @@ class MSpecScript
     "^spec/ruby/core/file/stat/ftype_spec.rb",
     "^spec/ruby/core/file/stat/sticky_spec.rb",
     "^spec/ruby/core/file/sticky_spec.rb",
-    "^spec/ruby/core/true/xor_spec.rb",
     "^spec/ruby/core/fixnum/exponent_spec.rb",
     "^spec/ruby/core/fixnum/right_shift_spec.rb",
     "^spec/ruby/core/io/isatty_spec.rb",
