@@ -17,7 +17,6 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.*;
 
-import com.oracle.truffle.api.instrument.SourceCallback;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
@@ -27,7 +26,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -50,7 +48,6 @@ public class RubyContext extends ExecutionContext {
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
-    private final RubyASTProber astProber;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
     private final TraceManager traceManager;
@@ -64,8 +61,6 @@ public class RubyContext extends ExecutionContext {
     private final Random random = new Random();
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
-
-    private SourceCallback sourceCallback = null;
 
     private final AtomicLong nextObjectID = new AtomicLong(6);
 
@@ -95,7 +90,6 @@ public class RubyContext extends ExecutionContext {
 
         this.runtime = runtime;
         translator = new TranslatorDriver(this);
-        astProber = new RubyASTProber();
 
         warnings = new Warnings(this);
 
@@ -342,21 +336,8 @@ public class RubyContext extends ExecutionContext {
         return "ruby";
     }
 
-    @Override
-    public void setSourceCallback(SourceCallback sourceCallback) {
-        this.sourceCallback = sourceCallback;
-    }
-
-    public SourceCallback getSourceCallback() {
-        return sourceCallback;
-    }
-
     public TruffleHooks getHooks() {
         return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
-    }
-
-    public RubyASTProber getASTProber() {
-        return astProber;
     }
 
     public TraceManager getTraceManager() {

@@ -1626,7 +1626,8 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
-        return context.getASTProber().probeAsStatement(node.getNextNode().accept(this));
+        final RubyNode child = node.getNextNode().accept(this);
+        return new TraceNode(context, child.getSourceSection(), child);
     }
 
     @Override
@@ -2034,8 +2035,6 @@ public class BodyTranslator extends Translator {
 
         RubyNode body = node.getBodyNode().accept(this);
 
-        body = context.getASTProber().probeAsPeriodic(body);
-
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCastNotCast, body);
         } else {
@@ -2067,8 +2066,6 @@ public class BodyTranslator extends Translator {
         final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
 
         RubyNode body = node.getBodyNode().accept(this);
-
-        body = context.getASTProber().probeAsPeriodic(body);
 
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCast, body);
