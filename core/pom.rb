@@ -258,7 +258,7 @@ project 'JRuby Core' do
   end
 
 
-  [ :osgi, :dist, :'jruby-jars', :main, :all, :complete, :release, :snapshots ].each do |name|
+  [ :osgi, :dist, :'jruby-jars', :main, :all, :complete, :release, :jruby_complete_jar_extended ].each do |name|
     profile name do
       plugin :shade do
         execute_goals( 'shade',

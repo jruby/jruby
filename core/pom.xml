@@ -950,7 +950,7 @@
       </build>
     </profile>
     <profile>
-      <id>snapshots</id>
+      <id>jruby_complete_jar_extended</id>
       <build>
         <plugins>
           <plugin>
