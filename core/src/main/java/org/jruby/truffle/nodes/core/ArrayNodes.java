@@ -635,13 +635,15 @@ public abstract class ArrayNodes {
         public Object getObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
-            int normalisedIndex = array.normaliseIndex(range.getBegin());
-            int length = array.normaliseExclusiveIndex(range.getExclusiveEnd()) - normalisedIndex;
+            final int normalisedIndex = array.normaliseIndex(range.getBegin());
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, normalisedIndex + length), length);
+                final int end = array.normaliseIndex(range.getEnd());
+                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
             }
         }
 

@@ -213,19 +213,19 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
+            final int begin = string.normaliseIndex(range.getBegin());
 
-            if (range.doesExcludeEnd()) {
-                final int begin = string.normaliseIndex(range.getBegin());
-                final int exclusiveEnd = string.normaliseExclusiveIndex(range.getExclusiveEnd());
-                return getContext().makeString(javaString.substring(begin, exclusiveEnd));
+            if (begin < 0 || begin >= javaString.length()) {
+                return getContext().getCoreLibrary().getNilObject();
             } else {
-                final int begin = string.normaliseIndex(range.getBegin());
-                final int inclusiveEnd = string.normaliseIndex(range.getInclusiveEnd());
-                return getContext().makeString(javaString.substring(begin, inclusiveEnd + 1));
+                final int end = string.normaliseIndex(range.getEnd());
+                final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
+
+                return getContext().makeString(javaString.substring(begin, excludingEnd));
             }
         }
 
@@ -234,7 +234,7 @@ public abstract class StringNodes {
             // TODO(CS): not sure if this is right - encoding
             // TODO(CS): why does subSequence return CharSequence?
             final int begin = string.normaliseIndex(start);
-            final int exclusiveEnd = string.normaliseExclusiveIndex(start + length);
+            final int exclusiveEnd = string.normaliseIndex(start + length);
             return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(begin, exclusiveEnd - begin));
         }
 

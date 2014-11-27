@@ -207,10 +207,6 @@ public final class RubyArray extends RubyObject {
         return normaliseIndex(size, index);
     }
 
-    public int normaliseExclusiveIndex(int index) {
-        return normaliseExclusiveIndex(size, index);
-    }
-
     public static int normaliseIndex(int length, int index) {
         if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
             return length + index;
@@ -219,11 +215,17 @@ public final class RubyArray extends RubyObject {
         }
     }
 
-    public static int normaliseExclusiveIndex(int length, int exclusiveIndex) {
-        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, exclusiveIndex < 0)) {
-            return length + exclusiveIndex + 1;
+    public int clampExclusiveIndex(int index) {
+        return clampExclusiveIndex(size, index);
+    }
+
+    public static int clampExclusiveIndex(int length, int index) {
+        if (index < 0) {
+            return 0;
+        } else if (index > length) {
+            return length;
         } else {
-            return exclusiveIndex;
+            return index;
         }
     }
 

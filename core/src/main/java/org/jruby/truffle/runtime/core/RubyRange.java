@@ -43,14 +43,6 @@ public abstract class RubyRange extends RubyObject {
             return end;
         }
 
-        public final int getInclusiveEnd() {
-            if (excludeEnd) {
-                return end - 1;
-            } else {
-                return end;
-            }
-        }
-
         public final int getExclusiveEnd() {
             if (excludeEnd) {
                 return end;
@@ -78,14 +70,6 @@ public abstract class RubyRange extends RubyObject {
 
         public final long getEnd() {
             return end;
-        }
-
-        public final long getInclusiveEnd() {
-            if (excludeEnd) {
-                return end - 1;
-            } else {
-                return end;
-            }
         }
 
         public final long getExclusiveEnd() {
