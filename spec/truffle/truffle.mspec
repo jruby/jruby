@@ -2,8 +2,7 @@ class MSpecScript
 
   set :language, [
     "spec/ruby/language",
-    "^spec/ruby/language/numbers_spec.rb",
-    "^spec/ruby/language/lambda_spec.rb"
+    "^spec/ruby/language/numbers_spec.rb"
   ]
 
   set :core, [
