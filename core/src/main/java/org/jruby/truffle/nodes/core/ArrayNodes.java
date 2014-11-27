@@ -2069,7 +2069,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "join", required = 1)
+    @CoreMethod(names = "join", optional = 1)
     public abstract static class JoinNode extends ArrayCoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -2078,6 +2078,20 @@ public abstract class ArrayNodes {
 
         public JoinNode(JoinNode prev) {
             super(prev);
+        }
+
+        @Specialization
+        public RubyString join(RubyArray array, UndefinedPlaceholder unused) {
+            Object separator = getContext().getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$,");
+            if (separator == getContext().getCoreLibrary().getNilObject()) {
+                separator = getContext().makeString("");
+            }
+
+            if (separator instanceof RubyString) {
+                return join(array, (RubyString) separator);
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
 
         @Specialization

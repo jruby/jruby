@@ -247,6 +247,7 @@ public class CoreLibrary {
         globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass));
         globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
         globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
+        globalVariablesObject.setInstanceVariable("$,", nilObject);
 
         initializeEncodingConstants();
 
