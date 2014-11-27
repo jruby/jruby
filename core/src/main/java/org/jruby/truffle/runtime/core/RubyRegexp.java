@@ -66,9 +66,9 @@ public class RubyRegexp extends RubyObject {
         initialize(regex, source);
     }
 
-    public void initialize(RubyNode currentNode, String setRegex) {
-        regex = compile(currentNode, getContext(), setRegex, Option.DEFAULT);
-        source = setRegex;
+    public void initialize(RubyNode currentNode, String setSource) {
+        regex = compile(currentNode, getContext(), setSource, Option.DEFAULT);
+        source = setSource;
     }
 
     public void initialize(Regex setRegex, String setSource) {

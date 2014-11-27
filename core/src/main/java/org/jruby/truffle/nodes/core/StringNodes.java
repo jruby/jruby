@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -481,7 +482,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "gsub", required = 2)
-    public abstract static class GsubNode extends CoreMethodNode {
+    public abstract static class GsubNode extends RegexpNodes.EscapingNode {
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -492,10 +493,10 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString gsub(RubyString string, RubyString regexpString, RubyString replacement) {
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).toString(), Option.DEFAULT);
             return gsub(string, regexp, replacement);
         }
 
@@ -819,7 +820,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "sub", required = 2)
-    public abstract static class SubNode extends CoreMethodNode {
+    public abstract static class SubNode extends RegexpNodes.EscapingNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -830,10 +831,10 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString gsub(RubyString string, RubyString regexpString, RubyString replacement) {
+        public RubyString sub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).toString(), Option.DEFAULT);
             return sub(string, regexp, replacement);
         }
 
