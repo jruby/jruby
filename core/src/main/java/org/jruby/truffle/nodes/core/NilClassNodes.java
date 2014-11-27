@@ -131,17 +131,17 @@ public abstract class NilClassNodes {
         }
 
         @Specialization
-        public boolean or(boolean other) {
+        public boolean orXor(boolean other) {
             return other;
         }
 
         @Specialization
-        public boolean or(RubyNilClass other) {
+        public boolean orXor(RubyNilClass other) {
             return false;
         }
 
         @Specialization(guards = "!isNil")
-        public boolean or(RubyObject other) {
+        public boolean orXor(RubyObject other) {
             return true;
         }
     }
