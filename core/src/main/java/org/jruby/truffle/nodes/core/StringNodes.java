@@ -26,7 +26,9 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @CoreClass(name = "String")
@@ -357,6 +359,45 @@ public abstract class StringNodes {
             string.set(ByteList.create(string.toString().toLowerCase()));
             return string;
         }
+    }
+
+    @CoreMethod(names = "each_line")
+    public abstract static class EachLineNode extends YieldingCoreMethodNode {
+
+        public EachLineNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EachLineNode(EachLineNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray eachLine(RubyString string) {
+            notDesignedForCompilation();
+
+            final List<Object> lines = new ArrayList<>();
+
+            String str = string.toString();
+            int start = 0;
+
+            while (start < str.length()) {
+                int end = str.indexOf('\n', start);
+
+                if (end == -1) {
+                    lines.add(getContext().makeString(str.substring(start)));
+                    break;
+                }
+
+                String line = str.substring(start, end+1);
+                start = end+1;
+
+                lines.add(getContext().makeString(line));
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
+        }
+
     }
 
     @CoreMethod(names = "empty?")
