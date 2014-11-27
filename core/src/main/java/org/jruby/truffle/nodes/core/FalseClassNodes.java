@@ -34,57 +34,29 @@ public abstract class FalseClassNodes {
         }
     }
 
-    @CoreMethod(names = "|", needsSelf = false, required = 1)
-    public abstract static class OrNode extends CoreMethodNode {
+    @CoreMethod(names = { "|", "^" }, needsSelf = false, required = 1)
+    public abstract static class OrXorNode extends CoreMethodNode {
 
-        public OrNode(RubyContext context, SourceSection sourceSection) {
+        public OrXorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public OrNode(OrNode prev) {
+        public OrXorNode(OrXorNode prev) {
             super(prev);
         }
 
         @Specialization
-        public boolean or(boolean other) {
+        public boolean orXor(boolean other) {
             return other;
         }
 
         @Specialization
-        public boolean or(RubyNilClass other) {
+        public boolean orXor(RubyNilClass other) {
             return false;
         }
 
         @Specialization(guards = "!isNil")
-        public boolean or(RubyObject other) {
-            return true;
-        }
-
-    }
-
-    @CoreMethod(names = "^", needsSelf = false, required = 1)
-    public abstract static class XorNode extends CoreMethodNode {
-
-        public XorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public XorNode(XorNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean xor(boolean other) {
-            return false ^ other;
-        }
-
-        @Specialization
-        public boolean xor(RubyNilClass other) {
-            return false;
-        }
-
-        @Specialization(guards = "!isNil")
-        public boolean xor(RubyObject other) {
+        public boolean orXor(RubyObject other) {
             return true;
         }
 
