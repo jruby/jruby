@@ -8,6 +8,6 @@ end
 
 describe 'NonLocalReturn' do
   it 'inside a block of a define_method block body returns normally' do
-    C.new.foo.should_be :foo
+    C.new.foo.should be(:foo)
   end
 end
