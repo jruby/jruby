@@ -49,19 +49,12 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.RubyRegexp;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BignumNode;
-import org.jruby.ast.ComplexNode;
-import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NthRefNode;
-import org.jruby.ast.RationalNode;
-import org.jruby.ast.StrNode;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
+import org.jruby.parser.RubyParser;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
@@ -137,6 +130,15 @@ public class RubyLexer {
         return encoding;
     }
 
+    private int considerComplex(int token, int suffix) {
+        if ((suffix & SUFFIX_I) == 0) {
+            return token;
+        } else {
+            yaccValue = newComplexNode((Node) yaccValue);
+            return RubyParser.tIMAGINARY;
+        }
+    }
+
     private int getFloatToken(String number, int suffix) {
         if ((suffix & SUFFIX_R) != 0) {
             BigDecimal bd = new BigDecimal(number);
@@ -149,7 +151,7 @@ public class RubyLexer {
                 // FIXME: Rational supports Bignum numerator and denominator
                 throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
             }
-            return Tokens.tRATIONAL;
+            return considerComplex(Tokens.tRATIONAL, suffix);
         }
 
         double d;
@@ -161,7 +163,7 @@ public class RubyLexer {
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
         yaccValue = new FloatNode(getPosition(), d);
-        return Tokens.tFLOAT;
+        return considerComplex(Tokens.tFLOAT, suffix);
     }
 
     private BignumNode newBignumNode(String value, int radix) {
