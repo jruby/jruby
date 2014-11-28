@@ -130,42 +130,6 @@ public class RubyLexer {
         return encoding;
     }
 
-    private int considerComplex(int token, int suffix) {
-        if ((suffix & SUFFIX_I) == 0) {
-            return token;
-        } else {
-            yaccValue = newComplexNode((Node) yaccValue);
-            return RubyParser.tIMAGINARY;
-        }
-    }
-
-    private int getFloatToken(String number, int suffix) {
-        if ((suffix & SUFFIX_R) != 0) {
-            BigDecimal bd = new BigDecimal(number);
-            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
-            BigDecimal numerator = bd.multiply(denominator);
-
-            try {
-                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
-            } catch (ArithmeticException ae) {
-                // FIXME: Rational supports Bignum numerator and denominator
-                throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
-            }
-            return considerComplex(Tokens.tRATIONAL, suffix);
-        }
-
-        double d;
-        try {
-            d = SafeDoubleParser.parseDouble(number);
-        } catch (NumberFormatException e) {
-            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
-
-            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-        }
-        yaccValue = new FloatNode(getPosition(), d);
-        return considerComplex(Tokens.tFLOAT, suffix);
-    }
-
     private BignumNode newBignumNode(String value, int radix) {
         return new BignumNode(getPosition(), new BigInteger(value, radix));
     }
@@ -561,7 +525,43 @@ public class RubyLexer {
             break;
         }
     }
-    
+
+    private int considerComplex(int token, int suffix) {
+        if ((suffix & SUFFIX_I) == 0) {
+            return token;
+        } else {
+            yaccValue = newComplexNode((Node) yaccValue);
+            return RubyParser.tIMAGINARY;
+        }
+    }
+
+    private int getFloatToken(String number, int suffix) {
+        if ((suffix & SUFFIX_R) != 0) {
+            BigDecimal bd = new BigDecimal(number);
+            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
+            BigDecimal numerator = bd.multiply(denominator);
+
+            try {
+                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
+            } catch (ArithmeticException ae) {
+                // FIXME: Rational supports Bignum numerator and denominator
+                throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
+            }
+            return considerComplex(Tokens.tRATIONAL, suffix);
+        }
+
+        double d;
+        try {
+            d = SafeDoubleParser.parseDouble(number);
+        } catch (NumberFormatException e) {
+            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
+
+            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+        yaccValue = new FloatNode(getPosition(), d);
+        return considerComplex(Tokens.tFLOAT, suffix);
+    }
+
     private Object getInteger(String value, int radix, int suffix) {
         Node literalValue = null;
 
