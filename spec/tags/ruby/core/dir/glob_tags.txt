@@ -2,3 +2,4 @@ fails(JRUBY-5667):Dir.glob splits the string on \0 if there is only one string g
 fails:Dir.glob raises an Encoding::CompatibilityError if the argument encoding is not compatible with US-ASCII
 fails:Dir.glob with encoding returns Strings in the encoding of the pattern
 fails:Dir.glob matches nothing when given an empty list of paths
+fails:Dir.glob splits the string on \0 if there is only one string given
