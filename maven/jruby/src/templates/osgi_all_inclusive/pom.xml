@@ -13,6 +13,7 @@
     <jruby.version>@project.version@</jruby.version>
     <url.version>1.5.2</url.version>
     <exam.version>3.0.3</exam.version>
+    <inline>true</inline>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <logback.version>1.0.13</logback.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
@@ -129,7 +130,7 @@
             <DynamicImport-Package>*</DynamicImport-Package>
             <Include-Resource>{maven-resources}</Include-Resource>
             <Import-Package>!org.jruby.*,*;resolution:=optional</Import-Package>
-            <Embed-Dependency>*;type=jar;scope=compile|runtime;inline=true</Embed-Dependency>
+            <Embed-Dependency>*;type=jar;scope=compile|runtime;inline=${inline}</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
           </instructions>
         </configuration>

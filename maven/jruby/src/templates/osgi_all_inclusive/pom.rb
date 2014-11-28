@@ -14,7 +14,8 @@ jruby_plugin! :gem, :includeRubygemsInResources => true
 
 # ruby-maven will dump an equivalent pom.xml
 properties( 'tesla.dump.pom' => 'pom.xml',
-            'jruby.home' => '../../../../../' )
+            'jruby.home' => '../../../../../',
+            'inline' => true )
 
 execute 'jrubydir', 'process-resources' do |ctx|
   require 'jruby/commands'
@@ -32,7 +33,7 @@ plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0',
           'DynamicImport-Package' => '*',
           'Include-Resource' => '{maven-resources}',
           'Import-Package' => '!org.jruby.*,*;resolution:=optional',
-          'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=true',
+          'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=${inline}',
           'Embed-Transitive' => true
         } ) do
   # pack the bundle before the test phase
