@@ -562,8 +562,8 @@ public class RubyLexer {
         return considerComplex(Tokens.tFLOAT, suffix);
     }
 
-    private Object getInteger(String value, int radix, int suffix) {
-        Node literalValue = null;
+    private int getIntegerToken(String value, int radix, int suffix) {
+        Node literalValue;
 
         if ((suffix & SUFFIX_R) != 0) {
             literalValue = newRationalNode(value, radix);
@@ -574,8 +574,9 @@ public class RubyLexer {
                 literalValue = newBignumNode(value, radix);
             }
         }
-        
-        return (suffix & SUFFIX_I) != 0 ? newComplexNode(literalValue) : literalValue;
+
+        yaccValue = literalValue;
+        return considerComplex(Tokens.tINTEGER, suffix);
     }
 
 	/**
@@ -2342,8 +2343,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
                 case 'B' : // binary
                     c = src.read();
@@ -2369,8 +2369,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
                 case 'D' : // decimal
                     c = src.read();
@@ -2396,8 +2395,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
                                 getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
                 case 'O':
                     c = src.read();
@@ -2423,8 +2421,7 @@ public class RubyLexer {
                                     getPosition(), getCurrentLine(), "Trailing '_' in number.");
                         }
 
-                        yaccValue = getInteger(tokenBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
-                        return Tokens.tINTEGER;
+                        return getIntegerToken(tokenBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
@@ -2477,8 +2474,7 @@ public class RubyLexer {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
-                                return Tokens.tINTEGER;
+                                return getIntegerToken(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                             }
                         } else {
                             tokenBuffer.append('.');
@@ -2532,8 +2528,7 @@ public class RubyLexer {
             int suffix = numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL);
             return getFloatToken(number, suffix);
         }
-        yaccValue = getInteger(number, 10, numberLiteralSuffix(SUFFIX_ALL));
-        return Tokens.tINTEGER;
+        return getIntegerToken(number, 10, numberLiteralSuffix(SUFFIX_ALL));
     }
 
     // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be
