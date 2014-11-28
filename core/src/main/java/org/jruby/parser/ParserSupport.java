@@ -1037,6 +1037,18 @@ public class ParserSupport {
         
         return floatNode;
     }
+
+    public ComplexNode negateComplexNode(ComplexNode complexNode) {
+        complexNode.setNumber(negateNumeric(complexNode.getPosition(), complexNode.getNumber()));
+
+        return complexNode;
+    }
+
+    public RationalNode negateRational(RationalNode rationalNode) {
+        return new RationalNode(rationalNode.getPosition(),
+                                -rationalNode.getNumerator(),
+                                rationalNode.getDenominator());
+    }
     
     public Node unwrapNewlineNode(Node node) {
     	if(node instanceof NewlineNode) {
@@ -1414,10 +1426,12 @@ public class ParserSupport {
             case FIXNUMNODE:
             case BIGNUMNODE:
                 return negateInteger(node);
-            case COMPLEXNODE: // FIXME: impl
-                // COMPLEX
+            case COMPLEXNODE:
+                return negateComplexNode((ComplexNode) node);
             case FLOATNODE:
                 return negateFloat((FloatNode) node);
+            case RATIONALNODE:
+                return negateRational((RationalNode) node);
         }
         
         yyerror("Invalid or unimplemented numeric to negate: " + node.toString());
