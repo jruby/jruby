@@ -445,7 +445,9 @@ public class RubyModule extends RubyObject implements ModuleChain {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (RubyConstant constant : constants.values()) {
-            getContext().getCoreLibrary().box(constant.getValue()).visitObjectGraph(visitor);
+            if (constant.getValue() instanceof RubyBasicObject) {
+                ((RubyBasicObject) constant.getValue()).visitObjectGraph(visitor);
+            }
         }
 
         for (RubyMethod method : methods.values()) {

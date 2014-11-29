@@ -482,4 +482,27 @@ describe :process_spawn, :shared => true do
   it "raises an ArgumentError when passed an unknown option key" do
     lambda { @object.spawn("echo", :nonesuch => :foo) }.should raise_error(ArgumentError)
   end
+
+  describe "with Integer option keys" do
+    before :each do
+      @name = tmp("spawn_fd_map.txt")
+      @io = new_io @name, "w+"
+      @io.sync = true
+    end
+
+    after :each do
+      @io.close unless @io.closed?
+      rm_r @name
+    end
+
+    it "maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value" do
+      child_fd = @io.fileno + 1
+      args = [RUBY_EXE, fixture(__FILE__, "map_fd.rb"), child_fd.to_s]
+      pid = @object.spawn *args, { child_fd => @io }
+      Process.waitpid pid
+      @io.rewind
+
+      @io.read.should == "writing to fd: #{child_fd}"
+    end
+  end
 end

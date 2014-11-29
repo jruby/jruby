@@ -535,7 +535,7 @@ describe MSpec, ".delete_tags" do
 
   it "deletes the tag file" do
     MSpec.delete_tags
-    File.exists?(@tags).should be_false
+    File.exist?(@tags).should be_false
   end
 end
 

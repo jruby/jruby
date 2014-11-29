@@ -156,10 +156,18 @@ describe "String#sub with pattern, replacement" do
     "hello.".sub(pattern, "!").should == "hello!"
   end
 
+  not_supported_on :opal do
+    it "raises a TypeError when pattern is a Symbol" do
+      lambda { "hello".sub(:woot, "x") }.should raise_error(TypeError)
+    end
+  end
+
+  it "raises a TypeError when pattern is an Array" do
+    lambda { "hello".sub([], "x") }.should raise_error(TypeError)
+  end
+
   it "raises a TypeError when pattern can't be converted to a string" do
-    lambda { "hello".sub(:woot, "x")     }.should raise_error(TypeError)
-    lambda { "hello".sub([], "x")        }.should raise_error(TypeError)
-    lambda { "hello".sub(Object.new, nil)}.should raise_error(TypeError)
+    lambda { "hello".sub(Object.new, nil) }.should raise_error(TypeError)
   end
 
   it "tries to convert replacement to a string using to_str" do

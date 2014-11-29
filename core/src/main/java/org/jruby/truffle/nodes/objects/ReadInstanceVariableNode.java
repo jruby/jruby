@@ -15,12 +15,8 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.cast.BoxingNode;
-import org.jruby.truffle.nodes.cast.BoxingNodeFactory;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.ReadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.RespecializeHook;
-import org.jruby.truffle.nodes.objectstorage.UninitializedReadObjectFieldNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.objectstorage.*;
@@ -51,44 +47,79 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     };
 
-    @Child protected BoxingNode receiver;
+    @Child protected RubyNode receiver;
     @Child protected ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
     private final BranchProfile nullProfile = BranchProfile.create();
+    private final BranchProfile primitiveProfile = BranchProfile.create();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
-        this.receiver = BoxingNodeFactory.create(context, sourceSection, receiver);
+        this.receiver = receiver;
         readNode = new ReadHeadObjectFieldNode(name, hook);
         this.isGlobal = isGlobal;
     }
 
     @Override
     public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return readNode.executeInteger(receiver.executeRubyBasicObject(frame));
+        final Object receiverObject = receiver.execute(frame);
+
+        if (receiverObject instanceof RubyBasicObject) {
+            return readNode.executeInteger((RubyBasicObject) receiverObject);
+        } else {
+            // TODO(CS): need to put this onto the fast path?
+
+            CompilerDirectives.transferToInterpreter();
+            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+        }
     }
 
     @Override
     public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return readNode.executeLong(receiver.executeRubyBasicObject(frame));
+        final Object receiverObject = receiver.execute(frame);
+
+        if (receiverObject instanceof RubyBasicObject) {
+            return readNode.executeLong((RubyBasicObject) receiverObject);
+        } else {
+            // TODO(CS): need to put this onto the fast path?
+
+            CompilerDirectives.transferToInterpreter();
+            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+        }
     }
 
     @Override
     public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
-        return readNode.executeDouble(receiver.executeRubyBasicObject(frame));
+        final Object receiverObject = receiver.execute(frame);
+
+        if (receiverObject instanceof RubyBasicObject) {
+            return readNode.executeDouble((RubyBasicObject) receiverObject);
+        } else {
+            // TODO(CS): need to put this onto the fast path?
+
+            CompilerDirectives.transferToInterpreter();
+            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+        }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        Object value = readNode.execute(receiver.executeRubyBasicObject(frame));
+        final Object receiverObject = receiver.execute(frame);
 
-        if (value == null) {
-            nullProfile.enter();
-            value = getContext().getCoreLibrary().getNilObject();
+        if (receiverObject instanceof RubyBasicObject) {
+            Object value = readNode.execute((RubyBasicObject) receiverObject);
+
+            if (value == null) {
+                nullProfile.enter();
+                value = getContext().getCoreLibrary().getNilObject();
+            }
+
+            return value;
+        } else {
+            primitiveProfile.enter();
+            return getContext().getCoreLibrary().getNilObject();
         }
-
-        return value;
     }
 
     @Override
@@ -96,7 +127,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         notDesignedForCompilation();
 
         if (isGlobal) {
-            if (readNode.getName().equals("$~") || readNode.isSet(receiver.executeRubyBasicObject(frame))) {
+            if (readNode.getName().equals("$~") || readNode.isSet((RubyBasicObject) receiver.execute(frame))) {
                 return getContext().makeString("global-variable");
             } else{
                 return getContext().getCoreLibrary().getNilObject();
@@ -107,15 +138,20 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
         try {
             final Object receiverObject = receiver.execute(frame);
-            final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(receiverObject);
 
-            final ObjectLayout layout = receiverRubyObject.getObjectLayout();
-            final StorageLocation storageLocation = layout.findStorageLocation(readNode.getName());
+            if (receiverObject instanceof RubyBasicObject) {
+                final RubyBasicObject receiverRubyObject = (RubyBasicObject) receiverObject;
 
-            if (storageLocation.isSet(receiverRubyObject)) {
-                return context.makeString("instance-variable");
+                final ObjectLayout layout = receiverRubyObject.getObjectLayout();
+                final StorageLocation storageLocation = layout.findStorageLocation(readNode.getName());
+
+                if (storageLocation.isSet(receiverRubyObject)) {
+                    return context.makeString("instance-variable");
+                } else {
+                    return getContext().getCoreLibrary().getNilObject();
+                }
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return false;
             }
         } catch (Exception e) {
             return getContext().getCoreLibrary().getNilObject();

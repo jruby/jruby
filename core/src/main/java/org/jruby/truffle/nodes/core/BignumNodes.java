@@ -145,7 +145,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mul(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.multiply(a, b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.multiply(a, b));
         }
 
     }
@@ -215,7 +215,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object div(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.divide(a, b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.divide(a, b));
         }
 
     }
@@ -233,17 +233,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mod(BigInteger a, int b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.mod(a, BigInteger.valueOf(b)));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(BigInteger a, long b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.mod(a, BigInteger.valueOf(b)));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.mod(a, BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.mod(a, b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.mod(a, b));
         }
 
     }

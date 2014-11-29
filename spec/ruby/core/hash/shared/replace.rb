@@ -37,13 +37,13 @@ describe :hash_replace, :shared => true do
     hash_a.default.should == hash_b.default
   end
 
-  it "raises a RuntimeError if called on a frozen instance that is modified" do
+  it "raises a RuntimeError if called on a frozen instance that would not be modified" do
     lambda do
       HashSpecs.frozen_hash.send(@method, HashSpecs.frozen_hash)
     end.should raise_error(RuntimeError)
   end
 
-  it "raises a RuntimeError if called on a frozen instance that would not be modified" do
+  it "raises a RuntimeError if called on a frozen instance that is modified" do
     lambda do
       HashSpecs.frozen_hash.send(@method, HashSpecs.empty_frozen_hash)
     end.should raise_error(RuntimeError)

@@ -16,8 +16,6 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.UnboxingNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -103,13 +101,6 @@ public abstract class BasicObjectNodes {
         // The @CreateCast is not applied when using this, so the caller needs to unbox itself.
         protected abstract boolean executeEqualWithUnboxed(VirtualFrame frame, Object a, Object b);
 
-        @CreateCast("arguments") public RubyNode[] createCast(RubyNode[] arguments) {
-            return new RubyNode[]{
-                UnboxingNodeFactory.create(getContext(), getSourceSection(), arguments[0]),
-                UnboxingNodeFactory.create(getContext(), getSourceSection(), arguments[1])
-            };
-        }
-
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
@@ -117,25 +108,21 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(BigInteger a, BigInteger b) { return a == b; } // On purpose, Bignum are not #equal?
 
         @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            assert !(a instanceof Unboxable) && !(b instanceof Unboxable);
             return a == b;
         }
 
         @Specialization(guards = {"isNotRubyBasicObject(arguments[0])", "isNotRubyBasicObject(arguments[1])", "notSameClass"})
         public boolean equal(Object a, Object b) {
-            assert !(a instanceof Unboxable) && !(b instanceof Unboxable);
             return false;
         }
 
         @Specialization(guards = "isNotRubyBasicObject(arguments[0])")
         public boolean equal(Object a, RubyBasicObject b) {
-            assert !(b instanceof Unboxable);
             return false;
         }
 
         @Specialization(guards = "isNotRubyBasicObject(arguments[1])")
         public boolean equal(RubyBasicObject a, Object b) {
-            assert !(a instanceof Unboxable);
             return false;
         }
 
@@ -183,28 +170,17 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyString string, UndefinedPlaceholder block) {
+        public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             return getContext().eval(string.toString(), receiver, this);
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, UndefinedPlaceholder string, RubyProc block) {
+        public Object instanceEval(VirtualFrame frame, Object receiver, UndefinedPlaceholder string, RubyProc block) {
             notDesignedForCompilation();
-
-            if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias", this));
-            }
 
             return yield.dispatchWithModifiedSelf(frame, block, receiver);
-        }
-
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object self, UndefinedPlaceholder string, RubyProc block) {
-            notDesignedForCompilation();
-
-            return instanceEval(frame, getContext().getCoreLibrary().box(self), string, block);
         }
 
     }

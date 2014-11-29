@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -50,43 +51,43 @@ public abstract class SplatCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyArray doArray(RubyArray array) {
-        return array;
+    public RubyArray splat(RubyNilClass nil) {
+        switch (nilBehavior) {
+            case EMPTY_ARRAY:
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            case ARRAY_WITH_NIL:
+                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
+
+            default: {
+                CompilerAsserts.neverPartOfCompilation();
+                throw new UnsupportedOperationException();
+            }
+        }
     }
 
     @Specialization
-    public RubyArray doObject(VirtualFrame frame, Object object) {
+    public RubyArray splat(RubyArray array) {
+        return array;
+    }
+
+    @Specialization(guards = {"!isNil", "!isArray"})
+    public RubyArray splat(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
-        if (object == getContext().getCoreLibrary().getNilObject()) {
-            switch (nilBehavior) {
-                case EMPTY_ARRAY:
-                    return new RubyArray(getContext().getCoreLibrary().getArrayClass());
-
-                case ARRAY_WITH_NIL:
-                    return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
-
-                default: {
-                    CompilerAsserts.neverPartOfCompilation();
-                    throw new UnsupportedOperationException();
-                }
-            }
-        } else if (object instanceof RubyArray) {
-            return (RubyArray) object;
-        } else {
+        if (toA.doesRespondTo(frame, "to_a", object)) {
             final Object array = toA.call(frame, object, "to_a", null);
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
             }
 
+            // TODO(CS): surely this is an error? to_a returned something that was not an array
+
+            return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+        } else {
             return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
         }
-    }
-
-    @Override
-    public void executeVoid(VirtualFrame frame) {
-        getChild().executeVoid(frame);
     }
 
 }

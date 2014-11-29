@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -26,7 +27,9 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @CoreClass(name = "String")
@@ -189,15 +192,15 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization(rewriteOn=UnexpectedResultException.class)
+        @Specialization(rewriteOn = UnexpectedResultException.class)
         public RubyString getIndexInBounds(RubyString string, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
             final int normalisedIndex = string.normaliseIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex + 1 >= bytes.length()) {
+            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
+                return getContext().makeString(bytes.charAt(normalisedIndex));
             }
         }
 
@@ -206,27 +209,27 @@ public abstract class StringNodes {
             int normalisedIndex = string.normaliseIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex + 1 >= bytes.length()) {
+            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) bytes.subSequence(index, index + 1));
+                return getContext().makeString(bytes.charAt(normalisedIndex));
             }
         }
 
         @Specialization
-        public RubyString getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
+            final int begin = string.normaliseIndex(range.getBegin());
 
-            if (range.doesExcludeEnd()) {
-                final int begin = string.normaliseIndex(range.getBegin());
-                final int exclusiveEnd = string.normaliseExclusiveIndex(range.getExclusiveEnd());
-                return getContext().makeString(javaString.substring(begin, exclusiveEnd));
+            if (begin < 0 || begin >= javaString.length()) {
+                return getContext().getCoreLibrary().getNilObject();
             } else {
-                final int begin = string.normaliseIndex(range.getBegin());
-                final int inclusiveEnd = string.normaliseIndex(range.getInclusiveEnd());
-                return getContext().makeString(javaString.substring(begin, inclusiveEnd + 1));
+                final int end = string.normaliseIndex(range.getEnd());
+                final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
+
+                return getContext().makeString(javaString.substring(begin, excludingEnd));
             }
         }
 
@@ -235,7 +238,7 @@ public abstract class StringNodes {
             // TODO(CS): not sure if this is right - encoding
             // TODO(CS): why does subSequence return CharSequence?
             final int begin = string.normaliseIndex(start);
-            final int exclusiveEnd = string.normaliseExclusiveIndex(start + length);
+            final int exclusiveEnd = string.normaliseIndex(start + length);
             return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(begin, exclusiveEnd - begin));
         }
 
@@ -278,7 +281,7 @@ public abstract class StringNodes {
             final int[] store = new int[bytes.length];
 
             for (int n = 0; n < store.length; n++) {
-                store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                store[n] = CoreLibrary.toUnsignedInt(bytes[n]);
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
@@ -363,6 +366,45 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "each_line")
+    public abstract static class EachLineNode extends YieldingCoreMethodNode {
+
+        public EachLineNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EachLineNode(EachLineNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray eachLine(RubyString string) {
+            notDesignedForCompilation();
+
+            final List<Object> lines = new ArrayList<>();
+
+            String str = string.toString();
+            int start = 0;
+
+            while (start < str.length()) {
+                int end = str.indexOf('\n', start);
+
+                if (end == -1) {
+                    lines.add(getContext().makeString(str.substring(start)));
+                    break;
+                }
+
+                String line = str.substring(start, end+1);
+                start = end+1;
+
+                lines.add(getContext().makeString(line));
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
+        }
+
+    }
+
     @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodNode {
 
@@ -444,7 +486,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "gsub", required = 2)
-    public abstract static class GsubNode extends CoreMethodNode {
+    public abstract static class GsubNode extends RegexpNodes.EscapingNode {
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -455,10 +497,10 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString gsub(RubyString string, RubyString regexpString, RubyString replacement) {
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).toString(), Option.DEFAULT);
             return gsub(string, regexp, replacement);
         }
 
@@ -638,6 +680,32 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "rstrip")
+    public abstract static class RStripNode extends CoreMethodNode {
+
+        public RStripNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RStripNode(RStripNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString rstrip(RubyString string) {
+            notDesignedForCompilation();
+
+            String str = string.toString();
+            int last = str.length()-1;
+            while (last >= 0 && " \r\n\t".indexOf(str.charAt(last)) != -1) {
+                last--;
+            }
+
+            return getContext().makeString(str.substring(0, last+1));
+        }
+
+    }
+
     @CoreMethod(names = "scan", required = 1)
     public abstract static class ScanNode extends CoreMethodNode {
 
@@ -752,6 +820,33 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             return string.toString().startsWith(b.toString());
+        }
+    }
+
+    @CoreMethod(names = "sub", required = 2)
+    public abstract static class SubNode extends RegexpNodes.EscapingNode {
+
+        public SubNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SubNode(SubNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString sub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
+            notDesignedForCompilation();
+
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).toString(), Option.DEFAULT);
+            return sub(string, regexp, replacement);
+        }
+
+        @Specialization
+        public RubyString sub(RubyString string, RubyRegexp regexp, RubyString replacement) {
+            notDesignedForCompilation();
+
+            return regexp.sub(string.toString(), replacement.toString());
         }
     }
 

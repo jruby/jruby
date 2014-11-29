@@ -635,13 +635,15 @@ public abstract class ArrayNodes {
         public Object getObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
-            int normalisedIndex = array.normaliseIndex(range.getBegin());
-            int length = array.normaliseExclusiveIndex(range.getExclusiveEnd()) - normalisedIndex;
+            final int normalisedIndex = array.normaliseIndex(range.getBegin());
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, normalisedIndex + length), length);
+                final int end = array.normaliseIndex(range.getEnd());
+                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
             }
         }
 
@@ -2069,7 +2071,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "join", required = 1)
+    @CoreMethod(names = "join", optional = 1)
     public abstract static class JoinNode extends ArrayCoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -2078,6 +2080,20 @@ public abstract class ArrayNodes {
 
         public JoinNode(JoinNode prev) {
             super(prev);
+        }
+
+        @Specialization
+        public RubyString join(RubyArray array, UndefinedPlaceholder unused) {
+            Object separator = getContext().getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$,");
+            if (separator == getContext().getCoreLibrary().getNilObject()) {
+                separator = getContext().makeString("");
+            }
+
+            if (separator instanceof RubyString) {
+                return join(array, (RubyString) separator);
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
 
         @Specialization

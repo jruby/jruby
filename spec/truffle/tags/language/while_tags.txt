@@ -1,0 +1,2 @@
+fails:The while expression stops running body if interrupted by break in a parenthesized attribute op-assign-or value
+fails:The while expression stops running body if interrupted by break in a begin ... end attribute op-assign-or value

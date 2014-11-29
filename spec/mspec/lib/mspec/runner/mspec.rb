@@ -354,6 +354,6 @@ module MSpec
   # Removes the tag file associated with a spec file.
   def self.delete_tags
     file = tags_file
-    File.delete file if File.exists? file
+    File.delete file if File.exist? file
   end
 end

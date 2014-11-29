@@ -114,7 +114,7 @@ public class RubyString extends RubyObject {
         try {
             final int value = Integer.parseInt(toString());
 
-            if (value >= RubyFixnum.MIN_VALUE && value <= RubyFixnum.MAX_VALUE) {
+            if (value >= CoreLibrary.FIXNUM_MIN_VALUE && value <= CoreLibrary.FIXNUM_MAX_VALUE) {
                 return value;
             } else {
                 return BigInteger.valueOf(value);
@@ -157,8 +157,8 @@ public class RubyString extends RubyObject {
         return RubyArray.normaliseIndex(bytes.length(), index);
     }
 
-    public int normaliseExclusiveIndex(int index) {
-        return RubyArray.normaliseExclusiveIndex(bytes.length(), index);
+    public int clampExclusiveIndex(int index) {
+        return RubyArray.clampExclusiveIndex(bytes.length(), index);
     }
 
 }

@@ -38,6 +38,12 @@ import java.util.Map;
 
 public class CoreLibrary {
 
+    public static final long FIXNUM_MIN_VALUE = Long.MIN_VALUE;
+    public static final long FIXNUM_MAX_VALUE = Long.MAX_VALUE;
+
+    public static final BigInteger MIN_VALUE_BIG = BigInteger.valueOf(FIXNUM_MIN_VALUE);
+    public static final BigInteger MAX_VALUE_BIG = BigInteger.valueOf(FIXNUM_MAX_VALUE);
+
     private final RubyContext context;
 
     @CompilerDirectives.CompilationFinal private RubyClass argumentErrorClass;
@@ -102,9 +108,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
     @CompilerDirectives.CompilationFinal private RubyBasicObject mainObject;
-    @CompilerDirectives.CompilationFinal private RubyFalseClass falseObject;
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
-    @CompilerDirectives.CompilationFinal private RubyTrueClass trueObject;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
     private ArrayNodes.MinBlock arrayMinBlock;
@@ -114,6 +118,39 @@ public class CoreLibrary {
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
+    }
+
+    /**
+     * Convert a value to a {@code Float}, without doing any lookup.
+     */
+    public static double toDouble(Object value) {
+        RubyNode.notDesignedForCompilation();
+
+        assert value != null;
+
+        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof BigInteger) {
+            return ((BigInteger) value).doubleValue();
+        }
+
+        if (value instanceof Double) {
+            return (double) value;
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException();
+    }
+
+    public static boolean fitsIntoInteger(long value) {
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
 
     public void initialize() {
@@ -236,8 +273,6 @@ public class CoreLibrary {
 
         mainObject = new RubyObject(objectClass);
         nilObject = new RubyNilClass(nilClass);
-        trueObject = new RubyTrueClass(trueClass);
-        falseObject = new RubyFalseClass(falseClass);
 
         // Create the globals object
 
@@ -247,6 +282,7 @@ public class CoreLibrary {
         globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass));
         globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
         globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
+        globalVariablesObject.setInstanceVariable("$,", nilObject);
 
         initializeEncodingConstants();
 
@@ -332,60 +368,63 @@ public class CoreLibrary {
 
     }
 
-    public RubyBasicObject box(Object object) {
+    public RubyClass getMetaClass(Object object) {
         RubyNode.notDesignedForCompilation();
 
-        // TODO(cs): pool common object instances like small Fixnums?
+        if (object instanceof RubyBasicObject) {
+            return ((RubyBasicObject) object).getMetaClass();
+        } else if (object instanceof Boolean) {
+            if ((boolean) object) {
+                return trueClass;
+            } else {
+                return falseClass;
+            }
+        } else if (object instanceof Integer) {
+            return fixnumClass;
+        } else if (object instanceof Long) {
+            return fixnumClass;
+        } else if (object instanceof BigInteger) {
+            return bignumClass;
+        } else if (object instanceof Double) {
+            return floatClass;
+        } else {
+            throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
+        }
+    }
+
+    public RubyClass getLogicalClass(Object object) {
+        RubyNode.notDesignedForCompilation();
 
         if (object instanceof RubyBasicObject) {
-            return (RubyBasicObject) object;
-        }
-
-        if (object instanceof Boolean) {
+            return ((RubyBasicObject) object).getLogicalClass();
+        } else if (object instanceof Boolean) {
             if ((boolean) object) {
-                return trueObject;
+                return trueClass;
             } else {
-                return falseObject;
+                return falseClass;
             }
+        } else if (object instanceof Integer) {
+            return fixnumClass;
+        } else if (object instanceof Long) {
+            return fixnumClass;
+        } else if (object instanceof BigInteger) {
+            return bignumClass;
+        } else if (object instanceof Double) {
+            return floatClass;
+        } else {
+            throw new UnsupportedOperationException(String.format("Don't know how to get the logical class for %s", object.getClass()));
         }
-
-        if (object instanceof Integer) {
-            return new RubyFixnum.IntegerFixnum(fixnumClass, (int) object);
-        }
-
-        if (object instanceof Long) {
-            return new RubyFixnum.LongFixnum(fixnumClass, (long) object);
-        }
-
-        if (object instanceof BigInteger) {
-            return new RubyBignum(bignumClass, (BigInteger) object);
-        }
-
-        if (object instanceof Double) {
-            return new RubyFloat(floatClass, (double) object);
-        }
-
-        if (object instanceof RubyNilClass) {
-            return nilObject;
-        }
-
-        if (object instanceof String) {
-            return context.makeString((String) object);
-        }
-
-        CompilerDirectives.transferToInterpreter();
-
-        throw new UnsupportedOperationException("Don't know how to box " + object.getClass().getName());
     }
 
     /**
      * Convert a value to a boolean according to Ruby rules. Never fails.
      */
     public boolean isTruthy(Object value) {
+        // TODO(CS): mark are neverPartOfCompilation
         if (value instanceof Boolean) {
             return (boolean) value;
         } else {
-            return value != nilObject && value != falseObject;
+            return value != nilObject;
         }
     }
 
@@ -439,6 +478,11 @@ public class CoreLibrary {
         return typeError("can't define singleton", currentNode);
     }
 
+    public RubyException typeErrorNoClassToMakeAlias(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError("no class to make alias", currentNode);
+    }
+
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
@@ -456,7 +500,7 @@ public class CoreLibrary {
 
     public RubyException typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeErrorCantConvertInto(box(from).getLogicalClass().getName(), to.getName(), currentNode);
+        return typeErrorCantConvertInto(getLogicalClass(from).getName(), to.getName(), currentNode);
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {
@@ -691,14 +735,6 @@ public class CoreLibrary {
         return mainObject;
     }
 
-    public RubyTrueClass getTrueObject() {
-        return trueObject;
-    }
-
-    public RubyFalseClass getFalseObject() {
-        return falseObject;
-    }
-
     public RubyNilClass getNilObject() {
         return nilObject;
     }
@@ -746,4 +782,106 @@ public class CoreLibrary {
     public RubyClass getEncodingConverterClass() {
         return encodingConverterClass;
     }
+
+    public static int toInt(Object value) {
+        RubyNode.notDesignedForCompilation();
+
+        assert value != null;
+
+        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof Long && fitsIntoInteger((long) value)) {
+            return (int) (long) value;
+        }
+
+        if (value instanceof BigInteger) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof Double) {
+            return (int) (double) value;
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException(value.getClass().toString());
+    }
+
+    public static long toLong(Object value) {
+        RubyNode.notDesignedForCompilation();
+
+        // TODO(CS): stop using this in compilation - use a specialising node instead
+
+        assert value != null;
+
+        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof Long) {
+            return (long) value;
+        }
+
+        if (value instanceof BigInteger) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof Double) {
+            return (long) (double) value;
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException(value.getClass().toString());
+    }
+
+    public static Object fixnumOrBignum(double value) {
+        RubyNode.notDesignedForCompilation();
+
+        if (value >= FIXNUM_MIN_VALUE && value <= FIXNUM_MAX_VALUE) {
+            final long longValue = (long) value;
+
+            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
+                return (int) longValue;
+            } else {
+                return value;
+            }
+        } else {
+            return value;
+        }
+    }
+
+    public static Object fixnumOrBignum(BigInteger value) {
+        RubyNode.notDesignedForCompilation();
+
+        assert value != null;
+
+        if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
+            final long longValue = value.longValue();
+
+            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
+                return (int) longValue;
+            } else {
+                return value;
+            }
+        } else {
+            return value;
+        }
+    }
+
+    public static int toUnsignedInt(byte x) {
+        return ((int) x) & 0xff;
+    }
+
 }

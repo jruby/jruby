@@ -41,4 +41,8 @@ public class ComplexNode extends Node {
     public Node getNumber() {
         return y;
     }
+
+    public void setNumber(Node y) {
+        this.y = y;
+    }
 }

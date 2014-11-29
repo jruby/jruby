@@ -18,13 +18,13 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class NilClassNodes {
 
     @CoreMethod(names = "inspect", needsSelf = false)
-    public abstract static class InpsectNode extends CoreMethodNode {
+    public abstract static class InspectNode extends CoreMethodNode {
 
-        public InpsectNode(RubyContext context, SourceSection sourceSection) {
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InpsectNode(InpsectNode prev) {
+        public InspectNode(InspectNode prev) {
             super(prev);
         }
 
@@ -102,4 +102,47 @@ public abstract class NilClassNodes {
         }
     }
 
+    @CoreMethod(names = "&", needsSelf = false, required = 1)
+    public abstract static class AndNode extends CoreMethodNode {
+
+        public AndNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AndNode(AndNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean and(Object other) {
+            return false;
+        }
+    }
+
+    @CoreMethod(names = { "|", "^" }, needsSelf = false, required = 1)
+    public abstract static class OrXorNode extends CoreMethodNode {
+
+        public OrXorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OrXorNode(OrXorNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean orXor(boolean other) {
+            return other;
+        }
+
+        @Specialization
+        public boolean orXor(RubyNilClass other) {
+            return false;
+        }
+
+        @Specialization(guards = "!isNil")
+        public boolean orXor(RubyBasicObject other) {
+            return true;
+        }
+    }
 }

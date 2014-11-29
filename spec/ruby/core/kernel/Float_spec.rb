@@ -13,6 +13,10 @@ describe :kernel_float, :shared => true do
     @object.send(:Float, 1).should == 1.0
   end
 
+  it "returns a Float for Complex with only a real part" do
+    @object.send(:Float, Complex(1)).should == 1.0
+  end
+
   it "returns a Float for Bignums" do
     @object.send(:Float, 1000000000000).should == 1000000000000.0
   end
@@ -232,6 +236,11 @@ describe :kernel_float, :shared => true do
   it "raises a TypeError if #to_f returns an Integer" do
     (obj = mock('123')).should_receive(:to_f).once.and_return(123)
     lambda { @object.send(:Float, obj) }.should raise_error(TypeError)
+  end
+
+  it "raises a RangeError when passed a Complex argument" do
+    c = Complex(2, 3)
+    lambda { @object.send(:Float, c) }.should raise_error(RangeError)
   end
 end
 

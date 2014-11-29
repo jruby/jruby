@@ -17,7 +17,6 @@ env:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
   matrix:
     - PHASE='-Ptest'
-    - PHASE='-Pjruby_complete_jar_jruby'
     - PHASE='-Prake -Dtask=test:jruby'
     - PHASE='-Prake -Dtask=test:mri'
     - PHASE='-Prake -Dtask=test:slow_suites'
@@ -51,6 +50,8 @@ matrix:
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
       jdk: oraclejdk7
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+      jdk: openjdk7
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
@@ -58,11 +59,7 @@ matrix:
   allow_failures:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
-    - env: PHASE='-Pjruby_complete_jar_extended'
     - env: PHASE='-Prake -Dtask=spec:profiler'
-    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-    - env: PHASE='-Pj2ee'
 
 branches:
   only:
@@ -73,7 +70,7 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn -q -Pbootstrap clean package ; mvn install $PHASE -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
+script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn -q -Pbootstrap clean package ; mvn install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
 install: /bin/true
 notifications:
   irc:

@@ -43,14 +43,6 @@ public abstract class RubyRange extends RubyObject {
             return end;
         }
 
-        public final int getInclusiveEnd() {
-            if (excludeEnd) {
-                return end - 1;
-            } else {
-                return end;
-            }
-        }
-
         public final int getExclusiveEnd() {
             if (excludeEnd) {
                 return end;
@@ -80,26 +72,12 @@ public abstract class RubyRange extends RubyObject {
             return end;
         }
 
-        public final long getInclusiveEnd() {
-            if (excludeEnd) {
-                return end - 1;
-            } else {
-                return end;
-            }
-        }
-
         public final long getExclusiveEnd() {
             if (excludeEnd) {
                 return end;
             } else {
                 return end + 1;
             }
-        }
-
-        @Override
-        public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-            getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
-            getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
         }
 
     }
@@ -125,8 +103,13 @@ public abstract class RubyRange extends RubyObject {
 
         @Override
         public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-            getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
-            getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
+            if (begin instanceof RubyBasicObject) {
+                ((RubyBasicObject) begin).visitObjectGraph(visitor);
+            }
+
+            if (end instanceof RubyBasicObject) {
+                ((RubyBasicObject) end).visitObjectGraph(visitor);
+            }
         }
 
     }

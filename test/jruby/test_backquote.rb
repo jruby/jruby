@@ -27,7 +27,7 @@ class TestBackquote < Test::Unit::TestCase
 
   #JRUBY-2251
   def test_empty_backquotes
-    if (!WINDOWS)
+    if (!WINDOWS and IS_COMMAND_LINE_EXECUTION)
       assert_raise(Errno::ENOENT) {``}
       assert_raise(Errno::ENOENT) {`   `}
       assert_raise(Errno::ENOENT) {`\n`}

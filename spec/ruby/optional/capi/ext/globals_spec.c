@@ -67,6 +67,30 @@ static VALUE global_spec_rb_set_kcode(VALUE self, VALUE code) {
 }
 #endif
 
+#ifdef HAVE_RB_STDIN
+static VALUE global_spec_rb_stdin(VALUE self) {
+  return rb_stdin;
+}
+#endif
+
+#ifdef HAVE_RB_STDOUT
+static VALUE global_spec_rb_stdout(VALUE self) {
+  return rb_stdout;
+}
+#endif
+
+#ifdef HAVE_RB_STDERR
+static VALUE global_spec_rb_stderr(VALUE self) {
+  return rb_stderr;
+}
+#endif
+
+#ifdef HAVE_RB_DEFOUT
+static VALUE global_spec_rb_defout(VALUE self) {
+  return rb_defout;
+}
+#endif
+
 #ifdef HAVE_RB_RS
 static VALUE global_spec_rb_rs(VALUE self) {
   return rb_rs;
@@ -135,6 +159,22 @@ void Init_globals_spec() {
 
 #ifdef HAVE_RB_SET_KCODE
   rb_define_method(cls, "rb_set_kcode", global_spec_rb_set_kcode, 1);
+#endif
+
+#ifdef HAVE_RB_STDIN
+  rb_define_method(cls, "rb_stdin", global_spec_rb_stdin, 0);
+#endif
+
+#ifdef HAVE_RB_STDOUT
+  rb_define_method(cls, "rb_stdout", global_spec_rb_stdout, 0);
+#endif
+
+#ifdef HAVE_RB_STDERR
+  rb_define_method(cls, "rb_stderr", global_spec_rb_stderr, 0);
+#endif
+
+#ifdef HAVE_RB_DEFOUT
+  rb_define_method(cls, "rb_defout", global_spec_rb_defout, 0);
 #endif
 
 #ifdef HAVE_RB_RS

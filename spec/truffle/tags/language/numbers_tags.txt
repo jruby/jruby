@@ -1,0 +1,10 @@
+fails:A number literal can be an integer literal with trailing 'r' to represent a Rational
+fails:A number literal can be a decimal literal with trailing 'r' to represent a Rational
+fails:A number literal can be a hexadecimal literal with trailing 'r' to represent a Rational
+fails:A number literal can be an octal literal with trailing 'r' to represent a Rational
+fails:A number literal can be a binary literal with trailing 'r' to represent a Rational
+fails:A number literal can be an integer literal with trailing 'i' to represent a Complex
+fails:A number literal can be a decimal literal with trailing 'i' to represent a Complex
+fails:A number literal can be a hexadecimal literal with trailing 'i' to represent a Complex
+fails:A number literal can be a octal literal with trailing 'i' to represent a Complex
+fails:A number literal can be a binary literal with trailing 'i' to represent a Complex

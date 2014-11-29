@@ -250,7 +250,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object mul(int a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), b));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -575,7 +575,7 @@ public abstract class FixnumNodes {
 
         public Object mod(BigInteger a, BigInteger b) {
             notDesignedForCompilation();
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.mod(a, b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.mod(a, b));
         }
     }
 
@@ -990,7 +990,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object bitAnd(int a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.and(BigInteger.valueOf(a), b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.and(BigInteger.valueOf(a), b));
         }
 
         @Specialization
@@ -1005,7 +1005,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object bitAnd(long a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.and(BigInteger.valueOf(a), b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.and(BigInteger.valueOf(a), b));
         }
     }
 
@@ -1032,7 +1032,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object bitOr(int a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.or(BigInteger.valueOf(a), b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.or(BigInteger.valueOf(a), b));
         }
 
         @Specialization
@@ -1047,7 +1047,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object bitOr(long a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.or(BigInteger.valueOf(a), b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.or(BigInteger.valueOf(a), b));
         }
     }
 
@@ -1074,7 +1074,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object bitXOr(int a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.xor(BigInteger.valueOf(a), b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.xor(BigInteger.valueOf(a), b));
         }
 
         @Specialization
@@ -1089,7 +1089,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object bitXOr(long a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(RuntimeBigInteger.xor(BigInteger.valueOf(a), b));
+            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.xor(BigInteger.valueOf(a), b));
         }
     }
 

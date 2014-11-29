@@ -115,6 +115,7 @@
     <profile>
       <id>jruby_complete_jar_extended</id>
       <modules>
+        <module>jruby-stdlib</module>
         <module>jruby-complete</module>
       </modules>
     </profile>

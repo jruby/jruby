@@ -16,15 +16,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.RubyMath;
-import org.jruby.truffle.nodes.cast.BoxingNode;
-import org.jruby.truffle.nodes.cast.BoxingNodeFactory;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
 @CoreClass(name = "Math")
@@ -366,18 +364,18 @@ public abstract class MathNodes {
     @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
     public abstract static class FrExpNode extends CoreMethodNode {
 
-        @Child protected BoxingNode box;
+        @Child protected KernelNodes.IsANode isANode;
         @Child protected DispatchHeadNode floatNode;
 
         public FrExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = BoxingNodeFactory.create(context, sourceSection, null);
+            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
         public FrExpNode(FrExpNode prev) {
             super(prev);
-            box = prev.box;
+            isANode = prev.isANode;
             floatNode = prev.floatNode;
         }
 
@@ -423,14 +421,12 @@ public abstract class MathNodes {
 
         @Fallback
         public RubyArray frexp(VirtualFrame frame, Object a) {
-            final RubyBasicObject boxed = box.box(a);
-
-            if (boxed.isNumeric()) {
+            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
-                    return frexp(floatNode.callFloat(frame, boxed, "to_f", null));
+                    return frexp(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getLogicalClass().getName(),
+                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -438,7 +434,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getLogicalClass().getName(),
+                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -524,20 +520,20 @@ public abstract class MathNodes {
     @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
     public abstract static class LdexpNode extends CoreMethodNode {
 
-        @Child protected BoxingNode box;
+        @Child protected KernelNodes.IsANode isANode;
         @Child protected DispatchHeadNode floatANode;
         @Child protected DispatchHeadNode integerBNode;
 
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = BoxingNodeFactory.create(context, sourceSection, null);
+            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatANode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
             integerBNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
         protected LdexpNode(LdexpNode prev) {
             super(prev);
-            box = prev.box;
+            isANode = prev.isANode;
             floatANode = prev.floatANode;
             integerBNode = prev.integerBNode;
         }
@@ -609,17 +605,14 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            final RubyBasicObject aBoxed = box.box(a);
-            final RubyBasicObject bBoxed = box.box(b);
-
-            if (aBoxed.isNumeric()) {
+            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return function(
-                            floatANode.callFloat(frame, aBoxed, "to_f", null),
-                            integerBNode.callLongFixnum(frame, bBoxed, "to_int", null));
+                            floatANode.callFloat(frame, a, "to_f", null),
+                            integerBNode.callLongFixnum(frame, b, "to_int", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                           aBoxed.getLogicalClass().getName(),
+                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
                             getContext().getCoreLibrary().getIntegerClass().getName(),
                             this));
                 }
@@ -627,7 +620,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        aBoxed.getLogicalClass().getName(),
+                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -640,18 +633,18 @@ public abstract class MathNodes {
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodNode {
 
-        @Child protected BoxingNode box;
+        @Child protected KernelNodes.IsANode isANode;
         @Child protected DispatchHeadNode floatNode;
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = BoxingNodeFactory.create(context, sourceSection, null);
+            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
         public LGammaNode(LGammaNode prev) {
             super(prev);
-            box = prev.box;
+            isANode = prev.isANode;
             floatNode = prev.floatNode;
         }
 
@@ -686,14 +679,12 @@ public abstract class MathNodes {
 
         @Fallback
         public RubyArray lgamma(VirtualFrame frame, Object a) {
-            final RubyBasicObject boxed = box.box(a);
-
-            if (boxed.isNumeric()) {
+            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
-                    return lgamma(floatNode.callFloat(frame, boxed, "to_f", null));
+                    return lgamma(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getLogicalClass().getName(),
+                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -701,7 +692,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getLogicalClass().getName(),
+                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -742,15 +733,13 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(VirtualFrame frame, Object a, UndefinedPlaceholder b) {
-            final RubyBasicObject boxed = box.box(a);
-
-            if (boxed.isNumeric()) {
+            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(
-                            floatANode.callFloat(frame, boxed, "to_f", null));
+                            floatANode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getLogicalClass().getName(),
+                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -758,7 +747,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getLogicalClass().getName(),
+                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -925,18 +914,18 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleMonadicMathFunction extends CoreMethodNode {
 
-        @Child protected BoxingNode box;
+        @Child protected KernelNodes.IsANode isANode;
         @Child protected DispatchHeadNode floatNode;
 
         protected SimpleMonadicMathFunction(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = BoxingNodeFactory.create(context, sourceSection, null);
+            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
         protected SimpleMonadicMathFunction(SimpleMonadicMathFunction prev) {
             super(prev);
-            box = prev.box;
+            isANode = prev.isANode;
             floatNode = prev.floatNode;
         }
 
@@ -968,14 +957,12 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a) {
-            final RubyBasicObject boxed = box.box(a);
-
-            if (boxed.isNumeric()) {
+            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
-                    return doFunction(floatNode.callFloat(frame, boxed, "to_f", null));
+                    return doFunction(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            boxed.getLogicalClass().getName(),
+                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -983,7 +970,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        boxed.getLogicalClass().getName(),
+                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }
@@ -993,20 +980,20 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleDyadicMathFunction extends CoreMethodNode {
 
-        @Child protected BoxingNode box;
+        @Child protected KernelNodes.IsANode isANode;
         @Child protected DispatchHeadNode floatANode;
         @Child protected DispatchHeadNode floatBNode;
 
         protected SimpleDyadicMathFunction(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            box = BoxingNodeFactory.create(context, sourceSection, null);
+            isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatANode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
             floatBNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
         }
 
         protected SimpleDyadicMathFunction(SimpleDyadicMathFunction prev) {
             super(prev);
-            box = prev.box;
+            isANode = prev.isANode;
             floatANode = prev.floatANode;
             floatBNode = prev.floatBNode;
         }
@@ -1099,17 +1086,14 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            final RubyBasicObject aBoxed = box.box(a);
-            final RubyBasicObject bBoxed = box.box(b);
-
-            if (aBoxed.isNumeric() && bBoxed.isNumeric()) {
+            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeBoolean(b, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(
-                            floatANode.callFloat(frame, aBoxed, "to_f", null),
-                            floatBNode.callFloat(frame, bBoxed, "to_f", null));
+                            floatANode.callFloat(frame, a, "to_f", null),
+                            floatBNode.callFloat(frame, b, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            aBoxed.getLogicalClass().getName(),
+                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
                             getContext().getCoreLibrary().getFloatClass().getName(),
                             this));
                 }
@@ -1117,7 +1101,7 @@ public abstract class MathNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        aBoxed.getLogicalClass().getName(),
+                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
                         getContext().getCoreLibrary().getFloatClass().getName(),
                         this));
             }

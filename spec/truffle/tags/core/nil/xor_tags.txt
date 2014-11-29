@@ -1,1 +1,0 @@
-fails:NilClass#^ returns false if other is nil or false, otherwise true

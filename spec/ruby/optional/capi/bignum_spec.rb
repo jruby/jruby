@@ -95,6 +95,64 @@ describe "CApiBignumSpecs" do
     end
   end
 
+  describe "rb_big_cmp" do
+    it "compares a Bignum with a Bignum" do
+      @s.rb_big_cmp(ensure_bignum(10), ensure_bignum(20)).should == -1
+    end
+
+    it "compares a Bignum with a Fixnum" do
+      @s.rb_big_cmp(ensure_bignum(10), 5).should == 1
+    end
+  end
+
+  describe "rb_big_pack" do
+    it "packs a Bignum into a Fixnum" do
+      val = @s.rb_big_pack(ensure_bignum(2))
+
+      val.kind_of?(Fixnum).should == true
+      val.should == 2
+    end
+  end
+
+  describe "rb_dbl2big" do
+    it "returns a Fixnum for a Fixnum input value" do
+      val = @s.rb_dbl2big(2)
+
+      val.kind_of?(Fixnum).should == true
+      val.should == 2
+    end
+
+    it "returns a Fixnum for a Float input value" do
+      val = @s.rb_dbl2big(2.5)
+
+      val.kind_of?(Fixnum).should == true
+      val.should == 2
+    end
+
+    it "returns a Bignum for a large enough Float input value" do
+      input = 219238102380912830988.5 # chosen by fair dice roll
+      val   = @s.rb_dbl2big(input)
+
+      val.kind_of?(Bignum).should == true
+
+      # This value is based on the output of a simple C extension that uses
+      # rb_dbl2big() to convert the above input value to a Bignum.
+      val.should == 219238102380912836608
+    end
+
+    it "raises FloatDomainError for Infinity values" do
+      inf = 1.0 / 0
+
+      lambda { @s.rb_dbl2big(inf) }.should raise_error(FloatDomainError)
+    end
+
+    it "raises FloatDomainError for NaN values" do
+      nan = 0.0 / 0
+
+      lambda { @s.rb_dbl2big(nan) }.should raise_error(FloatDomainError)
+    end
+  end
+
   describe "RBIGNUM_SIGN" do
     it "returns C true if the Bignum has a positive sign" do
       @s.RBIGNUM_SIGN(bignum_value()).should be_true

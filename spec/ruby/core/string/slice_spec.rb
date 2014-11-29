@@ -369,16 +369,14 @@ describe "String#slice! with Regexp, index" do
     "hello there".slice!(/[aeiou](.)\1/, -2).should == nil
   end
 
-  it "calls to_int on idx" do
-    obj = mock('2')
-    def obj.to_int() 2 end
-
+  it "accepts a Float for capture index" do
     "har".slice!(/(.)(.)(.)/, 1.5).should == "h"
-    "har".slice!(/(.)(.)(.)/, obj).should == "a"
+  end
 
+  it "calls #to_int to convert an Object to capture index" do
     obj = mock('2')
-    def obj.respond_to?(name, *) name == :to_int; end
-    def obj.method_missing(name) name == :to_int ? 2: super; end
+    obj.should_receive(:to_int).at_least(1).times.and_return(2)
+
     "har".slice!(/(.)(.)(.)/, obj).should == "a"
   end
 

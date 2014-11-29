@@ -6,6 +6,9 @@ module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SEPARATOR = WINDOWS ? '\\' : '/'
+  # using the classloader setup to determine whether it runs inside 
+  # ScriptingContainer or via commandline
+  IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
   IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
   RUBY = if IS_JAR_EXECUTION
            exe = 'java'
@@ -62,7 +65,13 @@ module TestHelper
   end
 
   def jruby_with_pipe(pipe, *args)
-    with_jruby_shell_spawning { `#{pipe} | #{RUBY} #{args.join(' ')}` }
+    options = []
+    if args.last.is_a? Hash
+      options = args.last
+      args = args[0..-2]
+    end
+    options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
+    with_jruby_shell_spawning { `#{pipe} | #{interpreter(options)} #{args.join(' ')}` }
   end
 
   def with_temp_script(script, filename="test-script")

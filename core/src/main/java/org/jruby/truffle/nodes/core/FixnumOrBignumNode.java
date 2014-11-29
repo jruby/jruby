@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.core.RubyFixnum;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
 import java.math.BigInteger;
@@ -26,7 +26,7 @@ public class FixnumOrBignumNode extends Node {
     private final BranchProfile checkLongProfile = BranchProfile.create();
 
     public Object fixnumOrBignum(BigInteger value) {
-        if (value.compareTo(RubyFixnum.MIN_VALUE_BIG) >= 0 && value.compareTo(RubyFixnum.MAX_VALUE_BIG) <= 0) {
+        if (value.compareTo(CoreLibrary.MIN_VALUE_BIG) >= 0 && value.compareTo(CoreLibrary.MAX_VALUE_BIG) <= 0) {
             lowerProfile.enter();
 
             final long longValue = value.longValue();

@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
+import org.jruby.RubyClass;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -46,16 +47,14 @@ public abstract class DebugOperations {
     public static Object send(RubyContext context, Object object, String methodName, RubyProc block, Object... arguments) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyBasicObject rubyObject = context.getCoreLibrary().box(object);
-
-        final RubyMethod method = ModuleOperations.lookupMethod(rubyObject.getMetaClass(), methodName);
+        final RubyMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(object), methodName);
 
         if (method == null) {
             return null;
         }
 
         return method.getCallTarget().call(
-                RubyArguments.pack(method, method.getDeclarationFrame(), rubyObject, block, arguments));
+                RubyArguments.pack(method, method.getDeclarationFrame(), object, block, arguments));
     }
 
     public static void panic(RubyContext context, Node currentNode, String message) {

@@ -22,6 +22,36 @@ describe :io_new, :shared => true do
     @io.should be_an_instance_of(IO)
   end
 
+  it "creates an IO instance when STDOUT is closed" do
+    stdout = STDOUT
+    stdout_file = tmp("stdout.txt")
+    STDOUT = new_io stdout_file
+    STDOUT.close
+
+    begin
+      @io = IO.send(@method, @fd, "w")
+      @io.should be_an_instance_of(IO)
+    ensure
+      STDOUT = stdout
+      rm_r stdout_file
+    end
+  end
+
+  it "creates an IO instance when STDERR is closed" do
+    stderr = STDERR
+    stderr_file = tmp("stderr.txt")
+    STDERR = new_io stderr_file
+    STDERR.close
+
+    begin
+      @io = IO.send(@method, @fd, "w")
+      @io.should be_an_instance_of(IO)
+    ensure
+      STDERR = stderr
+      rm_r stderr_file
+    end
+  end
+
   it "calls #to_int on an object to convert to a Fixnum" do
     obj = mock("file descriptor")
     obj.should_receive(:to_int).and_return(@fd)

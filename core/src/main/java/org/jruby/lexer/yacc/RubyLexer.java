@@ -49,19 +49,12 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.RubyRegexp;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BignumNode;
-import org.jruby.ast.ComplexNode;
-import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NthRefNode;
-import org.jruby.ast.RationalNode;
-import org.jruby.ast.StrNode;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
+import org.jruby.parser.RubyParser;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
@@ -135,33 +128,6 @@ public class RubyLexer {
 
     public Encoding getEncoding() {
         return encoding;
-    }
-
-    private int getFloatToken(String number, int suffix) {
-        if ((suffix & SUFFIX_R) != 0) {
-            BigDecimal bd = new BigDecimal(number);
-            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
-            BigDecimal numerator = bd.multiply(denominator);
-
-            try {
-                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
-            } catch (ArithmeticException ae) {
-                // FIXME: Rational supports Bignum numerator and denominator
-                throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
-            }
-            return Tokens.tRATIONAL;
-        }
-
-        double d;
-        try {
-            d = SafeDoubleParser.parseDouble(number);
-        } catch (NumberFormatException e) {
-            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
-
-            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-        }
-        yaccValue = new FloatNode(getPosition(), d);
-        return Tokens.tFLOAT;
     }
 
     private BignumNode newBignumNode(String value, int radix) {
@@ -559,9 +525,45 @@ public class RubyLexer {
             break;
         }
     }
-    
-    private Object getInteger(String value, int radix, int suffix) {
-        Node literalValue = null;
+
+    private int considerComplex(int token, int suffix) {
+        if ((suffix & SUFFIX_I) == 0) {
+            return token;
+        } else {
+            yaccValue = newComplexNode((Node) yaccValue);
+            return RubyParser.tIMAGINARY;
+        }
+    }
+
+    private int getFloatToken(String number, int suffix) {
+        if ((suffix & SUFFIX_R) != 0) {
+            BigDecimal bd = new BigDecimal(number);
+            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
+            BigDecimal numerator = bd.multiply(denominator);
+
+            try {
+                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
+            } catch (ArithmeticException ae) {
+                // FIXME: Rational supports Bignum numerator and denominator
+                throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
+            }
+            return considerComplex(Tokens.tRATIONAL, suffix);
+        }
+
+        double d;
+        try {
+            d = SafeDoubleParser.parseDouble(number);
+        } catch (NumberFormatException e) {
+            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
+
+            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+        yaccValue = new FloatNode(getPosition(), d);
+        return considerComplex(Tokens.tFLOAT, suffix);
+    }
+
+    private int getIntegerToken(String value, int radix, int suffix) {
+        Node literalValue;
 
         if ((suffix & SUFFIX_R) != 0) {
             literalValue = newRationalNode(value, radix);
@@ -572,8 +574,9 @@ public class RubyLexer {
                 literalValue = newBignumNode(value, radix);
             }
         }
-        
-        return (suffix & SUFFIX_I) != 0 ? newComplexNode(literalValue) : literalValue;
+
+        yaccValue = literalValue;
+        return considerComplex(Tokens.tINTEGER, suffix);
     }
 
 	/**
@@ -2340,8 +2343,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
                 case 'B' : // binary
                     c = src.read();
@@ -2367,8 +2369,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
                 case 'D' : // decimal
                     c = src.read();
@@ -2394,8 +2395,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
                                 getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
                 case 'O':
                     c = src.read();
@@ -2421,8 +2421,7 @@ public class RubyLexer {
                                     getPosition(), getCurrentLine(), "Trailing '_' in number.");
                         }
 
-                        yaccValue = getInteger(tokenBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
-                        return Tokens.tINTEGER;
+                        return getIntegerToken(tokenBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
@@ -2475,8 +2474,7 @@ public class RubyLexer {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
-                                return Tokens.tINTEGER;
+                                return getIntegerToken(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                             }
                         } else {
                             tokenBuffer.append('.');
@@ -2530,8 +2528,7 @@ public class RubyLexer {
             int suffix = numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL);
             return getFloatToken(number, suffix);
         }
-        yaccValue = getInteger(number, 10, numberLiteralSuffix(SUFFIX_ALL));
-        return Tokens.tINTEGER;
+        return getIntegerToken(number, 10, numberLiteralSuffix(SUFFIX_ALL));
     }
 
     // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be

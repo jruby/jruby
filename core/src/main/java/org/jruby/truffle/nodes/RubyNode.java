@@ -115,10 +115,6 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubyClass(execute(frame));
     }
 
-    public RubyContinuation executeRubyContinuation(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyContinuation(execute(frame));
-    }
-
     public RubyException executeRubyException(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyException(execute(frame));
     }
@@ -222,7 +218,56 @@ public abstract class RubyNode extends Node {
         CompilerAsserts.neverPartOfCompilation();
     }
 
-    public static boolean isNil(RubyObject o) {
+    public static boolean isNil(Object o) {
         return o instanceof RubyNilClass;
     }
+
+    public static boolean isTrue(boolean b) {
+        return b;
+    }
+
+    public static boolean isModule(RubyBasicObject o) {
+        return o instanceof RubyModule;
+    }
+
+    public static boolean isArray(Object o) {
+        return o instanceof RubyArray;
+    }
+
+    public static boolean isFixnum(Object o) {
+        return o instanceof Integer || o instanceof Long;
+    }
+
+    public static boolean isBignum(Object o) {
+        return o instanceof BigInteger;
+    }
+
+    public static boolean isFloat(Object o) {
+        return o instanceof Double;
+    }
+
+    public static boolean isFirstFixnum(Object o) {
+        return o instanceof Integer || o instanceof Long;
+    }
+
+    public static boolean isFirstBignum(Object o) {
+        return o instanceof BigInteger;
+    }
+
+    public static boolean isFirstFloat(Object o) {
+        return o instanceof Double;
+    }
+
+    public static boolean isSecondFixnum(Object a, Object b) {
+        return b instanceof Integer || b instanceof Long;
+    }
+
+    public static boolean isSecondBignum(Object a, Object b) {
+        return b instanceof BigInteger;
+    }
+
+    public static boolean isSecondFloat(Object a, Object b) {
+        return b instanceof Double;
+    }
+
 }

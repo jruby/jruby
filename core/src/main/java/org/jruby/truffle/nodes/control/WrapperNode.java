@@ -26,7 +26,6 @@ public abstract class WrapperNode extends RubyNode {
 
     public WrapperNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        assert !(child instanceof WrapperNode);
         this.child = child;
     }
 
@@ -275,25 +274,6 @@ public abstract class WrapperNode extends RubyNode {
 
         try {
             result = child.executeRubyClass(frame);
-            leave(frame, result);
-        } catch (KillException e) {
-            throw (e);
-        } catch (Exception e) {
-            leaveExceptional(frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
-    public RubyContinuation executeRubyContinuation(VirtualFrame frame) throws UnexpectedResultException {
-        enter(frame);
-
-        final RubyContinuation result;
-
-        try {
-            result = child.executeRubyContinuation(frame);
             leave(frame, result);
         } catch (KillException e) {
             throw (e);

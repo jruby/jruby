@@ -79,6 +79,112 @@ describe "The while expression" do
     i.should == 6
   end
 
+  it "stops running body if interrupted by break in a parenthesized element op-assign-or value" do
+    c = true
+    a = []
+    while c
+      a[1] ||=
+        (
+          break if c
+          c = false
+        )
+    end.should be_nil
+  end
+
+  it "stops running body if interrupted by break in a begin ... end element op-assign-or value" do
+    c = true
+    a = []
+    while c
+      a[1] ||= begin
+        break if c
+        c = false
+      end
+    end.should be_nil
+  end
+
+  it "stops running body if interrupted by break in a parenthesized element op-assign value" do
+    c = true
+    a = [1, 2]
+    while c
+      a[1] +=
+        (
+          break if c
+          c = false
+        )
+    end.should be_nil
+    a.should == [1, 2]
+  end
+
+  it "stops running body if interrupted by break in a begin ... end element op-assign value" do
+    c = true
+    a = [1, 2]
+    while c
+      a[1] += begin
+        break if c
+        c = false
+      end
+    end.should be_nil
+    a.should == [1, 2]
+  end
+
+  it "stops running body if interrupted by break in a parenthesized attribute op-assign-or value" do
+    a = mock("attribute assignment break")
+    a.should_receive(:m).twice.and_return(nil)
+    a.should_receive(:m=)
+
+    c = d = true
+    while c
+      a.m ||=
+        (
+          break unless d
+          d = false
+        )
+    end.should be_nil
+  end
+
+  it "stops running body if interrupted by break in a begin ... end attribute op-assign-or value" do
+    a = mock("attribute assignment break")
+    a.should_receive(:m).twice.and_return(nil)
+    a.should_receive(:m=)
+
+    c = d = true
+    while c
+      a.m ||= begin
+        break unless d
+        d = false
+      end
+    end.should be_nil
+  end
+
+  it "stops running body if interrupted by break in a parenthesized attribute op-assign-or value" do
+    a = mock("attribute assignment break")
+    a.should_receive(:m).and_return(nil)
+    a.should_not_receive(:m=)
+
+    c = true
+    while c
+      a.m +=
+        (
+          break if c
+          c = false
+        )
+    end.should be_nil
+  end
+
+  it "stops running body if interrupted by break in a begin ... end attribute op-assign-or value" do
+    a = mock("attribute assignment break")
+    a.should_receive(:m).and_return(nil)
+    a.should_not_receive(:m=)
+
+    c = true
+    while c
+      a.m += begin
+        break if c
+        c = false
+      end
+    end.should be_nil
+  end
+
   it "returns value passed to break if interrupted by break" do
     while true
       break 123

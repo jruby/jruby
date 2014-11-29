@@ -184,23 +184,21 @@ public class RubyCallNode extends RubyNode {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        final RubyBasicObject receiverBasicObject = context.getCoreLibrary().box(receiverObject);
-
         // TODO(CS): this lookup should be cached
 
-        final RubyMethod method = ModuleOperations.lookupMethod(receiverBasicObject.getMetaClass(), methodName);
+        final RubyMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiverObject), methodName);
 
-        final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
+        final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (method == null) {
-            final Object r = respondToMissing.call(frame, receiverBasicObject, "respond_to_missing?", null, context.makeString(methodName));
+            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, context.makeString(methodName));
 
             if (r != Dispatch.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return getContext().getCoreLibrary().getNilObject();
             }
         } else if (method.isUndefined()) {
             return getContext().getCoreLibrary().getNilObject();
-        } else if (!ignoreVisibility && !method.isVisibleTo(this, self.getMetaClass())) {
+        } else if (!ignoreVisibility && !method.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
             return getContext().getCoreLibrary().getNilObject();
         }
 

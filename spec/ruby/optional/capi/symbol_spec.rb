@@ -21,6 +21,12 @@ describe "C-API Symbol function" do
     end
   end
 
+  describe "rb_intern_const" do
+    it "converts a string to a Symbol" do
+      @s.rb_intern_const("test").should == :test
+    end
+  end
+
   describe "rb_id2name" do
     it "converts a symbol to a C char array" do
       @s.rb_id2name(:test_symbol).should == "test_symbol"

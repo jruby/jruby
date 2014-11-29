@@ -10,45 +10,81 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
-public class AliasNode extends RubyNode {
+import java.math.BigInteger;
+
+@NodeChild(value="module", type=RubyNode.class)
+public abstract class AliasNode extends RubyNode {
 
     @Child protected RubyNode module;
     final String newName;
     final String oldName;
 
-    public AliasNode(RubyContext context, SourceSection sourceSection, RubyNode module, String newName, String oldName) {
+    public AliasNode(RubyContext context, SourceSection sourceSection, String newName, String oldName) {
         super(context, sourceSection);
-        this.module = module;
         this.newName = newName;
         this.oldName = oldName;
     }
 
-    @Override
-    public void executeVoid(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        final Object object = module.execute(frame);
-
-        if (object instanceof RubyModule) {
-            // Module definition or class_eval
-            ((RubyModule) object).alias(this, newName, oldName);
-        } else {
-            // instance_eval?
-            ((RubyBasicObject) object).getSingletonClass(this).alias(this, newName, oldName);
-        }
+    public AliasNode(AliasNode prev) {
+        super(prev);
+        newName = prev.newName;
+        oldName = prev.oldName;
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        executeVoid(frame);
-        return getContext().getCoreLibrary().getNilObject();
+    public Object noClass() {
+        CompilerDirectives.transferToInterpreter();
+        throw new RaiseException(getContext().getCoreLibrary().typeErrorNoClassToMakeAlias(this));
+    }
+
+    @Specialization
+    public Object alias(boolean value) {
+        return noClass();
+    }
+
+    @Specialization
+    public Object alias(int value) {
+        return noClass();
+    }
+
+    @Specialization
+    public Object alias(long value) {
+        return noClass();
+    }
+
+    @Specialization
+    public Object alias(double value) {
+        return noClass();
+    }
+
+    @Specialization
+    public Object alias(BigInteger value) {
+        return noClass();
+    }
+
+    @Specialization
+    public Object alias(RubyModule module) {
+        notDesignedForCompilation();
+
+        module.alias(this, newName, oldName);
+        return null;
+    }
+
+    @Specialization(guards = "!isModule")
+    public Object alias(RubyBasicObject object) {
+        notDesignedForCompilation();
+
+        object.getSingletonClass(this).alias(this, newName, oldName);
+        return null;
     }
 
 }

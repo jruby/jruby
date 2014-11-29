@@ -185,7 +185,9 @@ public class RubyBasicObject extends ObjectStorage {
             metaClass.visitObjectGraph(visitor);
 
             for (Object instanceVariable : getFields().values()) {
-                getContext().getCoreLibrary().box(instanceVariable).visitObjectGraph(visitor);
+                if (instanceVariable instanceof RubyBasicObject) {
+                    ((RubyBasicObject) instanceVariable).visitObjectGraph(visitor);
+                }
             }
 
             visitObjectGraphChildren(visitor);

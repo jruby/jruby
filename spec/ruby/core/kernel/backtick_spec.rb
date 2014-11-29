@@ -19,14 +19,13 @@ describe "Kernel#`" do
     `echo disc #{ip}`.should == "disc world\n"
   end
 
-  it "tries to convert the given argument to String using #to_str" do
-    (obj = mock('echo test')).should_receive(:to_str).and_return("echo test")
-    Kernel.`(obj).should == "test\n"
-  end
-
   it "produces a String in the default external encoding" do
     Encoding.default_external = Encoding::SHIFT_JIS
     `echo disc`.encoding.should equal(Encoding::SHIFT_JIS)
+  end
+
+  it "raises an Errno::ENOENT if the command is not executable" do
+    lambda { `nonexistent_command` }.should raise_error(Errno::ENOENT)
   end
 
   platform_is_not :windows do
@@ -68,4 +67,9 @@ end
 
 describe "Kernel.`" do
   it "needs to be reviewed for spec completeness"
+
+  it "tries to convert the given argument to String using #to_str" do
+    (obj = mock('echo test')).should_receive(:to_str).and_return("echo test")
+    Kernel.`(obj).should == "test\n"  #` fix vim syntax highlighting
+  end
 end

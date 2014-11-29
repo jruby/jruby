@@ -100,11 +100,6 @@ public abstract class PassthroughNode extends RubyNode {
     }
 
     @Override
-    public RubyContinuation executeRubyContinuation(VirtualFrame frame) throws UnexpectedResultException {
-        return child.executeRubyContinuation(frame);
-    }
-
-    @Override
     public RubyException executeRubyException(VirtualFrame frame) throws UnexpectedResultException {
         return child.executeRubyException(frame);
     }

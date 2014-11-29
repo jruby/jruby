@@ -42,16 +42,11 @@ import java.math.BigInteger;
                 RubyRange.LongFixnumRange.class, //
                 RubyRange.ObjectRange.class, //
                 RubyArray.class, //
-                RubyBignum.class, //
                 RubyBinding.class, //
                 RubyClass.class, //
-                RubyContinuation.class, //
                 RubyException.class, //
                 RubyFiber.class, //
                 RubyFile.class, //
-                RubyFixnum.IntegerFixnum.class, //
-                RubyFixnum.LongFixnum.class, //
-                RubyFloat.class, //
                 RubyHash.class, //
                 RubyMatchData.class, //
                 RubyModule.class, //
@@ -64,8 +59,6 @@ import java.math.BigInteger;
                 RubySymbol.class, //
                 RubyThread.class, //
                 RubyTime.class, //
-                RubyTrueClass.class, //
-                RubyFalseClass.class, //
                 RubiniusChannel.class, //
                 RubiniusByteArray.class, //
                 RubyEncodingConverter.class, //
@@ -74,35 +67,5 @@ import java.math.BigInteger;
                 Object[].class})
 
 public class RubyTypes {
-
-    @ImplicitCast
-    public boolean unboxBoolean(RubyTrueClass value) {
-        return true;
-    }
-
-    @ImplicitCast
-    public boolean unboxBoolean(RubyFalseClass value) {
-        return false;
-    }
-
-    @ImplicitCast
-    public int unboxIntegerFixnum(RubyFixnum.IntegerFixnum value) {
-        return value.getValue();
-    }
-
-    @ImplicitCast
-    public long unboxLongFixnum(RubyFixnum.LongFixnum value) {
-        return value.getValue();
-    }
-
-    @ImplicitCast
-    public BigInteger unboxBignum(RubyBignum value) {
-        return value.getValue();
-    }
-
-    @ImplicitCast
-    public double unboxFloat(RubyFloat value) {
-        return value.getValue();
-    }
 
 }

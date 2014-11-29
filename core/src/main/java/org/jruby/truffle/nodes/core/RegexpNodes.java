@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -20,6 +22,27 @@ import org.jruby.util.ByteList;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
+
+    public abstract static class EscapingNode extends CoreMethodNode {
+
+        @Child protected EscapeNode escapeNode;
+
+        public EscapingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EscapingNode(EscapingNode prev) {
+            super(prev);
+        }
+
+        protected RubyString escape(VirtualFrame frame, RubyString string) {
+            if (escapeNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
+            }
+            return escapeNode.executeEscape(frame, string);
+        }
+    }
 
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
@@ -103,8 +126,10 @@ public abstract class RegexpNodes {
             super(prev);
         }
 
+        public abstract RubyString executeEscape(VirtualFrame frame, RubyString pattern);
+
         @Specialization
-        public RubyString sqrt(RubyString pattern) {
+        public RubyString escape(RubyString pattern) {
             notDesignedForCompilation();
 
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());

@@ -37,3 +37,5 @@ fails:Kernel.exec (environment variables) unsets other environment variables whe
 fails:Kernel.exec with a command array uses the first element as the command name and the second as the argv[0] value
 fails:Kernel.exec with a command array coerces the argument using to_ary
 fails:Kernel.exec with a command array raises an ArgumentError if the Array does not have exactly two elements
+fails:Kernel.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+fails:Kernel#exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value

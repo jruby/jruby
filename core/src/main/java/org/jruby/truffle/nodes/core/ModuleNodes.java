@@ -64,7 +64,7 @@ public abstract class ModuleNodes {
         public boolean containsInstance(RubyModule module, Object instance) {
             notDesignedForCompilation();
 
-            return ModuleOperations.includesModule(getContext().getCoreLibrary().box(instance).getMetaClass(), module);
+            return ModuleOperations.includesModule(getContext().getCoreLibrary().getMetaClass(instance), module);
         }
     }
 
