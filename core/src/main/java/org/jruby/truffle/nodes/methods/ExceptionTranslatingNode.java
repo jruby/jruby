@@ -127,7 +127,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             DebugOperations.panic(getContext(), this, throwable.toString());
         }
 
-        return getContext().getCoreLibrary().internalError(throwable.getClass().getSimpleName(), this);
+        return getContext().getCoreLibrary().internalError(String.format("%s %s", throwable.getClass().getSimpleName(), throwable.getMessage()), this);
     }
 
 }

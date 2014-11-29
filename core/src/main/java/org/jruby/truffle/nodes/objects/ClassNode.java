@@ -9,35 +9,63 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+
+import java.math.BigInteger;
 
 /**
  * Reads the class of an object.
  */
-public class ClassNode extends RubyNode {
+@NodeChild(value="object", type=RubyNode.class)
+public abstract class ClassNode extends RubyNode {
 
-    @Child protected BoxingNode child;
-
-    public ClassNode(RubyContext context, SourceSection sourceSection, BoxingNode child) {
+    public ClassNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.child = child;
     }
 
-    @Override
-    public RubyClass executeRubyClass(VirtualFrame frame) {
-        return child.executeRubyBasicObject(frame).getLogicalClass();
+    public ClassNode(ClassNode prev) {
+        super(prev);
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeRubyClass(frame);
+    @Specialization(guards = "isTrue")
+    protected RubyClass getClassTrue(boolean value) {
+        return getContext().getCoreLibrary().getTrueClass();
+    }
+
+    @Specialization(guards = "!isTrue")
+    protected RubyClass getClassFalse(boolean value) {
+        return getContext().getCoreLibrary().getFalseClass();
+    }
+
+    @Specialization
+    protected RubyClass getClass(int value) {
+        return getContext().getCoreLibrary().getFixnumClass();
+    }
+
+    @Specialization
+    protected RubyClass getClass(long value) {
+        return getContext().getCoreLibrary().getFixnumClass();
+    }
+
+    @Specialization
+    protected RubyClass getClass(double value) {
+        return getContext().getCoreLibrary().getFloatClass();
+    }
+
+    @Specialization
+    protected RubyClass getClass(BigInteger value) {
+        return getContext().getCoreLibrary().getBignumClass();
+    }
+
+    @Specialization
+    protected RubyClass getClass(RubyBasicObject object) {
+        return object.getLogicalClass();
     }
 
 }

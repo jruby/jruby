@@ -19,7 +19,10 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
+
+import java.math.BigInteger;
 
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {
@@ -39,17 +42,42 @@ public abstract class ArrayCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyArray doArray(RubyArray array) {
+    public RubyNilClass cast(boolean value) {
+        return getContext().getCoreLibrary().getNilObject();
+    }
+
+    @Specialization
+    public RubyNilClass cast(int value) {
+        return getContext().getCoreLibrary().getNilObject();
+    }
+
+    @Specialization
+    public RubyNilClass cast(long value) {
+        return getContext().getCoreLibrary().getNilObject();
+    }
+
+    @Specialization
+    public RubyNilClass cast(double value) {
+        return getContext().getCoreLibrary().getNilObject();
+    }
+
+    @Specialization
+    public RubyNilClass cast(BigInteger value) {
+        return getContext().getCoreLibrary().getNilObject();
+    }
+
+    @Specialization
+    public RubyArray cast(RubyArray array) {
         return array;
     }
 
     @Specialization
-    public RubyNilClass doNil(RubyNilClass nil) {
+    public RubyNilClass cast(RubyNilClass nil) {
         return nil;
     }
 
-    @Specialization
-    public Object doObject(VirtualFrame frame, Object object) {
+    @Specialization(guards = {"!isNil", "!isArray"})
+    public Object cast(VirtualFrame frame, RubyBasicObject object) {
         notDesignedForCompilation();
 
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});

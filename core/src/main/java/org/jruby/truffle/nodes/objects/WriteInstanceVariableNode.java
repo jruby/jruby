@@ -14,8 +14,6 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.cast.BoxingNode;
-import org.jruby.truffle.nodes.cast.BoxingNodeFactory;
 import org.jruby.truffle.nodes.objectstorage.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -49,14 +47,14 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     };
 
-    @Child protected BoxingNode receiver;
+    @Child protected RubyNode receiver;
     @Child protected RubyNode rhs;
     @Child protected WriteHeadObjectFieldNode writeNode;
     private final boolean isGlobal;
 
     public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
         super(context, sourceSection);
-        this.receiver = BoxingNodeFactory.create(context, sourceSection, receiver);
+        this.receiver = receiver;
         this.rhs = rhs;
         writeNode = new WriteHeadObjectFieldNode(name, hook);
         this.isGlobal = isGlobal;
@@ -64,54 +62,76 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Override
     public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
+        final Object object = receiver.execute(frame);
 
-        try {
-            final int value = rhs.executeIntegerFixnum(frame);
+        if (object instanceof RubyBasicObject) {
+            try {
+                final int value = rhs.executeIntegerFixnum(frame);
 
-            writeNode.execute(object, value);
-            return value;
-        } catch (UnexpectedResultException e) {
-            writeNode.execute(object, e.getResult());
-            throw e;
+                writeNode.execute((RubyBasicObject) object, value);
+                return value;
+            } catch (UnexpectedResultException e) {
+                writeNode.execute((RubyBasicObject) object, e.getResult());
+                throw e;
+            }
+        } else {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
         }
     }
 
     @Override
     public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
+        final Object object = receiver.execute(frame);
 
-        try {
-            final long value = rhs.executeLongFixnum(frame);
+        if (object instanceof RubyBasicObject) {
+            try {
+                final long value = rhs.executeLongFixnum(frame);
 
-            writeNode.execute(object, value);
-            return value;
-        } catch (UnexpectedResultException e) {
-            writeNode.execute(object, e.getResult());
-            throw e;
+                writeNode.execute((RubyBasicObject) object, value);
+                return value;
+            } catch (UnexpectedResultException e) {
+                writeNode.execute((RubyBasicObject) object, e.getResult());
+                throw e;
+            }
+        } else {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
         }
     }
 
     @Override
     public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
-        final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
+        final Object object = receiver.execute(frame);
 
-        try {
-            final double value = rhs.executeFloat(frame);
+        if (object instanceof RubyBasicObject) {
+            try {
+                final double value = rhs.executeFloat(frame);
 
-            writeNode.execute(object, value);
-            return value;
-        } catch (UnexpectedResultException e) {
-            writeNode.execute(object, e.getResult());
-            throw e;
+                writeNode.execute((RubyBasicObject) object, value);
+                return value;
+            } catch (UnexpectedResultException e) {
+                writeNode.execute((RubyBasicObject) object, e.getResult());
+                throw e;
+            }
+        } else {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
         }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
+        final Object object = receiver.execute(frame);
         final Object value = rhs.execute(frame);
-        writeNode.execute(object, value);
+
+        if (object instanceof RubyBasicObject) {
+            writeNode.execute((RubyBasicObject) object, value);
+        } else {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+        }
+
         return value;
     }
 

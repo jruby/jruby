@@ -119,8 +119,13 @@ public class RubyHash extends RubyObject {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (Map.Entry<Object, Object> entry : slowToMap().entrySet()) {
-            getContext().getCoreLibrary().box(entry.getKey()).visitObjectGraph(visitor);
-            getContext().getCoreLibrary().box(entry.getValue()).visitObjectGraph(visitor);
+            if (entry.getKey() instanceof RubyBasicObject) {
+                ((RubyBasicObject) entry.getKey()).visitObjectGraph(visitor);
+            }
+
+            if (entry.getValue() instanceof RubyBasicObject) {
+                ((RubyBasicObject) entry.getValue()).visitObjectGraph(visitor);
+            }
         }
     }
 

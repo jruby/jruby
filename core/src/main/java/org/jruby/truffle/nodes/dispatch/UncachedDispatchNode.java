@@ -15,8 +15,6 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.nodes.cast.BoxingNode;
-import org.jruby.truffle.nodes.cast.BoxingNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -34,7 +32,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     private final boolean ignoreVisibility;
 
     @Child protected IndirectCallNode callNode;
-    @Child protected BoxingNode box;
     @Child protected ToSymbolNode toSymbolNode;
     @Child protected ToJavaStringNode toJavaStringNode;
 
@@ -45,7 +42,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
-        box = BoxingNodeFactory.create(context, null, null);
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
         toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
     }
@@ -54,7 +50,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         super(prev);
         ignoreVisibility = prev.ignoreVisibility;
         callNode = prev.callNode;
-        box = prev.box;
         toSymbolNode = prev.toSymbolNode;
         toJavaStringNode = prev.toJavaStringNode;
     }
@@ -78,7 +73,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
         constantMissingProfile.enter();
 
-        final RubyClass callerClass = ignoreVisibility ? null : box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         final RubyMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility,
                 dispatchAction);
@@ -105,12 +100,12 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             VirtualFrame frame,
             Object methodReceiverObject,
             LexicalScope lexicalScope,
-            RubyBasicObject receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        final RubyClass callerClass = ignoreVisibility ? null : box.box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         final RubyMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, methodName),
                 ignoreVisibility, dispatchAction);
@@ -171,27 +166,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Specialization
-    public Object dispatch(
-            VirtualFrame frame,
-            Object methodReceiverObject,
-            LexicalScope lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return dispatch(
-                frame,
-                methodReceiverObject,
-                lexicalScope,
-                box.box(receiverObject),
-                methodName,
-                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true, true),
-                dispatchAction);
     }
 
 

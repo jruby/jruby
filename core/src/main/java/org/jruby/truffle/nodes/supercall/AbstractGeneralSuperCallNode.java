@@ -46,7 +46,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
         final RubyModule declaringModule = RubyCallStack.getCurrentMethod().getDeclaringModule();
-        final RubyClass selfMetaClass = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass selfMetaClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         method = ModuleOperations.lookupSuperMethod(declaringModule, name, selfMetaClass);
 
@@ -74,13 +74,13 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         final RubyContext context = getContext();
 
         try {
-            final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
+            final Object self = RubyArguments.getSelf(frame.getArguments());
 
             if (!guard()) {
                 lookup(frame);
             }
 
-            if (method == null || method.isUndefined() || !method.isVisibleTo(this, self.getMetaClass())) {
+            if (method == null || method.isUndefined() || !method.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 return context.makeString("super");

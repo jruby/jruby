@@ -16,8 +16,8 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.control.PassthroughNode;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRange;
 
 public class FixnumLowerNode extends PassthroughNode {
@@ -194,7 +194,7 @@ public class FixnumLowerNode extends PassthroughNode {
     }
 
     private static boolean canLower(long value) {
-        return RubyFixnum.fitsIntoInteger(value);
+        return CoreLibrary.fitsIntoInteger(value);
     }
 
     private static int lower(long value) {

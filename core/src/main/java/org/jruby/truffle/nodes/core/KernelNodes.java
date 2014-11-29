@@ -51,8 +51,6 @@ public abstract class KernelNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
-        @Child protected UnboxingNode unboxLeftNode;
-        @Child protected UnboxingNode unboxRightNode;
         @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
         @Child protected DispatchHeadNode equalNode;
 
@@ -62,22 +60,6 @@ public abstract class KernelNodes {
 
         public SameOrEqualNode(SameOrEqualNode prev) {
             super(prev);
-        }
-
-        protected Object unboxLeft(VirtualFrame frame, Object value) {
-            if (unboxLeftNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                unboxLeftNode = insert(UnboxingNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-            return unboxLeftNode.executeUnbox(frame, value);
-        }
-
-        protected Object unboxRight(VirtualFrame frame, Object value) {
-            if (unboxRightNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                unboxRightNode = insert(UnboxingNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-            return unboxRightNode.executeUnbox(frame, value);
         }
 
         protected boolean areSame(VirtualFrame frame, Object left, Object right) {
@@ -100,7 +82,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
-            if (areSame(frame, unboxLeft(frame, a), unboxRight(frame, b)))
+            if (areSame(frame, a, b))
                 return true;
             return areEqual(frame, a, b);
         }
@@ -877,7 +859,7 @@ public abstract class KernelNodes {
         @Specialization
         public boolean instanceOf(Object self, RubyClass rubyClass) {
             // TODO(CS): fast path
-            return getContext().getCoreLibrary().box(self).getLogicalClass() == rubyClass;
+            return getContext().getCoreLibrary().getLogicalClass(self) == rubyClass;
         }
 
     }
@@ -1048,6 +1030,8 @@ public abstract class KernelNodes {
             super(prev);
         }
 
+        public abstract boolean executeBoolean(Object self, RubyClass rubyClass);
+
         @Specialization
         public boolean isA(@SuppressWarnings("unused") RubyBasicObject self, @SuppressWarnings("unused") RubyNilClass nil) {
             return false;
@@ -1057,7 +1041,8 @@ public abstract class KernelNodes {
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
             // TODO(CS): fast path
-            return ModuleOperations.assignableTo(getContext().getCoreLibrary().box(self).getMetaClass(), rubyClass);
+            notDesignedForCompilation();
+            return ModuleOperations.assignableTo(getContext().getCoreLibrary().getMetaClass(self), rubyClass);
         }
 
     }
@@ -1619,11 +1604,45 @@ public abstract class KernelNodes {
             super(prev);
         }
 
+        @Specialization(guards = "isTrue")
+        public RubyClass singletonClassTrue(boolean self) {
+            return getContext().getCoreLibrary().getTrueClass();
+        }
+
+        @Specialization(guards = "!isTrue")
+        public RubyClass singletonClassFalse(boolean self) {
+            return getContext().getCoreLibrary().getFalseClass();
+        }
+
         @Specialization
-        public RubyClass singletonClass(Object self) {
+        public RubyClass singletonClass(int self) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        }
+
+        @Specialization
+        public RubyClass singletonClass(long self) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        }
+
+        @Specialization
+        public RubyClass singletonClass(double self) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        }
+
+        @Specialization
+        public RubyClass singletonClass(BigInteger self) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        }
+
+        @Specialization
+        public RubyClass singletonClass(RubyBasicObject self) {
             notDesignedForCompilation();
 
-            return getContext().getCoreLibrary().box(self).getSingletonClass(this);
+            return self.getSingletonClass(this);
         }
 
     }

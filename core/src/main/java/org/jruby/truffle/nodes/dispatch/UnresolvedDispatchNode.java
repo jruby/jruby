@@ -99,16 +99,15 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction,
             Object methodReceiverObject) {
-        final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
-        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
-            final RubyMethod method = lookup(callerClass, boxedReceiverObject, methodName.toString(), ignoreVisibility,
+            final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
             if (method == null) {
-                final DispatchNode newDispatch = createMethodMissingNode(methodName, boxedReceiverObject, dispatchAction);
-                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, boxedReceiverObject,
+                final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject, dispatchAction);
+                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
@@ -117,14 +116,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
 
                 final RubyMethod falseMethod =
-                        lookup(callerClass, getContext().getCoreLibrary().box(false), methodName.toString(),
+                        lookup(callerClass, false, methodName.toString(),
                                 ignoreVisibility, dispatchAction);
 
                 final Assumption trueUnmodifiedAssumption =
                         getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
 
                 final RubyMethod trueMethod =
-                        lookup(callerClass, getContext().getCoreLibrary().box(true), methodName.toString(),
+                        lookup(callerClass, true, methodName.toString(),
                                 ignoreVisibility, dispatchAction);
 
                 if ((falseMethod == null) && (trueMethod == null)) {
@@ -144,7 +143,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             } else {
                 final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
                         methodName, first, receiverObject.getClass(),
-                        boxedReceiverObject.getLogicalClass().getUnmodifiedAssumption(), null, method, indirect, null, null, null, null,
+                        getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, null, null, null, null,
                         null, null, null);
 
                 first.replace(newDispatch);
@@ -167,16 +166,15 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction,
             Object methodReceiverObject) {
-        final RubyBasicObject boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
-        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments())).getMetaClass();
+        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
-            final RubyMethod method = lookup(callerClass, boxedReceiverObject, methodName.toString(), ignoreVisibility,
+            final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
             if (method == null) {
-                final DispatchNode newDispatch = createMethodMissingNode(methodName, boxedReceiverObject, dispatchAction);
-                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, boxedReceiverObject,
+                final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject, dispatchAction);
+                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
@@ -187,7 +185,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         null, null, null, null, null, null);
             } else {
                 newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        boxedReceiverObject.getMetaClass(), null, method, indirect, null, null, null, null, null, null, null);
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, null, null, null, null, null, null, null);
             }
 
             first.replace(newDispatch);
@@ -195,7 +193,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     methodName, blockObject, argumentsObjects, dispatchAction);
 
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-            final RubyModule module = (RubyModule) boxedReceiverObject;
+            final RubyModule module = (RubyModule) receiverObject;
             final RubyConstant constant = lookupConstant(lexicalScope, module, methodName.toString(),
                     ignoreVisibility, dispatchAction);
 
@@ -257,14 +255,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
     private DispatchNode createMethodMissingNode(
             Object methodName,
-            RubyBasicObject receiverObject,
+            Object receiverObject,
             Dispatch.DispatchAction dispatchAction) {
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(CachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), indirect, null, null, null, null, null, null, null));
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, null, null, null, null, null, null, null));
             }
 
             case CALL_METHOD_MISSING: {
@@ -281,7 +279,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), null, null, null, null, null, null, null));
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), null, null, null, null, null, null, null));
             }
 
             default: {

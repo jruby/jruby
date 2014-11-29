@@ -40,11 +40,6 @@ public abstract class BooleanCastNode extends RubyNode {
     }
 
     @Specialization
-    public boolean doFalse(@SuppressWarnings("unused") RubyFalseClass falseObject) {
-        return false;
-    }
-
-    @Specialization
     public boolean doBoolean(boolean value) {
         return value;
     }
@@ -75,8 +70,7 @@ public abstract class BooleanCastNode extends RubyNode {
     }
 
     protected boolean neitherNilNorFalse(RubyBasicObject object) {
-        return object != getContext().getCoreLibrary().getNilObject() &&
-                object != getContext().getCoreLibrary().getFalseObject();
+        return object != getContext().getCoreLibrary().getNilObject();
     }
 
     @Override

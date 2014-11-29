@@ -80,7 +80,7 @@ public abstract class MatchDataNodes {
             final int[] indicies = new int[args.length];
 
             for (int n = 0; n < args.length; n++) {
-                indicies[n] = RubyFixnum.toInt(args[n]);
+                indicies[n] = CoreLibrary.toInt(args[n]);
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));

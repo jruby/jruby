@@ -277,7 +277,7 @@ public abstract class StringNodes {
             final int[] store = new int[bytes.length];
 
             for (int n = 0; n < store.length; n++) {
-                store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                store[n] = CoreLibrary.toUnsignedInt(bytes[n]);
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);

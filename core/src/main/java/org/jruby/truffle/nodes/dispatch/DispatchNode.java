@@ -77,11 +77,11 @@ public abstract class DispatchNode extends RubyNode {
     @CompilerDirectives.SlowPath
     protected RubyMethod lookup(
             RubyClass callerClass,
-            RubyBasicObject receiver,
+            Object receiver,
             String name,
             boolean ignoreVisibility,
             Dispatch.DispatchAction dispatchAction) {
-        RubyMethod method = ModuleOperations.lookupMethod(receiver.getMetaClass(), name);
+        RubyMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
 
@@ -145,7 +145,7 @@ public abstract class DispatchNode extends RubyNode {
             VirtualFrame frame,
             Object methodReceiverObject,
             LexicalScope lexicalScope,
-            RubyBasicObject receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
@@ -157,7 +157,7 @@ public abstract class DispatchNode extends RubyNode {
             VirtualFrame frame,
             Object methodReceiverObject,
             LexicalScope lexicalScope,
-            RubyBasicObject receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects,

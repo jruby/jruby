@@ -81,16 +81,10 @@ public final class RubyArray extends RubyObject {
 
         if (object instanceof Integer) {
             store = new int[]{(int) object};
-        } else if (object instanceof RubyFixnum.IntegerFixnum) {
-            store = new int[]{((RubyFixnum.IntegerFixnum) object).getValue()};
         } else if (object instanceof Long) {
             store = new long[]{(long) object};
-        } else if (object instanceof RubyFixnum.LongFixnum) {
-            store = new long[]{((RubyFixnum.LongFixnum) object).getValue()};
         } else if (object instanceof Double) {
             store = new double[]{(double) object};
-        } else if (object instanceof RubyFloat) {
-            store = new double[]{((RubyFloat) object).getValue()};
         } else {
             store = new Object[]{object};
         }
@@ -116,18 +110,10 @@ public final class RubyArray extends RubyObject {
         for (Object object : objects) {
             if (object instanceof Integer) {
                 canUseDouble = false;
-            } else if (object instanceof RubyFixnum.IntegerFixnum) {
-                canUseDouble = false;
             } else if (object instanceof Long) {
-                canUseInteger = canUseInteger && RubyFixnum.fitsIntoInteger((long) object);
-                canUseDouble = false;
-            } else if (object instanceof RubyFixnum.LongFixnum) {
-                canUseInteger = canUseInteger && RubyFixnum.fitsIntoInteger(((RubyFixnum.LongFixnum) object).getValue());
+                canUseInteger = canUseInteger && CoreLibrary.fitsIntoInteger((long) object);
                 canUseDouble = false;
             } else if (object instanceof Double) {
-                canUseInteger = false;
-                canUseLong = false;
-            } else if (object instanceof RubyFloat) {
                 canUseInteger = false;
                 canUseLong = false;
             } else {
@@ -141,7 +127,7 @@ public final class RubyArray extends RubyObject {
             final int[] store = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                store[n] = RubyFixnum.toInt(objects[n]);
+                store[n] = CoreLibrary.toInt(objects[n]);
             }
 
             return new RubyArray(arrayClass, store, objects.length);
@@ -149,7 +135,7 @@ public final class RubyArray extends RubyObject {
             final long[] store = new long[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                store[n] = RubyFixnum.toLong(objects[n]);
+                store[n] = CoreLibrary.toLong(objects[n]);
             }
 
             return new RubyArray(arrayClass, store, objects.length);
@@ -157,7 +143,7 @@ public final class RubyArray extends RubyObject {
             final double[] store = new double[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                store[n] = RubyFloat.toDouble(objects[n]);
+                store[n] = CoreLibrary.toDouble(objects[n]);
             }
 
             return new RubyArray(arrayClass, store, objects.length);
@@ -277,7 +263,9 @@ public final class RubyArray extends RubyObject {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (Object object : slowToArray()) {
-            getContext().getCoreLibrary().box(object).visitObjectGraph(visitor);
+            if (object instanceof RubyBasicObject) {
+                ((RubyBasicObject) object).visitObjectGraph(visitor);
+            }
         }
     }
 

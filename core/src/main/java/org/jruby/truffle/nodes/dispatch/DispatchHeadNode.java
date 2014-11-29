@@ -95,17 +95,14 @@ public class DispatchHeadNode extends Node {
 
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject receiverBoxed = context.getCoreLibrary().box(receiverObject);
-        final RubyBasicObject valueBoxed = context.getCoreLibrary().box(value);
-
         final String message = String.format("%s (%s#%s gives %s)",
                 context.getCoreLibrary().getFloatClass().getName(),
-                receiverBoxed.getLogicalClass().getName(),
+                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
                 methodName,
-                valueBoxed.getLogicalClass().getName());
+                context.getCoreLibrary().getLogicalClass(value).getName());
 
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverBoxed.getLogicalClass().getName(),
+                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
                 message,
                 this));
     }
@@ -132,17 +129,14 @@ public class DispatchHeadNode extends Node {
 
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject receiverBoxed = context.getCoreLibrary().box(receiverObject);
-        final RubyBasicObject valueBoxed = context.getCoreLibrary().box(value);
-
         final String message = String.format("%s (%s#%s gives %s)",
                 context.getCoreLibrary().getFloatClass().getName(),
-                receiverBoxed.getLogicalClass().getName(),
+                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
                 methodName,
-                valueBoxed.getLogicalClass().getName());
+                context.getCoreLibrary().getLogicalClass(value).getName());
 
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverBoxed.getLogicalClass().getName(),
+                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
                 message,
                 this));
     }

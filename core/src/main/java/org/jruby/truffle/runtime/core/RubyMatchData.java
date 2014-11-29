@@ -43,7 +43,9 @@ public class RubyMatchData extends RubyObject {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (Object object : values) {
-            getContext().getCoreLibrary().box(object).visitObjectGraph(visitor);
+            if (object instanceof RubyBasicObject) {
+                ((RubyBasicObject) object).visitObjectGraph(visitor);
+            }
         }
     }
 

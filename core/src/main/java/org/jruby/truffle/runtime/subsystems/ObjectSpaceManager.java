@@ -257,7 +257,9 @@ public class ObjectSpaceManager {
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             Object value = frame.getValue(slot);
             if (!(value instanceof Visibility)) { // TODO(cs): Better condition for hidden local variables
-                context.getCoreLibrary().box(value).visitObjectGraph(visitor);
+                if (value instanceof RubyBasicObject) {
+                    ((RubyBasicObject) value).visitObjectGraph(visitor);
+                }
             }
         }
     }
