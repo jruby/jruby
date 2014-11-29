@@ -17,3 +17,4 @@ fails:Process.exec (environment variables) unsets other environment variables wh
 fails:Process.exec with a command array uses the first element as the command name and the second as the argv[0] value
 fails:Process.exec with a command array coerces the argument using to_ary
 fails:Process.exec with a command array raises an ArgumentError if the Array does not have exactly two elements
+fails:Process.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value

@@ -12,3 +12,4 @@ fails:Array#first tries to convert the passed argument to an Integer using #to_i
 fails:Array#first raises a TypeError if the passed argument is not numeric
 fails:Array#first does not return subclass instance when passed count on Array subclasses
 fails:Array#first is not destructive
+fails:Array#first raises a RangeError when count is a Bignum

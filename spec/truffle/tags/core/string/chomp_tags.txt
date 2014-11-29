@@ -63,3 +63,4 @@ fails:String#chomp! when passed a String does not taint the result when the argu
 fails:String#chomp removes the final carriage return, newline from a non-ASCII String
 fails:String#chomp! returns nil when the String is not modified
 fails:String#chomp! removes the final carriage return, newline from a non-ASCII String
+fails:String#chomp! removes the final carriage return, newline from a multibyte String

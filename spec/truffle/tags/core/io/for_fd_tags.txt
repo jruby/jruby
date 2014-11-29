@@ -47,3 +47,5 @@ fails:IO.for_fd raises an Errno::EBADF if the file descriptor is not valid
 fails:IO.for_fd raises an IOError if passed a closed stream
 fails:IO.for_fd raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode
 fails:IO.for_fd raises ArgumentError if passed an empty mode string
+fails:IO.for_fd creates an IO instance when STDOUT is closed
+fails:IO.for_fd creates an IO instance when STDERR is closed

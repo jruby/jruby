@@ -101,3 +101,5 @@ fails:String#slice! with String returns nil if self does not contain other
 fails:String#slice! with String doesn't call to_str on its argument
 fails:String#slice! with String returns a subclass instance when given a subclass instance
 fails:String#slice! with String raises a RuntimeError if self is frozen
+fails:String#slice! with Regexp, index accepts a Float for capture index
+fails:String#slice! with Regexp, index calls #to_int to convert an Object to capture index

@@ -45,3 +45,8 @@ fails:Kernel#require_relative with an absolute path ($LOAD_FEATURES) does not st
 fails:Kernel#require_relative with an absolute path ($LOAD_FEATURES) does not load an absolute path that is already stored
 fails:Kernel#require_relative with an absolute path ($LOAD_FEATURES) adds the suffix of the resolved filename
 fails:Kernel#require_relative with an absolute path ($LOAD_FEATURES) loads a path for a file already loaded with a relative path
+fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) stores an absolute path
+fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) does not store the path if the load fails
+fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) does not load an absolute path that is already stored
+fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) adds the suffix of the resolved filename
+fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) loads a path for a file already loaded with a relative path

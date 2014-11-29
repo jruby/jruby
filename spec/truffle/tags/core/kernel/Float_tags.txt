@@ -115,3 +115,7 @@ fails:Kernel#Float raises a TypeError if #to_f is not provided
 fails:Kernel#Float raises a TypeError if #to_f returns a String
 fails:Kernel#Float raises a TypeError if #to_f returns an Integer
 fails:Kernel#Float is a private method
+fails:Kernel.Float returns a Float for Complex with only a real part
+fails:Kernel.Float raises a RangeError when passed a Complex argument
+fails:Kernel#Float returns a Float for Complex with only a real part
+fails:Kernel#Float raises a RangeError when passed a Complex argument

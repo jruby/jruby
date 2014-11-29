@@ -20,3 +20,19 @@ fails:IO.popen with a block returns the value of the block
 fails:IO.popen with a leading Array parameter uses the Array as command plus args for the child process
 fails:IO.popen with a leading Array parameter uses a leading Hash in the Array as additional environment variables
 fails:IO.popen with a leading Array parameter uses a trailing Hash in the Array for spawn-like settings
+fails:IO.popen with a leading ENV Hash accepts a single String command
+fails:IO.popen with a leading ENV Hash accepts a single String command, and an IO mode
+fails:IO.popen with a leading ENV Hash accepts a single String command with a trailing Hash of Process.exec options
+fails:IO.popen with a leading ENV Hash accepts a single String command with a trailing Hash of Process.exec options, and an IO mode
+fails:IO.popen with a leading ENV Hash accepts an Array of command and arguments
+fails:IO.popen with a leading ENV Hash accepts an Array of command and arguments, and an IO mode
+fails:IO.popen with a leading ENV Hash accepts an Array command with a separate trailing Hash of Process.exec options
+fails:IO.popen with a leading ENV Hash accepts an Array command with a separate trailing Hash of Process.exec options, and an IO mode
+fails:IO.popen with a leading Array argument uses the Array as command plus args for the child process
+fails:IO.popen with a leading Array argument accepts a leading ENV Hash
+fails:IO.popen with a leading Array argument accepts a trailing Hash of Process.exec options
+fails:IO.popen with a leading Array argument accepts an IO mode argument following the Array
+fails:IO.popen with a leading Array argument accepts [env, command, arg1, arg2, ..., exec options]
+fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode'
+fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'
+fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'

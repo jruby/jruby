@@ -67,3 +67,6 @@ fails:String#sub! with pattern and Hash keeps untrusted state
 fails:String#sub! with pattern and Hash untrusts self if a hash value is untrusted
 fails:String#sub! with pattern and Hash keeps tainted state
 fails:String#sub! with pattern and Hash taints self if a hash value is tainted
+fails:String#sub with pattern, replacement raises a TypeError when pattern is a Symbol
+fails:String#sub with pattern, replacement raises a TypeError when pattern is an Array
+fails:String#sub with pattern, replacement replaces \ with 
