@@ -79,7 +79,7 @@ public class RubyContext extends ExecutionContext {
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
-            compilerOptions.setOption("MinTimeThreshold", Integer.MAX_VALUE);
+            compilerOptions.setOption("MinTimeThreshold", 100000000);
         }
 
         if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
