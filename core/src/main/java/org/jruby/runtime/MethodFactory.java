@@ -45,7 +45,7 @@ import org.jruby.internal.runtime.methods.MethodNodes;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.ClassDefininngJRubyClassLoader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -81,7 +81,7 @@ public abstract class MethodFactory {
                 baos.write(buf, 0, bytesRead);
             }
 
-            JRubyClassLoader oscl = new JRubyClassLoader(Ruby.getClassLoader());
+            ClassDefininngJRubyClassLoader oscl = new ClassDefininngJRubyClassLoader(Ruby.getClassLoader());
             Class<?> unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
             unloaderClass.newInstance();
             can = true;

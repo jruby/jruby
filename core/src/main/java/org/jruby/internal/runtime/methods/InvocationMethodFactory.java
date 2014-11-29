@@ -60,7 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import static org.jruby.util.CodegenUtils.*;
 import static java.lang.System.*;
-import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.ClassDefininngJRubyClassLoader;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -174,7 +174,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public static final int BLOCK_INDEX = 6;
 
     /** The classloader to use for code loading */
-    protected final JRubyClassLoader classLoader;
+    protected final ClassDefininngJRubyClassLoader classLoader;
     
     /** An object to sync against when loading classes, to avoid dups */
     protected final Object syncObject;
@@ -204,10 +204,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // use the given classloader as our sync, regardless of whether we wrap it
         this.syncObject = classLoader;
         
-        if (classLoader instanceof JRubyClassLoader) {
-            this.classLoader = (JRubyClassLoader)classLoader;
+        if (classLoader instanceof ClassDefininngJRubyClassLoader) {
+            this.classLoader = (ClassDefininngJRubyClassLoader)classLoader;
         } else {
-            this.classLoader = new JRubyClassLoader(classLoader);
+            this.classLoader = new ClassDefininngJRubyClassLoader(classLoader);
         }
     }
 

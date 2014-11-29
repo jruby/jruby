@@ -12,7 +12,7 @@ import java.io.InputStream;
 import org.jruby.Ruby;
 import org.jruby.ast.executable.Script;
 import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.ClassDefininngJRubyClassLoader;
 import org.objectweb.asm.ClassReader;
 
 /**
@@ -31,7 +31,7 @@ public class CompiledScriptLoader {
                 baos.write(buf, 0, read);
             }
             buf = baos.toByteArray();
-            JRubyClassLoader jcl = runtime.getJRubyClassLoader();
+            ClassDefininngJRubyClassLoader jcl = runtime.getJRubyClassLoader();
             OneShotClassLoader oscl = new OneShotClassLoader(jcl);
             
             ClassReader cr = new ClassReader(buf);
