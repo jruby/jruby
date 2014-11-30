@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodNode;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
 
 @CoreClass(name = "Channel")
@@ -33,7 +33,7 @@ public abstract class ChannelNodes {
         }
 
         @Specialization
-        public Object send(RubiniusChannel self, RubyObject value) {
+        public Object send(RubiniusChannel self, RubyBasicObject value) {
             self.send(value);
             return getContext().getCoreLibrary().getNilObject();
         }

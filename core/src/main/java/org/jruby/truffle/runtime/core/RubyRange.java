@@ -11,7 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
-public abstract class RubyRange extends RubyObject {
+public abstract class RubyRange extends RubyBasicObject {
 
     protected final boolean excludeEnd;
 

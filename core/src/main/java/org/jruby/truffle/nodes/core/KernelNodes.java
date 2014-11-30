@@ -15,7 +15,6 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.nodes.SlowPathException;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -32,7 +31,6 @@ import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -148,7 +146,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object compare(VirtualFrame frame, RubyObject self, RubyObject other) {
+        public Object compare(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
             notDesignedForCompilation();
 
             if ((self == other) || booleanCast.executeBoolean(frame, equalNode.call(frame, self, "==", null, other))) {
@@ -668,7 +666,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyObject freeze(RubyObject self) {
+        public RubyBasicObject freeze(RubyBasicObject self) {
             notDesignedForCompilation();
 
             self.freeze();
@@ -689,7 +687,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean isFrozen(RubyObject self) {
+        public boolean isFrozen(RubyBasicObject self) {
             notDesignedForCompilation();
 
             return self.isFrozen();
@@ -789,7 +787,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public int hash(RubyObject self) {
+        public int hash(RubyBasicObject self) {
             notDesignedForCompilation();
 
             return self.hashCode();
@@ -879,14 +877,14 @@ public abstract class KernelNodes {
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubyString name) {
             notDesignedForCompilation();
 
-            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
+            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
         @Specialization
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubySymbol name) {
             notDesignedForCompilation();
 
-            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
+            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
     }
@@ -906,14 +904,14 @@ public abstract class KernelNodes {
         public Object isInstanceVariableGet(RubyBasicObject object, RubyString name) {
             notDesignedForCompilation();
 
-            return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
+            return object.getInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
         @Specialization
         public Object isInstanceVariableGet(RubyBasicObject object, RubySymbol name) {
             notDesignedForCompilation();
 
-            return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
+            return object.getInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
     }
@@ -933,7 +931,7 @@ public abstract class KernelNodes {
         public Object isInstanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
             notDesignedForCompilation();
 
-            object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            object.setInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -941,7 +939,7 @@ public abstract class KernelNodes {
         public Object isInstanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
             notDesignedForCompilation();
 
-            object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            object.setInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -959,7 +957,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray instanceVariables(RubyObject self) {
+        public RubyArray instanceVariables(RubyBasicObject self) {
             notDesignedForCompilation();
 
             final String[] instanceVariableNames = self.getFieldNames();
@@ -1124,12 +1122,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
+        public RubyArray methods(RubyBasicObject self, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
             return methods(self, true);
         }
 
         @Specialization
-        public RubyArray methods(RubyObject self, boolean includeInherited) {
+        public RubyArray methods(RubyBasicObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
@@ -1330,7 +1328,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray methods(RubyObject self, boolean includeInherited) {
+        public RubyArray methods(RubyBasicObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
             if (!includeInherited) {
@@ -1341,7 +1339,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        public RubyArray methods(RubyBasicObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
@@ -1659,7 +1657,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
+        public RubyArray singletonMethods(RubyBasicObject self, boolean includeInherited) {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
@@ -1680,7 +1678,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        public RubyArray singletonMethods(RubyBasicObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             return singletonMethods(self, false);
         }
 

@@ -19,7 +19,7 @@ import org.jruby.util.cli.Options;
 /**
  * Represents the Ruby {@code Hash} class.
  */
-public class RubyHash extends RubyObject {
+public class RubyHash extends RubyBasicObject {
 
     public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
 

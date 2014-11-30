@@ -34,11 +34,11 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
-public class RubiniusByteArray extends RubyObject {
+public class RubiniusByteArray extends RubyBasicObject {
     private final byte[] bytes;
 
     public RubiniusByteArray(RubyClass cls, int size) {
@@ -51,7 +51,7 @@ public class RubiniusByteArray extends RubyObject {
         this.bytes = bytes;
     }
 
-    public static RubyObject allocate_sized(RubyNode currentNode, RubyClass baClass, long size) {
+    public static RubyBasicObject allocate_sized(RubyNode currentNode, RubyClass baClass, long size) {
         if (size < 0) {
             RubiniusLibrary.throwArgumentError(currentNode, "negative byte array size");
         } else if (size > Integer.MAX_VALUE) {
@@ -64,7 +64,7 @@ public class RubiniusByteArray extends RubyObject {
         return bytes.length;
     }
 
-    public RubyObject fetch_bytes(RubyNode currentNode, long src, long cnt) {
+    public RubyBasicObject fetch_bytes(RubyNode currentNode, long src, long cnt) {
         if (src < 0) {
             RubiniusLibrary.throwObjectBoundsExceededError(currentNode, "start less than zero");
         } else if (cnt < 0) {
@@ -157,19 +157,19 @@ public class RubiniusByteArray extends RubyObject {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    public RubyObject prepend(RubyString str) {
+    public RubyBasicObject prepend(RubyString str) {
         RubiniusByteArray ba = new RubiniusByteArray(getLogicalClass(), size() + str.getBytes().getRealSize());
         System.arraycopy(str.getBytes().unsafeBytes(), str.getBytes().getBegin(), ba.bytes, 0, str.getBytes().getRealSize());
         System.arraycopy(bytes, 0, ba.bytes, str.getBytes().getRealSize(), size());
         return ba;
     }
 
-    public RubyObject utf8_char(RubyNode currentNode, RubyObject offset) {
+    public RubyBasicObject utf8_char(RubyNode currentNode, RubyBasicObject offset) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(currentNode.getContext().getCoreLibrary().runtimeError("ByteArray#utf8_char not implemented", currentNode));
     }
 
-    public RubyObject reverse(long start, long total) {
+    public RubyBasicObject reverse(long start, long total) {
         if (total <= 0 || start < 0 || start >= size()) {
             return this;
         }

@@ -23,7 +23,7 @@ import java.util.Arrays;
 /**
  * Implements the Ruby {@code Array} class.
  */
-public final class RubyArray extends RubyObject {
+public final class RubyArray extends RubyBasicObject {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
 

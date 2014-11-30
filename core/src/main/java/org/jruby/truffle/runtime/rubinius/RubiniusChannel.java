@@ -31,23 +31,23 @@ package org.jruby.truffle.runtime.rubinius;
 
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class RubiniusChannel extends RubyObject {
-	private final LinkedBlockingQueue<RubyObject> queue = new LinkedBlockingQueue<>();
+public class RubiniusChannel extends RubyBasicObject {
+	private final LinkedBlockingQueue<RubyBasicObject> queue = new LinkedBlockingQueue<>();
 
 	public RubiniusChannel(RubyClass cls) {
 		super(cls);
 	}
 
-	public RubyObject allocate(RubyClass klazz) {
+	public RubyBasicObject allocate(RubyClass klazz) {
 		return new RubiniusChannel(klazz);
 	}
 
-	public void send(RubyObject value) {
+	public void send(RubyBasicObject value) {
 		queue.add(value);
 	}
 
@@ -72,7 +72,7 @@ public class RubiniusChannel extends RubyObject {
 	}
 
 	public Object try_receive() {
-		RubyObject result = queue.poll();
+		RubyBasicObject result = queue.poll();
 		if (result == null)
 			return getContext().getCoreLibrary().getNilObject();
 		return result;

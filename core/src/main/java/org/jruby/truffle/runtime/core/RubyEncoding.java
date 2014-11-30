@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * This is a bridge between JRuby encoding and Truffle encoding
  */
-public class RubyEncoding extends RubyObject {
+public class RubyEncoding extends RubyBasicObject {
 
     private static Map<Encoding, RubyEncoding> map = new HashMap<>();
 

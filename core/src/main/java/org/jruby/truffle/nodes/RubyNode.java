@@ -143,10 +143,6 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubyNilClass(execute(frame));
     }
 
-    public RubyObject executeRubyObject(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyObject(execute(frame));
-    }
-
     public RubyProc executeRubyProc(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyProc(execute(frame));
     }

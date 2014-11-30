@@ -1010,7 +1010,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyObject data(RubyString string) {
+        public RubyBasicObject data(RubyString string) {
             return new RubiniusByteArray(getContext().getCoreLibrary().getRubiniusLibrary().getByteArrayCLass(), string.getBytes().getUnsafeBytes());
         }
     }

@@ -30,7 +30,7 @@ import java.util.*;
 /**
  * Represents the Ruby {@code Module} class.
  */
-public class RubyModule extends RubyObject implements ModuleChain {
+public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     /**
      * A reference to an included RubyModule.

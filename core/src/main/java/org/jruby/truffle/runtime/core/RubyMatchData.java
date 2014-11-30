@@ -15,7 +15,7 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 /**
  * Represents the Ruby {@code MatchData} class.
  */
-public class RubyMatchData extends RubyObject {
+public class RubyMatchData extends RubyBasicObject {
 
     private final Object[] values;
 

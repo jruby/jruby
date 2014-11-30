@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.util.TypeConversionUtils;
@@ -38,7 +38,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject allocate(RubyObject baClass, RubyObject size) {
+        public RubyBasicObject allocate(RubyBasicObject baClass, RubyBasicObject size) {
             throw new RaiseException(getContext().getCoreLibrary().typeError("ByteArray cannot be created via allocate()", this));
         }
     }
@@ -59,7 +59,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject allocate_sized(VirtualFrame frame, RubyObject bytes) {
+        public RubyBasicObject allocate_sized(VirtualFrame frame, RubyBasicObject bytes) {
             RubyClass self = (RubyClass) RubyArguments.getSelf(frame.getArguments());
             return RubiniusByteArray.allocate_sized(this, self, TypeConversionUtils.convertToLong(this, bytesToIntNode, frame, bytes));
         }
@@ -85,7 +85,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject fetch_bytes(VirtualFrame frame, RubiniusByteArray self, RubyObject start, RubyObject count) {
+        public RubyBasicObject fetch_bytes(VirtualFrame frame, RubiniusByteArray self, RubyBasicObject start, RubyBasicObject count) {
             return self.fetch_bytes(this, TypeConversionUtils.convertToLong(this, startToIntNode, frame, start), TypeConversionUtils.convertToLong(this, countToIntNode, frame, count));
         }
     }
@@ -114,7 +114,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject move_bytes(VirtualFrame frame, RubiniusByteArray self, RubyObject start, RubyObject count, RubyObject dest) {
+        public RubyBasicObject move_bytes(VirtualFrame frame, RubiniusByteArray self, RubyBasicObject start, RubyBasicObject count, RubyBasicObject dest) {
             self.move_bytes(this, TypeConversionUtils.convertToLong(this, startToIntNode, frame, start), TypeConversionUtils.convertToLong(this, countToIntNode, frame, count),
                     TypeConversionUtils.convertToLong(this, destToIntNode, frame, dest));
             return count;
@@ -137,7 +137,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int get_byte(VirtualFrame frame, RubiniusByteArray self, RubyObject index) {
+        public int get_byte(VirtualFrame frame, RubiniusByteArray self, RubyBasicObject index) {
             return self.get_byte(this, TypeConversionUtils.convertToLong(this, indexToIntNode, frame, index));
         }
     }
@@ -162,7 +162,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int set_byte(VirtualFrame frame, RubiniusByteArray self, RubyObject index, RubyObject value) {
+        public int set_byte(VirtualFrame frame, RubiniusByteArray self, RubyBasicObject index, RubyBasicObject value) {
             return self.set_byte(this, TypeConversionUtils.convertToLong(this, indexToIntNode, frame, index), TypeConversionUtils.convertToLong(this, valueToIntNode, frame, value));
         }
     }
@@ -187,7 +187,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int compare_bytes(VirtualFrame frame, RubiniusByteArray self, RubiniusByteArray other, RubyObject a, RubyObject b) {
+        public int compare_bytes(VirtualFrame frame, RubiniusByteArray self, RubiniusByteArray other, RubyBasicObject a, RubyBasicObject b) {
             return self.compare_bytes(this, other, TypeConversionUtils.convertToLong(this, aToIntNode, frame, a), TypeConversionUtils.convertToLong(this, bToIntNode, frame, b));
         }
     }
@@ -232,7 +232,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public Object locate(VirtualFrame frame, RubiniusByteArray self, RubyObject pattern, RubyObject start, RubyObject max_o) {
+        public Object locate(VirtualFrame frame, RubiniusByteArray self, RubyBasicObject pattern, RubyBasicObject start, RubyBasicObject max_o) {
             return self.locate((RubyString) patternToStringNode.call(frame, pattern, "to_s", null), TypeConversionUtils.convertToLong(this, startToIntNode, frame, start),
                     TypeConversionUtils.convertToLong(this, max_oToIntNode, frame, max_o));
         }
@@ -254,7 +254,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject prepend(VirtualFrame frame, RubiniusByteArray self, RubyObject str) {
+        public RubyBasicObject prepend(VirtualFrame frame, RubiniusByteArray self, RubyBasicObject str) {
             return self.prepend((RubyString) strToStringNode.call(frame, str, "to_s", null));
         }
     }
@@ -270,7 +270,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject utf8_char(RubiniusByteArray self, RubyObject offset) {
+        public RubyBasicObject utf8_char(RubiniusByteArray self, RubyBasicObject offset) {
             return self.utf8_char(this, offset);
         }
     }
@@ -295,7 +295,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public RubyObject reverse(VirtualFrame frame, RubiniusByteArray self, RubyObject o_start, RubyObject o_total) {
+        public RubyBasicObject reverse(VirtualFrame frame, RubiniusByteArray self, RubyBasicObject o_start, RubyBasicObject o_total) {
             return self.reverse(TypeConversionUtils.convertToLong(this, o_startToIntNode, frame, o_start), TypeConversionUtils.convertToLong(this, o_totalToIntNode, frame, o_total));
         }
     }

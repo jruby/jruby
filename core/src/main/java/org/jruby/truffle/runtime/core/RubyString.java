@@ -21,7 +21,7 @@ import java.math.BigInteger;
 /**
  * Represents the Ruby {@code String} class.
  */
-public class RubyString extends RubyObject {
+public class RubyString extends RubyBasicObject {
 
     /**
      * The class from which we create the object that is {@code String}. A subclass of
