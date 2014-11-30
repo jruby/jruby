@@ -128,7 +128,7 @@ public class GeneralDivModNode extends Node {
             throw new ArithmeticException("divide by zero");
         }
 
-        final BigInteger[] bigIntegerResults = a.divideAndRemainder(a);
+        final BigInteger[] bigIntegerResults = a.divideAndRemainder(b);
 
         if ((a.signum() * b.signum()) == -1 && bigIntegerResults[1].signum() != 0) {
             bigIntegerFixnumProfile.enter();
