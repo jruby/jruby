@@ -4,7 +4,6 @@ import java.net.URL;
 import java.util.Arrays;
 
 import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
 
 /**
  * the IsolatedScriptingContainer detects the whether it is used with
@@ -110,15 +109,15 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         addLoadPath(createUri(cl, ref));
     }
 
-    public void addLoadPath( Bundle cl ) {
-        addLoadPath( cl, JRUBYDIR );
+    public void addBundleToLoadPath( Bundle cl ) {
+        addBundleToLoadPath( cl, JRUBYDIR );
     }
 
-    public void addLoadPath( Bundle cl, String ref ) {
-        addLoadPath(createUri(cl, ref));
+    public void addBundleToLoadPath( Bundle cl, String ref ) {
+        addLoadPath(createUriFromBundle(cl, ref));
     }
 
-    private String createUri(Bundle cl, String ref) {
+    private String createUriFromBundle( Bundle cl, String ref) {
         URL url = cl.getResource( ref );
         if ( url == null && ref.startsWith( "/" ) ) {
             url = cl.getResource( ref.substring( 1 ) );
@@ -133,12 +132,12 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
     }
 
-    public void addGemPath( Bundle cl ) {
-        addGemPath( cl, "/specifications" + JRUBYDIR );
+    public void addBundleToGemPath( Bundle cl ) {
+        addBundleToGemPath( cl, "/specifications" + JRUBYDIR );
     }
 
-    public void addGemPath( Bundle cl, String ref ) {
-        addGemPath(createUri(cl, ref));
+    public void addBundleToGemPath( Bundle cl, String ref ) {
+        addGemPath(createUriFromBundle(cl, ref));
     }
 
     public void addGemPath( ClassLoader cl ) {
