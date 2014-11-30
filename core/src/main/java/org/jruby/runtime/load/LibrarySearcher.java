@@ -1,5 +1,6 @@
 package org.jruby.runtime.load;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -219,8 +220,11 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = resource.openInputStream();
-            if (is == null) {
+            InputStream is = null;
+            try {
+                is = new BufferedInputStream(resource.inputStream(), 32768);
+            }
+            catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             }
 

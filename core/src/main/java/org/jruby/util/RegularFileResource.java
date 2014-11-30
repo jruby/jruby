@@ -23,7 +23,7 @@ import org.jruby.util.io.PosixShim;
 /**
  * Represents a "regular" file, backed by regular file system.
  */
-class RegularFileResource implements FileResource {
+class RegularFileResource extends AbstractFileResource {
     private final JRubyFile file;
     private final POSIX posix;
 
@@ -139,12 +139,8 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
-    public InputStream openInputStream() {
-        try {
-            return new java.io.BufferedInputStream(new FileInputStream(file), 32768);
-        } catch (FileNotFoundException fnfe) {
-            return null;
-        }
+    InputStream openInputStream() throws IOException {
+        return new FileInputStream(file);
     }
 
     @Override

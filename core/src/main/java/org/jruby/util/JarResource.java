@@ -9,7 +9,7 @@ import java.util.jar.JarEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-abstract class JarResource implements FileResource {
+abstract class JarResource extends AbstractFileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
 
     private static final JarCache jarCache = new JarCache();
