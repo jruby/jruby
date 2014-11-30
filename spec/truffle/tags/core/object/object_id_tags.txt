@@ -1,7 +1,3 @@
-fails:Object#object_id returns the same value for two Fixnums with the same value
-fails:Object#object_id returns the same value for two true literals
-fails:Object#object_id returns the same value for two false literals
-fails:Object#object_id returns the same value for two nil literals
 fails:Object#object_id returns a different value for two Bignum literals
 fails:Object#object_id returns a different value for two Float literals
 fails:Object#object_id returns a different value for two numbers near the 32 bit Fixnum limit

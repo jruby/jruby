@@ -108,9 +108,8 @@ public class RubyBasicObject extends ObjectStorage {
         }
     }
 
+    @CompilerDirectives.SlowPath
     public long getObjectID() {
-        RubyNode.notDesignedForCompilation();
-
         if (objectID == -1) {
             objectID = getContext().getNextObjectID();
         }

@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import java.math.*;
 import java.util.*;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -67,7 +68,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "__id__", needsSelf = true)
+    @CoreMethod(names = "__id__")
     public abstract static class IDNode extends CoreMethodNode {
 
         public IDNode(RubyContext context, SourceSection sourceSection) {
@@ -79,9 +80,44 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public long id(RubyBasicObject object) {
-            notDesignedForCompilation();
+        public int objectID(RubyNilClass nil) {
+            return ObjectIDOperations.NIL;
+        }
 
+        @Specialization(guards = "isTrue")
+        public int objectIDTrue(boolean value) {
+            return ObjectIDOperations.TRUE;
+        }
+
+        @Specialization(guards = "!isTrue")
+        public int objectIDFalse(boolean value) {
+            return ObjectIDOperations.FALSE;
+        }
+
+        @Specialization
+        public long objectID(int value) {
+            return ObjectIDOperations.fixnumToID(value);
+        }
+
+        @Specialization
+        public long objectID(long value) {
+            return ObjectIDOperations.fixnumToID(value);
+        }
+
+        @Specialization
+        public long objectID(double value) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException("No ID for Float yet");
+        }
+
+        @Specialization
+        public long objectID(BigInteger value) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException("No ID for Bignum yet");
+        }
+
+        @Specialization
+        public long objectID(RubyBasicObject object) {
             return object.getObjectID();
         }
 
@@ -241,14 +277,12 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object send(VirtualFrame frame, RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            final Object name = args[0];
-            final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
-            return dispatchNode.call(frame, self, name, null, sendArgs);
+        public Object send(VirtualFrame frame, Object self, Object[] args, UndefinedPlaceholder block) {
+            return send(frame, self, args, (RubyProc) null);
         }
 
         @Specialization
-        public Object send(VirtualFrame frame, RubyBasicObject self, Object[] args, RubyProc block) {
+        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
             final Object name = args[0];
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
             return dispatchNode.call(frame, self, name, block, sendArgs);

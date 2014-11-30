@@ -1168,8 +1168,8 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "object_id", needsSelf = true)
-    public abstract static class ObjectIDNode extends CoreMethodNode {
+    @CoreMethod(names = "object_id")
+    public abstract static class ObjectIDNode extends BasicObjectNodes.IDNode {
 
         public ObjectIDNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1177,20 +1177,6 @@ public abstract class KernelNodes {
 
         public ObjectIDNode(ObjectIDNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public long objectID(int fixnum) {
-            notDesignedForCompilation();
-
-            return ObjectIDOperations.fixnumToID(fixnum);
-        }
-
-        @Specialization
-        public long objectID(RubyBasicObject object) {
-            notDesignedForCompilation();
-
-            return object.getObjectID();
         }
 
     }
@@ -1554,6 +1540,7 @@ public abstract class KernelNodes {
 
     @CoreMethod(names = "send", needsBlock = true, required = 1, argumentsAsArray = true)
     public abstract static class SendNode extends BasicObjectNodes.SendNode {
+
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1561,6 +1548,7 @@ public abstract class KernelNodes {
         public SendNode(SendNode prev) {
             super(prev);
         }
+
     }
 
     @CoreMethod(names = "set_trace_func", isModuleFunction = true, required = 1)
