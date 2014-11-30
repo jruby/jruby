@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.math.*;
-
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.*;
@@ -23,7 +21,7 @@ import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.util.RuntimeBigInteger;
+import org.jruby.truffle.runtime.core.RubyBignum;
 
 @CoreClass(name = "Math")
 public abstract class MathNodes {
@@ -390,8 +388,8 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public RubyArray frexp(BigInteger a) {
-            return frexp(RuntimeBigInteger.doubleValue(a));
+        public RubyArray frexp(RubyBignum a) {
+            return frexp(a.doubleValue());
         }
 
         @Specialization
@@ -569,18 +567,18 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(BigInteger a, int b) {
-            return function(RuntimeBigInteger.doubleValue(a), b);
+        public double function(RubyBignum a, int b) {
+            return function(a.doubleValue(), b);
         }
 
         @Specialization
-        public double function(BigInteger a, long b) {
-            return function(RuntimeBigInteger.doubleValue(a), b);
+        public double function(RubyBignum a, long b) {
+            return function(a.doubleValue(), b);
         }
 
         @Specialization
-        public double function(BigInteger a, double b) {
-            return function(RuntimeBigInteger.doubleValue(a), b);
+        public double function(RubyBignum a, double b) {
+            return function(a.doubleValue(), b);
         }
 
         @Specialization
@@ -659,8 +657,8 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public RubyArray lgamma(BigInteger a) {
-            return lgamma(RuntimeBigInteger.doubleValue(a));
+        public RubyArray lgamma(RubyBignum a) {
+            return lgamma(a.doubleValue());
         }
 
         @Specialization
@@ -722,8 +720,8 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(BigInteger a, UndefinedPlaceholder b) {
-            return doFunction(RuntimeBigInteger.doubleValue(a));
+        public double function(RubyBignum a, UndefinedPlaceholder b) {
+            return doFunction(a.doubleValue());
         }
 
         @Specialization
@@ -946,8 +944,8 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(BigInteger a) {
-            return doFunction(RuntimeBigInteger.doubleValue(a));
+        public double function(RubyBignum a) {
+            return doFunction(a.doubleValue());
         }
 
         @Specialization
@@ -1015,8 +1013,8 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(int a, BigInteger b) {
-            return doFunction(a, RuntimeBigInteger.doubleValue(b));
+        public double function(int a, RubyBignum b) {
+            return doFunction(a, b.doubleValue());
         }
 
         @Specialization
@@ -1035,8 +1033,8 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(long a, BigInteger b) {
-            return doFunction(a, RuntimeBigInteger.doubleValue(b));
+        public double function(long a, RubyBignum b) {
+            return doFunction(a, b.doubleValue());
         }
 
         @Specialization
@@ -1045,23 +1043,23 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(BigInteger a, int b) {
-            return doFunction(RuntimeBigInteger.doubleValue(a), b);
+        public double function(RubyBignum a, int b) {
+            return doFunction(a.doubleValue(), b);
         }
 
         @Specialization
-        public double function(BigInteger a, long b) {
-            return doFunction(RuntimeBigInteger.doubleValue(a), b);
+        public double function(RubyBignum a, long b) {
+            return doFunction(a.doubleValue(), b);
         }
 
         @Specialization
-        public double function(BigInteger a, BigInteger b) {
-            return doFunction(RuntimeBigInteger.doubleValue(a), RuntimeBigInteger.doubleValue(b));
+        public double function(RubyBignum a, RubyBignum b) {
+            return doFunction(a.doubleValue(), b.doubleValue());
         }
 
         @Specialization
-        public double function(BigInteger a, double b) {
-            return doFunction(RuntimeBigInteger.doubleValue(a), b);
+        public double function(RubyBignum a, double b) {
+            return doFunction(a.doubleValue(), b);
         }
 
         @Specialization
@@ -1075,8 +1073,8 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(double a, BigInteger b) {
-            return doFunction(a, RuntimeBigInteger.doubleValue(b));
+        public double function(double a, RubyBignum b) {
+            return doFunction(a, b.doubleValue());
         }
 
         @Specialization

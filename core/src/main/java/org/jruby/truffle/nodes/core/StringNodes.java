@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -27,6 +26,7 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -281,11 +281,16 @@ public abstract class StringNodes {
             final int[] store = new int[bytes.length];
 
             for (int n = 0; n < store.length; n++) {
-                store[n] = CoreLibrary.toUnsignedInt(bytes[n]);
+                store[n] = toUnsignedInt(bytes[n]);
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
         }
+
+        public static int toUnsignedInt(byte x) {
+            return ((int) x) & 0xff;
+        }
+
     }
 
     @CoreMethod(names = "chomp")
@@ -903,7 +908,21 @@ public abstract class StringNodes {
         public Object toI(RubyString string) {
             notDesignedForCompilation();
 
-            return string.toInteger();
+            if (string.toString().length() == 0) {
+                return 0;
+            }
+
+            try {
+                final int value = Integer.parseInt(string.toString());
+
+                if (value >= Long.MIN_VALUE && value <= Long.MAX_VALUE) {
+                    return value;
+                } else {
+                    return bignum(value);
+                }
+            } catch (NumberFormatException e) {
+                return bignum(new BigInteger(string.toString()));
+            }
         }
     }
 

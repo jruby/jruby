@@ -38,12 +38,6 @@ import java.util.Map;
 
 public class CoreLibrary {
 
-    public static final long FIXNUM_MIN_VALUE = Long.MIN_VALUE;
-    public static final long FIXNUM_MAX_VALUE = Long.MAX_VALUE;
-
-    public static final BigInteger MIN_VALUE_BIG = BigInteger.valueOf(FIXNUM_MIN_VALUE);
-    public static final BigInteger MAX_VALUE_BIG = BigInteger.valueOf(FIXNUM_MAX_VALUE);
-
     private final RubyContext context;
 
     @CompilerDirectives.CompilationFinal private RubyClass argumentErrorClass;
@@ -136,8 +130,8 @@ public class CoreLibrary {
             return (int) value;
         }
 
-        if (value instanceof BigInteger) {
-            return ((BigInteger) value).doubleValue();
+        if (value instanceof RubyBignum) {
+            return ((RubyBignum) value).doubleValue();
         }
 
         if (value instanceof Double) {
@@ -189,7 +183,7 @@ public class CoreLibrary {
 
         argumentErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "ArgumentError");
         arrayClass = new RubyArray.RubyArrayClass(context, objectClass);
-        bignumClass = new RubyClass(context, objectClass, integerClass, "Bignum");
+        bignumClass = new RubyBignum.RubyBignumClass(context, objectClass, integerClass, "Bignum");
         bindingClass = new RubyClass(context, objectClass, objectClass, "Binding");
         comparableModule = new RubyModule(context, objectClass, "Comparable");
         configModule = new RubyModule(context, objectClass, "Config");
@@ -383,8 +377,6 @@ public class CoreLibrary {
             return fixnumClass;
         } else if (object instanceof Long) {
             return fixnumClass;
-        } else if (object instanceof BigInteger) {
-            return bignumClass;
         } else if (object instanceof Double) {
             return floatClass;
         } else {
@@ -407,8 +399,6 @@ public class CoreLibrary {
             return fixnumClass;
         } else if (object instanceof Long) {
             return fixnumClass;
-        } else if (object instanceof BigInteger) {
-            return bignumClass;
         } else if (object instanceof Double) {
             return floatClass;
         } else {
@@ -450,7 +440,7 @@ public class CoreLibrary {
 
     public RubyException argumentError(int passed, int required, int optional, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required+optional), currentNode);
+        return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required + optional), currentNode);
     }
 
     public RubyException localJumpError(String message, Node currentNode) {
@@ -781,107 +771,6 @@ public class CoreLibrary {
 
     public RubyClass getEncodingConverterClass() {
         return encodingConverterClass;
-    }
-
-    public static int toInt(Object value) {
-        RubyNode.notDesignedForCompilation();
-
-        assert value != null;
-
-        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
-            return 0;
-        }
-
-        if (value instanceof Integer) {
-            return (int) value;
-        }
-
-        if (value instanceof Long && fitsIntoInteger((long) value)) {
-            return (int) (long) value;
-        }
-
-        if (value instanceof BigInteger) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
-        }
-
-        if (value instanceof Double) {
-            return (int) (double) value;
-        }
-
-        CompilerDirectives.transferToInterpreter();
-
-        throw new UnsupportedOperationException(value.getClass().toString());
-    }
-
-    public static long toLong(Object value) {
-        RubyNode.notDesignedForCompilation();
-
-        // TODO(CS): stop using this in compilation - use a specialising node instead
-
-        assert value != null;
-
-        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
-            return 0;
-        }
-
-        if (value instanceof Integer) {
-            return (int) value;
-        }
-
-        if (value instanceof Long) {
-            return (long) value;
-        }
-
-        if (value instanceof BigInteger) {
-            throw new UnsupportedOperationException();
-        }
-
-        if (value instanceof Double) {
-            return (long) (double) value;
-        }
-
-        CompilerDirectives.transferToInterpreter();
-
-        throw new UnsupportedOperationException(value.getClass().toString());
-    }
-
-    public static Object fixnumOrBignum(double value) {
-        RubyNode.notDesignedForCompilation();
-
-        if (value >= FIXNUM_MIN_VALUE && value <= FIXNUM_MAX_VALUE) {
-            final long longValue = (long) value;
-
-            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
-                return (int) longValue;
-            } else {
-                return value;
-            }
-        } else {
-            return value;
-        }
-    }
-
-    public static Object fixnumOrBignum(BigInteger value) {
-        RubyNode.notDesignedForCompilation();
-
-        assert value != null;
-
-        if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
-            final long longValue = value.longValue();
-
-            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
-                return (int) longValue;
-            } else {
-                return value;
-            }
-        } else {
-            return value;
-        }
-    }
-
-    public static int toUnsignedInt(byte x) {
-        return ((int) x) & 0xff;
     }
 
 }

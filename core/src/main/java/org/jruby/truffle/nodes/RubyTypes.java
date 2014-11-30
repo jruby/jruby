@@ -22,8 +22,6 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
 import org.jruby.truffle.runtime.LexicalScope;
 
-import java.math.BigInteger;
-
 /**
  * The list of types and type conversions that the AST interpreter knows about and can specialise
  * using. Used by the DSL.
@@ -37,7 +35,7 @@ import java.math.BigInteger;
                 long.class, //
                 double.class, //
                 String.class, // for SymbolCastNode
-                BigInteger.class, //
+                RubyBignum.class, //
                 RubyRange.IntegerFixnumRange.class, //
                 RubyRange.LongFixnumRange.class, //
                 RubyRange.ObjectRange.class, //

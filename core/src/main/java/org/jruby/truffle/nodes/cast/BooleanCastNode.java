@@ -18,8 +18,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
-import java.math.BigInteger;
-
 /**
  * Casts a value into a boolean.
  */
@@ -55,7 +53,7 @@ public abstract class BooleanCastNode extends RubyNode {
     }
 
     @Specialization
-    public boolean doBignum(BigInteger value) {
+    public boolean doBignum(RubyBignum value) {
         return true;
     }
 

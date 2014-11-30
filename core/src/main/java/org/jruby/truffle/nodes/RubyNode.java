@@ -67,8 +67,8 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubyArray(execute(frame));
     }
 
-    public BigInteger executeBignum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectBigInteger(execute(frame));
+    public RubyBignum executeBignum(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyBignum(execute(frame));
     }
 
     public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
@@ -235,7 +235,7 @@ public abstract class RubyNode extends Node {
     }
 
     public static boolean isBignum(Object o) {
-        return o instanceof BigInteger;
+        return o instanceof RubyBignum;
     }
 
     public static boolean isFloat(Object o) {
@@ -247,7 +247,7 @@ public abstract class RubyNode extends Node {
     }
 
     public static boolean isFirstBignum(Object o) {
-        return o instanceof BigInteger;
+        return o instanceof RubyBignum;
     }
 
     public static boolean isFirstFloat(Object o) {
@@ -259,11 +259,23 @@ public abstract class RubyNode extends Node {
     }
 
     public static boolean isSecondBignum(Object a, Object b) {
-        return b instanceof BigInteger;
+        return b instanceof RubyBignum;
     }
 
     public static boolean isSecondFloat(Object a, Object b) {
         return b instanceof Double;
+    }
+
+    public RubyBignum bignum(int value) {
+        return bignum((long) value);
+    }
+
+    public RubyBignum bignum(long value) {
+        return bignum(BigInteger.valueOf(value));
+    }
+
+    public RubyBignum bignum(BigInteger value) {
+        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
     }
 
 }

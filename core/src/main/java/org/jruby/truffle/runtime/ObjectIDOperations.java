@@ -11,17 +11,9 @@ package org.jruby.truffle.runtime;
 
 public abstract class ObjectIDOperations {
 
-    public static boolean isFalse(long id) {
-        return id == 0;
-    }
-
-    public static boolean isTrue(long id) {
-        return id == 2;
-    }
-
-    public static boolean isNil(long id) {
-        return id == 4;
-    }
+    public static int FALSE = 0;
+    public static int TRUE = 1;
+    public static int NIL = 4;
 
     public static boolean isFixnum(long id) {
         return id % 2 != 0;

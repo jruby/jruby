@@ -40,11 +40,11 @@ public abstract class ObjectSpaceNodes {
         public Object id2Ref(long id) {
             notDesignedForCompilation();
 
-            if (ObjectIDOperations.isNil(id)) {
+            if (id == ObjectIDOperations.NIL) {
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (ObjectIDOperations.isTrue(id)) {
+            } else if (id == ObjectIDOperations.TRUE) {
                 return true;
-            } else if (ObjectIDOperations.isFalse(id)) {
+            } else if (id == ObjectIDOperations.FALSE) {
                 return false;
             } else if (ObjectIDOperations.isFixnum(id)) {
                 return ObjectIDOperations.toFixnum(id);

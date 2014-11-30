@@ -17,9 +17,8 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
-
-import java.math.BigInteger;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.
@@ -64,7 +63,7 @@ public abstract class SingletonClassNode extends RubyNode {
     }
 
     @Specialization
-    protected Object singletonClass(BigInteger value) {
+    protected Object singletonClass(RubyBignum value) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }

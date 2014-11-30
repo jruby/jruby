@@ -20,8 +20,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
-import java.math.BigInteger;
-
 @NodeChild(value="module", type=RubyNode.class)
 public abstract class AliasNode extends RubyNode {
 
@@ -67,7 +65,7 @@ public abstract class AliasNode extends RubyNode {
     }
 
     @Specialization
-    public Object alias(BigInteger value) {
+    public Object alias(RubyBignum value) {
         return noClass();
     }
 

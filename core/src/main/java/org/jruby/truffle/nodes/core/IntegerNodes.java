@@ -20,12 +20,7 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-
-import java.math.BigInteger;
+import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
@@ -73,7 +68,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public BigInteger floor(BigInteger n) {
+        public RubyBignum floor(RubyBignum n) {
             return n;
         }
 
@@ -176,10 +171,10 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public Object times(VirtualFrame frame, BigInteger n, RubyProc block) {
+        public Object times(VirtualFrame frame, RubyBignum n, RubyProc block) {
             notDesignedForCompilation();
 
-            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(n) < 0; i = i.add(BigInteger.ONE)) {
+            outer: for (RubyBignum i = bignum(0); i.compareTo(n) < 0; i = i.add(1)) {
                 while (true) {
                     try {
                         yield(frame, block, i);
@@ -223,7 +218,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public BigInteger toI(BigInteger n) {
+        public RubyBignum toI(RubyBignum n) {
             return n;
         }
 

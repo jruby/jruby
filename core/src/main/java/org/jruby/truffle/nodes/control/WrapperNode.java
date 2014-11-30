@@ -18,8 +18,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 
-import java.math.BigInteger;
-
 public abstract class WrapperNode extends RubyNode {
 
     @Child protected RubyNode child;
@@ -77,10 +75,10 @@ public abstract class WrapperNode extends RubyNode {
     }
 
     @Override
-    public BigInteger executeBignum(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyBignum executeBignum(VirtualFrame frame) throws UnexpectedResultException {
         enter(frame);
 
-        final BigInteger result;
+        final RubyBignum result;
 
         try {
             result = child.executeBignum(frame);

@@ -14,14 +14,10 @@ import java.math.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.*;
-import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.util.RuntimeBigInteger;
 
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
@@ -53,25 +49,21 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public BigInteger negWithOverflow(long value) {
-            return BigInteger.valueOf(value).negate();
+        public RubyBignum negWithOverflow(long value) {
+            return bignum(value).negate();
         }
 
     }
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends CoreMethodNode {
-
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+    public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public AddNode(AddNode prev) {
             super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -96,12 +88,12 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object addWithOverflow(int a, long b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).add(bignum(b)));
         }
 
         @Specialization
-        public Object add(int a, BigInteger b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), b));
+        public Object add(int a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).add(b));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -111,7 +103,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object addWithOverflow(long a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).add(bignum(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -121,7 +113,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object addWithOverflow(long a, long b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).add(bignum(b)));
         }
 
         @Specialization
@@ -130,25 +122,21 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object add(long a, BigInteger b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.add(BigInteger.valueOf(a), b));
+        public Object add(long a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).add(b));
         }
 
     }
 
     @CoreMethod(names = "-", required = 1)
-    public abstract static class SubNode extends CoreMethodNode {
-
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+    public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public SubNode(SubNode prev) {
             super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -172,8 +160,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object sub(int a, BigInteger b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.subtract(BigInteger.valueOf(a), b));
+        public Object sub(int a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).subtract(b));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -183,7 +171,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object subWithOverflow(long a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).subtract(bignum(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -193,7 +181,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object subWithOverflow(long a, long b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).subtract(bignum(b)));
         }
 
         @Specialization
@@ -202,25 +190,21 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object sub(long a, BigInteger b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.subtract(BigInteger.valueOf(a), b));
+        public Object sub(long a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).subtract(b));
         }
 
     }
 
     @CoreMethod(names = "*", required = 1)
-    public abstract static class MulNode extends CoreMethodNode {
-
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+    public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public MulNode(MulNode prev) {
             super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -240,7 +224,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object mulWithOverflow(int a, long b) {
-            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).multiply(bignum(b)));
         }
 
         @Specialization
@@ -249,8 +233,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mul(int a, BigInteger b) {
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), b));
+        public Object mul(int a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).multiply(b));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -260,7 +244,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object mulWithOverflow(long a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).multiply(bignum(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -270,7 +254,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object mulWithOverflow(long a, long b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), BigInteger.valueOf(b)));
+            return fixnumOrBignum(bignum(a).multiply(bignum(b)));
         }
 
         @Specialization
@@ -279,25 +263,21 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mul(long a, BigInteger b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.multiply(BigInteger.valueOf(a), b));
+        public Object mul(long a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).multiply(b));
         }
 
     }
 
     @CoreMethod(names = "**", required = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
-    public abstract static class PowNode extends CoreMethodNode {
-
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+    public abstract static class PowNode extends BignumNodes.BignumCoreMethodNode {
 
         public PowNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public PowNode(PowNode prev) {
             super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization(guards = "canShiftIntoInt")
@@ -307,7 +287,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object pow(int a, int b) {
-            return fixnumOrBignum.fixnumOrBignum(RuntimeBigInteger.pow(BigInteger.valueOf(a), b));
+            return fixnumOrBignum(bignum(a).pow(b));
         }
 
         @Specialization
@@ -316,14 +296,14 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object pow(int a, BigInteger b) {
+        public Object pow(int a, RubyBignum b) {
             notDesignedForCompilation();
 
-            final BigInteger bigA = BigInteger.valueOf(a);
+            final RubyBignum bigA = bignum(a);
 
-            BigInteger result = BigInteger.ONE;
+            RubyBignum result = bignum(1);
 
-            for (BigInteger n = BigInteger.ZERO; b.compareTo(n) < 0; n = n.add(BigInteger.ONE)) {
+            for (RubyBignum n = bignum(0); b.compareTo(n) < 0; n = n.add(bignum(1))) {
                 result = result.multiply(bigA);
             }
 
@@ -375,7 +355,7 @@ public abstract class FixnumNodes {
                 bMinusOne.enter();
                 if (a == Integer.MIN_VALUE) {
                     bMinusOneAMinimum.enter();
-                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
+                    throw new UnexpectedResultException(bignum(a).negate());
                 } else {
                     bMinusOneANotMinimum.enter();
                     return -a;
@@ -404,7 +384,7 @@ public abstract class FixnumNodes {
                 bMinusOne.enter();
                 if (a == Integer.MIN_VALUE) {
                     bMinusOneAMinimum.enter();
-                    return BigInteger.valueOf(a).negate();
+                    return bignum(a).negate();
                 } else {
                     bMinusOneANotMinimum.enter();
                     return -a;
@@ -431,7 +411,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int div(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") BigInteger b) {
+        public int div(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") RubyBignum b) {
             // TODO(CS): not entirely sure this is correct
             return 0;
         }
@@ -464,7 +444,7 @@ public abstract class FixnumNodes {
                 bMinusOne.enter();
                 if (a == Long.MIN_VALUE) {
                     bMinusOneAMinimum.enter();
-                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
+                    throw new UnexpectedResultException(bignum(a).negate());
                 } else {
                     bMinusOneANotMinimum.enter();
                     return -a;
@@ -493,7 +473,7 @@ public abstract class FixnumNodes {
                 bMinusOne.enter();
                 if (a == Long.MIN_VALUE) {
                     bMinusOneAMinimum.enter();
-                    return BigInteger.valueOf(a).negate();
+                    return bignum(a).negate();
                 } else {
                     bMinusOneANotMinimum.enter();
                     return -a;
@@ -510,14 +490,14 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int div(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") BigInteger b) {
+        public int div(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") RubyBignum b) {
             // TODO(CS): not entirely sure this is correct
             return 0;
         }
     }
 
     @CoreMethod(names = "%", required = 1)
-    public abstract static class ModNode extends CoreMethodNode {
+    public abstract static class ModNode extends BignumNodes.BignumCoreMethodNode {
 
         private final BranchProfile adjustProfile = BranchProfile.create();
 
@@ -547,11 +527,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object mod(int a, BigInteger b) {
-            return mod(BigInteger.valueOf(a), b);
-        }
-
-        @Specialization
         public long mod(long a, int b) {
             return mod(a, (long) b);
         }
@@ -568,15 +543,6 @@ public abstract class FixnumNodes {
             return mod;
         }
 
-        @Specialization
-        public Object mod(long a, BigInteger b) {
-            return mod(BigInteger.valueOf(a), b);
-        }
-
-        public Object mod(BigInteger a, BigInteger b) {
-            notDesignedForCompilation();
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.mod(a, b));
-        }
     }
 
     @CoreMethod(names = "divmod", required = 1)
@@ -605,7 +571,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public RubyArray divMod(int a, BigInteger b) {
+        public RubyArray divMod(int a, RubyBignum b) {
             return divModNode.execute(a, b);
         }
 
@@ -620,7 +586,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public RubyArray divMod(long a, BigInteger b) {
+        public RubyArray divMod(long a, RubyBignum b) {
             return divModNode.execute(a, b);
         }
 
@@ -653,8 +619,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean less(int a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) < 0;
+        public boolean less(int a, RubyBignum b) {
+            return bignum(a).compareTo(b) < 0;
         }
 
         @Specialization
@@ -673,8 +639,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean less(long a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) < 0;
+        public boolean less(long a, RubyBignum b) {
+            return bignum(a).compareTo(b) < 0;
         }
     }
 
@@ -705,8 +671,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean lessEqual(int a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) <= 0;
+        public boolean lessEqual(int a, RubyBignum b) {
+            return bignum(a).compareTo(b) <= 0;
         }
 
         @Specialization
@@ -725,8 +691,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean lessEqual(long a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) <= 0;
+        public boolean lessEqual(long a, RubyBignum b) {
+            return bignum(a).compareTo(b) <= 0;
         }
     }
 
@@ -757,8 +723,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean equal(int a, BigInteger b) {
-            return BigInteger.valueOf(a).equals(b);
+        public boolean equal(int a, RubyBignum b) {
+            return bignum(a).equals(b);
         }
 
         @Specialization
@@ -777,8 +743,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean equal(long a, BigInteger b) {
-            return BigInteger.valueOf(a).equals(b);
+        public boolean equal(long a, RubyBignum b) {
+            return bignum(a).equals(b);
         }
 
         @Fallback
@@ -814,8 +780,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int compare(int a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b);
+        public int compare(int a, RubyBignum b) {
+            return bignum(a).compareTo(b);
         }
 
         @Specialization
@@ -834,8 +800,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int compare(long a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b);
+        public int compare(long a, RubyBignum b) {
+            return bignum(a).compareTo(b);
         }
     }
 
@@ -866,8 +832,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean greaterEqual(int a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) >= 0;
+        public boolean greaterEqual(int a, RubyBignum b) {
+            return bignum(a).compareTo(b) >= 0;
         }
 
         @Specialization
@@ -886,8 +852,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean greaterEqual(long a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) >= 0;
+        public boolean greaterEqual(long a, RubyBignum b) {
+            return bignum(a).compareTo(b) >= 0;
         }
     }
 
@@ -918,8 +884,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean greater(int a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) > 0;
+        public boolean greater(int a, RubyBignum b) {
+            return bignum(a).compareTo(b) > 0;
         }
 
         @Specialization
@@ -938,8 +904,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean greater(long a, BigInteger b) {
-            return RuntimeBigInteger.compareTo(BigInteger.valueOf(a), b) > 0;
+        public boolean greater(long a, RubyBignum b) {
+            return bignum(a).compareTo(b) > 0;
         }
 
     }
@@ -968,7 +934,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "&", required = 1)
-    public abstract static class BitAndNode extends CoreMethodNode {
+    public abstract static class BitAndNode extends BignumNodes.BignumCoreMethodNode {
 
         public BitAndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -989,8 +955,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object bitAnd(int a, BigInteger b) {
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.and(BigInteger.valueOf(a), b));
+        public Object bitAnd(int a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).and(b));
         }
 
         @Specialization
@@ -1004,13 +970,13 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object bitAnd(long a, BigInteger b) {
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.and(BigInteger.valueOf(a), b));
+        public Object bitAnd(long a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).and(b));
         }
     }
 
     @CoreMethod(names = "|", required = 1)
-    public abstract static class BitOrNode extends CoreMethodNode {
+    public abstract static class BitOrNode extends BignumNodes.BignumCoreMethodNode {
 
         public BitOrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1031,8 +997,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object bitOr(int a, BigInteger b) {
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.or(BigInteger.valueOf(a), b));
+        public Object bitOr(int a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).or(b));
         }
 
         @Specialization
@@ -1046,13 +1012,13 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object bitOr(long a, BigInteger b) {
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.or(BigInteger.valueOf(a), b));
+        public Object bitOr(long a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).or(b));
         }
     }
 
     @CoreMethod(names = "^", required = 1)
-    public abstract static class BitXOrNode extends CoreMethodNode {
+    public abstract static class BitXOrNode extends BignumNodes.BignumCoreMethodNode {
 
         public BitXOrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1073,8 +1039,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object bitXOr(int a, BigInteger b) {
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.xor(BigInteger.valueOf(a), b));
+        public Object bitXOr(int a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).xor(b));
         }
 
         @Specialization
@@ -1088,15 +1054,13 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public Object bitXOr(long a, BigInteger b) {
-            return CoreLibrary.fixnumOrBignum(RuntimeBigInteger.xor(BigInteger.valueOf(a), b));
+        public Object bitXOr(long a, RubyBignum b) {
+            return fixnumOrBignum(bignum(a).xor(b));
         }
     }
 
     @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
-    public abstract static class LeftShiftNode extends CoreMethodNode {
-
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+    public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
 
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1106,12 +1070,8 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        protected Object lower(BigInteger value) {
-            if (fixnumOrBignum == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignum = insert(new FixnumOrBignumNode());
-            }
-            return fixnumOrBignum.fixnumOrBignum(value);
+        protected Object lower(RubyBignum value) {
+            return fixnumOrBignum(value);
         }
 
         @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoInt"})
@@ -1148,7 +1108,7 @@ public abstract class FixnumNodes {
             if (canShiftIntoLong(a, b)) {
                 return leftShiftToLong(a, b);
             } else {
-                return lower(RuntimeBigInteger.shiftLeft(BigInteger.valueOf(a), b));
+                return lower(bignum(a).shiftLeft(b));
             }
         }
 
