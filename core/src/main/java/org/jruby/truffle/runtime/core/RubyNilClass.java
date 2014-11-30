@@ -15,7 +15,7 @@ import org.jruby.truffle.runtime.*;
 /**
  * Represents the Ruby {@code NilClass} class.
  */
-public class RubyNilClass extends RubyObject {
+public class RubyNilClass extends RubyBasicObject {
 
     public RubyNilClass(RubyClass rubyClass) {
         super(rubyClass);

@@ -19,7 +19,7 @@ import java.util.Date;
  * enough to run benchmark harnesses.
  */
 
-public class RubyTime extends RubyObject {
+public class RubyTime extends RubyBasicObject {
 
     /**
      * The class from which we create the object that is {@code Time}. A subclass of

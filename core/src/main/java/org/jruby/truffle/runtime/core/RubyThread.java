@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.subsystems.*;
  * not a one-to-one mapping between Ruby threads and Java threads - specifically in combination with
  * fibers as they are currently implemented as their own Java threads.
  */
-public class RubyThread extends RubyObject {
+public class RubyThread extends RubyBasicObject {
 
     public Object getValue() {
         return value;

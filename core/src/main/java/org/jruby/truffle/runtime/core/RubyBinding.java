@@ -15,7 +15,7 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 /**
  * Represents the Ruby {@code Binding} class.
  */
-public class RubyBinding extends RubyObject {
+public class RubyBinding extends RubyBasicObject {
 
     private final Object self;
     private final MaterializedFrame frame;

@@ -23,7 +23,7 @@ import org.jruby.util.ByteList;
 /**
  * Represents the Ruby {@code Symbol} class.
  */
-public class RubySymbol extends RubyObject {
+public class RubySymbol extends RubyBasicObject {
 
     private final String symbol;
     private final ByteList symbolBytes;

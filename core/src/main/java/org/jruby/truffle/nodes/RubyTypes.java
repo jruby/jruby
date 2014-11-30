@@ -62,7 +62,6 @@ import java.math.BigInteger;
                 RubiniusChannel.class, //
                 RubiniusByteArray.class, //
                 RubyEncodingConverter.class, //
-                RubyObject.class, //
                 RubyBasicObject.class, //
                 Object[].class})
 

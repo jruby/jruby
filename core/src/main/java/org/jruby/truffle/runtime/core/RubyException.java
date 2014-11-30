@@ -16,7 +16,7 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 /**
  * Represents the Ruby {@code Exception} class.
  */
-public class RubyException extends RubyObject {
+public class RubyException extends RubyBasicObject {
 
     /**
      * The class from which we create the object that is {@code Exception}. A subclass of

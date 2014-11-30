@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.*;
 /**
  * Represents the Ruby {@code File} class.
  */
-public class RubyFile extends RubyObject {
+public class RubyFile extends RubyBasicObject {
 
     private final Reader reader;
     private final Writer writer;

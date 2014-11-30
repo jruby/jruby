@@ -140,7 +140,7 @@ public class RubyClass extends RubyModule {
 
     @TruffleBoundary
     public RubyBasicObject newInstance(RubyNode currentNode) {
-        return new RubyObject(this);
+        return new RubyBasicObject(this);
     }
 
     public boolean isSingleton() {

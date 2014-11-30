@@ -13,7 +13,7 @@ import org.jcodings.transcode.EConv;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-public class RubyEncodingConverter extends RubyObject {
+public class RubyEncodingConverter extends RubyBasicObject {
 
     public EConv getEConv() {
         return econv;

@@ -22,7 +22,7 @@ import org.jruby.util.cli.Options;
 /**
  * Represents the Ruby {@code Proc} class.
  */
-public class RubyProc extends RubyObject implements MethodLike {
+public class RubyProc extends RubyBasicObject implements MethodLike {
 
     public static final boolean PROC_BINDING = Options.TRUFFLE_PROC_BINDING.load();
 

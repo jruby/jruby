@@ -32,7 +32,7 @@ public class ReadClassVariableNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyObject object = (RubyObject) module.execute(frame);
+        final RubyBasicObject object = (RubyBasicObject) module.execute(frame);
 
         RubyModule moduleObject;
 
@@ -58,7 +58,7 @@ public class ReadClassVariableNode extends RubyNode {
     public Object isDefined(VirtualFrame frame) {
         final RubyContext context = getContext();
 
-        final RubyObject object = (RubyObject) module.execute(frame);
+        final RubyBasicObject object = (RubyBasicObject) module.execute(frame);
 
         RubyModule moduleObject;
 

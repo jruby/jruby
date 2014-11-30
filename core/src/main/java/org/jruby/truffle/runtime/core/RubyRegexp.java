@@ -29,7 +29,7 @@ import java.util.ArrayList;
 /**
  * Represents the Ruby {@code Regexp} class.
  */
-public class RubyRegexp extends RubyObject {
+public class RubyRegexp extends RubyBasicObject {
 
     /**
      * The class from which we create the object that is {@code Regexp}. A subclass of

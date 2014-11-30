@@ -112,6 +112,26 @@ public class RubyContext extends ExecutionContext {
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
     }
 
+    public static String checkInstanceVariableName(RubyContext context, String name, RubyNode currentNode) {
+        RubyNode.notDesignedForCompilation();
+
+        if (!name.startsWith("@")) {
+            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+        }
+
+        return name;
+    }
+
+    public static String checkClassVariableName(RubyContext context, String name, RubyNode currentNode) {
+        RubyNode.notDesignedForCompilation();
+
+        if (!name.startsWith("@@")) {
+            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
+        }
+
+        return name;
+    }
+
     public void load(Source source, RubyNode currentNode) {
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }

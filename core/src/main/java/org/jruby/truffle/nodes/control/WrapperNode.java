@@ -419,25 +419,6 @@ public abstract class WrapperNode extends RubyNode {
     }
 
     @Override
-    public RubyObject executeRubyObject(VirtualFrame frame) throws UnexpectedResultException {
-        enter(frame);
-
-        final RubyObject result;
-
-        try {
-            result = child.executeRubyObject(frame);
-            leave(frame, result);
-        } catch (KillException e) {
-            throw (e);
-        } catch (Exception e) {
-            leaveExceptional(frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
     public RubyProc executeRubyProc(VirtualFrame frame) throws UnexpectedResultException {
         enter(frame);
 

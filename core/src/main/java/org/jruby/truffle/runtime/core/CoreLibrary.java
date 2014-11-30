@@ -271,7 +271,7 @@ public class CoreLibrary {
 
         // Create some key objects
 
-        mainObject = new RubyObject(objectClass);
+        mainObject = new RubyBasicObject(objectClass);
         nilObject = new RubyNilClass(nilClass);
 
         // Create the globals object

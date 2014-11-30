@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.subsystems.*;
  * different Ruby threads. Take note of the lock contracts on {@link #waitForResume} and
  * {@link #resume}.
  */
-public class RubyFiber extends RubyObject {
+public class RubyFiber extends RubyBasicObject {
 
     public static class RubyFiberClass extends RubyClass {
 

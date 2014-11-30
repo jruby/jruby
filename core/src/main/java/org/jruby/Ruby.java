@@ -130,10 +130,10 @@ import org.jruby.truffle.TruffleBridgeImpl;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
-import org.jruby.util.DynamicJRubyClassLoader;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
-import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.ClassDefininngJRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
@@ -727,7 +727,7 @@ public final class Ruby implements Constantizable {
             // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
             // FIXME: restore error once JIT should handle everything
             try {
-                scriptAndCode = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()));
+                scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(getJRubyClassLoader()));
                 if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
                     LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
                 }
@@ -767,7 +767,7 @@ public final class Ruby implements Constantizable {
      * @return an instance of the successfully-compiled Script, or null.
      */
     public Script tryCompile(Node node) {
-        return tryCompile(node, new JRubyClassLoader(getJRubyClassLoader())).script();
+        return tryCompile(node, new ClassDefininngJRubyClassLoader(getJRubyClassLoader())).script();
     }
 
     private void failForcedCompile(Node scriptNode) throws RaiseException {
@@ -783,7 +783,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private ScriptAndCode tryCompile(Node node, JRubyClassLoader classLoader) {
+    private ScriptAndCode tryCompile(Node node, ClassDefininngJRubyClassLoader classLoader) {
         try {
             return Compiler.getInstance().execute(this, node, classLoader);
         } catch (NotCompilableException e) {
@@ -2569,10 +2569,10 @@ public final class Ruby implements Constantizable {
      *
      * @return
      */
-    public synchronized DynamicJRubyClassLoader getJRubyClassLoader() {
+    public synchronized JRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
-            jrubyClassLoader = new DynamicJRubyClassLoader(config.getLoader());
+            jrubyClassLoader = new JRubyClassLoader(config.getLoader());
 
             // if jit code cache is used, we need to add the cache directory to the classpath
             // so the previously generated class files can be reused.
@@ -2913,7 +2913,7 @@ public final class Ruby implements Constantizable {
             // script was not found in cache above, so proceed to compile
             Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                scriptAndCode = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader));
+                scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(jrubyClassLoader));
                 if (scriptAndCode != null) script = scriptAndCode.script();
             }
 
@@ -4831,7 +4831,7 @@ public final class Ruby implements Constantizable {
 
     // Java support
     private JavaSupport javaSupport;
-    private DynamicJRubyClassLoader jrubyClassLoader;
+    private JRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
     private BeanManager beanManager;
