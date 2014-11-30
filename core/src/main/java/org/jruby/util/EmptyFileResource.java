@@ -91,8 +91,8 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public InputStream openInputStream() {
-      return null;
+    public InputStream inputStream() throws ResourceException {
+        throw new ResourceException.NotFound("");
     }
 
     @Override

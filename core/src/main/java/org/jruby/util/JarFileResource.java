@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.util.jar.JarEntry;
@@ -60,12 +61,12 @@ class JarFileResource extends JarResource {
   }
 
   @Override
-  public InputStream openInputStream() {
+  InputStream openInputStream() {
     return index.getInputStream(entry);
   }
 
   @Override
   public ChannelDescriptor openDescriptor(ModeFlags flags, int perm) throws ResourceException {
-    return new ChannelDescriptor(Channels.newChannel(openInputStream()), flags);
+    return new ChannelDescriptor(Channels.newChannel(inputStream()), flags);
   }
 }
