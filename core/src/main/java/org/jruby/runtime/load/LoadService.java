@@ -1605,7 +1605,17 @@ public class LoadService {
         }
         else {
             debugLogTry("fileInClasspath", name);
-            loc = classLoader.getResource(name);
+            try
+            {
+                loc = classLoader.getResource(name);
+            }
+            // some classloaders can throw IllegalArgumentException here
+            //  	at org.apache.felix.framework.BundleWiringImpl$BundleClassLoader.getResource(BundleWiringImpl.java:2419) ~[org.apache.felix.framework-4.2.1.jar:na]
+            //  	at java.lang.ClassLoader.getResource(ClassLoader.java:1142) ~[na:1.7.0_65]
+            catch (IllegalArgumentException e)
+            {
+                loc = null;
+            }
         }
 
         if (loc != null) { // got it
