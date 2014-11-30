@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Set;
 
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
@@ -94,7 +93,7 @@ public class URLResource implements FileResource {
     @Override
     public boolean canRead()
     {
-        return true;
+        return isFile();
     }
 
     @Override
@@ -127,8 +126,7 @@ public class URLResource implements FileResource {
  
     @Override
     public JRubyFile hackyGetJRubyFile() {
-        new RuntimeException().printStackTrace();
-        return null;
+      return JRubyNonExistentFile.NOT_EXIST;
     }
 
     @Override
