@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.math.*;
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -111,12 +110,6 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public long objectID(BigInteger value) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException("No ID for Bignum yet");
-        }
-
-        @Specialization
         public long objectID(RubyBasicObject object) {
             return object.getObjectID();
         }
@@ -141,7 +134,6 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
         @Specialization public boolean equal(double a, double b) { return a == b; }
-        @Specialization public boolean equal(BigInteger a, BigInteger b) { return a == b; } // On purpose, Bignum are not #equal?
 
         @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;

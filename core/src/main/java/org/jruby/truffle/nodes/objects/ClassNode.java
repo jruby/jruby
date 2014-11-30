@@ -17,8 +17,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 
-import java.math.BigInteger;
-
 /**
  * Reads the class of an object.
  */
@@ -56,11 +54,6 @@ public abstract class ClassNode extends RubyNode {
     @Specialization
     protected RubyClass getClass(double value) {
         return getContext().getCoreLibrary().getFloatClass();
-    }
-
-    @Specialization
-    protected RubyClass getClass(BigInteger value) {
-        return getContext().getCoreLibrary().getBignumClass();
     }
 
     @Specialization

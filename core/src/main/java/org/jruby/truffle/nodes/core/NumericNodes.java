@@ -13,10 +13,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
-
-import java.math.BigInteger;
 
 @CoreClass(name = "Numeric")
 public abstract class NumericNodes {
@@ -43,7 +42,7 @@ public abstract class NumericNodes {
         }
 
         @Specialization
-        public BigInteger pos(BigInteger value) {
+        public RubyBignum pos(RubyBignum value) {
             return value;
         }
 
@@ -84,8 +83,8 @@ public abstract class NumericNodes {
         }
 
         @Specialization
-        public Object nonZero(BigInteger value) {
-            if (value.equals(BigInteger.ZERO)) {
+        public Object nonZero(RubyBignum value) {
+            if (value.isZero()) {
                 return false;
             } else {
                 return value;

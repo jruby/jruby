@@ -20,9 +20,8 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
-
-import java.math.BigInteger;
 
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {
@@ -62,7 +61,7 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyNilClass cast(BigInteger value) {
+    public RubyNilClass cast(RubyBignum value) {
         return getContext().getCoreLibrary().getNilObject();
     }
 

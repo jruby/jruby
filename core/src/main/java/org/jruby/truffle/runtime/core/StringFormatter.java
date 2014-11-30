@@ -117,8 +117,16 @@ public class StringFormatter {
 
                     case 'd': {
                         formatBuilder.append("d");
-                        final long value = CoreLibrary.toLong(values.get(v));
-                        stream.printf(formatBuilder.toString(), value);
+                        final Object value = values.get(v);
+                        final long longValue;
+                        if (value instanceof Integer) {
+                            longValue = (int) value;
+                        } else if (value instanceof Long) {
+                            longValue = (long) value;
+                        } else {
+                            throw new UnsupportedOperationException();
+                        }
+                        stream.printf(formatBuilder.toString(), longValue);
                         break;
                     }
 

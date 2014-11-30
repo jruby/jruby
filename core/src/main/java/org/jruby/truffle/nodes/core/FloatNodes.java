@@ -18,7 +18,6 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -68,8 +67,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double add(double a, BigInteger b) {
-            return a + SlowPathBigInteger.doubleValue(b);
+        public double add(double a, RubyBignum b) {
+            return a + b.doubleValue();
         }
 
     }
@@ -101,8 +100,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double sub(double a, BigInteger b) {
-            return a - SlowPathBigInteger.doubleValue(b);
+        public double sub(double a, RubyBignum b) {
+            return a - b.doubleValue();
         }
 
     }
@@ -134,8 +133,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double mul(double a, BigInteger b) {
-            return a * SlowPathBigInteger.doubleValue(b);
+        public double mul(double a, RubyBignum b) {
+            return a * b.doubleValue();
         }
 
     }
@@ -167,8 +166,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double pow(double a, BigInteger b) {
-            return Math.pow(a, SlowPathBigInteger.doubleValue(b));
+        public double pow(double a, RubyBignum b) {
+            return Math.pow(a, b.doubleValue());
         }
 
     }
@@ -200,8 +199,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double div(double a, BigInteger b) {
-            return a / SlowPathBigInteger.doubleValue(b);
+        public double div(double a, RubyBignum b) {
+            return a / b.doubleValue();
         }
 
     }
@@ -233,7 +232,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") BigInteger b) {
+        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") RubyBignum b) {
             throw new UnsupportedOperationException();
         }
 
@@ -266,7 +265,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") BigInteger b) {
+        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") RubyBignum b) {
             throw new UnsupportedOperationException();
         }
 
@@ -299,8 +298,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public boolean less(double a, BigInteger b) {
-            return a < SlowPathBigInteger.doubleValue(b);
+        public boolean less(double a, RubyBignum b) {
+            return a < b.doubleValue();
         }
     }
 
@@ -331,8 +330,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public boolean lessEqual(double a, BigInteger b) {
-            return a <= SlowPathBigInteger.doubleValue(b);
+        public boolean lessEqual(double a, RubyBignum b) {
+            return a <= b.doubleValue();
         }
     }
 
@@ -363,8 +362,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public boolean equal(double a, BigInteger b) {
-            return a == SlowPathBigInteger.doubleValue(b);
+        public boolean equal(double a, RubyBignum b) {
+            return a == b.doubleValue();
         }
     }
 
@@ -412,8 +411,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public boolean greaterEqual(double a, BigInteger b) {
-            return a >= SlowPathBigInteger.doubleValue(b);
+        public boolean greaterEqual(double a, RubyBignum b) {
+            return a >= b.doubleValue();
         }
     }
 
@@ -444,8 +443,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public boolean equal(double a, BigInteger b) {
-            return a > SlowPathBigInteger.doubleValue(b);
+        public boolean equal(double a, RubyBignum b) {
+            return a > b.doubleValue();
         }
     }
 
@@ -553,7 +552,7 @@ public abstract class FloatNodes {
                 }
             }
 
-            return fixnumOrBignum.fixnumOrBignum(f);
+            return fixnumOrBignum.fixnumOrBignum(getContext(), f);
         }
 
     }

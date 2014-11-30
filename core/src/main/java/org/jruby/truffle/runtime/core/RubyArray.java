@@ -127,7 +127,14 @@ public final class RubyArray extends RubyBasicObject {
             final int[] store = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                store[n] = CoreLibrary.toInt(objects[n]);
+                final Object object = objects[n];
+                if (object instanceof Integer) {
+                    store[n] = (int) object;
+                } else if (object instanceof Long) {
+                    store[n] = (int) (long) object;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
             }
 
             return new RubyArray(arrayClass, store, objects.length);
@@ -135,7 +142,14 @@ public final class RubyArray extends RubyBasicObject {
             final long[] store = new long[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                store[n] = CoreLibrary.toLong(objects[n]);
+                final Object object = objects[n];
+                if (object instanceof Integer) {
+                    store[n] = (long) (int) object;
+                } else if (object instanceof Long) {
+                    store[n] = (long) object;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
             }
 
             return new RubyArray(arrayClass, store, objects.length);

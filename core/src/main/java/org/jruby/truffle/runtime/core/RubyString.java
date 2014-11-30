@@ -16,8 +16,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
-import java.math.BigInteger;
-
 /**
  * Represents the Ruby {@code String} class.
  */
@@ -102,26 +100,6 @@ public class RubyString extends RubyBasicObject {
         builder.append(string);
 
         return builder.toString();
-    }
-
-    public Object toInteger() {
-        RubyNode.notDesignedForCompilation();
-
-        if (toString().length() == 0) {
-            return 0;
-        }
-
-        try {
-            final int value = Integer.parseInt(toString());
-
-            if (value >= CoreLibrary.FIXNUM_MIN_VALUE && value <= CoreLibrary.FIXNUM_MAX_VALUE) {
-                return value;
-            } else {
-                return BigInteger.valueOf(value);
-            }
-        } catch (NumberFormatException e) {
-            return new BigInteger(toString());
-        }
     }
 
     @Override

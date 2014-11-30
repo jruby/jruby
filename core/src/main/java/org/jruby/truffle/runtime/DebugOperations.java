@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -224,7 +224,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBignumNode(org.jruby.ast.BignumNode node) {
-        return new BignumLiteralNode(context, translate(node.getPosition()), node.getValue());
+        return new ObjectLiteralNode(context, translate(node.getPosition()), new RubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
     }
 
     @Override

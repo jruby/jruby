@@ -378,7 +378,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass getClass(@SuppressWarnings("unused") BigInteger value) {
+        public RubyClass getClass(@SuppressWarnings("unused") RubyBignum value) {
             return getContext().getCoreLibrary().getBignumClass();
         }
 
@@ -782,7 +782,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public int hash(BigInteger value) {
+        public int hash(RubyBignum value) {
             return value.hashCode();
         }
 
@@ -996,7 +996,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public BigInteger integer(BigInteger value) {
+        public RubyBignum integer(RubyBignum value) {
             return value;
         }
 
@@ -1007,7 +1007,23 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object integer(RubyString value) {
-            return value.toInteger();
+            notDesignedForCompilation();
+
+            if (value.toString().length() == 0) {
+                return 0;
+            }
+
+            try {
+                final int value1 = Integer.parseInt(value.toString());
+
+                if (value1 >= Long.MIN_VALUE && value1 <= Long.MAX_VALUE) {
+                    return value1;
+                } else {
+                    return bignum(value1);
+                }
+            } catch (NumberFormatException e) {
+                return bignum(new BigInteger(value.toString()));
+            }
         }
 
         @Specialization
@@ -1619,12 +1635,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass singletonClass(BigInteger self) {
+        public RubyClass singletonClass(RubyBignum self) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
         }
 
-        @Specialization
+        @Specialization(guards = "!isBignum")
         public RubyClass singletonClass(RubyBasicObject self) {
             notDesignedForCompilation();
 
@@ -1693,7 +1709,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyString string(BigInteger value) {
+        public RubyString string(RubyBignum value) {
             return getContext().makeString(value.toString());
         }
 

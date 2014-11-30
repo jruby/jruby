@@ -25,8 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 
-import java.math.BigInteger;
-
 @NodeInfo(cost = NodeCost.NONE)
 public class RubyWrapper extends ProxyNode implements Wrapper {
 
