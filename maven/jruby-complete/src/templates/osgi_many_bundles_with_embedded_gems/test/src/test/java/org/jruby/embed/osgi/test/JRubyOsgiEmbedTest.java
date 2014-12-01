@@ -82,7 +82,7 @@ public class JRubyOsgiEmbedTest {
 
 	IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
 	jruby.addLoadPath( Scripts.class.getClassLoader() );
-	jruby.addGemPath( FrameworkUtil.getBundle( Gems.class ) );
+	jruby.addBundleToGemPath( FrameworkUtil.getBundle( Gems.class ) );
 	
         // run a script from LOAD_PATH
         String hello = (String) jruby.runScriptlet( "require 'hello'; Hello.say" );
