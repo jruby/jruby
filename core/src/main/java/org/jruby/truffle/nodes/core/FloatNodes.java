@@ -384,6 +384,12 @@ public abstract class FloatNodes {
         public boolean equal(double a, RubyBignum b) {
             return a == b.doubleValue();
         }
+
+        @Specialization(guards = "!isBignum(arguments[1])")
+        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+            // TODO (nirvdrum Dec. 1, 2014): This is a stub. There is one case where this should return 'true', but it's not a trivial fix.
+            return false;
+        }
     }
 
     @CoreMethod(names = "<=>", required = 1)

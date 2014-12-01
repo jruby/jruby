@@ -85,6 +85,23 @@ public abstract class NilClassNodes {
         }
     }
 
+    @CoreMethod(names = "to_f", needsSelf = false)
+    public abstract static class ToFNode extends CoreMethodNode {
+
+        public ToFNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToFNode(ToINode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double toF() {
+            return 0.0f;
+        }
+    }
+
     @CoreMethod(names = "to_s", needsSelf = false)
     public abstract static class ToSNode extends CoreMethodNode {
 
