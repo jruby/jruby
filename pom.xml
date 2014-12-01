@@ -57,7 +57,7 @@
     <its.osgi>osgi*/pom.xml</its.osgi>
     <invoker.skip>true</invoker.skip>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <jruby.plugins.version>1.0.7-SNAPSHOT</jruby.plugins.version>
+    <jruby.plugins.version>1.0.7</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
     <rspec-core.version>2.14.2</rspec-core.version>
