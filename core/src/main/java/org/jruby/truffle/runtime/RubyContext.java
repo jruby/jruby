@@ -34,10 +34,8 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.util.Supplier;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -66,7 +64,7 @@ public class RubyContext extends ExecutionContext {
 
     private SourceCallback sourceCallback = null;
 
-    private final AtomicLong nextObjectID = new AtomicLong(6);
+    private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
     private final ThreadLocal<Queue<Object>> throwTags = new ThreadLocal<Queue<Object>>() {
 

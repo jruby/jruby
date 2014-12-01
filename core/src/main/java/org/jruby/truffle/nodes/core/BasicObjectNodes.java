@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -95,23 +96,46 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public long objectID(int value) {
-            return ObjectIDOperations.fixnumToID(value);
+            return ObjectIDOperations.smallFixnumToID(value);
+        }
+
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public long objectIDSmallFixnumOverflow(long value) {
+            return ObjectIDOperations.smallFixnumToIDOverflow(value);
+        }
+
+        /* TODO: Ideally we would have this instead of the code below to speculate better. [GRAAL-903]
+        @Specialization(guards = "isSmallFixnum")
+        public long objectIDSmallFixnum(long value) {
+            return ObjectIDOperations.smallFixnumToID(value);
+        }
+
+        @Specialization(guards = "!isSmallFixnum")
+        public Object objectIDLargeFixnum(long value) {
+            return ObjectIDOperations.largeFixnumToID(getContext(), value);
+        } */
+
+        @Specialization
+        public Object objectID(long value) {
+            if (isSmallFixnum(value)) {
+                return ObjectIDOperations.smallFixnumToID(value);
+            } else {
+                return ObjectIDOperations.largeFixnumToID(getContext(), value);
+            }
         }
 
         @Specialization
-        public long objectID(long value) {
-            return ObjectIDOperations.fixnumToID(value);
-        }
-
-        @Specialization
-        public long objectID(double value) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException("No ID for Float yet");
+        public RubyBignum objectID(double value) {
+            return ObjectIDOperations.floatToID(getContext(), value);
         }
 
         @Specialization
         public long objectID(RubyBasicObject object) {
             return object.getObjectID();
+        }
+
+        protected boolean isSmallFixnum(long fixnum) {
+            return ObjectIDOperations.isSmallFixnum(fixnum);
         }
 
     }
