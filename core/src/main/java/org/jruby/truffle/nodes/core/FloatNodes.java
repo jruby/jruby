@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 
@@ -301,6 +302,15 @@ public abstract class FloatNodes {
         public boolean less(double a, RubyBignum b) {
             return a < b.doubleValue();
         }
+
+        @Specialization(guards = "!isBignum(arguments[1])")
+        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+            throw new RaiseException(new RubyException(
+                    getContext().getCoreLibrary().getArgumentErrorClass(),
+                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
+                    RubyCallStack.getBacktrace(this)
+            ));
+        }
     }
 
     @CoreMethod(names = "<=", required = 1)
@@ -332,6 +342,15 @@ public abstract class FloatNodes {
         @Specialization
         public boolean lessEqual(double a, RubyBignum b) {
             return a <= b.doubleValue();
+        }
+
+        @Specialization(guards = "!isBignum(arguments[1])")
+        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+            throw new RaiseException(new RubyException(
+                    getContext().getCoreLibrary().getArgumentErrorClass(),
+                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
+                    RubyCallStack.getBacktrace(this)
+            ));
         }
     }
 
@@ -414,6 +433,15 @@ public abstract class FloatNodes {
         public boolean greaterEqual(double a, RubyBignum b) {
             return a >= b.doubleValue();
         }
+
+        @Specialization(guards = "!isBignum(arguments[1])")
+        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+            throw new RaiseException(new RubyException(
+                    getContext().getCoreLibrary().getArgumentErrorClass(),
+                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
+                    RubyCallStack.getBacktrace(this)
+            ));
+        }
     }
 
     @CoreMethod(names = ">", required = 1)
@@ -445,6 +473,15 @@ public abstract class FloatNodes {
         @Specialization
         public boolean equal(double a, RubyBignum b) {
             return a > b.doubleValue();
+        }
+
+        @Specialization(guards = "!isBignum(arguments[1])")
+        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+            throw new RaiseException(new RubyException(
+                    getContext().getCoreLibrary().getArgumentErrorClass(),
+                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
+                    RubyCallStack.getBacktrace(this)
+            ));
         }
     }
 
