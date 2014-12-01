@@ -127,8 +127,7 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        // The @CreateCast is not applied when using this, so the caller needs to unbox itself.
-        protected abstract boolean executeEqualWithUnboxed(VirtualFrame frame, Object a, Object b);
+        protected abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }

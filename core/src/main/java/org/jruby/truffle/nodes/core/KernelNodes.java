@@ -65,7 +65,7 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
             }
-            return referenceEqualNode.executeEqualWithUnboxed(frame, left, right);
+            return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
 
         protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
