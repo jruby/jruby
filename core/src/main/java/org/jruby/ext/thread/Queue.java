@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.thread;
 
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -194,7 +195,7 @@ public class Queue extends RubyObject {
         try {
             return context.getThread().executeTask(context, this, takeTask);
         } catch (InterruptedException ie) {
-            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop");
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop: " + Arrays.toString(ie.getStackTrace()));
         } finally {
             numWaiting.decrementAndGet();
         }
