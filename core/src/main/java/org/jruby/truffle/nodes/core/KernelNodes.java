@@ -378,6 +378,11 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public RubyClass getClass(@SuppressWarnings("unused") long value) {
+            return getContext().getCoreLibrary().getFixnumClass();
+        }
+
+        @Specialization
         public RubyClass getClass(@SuppressWarnings("unused") RubyBignum value) {
             return getContext().getCoreLibrary().getBignumClass();
         }
