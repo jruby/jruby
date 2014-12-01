@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 
 import org.jruby.util.io.ModeFlags;
 
@@ -95,7 +94,7 @@ public class URLResource implements FileResource {
     @Override
     public boolean canRead()
     {
-        return true;
+        return isFile();
     }
 
     @Override
@@ -128,8 +127,7 @@ public class URLResource implements FileResource {
  
     @Override
     public JRubyFile hackyGetJRubyFile() {
-        new RuntimeException().printStackTrace();
-        return null;
+      return JRubyNonExistentFile.NOT_EXIST;
     }
 
     @Override
@@ -211,7 +209,15 @@ public class URLResource implements FileResource {
             return new URLResource(URI + pathname, (URL)null, files);
         }
         try {
-            url.openStream().close();
+            InputStream is = url.openStream();
+            // no inputstream happens with knoplerfish OSGI and osgi tests from /maven/jruby-complete
+            if (is != null) {
+                is.close();
+            }
+            else {
+                // there is no input-stream from this url
+                url = null;
+            }
             return new URLResource(URI + pathname, url, null);
         }
         catch (IOException e)
@@ -249,6 +255,9 @@ public class URLResource implements FileResource {
         }
     }
     private static String[] listClassLoaderFiles(String pathname) {
+        if (pathname.endsWith(".rb") || pathname.endsWith(".class") || pathname.endsWith(".jar")) {
+            return null;
+        }
         try
         {
             Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(pathname + "/.jrubydir");
@@ -273,9 +282,20 @@ public class URLResource implements FileResource {
     }
 
     private static String[] listFiles(String pathname) {
+        if (pathname.endsWith(".rb") || pathname.endsWith(".class") || pathname.endsWith(".jar")) {
+            return null;
+        }
         try
         {
-            return listFilesFromInputStream(new URL(pathname.replace("file://", "file:/") + "/.jrubydir").openStream());
+            // TODO remove this replace
+            InputStream is = new URL(pathname.replace("file://", "file:/") + "/.jrubydir").openStream();
+            // no inputstream happens with knoplerfish OSGI and osgi tests from /maven/jruby-complete
+            if (is != null) {
+                return listFilesFromInputStream(is);
+            }
+            else {
+                return null;
+            }
         }
         catch (IOException e)
         {

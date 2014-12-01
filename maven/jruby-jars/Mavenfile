@@ -26,7 +26,7 @@ end
 
 properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
-            'jruby.plugins.version' => '1.0.7-SNAPSHOT',
+            'jruby.plugins.version' => '1.0.7',
             # we share the already installed gems
             'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
             # need jruby_home but not jruby.home as name otherwise
