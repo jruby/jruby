@@ -1,1 +1,0 @@
-fails:NilClass#to_i does not cause NilClass to be coerced to Fixnum
