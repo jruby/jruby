@@ -1,5 +1,7 @@
 class MSpecScript
 
+  set :target, File.dirname(__FILE__) + '/spec-wrapper'
+
   set :language, [
     "spec/ruby/language"
   ]

@@ -1,6 +1,9 @@
 package org.jruby.embed;
 
 import java.net.URL;
+import java.util.Arrays;
+
+import org.osgi.framework.Bundle;
 
 /**
  * the IsolatedScriptingContainer detects the whether it is used with
@@ -68,38 +71,34 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
                                        boolean lazy )
     {
         super( scope, behavior, lazy );
-        boolean isContextClassLoader = true;
         URL home = Thread.currentThread().getContextClassLoader().getResource( JRUBY_HOME_DIR.substring( 1 ) );
+        final String baseuri;
         if ( home == null ) {
-            isContextClassLoader = false;
             home = this.getClass().getClassLoader().getResource( JRUBY_HOME_DIR );
             if ( home == null ) {
                 throw new RuntimeException( "BUG can not find " + JRUBY_HOME_DIR );
             }
             setClassLoader( this.getClass().getClassLoader() );
             setHomeDirectory( "uri:" + home.toString().replaceFirst( JRUBYDIR + "$", "" ) );
+            baseuri = createUri(getClassLoader(), "/jruby/java.rb" );
         }
         else {
             setHomeDirectory( "uri:classloader:" + JRUBY_HOME );
+            baseuri = "uri:classloader:/";
         }
 
         // clean up LOAD_PATH
+        getProvider().getRubyInstanceConfig().setLoadPaths(Arrays.asList(baseuri));
         runScriptlet( "$LOAD_PATH.delete_if{|p| p =~ /jar$/ };"
                       // TODO NormalizedFile does too much - should leave uri: files as they are
                       + "$LOAD_PATH.each{|p| p.sub!( /:\\/([^\\/])/,'://\\1' )}" );
         
-        if ( isContextClassLoader ) {
-            runScriptlet( "Gem::Specification.reset;"
-                        + "Gem::Specification.add_dir 'uri:classloader:" + JRUBY_HOME + "/lib/ruby/gems/shared';"
-                        + "Gem::Specification.add_dir 'uri:classloader:/';"
-                        + "$LOAD_PATH << 'uri:classloader:/'; $LOAD_PATH.inspect" );
-        }
-        else {
-            runScriptlet( "Gem::Specification.reset;"
-                        + "Gem::Specification.add_dir '" + getHomeDirectory() + "/lib/ruby/gems/shared'" );
-            addLoadPath( getClassLoader(), JRUBY_HOME_DIR );
-            addGemPath( getClassLoader(), JRUBY_HOME_DIR );
-        }
+        runScriptlet( "require 'rubygems/defaults/jruby';" // make sure we have the monkey patch Gem::Specification
+                + "Gem::Specification.reset;"
+                + "Gem::Specification.add_dir '" + getHomeDirectory() + "/lib/ruby/gems/shared';"
+                // if jruby-core and jruby-stdlib comes from the same osgi bundle, assume the embedded gems
+                // are in the same bundle
+                + (getHomeDirectory().startsWith(baseuri) ? "Gem::Specification.add_dir '" + baseuri + "';" : "" ) );
     }
     
     public void addLoadPath( ClassLoader cl ) {
@@ -107,16 +106,38 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     }
 
     public void addLoadPath( ClassLoader cl, String ref ) {
+        addLoadPath(createUri(cl, ref));
+    }
+
+    public void addBundleToLoadPath( Bundle cl ) {
+        addBundleToLoadPath( cl, JRUBYDIR );
+    }
+
+    public void addBundleToLoadPath( Bundle cl, String ref ) {
+        addLoadPath(createUriFromBundle(cl, ref));
+    }
+
+    private String createUriFromBundle( Bundle cl, String ref) {
         URL url = cl.getResource( ref );
         if ( url == null && ref.startsWith( "/" ) ) {
             url = cl.getResource( ref.substring( 1 ) );
         }
         if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
+            throw new RuntimeException( "reference " + ref + " not found on bundle " + cl );
         }
+        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
+    }
 
-        String uri = "uri:" + url.toString().replaceFirst( ref + "$", "" );
+    private void addLoadPath(String uri) {
         runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
+    }
+
+    public void addBundleToGemPath( Bundle cl ) {
+        addBundleToGemPath( cl, "/specifications" + JRUBYDIR );
+    }
+
+    public void addBundleToGemPath( Bundle cl, String ref ) {
+        addGemPath(createUriFromBundle(cl, ref));
     }
 
     public void addGemPath( ClassLoader cl ) {
@@ -124,6 +145,10 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     }
 
     public void addGemPath( ClassLoader cl, String ref ) {
+        addGemPath(createUri(cl, ref));
+    }
+
+    private String createUri(ClassLoader cl, String ref) {
         URL url = cl.getResource( ref );
         if ( url == null && ref.startsWith( "/" ) ) {
             url = cl.getResource( ref.substring( 1 ) );
@@ -131,9 +156,10 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         if ( url == null ) {
             throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
         }
-
-        String uri = "uri:" + url.toString().replaceFirst( ref + "$", "" );
-        runScriptlet( "Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
+        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
 
+    private void addGemPath(String uri) {
+        runScriptlet( "Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
+    }
 }
