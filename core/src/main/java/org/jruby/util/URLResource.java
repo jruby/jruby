@@ -252,6 +252,9 @@ public class URLResource implements FileResource {
         }
     }
     private static String[] listClassLoaderFiles(String pathname) {
+        if (pathname.endsWith(".rb") || pathname.endsWith(".class") || pathname.endsWith(".jar")) {
+            return null;
+        }
         try
         {
             Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(pathname + "/.jrubydir");
@@ -276,6 +279,9 @@ public class URLResource implements FileResource {
     }
 
     private static String[] listFiles(String pathname) {
+        if (pathname.endsWith(".rb") || pathname.endsWith(".class") || pathname.endsWith(".jar")) {
+            return null;
+        }
         try
         {
             // TODO remove this replace
