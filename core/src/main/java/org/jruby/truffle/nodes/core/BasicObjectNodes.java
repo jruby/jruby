@@ -12,10 +12,13 @@ package org.jruby.truffle.nodes.core;
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -38,9 +41,15 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
+        @CreateCast("arguments") public RubyNode[] createCast(RubyNode[] arguments) {
+            return new RubyNode[] {
+                    BooleanCastNodeFactory.create(getContext(), getSourceSection(), arguments[0])
+            };
+        }
+
         @Specialization
-        public boolean not(Object value) {
-            return !getContext().getCoreLibrary().isTruthy(value);
+        public boolean not(boolean value) {
+            return !value;
         }
 
     }
@@ -95,23 +104,46 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public long objectID(int value) {
-            return ObjectIDOperations.fixnumToID(value);
+            return ObjectIDOperations.smallFixnumToID(value);
+        }
+
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public long objectIDSmallFixnumOverflow(long value) {
+            return ObjectIDOperations.smallFixnumToIDOverflow(value);
+        }
+
+        /* TODO: Ideally we would have this instead of the code below to speculate better. [GRAAL-903]
+        @Specialization(guards = "isSmallFixnum")
+        public long objectIDSmallFixnum(long value) {
+            return ObjectIDOperations.smallFixnumToID(value);
+        }
+
+        @Specialization(guards = "!isSmallFixnum")
+        public Object objectIDLargeFixnum(long value) {
+            return ObjectIDOperations.largeFixnumToID(getContext(), value);
+        } */
+
+        @Specialization
+        public Object objectID(long value) {
+            if (isSmallFixnum(value)) {
+                return ObjectIDOperations.smallFixnumToID(value);
+            } else {
+                return ObjectIDOperations.largeFixnumToID(getContext(), value);
+            }
         }
 
         @Specialization
-        public long objectID(long value) {
-            return ObjectIDOperations.fixnumToID(value);
-        }
-
-        @Specialization
-        public long objectID(double value) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException("No ID for Float yet");
+        public RubyBignum objectID(double value) {
+            return ObjectIDOperations.floatToID(getContext(), value);
         }
 
         @Specialization
         public long objectID(RubyBasicObject object) {
             return object.getObjectID();
+        }
+
+        protected boolean isSmallFixnum(long fixnum) {
+            return ObjectIDOperations.isSmallFixnum(fixnum);
         }
 
     }
@@ -127,8 +159,7 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        // The @CreateCast is not applied when using this, so the caller needs to unbox itself.
-        protected abstract boolean executeEqualWithUnboxed(VirtualFrame frame, Object a, Object b);
+        protected abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }

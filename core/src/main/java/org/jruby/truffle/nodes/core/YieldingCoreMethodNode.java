@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -19,6 +21,7 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class YieldingCoreMethodNode extends CoreMethodNode {
 
     @Child protected YieldDispatchHeadNode dispatchNode;
+    @Child protected BooleanCastNode booleanCastNode;
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -30,12 +33,20 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
         dispatchNode = prev.dispatchNode;
     }
 
+    private boolean booleanCast(VirtualFrame frame, Object value) {
+        if (booleanCastNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+        }
+        return booleanCastNode.executeBoolean(frame, value);
+    }
+
     public Object yield(VirtualFrame frame, RubyProc block, Object... arguments) {
         return dispatchNode.dispatch(frame, block, arguments);
     }
 
     public boolean yieldIsTruthy(VirtualFrame frame, RubyProc block, Object... arguments) {
-        return getContext().getCoreLibrary().isTruthy(yield(frame, block, arguments));
+        return booleanCast(frame, yield(frame, block, arguments));
     }
 
 }

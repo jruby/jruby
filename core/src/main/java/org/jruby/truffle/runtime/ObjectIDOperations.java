@@ -9,13 +9,73 @@
  */
 package org.jruby.truffle.runtime;
 
+import com.oracle.truffle.api.ExactMath;
+import org.jruby.truffle.runtime.core.RubyBignum;
+
+import java.math.BigInteger;
+
+/**
+ * <pre>
+ * Object IDs distribution
+ *
+ * We try to respect MRI scheme when it makes sense (Fixnum for the moment).
+ * Have a look at include/ruby/ruby.h below ruby_special_consts.
+ *
+ * Encoding for Fixnum (long):
+ * ... 0000 = false
+ * ... 0010 = true
+ * ... 0100 = nil
+ *
+ * ... xxx1 = Fixnum of value (id-1)/2 if -2^62 <= value < 2^62
+ * ... xxx0 = BasicObject generated id (for id > 4)
+ *
+ * Encoding for Bignum:
+ * ... 0001 | 64-bit long = Fixnum if value < -2^62 or value >= 2^62
+ * ... 0010 | 64-bit raw double bits = Float
+ * </pre>
+ */
 public abstract class ObjectIDOperations {
 
     public static int FALSE = 0;
-    public static int TRUE = 1;
+    public static int TRUE = 2;
     public static int NIL = 4;
+    public static int FIRST_OBJECT_ID = 6;
 
-    public static boolean isFixnum(long id) {
+    private static BigInteger LARGE_FIXNUM_FLAG = BigInteger.ONE.shiftLeft(64);
+    private static BigInteger FLOAT_FLAG = BigInteger.ONE.shiftLeft(65);
+
+    private static long SMALL_FIXNUM_MIN = -(1L << 62);
+    private static long SMALL_FIXNUM_MAX = (1L << 62) - 1;
+
+    // primitive => ID
+
+    public static boolean isSmallFixnum(long fixnum) {
+        // TODO: optimize
+        return SMALL_FIXNUM_MIN <= fixnum && fixnum <= SMALL_FIXNUM_MAX;
+    }
+
+    public static long smallFixnumToIDOverflow(long fixnum) throws ArithmeticException{
+        return ExactMath.addExact(ExactMath.multiplyExact(fixnum, 2), 1);
+    }
+
+    public static long smallFixnumToID(long fixnum) {
+        assert isSmallFixnum(fixnum);
+        return fixnum * 2 + 1;
+    }
+
+    public static RubyBignum largeFixnumToID(RubyContext context, long fixnum) {
+        assert !isSmallFixnum(fixnum);
+        return new RubyBignum(context.getCoreLibrary().getBignumClass(), BigInteger.valueOf(fixnum).or(LARGE_FIXNUM_FLAG));
+    }
+
+    public static RubyBignum floatToID(RubyContext context, double value) {
+        long bits = Double.doubleToRawLongBits(value);
+        return new RubyBignum(context.getCoreLibrary().getBignumClass(), BigInteger.valueOf(bits).or(FLOAT_FLAG));
+    }
+
+    // ID => primitive
+
+    public static boolean isSmallFixnumID(long id) {
         return id % 2 != 0;
     }
 
@@ -23,7 +83,20 @@ public abstract class ObjectIDOperations {
         return (id - 1) / 2;
     }
 
-    public static long fixnumToID(long fixnum) {
-        return fixnum * 2 + 1;
+    public static boolean isLargeFixnumID(RubyBignum id) {
+        return !id.bigIntegerValue().and(LARGE_FIXNUM_FLAG).equals(BigInteger.ZERO);
     }
+
+    public static long toFixnum(RubyBignum id) {
+        return id.longValue();
+    }
+
+    public static boolean isFloatID(RubyBignum id) {
+        return !id.bigIntegerValue().and(FLOAT_FLAG).equals(BigInteger.ZERO);
+    }
+
+    public static double toFloat(RubyBignum id) {
+        return Double.longBitsToDouble(id.longValue());
+    }
+
 }

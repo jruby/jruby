@@ -1,2 +1,0 @@
-fails:NilClass#to_f returns 0.0
-fails:NilClass#to_f does not cause NilClass to be coerced to Float

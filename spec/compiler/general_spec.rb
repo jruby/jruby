@@ -108,7 +108,7 @@ modes.each do |mode|
       run("1r") {|result| expect(result).to eq (Rational(1, 1))}
       run("1.1r") {|result| expect(result).to eq (Rational(11, 10))}
       run("1i") {|result| expect(result).to eq (Complex(0, 1))}
-      pending("needs parser support") { run("1.1i") {|result| expect(result).to eq (Complex(0, 1.1))} }
+      run("1.1i") {|result| expect(result).to eq (Complex(0, 1.1))}
     end
 
     it "compiles interpolated strings" do

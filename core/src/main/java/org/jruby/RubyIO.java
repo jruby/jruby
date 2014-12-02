@@ -3446,6 +3446,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int perm;
         IRubyObject cmd;
         
+        if ((filename instanceof RubyString) && ((RubyString) filename).isEmpty()) {
+            throw context.getRuntime().newErrnoENOENTError();
+        }
+
         Object pm = EncodingUtils.vmodeVperm(vmode, vperm);
 
         IOEncodable convconfig = new IOEncodable.ConvConfig();

@@ -53,22 +53,13 @@ public abstract class BooleanCastNode extends RubyNode {
     }
 
     @Specialization
-    public boolean doBignum(RubyBignum value) {
-        return true;
-    }
-
-    @Specialization
     public boolean doFloat(double value) {
         return true;
     }
 
-    @Specialization(guards = "neitherNilNorFalse")
+    @Specialization(guards = "!isNil")
     public boolean doBasicObject(RubyBasicObject object) {
         return true;
-    }
-
-    protected boolean neitherNilNorFalse(RubyBasicObject object) {
-        return object != getContext().getCoreLibrary().getNilObject();
     }
 
     @Override

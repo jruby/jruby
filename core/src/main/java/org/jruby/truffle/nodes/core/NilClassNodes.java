@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "NilClass")
@@ -85,6 +86,23 @@ public abstract class NilClassNodes {
         }
     }
 
+    @CoreMethod(names = "to_f", needsSelf = false)
+    public abstract static class ToFNode extends CoreMethodNode {
+
+        public ToFNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToFNode(ToINode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double toF() {
+            return 0.0f;
+        }
+    }
+
     @CoreMethod(names = "to_s", needsSelf = false)
     public abstract static class ToSNode extends CoreMethodNode {
 
@@ -99,6 +117,40 @@ public abstract class NilClassNodes {
         @Specialization
         public RubyString toS() {
             return getContext().makeString("");
+        }
+    }
+
+    @CoreMethod(names = "to_h", needsSelf = false)
+    public abstract static class ToHNode extends CoreMethodNode {
+
+        public ToHNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToHNode(ToHNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyHash toH() {
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, getContext().getCoreLibrary().getNilObject(), null, 0);
+        }
+    }
+
+    @CoreMethod(names = "dup", needsSelf = false)
+    public abstract static class DupNode extends CoreMethodNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DupNode(DupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString dup() {
+            throw new RaiseException(getContext().getCoreLibrary().typeError("can't dup NilClass", this));
         }
     }
 

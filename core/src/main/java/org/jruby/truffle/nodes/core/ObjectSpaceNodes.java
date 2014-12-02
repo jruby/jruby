@@ -46,7 +46,7 @@ public abstract class ObjectSpaceNodes {
                 return true;
             } else if (id == ObjectIDOperations.FALSE) {
                 return false;
-            } else if (ObjectIDOperations.isFixnum(id)) {
+            } else if (ObjectIDOperations.isSmallFixnumID(id)) {
                 return ObjectIDOperations.toFixnum(id);
             } else {
                 final Object object = getContext().getObjectSpaceManager().collectLiveObjects().get(id);
@@ -57,7 +57,24 @@ public abstract class ObjectSpaceNodes {
                     return object;
                 }
             }
+        }
 
+        @Specialization(guards = "isLargeFixnumID")
+        public Object id2RefLargeFixnum(RubyBignum id) {
+            return ObjectIDOperations.toFixnum(id);
+        }
+
+        @Specialization(guards = "isFloatID")
+        public double id2RefFloat(RubyBignum id) {
+            return ObjectIDOperations.toFloat(id);
+        }
+
+        protected boolean isLargeFixnumID(RubyBignum id) {
+            return ObjectIDOperations.isLargeFixnumID(id);
+        }
+
+        protected boolean isFloatID(RubyBignum id) {
+            return ObjectIDOperations.isFloatID(id);
         }
 
     }
