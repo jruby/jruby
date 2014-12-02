@@ -53,11 +53,6 @@ public abstract class BooleanCastNode extends RubyNode {
     }
 
     @Specialization
-    public boolean doBignum(RubyBignum value) {
-        return true;
-    }
-
-    @Specialization
     public boolean doFloat(double value) {
         return true;
     }
