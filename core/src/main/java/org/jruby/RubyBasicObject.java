@@ -1690,6 +1690,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block, EvalType evalType) {
         context.preExecuteUnder(under, block);
 
+        IRubyObject savedBindingSelf = block.getBinding().getSelf();
+        IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();
         Visibility savedVisibility = block.getBinding().getVisibility();
         block.getBinding().setVisibility(PUBLIC);
 
@@ -1706,6 +1708,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             return (IRubyObject) bj.getValue();
         } finally {
             block.getBinding().setVisibility(savedVisibility);
+            block.getBinding().setSelf(savedBindingSelf);
+            block.getBinding().getFrame().setSelf(savedFrameSelf);
 
             context.postExecuteUnder();
         }
@@ -1728,6 +1732,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block, EvalType evalType) {
         context.preExecuteUnder(under, block);
 
+        IRubyObject savedBindingSelf = block.getBinding().getSelf();
+        IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();
         Visibility savedVisibility = block.getBinding().getVisibility();
         block.getBinding().setVisibility(PUBLIC);
 
@@ -1738,6 +1744,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             return (IRubyObject) bj.getValue();
         } finally {
             block.getBinding().setVisibility(savedVisibility);
+            block.getBinding().setSelf(savedBindingSelf);
+            block.getBinding().getFrame().setSelf(savedFrameSelf);
 
             context.postExecuteUnder();
         }
