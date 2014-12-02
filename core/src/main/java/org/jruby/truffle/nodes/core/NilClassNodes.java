@@ -120,6 +120,23 @@ public abstract class NilClassNodes {
         }
     }
 
+    @CoreMethod(names = "to_h", needsSelf = false)
+    public abstract static class ToHNode extends CoreMethodNode {
+
+        public ToHNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToHNode(ToHNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyHash toH() {
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, getContext().getCoreLibrary().getNilObject(), null, 0);
+        }
+    }
+
     @CoreMethod(names = "dup", needsSelf = false)
     public abstract static class DupNode extends CoreMethodNode {
 
