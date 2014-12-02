@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "NilClass")
@@ -116,6 +117,23 @@ public abstract class NilClassNodes {
         @Specialization
         public RubyString toS() {
             return getContext().makeString("");
+        }
+    }
+
+    @CoreMethod(names = "dup", needsSelf = false)
+    public abstract static class DupNode extends CoreMethodNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DupNode(DupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString dup() {
+            throw new RaiseException(getContext().getCoreLibrary().typeError("can't dup NilClass", this));
         }
     }
 
