@@ -17,6 +17,8 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -39,9 +41,15 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
+        @CreateCast("arguments") public RubyNode[] createCast(RubyNode[] arguments) {
+            return new RubyNode[] {
+                    BooleanCastNodeFactory.create(getContext(), getSourceSection(), arguments[0])
+            };
+        }
+
         @Specialization
-        public boolean not(Object value) {
-            return !getContext().getCoreLibrary().isTruthy(value);
+        public boolean not(boolean value) {
+            return !value;
         }
 
     }
