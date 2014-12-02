@@ -191,7 +191,12 @@ public final class Block {
     }
 
     public Block cloneBlockForEval(IRubyObject self) {
-        Block block = cloneBlock();
+        Binding newBinding = new Binding(self, binding.getFrame().duplicate(), binding.getVisibility(), binding.getKlass(), binding.getDynamicScope(), binding.getBacktrace());
+
+        Block block = new Block(body, newBinding);
+
+        block.type = type;
+        block.escapeBlock = this;
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);
