@@ -197,8 +197,7 @@ public class RubyFileTest {
             filename = get_path(context, filename);
         }
 
-        FileStat stat = fileResource(filename).stat();
-        return runtime.newBoolean(stat != null && stat.isReadable());
+        return runtime.newBoolean(fileResource(filename).canRead());
     }
 
     // Not exposed by filetest, but so similiar in nature that it is stored here

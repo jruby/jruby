@@ -24,6 +24,10 @@ abstract class JarResource implements FileResource {
             // since pathname is actually an uri we need to decode any url decoded characters like %20
             // which happens when directory names contain spaces
             sanitized = URLDecoder.decode(sanitized, "UTF-8");
+        } catch (IllegalArgumentException iae) {
+            // something in the path did not decode, so it's probably not a URI
+            // See jruby/jruby#2264.
+            return null;
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
         }
