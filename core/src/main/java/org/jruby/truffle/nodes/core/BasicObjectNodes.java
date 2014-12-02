@@ -31,7 +31,7 @@ import org.jruby.util.cli.Options;
 public abstract class BasicObjectNodes {
 
     @CoreMethod(names = "!")
-    public abstract static class NotNode extends CoreMethodNode {
+    public abstract static class NotNode extends UnaryCoreMethodNode {
 
         public NotNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -41,10 +41,8 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        @CreateCast("arguments") public RubyNode[] createCast(RubyNode[] arguments) {
-            return new RubyNode[] {
-                    BooleanCastNodeFactory.create(getContext(), getSourceSection(), arguments[0])
-            };
+        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
         }
 
         @Specialization
@@ -149,7 +147,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = {"equal?", "=="}, required = 1)
-    public abstract static class ReferenceEqualNode extends CoreMethodNode {
+    public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -170,17 +168,17 @@ public abstract class BasicObjectNodes {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotRubyBasicObject(arguments[0])", "isNotRubyBasicObject(arguments[1])", "notSameClass"})
+        @Specialization(guards = {"isNotRubyBasicObject(left)", "isNotRubyBasicObject(right)", "notSameClass"})
         public boolean equal(Object a, Object b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(arguments[0])")
+        @Specialization(guards = "isNotRubyBasicObject(left)")
         public boolean equal(Object a, RubyBasicObject b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(arguments[1])")
+        @Specialization(guards = "isNotRubyBasicObject(right)")
         public boolean equal(RubyBasicObject a, Object b) {
             return false;
         }
