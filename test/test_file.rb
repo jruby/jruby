@@ -484,6 +484,14 @@ class TestFile < Test::Unit::TestCase
     assert(result == 'falsefalsetrue')
   end
 
+  def test_readable_query # - readable?
+    assert(File.readable?('test/test_file.rb'))
+    assert(File.readable?('test'))
+    assert(! File.readable?('test_not'))
+    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"test\");print File.readable?(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
+    assert(result == 'falsetruetrue')
+  end
+
   def test_file_exist_query
     assert(File.exist?('test'))
     assert(! File.exist?('test_not'))
