@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -1002,6 +1003,42 @@ public abstract class HashNodes {
             throw new UnsupportedOperationException();
         }
 
+    }
+
+    @CoreMethod(names = "default", optional = 1)
+    public abstract static class DefaultNode extends HashCoreMethodNode {
+
+        public DefaultNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DefaultNode(DefaultNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object defaultElement(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder undefined) {
+            Object ret = hash.getDefaultValue();
+
+            // TODO (nirvdrum Dec. 1, 2014): This needs to evaluate the defaultProc if it exists before it tries defaultValue.
+            if (ret != null) {
+                return ret;
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object defaultElement(VirtualFrame frame, RubyHash hash, Object key) {
+            Object ret = hash.getDefaultValue();
+
+            // TODO (nirvdrum Dec. 1, 2014): This really needs to do something with the key.  Dummy stub for now.
+            if (ret != null) {
+                return ret;
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
     }
 
     @CoreMethod(names = "size")
