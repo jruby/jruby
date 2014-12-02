@@ -62,13 +62,9 @@ public abstract class BooleanCastNode extends RubyNode {
         return true;
     }
 
-    @Specialization(guards = "neitherNilNorFalse")
+    @Specialization(guards = "!isNil")
     public boolean doBasicObject(RubyBasicObject object) {
         return true;
-    }
-
-    protected boolean neitherNilNorFalse(RubyBasicObject object) {
-        return object != getContext().getCoreLibrary().getNilObject();
     }
 
     @Override
