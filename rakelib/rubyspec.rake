@@ -53,12 +53,22 @@ namespace :spec do
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
   task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_18']
 
-  desc "Run fast specs that do not spawn many subprocesses"
+  desc "Run fast 1.8 specs that do not spawn many subprocesses"
   task :'ruby:fast' do
     mspec :compile_mode => "OFF",
-          :format => 'd',
+          :format => 's',
           :spec_target => ":fast",
-          :jruby_opts => "--dev"
+          :jruby_opts => "--dev",
+          :compat => "1.8"
+  end
+
+  desc "Run fast 1.9 specs that do not spawn many subprocesses"
+  task :'ruby19:fast' do
+    mspec :compile_mode => "OFF",
+          :format => 's',
+          :spec_target => ":fast",
+          :jruby_opts => "--dev",
+          :compat => "1.9"
   end
 
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
@@ -174,20 +184,6 @@ namespace :spec do
   desc "All 1.9 specs in JIT mode only (threshold=0)"
   task :all_compiled_19 do
     mspec :compile_mode => "JIT", :jit_threshold => 0, :compat => "1.9", :format => 'd'
-  end
-
-  # Parameterized rubyspec runs for e.g. TravisCI
-  desc "Run RubySpec in interpreted mode under the language compat version ENV['RUBYSPEC_LANG_VER']"
-  task :ci_interpreted_via_env do
-    ENV['RUBYSPEC_LANG_VER'] ||= '1.9'
-    case
-    when ENV['RUBYSPEC_LANG_VER'] == '1.8'
-      spec_config_file = RUBY18_MSPEC_FILE
-    else
-      spec_config_file = RUBY19_MSPEC_FILE
-    end
-    mspec :compile_mode => 'OFF', :compat => ENV['RUBYSPEC_LANG_VER'],
-      :spec_config => spec_config_file, :format => 's'
   end
   
   # Complimentary tasks for running specs

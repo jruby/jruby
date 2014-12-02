@@ -34,8 +34,11 @@
     <target name="spec:ci_interpreted_19" depends="bootstrap">
         <rake task="spec:ci_interpreted_19"/>
     </target>
-    <target name="spec:ci_interpreted_via_env" depends="bootstrap">
-        <rake task="spec:ci_interpreted_via_env"/>
+    <target name="spec:ruby:fast" depends="bootstrap">
+        <rake task="spec:ruby:fast"/>
+    </target>
+    <target name="spec:ruby19:fast" depends="bootstrap">
+        <rake task="spec:ruby19:fast"/>
     </target>
     <target name="spec:ci_compiled_18" depends="bootstrap">
         <rake task="spec:ci_compiled_18"/>

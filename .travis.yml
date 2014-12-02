@@ -14,8 +14,8 @@ env:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.cext.enabled=false"
   matrix:
     - TARGET='test-extended'
-    - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
-    - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
+    - TARGET='spec:ruby:fast'
+    - TARGET='spec:ruby19:fast'
     - TARGET='jruby-jars'
     - TARGET='complete'
     - TARGET='main'
