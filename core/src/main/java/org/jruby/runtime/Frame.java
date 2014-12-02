@@ -281,7 +281,7 @@ public final class Frame {
      * 
      * @return The self for the frame
      */
-    IRubyObject getSelf() {
+    public IRubyObject getSelf() {
         return self;
     }
 
