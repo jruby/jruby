@@ -7,3 +7,4 @@ fails:Exception#backtrace includes the name of the method from where self raised
 fails:Exception#backtrace includes the filename of the location immediately prior to where self raised in the second element
 fails:Exception#backtrace includes the line number of the location immediately prior to where self raised in the second element
 fails:Exception#backtrace contains lines of the same format for each prior position in the stack
+fails:Exception#backtrace when redefined does not affect the behaviour of Exception#message
