@@ -1,1 +1,2 @@
 fails:Float#* returns self multiplied by other
+fails:Float#* raises a TypeError when given a non-Numeric
