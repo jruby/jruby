@@ -732,6 +732,13 @@ public class ShellLauncher {
         File pwd = new File(runtime.getCurrentDirectory());
 
         try {
+            // Peel off env hash, if given
+            IRubyObject envHash = null;
+            if (env == null && strings.length > 0 && !(envHash = TypeConverter.checkHashType(runtime, strings[0])).isNil()) {
+                strings = Arrays.copyOfRange(strings, 1, strings.length);
+                env = (Map)envHash;
+            }
+
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
             boolean useShell = false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
