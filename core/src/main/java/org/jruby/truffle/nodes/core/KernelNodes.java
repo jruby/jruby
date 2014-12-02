@@ -421,7 +421,7 @@ public abstract class KernelNodes {
                 newObject.getSingletonClass(this).initCopy(self.getMetaClass());
             }
 
-            newObject.setInstanceVariables(self.getFields());
+            newObject.setInstanceVariables(self.getInstanceVariables());
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
 
             return newObject;
@@ -450,8 +450,7 @@ public abstract class KernelNodes {
             // This method is pretty crappy for compilation - it should improve with the OM
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
-
-            newObject.setInstanceVariables(self.getFields());
+            newObject.setInstanceVariables(self.getInstanceVariables());
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
 
             return newObject;

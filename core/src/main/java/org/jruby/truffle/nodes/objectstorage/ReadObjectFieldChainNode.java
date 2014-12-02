@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.nodes.NodeCost;
-import com.oracle.truffle.api.nodes.NodeInfo;
-
 public abstract class ReadObjectFieldChainNode extends ReadObjectFieldNode {
 
     @Child protected ReadObjectFieldNode next;

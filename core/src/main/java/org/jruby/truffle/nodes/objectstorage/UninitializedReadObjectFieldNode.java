@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,40 +12,53 @@ package org.jruby.truffle.nodes.objectstorage;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
-import org.jruby.truffle.runtime.objectstorage.*;
+import com.oracle.truffle.api.object.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
 
     private final String name;
-    private final RespecializeHook hook;
 
-    public UninitializedReadObjectFieldNode(String name, RespecializeHook hook) {
+    public UninitializedReadObjectFieldNode(String name) {
         this.name = name;
-        this.hook = hook;
     }
 
     @Override
-    public Object execute(ObjectStorage object) {
+    public Object execute(RubyBasicObject object) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        hook.hookRead(object, name);
+        if (object.getDynamicObject().updateShape()) {
+            ReadObjectFieldNode topNode = getTopNode();
+            if (topNode != this) {
+                // retry existing cache nodes
+                return topNode.execute(object);
+            }
+        }
 
-        final ObjectLayout layout = object.getObjectLayout();
-        final StorageLocation storageLocation = layout.findStorageLocation(name);
+        final Shape layout = object.getDynamicObject().getShape();
+        final Property property = layout.getProperty(name);
 
-        ReadObjectFieldNode newNode;
+        final ReadObjectFieldNode newNode;
 
-        if (storageLocation == null) {
+        if (property == null) {
             newNode = new ReadMissingObjectFieldNode(layout, this);
-        } else if (storageLocation instanceof IntegerStorageLocation) {
-            newNode = new ReadIntegerObjectFieldNode(layout, (IntegerStorageLocation) storageLocation, this);
-        } else if (storageLocation instanceof LongStorageLocation) {
-            newNode = new ReadLongObjectFieldNode(layout, (LongStorageLocation) storageLocation, this);
-        } else if (storageLocation instanceof DoubleStorageLocation) {
-            newNode = new ReadDoubleObjectFieldNode(layout, (DoubleStorageLocation) storageLocation, this);
         } else {
-            newNode = new ReadObjectObjectFieldNode(layout, (ObjectStorageLocation) storageLocation, this);
+            final Location storageLocation = property.getLocation();
+
+            assert storageLocation != null;
+
+            if (storageLocation instanceof BooleanLocation) {
+                newNode = new ReadBooleanObjectFieldNode(layout, (BooleanLocation) storageLocation, this);
+            } else if (storageLocation instanceof IntLocation) {
+                newNode = new ReadIntegerObjectFieldNode(layout, (IntLocation) storageLocation, this);
+            } else if (storageLocation instanceof LongLocation) {
+                newNode = new ReadLongObjectFieldNode(layout, (LongLocation) storageLocation, this);
+            } else if (storageLocation instanceof DoubleLocation) {
+                newNode = new ReadDoubleObjectFieldNode(layout, (DoubleLocation) storageLocation, this);
+            } else {
+                newNode = new ReadObjectObjectFieldNode(layout, storageLocation, this);
+            }
         }
 
         replace(newNode, "adding new read object field node to chain");
@@ -53,9 +66,15 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
     }
 
     @Override
-    public boolean isSet(ObjectStorage object) {
-        return object.getObjectLayout().findStorageLocation(name) != null;
-
+    public boolean isSet(RubyBasicObject object) {
+        return object.getObjectLayout().getProperty(name) != null;
     }
 
+    private ReadObjectFieldNode getTopNode() {
+        ReadObjectFieldNode topNode = this;
+        while (topNode.getParent() instanceof ReadObjectFieldNode) {
+            topNode = (ReadObjectFieldNode) topNode.getParent();
+        }
+        return topNode;
+    }
 }

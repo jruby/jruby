@@ -185,6 +185,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
                           '<arg value="-J-ea" />' +
+                          '<arg value="-J-Xmx1G" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
                           '<arg value="run" />' +
                           '<arg value="-t" />' +
@@ -235,6 +236,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
                           '<arg value="-J-ea" />' +
+                          '<arg value="-J-Xmx1G" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
                           '<arg value="run" />' +
                           '<arg value="-t" />' +

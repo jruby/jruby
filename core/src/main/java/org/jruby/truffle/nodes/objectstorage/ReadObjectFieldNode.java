@@ -11,13 +11,23 @@ package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.runtime.objectstorage.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public abstract class ReadObjectFieldNode extends Node {
 
-    public abstract Object execute(ObjectStorage object);
+    public abstract Object execute(RubyBasicObject object);
 
-    public int executeInteger(ObjectStorage object) throws UnexpectedResultException {
+    public boolean executeBoolean(RubyBasicObject object) throws UnexpectedResultException {
+        Object result = execute(object);
+
+        if (result instanceof Boolean) {
+            return (boolean) result;
+        } else {
+            throw new UnexpectedResultException(result);
+        }
+    }
+
+    public int executeInteger(RubyBasicObject object) throws UnexpectedResultException {
         Object result = execute(object);
 
         if (result instanceof Integer) {
@@ -27,7 +37,7 @@ public abstract class ReadObjectFieldNode extends Node {
         }
     }
 
-    public long executeLong(ObjectStorage object) throws UnexpectedResultException {
+    public long executeLong(RubyBasicObject object) throws UnexpectedResultException {
         Object result = execute(object);
 
         if (result instanceof Long) {
@@ -37,7 +47,7 @@ public abstract class ReadObjectFieldNode extends Node {
         }
     }
 
-    public double executeDouble(ObjectStorage object) throws UnexpectedResultException {
+    public double executeDouble(RubyBasicObject object) throws UnexpectedResultException {
         Object result = execute(object);
 
         if (result instanceof Double) {
@@ -47,7 +57,7 @@ public abstract class ReadObjectFieldNode extends Node {
         }
     }
 
-    public boolean isSet(ObjectStorage object) {
+    public boolean isSet(RubyBasicObject object) {
         return true;
     }
 

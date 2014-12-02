@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -18,34 +18,8 @@ import org.jruby.truffle.nodes.objectstorage.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyMatchData;
-import org.jruby.truffle.runtime.objectstorage.*;
 
 public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
-
-    private final RespecializeHook hook = new RespecializeHook() {
-
-        @Override
-        public void hookRead(ObjectStorage object, String name) {
-            final RubyBasicObject rubyObject = (RubyBasicObject) object;
-
-            if (!rubyObject.hasPrivateLayout()) {
-                rubyObject.updateLayoutToMatchClass();
-            }
-        }
-
-        @Override
-        public void hookWrite(ObjectStorage object, String name, Object value) {
-            final RubyBasicObject rubyObject = (RubyBasicObject) object;
-
-            if (!rubyObject.hasPrivateLayout()) {
-                rubyObject.updateLayoutToMatchClass();
-            }
-
-            rubyObject.setInstanceVariable(name, value);
-        }
-
-    };
 
     @Child protected RubyNode receiver;
     @Child protected RubyNode rhs;
@@ -56,7 +30,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
-        writeNode = new WriteHeadObjectFieldNode(name, hook);
+        writeNode = new WriteHeadObjectFieldNode(name);
         this.isGlobal = isGlobal;
     }
 

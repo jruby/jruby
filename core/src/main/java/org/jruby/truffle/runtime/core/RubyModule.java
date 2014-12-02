@@ -135,7 +135,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, RubyNode currentNode) {
-        super(selfClass);
+        super(selfClass, context);
         this.context = context;
         this.name = name;
 

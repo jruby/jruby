@@ -10,31 +10,31 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class WriteHeadObjectFieldNode extends Node {
 
     private final String name;
     @Child protected WriteObjectFieldNode first;
 
-    public WriteHeadObjectFieldNode(String name, RespecializeHook hook) {
+    public WriteHeadObjectFieldNode(String name) {
         this.name = name;
-        first = new UninitializedWriteObjectFieldNode(name, hook);
+        first = new UninitializedWriteObjectFieldNode(name);
     }
 
-    public void execute(ObjectStorage object, int value) {
+    public void execute(RubyBasicObject object, int value) {
         first.execute(object, value);
     }
 
-    public void execute(ObjectStorage object, long value) {
+    public void execute(RubyBasicObject object, long value) {
         first.execute(object, value);
     }
 
-    public void execute(ObjectStorage object, double value) {
+    public void execute(RubyBasicObject object, double value) {
         first.execute(object, value);
     }
 
-    public void execute(ObjectStorage object, Object value) {
+    public void execute(RubyBasicObject object, Object value) {
         first.execute(object, value);
     }
 

@@ -17,6 +17,7 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.*;
 
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
@@ -30,6 +31,7 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -56,6 +58,7 @@ public class RubyContext extends ExecutionContext {
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
+    private final Shape emptyShape;
     private final Warnings warnings;
     private final SafepointManager safepointManager;
     private final Random random = new Random();
@@ -96,6 +99,8 @@ public class RubyContext extends ExecutionContext {
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
 
+        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
+
         // See note in CoreLibrary#initialize to see why we need to break this into two statements
         coreLibrary = new CoreLibrary(this);
         coreLibrary.initialize();
@@ -110,6 +115,10 @@ public class RubyContext extends ExecutionContext {
         fiberManager = new FiberManager(this);
 
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+    }
+
+    public Shape getEmptyShape() {
+        return emptyShape;
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, RubyNode currentNode) {
