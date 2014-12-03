@@ -485,10 +485,10 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_readable_query # - readable?
-    assert(File.readable?('test/test_file.rb'))
-    assert(File.readable?('test'))
+    assert(File.readable?(__FILE__))
+    assert(File.readable?(File.dirname(__FILE__)))
     assert(! File.readable?('test_not'))
-    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"test\");print File.readable?(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
+    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"#{File.dirname(__FILE__)}\");print File.readable?(\"#{__FILE__}\")'", 'jruby.native.enabled' => 'false' )
     assert(result == 'falsetruetrue')
   end
 
