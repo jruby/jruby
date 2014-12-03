@@ -1259,10 +1259,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             this.unblockFunc = task;
             this.unblockArg = data;
 
-            enterSleep();
-
             // check for interrupt before going into blocking call
-            context.pollThreadEvents();
+            pollThreadEvents(context);
+
+            enterSleep();
 
             return task.run(context, data);
         } finally {
