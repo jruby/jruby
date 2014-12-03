@@ -282,7 +282,7 @@ class LibrarySearcher {
                 }
                 else if (location.startsWith(URLResource.URI)){
                     url = null;
-                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(location));
+                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(runtime, location));
                 }
                 else {
                     File f = new File(location);
