@@ -145,7 +145,7 @@ public class DispatchHeadNode extends Node {
             VirtualFrame frame,
             Object methodName,
             Object receiverObject) {
-        return context.getCoreLibrary().isTruthy(dispatch(
+        return (boolean) dispatch(
                 frame,
                 context.getCoreLibrary().getNilObject(),
                 null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
@@ -153,7 +153,7 @@ public class DispatchHeadNode extends Node {
                 methodName,
                 null,
                 null,
-                Dispatch.DispatchAction.RESPOND_TO_METHOD));
+                Dispatch.DispatchAction.RESPOND_TO_METHOD);
     }
 
     public Object dispatch(
