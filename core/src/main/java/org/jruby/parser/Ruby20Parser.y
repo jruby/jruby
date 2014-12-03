@@ -1670,11 +1670,11 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     } else if ($2 instanceof StrNode) {
                         $$ = new XStrNode(position, (ByteList) $<StrNode>2.getValue().clone());
                     } else if ($2 instanceof DStrNode) {
-                        $$ = new DXStrNode(position, $<DStrNode>2);
+                        $$ = new DXStrNode(position, lexer.getEncoding()).addAll($<DStrNode>2);
 
                         $<Node>$.setPosition(position);
                     } else {
-                        $$ = new DXStrNode(position).add($2);
+                        $$ = new DXStrNode(position, lexer.getEncoding()).add($2);
                     }
                 }
 
