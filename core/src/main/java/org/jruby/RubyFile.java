@@ -934,7 +934,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         JRubyFile oldFile = JRubyFile.create(runtime.getCurrentDirectory(), oldNameJavaString);
         JRubyFile newFile = JRubyFile.create(runtime.getCurrentDirectory(), newNameJavaString);
         
-        if (!oldFile.exists() || !newFile.getParentFile().exists()) {
+        boolean isOldSymlink = RubyFileTest.symlink_p(recv, oldNameString).isTrue();
+        // Broken symlinks considered by exists() as non-existing,
+        // so we need to check for symlinks explicitly.
+        if (!(oldFile.exists() || isOldSymlink) || !newFile.getParentFile().exists()) {
             throw runtime.newErrnoENOENTError(oldNameJavaString + " or " + newNameJavaString);
         }
 
