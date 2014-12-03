@@ -710,8 +710,6 @@ CLASSDEF
   # JRUBY-2169
   def test_java_class_resource_methods
     path = 'test/org/jruby/javasupport/test/'
-    # workaround for https://github.com/jruby/jruby/issues/2216
-    path = File.expand_path(path) if ENV_JAVA['user.dir'] != Dir.pwd
     $CLASSPATH << path
     file = 'test_java_class_resource_methods.properties'
 
@@ -720,6 +718,7 @@ CLASSDEF
     # get resource as URL
     url = jc.resource_as_url(file)
     assert(java.net.URL === url)
+    assert(url.path == File.expand_path(url.path))
     assert(/^foo=bar/ =~ java.io.DataInputStream.new(url.content).read_line)
 
     # get resource as stream
