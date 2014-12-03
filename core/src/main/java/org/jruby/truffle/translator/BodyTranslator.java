@@ -659,6 +659,14 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitComplexNode(ComplexNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        // TODO: implement Complex
+        return node.getNumber().accept(this);
+    }
+
+    @Override
     public RubyNode visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
@@ -1832,6 +1840,14 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitPostExeNode(PostExeNode node) {
         return node.getBodyNode().accept(this);
+    }
+
+    @Override
+    public RubyNode visitRationalNode(RationalNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        // TODO: implement Rational
+        return new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator());
     }
 
     @Override
