@@ -5,6 +5,7 @@
 
 require 'rbconfig'
 require 'ffi'
+require 'fileutils'
 
 CPU = case RbConfig::CONFIG['host_cpu'].downcase
   when /i[3456]86/

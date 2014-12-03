@@ -424,9 +424,29 @@ module FFI
     #  @example
     #   enum [:zero, :one, :two]  # unnamed enum, equivalent to above example
     #  @param [Array] values values for enum
+    # @overload enum(native_type, name, values)
+    #  Create a named enum and specify the native type.
+    #  @example
+    #   enum FFI::Type::UINT64, :foo, [:zero, :one, :two]  # named enum
+    #  @param [FFI::Type] native_type native type for new enum
+    #  @param [Symbol] name name for new enum
+    #  @param [Array] values values for enum
+    # @overload enum(native_type, *args)
+    #  Create an unnamed enum and specify the native type.
+    #  @example
+    #   enum FFI::Type::UINT64, :zero, :one, :two  # unnamed enum
+    #  @param [FFI::Type] native_type native type for new enum
+    #  @param args values for enum
+    # @overload enum(native_type, values)
+    #  Create an unnamed enum and specify the native type.
+    #  @example
+    #   enum Type::UINT64, [:zero, :one, :two]  # unnamed enum, equivalent to above example
+    #  @param [FFI::Type] native_type native type for new enum
+    #  @param [Array] values values for enum
     # @return [FFI::Enum]
     # Create a new {FFI::Enum}.
     def enum(*args)
+      native_type = args.first.kind_of?(FFI::Type) ? args.shift : nil
       name, values = if args[0].kind_of?(Symbol) && args[1].kind_of?(Array)
         [ args[0], args[1] ]
       elsif args[0].kind_of?(Array)
@@ -434,8 +454,8 @@ module FFI
       else
         [ nil, args ]
       end
-      @ffi_enums ||= FFI::Enums.new
-      @ffi_enums << (e = FFI::Enum.new(values, name))
+      @ffi_enums = FFI::Enums.new unless defined?(@ffi_enums)
+      @ffi_enums << (e = native_type ? FFI::Enum.new(native_type, values, name) : FFI::Enum.new(values, name))
 
       # If called as enum :foo, [ :zero, :one, :two ], add a typedef alias
       typedef(e, name) if name

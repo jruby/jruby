@@ -30,7 +30,7 @@ package org.jruby.ext.ffi;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
-import org.jcodings.util.IntHash;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.Ruby;
@@ -52,12 +52,12 @@ import org.jruby.runtime.Visibility;
  */
 @JRubyClass(name="FFI::Enum", parent="Object")
 public final class Enum extends RubyObject {
-    private final IRubyObject nativeType;
+    private IRubyObject nativeType;
     private final RubyHash kv_map;
     private volatile IRubyObject tag;
 
     private volatile Map<RubySymbol, RubyInteger> symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>();
-    private volatile IntHash<RubySymbol> valueToSymbol = new IntHash<RubySymbol>();
+    private volatile ConcurrentHashMap<Long, RubySymbol> valueToSymbol = new ConcurrentHashMap<Long, RubySymbol>();
 
     public static RubyClass createEnumClass(Ruby runtime, RubyModule ffiModule) {
         RubyClass enumClass = ffiModule.defineClassUnder("Enum", runtime.getObject(),
@@ -79,27 +79,53 @@ public final class Enum extends RubyObject {
 
     private Enum(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        nativeType = runtime.getModule("FFI").getClass("Type").getConstant("INT");
         kv_map = RubyHash.newHash(runtime);
         tag = runtime.getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public final IRubyObject initialize(ThreadContext context, IRubyObject values, IRubyObject tag) {
-        this.tag = tag;
-        return initialize(context, values);
+    public final IRubyObject initialize(ThreadContext context, IRubyObject arg) {
+        return initialize(context, null, null, arg);
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public final IRubyObject initialize(ThreadContext context, IRubyObject values) {
+    public final IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof org.jruby.ext.ffi.Type)
+            return initialize(context, arg0, arg1, null);
+
+        if (arg1.isNil())
+            return initialize(context, null, arg0, null);
+
+        // Handles bad args and tag, values case.
+        return initialize(context, null, arg0, arg1);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public final IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject values, IRubyObject tag) {
+        int offset = 0;
+        if (type instanceof org.jruby.ext.ffi.Type) {
+            nativeType = type;
+        } else {
+            if (!(type == null || type.isNil()))
+                throw context.runtime.newTypeError(type, context.runtime.getModule("FFI").getClass("Type"));
+
+            nativeType = context.runtime.getModule("FFI").getClass("Type").getConstant("INT");
+        }
+
+        if (!(tag == null || tag.isNil() || tag instanceof RubySymbol))
+            throw context.runtime.newTypeError(tag, context.runtime.getSymbol());
+
+        this.tag = tag;
+
         if (!(values instanceof RubyArray)) {
             throw context.runtime.newTypeError(values, context.runtime.getArray());
         }
+
         RubyArray ary = (RubyArray) values;
 
         Map<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>();
         IRubyObject prevConstant = null;
-        int nextValue = 0;
+        long nextValue = 0;
 
         for (int i = 0; i < ary.size(); i++) {
             IRubyObject v = ary.entry(i);
@@ -109,13 +135,13 @@ public final class Enum extends RubyObject {
                 prevConstant = v;
                 nextValue++;
 
-            } else if (v instanceof RubyFixnum) {
+            } else if (v instanceof RubyInteger) {
                 if (prevConstant == null) {
                     throw context.runtime.newArgumentError("invalid enum sequence - no symbol for value "
                             + v);
                 }
                 s2v.put((RubySymbol) prevConstant, (RubyFixnum) v);
-                nextValue = (int) ((RubyInteger) v).getLongValue() + 1;
+                nextValue = ((RubyInteger) v).getLongValue() + 1;
 
             } else {
                 throw context.runtime.newTypeError(v, context.runtime.getSymbol());
@@ -123,10 +149,10 @@ public final class Enum extends RubyObject {
         }
 
         symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>(s2v);
-        valueToSymbol = new IntHash<RubySymbol>(symbolToValue.size());
+        valueToSymbol = new ConcurrentHashMap<Long, RubySymbol>(symbolToValue.size());
         for (Map.Entry<RubySymbol, RubyInteger> e : symbolToValue.entrySet()) {
             kv_map.fastASet(e.getKey(), e.getValue());
-            valueToSymbol.put((int) e.getValue().getLongValue(), e.getKey());
+            valueToSymbol.put(e.getValue().getLongValue(), e.getKey());
         }
 
         return this;
@@ -139,7 +165,7 @@ public final class Enum extends RubyObject {
             return value != null ? value : context.runtime.getNil();
 
         } else if (query instanceof RubyInteger) {
-            RubySymbol symbol = valueToSymbol.get((int) ((RubyInteger) query).getLongValue());
+            RubySymbol symbol = valueToSymbol.get((Long)((RubyInteger) query).getLongValue());
             return symbol != null ? symbol : context.runtime.getNil();
 
         } else {
@@ -194,7 +220,7 @@ public final class Enum extends RubyObject {
 
         RubySymbol sym;
 
-        if (value instanceof RubyInteger && (sym = valueToSymbol.get((int) ((RubyInteger) value).getLongValue())) != null) {
+        if (value instanceof RubyInteger && (sym = valueToSymbol.get((Long)((RubyInteger) value).getLongValue())) != null) {
             return sym;
         }
 
