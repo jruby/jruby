@@ -15,8 +15,10 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Layout;
+import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.InternalName;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyOperations;
@@ -30,6 +32,8 @@ import java.util.Map;
  */
 public class RubyBasicObject {
 
+    public static final InternalName OBJECT_ID_IDENTIFIER = new InternalName("object_id");
+
     public static Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
 
     private final DynamicObject dynamicObject;
@@ -38,8 +42,6 @@ public class RubyBasicObject {
     @CompilationFinal protected RubyClass logicalClass;
     /** Either the singleton class if it exists or the logicalClass. */
     @CompilationFinal protected RubyClass metaClass;
-
-    protected long objectID = -1;
 
     private boolean frozen = false;
 
@@ -112,10 +114,15 @@ public class RubyBasicObject {
 
     @CompilerDirectives.TruffleBoundary
     public long getObjectID() {
-        if (objectID == -1) {
-            objectID = getContext().getNextObjectID();
+        // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
+        Property property = dynamicObject.getShape().getProperty(OBJECT_ID_IDENTIFIER);
+
+        if (property != null) {
+            return (long) property.get(dynamicObject, false);
         }
 
+        final long objectID = getContext().getNextObjectID();
+        dynamicObject.define(OBJECT_ID_IDENTIFIER, objectID, 0);
         return objectID;
     }
 

@@ -55,7 +55,9 @@ public class RubyOperations extends ObjectType {
         Map<String, Object> vars = new LinkedHashMap<>();
         List<Property> properties = shape.getPropertyList();
         for (Property property : properties) {
-            vars.put((String) property.getKey(), property.get(receiver.getDynamicObject(), false));
+            if (property.getKey() != RubyBasicObject.OBJECT_ID_IDENTIFIER) {
+                vars.put((String) property.getKey(), property.get(receiver.getDynamicObject(), false));
+            }
         }
         return vars;
     }
