@@ -97,6 +97,14 @@ public class TranslatorEnvironment {
         return getFrameDescriptor().findOrAddFrameSlot(name);
     }
 
+    public FrameSlot declareVarWhereAllowed(String name) {
+        if (isBlock) {
+            return parent.declareVarWhereAllowed(name);
+        } else {
+            return declareVar(name);
+        }
+    }
+
     public SharedMethodInfo findMethodForLocalVar(String name) {
         TranslatorEnvironment current = this;
         do {

@@ -20,6 +20,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
@@ -96,7 +97,14 @@ public class RubyRegexp extends RubyBasicObject {
         final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
         if (match == -1) {
-            set(frame, "$~", getContext().getCoreLibrary().getNilObject());
+            final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
+
+            set(frame, "$&", nil);
+            set(frame, "$~", nil);
+
+            if (operator) {
+                set(frame, "$+", nil);
+            }
 
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -140,8 +148,13 @@ public class RubyRegexp extends RubyBasicObject {
                 }
 
                 set(frame, "$+", values[nonNil]);
+            } else {
+                set(frame, "$+", getContext().getCoreLibrary().getNilObject());
             }
         }
+
+
+        set(frame, "$&", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup()));
 
         set(frame, "$~", matchObject);
 
@@ -153,10 +166,15 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     private void set(Frame frame, String name, Object value) {
-        final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(name);
+        while (frame != null) {
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(name);
 
-        if (slot != null) {
-            frame.setObject(slot, value);
+            if (slot != null) {
+                frame.setObject(slot, value);
+                break;
+            }
+
+            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
         }
     }
 

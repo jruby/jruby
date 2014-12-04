@@ -81,7 +81,7 @@ public class BodyTranslator extends Translator {
     /**
      * Global variables which in common usage have frame local semantics.
      */
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$+"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$+", "$&", "$`", "$'"));
 
     public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(currentNode, context, source);
@@ -1049,7 +1049,7 @@ public class BodyTranslator extends Translator {
         if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             // Assignment is implicit for many of these, so we need to declare when we use
 
-            environment.declareVar(name);
+            environment.declareVarWhereAllowed(name);
 
             final RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 

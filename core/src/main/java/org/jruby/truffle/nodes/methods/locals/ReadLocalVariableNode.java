@@ -17,6 +17,10 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.translator.BodyTranslator;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public abstract class ReadLocalVariableNode extends FrameSlotNode implements ReadNode {
 
     public ReadLocalVariableNode(RubyContext context, SourceSection sourceSection, FrameSlot slot) {
@@ -57,13 +61,16 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
         return WriteLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, rhs);
     }
 
+    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));
+
     @Override
     public Object isDefined(VirtualFrame frame) {
+        // TODO(CS): copy and paste of ReadLevelVariableNode
         if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
-            if (frameSlot.getIdentifier().equals("$+") && getObject(frame) == getContext().getCoreLibrary().getNilObject()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
+            if (ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doObject(frame) != getContext().getCoreLibrary().getNilObject()) {
                 return getContext().makeString("global-variable");
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
             }
         } else {
             return getContext().makeString("local-variable");

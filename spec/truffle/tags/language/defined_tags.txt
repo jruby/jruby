@@ -1,11 +1,9 @@
-fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $&
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $`
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $'
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $+
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for the capture references
 fails:The defined? keyword for variables when a String matches a Regexp returns nil for non-captures
 fails:The defined? keyword for variables when a Regexp does not match a String returns nil for $1-$9
-fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $&
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $`
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $'
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $+
