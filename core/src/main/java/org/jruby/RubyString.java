@@ -2656,7 +2656,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         RubyString result = RubyString.newString(context.runtime,
-                context.runtime.getPosix().crypt(salt, asJavaString()).toString());
+                context.runtime.getPosix().crypt(asJavaString(), salt).toString());
         result.infectBy(this);
         result.infectBy(otherStr);
         return result;
