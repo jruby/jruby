@@ -15,9 +15,11 @@ import java.util.Set;
 import jnr.posix.FileStat;
 
 import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.Ruby;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.util.io.ModeFlags;
 
-public class URLResource implements FileResource {
+public class URLResource extends AbstractFileResource {
 
     public static String URI = "uri:";
     public static String CLASSLOADER = "classloader:/";
@@ -130,27 +132,16 @@ public class URLResource implements FileResource {
     }
 
     @Override
-    public InputStream openInputStream()
-    {
-        try
-        {
-            if (pathname != null) {
-                return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
-            }
-            return url.openStream();
+    InputStream openInputStream() throws IOException {
+        if (pathname != null) {
+            return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
         }
-        catch (IOException e)
-        {
-            return null;
-        }
+        return url.openStream();
     }
 
     @Override
     public ChannelDescriptor openDescriptor(ModeFlags flags, int perm) throws ResourceException {
-        if (!exists()) {
-            throw new ResourceException.NotFound(absolutePath());
-        }
-        return new ChannelDescriptor(openInputStream(), flags);
+        return new ChannelDescriptor(inputStream(), flags);
     }
 
     public static FileResource createClassloaderURI(String pathname) {
