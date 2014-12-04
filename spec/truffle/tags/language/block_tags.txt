@@ -3,7 +3,6 @@ fails:Post-args with pattern matching extracts matched blocks with post argument
 fails:A block yielded a single Array assigns nil to unassigned required arguments
 fails:A block yielded a single Array assigns elements to optional arguments
 fails:A block yielded a single Array assgins elements to post arguments
-fails:A block yielded a single Array assigns elements to required arguments when a keyword rest argument is present
 fails:A block yielded a single Array assigns elements to mixed argument types
 fails:A block yielded a single Array calls #to_hash on the last element if keyword arguments are present
 fails:A block yielded a single Array assigns the last element to a non-keyword argument if #to_hash returns nil
@@ -11,3 +10,4 @@ fails:A block yielded a single Array calls #to_hash on the element that maps to 
 fails:A block yielded a single Array raises a TypeError if #to_hash does not return a Hash
 fails:A block yielded a single Array raises the error raised inside #to_hash
 fails:A block yielded a single Object receives the object if #to_ary returns nil
+fails:A block yielded a single Array assigns elements to required arguments when a keyword rest argument is present

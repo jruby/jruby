@@ -55,7 +55,6 @@ fails:Multiple assignment with a single RHS value assigns global variables
 fails:Multiple assignment with a single RHS value assigns indexed elements
 fails:Multiple assignment with a single splatted RHS value calls #to_a to convert nil to an empty Array
 fails:Multiple assignment with a single splatted RHS value returns a copy of a splatted Array
-fails:Multiple assignment with a single splatted RHS value does not call #to_a on an Array subclass
 fails:Multiple assignment with a single splatted RHS value returns an Array when the splatted object is an Array subclass
 fails:Multiple assignment with a single splatted RHS value does not call #to_a if #respond_to? returns false
 fails:Multiple assignment with a single splatted RHS value raises a TypeError if #to_a does not return an Array
@@ -80,3 +79,4 @@ fails:Multiple assignment with a MRHS value does not call #to_ary to convert an 
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object when the position receiving the value is a simple variable
 fails:Multiple assignment with a MRHS value does not mutate the assigned Array
 fails:Multiple assignment with a RHS assignment value does not mutate a RHS Array
+fails:Multiple assignment with a single splatted RHS value does not call #to_a on an Array subclass
