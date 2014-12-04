@@ -68,15 +68,6 @@ public class DispatchHeadNode extends Node {
                 Dispatch.DispatchAction.CALL_METHOD);
     }
 
-    public boolean callIsTruthy(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            RubyProc blockObject,
-            Object... argumentsObjects) {
-        return context.getCoreLibrary().isTruthy(call(frame, receiverObject, methodName, blockObject, argumentsObjects));
-    }
-
     public double callFloat(
             VirtualFrame frame,
             Object receiverObject,

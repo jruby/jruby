@@ -18,9 +18,9 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -33,11 +33,11 @@ public abstract class HashNodes {
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode equalNode;
+        @Child protected PredicateDispatchHeadNode equalNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context);
+            equalNode = new PredicateDispatchHeadNode(context);
         }
 
         public EqualNode(EqualNode prev) {
@@ -69,7 +69,7 @@ public abstract class HashNodes {
             }
 
             for (int n = 0; n < aSize * 2; n++) {
-                if (!equalNode.callIsTruthy(frame, aStore[n], "==", null, bStore[n])) {
+                if (!equalNode.call(frame, aStore[n], "==", null, bStore[n])) {
                     return false;
                 }
             }
@@ -199,7 +199,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]", required = 1)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode eqlNode;
+        @Child protected PredicateDispatchHeadNode eqlNode;
         @Child protected YieldDispatchHeadNode yield;
 
         private final BranchProfile notInHashProfile = new BranchProfile();
@@ -207,7 +207,7 @@ public abstract class HashNodes {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context);
+            eqlNode = new PredicateDispatchHeadNode(context);
             yield = new YieldDispatchHeadNode(context);
         }
 
@@ -237,7 +237,7 @@ public abstract class HashNodes {
             final int size = hash.getStoreSize();
 
             for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
-                if (n < size && eqlNode.callIsTruthy(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
                     return store[n * 2 + 1];
                 }
             }
@@ -285,7 +285,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", required = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode eqlNode;
+        @Child protected PredicateDispatchHeadNode eqlNode;
 
         private final BranchProfile considerExtendProfile = new BranchProfile();
         private final BranchProfile extendProfile = new BranchProfile();
@@ -293,7 +293,7 @@ public abstract class HashNodes {
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context);
+            eqlNode = new PredicateDispatchHeadNode(context);
         }
 
         public SetIndexNode(SetIndexNode prev) {
@@ -320,7 +320,7 @@ public abstract class HashNodes {
             final int size = hash.getStoreSize();
 
             for (int n = 0; n < RubyHash.HASHES_SMALL; n++) {
-                if (n < size && eqlNode.callIsTruthy(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
                     store[n * 2 + 1] = value;
                     return value;
                 }
@@ -723,11 +723,11 @@ public abstract class HashNodes {
     @CoreMethod(names = "key?", required = 1)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode eqlNode;
+        @Child protected PredicateDispatchHeadNode eqlNode;
 
         public KeyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context);
+            eqlNode = new PredicateDispatchHeadNode(context);
         }
 
         public KeyNode(KeyNode prev) {
@@ -748,7 +748,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
 
             for (int n = 0; n < store.length; n += 2) {
-                if (n < size && eqlNode.callIsTruthy(frame, store[n], "eql?", null, key)) {
+                if (n < size && eqlNode.call(frame, store[n], "eql?", null, key)) {
                     return true;
                 }
             }
@@ -896,7 +896,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "merge", required = 1)
     public abstract static class MergeNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode eqlNode;
+        @Child protected PredicateDispatchHeadNode eqlNode;
 
         private final BranchProfile nothingFromFirstProfile = new BranchProfile();
         private final BranchProfile considerNothingFromSecondProfile = new BranchProfile();
@@ -908,7 +908,7 @@ public abstract class HashNodes {
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context);
+            eqlNode = new PredicateDispatchHeadNode(context);
         }
 
         public MergeNode(MergeNode prev) {
@@ -944,7 +944,7 @@ public abstract class HashNodes {
 
                     for (int b = 0; b < RubyHash.HASHES_SMALL; b++) {
                         if (b < storeBSize) {
-                            if (eqlNode.callIsTruthy(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
+                            if (eqlNode.call(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
                                 merge = false;
                                 break;
                             }

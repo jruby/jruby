@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
@@ -50,7 +51,7 @@ public abstract class KernelNodes {
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
         @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child protected DispatchHeadNode equalNode;
+        @Child protected PredicateDispatchHeadNode equalNode;
 
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -71,9 +72,9 @@ public abstract class KernelNodes {
         protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(new DispatchHeadNode(getContext()));
+                equalNode = insert(new PredicateDispatchHeadNode(getContext()));
             }
-            return equalNode.callIsTruthy(frame, left, "==", null, right);
+            return equalNode.call(frame, left, "==", null, right);
         }
 
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
@@ -108,11 +109,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode matchNode;
+        @Child protected PredicateDispatchHeadNode matchNode;
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = new DispatchHeadNode(context);
+            matchNode = new PredicateDispatchHeadNode(context);
         }
 
         public NotMatchNode(NotMatchNode prev) {
@@ -122,7 +123,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            return !matchNode.callIsTruthy(frame, self, "=~", null, other);
+            return !matchNode.call(frame, self, "=~", null, other);
         }
 
     }

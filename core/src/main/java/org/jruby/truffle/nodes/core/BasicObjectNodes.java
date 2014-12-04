@@ -11,8 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import java.util.*;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -21,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -55,11 +54,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode equalNode;
+        @Child protected PredicateDispatchHeadNode equalNode;
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context);
+            equalNode = new PredicateDispatchHeadNode(context);
         }
 
         public NotEqualNode(NotEqualNode prev) {
@@ -69,7 +68,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean equal(VirtualFrame frame, Object a, Object b) {
-            return !equalNode.callIsTruthy(frame, a, "==", null, b);
+            return !equalNode.call(frame, a, "==", null, b);
         }
 
     }

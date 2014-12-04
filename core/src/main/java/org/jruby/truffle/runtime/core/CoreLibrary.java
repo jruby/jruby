@@ -406,18 +406,6 @@ public class CoreLibrary {
         }
     }
 
-    /**
-     * Convert a value to a boolean according to Ruby rules. Never fails.
-     */
-    public boolean isTruthy(Object value) {
-        // TODO(CS): mark are neverPartOfCompilation
-        if (value instanceof Boolean) {
-            return (boolean) value;
-        } else {
-            return value != nilObject;
-        }
-    }
-
     public RubyException runtimeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(runtimeErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -207,15 +208,15 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"include?", "==="}, optional = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode callLess;
-        @Child protected DispatchHeadNode callGreater;
-        @Child protected DispatchHeadNode callGreaterEqual;
+        @Child protected PredicateDispatchHeadNode callLess;
+        @Child protected PredicateDispatchHeadNode callGreater;
+        @Child protected PredicateDispatchHeadNode callGreaterEqual;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callLess = new DispatchHeadNode(context);
-            callGreater = new DispatchHeadNode(context);
-            callGreaterEqual = new DispatchHeadNode(context);
+            callLess = new PredicateDispatchHeadNode(context);
+            callGreater = new PredicateDispatchHeadNode(context);
+            callGreaterEqual = new PredicateDispatchHeadNode(context);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -234,16 +235,16 @@ public abstract class RangeNodes {
         public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
             notDesignedForCompilation();
 
-            if (callLess.callIsTruthy(frame, value, "<", null, range.getBegin())) {
+            if (callLess.call(frame, value, "<", null, range.getBegin())) {
                 return false;
             }
 
             if (range.doesExcludeEnd()) {
-                if (callGreaterEqual.callIsTruthy(frame, value, ">=", null, range.getEnd())) {
+                if (callGreaterEqual.call(frame, value, ">=", null, range.getEnd())) {
                     return false;
                 }
             } else {
-                if (callGreater.callIsTruthy(frame, value, ">", null, range.getEnd())) {
+                if (callGreater.call(frame, value, ">", null, range.getEnd())) {
                     return false;
                 }
             }
