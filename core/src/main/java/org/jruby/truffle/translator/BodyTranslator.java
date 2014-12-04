@@ -81,7 +81,7 @@ public class BodyTranslator extends Translator {
     /**
      * Global variables which in common usage have frame local semantics.
      */
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$+", "$&", "$`", "$'"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
 
     public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(currentNode, context, source);
@@ -1658,16 +1658,11 @@ public class BodyTranslator extends Translator {
     public RubyNode visitNthRefNode(org.jruby.ast.NthRefNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
+        // This is wrong I think - should reference one of the existing global variables or something like that
+
         final String name = "$" + node.getMatchNumber();
 
-        RubyNode readLocal = environment.findLocalVarNode(name, sourceSection);
-
-        if (readLocal == null) {
-            environment.declareVar(name);
-            readLocal = environment.findLocalVarNode(name, sourceSection);
-        }
-
-        return readLocal;
+        return new GlobalVarNode(node.getPosition(), name).accept(this);
     }
 
     @Override

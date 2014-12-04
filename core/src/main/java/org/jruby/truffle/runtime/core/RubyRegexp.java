@@ -96,11 +96,19 @@ public class RubyRegexp extends RubyBasicObject {
         final Matcher matcher = regex.matcher(stringBytes);
         final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
-        if (match == -1) {
-            final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
+        final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
 
+        if (operator) {
+            for (int n = 0; n < 10; n++) {
+                set(frame, "$" + n, nil);
+            }
+        }
+
+        if (match == -1) {
             set(frame, "$&", nil);
             set(frame, "$~", nil);
+            set(frame, "$`", nil);
+            set(frame, "$'", nil);
 
             if (operator) {
                 set(frame, "$+", nil);
@@ -153,7 +161,8 @@ public class RubyRegexp extends RubyBasicObject {
             }
         }
 
-
+        set(frame, "$`", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(0, region.beg[0]).dup()));
+        set(frame, "$'", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup()));
         set(frame, "$&", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup()));
 
         set(frame, "$~", matchObject);
