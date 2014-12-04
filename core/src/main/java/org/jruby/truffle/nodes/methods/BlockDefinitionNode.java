@@ -57,7 +57,7 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
         }
 
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
-                callTarget, callTargetForMethods, declarationFrame, declaringModule, RubyArguments.getSelf(frame.getArguments()),
+                callTarget, callTargetForMethods, declarationFrame, declaringModule, RubyArguments.getMethod(frame.getArguments()), RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));
     }
 

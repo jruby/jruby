@@ -56,6 +56,7 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
     @CompilationFinal private CallTarget callTargetForMethods;
     @CompilationFinal private MaterializedFrame declarationFrame;
     @CompilationFinal private RubyModule declaringModule;
+    @CompilationFinal private MethodLike method;
     @CompilationFinal private Object self;
     @CompilationFinal private RubyProc block;
 
@@ -65,18 +66,19 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
     }
 
     public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTarget,
-                    CallTarget callTargetForMethods, MaterializedFrame declarationFrame, RubyModule declaringModule, Object self, RubyProc block) {
+                    CallTarget callTargetForMethods, MaterializedFrame declarationFrame, RubyModule declaringModule, MethodLike method, Object self, RubyProc block) {
         this(procClass, type);
-        initialize(sharedMethodInfo, callTarget, callTargetForMethods, declarationFrame, declaringModule, self, block);
+        initialize(sharedMethodInfo, callTarget, callTargetForMethods, declarationFrame, declaringModule, method, self, block);
     }
 
     public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTarget, CallTarget callTargetForMethods,
-                           MaterializedFrame declarationFrame, RubyModule declaringModule, Object self, RubyProc block) {
+                           MaterializedFrame declarationFrame, RubyModule declaringModule, MethodLike method, Object self, RubyProc block) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
         this.callTargetForMethods = callTargetForMethods;
         this.declarationFrame = declarationFrame;
         this.declaringModule = declaringModule;
+        this.method = method;
         this.self = self;
         this.block = block;
     }
@@ -123,6 +125,10 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
     @Override
     public RubyModule getDeclaringModule() {
         return declaringModule;
+    }
+
+    public MethodLike getMethod() {
+        return method;
     }
 
     public Object getSelfCapturedInScope() {

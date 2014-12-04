@@ -1084,7 +1084,7 @@ public abstract class KernelNodes {
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
                     block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getDeclarationFrame(), block.getDeclaringModule(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+                    block.getDeclarationFrame(), block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 
@@ -1320,7 +1320,7 @@ public abstract class KernelNodes {
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
-                    block.getDeclaringModule(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+                    block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 

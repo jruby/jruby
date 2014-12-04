@@ -95,7 +95,7 @@ public abstract class RubyCallStack {
         });
     }
 
-    private static MethodLike getMethod(FrameInstance frame) {
+    public static MethodLike getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (frame == null) {

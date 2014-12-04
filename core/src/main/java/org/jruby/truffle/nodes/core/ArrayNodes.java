@@ -2366,7 +2366,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), null, array, null);
+                    maximumClosureFrame.materialize(), null, null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2485,7 +2485,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), null, array, null);
+                    minimumClosureFrame.materialize(), null, null, array, null);
 
             eachNode.call(frame, array, "each", block);
 

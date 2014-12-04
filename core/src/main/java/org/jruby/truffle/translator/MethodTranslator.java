@@ -210,7 +210,7 @@ class MethodTranslator extends BodyTranslator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), null, environment.getNamedMethodName());
 
-        return new GeneralSuperCallNode(context, sourceSection, environment.getNamedMethodName(), argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
+        return new GeneralSuperCallNode(context, sourceSection, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
     }
 
     @Override
@@ -222,7 +222,7 @@ class MethodTranslator extends BodyTranslator {
             environment.setNeedsDeclarationFrame();
         }
 
-        return new GeneralSuperReCallNode(context, sourceSection, environment.getNamedMethodName(), environment.isBlock());
+        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock());
     }
 
     @Override
