@@ -45,7 +45,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         CompilerAsserts.neverPartOfCompilation();
 
         // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
-        final RubyModule declaringModule = RubyCallStack.getCurrentMethod().getDeclaringModule();
+        final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();
         final RubyClass selfMetaClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         method = ModuleOperations.lookupSuperMethod(declaringModule, name, selfMetaClass);
