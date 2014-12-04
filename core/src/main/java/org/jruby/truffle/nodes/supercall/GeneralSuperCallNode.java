@@ -29,8 +29,8 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
     @Child protected RubyNode block;
     @Children protected final RubyNode[] arguments;
 
-    public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, String name, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
-        super(context, sourceSection, name);
+    public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
+        super(context, sourceSection);
         assert arguments != null;
         assert !isSplatted || arguments.length == 1;
         this.block = block;

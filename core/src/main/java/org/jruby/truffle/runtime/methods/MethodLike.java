@@ -9,8 +9,11 @@
  */
 package org.jruby.truffle.runtime.methods;
 
+import org.jruby.truffle.runtime.core.RubyModule;
+
 public interface MethodLike {
 
     SharedMethodInfo getSharedMethodInfo();
+    RubyModule getDeclaringModule();
 
 }

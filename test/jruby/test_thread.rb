@@ -256,15 +256,15 @@ class TestThread < Test::Unit::TestCase
   def test_poly_calls_thread_safe
     # Note this isn't a perfect test, but it's not possible to test perfectly
     # This might only fail on multicore machines
-    results = [false, false, false, false, false, false, false, false, false, false]
+    results = [false] * 20
     threads = []
     sym = :foo
     str = "foo"
     
-    10.times {|i| threads << Thread.new { 10_000.times { call_to_s(sym); call_to_s(str) }; results[i] = true }}
+    20.times {|i| threads << Thread.new { 10_000.times { call_to_s(sym); call_to_s(str) }; results[i] = true }}
     
     threads.pop.join until threads.empty?
-    assert_equal [true, true, true, true, true, true, true, true, true, true], results
+    assert_equal [true] * 20, results
   end
 
   def test_thread_exit_does_not_deadlock

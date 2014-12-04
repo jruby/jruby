@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
@@ -50,7 +51,7 @@ public abstract class KernelNodes {
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
         @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child protected DispatchHeadNode equalNode;
+        @Child protected PredicateDispatchHeadNode equalNode;
 
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -63,7 +64,7 @@ public abstract class KernelNodes {
         protected boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
             }
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
@@ -71,9 +72,9 @@ public abstract class KernelNodes {
         protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(new DispatchHeadNode(getContext()));
+                equalNode = insert(new PredicateDispatchHeadNode(getContext()));
             }
-            return equalNode.callIsTruthy(frame, left, "==", null, right);
+            return equalNode.call(frame, left, "==", null, right);
         }
 
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
@@ -108,11 +109,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode matchNode;
+        @Child protected PredicateDispatchHeadNode matchNode;
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = new DispatchHeadNode(context);
+            matchNode = new PredicateDispatchHeadNode(context);
         }
 
         public NotMatchNode(NotMatchNode prev) {
@@ -122,7 +123,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            return !matchNode.callIsTruthy(frame, self, "=~", null, other);
+            return !matchNode.call(frame, self, "=~", null, other);
         }
 
     }
@@ -1082,7 +1083,7 @@ public abstract class KernelNodes {
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
                     block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+                    block.getDeclarationFrame(), block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 
@@ -1318,7 +1319,7 @@ public abstract class KernelNodes {
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
-                    block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+                    block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 
@@ -1480,8 +1481,8 @@ public abstract class KernelNodes {
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
-            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
+            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatch.forceUncached();

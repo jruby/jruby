@@ -48,6 +48,7 @@ public class RubyMethod implements MethodLike {
         return sharedMethodInfo;
     }
 
+    @Override
     public RubyModule getDeclaringModule() { return declaringModule; }
 
     public String getName() {

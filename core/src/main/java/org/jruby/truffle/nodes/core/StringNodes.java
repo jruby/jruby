@@ -257,9 +257,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
-            notDesignedForCompilation();
-
-            return regexp.matchOperator(string.toString());
+            return regexp.matchCommon(string.getBytes(), true);
         }
     }
 
@@ -647,14 +645,12 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
-            return regexp.match(string);
+            return regexp.matchCommon(string.getBytes(), false);
         }
 
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
-            notDesignedForCompilation();
-
-            return regexp.match(string);
+            return regexp.matchCommon(string.getBytes(), false);
         }
     }
 

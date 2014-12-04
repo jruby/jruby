@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
@@ -430,11 +431,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"==", "eql?"}, required = 1)
     public abstract static class EqualNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode equals;
+        @Child protected PredicateDispatchHeadNode equals;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equals = new DispatchHeadNode(context);
+            equals = new PredicateDispatchHeadNode(context);
         }
 
         public EqualNode(EqualNode prev) {
@@ -503,7 +504,7 @@ public abstract class ArrayNodes {
             final Object[] bs = b.slowToArray();
 
             for (int n = 0; n < a.getSize(); n++) {
-                if (!equals.callIsTruthy(frame, as[n], "==", null, bs[n])) {
+                if (!equals.call(frame, as[n], "==", null, bs[n])) {
                     return false;
                 }
             }
@@ -2365,7 +2366,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), array, null);
+                    maximumClosureFrame.materialize(), null, null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2440,8 +2441,14 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
+        @Override
         public SharedMethodInfo getSharedMethodInfo() {
             return sharedMethodInfo;
+        }
+
+        @Override
+        public RubyModule getDeclaringModule() {
+            throw new UnsupportedOperationException();
         }
 
         public CallTarget getCallTarget() {
@@ -2478,7 +2485,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), array, null);
+                    minimumClosureFrame.materialize(), null, null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2553,8 +2560,14 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
+        @Override
         public SharedMethodInfo getSharedMethodInfo() {
             return sharedMethodInfo;
+        }
+
+        @Override
+        public RubyModule getDeclaringModule() {
+            throw new UnsupportedOperationException();
         }
 
         public CallTarget getCallTarget() {

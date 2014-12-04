@@ -46,8 +46,18 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
             declarationFrame = null;
         }
 
+        final MethodLike methodLike = RubyArguments.getMethod(frame.getArguments());
+
+        final RubyModule declaringModule;
+
+        if (methodLike == null) {
+            declaringModule = null;
+        } else {
+            declaringModule = methodLike.getDeclaringModule();
+        }
+
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
-                callTarget, callTargetForMethods, declarationFrame, RubyArguments.getSelf(frame.getArguments()),
+                callTarget, callTargetForMethods, declarationFrame, declaringModule, RubyArguments.getMethod(frame.getArguments()), RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));
     }
 

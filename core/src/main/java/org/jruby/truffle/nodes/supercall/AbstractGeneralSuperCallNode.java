@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.supercall;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
@@ -19,21 +20,20 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.LexicalScope;
 
 public abstract class AbstractGeneralSuperCallNode extends RubyNode {
-
-    private final String name;
 
     @Child protected DirectCallNode callNode;
 
     @CompilerDirectives.CompilationFinal protected Assumption unmodifiedAssumption;
     @CompilerDirectives.CompilationFinal protected RubyMethod method;
 
-    public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection, String name) {
+    public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.name = name;
     }
 
     protected boolean guard() {
@@ -44,8 +44,17 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     protected void lookup(VirtualFrame frame) {
         CompilerAsserts.neverPartOfCompilation();
 
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+        MethodLike methodLike = RubyCallStack.getMethod(currentFrame);
+
+        while (!(methodLike instanceof RubyMethod)) {
+            methodLike = ((RubyProc) methodLike).getMethod();
+        }
+
+        final String name = ((RubyMethod) methodLike).getName();
+
         // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
-        final RubyModule declaringModule = RubyCallStack.getCurrentMethod().getDeclaringModule();
+        final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();
         final RubyClass selfMetaClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         method = ModuleOperations.lookupSuperMethod(declaringModule, name, selfMetaClass);

@@ -46,4 +46,9 @@ public class WriteClassVariableNode extends RubyNode {
         return rhsValue;
     }
 
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("assignment");
+    }
+
 }

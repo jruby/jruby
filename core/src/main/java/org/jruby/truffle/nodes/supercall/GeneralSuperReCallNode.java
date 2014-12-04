@@ -19,8 +19,8 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
     private final boolean inBlock;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, String name, boolean inBlock) {
-        super(context, sourceSection, name);
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock) {
+        super(context, sourceSection);
         this.inBlock = inBlock;
     }
 

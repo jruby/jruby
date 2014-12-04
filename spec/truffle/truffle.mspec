@@ -102,7 +102,6 @@ class MSpecScript
     "^spec/ruby/core/string/match_spec.rb",
     "^spec/ruby/core/string/modulo_spec.rb",
     "^spec/ruby/core/string/rindex_spec.rb",
-    "^spec/ruby/core/symbol/encoding_spec.rb",
     "^spec/ruby/core/thread/raise_spec.rb",
   ]
 

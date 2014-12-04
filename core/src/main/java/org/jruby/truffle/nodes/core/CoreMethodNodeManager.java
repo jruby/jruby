@@ -37,8 +37,8 @@ import java.util.List;
 
 public abstract class CoreMethodNodeManager {
 
-    public static void addCoreMethodNodes(RubyClass rubyObjectClass, List<? extends NodeFactory<? extends CoreMethodNode>> nodeFactories) {
-        for (NodeFactory<? extends CoreMethodNode> nodeFactory : nodeFactories) {
+    public static void addCoreMethodNodes(RubyClass rubyObjectClass, List<? extends NodeFactory<? extends RubyNode>> nodeFactories) {
+        for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
             final CoreClass classAnnotation = nodeClass.getEnclosingClass().getAnnotation(CoreClass.class);
@@ -164,7 +164,18 @@ public abstract class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(context, sourceSection, UndefinedPlaceholder.INSTANCE));
         }
 
-        final RubyNode methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
+        final RubyNode methodNode;
+        List<List<Class<?>>> signatures = methodDetails.getNodeFactory().getNodeSignatures();
+        if (signatures.size() < 1 || signatures.get(0).get(2) == RubyNode[].class) {
+            methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
+        } else {
+            Object[] args = new Object[2 + argumentsNodes.size()];
+            args[0] = context;
+            args[1] = sourceSection;
+            System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 2, argumentsNodes.size());
+            methodNode = methodDetails.getNodeFactory().createNode(args);
+        }
+
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, block);

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.translator.BodyTranslator;
 
 public abstract class ReadLevelVariableNode extends FrameSlotNode implements ReadNode {
 
@@ -62,6 +63,20 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
         return WriteLevelVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, varLevel, rhs);
+    }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        // TODO(CS): copy and paste of ReadLocalVariableNode
+        if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
+            if (ReadLocalVariableNode.ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doObject(frame) != getContext().getCoreLibrary().getNilObject()) {
+                return getContext().makeString("global-variable");
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        } else {
+            return getContext().makeString("local-variable");
+        }
     }
 
 }

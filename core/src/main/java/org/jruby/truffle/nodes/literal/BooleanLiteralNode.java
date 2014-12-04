@@ -36,4 +36,9 @@ public class BooleanLiteralNode extends RubyNode {
         return value;
     }
 
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString(value ? "true" : "false");
+    }
+
 }

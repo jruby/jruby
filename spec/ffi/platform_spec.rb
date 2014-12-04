@@ -3,95 +3,112 @@
 # For licensing, see LICENSE.SPECS
 #
 
-require 'ffi'
-require_relative 'spec_helper'
+require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
 describe "FFI::Platform::LIBSUFFIX" do
-  it "returns 'so'", if: RbConfig::CONFIG['host_os'].match('linux') do
-    FFI::Platform::LIBSUFFIX.should == 'so'
-  end
-
-  it "returns 'dll'", if: RbConfig::CONFIG['host_os'].match('windows') do
-    FFI::Platform::LIBSUFFIX.should == 'dll'
-  end
-
-  it "returns 'dylib'", if: RbConfig::CONFIG['host_os'].match('darwin') do
-    FFI::Platform::LIBSUFFIX.should == 'dylib'
+  case OS
+  when "linux"
+    it "returns 'so'" do
+      expect(FFI::Platform::LIBSUFFIX).to eq('so')
+    end
+  when "windows"
+    it "returns 'dll'" do
+      expect(FFI::Platform::LIBSUFFIX).to eq('dll')
+    end
+  when "darwin"
+    it "returns 'dylib'" do
+      expect(FFI::Platform::LIBSUFFIX).to eq('dylib')
+    end
   end
 end
 
 describe "FFI::Platform::IS_WINDOWS" do
-  it "returns false", if: RbConfig::CONFIG['host_os'].match('linux') do
-    FFI::Platform::IS_WINDOWS.should == false
-  end
-
-  it "returns true", if: RbConfig::CONFIG['host_os'].match('windows') do
-    FFI::Platform::IS_WINDOWS.should == true
-  end
-
-  it "returns false", if: RbConfig::CONFIG['host_os'].match('darwin') do
-    FFI::Platform::IS_WINDOWS.should == false
+  case OS
+  when "linux"
+    it "returns false" do
+      expect(FFI::Platform::IS_WINDOWS).to be false
+    end
+  when "windows"
+    it "returns true" do
+      expect(FFI::Platform::IS_WINDOWS).to be true
+    end
+  when "darwin"
+    it "returns false" do
+      expect(FFI::Platform::IS_WINDOWS).to be false
+    end
   end
 end
 
 describe "FFI::Platform::ARCH" do
   it "returns the architecture type" do
-    FFI::Platform::ARCH.should == RbConfig::CONFIG["target_cpu"]
+    expect(FFI::Platform::ARCH).to eq(CPU)
   end
 end
 
 describe "FFI::Platform::OS" do
-  it "returns 'linux' as a string", if: RbConfig::CONFIG['host_os'].match('linux') do
-    FFI::Platform::OS.should == 'linux'
-  end
-
-  it "returns 'windows' as a string", if: RbConfig::CONFIG['host_os'].match('windows') do
-    FFI::Platform::OS.should == 'windows'
-  end
-
-  it "returns 'darwin' as a string", if: RbConfig::CONFIG['host_os'].match('darwin') do
-    FFI::Platform::OS.should == 'darwin'
-  end
-
-  describe "FFI::Platform.windows?" do
-    it "returns false", if: RbConfig::CONFIG['host_os'].match('linux') do
-      FFI::Platform.windows?.should == false
+  case OS
+  when "linux"
+    it "returns 'linux' as a string" do
+      expect(FFI::Platform::OS).to eq('linux')
     end
-
-    it "returns true", if: RbConfig::CONFIG['host_os'].match('windows') do
-      FFI::Platform.windows?.should == true
+  when "windows"
+    it "returns 'windows' as a string" do
+      expect(FFI::Platform::OS).to eq('windows')
     end
-
-    it "returns false", if: RbConfig::CONFIG['host_os'].match('darwin') do
-      FFI::Platform.windows?.should == false
+  when "darwin"
+    it "returns 'darwin' as a string" do
+      expect(FFI::Platform::OS).to eq('darwin')
     end
   end
+end
 
-  describe "FFI::Platform.mac?" do
-    it "returns false", if: RbConfig::CONFIG['host_os'].match('linux') do
-      FFI::Platform.mac?.should == false
+describe "FFI::Platform.windows?" do
+  case OS
+  when "linux"
+    it "returns false" do
+      expect(FFI::Platform.windows?).to be false
     end
-
-    it "returns false", if: RbConfig::CONFIG['host_os'].match('windows') do
-      FFI::Platform.mac?.should == false
+  when "windows"
+    it "returns true" do
+      expect(FFI::Platform.windows?).to be true
     end
-
-    it "returns true", if: RbConfig::CONFIG['host_os'].match('darwin') do
-      FFI::Platform.mac?.should == true
+  when "darwin"
+    it "returns false" do
+      expect(FFI::Platform.windows?).to be false
     end
   end
+end
 
-  describe "FFI::Platform.unix?" do
-    it "returns true", if: RbConfig::CONFIG['host_os'].match('linux') do
-      FFI::Platform.unix?.should == true
+describe "FFI::Platform.mac?" do
+  case OS
+  when "linux"
+    it "returns false" do
+      expect(FFI::Platform.mac?).to be false
     end
-
-    it "returns false", if: RbConfig::CONFIG['host_os'].match('windows') do
-      FFI::Platform.unix?.should == false
+  when "windows"
+    it "returns false" do
+      expect(FFI::Platform.mac?).to be false
     end
+  when "darwin"
+    it "returns true" do
+      expect(FFI::Platform.mac?).to be true
+    end
+  end
+end
 
-    it "returns true", if: RbConfig::CONFIG['host_os'].match('darwin') do
-      FFI::Platform.unix?.should == true
+describe "FFI::Platform.unix?" do
+  case OS
+  when "linux"
+    it "returns true" do
+      expect(FFI::Platform.unix?).to be true
+    end
+  when "windows"
+    it "returns false" do
+      expect(FFI::Platform.unix?).to be false
+    end
+  when "darwin"
+    it "returns true" do
+      expect(FFI::Platform.unix?).to be true
     end
   end
 end

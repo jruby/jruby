@@ -1,9 +1,7 @@
-fails:Predefined global $~ is set at the method-scoped level rather than block-scoped
 fails:Predefined global $~ changes the value of derived capture globals when assigned
 fails:Predefined global $~ changes the value of the derived preceding match global
 fails:Predefined global $~ changes the value of the derived following match global
 fails:Predefined global $~ changes the value of the derived full match global
-fails:Predefined global $& is equivalent to MatchData#[0] on the last match $~
 fails(inherited):Predefined global $& sets the encoding to the encoding of the source String
 fails:Predefined global $` is equivalent to MatchData#pre_match on the last match $~
 fails(inherited):Predefined global $` sets the encoding to the encoding of the source String

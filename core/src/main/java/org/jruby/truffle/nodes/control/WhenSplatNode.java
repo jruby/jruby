@@ -13,7 +13,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 
@@ -21,13 +21,13 @@ public class WhenSplatNode extends RubyNode {
 
     @Child protected RubyNode readCaseExpression;
     @Child protected RubyNode splat;
-    @Child protected DispatchHeadNode dispatchCaseEqual;
+    @Child protected PredicateDispatchHeadNode dispatchCaseEqual;
 
     public WhenSplatNode(RubyContext context, SourceSection sourceSection, RubyNode readCaseExpression, RubyNode splat) {
         super(context, sourceSection);
         this.readCaseExpression = readCaseExpression;
         this.splat = splat;
-        dispatchCaseEqual = new DispatchHeadNode(context);
+        dispatchCaseEqual = new PredicateDispatchHeadNode(context);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class WhenSplatNode extends RubyNode {
         }
 
         for (Object value : array.slowToArray()) {
-            if (dispatchCaseEqual.callIsTruthy(frame, caseExpression, "===", null, value)) {
+            if (dispatchCaseEqual.call(frame, caseExpression, "===", null, value)) {
                 return true;
             }
         }

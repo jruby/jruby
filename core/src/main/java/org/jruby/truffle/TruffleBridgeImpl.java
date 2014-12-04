@@ -153,6 +153,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
                 final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
 
+                // TODO(CS): we really need a method here - it's causing problems elsewhere
+
                 return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
             }
 

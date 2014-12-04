@@ -27,14 +27,17 @@ import java.util.ArrayList;
 
 public abstract class RubyCallStack {
 
+    public static RubyModule getCurrentDeclaringModule() {
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+        final MethodLike method = getMethod(currentFrame);
+        return method.getDeclaringModule();
+    }
+
     public static RubyMethod getCurrentMethod() {
         CompilerAsserts.neverPartOfCompilation();
 
-        MethodLike method;
-
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-
-        method = getMethod(currentFrame);
+        final MethodLike method = getMethod(currentFrame);
 
         if (method instanceof RubyMethod) {
             return (RubyMethod) method;
@@ -92,7 +95,7 @@ public abstract class RubyCallStack {
         });
     }
 
-    private static MethodLike getMethod(FrameInstance frame) {
+    public static MethodLike getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (frame == null) {

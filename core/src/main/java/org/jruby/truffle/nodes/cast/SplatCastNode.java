@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -33,18 +34,24 @@ public abstract class SplatCastNode extends RubyNode {
 
     private final NilBehavior nilBehavior;
 
+    @Child protected DispatchHeadNode respondToToA;
+    @Child protected BooleanCastNode respondToCast;
     @Child protected DispatchHeadNode toA;
 
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
+        respondToToA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
+        respondToCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         toA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
     }
 
     public SplatCastNode(SplatCastNode prev) {
         super(prev);
         nilBehavior = prev.nilBehavior;
+        respondToToA = prev.respondToToA;
+        respondToCast = prev.respondToCast;
         toA = prev.toA;
     }
 
@@ -75,19 +82,17 @@ public abstract class SplatCastNode extends RubyNode {
     public RubyArray splat(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
-        if (toA.doesRespondTo(frame, "to_a", object)) {
+        RubyString toAString = getContext().makeString("to_a"); // TODO
+
+        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, toAString, true))) {
             final Object array = toA.call(frame, object, "to_a", null);
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
             }
-
-            // TODO(CS): surely this is an error? to_a returned something that was not an array
-
-            return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
-        } else {
-            return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
         }
+
+        return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
     }
 
 }

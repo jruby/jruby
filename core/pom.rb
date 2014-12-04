@@ -37,7 +37,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-unixsocket:0.3'
   jar 'com.github.jnr:jnr-posix:3.0.7'
   jar 'com.github.jnr:jnr-constants:0.8.6-SNAPSHOT'
-  jar 'com.github.jnr:jnr-ffi:2.0.0-SNAPSHOT'
+  jar 'com.github.jnr:jnr-ffi:2.0.0'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
