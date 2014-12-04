@@ -177,7 +177,7 @@ public class TranslatorDriver {
 
         // Shell result
 
-        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
+        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode);
     }
 
     private Object getData(RubyContext context) {

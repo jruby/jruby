@@ -139,4 +139,10 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     public RubyNode makeReadNode() {
         return new ReadInstanceVariableNode(getContext(), getSourceSection(), writeNode.getName(), receiver, isGlobal);
     }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("assignment");
+    }
+
 }

@@ -31,8 +31,6 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         return getContext().makeString("self");
     }
 

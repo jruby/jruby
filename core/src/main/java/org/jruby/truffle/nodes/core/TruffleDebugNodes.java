@@ -137,7 +137,7 @@ public abstract class TruffleDebugNodes {
         public Object parseTree() {
             notDesignedForCompilation();
 
-            final org.jruby.ast.Node parseTree = RubyCallStack.getCurrentMethod().getSharedMethodInfo().getParseTree();
+            final org.jruby.ast.Node parseTree = RubyCallStack.getCallingMethod().getSharedMethodInfo().getParseTree();
 
             if (parseTree == null) {
                 return getContext().getCoreLibrary().getNilObject();

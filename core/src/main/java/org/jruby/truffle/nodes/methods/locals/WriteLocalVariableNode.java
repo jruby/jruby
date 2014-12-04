@@ -62,4 +62,9 @@ public abstract class WriteLocalVariableNode extends FrameSlotNode implements Wr
         return ReadLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot);
     }
 
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("assignment");
+    }
+
 }

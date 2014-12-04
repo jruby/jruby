@@ -40,18 +40,15 @@ import org.jruby.truffle.nodes.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
-import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
@@ -71,28 +68,6 @@ public class BodyTranslator extends Translator {
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
     private String currentCallMethodName = null;
-
-    private static final Map<Class, String> nodeDefinedNames = new HashMap<>();
-
-    static {
-        // TODO(CS): this was a temporary hack and needs to be removed
-        nodeDefinedNames.put(org.jruby.ast.SelfNode.class, "self");
-        nodeDefinedNames.put(org.jruby.ast.NilNode.class, "nil");
-        nodeDefinedNames.put(org.jruby.ast.TrueNode.class, "true");
-        nodeDefinedNames.put(org.jruby.ast.FalseNode.class, "false");
-        nodeDefinedNames.put(org.jruby.ast.LocalAsgnNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.DAsgnNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.GlobalAsgnNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.InstAsgnNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.ClassVarAsgnNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.OpAsgnAndNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.OpAsgnOrNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.OpAsgnNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.OpElementAsgnNode.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.MultipleAsgn19Node.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.LocalVarNode.class, "local-variable");
-        nodeDefinedNames.put(org.jruby.ast.DVarNode.class, "local-variable");
-    }
 
     private static final Set<String> debugIgnoredCalls = new HashSet<>();
 
@@ -776,13 +751,6 @@ public class BodyTranslator extends Translator {
             expressionNode = ((org.jruby.ast.NewlineNode) expressionNode).getNextNode();
         }
 
-        final String name = nodeDefinedNames.get(expressionNode.getClass());
-
-        if (name != null) {
-            final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, ByteList.create(name));
-            return literal;
-        }
-
         return new DefinedNode(context, sourceSection, node.getExpressionNode().accept(this));
     }
 
@@ -1356,6 +1324,8 @@ public class BodyTranslator extends Translator {
             rhsTranslated = rhs.accept(this);
         }
 
+        final RubyNode result;
+
         if (preArray != null
                 && node.getPost() == null
                 && node.getRest() == null
@@ -1401,7 +1371,7 @@ public class BodyTranslator extends Translator {
 
             final ElidableResultNode elidableResult = new ElidableResultNode(context, sourceSection, blockNode, arrayNode);
 
-            return elidableResult;
+            result = elidableResult;
         } else if (preArray != null) {
             /*
              * The other simple case is
@@ -1458,11 +1428,11 @@ public class BodyTranslator extends Translator {
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
             }
 
-            return SequenceNode.sequence(context, sourceSection, sequence);
+            result = SequenceNode.sequence(context, sourceSection, sequence);
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() instanceof org.jruby.ast.StarNode) {
-            return rhsTranslated;
+            result = rhsTranslated;
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() != null
@@ -1495,7 +1465,7 @@ public class BodyTranslator extends Translator {
 
             final SplatCastNode rhsSplatCast = SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, rhsTranslated);
 
-            return restRead.makeWriteNode(rhsSplatCast);
+            result = restRead.makeWriteNode(rhsSplatCast);
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() != null
@@ -1526,7 +1496,7 @@ public class BodyTranslator extends Translator {
                 throw new RuntimeException("Unknown form of multiple assignment " + node + " at " + node.getPosition());
             }
 
-            return restRead.makeWriteNode(rhsTranslated);
+            result = restRead.makeWriteNode(rhsTranslated);
         } else if (node.getPre() == null && node.getRest() != null && node.getPost() != null) {
             /*
              * Something like
@@ -1571,11 +1541,13 @@ public class BodyTranslator extends Translator {
                 sequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }
 
-            return SequenceNode.sequence(context, sourceSection, sequence);
+            result = SequenceNode.sequence(context, sourceSection, sequence);
         } else {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
-            return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            result = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
         }
+
+        return new AssignmentWrapperNode(context, sourceSection, result);
     }
 
     private RubyNode translateDummyAssignment(org.jruby.ast.Node dummyAssignment, RubyNode rhs) {
@@ -1679,7 +1651,7 @@ public class BodyTranslator extends Translator {
             return new DeadNode(context, null);
         }
 
-        return new ObjectLiteralNode(context, translate(node.getPosition()), context.getCoreLibrary().getNilObject());
+        return new NilLiteralNode(context, translate(node.getPosition()));
     }
 
     @Override
@@ -1700,10 +1672,18 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnAndNode(org.jruby.ast.OpAsgnAndNode node) {
+        /*
+         * This doesn't translate as you might expect!
+         *
+         * http://www.rubyinside.com/what-rubys-double-pipe-or-equals-really-does-5488.html
+         */
+
+        final SourceSection sourceSection = translate(node.getPosition());
+
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return new AndNode(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
+        return new AssignmentWrapperNode(context, sourceSection, new AndNode(context, sourceSection, lhs.accept(this), rhs.accept(this)));
     }
 
     @Override
@@ -1734,11 +1714,12 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitOpAsgnOrNode(org.jruby.ast.OpAsgnOrNode node) {
         /*
-         * De-sugar x ||= y into ([defined?(x) &&] x) || x = y.
-         * The defined? check is only needed for some expressions.
-         * It's also basically how jruby-parser represents it already.
-         * We'll do it directly, rather than via another JRuby AST node.
+         * This doesn't translate as you might expect!
+         *
+         * http://www.rubyinside.com/what-rubys-double-pipe-or-equals-really-does-5488.html
          */
+
+        final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode lhs = node.getFirstNode().accept(this);
         RubyNode rhs = node.getSecondNode().accept(this);
@@ -1748,7 +1729,7 @@ public class BodyTranslator extends Translator {
             lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
         }
 
-        return new OrNode(context, translate(node.getPosition()), lhs, rhs);
+        return new AssignmentWrapperNode(context, sourceSection, new OrNode(context, sourceSection, lhs, rhs));
     }
 
     @Override

@@ -69,4 +69,10 @@ public abstract class WriteLevelVariableNode extends FrameSlotNode implements Wr
     public RubyNode makeReadNode() {
         return ReadLevelVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, varLevel);
     }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("assignment");
+    }
+
 }
