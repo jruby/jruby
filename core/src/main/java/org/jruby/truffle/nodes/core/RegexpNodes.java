@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -79,7 +78,7 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.matchOperator(string.toString()) != getContext().getCoreLibrary().getNilObject();
+            return regexp.matchCommon(string.getBytes(), true) != getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -97,9 +96,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
-            notDesignedForCompilation();
-
-            return regexp.matchOperator(string.toString());
+            return regexp.matchCommon(string.getBytes(), true);
         }
 
         @Specialization
@@ -205,9 +202,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
-            notDesignedForCompilation();
-
-            return regexp.match(string);
+            return regexp.matchCommon(string.getBytes(), false);
         }
 
     }

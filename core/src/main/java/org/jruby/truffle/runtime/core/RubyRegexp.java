@@ -21,6 +21,7 @@ import org.joni.*;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.ByteList;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -85,121 +86,77 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @CompilerDirectives.SlowPath
-    public Object matchOperator(String string) {
-        // TODO(CS) merge with match
+    public Object matchCommon(ByteList bytes, boolean operator) {
+        final RubyContext context = getContext();
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
-        final RubyContext context = getContext();
-
-        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final byte[] stringBytes = bytes.bytes();
         final Matcher matcher = regex.matcher(stringBytes);
         final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
-        if (match != -1) {
-            final Region region = matcher.getEagerRegion();
+        if (match == -1) {
+            set(frame, "$~", getContext().getCoreLibrary().getNilObject());
 
-            final Object[] values = new Object[region.numRegs];
+            return getContext().getCoreLibrary().getNilObject();
+        }
 
-            for (int n = 0; n < region.numRegs; n++) {
-                final int start = region.beg[n];
-                final int end = region.end[n];
+        final Region region = matcher.getEagerRegion();
+        final Object[] values = new Object[region.numRegs];
 
+        for (int n = 0; n < region.numRegs; n++) {
+            final int start = region.beg[n];
+            final int end = region.end[n];
+
+            if (operator) {
                 final Object groupString;
 
                 if (start > -1 && end > -1) {
-                    groupString = context.makeString(string.substring(start, end));
+                    groupString = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
                 } else {
                     groupString = getContext().getCoreLibrary().getNilObject();
                 }
 
                 values[n] = groupString;
-
-                final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$" + n);
-
-                if (slot != null) {
-                    frame.setObject(slot, groupString);
+                set(frame, "$" + n, groupString);
+            } else {
+                if (start == -1 || end == -1) {
+                    values[n] = getContext().getCoreLibrary().getNilObject();
+                } else {
+                    final RubyString groupString = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
+                    values[n] = groupString;
                 }
             }
+        }
 
+        final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+
+        if (operator) {
             if (values.length > 0) {
-                final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$+");
-
                 int nonNil = values.length - 1;
 
                 while (values[nonNil] == getContext().getCoreLibrary().getNilObject()) {
                     nonNil--;
                 }
 
-                if (slot != null) {
-                    frame.setObject(slot, values[nonNil]);
-                }
+                set(frame, "$+", values[nonNil]);
             }
+        }
 
-            final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+        set(frame, "$~", matchObject);
 
-            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            if (slot != null) {
-                frame.setObject(slot, matchObject);
-            }
-
+        if (operator) {
             return matcher.getBegin();
         } else {
-            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            if (slot != null) {
-                frame.setObject(slot, getContext().getCoreLibrary().getNilObject());
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
+            return matchObject;
         }
     }
 
-    @CompilerDirectives.SlowPath
-    public Object match(RubyString string) {
-        final RubyContext context = getContext();
+    private void set(Frame frame, String name, Object value) {
+        final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(name);
 
-        final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
-
-        final byte[] stringBytes = string.getBytes().bytes();
-        final Matcher matcher = regex.matcher(stringBytes);
-        final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
-
-        if (match != -1) {
-            final Region region = matcher.getEagerRegion();
-
-            final Object[] values = new Object[region.numRegs];
-
-            for (int n = 0; n < region.numRegs; n++) {
-                final int start = region.beg[n];
-                final int end = region.end[n];
-
-                if (start == -1 || end == -1) {
-                    values[n] = getContext().getCoreLibrary().getNilObject();
-                } else {
-                    final RubyString groupString = new RubyString(context.getCoreLibrary().getStringClass(), string.getBytes().makeShared(start, end - start).dup());
-                    values[n] = groupString;
-                }
-            }
-
-            final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
-
-            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            if (slot != null) {
-                frame.setObject(slot, matchObject);
-            }
-
-            return matchObject;
-        } else {
-            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            if (slot != null) {
-                frame.setObject(slot, getContext().getCoreLibrary().getNilObject());
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
+        if (slot != null) {
+            frame.setObject(slot, value);
         }
     }
 
