@@ -3,7 +3,7 @@
 # For licensing, see LICENSE.SPECS
 #
 
-require 'ffi'
+require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
 MemoryPointer = FFI::MemoryPointer
 
@@ -11,15 +11,19 @@ describe "MemoryPointer#total" do
   it "MemoryPointer.new(:char, 1).total == 1" do
     expect(MemoryPointer.new(:char, 1).total).to eq 1
   end
+
   it "MemoryPointer.new(:short, 1).total == 2" do
     expect(MemoryPointer.new(:short, 1).total).to eq 2
   end
+
   it "MemoryPointer.new(:int, 1).total == 4" do
     expect(MemoryPointer.new(:int, 1).total).to eq 4
   end
+
   it "MemoryPointer.new(:long_long, 1).total == 8" do
     expect(MemoryPointer.new(:long_long, 1).total).to eq 8
   end
+
   it "MemoryPointer.new(1024).total == 1024" do
     expect(MemoryPointer.new(1024).total).to eq 1024
   end
@@ -41,11 +45,13 @@ describe "MemoryPointer argument" do
     attach_function :memset, [ :pointer, :int, :ulong ], :pointer
     attach_function :memcpy, [ :pointer, :pointer, :ulong ], :pointer
   end
+
   it "Pointer passed correctly" do
     p = MemoryPointer.new :int, 1
     ret = Ptr.memset(p, 0, p.total)
     expect(ret).to eq p
   end
+
   it "Data passed to native function" do
     p = MemoryPointer.new :int, 1
     p2 = MemoryPointer.new :int, 1
@@ -63,6 +69,7 @@ describe "MemoryPointer return value" do
     attach_function :fclose, [ :pointer ], :int
     attach_function :fwrite, [ :pointer, :ulong, :ulong, :string ], :ulong
   end
+
   it "fopen returns non-nil" do
     fp = Stdio.fopen("/dev/null", "w")
     expect(fp).to_not be_nil
