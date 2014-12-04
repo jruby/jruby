@@ -2649,14 +2649,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @JRubyMethod(name = "crypt")
     public RubyString crypt(ThreadContext context, IRubyObject other) {
+        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
         RubyString otherStr = other.convertToString();
+        otherStr.associateEncoding(ascii8bit);
         String salt = otherStr.asJavaString();
-        if (salt.length() < 2) {
+        if (otherStr.getByteList().length() < 2) {
             throw context.runtime.newArgumentError("salt too short(need >=2 bytes)");
         }
 
         RubyString result = RubyString.newString(context.runtime,
                 context.runtime.getPosix().crypt(asJavaString(), salt).toString());
+        result.associateEncoding(ascii8bit);
         result.infectBy(this);
         result.infectBy(otherStr);
         return result;
