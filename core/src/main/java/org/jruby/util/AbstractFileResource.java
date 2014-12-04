@@ -15,8 +15,7 @@ abstract class AbstractFileResource implements FileResource {
         }
         try {
             return openInputStream();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ResourceException.IOError(e);
         }
     }

@@ -85,7 +85,7 @@ class LibrarySearcher {
 
             // Since searching for a service library doesn't take the suffix into account, there's no need
             // to perform it more than once.
-            if ((library == null) && (searchedForServiceLibrary == false)) {
+            if (library == null && !searchedForServiceLibrary) {
                 library = findServiceLibrary(baseName, suffix);
                 searchedForServiceLibrary = true;
             }
@@ -236,11 +236,10 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = null;
+            InputStream is;
             try {
                 is = new BufferedInputStream(resource.inputStream(), 32768);
-            }
-            catch(IOException e) {
+            } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             }
 
