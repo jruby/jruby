@@ -1683,6 +1683,25 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnNode(org.jruby.ast.OpAsgnNode node) {
+        if (node.getOperatorName() == "||") {
+            // Why does this ||= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
+
+            final String temp = environment.allocateLocalTemp("opassign");
+            final org.jruby.ast.Node writeReceiverToTemp = new org.jruby.ast.LocalAsgnNode(node.getPosition(), temp, 0, node.getReceiverNode());
+            final org.jruby.ast.Node readReceiverFromTemp = new org.jruby.ast.LocalVarNode(node.getPosition(), 0, temp);
+
+            final org.jruby.ast.Node readMethod = new CallNode(node.getPosition(), readReceiverFromTemp, node.getVariableName(), null, null);
+            final org.jruby.ast.Node writeMethod = new CallNode(node.getPosition(), readReceiverFromTemp, node.getVariableName() + "=", buildArrayNode(node.getPosition(),
+                    node.getValueNode()), null);
+
+            final SourceSection sourceSection = translate(node.getPosition());
+
+            RubyNode lhs = readMethod.accept(this);
+            RubyNode rhs = writeMethod.accept(this);
+
+            return new AssignmentWrapperNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs)));
+        }
+
         /*
          * We're going to de-sugar a.foo += c into a.foo = a.foo + c. Note that we can't evaluate a
          * more than once, so we put it into a temporary, and we're doing something more like:
