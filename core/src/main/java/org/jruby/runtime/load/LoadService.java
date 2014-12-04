@@ -1559,7 +1559,7 @@ public class LoadService {
     }
 
     /* Directories and unavailable resources are not able to open a stream. */
-    protected boolean isRequireable(URL loc) {
+    protected static boolean isRequireable(URL loc) {
         if (loc != null) {
                 if (loc.getProtocol().equals("file") && new java.io.File(getPath(loc)).isDirectory()) {
                         return false;
@@ -1619,26 +1619,39 @@ public class LoadService {
         }
 
         if (loc != null) { // got it
-            String path = "classpath:/" + name;
-            // special case for typical jar:file URLs, but only if the name didn't have
-            // the classpath scheme explicitly
-            if (!isClasspathScheme &&
-                    (loc.getProtocol().equals("jar") || loc.getProtocol().equals("file"))
-                    && isRequireable(loc)) {
-                path = getPath(loc);
-                // On windows file: urls converted to names will return /C:/foo from
-                // getPath versus C:/foo.  Since getPath is used in a million places
-                // putting the newFile.getPath broke some file with-in Jar loading. 
-                // So I moved it to only this site.
-                if (Platform.IS_WINDOWS && loc.getProtocol().equals("file")) {
-                    path = new File(path).getPath();
-                }
-            }
+            String path = classpathFilenameFromURL(name, loc, isClasspathScheme);
             LoadServiceResource foundResource = new LoadServiceResource(loc, path);
             debugLogFound(foundResource);
             return foundResource;
         }
         return null;
+    }
+
+    /**
+     * Given a URL to a classloader resource, build an appropriate load string.
+     *
+     * @param name the original filename requested
+     * @param loc the URL to the resource
+     * @param isClasspathScheme whether we're using the classpath: sceheme
+     * @return
+     */
+    public static String classpathFilenameFromURL(String name, URL loc, boolean isClasspathScheme) {
+        String path = "classpath:/" + name;
+        // special case for typical jar:file URLs, but only if the name didn't have
+        // the classpath scheme explicitly
+        if (!isClasspathScheme &&
+                (loc.getProtocol().equals("jar") || loc.getProtocol().equals("file"))
+                && isRequireable(loc)) {
+            path = getPath(loc);
+            // On windows file: urls converted to names will return /C:/foo from
+            // getPath versus C:/foo.  Since getPath is used in a million places
+            // putting the newFile.getPath broke some file with-in Jar loading.
+            // So I moved it to only this site.
+            if (Platform.IS_WINDOWS && loc.getProtocol().equals("file")) {
+                path = new File(path).getPath();
+            }
+        }
+        return path;
     }
 
     private String expandRelativeJarPath(String path) {

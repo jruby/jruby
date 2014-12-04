@@ -2750,4 +2750,11 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet("exit 1234");
         assertEquals(1234L, result);
     }
+
+    @Test
+    public void testClasspathScriptletHashClasspathFile() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        Object result = instance.runScriptlet(PathType.CLASSPATH, "__FILE__.rb");
+        assertEquals("classpath:/__FILE__.rb", result.toString());
+    }
 }
