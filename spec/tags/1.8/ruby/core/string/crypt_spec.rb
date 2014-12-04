@@ -1,1 +1,0 @@
-bogus:String#crypt returns NULL bytes prepended to the string when the salt contains NULL bytes
