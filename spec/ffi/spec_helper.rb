@@ -4,8 +4,8 @@
 #
 
 require 'rbconfig'
-require 'ffi'
 require 'fileutils'
+require 'ffi'
 
 CPU = case RbConfig::CONFIG['host_cpu'].downcase
   when /i[3456]86/
@@ -60,6 +60,7 @@ def compile_library(path, lib)
 
     puts Dir.pwd, dir, File.dirname(__FILE__)
 
+    output = nil
     FileUtils.cd(dir) do
       output = system(*%{#{system('which gmake >/dev/null') && 'gmake' || 'make'} CPU=#{CPU} OS=#{OS} }.tap{|x| puts x.inspect})
     end
