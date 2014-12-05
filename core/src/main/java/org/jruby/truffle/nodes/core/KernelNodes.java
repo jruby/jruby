@@ -509,9 +509,20 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            RubyString coerced = (RubyString) toStr.call(frame, object, "to_str", null);
+            try {
+                RubyString coerced = (RubyString) toStr.call(frame, object, "to_str", null);
 
-            return getContext().eval(coerced.toString(), this);
+                return getContext().eval(coerced.toString(), this);
+            } catch (RaiseException e) {
+                if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+                    throw new RaiseException(
+                            getContext().getCoreLibrary().typeError(
+                                    String.format("no implicit conversion of %s into String", object.getLogicalClass().getName()),
+                                    this));
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
