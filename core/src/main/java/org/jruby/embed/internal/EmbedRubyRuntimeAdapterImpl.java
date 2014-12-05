@@ -129,12 +129,15 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                     break;
                 case CLASSPATH:
                     URL loc = container.getProvider().getRuntime().getJRubyClassLoader().getResource(filename);
-                    filename = LoadService.classpathFilenameFromURL(filename, loc, true);
-                    try {
-                        istream = loc.openStream();
-                    } catch (IOException ioe) {
-                        // should not happen
-                        throw new ParseFailedException(ioe);
+                    if (loc == null) {
+                        istream = null; // as in ClassLoader.getResourceAsStream
+                    } else {
+                        filename = LoadService.classpathFilenameFromURL(filename, loc, true);
+                        try {
+                            istream = loc.openStream();
+                        } catch (IOException ioe) {
+                            istream = null; // as in getClassLoader.getResourceAsStream
+                        }
                     }
                     break;
             }
