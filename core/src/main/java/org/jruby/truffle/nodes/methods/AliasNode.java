@@ -77,7 +77,7 @@ public abstract class AliasNode extends RubyNode {
         return null;
     }
 
-    @Specialization(guards = "!isModule")
+    @Specialization(guards = {"!isRubyModule", "!isRubyBignum"})
     public Object alias(RubyBasicObject object) {
         notDesignedForCompilation();
 

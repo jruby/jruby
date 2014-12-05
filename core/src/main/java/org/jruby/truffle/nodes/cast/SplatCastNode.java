@@ -78,7 +78,7 @@ public abstract class SplatCastNode extends RubyNode {
         return array;
     }
 
-    @Specialization(guards = {"!isNil", "!isArray"})
+    @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})
     public RubyArray splat(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
