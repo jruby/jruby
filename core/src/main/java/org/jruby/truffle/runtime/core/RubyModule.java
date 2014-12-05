@@ -497,7 +497,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         @Override
         public boolean hasNext() {
-            return module instanceof RubyModule;
+            return super.hasNext() && !(module instanceof RubyClass);
         }
     }
 
@@ -517,16 +517,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             @Override
             public Iterator<RubyModule> iterator() {
                 return new AncestorIterator(top);
-            }
-        };
-    }
-
-    public Iterable<RubyModule> selfAndIncludedModules() {
-        final ModuleChain top = this;
-        return new Iterable<RubyModule>() {
-            @Override
-            public Iterator<RubyModule> iterator() {
-                return new IncludedModulesIterator(top);
             }
         };
     }

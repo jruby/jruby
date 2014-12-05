@@ -78,8 +78,6 @@ public abstract class ModuleOperations {
         }
 
         // Look in lexical scope
-        final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
-
         if (lexicalScope != null) {
             if (lexicalScope != context.getRootLexicalScope()) {
                 // Already looked in the top lexical scope, which is module.
@@ -108,7 +106,14 @@ public abstract class ModuleOperations {
 
         // Look in Object and its included modules
         if (module.isOnlyAModule()) {
-            for (RubyModule ancestor : objectClass.selfAndIncludedModules()) {
+            final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
+
+            constant = objectClass.getConstants().get(name);
+            if (constant != null) {
+                return constant;
+            }
+
+            for (RubyModule ancestor : objectClass.includedModules()) {
                 constant = ancestor.getConstants().get(name);
 
                 if (constant != null) {
