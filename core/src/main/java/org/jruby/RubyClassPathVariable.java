@@ -66,15 +66,10 @@ public class RubyClassPathVariable extends RubyObject {
             paths = context.runtime.newArray(obj).toJavaArray();
         }
         
-        boolean is1_8 = context.getRuntime().is1_8();
         for (IRubyObject path: paths) {
+            String ss = path.convertToString().toString();
             try {
-                URL url = getURL(path.convertToString().toString());
-                if (url.getProtocol().equals("file")) {
-                    path = is1_8 ? RubyFile.expand_path(context, null, new IRubyObject[]{ path })
-                            : RubyFile.expand_path19(context, null, new IRubyObject[]{ path });
-                    url = getURL(path.convertToString().toString());
-                }
+                URL url = getURL(ss);
                 getRuntime().getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException mue) {
                 throw getRuntime().newArgumentError(mue.getLocalizedMessage());
