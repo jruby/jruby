@@ -1,7 +1,7 @@
 fails:Kernel#eval is a private method
 fails:Kernel#eval is a module function
 fails:Kernel#eval evaluates the code within
-fails:Kernel#eval coerces an object to string
+passes:Kernel#eval coerces an object to string
 fails:Kernel#eval evaluates within the scope of the eval
 fails:Kernel#eval evaluates such that consts are scoped to the class of the eval
 fails:Kernel#eval finds a local in an enclosing scope

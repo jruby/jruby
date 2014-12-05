@@ -266,6 +266,10 @@ public abstract class RubyNode extends Node {
         return b instanceof Double;
     }
 
+    public static boolean isString(Object o) {
+        return o instanceof RubyString;
+    }
+
     public RubyBignum bignum(int value) {
         return bignum((long) value);
     }

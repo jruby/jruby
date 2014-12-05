@@ -479,12 +479,16 @@ public abstract class KernelNodes {
     @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class EvalNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode toStr;
+
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStr = new DispatchHeadNode(context);
         }
 
         public EvalNode(EvalNode prev) {
             super(prev);
+            toStr = prev.toStr;
         }
 
         @Specialization
@@ -501,6 +505,14 @@ public abstract class KernelNodes {
             return getContext().eval(source.toString(), binding, this);
         }
 
+        @Specialization(guards = "!isString")
+        public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding) {
+            notDesignedForCompilation();
+
+            RubyString coerced = (RubyString) toStr.call(frame, object, "to_str", null);
+
+            return getContext().eval(coerced.toString(), this);
+        }
     }
 
     @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
