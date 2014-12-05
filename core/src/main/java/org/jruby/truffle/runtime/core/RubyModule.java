@@ -526,7 +526,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return new Iterable<RubyModule>() {
             @Override
             public Iterator<RubyModule> iterator() {
-                return new AncestorIterator(top);
+                return new IncludedModulesIterator(top);
             }
         };
     }
@@ -536,7 +536,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return new Iterable<RubyModule>() {
             @Override
             public Iterator<RubyModule> iterator() {
-                return new AncestorIterator(top);
+                return new IncludedModulesIterator(top);
             }
         };
     }
