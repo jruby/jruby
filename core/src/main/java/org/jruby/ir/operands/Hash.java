@@ -71,6 +71,14 @@ public class Hash extends Operand {
         }
     }
 
+    public Operand cloneForLVarDepth(int newDepth) {
+        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<KeyValuePair<Operand, Operand>>();
+        for (KeyValuePair<Operand, Operand> pair : pairs) {
+            newPairs.add(new KeyValuePair(pair.getKey(), ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)));
+        }
+        return new Hash(newPairs, isKWArgsHash);
+    }
+
     @Override
     public Operand cloneForInlining(CloneInfo ii) {
         if (hasKnownValue())

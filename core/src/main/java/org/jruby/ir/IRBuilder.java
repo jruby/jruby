@@ -3510,7 +3510,12 @@ public class IRBuilder {
         Operand[] newArgs = new Operand[args.length];
 
         for (int i = 0; i < args.length; i++) {
-            newArgs[i] = ((DepthCloneable) args[i]).cloneForDepth(depthFromSuper);
+            // Because of keyword args, we can have a keyword-arg hash in the call args.
+            if (args[i] instanceof Hash) {
+                newArgs[i] = ((Hash) args[i]).cloneForLVarDepth(depthFromSuper);
+            } else {
+                newArgs[i] = ((DepthCloneable) args[i]).cloneForDepth(depthFromSuper);
+            }
         }
 
         return newArgs;
