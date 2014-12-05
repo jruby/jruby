@@ -102,8 +102,6 @@ public abstract class ArrayLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyArray executeArray(VirtualFrame frame) {
-            notDesignedForCompilation();
-
             final double[] executedValues = new double[values.length];
 
             for (int n = 0; n < values.length; n++) {
