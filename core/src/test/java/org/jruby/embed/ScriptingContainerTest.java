@@ -2752,7 +2752,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testClasspathScriptletHashClasspathFile() {
+    public void testClasspathScriptletHasClasspathFile() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         Object result = instance.runScriptlet(PathType.CLASSPATH, "__FILE__.rb");
         assertEquals("classpath:/__FILE__.rb", result.toString());
