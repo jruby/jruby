@@ -509,10 +509,10 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            try {
-                RubyString coerced = (RubyString) toStr.call(frame, object, "to_str", null);
+            Object coerced;
 
-                return getContext().eval(coerced.toString(), this);
+            try {
+                coerced = toStr.call(frame, object, "to_str", null);
             } catch (RaiseException e) {
                 if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                     throw new RaiseException(
@@ -522,6 +522,24 @@ public abstract class KernelNodes {
                 } else {
                     throw e;
                 }
+            }
+
+            if (coerced instanceof RubyString) {
+                return getContext().eval(coerced.toString(), this);
+            } else {
+                String coercedClassName = coerced.getClass().getName();
+
+                if (coerced instanceof RubyBasicObject) {
+                    coercedClassName = ((RubyBasicObject) coerced).getLogicalClass().getName();
+                }
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().typeError(
+                                String.format("can't convert %s to String (%s#to_str gives %s)",
+                                        object.getLogicalClass().getName(),
+                                        object.getLogicalClass().getName(),
+                                        coercedClassName),
+                                this));
             }
         }
     }
