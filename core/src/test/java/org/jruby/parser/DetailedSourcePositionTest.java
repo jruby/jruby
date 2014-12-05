@@ -47,6 +47,16 @@ public class DetailedSourcePositionTest extends TestCase {
         //assertEquals(2, position.getLength());
     }
 
+    public void testBlockNodeWrappingBegin() {
+        final DetailedSourcePosition position = detailedSource(find(parse("BEGIN { p 'yo' };\n"), BlockNode.class));
+        assertEquals("test", position.getFile());
+
+        // Since the BlockNode is just a wrapper, it should have the same position as the PreExe19Node representing BEGIN.
+        assertEquals(0, position.getLine());
+        assertEquals(0, position.getOffset());
+        assertEquals(5, position.getLength());
+    }
+
     public void testAtEndOfFile() {
         final DetailedSourcePosition position = detailedSource(find(parse("  14"), FixnumNode.class));
         assertEquals("test", position.getFile());
