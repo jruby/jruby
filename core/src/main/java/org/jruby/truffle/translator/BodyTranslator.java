@@ -78,10 +78,8 @@ public class BodyTranslator extends Translator {
         debugIgnoredCalls.add("upto");
     }
 
-    /**
-     * Global variables which in common usage have frame local semantics.
-     */
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
+    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_"));
 
     public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(currentNode, context, source);
@@ -1031,6 +1029,36 @@ public class BodyTranslator extends Translator {
 
         if (readOnlyGlobalVariables.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
+        } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+            final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
+            return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
+        } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+            if (environment.getNeverAssignInParentScope()) {
+                environment.declareVar(node.getName());
+            }
+
+            RubyNode localVarNode = environment.findLocalVarNode(node.getName(), sourceSection);
+
+            if (localVarNode == null) {
+                if (environment.hasOwnScopeForAssignments()) {
+                    environment.declareVar(node.getName());
+                }
+
+                TranslatorEnvironment environmentToDeclareIn = environment;
+
+                while (!environmentToDeclareIn.hasOwnScopeForAssignments()) {
+                    environmentToDeclareIn = environmentToDeclareIn.getParent();
+                }
+
+                environmentToDeclareIn.declareVar(node.getName());
+                localVarNode = environment.findLocalVarNode(node.getName(), sourceSection);
+
+                if (localVarNode == null) {
+                    throw new RuntimeException("shoudln't be here");
+                }
+            }
+
+            return ((ReadNode) localVarNode).makeWriteNode(rhs);
         } else {
             if (name.equals("$~")) {
                 rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
@@ -1054,9 +1082,11 @@ public class BodyTranslator extends Translator {
             final RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             return readNode;
+        } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+            final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
+            return new ReadInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, true);
         } else {
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
-
             return new ReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, true);
         }
     }

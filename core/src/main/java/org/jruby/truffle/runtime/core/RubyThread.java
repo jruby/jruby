@@ -9,8 +9,11 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.concurrent.*;
 
+import org.jcodings.util.Hash;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -64,9 +67,12 @@ public class RubyThread extends RubyBasicObject {
     private RubyException exception;
     private Object value;
 
+    private RubyBasicObject threadLocals;
+
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
         this.manager = manager;
+        threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
     }
 
     public void initialize(RubyContext context, RubyNode currentNode, RubyProc block) {
@@ -137,6 +143,10 @@ public class RubyThread extends RubyBasicObject {
 
     public Status getStatus() {
         return status;
+    }
+
+    public RubyBasicObject getThreadLocals() {
+        return threadLocals;
     }
 
 }
