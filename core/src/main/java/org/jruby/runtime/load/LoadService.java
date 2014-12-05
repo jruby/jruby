@@ -1080,7 +1080,7 @@ public class LoadService {
                 throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
             }
         } else if (file.endsWith(".jar")) {
-            return new JarredScript(resource);
+            return new JarredScript(resource, state.searchFile);
         } else if (file.endsWith(".class")) {
             return new JavaCompiledScript(resource);
         } else {
