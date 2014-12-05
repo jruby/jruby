@@ -6,6 +6,7 @@ Prerequisites:
 * A Java 7-compatible (or higher) Java development kit (JDK)
 * Maven 3+
 * Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
+* make and a C++ compiler for installing the jruby-launcher gem
 
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
