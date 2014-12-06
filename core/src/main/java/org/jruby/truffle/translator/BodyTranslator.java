@@ -43,6 +43,7 @@ import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.*;
@@ -61,8 +62,8 @@ import java.util.*;
 public class BodyTranslator extends Translator {
 
     protected final BodyTranslator parent;
-
     protected final TranslatorEnvironment environment;
+    private final boolean topLevel;
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
@@ -81,10 +82,11 @@ public class BodyTranslator extends Translator {
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
     public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_"));
 
-    public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
+    public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
         this.parent = parent;
         this.environment = environment;
+        this.topLevel = topLevel;
     }
 
     @Override
@@ -755,7 +757,14 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final SelfNode classNode = new SelfNode(context, sourceSection);
+        final RubyNode classNode;
+
+        if (topLevel) {
+            classNode = ClassNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
+        } else {
+            classNode = new SelfNode(context, sourceSection);
+        }
+
         return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
     }
 
@@ -790,7 +799,7 @@ public class BodyTranslator extends Translator {
          * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
          */
 
-        return new AddMethodNode(context, sourceSection, classNode, functionExprNode);
+        return new AddMethodNode(context, sourceSection, classNode, functionExprNode, topLevel);
     }
 
     @Override

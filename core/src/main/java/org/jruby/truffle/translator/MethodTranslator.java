@@ -36,7 +36,7 @@ class MethodTranslator extends BodyTranslator {
     private boolean isBlock;
 
     public MethodTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, boolean isTopLevel, Source source) {
-        super(currentNode, context, parent, environment, source);
+        super(currentNode, context, parent, environment, source, false);
         this.isBlock = isBlock;
         this.isTopLevel = isTopLevel;
     }

@@ -140,7 +140,7 @@ public class TranslatorDriver {
         if (parserContext == TranslatorDriver.ParserContext.MODULE) {
             translator = new ModuleTranslator(currentNode, context, null, environment, source);
         } else {
-            translator = new BodyTranslator(currentNode, context, null, environment, source);
+            translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
         }
 
         RubyNode truffleNode;

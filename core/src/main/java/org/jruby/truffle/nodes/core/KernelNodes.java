@@ -1238,6 +1238,33 @@ public abstract class KernelNodes {
 
     }
 
+    /*
+     * Kernel#pretty_inspect is normally part of stdlib, in pp.rb, but we aren't able to execute
+     * that file yet. Instead we implement a very simple version here, which is the solution
+     * suggested by RubySpec.
+     */
+
+    @CoreMethod(names = "pretty_inspect")
+    public abstract static class PrettyInspectNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode inspectNode;
+
+        public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            inspectNode = DispatchHeadNode.onSelf(context);
+        }
+
+        public PrettyInspectNode(PrettyInspectNode prev) {
+            super(prev);
+            inspectNode = prev.inspectNode;
+        }
+
+        @Specialization
+        public Object prettyInspect(VirtualFrame frame, Object self) {
+            return inspectNode.call(frame, self, "inspect", null);
+        }
+    }
+
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
@@ -1311,31 +1338,45 @@ public abstract class KernelNodes {
         }
     }
 
-    /*
-     * Kernel#pretty_inspect is normally part of stdlib, in pp.rb, but we aren't able to execute
-     * that file yet. Instead we implement a very simple version here, which is the solution
-     * suggested by RubySpec.
-     */
+    @CoreMethod(names = "private_methods", optional = 1)
+    public abstract static class PrivateMethodsNode extends CoreMethodNode {
 
-    @CoreMethod(names = "pretty_inspect")
-    public abstract static class PrettyInspectNode extends CoreMethodNode {
-
-        @Child protected DispatchHeadNode inspectNode;
-
-        public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
+        public PrivateMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspectNode = DispatchHeadNode.onSelf(context);
         }
 
-        public PrettyInspectNode(PrettyInspectNode prev) {
+        public PrivateMethodsNode(PrivateMethodsNode prev) {
             super(prev);
-            inspectNode = prev.inspectNode;
         }
 
         @Specialization
-        public Object prettyInspect(VirtualFrame frame, Object self) {
-            return inspectNode.call(frame, self, "inspect", null);
+        public RubyArray private_methods(RubyBasicObject self, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
+            return private_methods(self, true);
         }
+
+        @Specialization
+        public RubyArray private_methods(RubyBasicObject self, boolean includeInherited) {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
+
+            Map<String, RubyMethod> methods;
+
+            if (includeInherited) {
+                methods = ModuleOperations.getAllMethods(self.getMetaClass());
+            } else {
+                methods = self.getMetaClass().getMethods();
+            }
+
+            for (RubyMethod method : methods.values()) {
+                if (method.getVisibility() == Visibility.PRIVATE) {
+                    array.slowPush(self.getContext().newSymbol(method.getName()));
+                }
+            }
+
+            return array;
+        }
+
     }
 
     @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)

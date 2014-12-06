@@ -22,10 +22,13 @@ public class AddMethodNode extends RubyNode {
     @Child protected RubyNode receiver;
     @Child protected MethodDefinitionNode method;
 
-    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method) {
+    private final boolean topLevel;
+
+    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method, boolean topLevel) {
         super(context, section);
         this.receiver = receiver;
         this.method = method;
+        this.topLevel = topLevel;
     }
 
     @Override
@@ -46,11 +49,15 @@ public class AddMethodNode extends RubyNode {
 
         final RubyMethod methodWithDeclaringModule = methodObject.withDeclaringModule(module);
 
-        if (moduleFunctionFlag(frame)) {
+        if (topLevel) {
             module.addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PRIVATE));
-            module.getSingletonClass(this).addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PUBLIC));
         } else {
-            module.addMethod(this, methodWithDeclaringModule);
+            if (moduleFunctionFlag(frame)) {
+                module.addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PRIVATE));
+                module.getSingletonClass(this).addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PUBLIC));
+            } else {
+                module.addMethod(this, methodWithDeclaringModule);
+            }
         }
 
         return getContext().newSymbol(method.getName());
