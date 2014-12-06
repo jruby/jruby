@@ -561,6 +561,7 @@ public class RubyStruct extends RubyObject {
             buffer.append(":...>".getBytes());
             return runtime.newString(buffer);
         }
+
         for (int i = 0,k=member.getLength(); i < k; i++) {
             if (i > 0) {
                 buffer.append(',').append(' ');
