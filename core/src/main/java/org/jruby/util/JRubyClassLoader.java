@@ -134,6 +134,13 @@ public class JRubyClassLoader extends ClassDefininngJRubyClassLoader {
             return c;
         }
     }
+    public URL getResource( String name ) {
+        URL resource = findResource(name);
+        if (resource == null) {
+            resource = super.getResource(name);
+        }
+        return resource;
+    }
 
     /**
      * Called when the parent runtime is torn down.
