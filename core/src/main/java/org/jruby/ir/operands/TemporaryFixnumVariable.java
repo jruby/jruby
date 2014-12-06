@@ -51,7 +51,7 @@ public class TemporaryFixnumVariable extends TemporaryLocalVariable {
 
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new TemporaryFixnumVariable(offset);
+        return this;
     }
 
     @Override

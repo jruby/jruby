@@ -19,7 +19,7 @@ public class TemporaryLocalReplacementVariable extends TemporaryLocalVariable {
 
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new TemporaryLocalReplacementVariable(oldName, offset);
+        return this;
     }
 
     @Override

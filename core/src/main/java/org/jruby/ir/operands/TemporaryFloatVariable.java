@@ -51,7 +51,7 @@ public class TemporaryFloatVariable extends TemporaryLocalVariable {
 
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new TemporaryFloatVariable(offset);
+        return this;
     }
 
     @Override
