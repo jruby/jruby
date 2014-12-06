@@ -7,10 +7,19 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.util;
+package org.jruby.truffle.translator;
 
-public interface Supplier<T> {
+import org.jruby.truffle.nodes.RubyNode;
 
-    T get();
+public interface NodeWrapper {
+
+    public static NodeWrapper IDENTITY = new NodeWrapper() {
+        @Override
+        public RubyNode wrap(RubyNode node) {
+            return node;
+        }
+    };
+
+    RubyNode wrap(RubyNode node);
 
 }
