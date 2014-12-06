@@ -760,7 +760,8 @@ public class BodyTranslator extends Translator {
         final RubyNode classNode;
 
         if (topLevel) {
-            classNode = ClassNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
+            // TODO: different for Kernel#load(..., true)
+            classNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         } else {
             classNode = new SelfNode(context, sourceSection);
         }
