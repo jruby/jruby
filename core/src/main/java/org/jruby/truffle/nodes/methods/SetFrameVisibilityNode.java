@@ -17,13 +17,13 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 
-public class SetVisibilityNode extends RubyNode {
+public class SetFrameVisibilityNode extends RubyNode {
 
     @Child protected RubyNode body;
 
     final Visibility visibility;
 
-    public SetVisibilityNode(RubyContext context, SourceSection sourceSection, RubyNode body, Visibility visibility) {
+    public SetFrameVisibilityNode(RubyContext context, SourceSection sourceSection, RubyNode body, Visibility visibility) {
         super(context, sourceSection);
         this.body = body;
         this.visibility = visibility;

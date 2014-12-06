@@ -160,7 +160,7 @@ public class TranslatorDriver {
 
         // Set default top-level visibility
         if (parserContext == ParserContext.TOP_LEVEL) {
-            truffleNode = new SetVisibilityNode(context, truffleNode.getSourceSection(), truffleNode, Visibility.PRIVATE);
+            truffleNode = new SetFrameVisibilityNode(context, truffleNode.getSourceSection(), truffleNode, Visibility.PRIVATE);
         }
 
         // Load flip-flop states
