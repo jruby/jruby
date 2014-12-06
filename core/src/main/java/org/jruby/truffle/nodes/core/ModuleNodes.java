@@ -966,11 +966,12 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        public abstract RubyModule executePublic(VirtualFrame frame, RubyModule module, Object[] args);
+
         @Specialization
-        public RubyModule doPublic(RubyModule module, Object... args) {
+        public RubyModule doPublic(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            module.visibilityMethod(this, args, Visibility.PUBLIC);
             module.visibilityMethod(this, args, Visibility.PUBLIC);
             return module;
         }
@@ -1026,8 +1027,10 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        public abstract RubyModule executePrivate(VirtualFrame frame, RubyModule module, Object[] args);
+
         @Specialization
-        public RubyModule doPrivate(RubyModule module, Object... args) {
+        public RubyModule doPrivate(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
             module.visibilityMethod(this, args, Visibility.PRIVATE);
