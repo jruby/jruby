@@ -14,6 +14,7 @@ import java.util.Set;
 
 import jnr.posix.FileStat;
 
+import org.jruby.Ruby;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
@@ -33,19 +34,21 @@ public class URLResource extends AbstractFileResource {
     private final String pathname;
 
     private final JarFileStat fileStat;
+    private final ClassLoader cl;
 
     URLResource(String uri, URL url, String[] files) {
-        this(uri, url, null, files);
+        this(uri, url, null, null, files);
     }
     
-    URLResource(String uri, String pathname, String[] files) {
-        this(uri, null, pathname, files);
+    URLResource(String uri, ClassLoader cl, String pathname, String[] files) {
+        this(uri, null, cl, pathname, files);
     }
     
-    private URLResource(String uri, URL url, String pathname, String[] files) {
+    private URLResource(String uri, URL url, ClassLoader cl, String pathname, String[] files) {
         this.uri = uri;
         this.list = files;
         this.url = url;
+        this.cl = cl;
         this.pathname = pathname;
         this.fileStat = new JarFileStat(this);
     }
@@ -95,7 +98,7 @@ public class URLResource extends AbstractFileResource {
     @Override
     public boolean canRead()
     {
-        return isFile();
+        return exists();
     }
 
     @Override
@@ -128,15 +131,16 @@ public class URLResource extends AbstractFileResource {
  
     @Override
     public JRubyFile hackyGetJRubyFile() {
-      return JRubyNonExistentFile.NOT_EXIST;
+        return JRubyNonExistentFile.NOT_EXIST;
     }
 
     @Override
-    InputStream openInputStream() throws IOException {
-        if (pathname != null) {
-            return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
-        }
-        return url.openStream();
+    InputStream openInputStream() throws IOException
+    {
+    	if (pathname != null) {
+    		return cl.getResourceAsStream(pathname);
+    	}
+    	return url.openStream();
     }
 
     @Override
@@ -144,33 +148,32 @@ public class URLResource extends AbstractFileResource {
         return new ChannelDescriptor(inputStream(), flags);
     }
 
-    public static FileResource createClassloaderURI(String pathname) {
+    public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
+        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader and
+        // take this
+        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : URLResource.class.getClassLoader();
+        if (cl == null ) {
+            cl = Thread.currentThread().getContextClassLoader();
+        }
         if (pathname.startsWith("/")) {
             pathname = pathname.substring(1);
         }
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(pathname);
-        if (is != null) {
-            try
-            {
-                is.close();
-            }
-            // need Exception here due to strange NPE in some cases
-            catch (Exception e) {}
-        }
-        String[] files = listClassLoaderFiles(pathname);
+        URL url = cl.getResource(pathname);
+        String[] files = listClassLoaderFiles(cl, pathname);
         return new URLResource(URI_CLASSLOADER + pathname,
-                               is == null ? null : pathname,
+                               cl,
+                               url == null ? null : pathname,
                                files);
     }
 
-    public static FileResource create(String pathname)
+    public static FileResource create(Ruby runtime, String pathname)
     {
         if (!pathname.startsWith(URI)) {
             return null;
         }
         pathname = pathname.substring(URI.length());
         if (pathname.startsWith(CLASSLOADER)) {
-            return createClassloaderURI(pathname.substring(CLASSLOADER.length()));
+            return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()));
         }
         return createRegularURI(pathname);
     }
@@ -180,7 +183,10 @@ public class URLResource extends AbstractFileResource {
         try
         {
             // TODO NormalizedFile does too much - should leave uri: files as they are
+            // and make file:/a protocol to be file:///a so the second replace does not apply
+            pathname = pathname.replaceFirst( "file:/([^/])", "file:///$1" );
             pathname = pathname.replaceFirst( ":/([^/])", "://$1" );
+            
             url = new URL(pathname);
             // we do not want to deal with those url here like this though they are valid url/uri
             if (url.getProtocol().startsWith("http")){
@@ -189,6 +195,7 @@ public class URLResource extends AbstractFileResource {
         }
         catch (MalformedURLException e)
         {
+            e.printStackTrace();
             // file does not exists
             return new URLResource(URI + pathname, (URL)null, null);
         }
@@ -242,13 +249,14 @@ public class URLResource extends AbstractFileResource {
             }
         }
     }
-    private static String[] listClassLoaderFiles(String pathname) {
+
+    private static String[] listClassLoaderFiles(ClassLoader classloader, String pathname) {
         if (pathname.endsWith(".rb") || pathname.endsWith(".class") || pathname.endsWith(".jar")) {
             return null;
         }
         try
         {
-            Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(pathname + "/.jrubydir");
+            Enumeration<URL> urls = classloader.getResources(pathname + "/.jrubydir");
             if (!urls.hasMoreElements()) {
                 return null;
             }
@@ -275,8 +283,7 @@ public class URLResource extends AbstractFileResource {
         }
         try
         {
-            // TODO remove this replace
-            InputStream is = new URL(pathname.replace("file://", "file:/") + "/.jrubydir").openStream();
+            InputStream is = new URL(pathname + "/.jrubydir").openStream();
             // no inputstream happens with knoplerfish OSGI and osgi tests from /maven/jruby-complete
             if (is != null) {
                 return listFilesFromInputStream(is);
@@ -291,10 +298,10 @@ public class URLResource extends AbstractFileResource {
         }
     }
 
-    public static URL getResourceURL(String location)
+    public static URL getResourceURL(Ruby runtime, String location)
     {
         if (location.startsWith(URI + CLASSLOADER)){
-            return Thread.currentThread().getContextClassLoader().getResource(location.substring(URI_CLASSLOADER.length()));
+            return runtime.getJRubyClassLoader().getResource(location.substring(URI_CLASSLOADER.length()));
         }
         try
         {
