@@ -29,8 +29,9 @@ public abstract class Variable extends Operand implements Comparable {
         return (v != null) && (force || v.canCopyPropagate()) ? v : this;
     }
 
-    public boolean isImplicitBlockArg() {
-        return getName().equals(BLOCK);
+    // FIXME: Consider specialized type for special %block like for %self
+    public boolean isBlock() {
+        return BLOCK.equals(getName());
     }
 
     public boolean isSelf() {

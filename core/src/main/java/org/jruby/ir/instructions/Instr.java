@@ -96,26 +96,20 @@ public abstract class Instr {
     }
 
     public boolean canBeDeleted(IRScope s) {
-         if (hasSideEffects() || getOperation().isDebugOp() || getOperation().canRaiseException() || transfersControl()) {
-             return false;
-         } else if (this instanceof ResultInstr) {
-             Variable r = ((ResultInstr)this).getResult();
-             if (s.bindingHasEscaped() && !r.getName().equals(Variable.BLOCK)) {
-                 // If the binding of this scope has escaped, then we have to preserve writes to
-                 // all local variables because anyone who uses the binding might query any of the
-                 // local variables from the binding.  This is safe, but extremely conservative.
-                 return !(r instanceof LocalVariable);
-             } else if (s.usesEval() && r.getName().equals(Variable.BLOCK)) {
-                 // If this scope (or any nested scope) has any evals, then the eval might have a yield which
-                 // would use %block.  In that scenario, we cannot delete the '%block = recv_closure' instruction.
-                 // This is safe, but conservative.
-                 return false;
-             } else {
-                 return true;
-             }
-         } else {
-             return true;
+         if (hasSideEffects() || operation.isDebugOp() || canRaiseException() || transfersControl()) return false;
+
+         if (this instanceof ResultInstr) {
+             Variable r = ((ResultInstr) this).getResult();
+
+             // %block must stay if this scope or nested scope has an eval which might yield. Safe, but conservative.
+             if (r.isBlock()) return !s.usesEval();
+
+             // If scope's binding escaped, then preserve lvars since consumers of the escaped binding may access those
+             // lvars.  Safe, but extremely conservative.
+             if (s.bindingHasEscaped()) return !(r instanceof LocalVariable);
          }
+
+        return true;
     }
 
     public void markDead() {
