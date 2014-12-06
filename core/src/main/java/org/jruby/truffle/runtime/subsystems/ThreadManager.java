@@ -16,7 +16,6 @@ import java.util.concurrent.locks.*;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.util.Supplier;
 
 /**
  * Manages Ruby {@code Thread} objects.
