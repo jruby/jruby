@@ -303,7 +303,7 @@ public abstract class FloatNodes {
             return a < b.doubleValue();
         }
 
-        @Specialization(guards = "!isBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
@@ -344,7 +344,7 @@ public abstract class FloatNodes {
             return a <= b.doubleValue();
         }
 
-        @Specialization(guards = "!isBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
@@ -385,7 +385,7 @@ public abstract class FloatNodes {
             return a == b.doubleValue();
         }
 
-        @Specialization(guards = "!isBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
             // TODO (nirvdrum Dec. 1, 2014): This is a stub. There is one case where this should return 'true', but it's not a trivial fix.
             return false;
@@ -440,7 +440,7 @@ public abstract class FloatNodes {
             return a >= b.doubleValue();
         }
 
-        @Specialization(guards = "!isBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
@@ -481,7 +481,7 @@ public abstract class FloatNodes {
             return a > b.doubleValue();
         }
 
-        @Specialization(guards = "!isBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),

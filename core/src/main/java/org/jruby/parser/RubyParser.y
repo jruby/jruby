@@ -309,7 +309,7 @@ program       : {
                           support.checkUselessStatement($2);
                       }
                   }
-                  support.getResult().setAST(support.addRootNode($2, support.getPosition($2)));
+                  support.getResult().setAST(support.addRootNode($2));
               }
 
 top_compstmt  : top_stmts opt_terms {
@@ -2099,7 +2099,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                 }
                 | k__LINE__ {
-                    $$ = new FixnumNode(lexer.getPosition(), lexer.tokline.getStartLine()+1);
+                    $$ = new FixnumNode(lexer.getPosition(), lexer.tokline.getLine()+1);
                 }
                 | k__ENCODING__ {
                     $$ = new EncodingNode(lexer.getPosition(), lexer.getEncoding());

@@ -1715,23 +1715,6 @@ public class IRBuilder {
         return new Symbol(method.getName());
     }
 
-    protected int receiveOptArgs(final ArgsNode argsNode, IRScope s, int opt, int argIndex) {
-        ListNode optArgs = argsNode.getOptArgs();
-        for (int j = 0; j < opt; j++, argIndex++) {
-            // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
-            Label l = s.getNewLabel();
-            LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
-            String argName = n.getName();
-            Variable av = s.getLocalVariable(argName, 0);
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.opt, argName);
-            addInstr(s, new ReceiveOptArgInstr(av, argIndex-j, argIndex-j, j));
-            addInstr(s, BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
-            build(n, s);
-            addInstr(s, new LabelInstr(l));
-        }
-        return argIndex;
-    }
-
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
         return s instanceof IRFor ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
@@ -2038,17 +2021,6 @@ public class IRBuilder {
         } else  {
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
             buildBlockArgsAssignment(args, s, null, 0, false);
-        }
-    }
-
-    public String buildType(Node typeNode) {
-        switch (typeNode.getNodeType()) {
-        case CONSTNODE:
-            return ((ConstNode)typeNode).getName();
-        case SYMBOLNODE:
-            return ((SymbolNode)typeNode).getName();
-        default:
-            return "unknown_type";
         }
     }
 
@@ -3510,7 +3482,12 @@ public class IRBuilder {
         Operand[] newArgs = new Operand[args.length];
 
         for (int i = 0; i < args.length; i++) {
-            newArgs[i] = ((DepthCloneable) args[i]).cloneForDepth(depthFromSuper);
+            // Because of keyword args, we can have a keyword-arg hash in the call args.
+            if (args[i] instanceof Hash) {
+                newArgs[i] = ((Hash) args[i]).cloneForLVarDepth(depthFromSuper);
+            } else {
+                newArgs[i] = ((DepthCloneable) args[i]).cloneForDepth(depthFromSuper);
+            }
         }
 
         return newArgs;

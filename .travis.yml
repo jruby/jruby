@@ -3,6 +3,7 @@ before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
   - "export JAVA_OPTS='-XX:+TieredCompilation -XX:TieredStopAtLevel=1'"
+  - echo $HOME
 
 jdk:
   - openjdk7

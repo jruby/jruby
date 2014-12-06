@@ -93,6 +93,7 @@ class MSpecScript
     "^spec/ruby/core/regexp/source_spec.rb",
     "^spec/ruby/core/regexp/fixed_encoding_spec.rb",
     "^spec/ruby/core/regexp/encoding_spec.rb",
+    "^spec/ruby/core/regexp/new_spec.rb",
     "^spec/ruby/core/signal/list_spec.rb",
     "^spec/ruby/core/string/chomp_spec.rb",
     "^spec/ruby/core/string/crypt_spec.rb",

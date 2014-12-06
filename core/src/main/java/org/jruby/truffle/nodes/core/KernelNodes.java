@@ -478,12 +478,16 @@ public abstract class KernelNodes {
     @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class EvalNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode toStr;
+
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStr = new DispatchHeadNode(context);
         }
 
         public EvalNode(EvalNode prev) {
             super(prev);
+            toStr = prev.toStr;
         }
 
         @Specialization
@@ -500,6 +504,37 @@ public abstract class KernelNodes {
             return getContext().eval(source.toString(), binding, this);
         }
 
+        @Specialization(guards = "!isString")
+        public Object eval(VirtualFrame frame, RubyBasicObject object, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
+            notDesignedForCompilation();
+
+            Object coerced;
+
+            try {
+                coerced = toStr.call(frame, object, "to_str", null);
+            } catch (RaiseException e) {
+                if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+                    throw new RaiseException(
+                            getContext().getCoreLibrary().typeError(
+                                    String.format("no implicit conversion of %s into String", object.getLogicalClass().getName()),
+                                    this));
+                } else {
+                    throw e;
+                }
+            }
+
+            if (coerced instanceof RubyString) {
+                return getContext().eval(coerced.toString(), this);
+            } else {
+                throw new RaiseException(
+                        getContext().getCoreLibrary().typeError(
+                                String.format("can't convert %s to String (%s#to_str gives %s)",
+                                        object.getLogicalClass().getName(),
+                                        object.getLogicalClass().getName(),
+                                        getContext().getCoreLibrary().getLogicalClass(coerced).getName()),
+                                this));
+            }
+        }
     }
 
     @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
@@ -1645,7 +1680,7 @@ public abstract class KernelNodes {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
         }
 
-        @Specialization(guards = "!isBignum")
+        @Specialization(guards = "!isRubyBignum")
         public RubyClass singletonClass(RubyBasicObject self) {
             notDesignedForCompilation();
 

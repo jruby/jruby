@@ -503,7 +503,7 @@ public abstract class StringNodes {
         public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
             return gsub(string, regexp, replacement);
         }
 
@@ -644,7 +644,7 @@ public abstract class StringNodes {
         public Object match(RubyString string, RubyString regexpString) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
             return regexp.matchCommon(string.getBytes(), false);
         }
 
@@ -722,7 +722,7 @@ public abstract class StringNodes {
         public RubyArray scan(RubyString string, RubyString regexpString) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
             return scan(string, regexp);
         }
 
@@ -839,7 +839,7 @@ public abstract class StringNodes {
         public RubyString sub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
             return sub(string, regexp, replacement);
         }
 

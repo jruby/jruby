@@ -55,7 +55,7 @@ public abstract class FalseClassNodes {
             return false;
         }
 
-        @Specialization(guards = "!isNil")
+        @Specialization(guards = "!isRubyNilClass")
         public boolean orXor(RubyBasicObject other) {
             return true;
         }

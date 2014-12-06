@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -214,56 +215,8 @@ public abstract class RubyNode extends Node {
         CompilerAsserts.neverPartOfCompilation();
     }
 
-    public static boolean isNil(Object o) {
-        return o instanceof RubyNilClass;
-    }
-
-    public static boolean isTrue(boolean b) {
-        return b;
-    }
-
-    public static boolean isModule(RubyBasicObject o) {
-        return o instanceof RubyModule;
-    }
-
-    public static boolean isArray(Object o) {
-        return o instanceof RubyArray;
-    }
-
-    public static boolean isFixnum(Object o) {
-        return o instanceof Integer || o instanceof Long;
-    }
-
-    public static boolean isBignum(Object o) {
-        return o instanceof RubyBignum;
-    }
-
-    public static boolean isFloat(Object o) {
-        return o instanceof Double;
-    }
-
-    public static boolean isFirstFixnum(Object o) {
-        return o instanceof Integer || o instanceof Long;
-    }
-
-    public static boolean isFirstBignum(Object o) {
-        return o instanceof RubyBignum;
-    }
-
-    public static boolean isFirstFloat(Object o) {
-        return o instanceof Double;
-    }
-
-    public static boolean isSecondFixnum(Object a, Object b) {
-        return b instanceof Integer || b instanceof Long;
-    }
-
-    public static boolean isSecondBignum(Object a, Object b) {
-        return b instanceof RubyBignum;
-    }
-
-    public static boolean isSecondFloat(Object a, Object b) {
-        return b instanceof Double;
+    public boolean isTrue(boolean value) {
+        return value;
     }
 
     public RubyBignum bignum(int value) {
@@ -276,6 +229,183 @@ public abstract class RubyNode extends Node {
 
     public RubyBignum bignum(BigInteger value) {
         return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+    }
+
+    // Copied from RubyTypesGen
+
+    @SuppressWarnings("static-method")
+    public boolean isDispatchAction(Object value) {
+        return value instanceof Dispatch.DispatchAction;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isLexicalScope(Object value) {
+        return value instanceof LexicalScope;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isUndefinedPlaceholder(Object value) {
+        return value instanceof UndefinedPlaceholder;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isBoolean(Object value) {
+        return value instanceof Boolean;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isInteger(Object value) {
+        return value instanceof Integer;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isLong(Object value) {
+        return value instanceof Long;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isDouble(Object value) {
+        return value instanceof Double;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isString(Object value) {
+        return value instanceof String;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyBignum(Object value) {
+        return value instanceof RubyBignum;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isIntegerFixnumRange(Object value) {
+        return value instanceof RubyRange.IntegerFixnumRange;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isLongFixnumRange(Object value) {
+        return value instanceof RubyRange.LongFixnumRange;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isObjectRange(Object value) {
+        return value instanceof RubyRange.ObjectRange;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyArray(Object value) {
+        return value instanceof RubyArray;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyBinding(Object value) {
+        return value instanceof RubyBinding;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyClass(Object value) {
+        return value instanceof RubyClass;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyException(Object value) {
+        return value instanceof RubyException;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyFiber(Object value) {
+        return value instanceof RubyFiber;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyFile(Object value) {
+        return value instanceof RubyFile;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyHash(Object value) {
+        return value instanceof RubyHash;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyMatchData(Object value) {
+        return value instanceof RubyMatchData;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyModule(Object value) {
+        return value instanceof RubyModule;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyNilClass(Object value) {
+        return value instanceof RubyNilClass;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyProc(Object value) {
+        return value instanceof RubyProc;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyRange(Object value) {
+        return value instanceof RubyRange;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyRegexp(Object value) {
+        return value instanceof RubyRegexp;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyString(Object value) {
+        return value instanceof RubyString;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyEncoding(Object value) {
+        return value instanceof RubyEncoding;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubySymbol(Object value) {
+        return value instanceof RubySymbol;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyThread(Object value) {
+        return value instanceof RubyThread;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyTime(Object value) {
+        return value instanceof RubyTime;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubiniusChannel(Object value) {
+        return value instanceof RubiniusChannel;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubiniusByteArray(Object value) {
+        return value instanceof RubiniusByteArray;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyEncodingConverter(Object value) {
+        return value instanceof RubyEncodingConverter;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyBasicObject(Object value) {
+        return value instanceof RubyBasicObject;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isObjectArray(Object value) {
+        return value instanceof Object[];
     }
 
 }

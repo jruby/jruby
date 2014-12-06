@@ -8,10 +8,11 @@ describe "$CLASSPATH" do
     end
     
     it "accepts an array" do
-      Dir.chdir(File.join(File.dirname(__FILE__), '..', '..', '..', 'lib')) do
-        $CLASSPATH << Dir.glob("*.jar")
-        ($CLASSPATH.to_a.include?("file:#{File.expand_path('jruby.jar')}")).should == true
+      Dir.chdir(File.join(File.dirname(__FILE__), '..', '..', '..', 'test')) do
+        $CLASSPATH << Dir.glob("classpath*.jar")
+        ($CLASSPATH.to_a.include?("file:#{File.expand_path('classpath_test.jar')}")).should == true
       end
+      JRuby.runtime.getJRubyClassLoader.getResource('test_value.rb').should_not == nil
     end
   end
 end

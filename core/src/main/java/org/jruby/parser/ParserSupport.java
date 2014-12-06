@@ -173,15 +173,20 @@ public class ParserSupport {
         return node instanceof NewlineNode ? node : new NewlineNode(position, node); 
     }
     
-    public Node addRootNode(Node topOfAST, ISourcePosition position) {
-        position = topOfAST != null ? topOfAST.getPosition() : position;
-
+    public Node addRootNode(Node topOfAST) {
         if (result.getBeginNodes().isEmpty()) {
-            if (topOfAST == null) topOfAST = NilImplicitNode.NIL;
+            ISourcePosition position;
+            if (topOfAST == null) {
+                topOfAST = NilImplicitNode.NIL;
+                position = lexer.getPosition();
+            } else {
+                position = topOfAST.getPosition();
+            }
             
             return new RootNode(position, result.getScope(), topOfAST);
         }
-        
+
+        ISourcePosition position = topOfAST != null ? topOfAST.getPosition() : result.getBeginNodes().get(0).getPosition();
         BlockNode newTopOfAST = new BlockNode(position);
         for (Node beginNode: result.getBeginNodes()) {
             appendToBlock(newTopOfAST, beginNode);

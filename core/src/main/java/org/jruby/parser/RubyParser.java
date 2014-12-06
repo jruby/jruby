@@ -44,6 +44,7 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -1694,7 +1695,7 @@ states[2] = new ParserState() {
                           support.checkUselessStatement(((Node)yyVals[0+yyTop]));
                       }
                   }
-                  support.getResult().setAST(support.addRootNode(((Node)yyVals[0+yyTop]), support.getPosition(((Node)yyVals[0+yyTop]))));
+                  support.getResult().setAST(support.addRootNode(((Node)yyVals[0+yyTop])));
     return yyVal;
   }
 };
