@@ -46,11 +46,10 @@ public class TryNode extends RubyNode {
         while (true) {
             getContext().getSafepointManager().poll();
 
+            Object result;
+
             try {
-                final Object result = tryPart.execute(frame);
-                elseProfile.enter();
-                elsePart.executeVoid(frame);
-                return result;
+                result = tryPart.execute(frame);
             } catch (ControlFlowException exception) {
                 controlFlowProfile.enter();
                 throw exception;
@@ -63,6 +62,10 @@ public class TryNode extends RubyNode {
                     continue;
                 }
             }
+
+            elseProfile.enter();
+            elsePart.executeVoid(frame);
+            return result;
         }
     }
 
