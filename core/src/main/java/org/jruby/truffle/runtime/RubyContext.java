@@ -187,6 +187,7 @@ public class RubyContext extends ExecutionContext {
         final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
+        // TODO(CS): we really need a method here - it's causing problems elsewhere
         return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
     }
 

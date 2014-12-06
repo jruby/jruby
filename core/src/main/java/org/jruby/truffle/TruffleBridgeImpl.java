@@ -130,7 +130,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
             @Override
             public Object get() {
                 final String inputFile = rootNode.getPosition().getFile();
-
                 final Source source;
 
                 if (inputFile.equals("-e")) {
@@ -146,16 +145,10 @@ public class TruffleBridgeImpl implements TruffleBridge {
                     }
 
                     // Assume UTF-8 for the moment
-
                     source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
                 }
 
-                final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
-                final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
-
-                // TODO(CS): we really need a method here - it's causing problems elsewhere
-
-                return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
+                return truffleContext.execute(truffleContext, source, parserContext, self, parentFrame, null);
             }
 
         }, truffleContext.getCoreLibrary().getNilObject());
