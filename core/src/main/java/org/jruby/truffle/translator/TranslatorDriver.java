@@ -12,6 +12,7 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
@@ -155,6 +156,11 @@ public class TranslatorDriver {
             }
         } else {
             truffleNode = rootNode.getBodyNode().accept(translator);
+        }
+
+        // Set default top-level visibility
+        if (parserContext == ParserContext.TOP_LEVEL) {
+            truffleNode = new SetVisibilityNode(context, truffleNode.getSourceSection(), truffleNode, Visibility.PRIVATE);
         }
 
         // Load flip-flop states
