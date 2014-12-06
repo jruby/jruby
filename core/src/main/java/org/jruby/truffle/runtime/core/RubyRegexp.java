@@ -52,28 +52,28 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @CompilationFinal private Regex regex;
-    @CompilationFinal private String source;
+    @CompilationFinal private ByteList source;
 
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
     }
 
-    public RubyRegexp(RubyNode currentNode, RubyClass regexpClass, String regex, int options) {
+    public RubyRegexp(RubyNode currentNode, RubyClass regexpClass, ByteList regex, int options) {
         this(regexpClass);
         initialize(compile(currentNode, getContext(), regex, options), regex);
     }
 
-    public RubyRegexp(RubyClass regexpClass, Regex regex, String source) {
+    public RubyRegexp(RubyClass regexpClass, Regex regex, ByteList source) {
         this(regexpClass);
         initialize(regex, source);
     }
 
-    public void initialize(RubyNode currentNode, String setSource) {
+    public void initialize(RubyNode currentNode, ByteList setSource) {
         regex = compile(currentNode, getContext(), setSource, Option.DEFAULT);
         source = setSource;
     }
 
-    public void initialize(Regex setRegex, String setSource) {
+    public void initialize(Regex setRegex, ByteList setSource) {
         regex = setRegex;
         source = setSource;
     }
@@ -82,7 +82,7 @@ public class RubyRegexp extends RubyBasicObject {
         return regex;
     }
 
-    public String getSource() {
+    public ByteList getSource() {
         return source;
     }
 
@@ -315,11 +315,9 @@ public class RubyRegexp extends RubyBasicObject {
         return true;
     }
 
-    public static Regex compile(RubyNode currentNode, RubyContext context, String pattern, int options) {
+    public static Regex compile(RubyNode currentNode, RubyContext context, ByteList bytes, int options) {
         RubyNode.notDesignedForCompilation();
-
-        final byte[] bytes = pattern.getBytes(StandardCharsets.UTF_8);
-        return compile(currentNode, context, bytes, UTF8Encoding.INSTANCE, options);
+        return compile(currentNode, context, bytes.bytes(), UTF8Encoding.INSTANCE, options);
     }
 
     public static Regex compile(RubyNode currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {

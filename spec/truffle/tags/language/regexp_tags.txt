@@ -1,1 +1,0 @@
-fails:Literal Regexps allows unescaped / to be used with %r

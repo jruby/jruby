@@ -149,7 +149,7 @@ public abstract class RegexpNodes {
         public RubyRegexp initialize(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            regexp.initialize(this, string.toString());
+            regexp.initialize(this, string.getBytes());
             return regexp;
         }
 
@@ -219,8 +219,26 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public Object source(RubyRegexp regexp) {
-            return getContext().makeString(regexp.getSource());
+        public RubyString source(RubyRegexp regexp) {
+            return getContext().makeString(regexp.getSource().toString());
+        }
+
+    }
+
+    @CoreMethod(names = "to_s")
+    public abstract static class ToSNode extends CoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString to_s(RubyRegexp regexp) {
+            return getContext().makeString(org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource()).to_s().toString());
         }
 
     }
