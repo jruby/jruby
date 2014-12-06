@@ -30,7 +30,7 @@ public class RubyException extends RubyBasicObject {
         }
 
         @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
+        public RubyException newInstance(RubyNode currentNode) {
             return new RubyException(this);
         }
 

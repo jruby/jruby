@@ -31,8 +31,7 @@ public class TopLevelRaiseHandler extends RubyNode {
         try {
             return body.execute(frame);
         } catch (RaiseException e) {
-            // TODO(CS): what's this cast about?
-            final RubyException rubyException = (RubyException) e.getRubyException();
+            final RubyException rubyException = e.getRubyException();
 
             for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, rubyException.getBacktrace())) {
                 System.err.println(line);

@@ -12,13 +12,11 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.core.TruffleDebugNodes;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.LexicalScope;
 
 public class ReadConstantNode extends RubyNode {

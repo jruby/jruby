@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
@@ -219,7 +220,12 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyString message) {
-            final RubyBasicObject exception = exceptionClass.newInstance(this);
+            if (!(exceptionClass instanceof RubyException.RubyExceptionClass)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
+            }
+
+            final RubyException exception = ((RubyException.RubyExceptionClass) exceptionClass).newInstance(this);
             initialize.call(frame, exception, "initialize", null, message);
             final RaiseException exceptionWrapper = new RaiseException(exception);
 

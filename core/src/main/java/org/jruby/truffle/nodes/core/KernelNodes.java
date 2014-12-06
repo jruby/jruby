@@ -1481,7 +1481,12 @@ public abstract class KernelNodes {
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
             notDesignedForCompilation();
 
-            final RubyBasicObject exception = exceptionClass.newInstance(this);
+            if (!(exceptionClass instanceof RubyException.RubyExceptionClass)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
+            }
+
+            final RubyException exception = ((RubyException.RubyExceptionClass) exceptionClass).newInstance(this);
             initialize.call(frame, exception, "initialize", null, message);
             throw new RaiseException(exception);
         }

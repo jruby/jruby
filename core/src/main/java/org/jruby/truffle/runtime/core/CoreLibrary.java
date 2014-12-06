@@ -551,7 +551,7 @@ public class CoreLibrary {
         return new RubyException(edomClass, context.makeString(String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyBasicObject rangeError(String type, String value, String range, Node currentNode) {
+    public RubyException rangeError(String type, String value, String range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
     }
