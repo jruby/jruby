@@ -515,6 +515,11 @@ public class IRBuilder {
         // Receive self
         closureBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
 
+        // Set %current_scope = <current-scope>
+        // Set %current_module = <current-module>
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
+
         // args
         closureBuilder.receiveBlockArgs(node, closure);
 
