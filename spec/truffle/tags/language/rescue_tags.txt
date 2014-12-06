@@ -1,1 +1,0 @@
-fails:The rescue keyword will only rescue the specified exceptions when doing a splat rescue
