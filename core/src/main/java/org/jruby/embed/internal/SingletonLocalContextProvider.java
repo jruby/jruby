@@ -47,17 +47,37 @@ import org.jruby.embed.LocalVariableBehavior;
  */
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
 
-    private static LocalContext localContext = null;
+    private static volatile LocalContext localContext;
     private static BiVariableMap varMap = null;
     private static HashMap attribute = null;
 
+    public static SingletonLocalContextProvider getProvider(final LocalVariableBehavior behavior, final boolean lazy) {
+        if (localContext == null) {
+            synchronized( SingletonLocalContextProvider.class ) {
+                if (localContext == null) {
+                    localContext = new LocalContext(getGlobalRuntimeConfigOrNew(), behavior, lazy);
+                }
+            }
+        }
+        return new SingletonLocalContextProvider(localContext.getLocalVariableBehavior(), lazy);
+    }
+
+    @Deprecated // no longer used
     public static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
         if (localContext == null) {
-            synchronized (LocalContext.class) {
-                localContext = new LocalContext(config, behavior, lazy);
+            synchronized( SingletonLocalContextProvider.class ) {
+                if (localContext == null) {
+                    localContext = new LocalContext(config, behavior, lazy);
+                }
             }
         }
         return localContext;
+    }
+
+    @Deprecated // no longer used
+    public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
+        if (localContext == null) return null;
+        return localContext.getLocalVariableBehavior();
     }
 
     private static BiVariableMap getBiVariableInstance(LocalContextProvider provider, boolean lazy) {
@@ -81,17 +101,16 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
         return attribute;
     }
 
-    public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
-        if (localContext == null) return null;
-        else return localContext.getLocalVariableBehavior();
-    }
-
     public SingletonLocalContextProvider(LocalVariableBehavior behavior) {
         super( getGlobalRuntimeConfigOrNew(), behavior );
     }
 
     public SingletonLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        super( getGlobalRuntimeConfigOrNew(), behavior );
+        this( getGlobalRuntimeConfigOrNew(), behavior, lazy );
+    }
+
+    private SingletonLocalContextProvider(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+        super( config, behavior );
         this.lazy = lazy;
     }
 
@@ -122,8 +141,14 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
 
     @Override
     public void terminate() {
-        LocalContext context = SingletonLocalContextProvider.getLocalContextInstance(config, behavior, lazy);
-        context.remove();
+        if (localContext != null) {
+            synchronized( SingletonLocalContextProvider.class ) {
+                if (localContext != null) {
+                    localContext.remove();
+                    localContext = null;
+                }
+            }
+        }
     }
-    
+
 }
