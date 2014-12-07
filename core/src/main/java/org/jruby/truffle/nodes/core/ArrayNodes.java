@@ -777,6 +777,38 @@ public abstract class ArrayNodes {
             return value;
         }
 
+        @Specialization(guards = "isIntegerFixnum")
+        public RubyArray setIntegerFixnum(RubyArray array, int start, int length, RubyArray value) {
+            notDesignedForCompilation();
+
+            if (length < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
+            }
+
+            if (value.getSize() == 0) {
+                final int begin = array.normaliseIndex(start);
+                final int exclusiveEnd = begin + length;
+                int[] store = (int[]) array.getStore();
+
+                if (begin < 0) {
+                    tooSmallBranch.enter();
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, array.getSize(), this));
+                } else if (exclusiveEnd > array.getSize()) {
+                    throw new UnsupportedOperationException();
+                }
+
+                // TODO: This is a moving overlapping memory, should we use sth else instead?
+                System.arraycopy(store, exclusiveEnd, store, begin, array.getSize() - exclusiveEnd);
+                array.setSize(array.getSize() - length);
+
+                return value;
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        }
+
         @Specialization(guards = "isLongFixnum")
         public int setLongFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             setLongFixnum(array, index, (long) value, unused);
