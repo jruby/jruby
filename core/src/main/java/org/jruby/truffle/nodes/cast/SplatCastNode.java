@@ -81,7 +81,7 @@ public abstract class SplatCastNode extends RubyNode {
     @Specialization
     public RubyArray splat(VirtualFrame frame, RubyArray array) {
         // TODO(cs): is it necessary to dup here in all cases?
-        // It is needed at least for [*ary] (translated as just a SplatNode) and b = *ary.
+        // It is needed at least for [*ary] (parsed as just a SplatNode) and b = *ary.
         return dup.executeDup(frame, array);
     }
 
