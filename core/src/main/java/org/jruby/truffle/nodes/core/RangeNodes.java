@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
@@ -28,12 +29,23 @@ public abstract class RangeNodes {
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
+        @Child protected KernelNodes.SameOrEqualNode equalNode;
+
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public EqualNode(EqualNode prev) {
             super(prev);
+        }
+
+        protected boolean equal(VirtualFrame frame, Object a, Object b) {
+            if (equalNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                equalNode = insert(KernelNodesFactory.SameOrEqualNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+            }
+            return equalNode.executeSameOrEqual(frame, a, b);
+
         }
 
         @Specialization
@@ -64,6 +76,14 @@ public abstract class RangeNodes {
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
+        @Specialization
+        public boolean equal(VirtualFrame frame, RubyRange.ObjectRange a, RubyRange.ObjectRange b) {
+            notDesignedForCompilation();
+
+            return a.doesExcludeEnd() == b.doesExcludeEnd() &&
+                    equal(frame, a.getBegin(), b.getBegin()) &&
+                    equal(frame, a.getEnd(), b.getEnd());
+        }
     }
 
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)

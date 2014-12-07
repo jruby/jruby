@@ -34,6 +34,7 @@ import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -711,7 +712,8 @@ public abstract class ArrayNodes {
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
             } else if (normalisedIndex >= array.getSize()) {
                 pastEndBranch.enter();
 
@@ -749,7 +751,8 @@ public abstract class ArrayNodes {
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
             } else if (normalisedIndex >= array.getSize()) {
                 pastEndBranch.enter();
 
@@ -787,7 +790,8 @@ public abstract class ArrayNodes {
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
             } else if (normalisedIndex >= array.getSize()) {
                 pastEndBranch.enter();
 
@@ -819,7 +823,8 @@ public abstract class ArrayNodes {
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
             } else if (normalisedIndex >= array.getSize()) {
                 pastEndBranch.enter();
 
@@ -851,7 +856,8 @@ public abstract class ArrayNodes {
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
             } else if (normalisedIndex >= array.getSize()) {
                 pastEndBranch.enter();
 
@@ -874,6 +880,25 @@ public abstract class ArrayNodes {
             }
 
             return value;
+        }
+
+        @Specialization(guards = {"isObject", "!isRubyArray(arguments[3])"})
+        public Object setObject(RubyArray array, int start, int length, Object value) {
+            notDesignedForCompilation();
+
+            if (length < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
+            }
+
+            final int begin = array.normaliseIndex(start);
+
+            if (begin >= array.getSize()) {
+                // We don't care of length in this case
+                return setObject(array, start, value, UndefinedPlaceholder.INSTANCE);
+            } else {
+                throw  new UnsupportedOperationException();
+            }
         }
 
         @Specialization(guards = "isIntegerFixnum")
