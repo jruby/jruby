@@ -1,3 +1,0 @@
-fails:A class variable defined in a module can be accessed from classes that extend the module
-fails:A class variable defined in a module is updated in the class when a Method defined in the class is used
-fails:A class variable defined in a module can be accessed from modules that extend the module

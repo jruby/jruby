@@ -198,7 +198,7 @@ public abstract class ModuleOperations {
         final Map<String, Object> classVariables = new HashMap<>();
 
         // Look in the current module
-        classVariables.putAll(module.getMethods());
+        classVariables.putAll(module.getClassVariables());
 
         // Look in ancestors
         for (RubyModule ancestor : module.parentAncestors()) {
@@ -245,6 +245,7 @@ public abstract class ModuleOperations {
 
         if (module.getClassVariables().containsKey(name)) {
             module.getClassVariables().put(name, value);
+            return;
         }
 
         // Look in ancestors
@@ -252,6 +253,7 @@ public abstract class ModuleOperations {
         for (RubyModule ancestor : module.parentAncestors()) {
             if (ancestor.getClassVariables().containsKey(name)) {
                 ancestor.getClassVariables().put(name, value);
+                return;
             }
         }
 

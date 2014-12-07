@@ -43,7 +43,6 @@ import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.*;
@@ -578,26 +577,14 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode receiver;
-        if (useClassVariablesAsIfInClass) {
-            receiver = new SelfNode(context, sourceSection);
-        } else {
-            receiver = ClassNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
-        }
         final RubyNode rhs = node.getValueNode().accept(this);
-        return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
+        return new WriteClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope(), rhs);
     }
 
     @Override
     public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode receiver;
-        if (useClassVariablesAsIfInClass) {
-            receiver = new SelfNode(context, sourceSection);
-        } else {
-            receiver = ClassNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
-        }
-        return new ReadClassVariableNode(context, sourceSection, node.getName(), receiver);
+        return new ReadClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope());
     }
 
     @Override

@@ -10,16 +10,13 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.source.*;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.methods.*;
 
 /**
  * Translates module and class nodes.
@@ -70,19 +67,6 @@ class ModuleTranslator extends BodyTranslator {
         final SourceSection sourceSection = translate(node.getPosition());
         final SelfNode classNode = new SelfNode(context, sourceSection);
         return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
-    }
-
-    @Override
-    public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode rhs = node.getValueNode().accept(this);
-        return new WriteClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection), rhs);
-    }
-
-    @Override
-    public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-        return new ReadClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
     }
 
     @Override

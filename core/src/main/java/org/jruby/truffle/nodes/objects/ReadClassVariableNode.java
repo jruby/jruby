@@ -19,35 +19,26 @@ import org.jruby.truffle.runtime.core.*;
 
 public class ReadClassVariableNode extends RubyNode {
 
-    protected final String name;
-    @Child protected RubyNode module;
+    private final String name;
+    private final LexicalScope lexicalScope;
 
-    public ReadClassVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module) {
+    public ReadClassVariableNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.name = name;
-        this.module = module;
+        this.lexicalScope = lexicalScope;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyBasicObject object = (RubyBasicObject) module.execute(frame);
-
-        RubyModule moduleObject;
-
-        // TODO(CS): this cannot be right
-
-        if (object instanceof RubyModule) {
-            moduleObject = (RubyModule) object;
-        } else {
-            moduleObject = object.getLogicalClass();
-        }
+        final RubyModule moduleObject = lexicalScope.getLiveModule();
 
         final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
 
         if (value == null) {
             // TODO(CS): is this right?
+            // TODO: NameError!
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -56,24 +47,14 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final RubyContext context = getContext();
-
-        final RubyBasicObject object = (RubyBasicObject) module.execute(frame);
-
-        RubyModule moduleObject;
-
-        if (object instanceof RubyModule) {
-            moduleObject = (RubyModule) object;
-        } else {
-            moduleObject = object.getLogicalClass();
-        }
+        final RubyModule moduleObject = lexicalScope.getLiveModule();
 
         final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
 
         if (value == null) {
             return getContext().getCoreLibrary().getNilObject();
         } else {
-            return context.makeString("class variable");
+            return getContext().makeString("class variable");
         }
     }
 

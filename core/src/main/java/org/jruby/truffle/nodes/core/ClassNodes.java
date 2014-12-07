@@ -84,30 +84,6 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "class_variables")
-    public abstract static class ClassVariablesNode extends CoreMethodNode {
-
-        public ClassVariablesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ClassVariablesNode(ClassVariablesNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray getClassVariables(RubyClass rubyClass) {
-            notDesignedForCompilation();
-
-            final RubyArray array = new RubyArray(rubyClass.getContext().getCoreLibrary().getArrayClass());
-
-            for (String variable : ModuleOperations.getAllClassVariables(rubyClass).keySet()) {
-                array.slowPush(RubySymbol.newSymbol(rubyClass.getContext(), variable));
-            }
-            return array;
-        }
-    }
-
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 

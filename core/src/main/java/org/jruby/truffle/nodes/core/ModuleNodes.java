@@ -469,16 +469,65 @@ public abstract class ModuleNodes {
         public boolean isClassVariableDefined(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupClassVariable(module, name.toString()) != null;
+            return module.getClassVariables().containsKey(name.toString());
         }
 
         @Specialization
         public boolean isClassVariableDefined(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            return ModuleOperations.lookupClassVariable(module, name.toString()) != null;
+            return module.getClassVariables().containsKey(name.toString());
         }
 
+    }
+
+    @CoreMethod(names = "class_variable_get", required = 1)
+    public abstract static class ClassVariableGetNode extends CoreMethodNode {
+
+        public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClassVariableGetNode(ClassVariableGetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubyString name) {
+            notDesignedForCompilation();
+            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
+        }
+
+        @Specialization
+        public Object getClassVariable(RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
+        }
+
+    }
+
+    @CoreMethod(names = "class_variables")
+    public abstract static class ClassVariablesNode extends CoreMethodNode {
+
+        public ClassVariablesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClassVariablesNode(ClassVariablesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray getClassVariables(RubyModule module) {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(module.getContext().getCoreLibrary().getArrayClass());
+
+            for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
+                array.slowPush(RubySymbol.newSymbol(module.getContext(), variable));
+            }
+            return array;
+        }
     }
 
     @CoreMethod(names = "constants", optional = 1)
@@ -640,31 +689,6 @@ public abstract class ModuleNodes {
             module.setConstant(this, name.toString(), object);
             return module;
         }
-    }
-
-    @CoreMethod(names = "class_variable_get", required = 1)
-    public abstract static class ClassVariableGetNode extends CoreMethodNode {
-
-        public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ClassVariableGetNode(ClassVariableGetNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object getClassVariable(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
-        }
-
-        @Specialization
-        public Object getClassVariable(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
-            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
-        }
-
     }
 
     @CoreMethod(names = "define_method", needsBlock = true, required = 1, optional = 1)
