@@ -61,7 +61,3 @@ fails:Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails:Predefined global $-0 raises a TypeError if assigned a boolean
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:Predefined global $~ raises an error if assigned an object not nil or instanceof MatchData
-fails:The predefined global constant STDOUT has nil for the internal encoding
-fails:The predefined global constant STDOUT has nil for the internal encoding despite Encoding.default_internal being changed
-fails:The predefined global constant STDERR has nil for the internal encoding
-fails:The predefined global constant STDERR has nil for the internal encoding despite Encoding.default_internal being changed
