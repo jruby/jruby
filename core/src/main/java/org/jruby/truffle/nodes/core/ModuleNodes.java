@@ -454,7 +454,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "class_variable_defined?")
+    @CoreMethod(names = "class_variable_defined?", required = 1)
     public abstract static class ClassVariableDefinedNode extends CoreMethodNode {
 
         public ClassVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
