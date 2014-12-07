@@ -30,6 +30,7 @@
 package org.jruby.embed.internal;
 
 import java.util.List;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.util.ClassCache;
@@ -83,4 +84,18 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
     public LocalVariableBehavior getLocalVariableBehavior() {
         return behavior;
     }
+
+    static Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
+        if ( Ruby.isGlobalRuntimeReady() ) {
+            return Ruby.getGlobalRuntime();
+        }
+        return Ruby.newInstance(provider.config);
+    }
+
+    static RubyInstanceConfig getGlobalRuntimeConfigOrNew() {
+        return Ruby.isGlobalRuntimeReady() ?
+                Ruby.getGlobalRuntime().getInstanceConfig() :
+                    new RubyInstanceConfig();
+    }
+
 }

@@ -32,6 +32,8 @@ package org.jruby.embed.internal;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.AttributeName;
@@ -42,19 +44,22 @@ import org.jruby.embed.LocalVariableBehavior;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class LocalContext {
-    private RubyInstanceConfig config;
-    private LocalVariableBehavior behavior;
-    private boolean lazy;
-    Ruby runtime = null;
-    private BiVariableMap varMap = null;  // singleton doesn't use this varMap.
-    private HashMap attribute = null;
-    boolean initialized = false;
 
-    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
-        initialize(config, behavior, lazy);
+    private final RubyInstanceConfig config;
+    private final LocalVariableBehavior behavior;
+    private boolean lazy;
+
+    private Ruby runtime = null;
+
+    private BiVariableMap varMap;  // singleton doesn't use this varMap.
+    private Map<AttributeName, Object> attributes;
+
+    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
+        this.config = config;
+        this.behavior = behavior;
     }
 
-    private void initialize(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
         this.config = config;
         this.behavior = behavior;
         this.lazy = lazy;
@@ -62,14 +67,9 @@ public class LocalContext {
 
     // This method is used only from ThreadLocalContextProvider.
     // Other providers should instantialte runtime in their own way.
+    @Deprecated
     public Ruby getThreadSafeRuntime() {
-        if (runtime == null) {
-            // stopped loading java library (runtime.getLoadService().require("java");)
-            // during the intialization process.
-            runtime = Ruby.newInstance(config);
-            initialized = true;
-        }
-        return runtime;
+        return getRuntime();
     }
 
     // this method is used in ConcurrentContextProvider. concurrent model uses
@@ -81,24 +81,38 @@ public class LocalContext {
         }
         return varMap;
     }
-    
+
     public LocalVariableBehavior getLocalVariableBehavior() {
         return behavior;
     }
 
-    public HashMap getAttributeMap() {
-        if (attribute == null) {
-            attribute = new HashMap();
-            attribute.put(AttributeName.READER, new InputStreamReader(System.in));
-            attribute.put(AttributeName.WRITER, new PrintWriter(System.out, true));
-            attribute.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
+    @SuppressWarnings("MapReplaceableByEnumMap")
+    public Map<?, Object> getAttributeMap() {
+        if (attributes == null) {
+            synchronized(this) {
+                if (attributes == null) {
+                    attributes = new HashMap<AttributeName, Object>();
+                    attributes.put(AttributeName.READER, new InputStreamReader(System.in));
+                    attributes.put(AttributeName.WRITER, new PrintWriter(System.out, true));
+                    attributes.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
+                }
+            }
         }
-        return attribute;
+        return attributes;
     }
-    
+
     public void remove() {
-        if (attribute == null) return;
-        attribute.clear();
-        varMap.clear();
+        if ( attributes != null ) attributes.clear();
+        if ( varMap != null ) varMap.clear();
     }
+
+    Ruby getRuntime() {
+        if (runtime == null) {
+            runtime = Ruby.newInstance(config);
+        }
+        return runtime;
+    }
+
+    boolean isInitialized() { return runtime != null; }
+
 }
