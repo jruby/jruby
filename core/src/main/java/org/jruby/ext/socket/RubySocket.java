@@ -268,17 +268,19 @@ public class RubySocket extends RubyBasicSocket {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
             while (en.hasMoreElements()) {
                 NetworkInterface ni = en.nextElement();
+                // create interface link layer ifaddr
+                list.append(new Ifaddr(context.runtime, (RubyClass)context.runtime.getClassFromPath("Socket::Ifaddr"), ni));
                 List<InterfaceAddress> listIa = ni.getInterfaceAddresses();
                 Iterator<InterfaceAddress> it = listIa.iterator();
                 while (it.hasNext()) {
                     InterfaceAddress ia = it.next();
-                    list.append(new Ifaddr(context.runtime, (RubyClass)context.runtime.getClassFromPath("Socket::Ifaddr"), ni, ia, true));
-                    list.append(new Ifaddr(context.runtime, (RubyClass)context.runtime.getClassFromPath("Socket::Ifaddr"), ni, ia, false));
+                    list.append(new Ifaddr(context.runtime, (RubyClass)context.runtime.getClassFromPath("Socket::Ifaddr"), ni, ia));
                 }
             }
         } catch (Exception ex) {
             throw SocketUtils.sockerr(context.runtime, "getifaddrs: " + ex.toString());
         }
+        
         return list;
     }
 

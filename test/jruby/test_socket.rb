@@ -82,6 +82,19 @@ class SocketTest < Test::Unit::TestCase
     }
   end
 
+  def test_getifaddrs_packet_interfaces
+    begin
+      list = Socket.getifaddrs
+    rescue NotImplementedError
+      return
+    end
+    ifnames = list.collect(&:name).uniq
+    ifnames.each do |ifname|
+      packet_interfaces = list.select { |ifaddr| ifaddr.name == ifname && ifaddr.addr.afamily == Socket::AF_UNSPEC } # TODO: (gf) Socket::AF_PACKET when available
+      assert_equal(1, packet_interfaces.count) # one for each interface
+    end
+  end
+
   def test_basic_socket_reverse_lookup
     assert_nothing_raised do
       reverse = BasicSocket.do_not_reverse_lookup
