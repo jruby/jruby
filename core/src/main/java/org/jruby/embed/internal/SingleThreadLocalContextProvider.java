@@ -39,21 +39,20 @@ import org.jruby.embed.LocalVariableBehavior;
  */
 public class SingleThreadLocalContextProvider extends AbstractLocalContextProvider {
 
-    private volatile LocalContext instance;
+    private final LocalContext instance;
 
     public SingleThreadLocalContextProvider(LocalVariableBehavior behavior) {
         super(behavior);
+        instance = getInstance();
     }
 
     public SingleThreadLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
         super(behavior);
         this.lazy = lazy;
+        instance = getInstance();
     }
 
     private LocalContext getLocalContext() {
-        if (instance == null) {
-            return instance = getInstance();
-        }
         return instance;
     }
 
@@ -79,10 +78,7 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
 
     @Override
     public void terminate() {
-        if (instance != null) {
-            getLocalContext().remove();
-            instance = null;
-        }
+        getLocalContext().remove();
     }
 
 }
