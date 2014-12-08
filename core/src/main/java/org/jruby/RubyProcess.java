@@ -113,7 +113,7 @@ public class RubyProcess {
     public static final String CLOCK_UNIT_FLOAT_MILLISECOND = "float_millisecond";
     public static final String CLOCK_UNIT_FLOAT_SECOND = "float_second";
     public static final String CLOCK_UNIT_HERTZ = "hertz";
-    
+
     @JRubyClass(name="Process::Status")
     public static class RubyStatus extends RubyObject {
         private final long status;
@@ -573,16 +573,12 @@ public class RubyProcess {
 
     @JRubyMethod(name = "groups", module = true, visibility = PRIVATE)
     public static IRubyObject groups(IRubyObject recv) {
-        if(Platform.IS_WINDOWS) {
-            throw recv.getRuntime().newNotImplementedError("groups() function is unimplemented on this machine");
-        } else {
-            long[] groups = (new com.sun.security.auth.module.UnixSystem()).getGroups();
-            RubyArray ary = RubyArray.newArray(recv.getRuntime(), groups.length);
-            for(int i = 0; i < groups.length; i++) {
-                ary.push(RubyFixnum.newFixnum(recv.getRuntime(), groups[i]));
-            }
-            return ary;
+        long[] groups = Platform.getPlatform().getGroups(recv);
+        RubyArray ary = RubyArray.newArray(recv.getRuntime(), groups.length);
+        for(int i = 0; i < groups.length; i++) {
+            ary.push(RubyFixnum.newFixnum(recv.getRuntime(), groups[i]));
         }
+        return ary;
     }
 
     @JRubyMethod(name = "setrlimit", rest = true, module = true, visibility = PRIVATE)
