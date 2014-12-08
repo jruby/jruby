@@ -1143,6 +1143,34 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "local_variables", needsSelf = false)
+    public abstract static class LocalVariablesNode extends CoreMethodNode {
+
+        public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LocalVariablesNode(LocalVariablesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray localVariables() {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
+                if (name instanceof String) {
+                    array.slowPush(getContext().newSymbol((String) name));
+                }
+            }
+
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = "loop", isModuleFunction = true)
     public abstract static class LoopNode extends CoreMethodNode {
 
