@@ -4,7 +4,7 @@ fails:Kernel#eval evaluates the code within
 passes:Kernel#eval coerces an object to string
 fails:Kernel#eval evaluates within the scope of the eval
 fails:Kernel#eval evaluates such that consts are scoped to the class of the eval
-fails:Kernel#eval finds a local in an enclosing scope
+passes:Kernel#eval finds a local in an enclosing scope
 fails:Kernel#eval updates a local in an enclosing scope
 fails:Kernel#eval updates a local in a surrounding block scope
 fails:Kernel#eval updates a local in a scope above a surrounding block scope

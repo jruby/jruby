@@ -492,10 +492,13 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object eval(RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
+        public Object eval(VirtualFrame frame, RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.toString(), this);
+            RubyBinding newBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
+                    getSourceSection(), null).binding();
+
+            return getContext().eval(source.toString(), newBinding, this);
         }
 
         @Specialization
