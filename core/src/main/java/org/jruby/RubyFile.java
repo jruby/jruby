@@ -1255,10 +1255,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     protected void sysopenInternal19(String path, int oflags, int perm) {
         if (path.startsWith("jar:")) path = path.substring(4);
 
-        int umask = getUmaskSafe( getRuntime() );
-        perm = perm - (perm & umask);
-        
         ModeFlags modes = ModeFlags.createModeFlags(oflags);
+
+        // umask must be acquired under lock, but only for creating a new file
+        if (modes.isCreate()) {
+            int umask = getUmaskSafe(getRuntime());
+            perm = perm - (perm & umask);
+        }
 
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
