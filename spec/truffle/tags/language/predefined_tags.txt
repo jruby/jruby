@@ -2,15 +2,10 @@ fails:Predefined global $~ changes the value of derived capture globals when ass
 fails:Predefined global $~ changes the value of the derived preceding match global
 fails:Predefined global $~ changes the value of the derived following match global
 fails:Predefined global $~ changes the value of the derived full match global
-fails(inherited):Predefined global $& sets the encoding to the encoding of the source String
 fails:Predefined global $` is equivalent to MatchData#pre_match on the last match $~
-fails(inherited):Predefined global $` sets the encoding to the encoding of the source String
 fails(inherited):Predefined global $` sets an empty result to the encoding of the source String
 fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
-fails(inherited):Predefined global $' sets the encoding to the encoding of the source String
 fails(inherited):Predefined global $' sets an empty result to the encoding of the source String
-fails(inherited):Predefined global $+ sets the encoding to the encoding of the source String
-fails(inherited):Predefined globals $1..N sets the encoding to the encoding of the source String
 fails:Predefined global $stdout is the same as $DEFAULT_OUTPUT from 'English' library
 fails:Predefined global $stdout raises TypeError error if assigned to nil
 fails:Predefined global $stdout raises TypeError error if assigned to object that doesn't respond to #write
@@ -47,18 +42,12 @@ fails:The predefined global constant STDIN has the encodings set by #set_encodin
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external when that encoding is changed
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external
 fails:Processing RUBYOPT adds the -I path to $LOAD_PATH
-fails:Predefined global $& sets the encoding to the encoding of the source String
-fails:Predefined global $` sets the encoding to the encoding of the source String
 fails:Predefined global $` sets an empty result to the encoding of the source String
-fails:Predefined global $' sets the encoding to the encoding of the source String
 fails:Predefined global $' sets an empty result to the encoding of the source String
-fails:Predefined global $+ sets the encoding to the encoding of the source String
-fails:Predefined globals $1..N sets the encoding to the encoding of the source String
 fails:Predefined global $/ changes $-0
 fails:Predefined global $-0 changes $/
 fails:Predefined global $-0 does not call #to_str to convert the object to a String
 fails:Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails:Predefined global $-0 raises a TypeError if assigned a boolean
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
-fails:Predefined global $~ raises an error if assigned an object not nil or instanceof MatchData
 fails:Predefined global $~ is set at the method-scoped level rather than block-scoped
