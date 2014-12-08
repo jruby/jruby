@@ -280,7 +280,6 @@ public class RubySocket extends RubyBasicSocket {
         } catch (Exception ex) {
             throw SocketUtils.sockerr(context.runtime, "getifaddrs: " + ex.toString());
         }
-        
         return list;
     }
 
