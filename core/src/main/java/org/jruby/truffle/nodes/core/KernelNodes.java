@@ -495,10 +495,10 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            RubyBinding newBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
+            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
                     getSourceSection(), null).binding();
 
-            return getContext().eval(source.toString(), newBinding, this);
+            return getContext().eval(source.toString(), defaultBinding, this);
         }
 
         @Specialization
@@ -528,7 +528,10 @@ public abstract class KernelNodes {
             }
 
             if (coerced instanceof RubyString) {
-                return getContext().eval(coerced.toString(), this);
+                RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
+                        getSourceSection(), null).binding();
+
+                return getContext().eval(coerced.toString(), defaultBinding, this);
             } else {
                 throw new RaiseException(
                         getContext().getCoreLibrary().typeError(
