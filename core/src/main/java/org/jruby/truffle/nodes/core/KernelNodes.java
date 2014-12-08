@@ -498,7 +498,7 @@ public abstract class KernelNodes {
             RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
                     getSourceSection(), null).binding();
 
-            return getContext().eval(source.toString(), defaultBinding, this);
+            return eval(source, defaultBinding);
         }
 
         @Specialization
@@ -510,6 +510,16 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "!isString")
         public Object eval(VirtualFrame frame, RubyBasicObject object, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
+            notDesignedForCompilation();
+
+            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
+                    getSourceSection(), null).binding();
+
+            return eval(frame, object, defaultBinding);
+        }
+
+        @Specialization(guards = "!isString")
+        public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding) {
             notDesignedForCompilation();
 
             Object coerced;
@@ -528,10 +538,7 @@ public abstract class KernelNodes {
             }
 
             if (coerced instanceof RubyString) {
-                RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
-                        getSourceSection(), null).binding();
-
-                return getContext().eval(coerced.toString(), defaultBinding, this);
+                return getContext().eval(coerced.toString(), binding, this);
             } else {
                 throw new RaiseException(
                         getContext().getCoreLibrary().typeError(
