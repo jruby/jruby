@@ -213,7 +213,7 @@ class LibrarySearcher {
     }
 
     protected String resolveLoadName(FileResource resource, String ruby18path) {
-        return resource.canonicalPath();
+        return resource.absolutePath();
     }
 
     protected String resolveScriptName(FileResource resource, String ruby18Path) {
