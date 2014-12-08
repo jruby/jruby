@@ -68,7 +68,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return doRubyBasicObject(
                     frame,
                     first,
-                    (LexicalScope) lexicalScope,
+                    lexicalScope,
                     receiverObject,
                     methodName,
                     blockObject,
@@ -79,7 +79,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return doUnboxedObject(
                     frame,
                     first,
-                    (LexicalScope) lexicalScope,
+                    lexicalScope,
                     receiverObject,
                     methodName,
                     blockObject,
