@@ -1251,7 +1251,7 @@ public class BodyTranslator extends Translator {
             lhs = environment.findLocalVarNode(node.getName(), sourceSection);
 
             if (lhs == null) {
-                throw new RuntimeException("shoudln't be here");
+                throw new RuntimeException("shouldn't be here");
             }
         }
 
