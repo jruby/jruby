@@ -676,7 +676,13 @@ public class BodyTranslator extends Translator {
             children.add(child.accept(this));
         }
 
-        return new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
+        final InteroplatedRegexpNode i = new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
+
+        if (node.getOptions().isOnce()) {
+            return new OnceNode(context, i.getEncapsulatingSourceSection(), i);
+        }
+
+        return i;
     }
 
     @Override
@@ -1907,6 +1913,11 @@ public class BodyTranslator extends Translator {
         }
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
+
+        if (node.getOptions().isOnce()) {
+            return new OnceNode(context, literalNode.getEncapsulatingSourceSection(), literalNode);
+        }
+
         return literalNode;
     }
 
