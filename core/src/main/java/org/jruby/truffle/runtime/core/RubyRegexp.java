@@ -54,6 +54,8 @@ public class RubyRegexp extends RubyBasicObject {
     @CompilationFinal private Regex regex;
     @CompilationFinal private ByteList source;
 
+    private RubyEncoding encoding;
+
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
     }
@@ -340,6 +342,18 @@ public class RubyRegexp extends RubyBasicObject {
         //} catch (ValueException e) {
         //    throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
         //}
+    }
+
+    public void forceEncoding(RubyEncoding encoding) {
+        this.encoding = encoding;
+    }
+
+    public RubyEncoding getEncoding() {
+        if (encoding == null) {
+            encoding = RubyEncoding.getEncoding(getContext(), regex.getEncoding());
+        }
+
+        return encoding;
     }
 
 }

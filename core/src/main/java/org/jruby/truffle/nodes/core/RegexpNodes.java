@@ -112,6 +112,24 @@ public abstract class RegexpNodes {
 
     }
 
+    @CoreMethod(names = "encoding")
+    public abstract static class EncodingNode extends CoreMethodNode {
+
+        public EncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingNode(EncodingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyEncoding encoding(RubyRegexp regexp) {
+            notDesignedForCompilation();
+            return regexp.getEncoding();
+        }
+    }
+
     @CoreMethod(names = "escape", onSingleton = true, required = 1)
     public abstract static class EscapeNode extends CoreMethodNode {
 

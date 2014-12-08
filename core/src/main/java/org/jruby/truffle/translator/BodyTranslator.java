@@ -13,6 +13,8 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.joni.Regex;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
@@ -1887,8 +1889,35 @@ public class BodyTranslator extends Translator {
         Regex regex = RubyRegexp.compile(currentNode, context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
 
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue());
+
+        if (node.getOptions().isEncodingNone()) {
+            // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
+
+            if (all7Bit(node.getValue().bytes())) {
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+            } else {
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII-8BIT").getValue());
+            }
+        } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
+            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue());
+        } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
+            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue());
+        } else {
+            regexp.forceEncoding(RubyEncoding.getEncoding(context, node.getEncoding()));
+        }
+
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
         return literalNode;
+    }
+
+    private static boolean all7Bit(byte[] bytes) {
+        for (int n = 0; n < bytes.length; n++) {
+            if (bytes[n] < 0 || bytes[n] > 0x7F) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
