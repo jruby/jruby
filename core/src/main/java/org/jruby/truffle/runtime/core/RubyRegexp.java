@@ -335,11 +335,11 @@ public class RubyRegexp extends RubyBasicObject {
     public static Regex compile(RubyNode currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
         RubyNode.notDesignedForCompilation();
 
-        try {
+        //try {
             return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
-        } catch (ValueException e) {
-            throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
-        }
+        //} catch (ValueException e) {
+        //    throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
+        //}
     }
 
 }

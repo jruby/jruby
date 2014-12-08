@@ -668,9 +668,13 @@ public class BodyTranslator extends Translator {
     public RubyNode visitDRegxNode(org.jruby.ast.DRegexpNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode stringNode = translateInterpolatedString(sourceSection, node.childNodes());
+        final List<RubyNode> children = new ArrayList<>();
 
-        return StringToRegexpNodeFactory.create(context, sourceSection, stringNode);
+        for (org.jruby.ast.Node child : node.childNodes()) {
+            children.add(child.accept(this));
+        }
+
+        return new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
     }
 
     @Override

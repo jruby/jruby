@@ -58,7 +58,7 @@ public abstract class RegexpNodes {
         public boolean equal(RubyRegexp a, RubyRegexp b) {
             notDesignedForCompilation();
 
-            return a.equals(b);
+            return ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), a.getSource(), a.getRegex().getOptions()).to_s()).getByteList().equals(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), b.getSource(), b.getRegex().getOptions()).to_s()).getByteList());
         }
 
     }
@@ -189,6 +189,24 @@ public abstract class RegexpNodes {
 
     }
 
+    @CoreMethod(names = "inspect")
+    public abstract static class InspectNode extends CoreMethodNode {
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InspectNode(InspectNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString match(RubyRegexp regexp) {
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).inspect19()).getByteList());
+        }
+
+    }
+
     @CoreMethod(names = "match", required = 1)
     public abstract static class MatchNode extends CoreMethodNode {
 
@@ -238,7 +256,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString to_s(RubyRegexp regexp) {
-            return getContext().makeString(org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource()).to_s().toString());
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).to_s()).getByteList());
         }
 
     }
