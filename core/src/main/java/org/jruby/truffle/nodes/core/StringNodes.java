@@ -475,10 +475,14 @@ public abstract class StringNodes {
         @Specialization
         public RubyString forceEncoding(RubyString string, RubyString encodingName) {
             notDesignedForCompilation();
+            final RubyEncoding encoding = RubyEncoding.getEncoding(getContext(), encodingName.toString());
+            return forceEncoding(string, encoding);
+        }
 
-            RubyEncoding encoding = RubyEncoding.getEncoding(getContext(), encodingName.toString());
+        @Specialization
+        public RubyString forceEncoding(RubyString string, RubyEncoding encoding) {
+            notDesignedForCompilation();
             string.forceEncoding(encoding.getEncoding());
-
             return string;
         }
 
