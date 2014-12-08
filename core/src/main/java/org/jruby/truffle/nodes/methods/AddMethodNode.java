@@ -22,7 +22,7 @@ public class AddMethodNode extends RubyNode {
     @Child protected RubyNode receiver;
     @Child protected MethodDefinitionNode method;
 
-    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method) {
+    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method, boolean topLevel) {
         super(context, section);
         this.receiver = receiver;
         this.method = method;

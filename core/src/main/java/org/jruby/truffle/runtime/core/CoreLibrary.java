@@ -57,6 +57,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass floatClass;
     @CompilerDirectives.CompilationFinal private RubyClass hashClass;
     @CompilerDirectives.CompilationFinal private RubyClass integerClass;
+    @CompilerDirectives.CompilationFinal private RubyClass indexErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass ioClass;
     @CompilerDirectives.CompilationFinal private RubyClass loadErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass localJumpErrorClass;
@@ -199,6 +200,7 @@ public class CoreLibrary {
         floatClass = new RubyClass(context, objectClass, numericClass, "Float");
         gcModule = new RubyModule(context, objectClass, "GC");
         hashClass = new RubyHash.RubyHashClass(context, objectClass);
+        indexErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "IndexError");
         kernelModule = new RubyModule(context, objectClass, "Kernel");
         loadErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LoadError");
         localJumpErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LocalJumpError");
@@ -378,6 +380,8 @@ public class CoreLibrary {
             return fixnumClass;
         } else if (object instanceof Double) {
             return floatClass;
+        } else if (object == null) {
+            throw new RuntimeException();
         } else {
             throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
         }
@@ -400,6 +404,8 @@ public class CoreLibrary {
             return fixnumClass;
         } else if (object instanceof Double) {
             return floatClass;
+        } else if (object == null) {
+            throw new RuntimeException();
         } else {
             throw new UnsupportedOperationException(String.format("Don't know how to get the logical class for %s", object.getClass()));
         }
@@ -407,7 +413,7 @@ public class CoreLibrary {
 
     public RubyException runtimeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(runtimeErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(runtimeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException frozenError(String className, Node currentNode) {
@@ -417,7 +423,7 @@ public class CoreLibrary {
 
     public RubyException argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(argumentErrorClass, context.makeString(String.format("%s", message)), RubyCallStack.getBacktrace(currentNode));
+        return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException argumentError(int passed, int required, Node currentNode) {
@@ -428,6 +434,21 @@ public class CoreLibrary {
     public RubyException argumentError(int passed, int required, int optional, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required + optional), currentNode);
+    }
+
+    public RubyException indexError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(indexErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException indexTooSmallError(String type, int index, int length, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return indexError(String.format("index %d too small for %s; minimum: -%d", index, type, length), currentNode);
+    }
+
+    public RubyException indexNegativeLength(int length, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return indexError(String.format("negative length (%d)", length), currentNode);
     }
 
     public RubyException localJumpError(String message, Node currentNode) {
@@ -550,7 +571,7 @@ public class CoreLibrary {
         return new RubyException(edomClass, context.makeString(String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyBasicObject rangeError(String type, String value, String range, Node currentNode) {
+    public RubyException rangeError(String type, String value, String range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
     }

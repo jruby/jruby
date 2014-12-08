@@ -47,7 +47,7 @@ public class TemporaryLocalVariable extends TemporaryVariable {
 
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new TemporaryLocalVariable(offset);
+        return this;
     }
 
     @Override

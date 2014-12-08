@@ -9,12 +9,11 @@
  */
 package org.jruby.truffle.nodes.control;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyException;
 
 /**
  * Base node for all nodes which may be able to rescue an exception. They have a test method
@@ -29,7 +28,7 @@ public abstract class RescueNode extends RubyNode {
         this.body = body;
     }
 
-    public abstract boolean canHandle(VirtualFrame frame, RubyBasicObject exception);
+    public abstract boolean canHandle(VirtualFrame frame, RubyException exception);
 
     @Override
     public Object execute(VirtualFrame frame) {

@@ -9,23 +9,19 @@
  */
 package org.jruby.truffle;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.TruffleBridge;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.util.Supplier;
+import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 
@@ -125,40 +121,31 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public Object execute(final TranslatorDriver.ParserContext parserContext, final Object self, final MaterializedFrame parentFrame, final org.jruby.ast.RootNode rootNode) {
-        return truffleContext.handlingTopLevelRaise(new Supplier<Object>() {
+        final String inputFile = rootNode.getPosition().getFile();
+        final Source source;
 
-            @Override
-            public Object get() {
-                final String inputFile = rootNode.getPosition().getFile();
+        if (inputFile.equals("-e")) {
+            // Assume UTF-8 for the moment
+            source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
+        } else {
+            final byte[] bytes;
 
-                final Source source;
-
-                if (inputFile.equals("-e")) {
-                    // Assume UTF-8 for the moment
-                    source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
-                } else {
-                    final byte[] bytes;
-
-                    try {
-                        bytes = Files.readAllBytes(Paths.get(inputFile));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    // Assume UTF-8 for the moment
-
-                    source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
-                }
-
-                final RubyRootNode parsedRootNode = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
-                final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parsedRootNode);
-
-                // TODO(CS): we really need a method here - it's causing problems elsewhere
-
-                return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
+            try {
+                bytes = Files.readAllBytes(Paths.get(inputFile));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
 
-        }, truffleContext.getCoreLibrary().getNilObject());
+            // Assume UTF-8 for the moment
+            source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
+        }
+
+        return truffleContext.execute(truffleContext, source, parserContext, self, parentFrame, null, new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                return new TopLevelRaiseHandler(node.getContext(), node.getSourceSection(), node);
+            }
+        });
     }
 
     @Override

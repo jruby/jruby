@@ -12,6 +12,7 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
@@ -66,7 +67,7 @@ public class TranslatorDriver {
         return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false);
     }
 
-    public RubyRootNode parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode) {
+    public RubyRootNode parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
@@ -112,10 +113,10 @@ public class TranslatorDriver {
             throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode)));
         }
 
-        return parse(currentNode, context, source, parserContext, parentFrame, node);
+        return parse(currentNode, context, source, parserContext, parentFrame, node, wrapper);
     }
 
-    public RubyRootNode parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
+    public RubyRootNode parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), "<main>", false, rootNode, false);
 
@@ -140,7 +141,7 @@ public class TranslatorDriver {
         if (parserContext == TranslatorDriver.ParserContext.MODULE) {
             translator = new ModuleTranslator(currentNode, context, null, environment, source);
         } else {
-            translator = new BodyTranslator(currentNode, context, null, environment, source);
+            translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
         }
 
         RubyNode truffleNode;
@@ -155,6 +156,11 @@ public class TranslatorDriver {
             }
         } else {
             truffleNode = rootNode.getBodyNode().accept(translator);
+        }
+
+        // Set default top-level visibility
+        if (parserContext == ParserContext.TOP_LEVEL) {
+            truffleNode = new SetFrameVisibilityNode(context, truffleNode.getSourceSection(), truffleNode, Visibility.PRIVATE);
         }
 
         // Load flip-flop states
@@ -174,6 +180,10 @@ public class TranslatorDriver {
         // Catch retry
 
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+
+        // Custom node wrapper
+
+        truffleNode = wrapper.wrap(truffleNode);
 
         // Shell result
 

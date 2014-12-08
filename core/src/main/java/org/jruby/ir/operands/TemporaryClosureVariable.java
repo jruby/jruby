@@ -3,7 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class TemporaryClosureVariable extends TemporaryLocalVariable {
-    final int closureId;
+    private final int closureId;
 
     public TemporaryClosureVariable(int closureId, int offset) {
         super(offset);
@@ -22,7 +22,7 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
 
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new TemporaryClosureVariable(closureId, offset);
+        return this;
     }
 
     @Override

@@ -3,7 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 
 public abstract class TemporaryVariable extends Variable {
-    private String name;
+    private final String name;
 
     public TemporaryVariable(String name) {
         super(OperandType.TEMPORARY_VARIABLE);

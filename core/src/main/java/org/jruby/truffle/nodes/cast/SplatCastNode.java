@@ -14,6 +14,8 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.core.ArrayDupNode;
+import org.jruby.truffle.nodes.core.ArrayDupNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -34,6 +36,7 @@ public abstract class SplatCastNode extends RubyNode {
 
     private final NilBehavior nilBehavior;
 
+    @Child protected ArrayDupNode dup;
     @Child protected DispatchHeadNode respondToToA;
     @Child protected BooleanCastNode respondToCast;
     @Child protected DispatchHeadNode toA;
@@ -42,6 +45,7 @@ public abstract class SplatCastNode extends RubyNode {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
+        dup = ArrayDupNodeFactory.create(context, sourceSection, null);
         respondToToA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         toA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
@@ -49,6 +53,7 @@ public abstract class SplatCastNode extends RubyNode {
 
     public SplatCastNode(SplatCastNode prev) {
         super(prev);
+        dup = prev.dup;
         nilBehavior = prev.nilBehavior;
         respondToToA = prev.respondToToA;
         respondToCast = prev.respondToCast;
@@ -74,8 +79,10 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyArray splat(RubyArray array) {
-        return array;
+    public RubyArray splat(VirtualFrame frame, RubyArray array) {
+        // TODO(cs): is it necessary to dup here in all cases?
+        // It is needed at least for [*ary] (parsed as just a SplatNode) and b = *ary.
+        return dup.executeDup(frame, array);
     }
 
     @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})

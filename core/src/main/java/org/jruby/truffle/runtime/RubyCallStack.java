@@ -27,6 +27,7 @@ import java.util.ArrayList;
 
 public abstract class RubyCallStack {
 
+    /** Called "cref" in MRI. */
     public static RubyModule getCurrentDeclaringModule() {
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
         final MethodLike method = getMethod(currentFrame);

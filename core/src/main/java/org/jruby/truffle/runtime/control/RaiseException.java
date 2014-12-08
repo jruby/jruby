@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.control;
 
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyException;
 
 /**
  * Ruby exceptions are just Ruby objects, so they cannot also be exceptions unless we made all Ruby
@@ -19,9 +19,9 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
  */
 public class RaiseException extends RuntimeException {
 
-    private final RubyBasicObject rubyException;
+    private final RubyException rubyException;
 
-    public RaiseException(RubyBasicObject rubyException) {
+    public RaiseException(RubyException rubyException) {
         this.rubyException = rubyException;
     }
 
@@ -35,7 +35,7 @@ public class RaiseException extends RuntimeException {
         return rubyException.toString();
     }
 
-    public RubyBasicObject getRubyException() {
+    public RubyException getRubyException() {
         return rubyException;
     }
 

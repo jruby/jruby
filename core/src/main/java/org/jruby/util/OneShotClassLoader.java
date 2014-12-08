@@ -5,11 +5,11 @@ package org.jruby.util;
 */
 public class OneShotClassLoader extends ClassLoader implements ClassDefiningClassLoader {
 
-    public OneShotClassLoader(ClassDefininngJRubyClassLoader parent) {
+    public OneShotClassLoader(JRubyClassLoader parent) {
         super(parent);
     }
 
     public Class<?> defineClass(String name, byte[] bytes) {
         return super.defineClass(name, bytes, 0, bytes.length, ClassDefininngJRubyClassLoader.DEFAULT_DOMAIN);
-     }
+    }
 }

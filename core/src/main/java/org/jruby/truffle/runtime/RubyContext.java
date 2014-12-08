@@ -27,17 +27,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.util.Supplier;
+import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 
@@ -198,9 +196,14 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
-        final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode);
+        return execute(context, source, parserContext, self, parentFrame, currentNode, NodeWrapper.IDENTITY);
+    }
+
+    public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
+        final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
+        // TODO(CS): we really need a method here - it's causing problems elsewhere
         return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
     }
 
@@ -373,23 +376,6 @@ public class RubyContext extends ExecutionContext {
 
     public Warnings getWarnings() {
         return warnings;
-    }
-
-    public <T> T handlingTopLevelRaise(Supplier<T> run, T defaultValue) {
-        try {
-            return run.get();
-        } catch (RaiseException e) {
-            // TODO(CS): what's this cast about?
-            final RubyException rubyException = (RubyException) e.getRubyException();
-
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(this, rubyException, rubyException.getBacktrace())) {
-                System.err.println(line);
-            }
-        } catch (ThreadExitException e) {
-            // Ignore
-        }
-
-        return defaultValue;
     }
 
     public Queue<Object> getThrowTags() {

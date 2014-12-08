@@ -105,7 +105,7 @@ public class RubyThread extends RubyBasicObject {
                 } catch (ThreadExitException e) {
                     return;
                 } catch (RaiseException e) {
-                    exception = (RubyException) e.getRubyException();
+                    exception = e.getRubyException();
                 } catch (ReturnException e) {
                     exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
                 } finally {

@@ -51,7 +51,7 @@ public class TemporaryBooleanVariable extends TemporaryLocalVariable {
 
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new TemporaryBooleanVariable(offset);
+        return this;
     }
 
     @Override

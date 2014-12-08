@@ -20,13 +20,13 @@ import org.jruby.truffle.runtime.core.*;
 public class WriteClassVariableNode extends RubyNode {
 
     private final String name;
-    @Child protected RubyNode module;
+    private final LexicalScope lexicalScope;
     @Child protected RubyNode rhs;
 
-    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module, RubyNode rhs) {
+    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope, RubyNode rhs) {
         super(context, sourceSection);
         this.name = name;
-        this.module = module;
+        this.lexicalScope = lexicalScope;
         this.rhs = rhs;
     }
 
@@ -34,9 +34,7 @@ public class WriteClassVariableNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        // TODO(CS): can module ever not evaluate to a RubyModule?
-
-        final RubyModule moduleObject = (RubyModule) module.execute(frame);
+        final RubyModule moduleObject = lexicalScope.getLiveModule();
 
         final Object rhsValue = rhs.execute(frame);
 

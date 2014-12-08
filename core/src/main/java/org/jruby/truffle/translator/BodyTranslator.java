@@ -61,8 +61,8 @@ import java.util.*;
 public class BodyTranslator extends Translator {
 
     protected final BodyTranslator parent;
-
     protected final TranslatorEnvironment environment;
+    private final boolean topLevel;
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
@@ -78,13 +78,14 @@ public class BodyTranslator extends Translator {
         debugIgnoredCalls.add("upto");
     }
 
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
-    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$+", "$&", "$`", "$'"));
+    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
 
-    public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
+    public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
         this.parent = parent;
         this.environment = environment;
+        this.topLevel = topLevel;
     }
 
     @Override
@@ -576,26 +577,14 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode receiver;
-        if (useClassVariablesAsIfInClass) {
-            receiver = new SelfNode(context, sourceSection);
-        } else {
-            receiver = ClassNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
-        }
         final RubyNode rhs = node.getValueNode().accept(this);
-        return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
+        return new WriteClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope(), rhs);
     }
 
     @Override
     public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode receiver;
-        if (useClassVariablesAsIfInClass) {
-            receiver = new SelfNode(context, sourceSection);
-        } else {
-            receiver = ClassNodeFactory.create(context, sourceSection, new SelfNode(context, sourceSection));
-        }
-        return new ReadClassVariableNode(context, sourceSection, node.getName(), receiver);
+        return new ReadClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope());
     }
 
     @Override
@@ -679,9 +668,13 @@ public class BodyTranslator extends Translator {
     public RubyNode visitDRegxNode(org.jruby.ast.DRegexpNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode stringNode = translateInterpolatedString(sourceSection, node.childNodes());
+        final List<RubyNode> children = new ArrayList<>();
 
-        return StringToRegexpNodeFactory.create(context, sourceSection, stringNode);
+        for (org.jruby.ast.Node child : node.childNodes()) {
+            children.add(child.accept(this));
+        }
+
+        return new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
     }
 
     @Override
@@ -755,7 +748,15 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final SelfNode classNode = new SelfNode(context, sourceSection);
+        final RubyNode classNode;
+
+        if (topLevel) {
+            // TODO: different for Kernel#load(..., true)
+            classNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
+        } else {
+            classNode = new SelfNode(context, sourceSection);
+        }
+
         return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
     }
 
@@ -790,7 +791,7 @@ public class BodyTranslator extends Translator {
          * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
          */
 
-        return new AddMethodNode(context, sourceSection, classNode, functionExprNode);
+        return new AddMethodNode(context, sourceSection, classNode, functionExprNode, topLevel);
     }
 
     @Override
@@ -1030,6 +1031,10 @@ public class BodyTranslator extends Translator {
         if (readOnlyGlobalVariables.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+            if (name.equals("$~")) {
+                rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
+            }
+
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
             return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
@@ -1060,12 +1065,9 @@ public class BodyTranslator extends Translator {
 
             return ((ReadNode) localVarNode).makeWriteNode(rhs);
         } else {
-            if (name.equals("$~")) {
-                rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
-            }
-
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
+
         }
     }
 
