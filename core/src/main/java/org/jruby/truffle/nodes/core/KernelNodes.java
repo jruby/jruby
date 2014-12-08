@@ -508,7 +508,7 @@ public abstract class KernelNodes {
             return getContext().eval(source.toString(), binding, this);
         }
 
-        @Specialization(guards = "!isString")
+        @Specialization(guards = "!isString(arguments[0])")
         public Object eval(VirtualFrame frame, RubyBasicObject object, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
@@ -518,7 +518,7 @@ public abstract class KernelNodes {
             return eval(frame, object, defaultBinding);
         }
 
-        @Specialization(guards = "!isString")
+        @Specialization(guards = "!isString(arguments[0])")
         public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding) {
             notDesignedForCompilation();
 
