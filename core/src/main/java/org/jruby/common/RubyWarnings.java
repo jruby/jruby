@@ -126,7 +126,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Override
     public void warning(ID id, String message) {
-        if (!runtime.warningsEnabled()) return;
+        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
         RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
         String file;
@@ -148,8 +148,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, ISourcePosition position, String message) {
-        if (!runtime.warningsEnabled()) return;
-
         warning(id, position.getFile(), position.getStartLine() + 1, message);
     }
 
@@ -158,9 +156,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
-        assert isVerbose();
-
-        if (!runtime.warningsEnabled()) return;
+        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
         warn(id, fileName, lineNumber, message);
     }
@@ -181,7 +177,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     @Deprecated
     @Override
     public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
-        if (!runtime.warningsEnabled()) return; // TODO make an assert here
+        if (!runtime.warningsEnabled()) return;
 
         StringBuilder buffer = new StringBuilder(100);
 
@@ -219,7 +215,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     @Deprecated
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
-        assert isVerbose(); 
+        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
         warn(id, fileName, lineNumber, message, data);
     }
 }
