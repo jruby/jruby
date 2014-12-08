@@ -99,20 +99,21 @@ public class RubyRegexp extends RubyBasicObject {
         final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
 
         if (operator) {
-            for (int n = 0; n < 10; n++) {
-                set(frame, "$" + n, nil);
+            for (int n = 1; n < 10; n++) {
+                setThread("$" + n, nil);
             }
         }
 
         if (match == -1) {
-            set(frame, "$&", nil);
-            set(frame, "$~", nil);
-            set(frame, "$`", nil);
-            set(frame, "$'", nil);
+            setFrame(frame, "$&", nil);
+            setFrame(frame, "$`", nil);
+            setFrame(frame, "$'", nil);
 
             if (operator) {
-                set(frame, "$+", nil);
+                setFrame(frame, "$+", nil);
             }
+
+            setThread("$~", nil);
 
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -134,7 +135,10 @@ public class RubyRegexp extends RubyBasicObject {
                 }
 
                 values[n] = groupString;
-                set(frame, "$" + n, groupString);
+
+                if (n > 0 && n < 10) {
+                    setThread("$" + n, groupString);
+                }
             } else {
                 if (start == -1 || end == -1) {
                     values[n] = getContext().getCoreLibrary().getNilObject();
@@ -155,17 +159,17 @@ public class RubyRegexp extends RubyBasicObject {
                     nonNil--;
                 }
 
-                set(frame, "$+", values[nonNil]);
+                setFrame(frame, "$+", values[nonNil]);
             } else {
-                set(frame, "$+", getContext().getCoreLibrary().getNilObject());
+                setFrame(frame, "$+", getContext().getCoreLibrary().getNilObject());
             }
         }
 
-        set(frame, "$`", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(0, region.beg[0]).dup()));
-        set(frame, "$'", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup()));
-        set(frame, "$&", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup()));
+        setFrame(frame, "$`", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(0, region.beg[0]).dup()));
+        setFrame(frame, "$'", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup()));
+        setFrame(frame, "$&", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup()));
 
-        set(frame, "$~", matchObject);
+        setThread("$~", matchObject);
 
         if (operator) {
             return matcher.getBegin();
@@ -174,7 +178,9 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    private void set(Frame frame, String name, Object value) {
+    private void setFrame(Frame frame, String name, Object value) {
+        assert value != null;
+
         while (frame != null) {
             final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(name);
 
@@ -185,6 +191,12 @@ public class RubyRegexp extends RubyBasicObject {
 
             frame = RubyArguments.getDeclarationFrame(frame.getArguments());
         }
+    }
+
+    private void setThread(String name, Object value) {
+        assert value != null;
+
+        getContext().getThreadManager().getCurrentThread().getThreadLocals().setInstanceVariable(name, value);
     }
 
     @CompilerDirectives.SlowPath

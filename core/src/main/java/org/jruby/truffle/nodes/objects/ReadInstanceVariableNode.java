@@ -127,9 +127,17 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         notDesignedForCompilation();
 
         if (isGlobal) {
-            if (readNode.getName().equals("$~") || readNode.isSet((RubyBasicObject) receiver.execute(frame))) {
+            final RubyBasicObject recieverValue = (RubyBasicObject) receiver.execute(frame);
+
+            if (readNode.getName().equals("$~")) {
                 return getContext().makeString("global-variable");
-            } else{
+            } else if (readNode.isSet(recieverValue)) {
+                if (readNode.execute(recieverValue) == getContext().getCoreLibrary().getNilObject()) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    return getContext().makeString("global-variable");
+                }
+            } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }

@@ -381,6 +381,8 @@ public class CoreLibrary {
             return fixnumClass;
         } else if (object instanceof Double) {
             return floatClass;
+        } else if (object == null) {
+            throw new RuntimeException();
         } else {
             throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
         }
@@ -403,6 +405,8 @@ public class CoreLibrary {
             return fixnumClass;
         } else if (object instanceof Double) {
             return floatClass;
+        } else if (object == null) {
+            throw new RuntimeException();
         } else {
             throw new UnsupportedOperationException(String.format("Don't know how to get the logical class for %s", object.getClass()));
         }

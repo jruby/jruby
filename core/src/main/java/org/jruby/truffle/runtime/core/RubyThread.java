@@ -73,6 +73,7 @@ public class RubyThread extends RubyBasicObject {
         super(rubyClass);
         this.manager = manager;
         threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
+        threadLocals.switchToPrivateLayout();
     }
 
     public void initialize(RubyContext context, RubyNode currentNode, RubyProc block) {
