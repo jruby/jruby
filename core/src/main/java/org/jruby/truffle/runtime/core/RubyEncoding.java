@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.ByteList;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +25,7 @@ public class RubyEncoding extends RubyBasicObject {
     private static Map<Encoding, RubyEncoding> map = new HashMap<>();
 
     private final Encoding encoding;
+    private final ByteList name;
 
     /**
      * The class from which we create the object that is {@code Encoding}. A subclass of
@@ -61,10 +63,15 @@ public class RubyEncoding extends RubyBasicObject {
     private RubyEncoding(RubyClass encodingClass, Encoding encoding) {
         super(encodingClass);
         this.encoding = encoding;
+        this.name = new ByteList(encoding.getName());
     }
 
     public Encoding getEncoding() {
         return encoding;
+    }
+
+    public ByteList getName() {
+        return name;
     }
 
 }
