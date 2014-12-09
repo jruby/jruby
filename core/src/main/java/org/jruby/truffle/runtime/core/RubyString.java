@@ -50,6 +50,10 @@ public class RubyString extends RubyBasicObject {
         return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), UTF8Encoding.INSTANCE, false));
     }
 
+    public static RubyString fromByteList(RubyClass stringClass, ByteList bytes) {
+        return new RubyString(stringClass, bytes);
+    }
+
     public void set(ByteList bytes) {
         this.bytes = bytes;
     }
