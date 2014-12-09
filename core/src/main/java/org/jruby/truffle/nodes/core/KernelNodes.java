@@ -549,6 +549,15 @@ public abstract class KernelNodes {
                                 this));
             }
         }
+
+        @Specialization(guards = "!isRubyBinding(arguments[1])")
+        public Object eval(@SuppressWarnings("unused") RubyBasicObject source, RubyBasicObject badBinding) {
+            throw new RaiseException(
+                    getContext().getCoreLibrary().typeError(
+                            String.format("wrong argument type %s (expected binding)",
+                                    badBinding.getLogicalClass().getName()),
+                            this));
+        }
     }
 
     @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
