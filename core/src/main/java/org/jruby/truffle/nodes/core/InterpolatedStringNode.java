@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -30,7 +31,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        toS = new DispatchHeadNode(context);
+        toS = new DispatchHeadNode(context, true);
     }
 
     @ExplodeLoop

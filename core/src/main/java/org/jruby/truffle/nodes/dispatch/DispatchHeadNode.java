@@ -38,6 +38,10 @@ public class DispatchHeadNode extends Node {
         this(context, false, false, false, missingBehavior);
     }
 
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility) {
+        this(context, ignoreVisibility, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+    }
+
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
         this(context, ignoreVisibility, false, false, missingBehavior);
     }
