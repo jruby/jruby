@@ -1036,7 +1036,7 @@ public class RubyKernel {
             if (scope instanceof RubyBinding) {
                 return ((RubyBinding)scope).getBinding().cloneForEval();
             } else {
-                throw scope.getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Binding)");
+                throw scope.getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected binding)");
             }
         }
     };
