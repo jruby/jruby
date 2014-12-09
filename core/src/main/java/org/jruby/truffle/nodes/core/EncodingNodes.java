@@ -240,7 +240,25 @@ public abstract class EncodingNodes {
         public RubyString toS(RubyEncoding encoding) {
             return getContext().makeString(encoding.getName());
         }
-
     }
 
+    @CoreMethod(names = "inspect")
+    public abstract static class InspectNode extends CoreMethodNode {
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InspectNode(InspectNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public RubyString toS(RubyEncoding encoding) {
+            RubyString name = getContext().makeString(encoding.getName());
+
+            return getContext().makeString(String.format("#<Encoding:%s>", name.toString()));
+        }
+    }
 }
