@@ -9,12 +9,12 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
-import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.runtime.encoding.EncodingService;
@@ -224,6 +224,23 @@ public abstract class EncodingNodes {
         }
     }
 
+    @CoreMethod(names = "to_s")
+    public abstract static class ToSNode extends CoreMethodNode {
 
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public RubyString toS(RubyEncoding encoding) {
+            return getContext().makeString(encoding.getName());
+        }
+
+    }
 
 }

@@ -1,2 +1,0 @@
-fails:Encoding#to_s returns a String
-fails:Encoding#to_s uniquely identifies an encoding
