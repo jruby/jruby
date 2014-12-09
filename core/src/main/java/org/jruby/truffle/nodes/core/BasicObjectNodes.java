@@ -271,6 +271,10 @@ public abstract class BasicObjectNodes {
         }
 
         private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
+            if (self == getContext().getCoreLibrary().getMainObject()) {
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("undefined local variable or method `%s' for main:Object", name.toString()), this));
+            }
+
             throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
         }
 
