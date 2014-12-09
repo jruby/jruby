@@ -496,7 +496,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
-                    getSourceSection(), null).binding();
+                    getSourceSection(), new RubyNode[]{}).binding();
 
             return eval(source, defaultBinding);
         }
@@ -513,7 +513,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
-                    getSourceSection(), null).binding();
+                    getSourceSection(), new RubyNode[]{}).binding();
 
             return eval(frame, object, defaultBinding);
         }
