@@ -916,7 +916,10 @@ module Net   #:nodoc:
             @socket.write(buf)
             HTTPResponse.read_new(@socket).value
           end
-          s.session = @ssl_session if @ssl_session
+          if @ssl_session and
+             Time.now < @ssl_session.time + @ssl_session.timeout
+            s.session = @ssl_session if @ssl_session
+          end
           # Server Name Indication (SNI) RFC 3546
           s.hostname = @address if s.respond_to? :hostname=
           Timeout.timeout(@open_timeout, Net::OpenTimeout) { s.connect }
@@ -1034,7 +1037,9 @@ module Net   #:nodoc:
 
     # The proxy URI determined from the environment for this connection.
     def proxy_uri # :nodoc:
-      @proxy_uri ||= URI("http://#{address}:#{port}").find_proxy
+      @proxy_uri ||= URI::HTTP.new(
+        "http".freeze, nil, address, port, nil, nil, nil, nil, nil
+      ).find_proxy
     end
 
     # The address of the proxy server, if one is configured.
