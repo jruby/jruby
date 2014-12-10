@@ -2,12 +2,17 @@ package org.jruby.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import jnr.constants.platform.Errno;
 
 abstract class AbstractFileResource implements FileResource {
 
     @Override
     public boolean canExecute() {
         return false;
+    }
+
+    public int errno() {
+        return Errno.ENOENT.intValue();
     }
 
     @Override

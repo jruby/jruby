@@ -1,7 +1,6 @@
 package org.jruby.util;
 
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

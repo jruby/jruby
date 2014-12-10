@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.runtime.ThreadContext;
@@ -30,6 +31,10 @@ class EmptyFileResource implements FileResource {
     @Override
     public boolean exists() {
         return false;
+    }
+
+    public int errno() {
+        return Errno.ENOENT.intValue();
     }
 
     @Override
