@@ -158,7 +158,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         callSiteCount++;
     }
     
-    public void cacheSymbol(BaseBodyCompiler method, String symbol) {
+    public void cacheSymbol(BaseBodyCompiler method, String symbol, Encoding encoding) {
         Integer index = symbolIndices.get(symbol);
         if (index == null) {
             index = Integer.valueOf(inheritedSymbolCount++);
@@ -169,11 +169,13 @@ public class InheritedCacheCompiler implements CacheCompiler {
         method.loadThreadContext();
         if (index < AbstractScript.NUMBERED_SYMBOL_COUNT) {
             method.method.ldc(symbol);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol" + index, sig(RubySymbol.class, ThreadContext.class, String.class));
+            method.method.ldc(encoding.toString());
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol" + index, sig(RubySymbol.class, ThreadContext.class, String.class, String.class));
         } else {
             method.method.ldc(index.intValue());
             method.method.ldc(symbol);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, ThreadContext.class, int.class, String.class));
+            method.method.ldc(encoding.toString());
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, ThreadContext.class, int.class, String.class, String.class));
         }
     }
 

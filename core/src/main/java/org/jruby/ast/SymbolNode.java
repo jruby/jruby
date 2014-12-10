@@ -91,6 +91,10 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNod
     public String getName() {
         return name;
     }
+
+    public Encoding getEncoding() {
+        return encoding;
+    }
     
     public List<Node> childNodes() {
         return EMPTY_LIST;

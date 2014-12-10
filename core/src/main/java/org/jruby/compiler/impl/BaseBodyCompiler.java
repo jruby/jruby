@@ -562,8 +562,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         script.getCacheCompiler().cacheString(this, value, codeRange);
     }
 
-    public void createNewSymbol(String name) {
-        script.getCacheCompiler().cacheSymbol(this, name);
+    public void createNewSymbol(String name, Encoding encoding) {
+        script.getCacheCompiler().cacheSymbol(this, name, encoding);
     }
 
     public void createNewArray(boolean lightweight) {

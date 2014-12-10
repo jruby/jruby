@@ -421,9 +421,9 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      * @param method the method compiler with which bytecode is emitted
      * @param symbol the string of the Symbol to cache
      */
-    public void cacheSymbol(BaseBodyCompiler method, String symbol) {
+    public void cacheSymbol(BaseBodyCompiler method, String symbol, Encoding encoding) {
         if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
-            super.cacheSymbol(method, symbol);
+            super.cacheSymbol(method, symbol, encoding);
             return;
         }
         
@@ -433,7 +433,8 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 "getSymbol",
                 sig(RubySymbol.class, ThreadContext.class),
                 InvokeDynamicSupport.getSymbolHandle(),
-                symbol);
+                symbol,
+                encoding.toString());
     }
 
     public void cachedGetVariable(BaseBodyCompiler method, String name) {

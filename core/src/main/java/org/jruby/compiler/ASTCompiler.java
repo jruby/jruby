@@ -3537,7 +3537,8 @@ public class ASTCompiler {
     }
 
     public void compileSymbol(Node node, BodyCompiler context, boolean expr) {
-        context.createNewSymbol(((SymbolNode) node).getName());
+        SymbolNode symbol = (SymbolNode)node;
+        context.createNewSymbol(symbol.getName(), symbol.getEncoding());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }    

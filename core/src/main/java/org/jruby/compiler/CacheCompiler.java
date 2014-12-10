@@ -28,7 +28,7 @@ public interface CacheCompiler {
 
     public int cacheEncoding(BaseBodyCompiler method, Encoding encoding);
     
-    public void cacheSymbol(BaseBodyCompiler method, String symbol);
+    public void cacheSymbol(BaseBodyCompiler method, String symbol, Encoding encoding);
     
     public void cacheFixnum(BaseBodyCompiler method, long value);
     

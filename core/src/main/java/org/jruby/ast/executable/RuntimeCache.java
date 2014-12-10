@@ -1,5 +1,6 @@
 package org.jruby.ast.executable;
 
+import org.jcodings.EncodingDB;
 import org.jruby.runtime.opto.ConstantCache;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -96,10 +97,14 @@ public class RuntimeCache {
         return callback;
     }
 
-    public final RubySymbol getSymbol(ThreadContext context, int index, String name) {
+    public final RubySymbol getSymbol(ThreadContext context, int index, String name, String encodingName) {
         RubySymbol symbol = symbols[index];
         if (symbol == null) {
-            return symbols[index] = context.runtime.newSymbol(name);
+            symbol = context.runtime.newSymbol(name);
+            if (encodingName != null) {
+                symbol.associateEncoding(EncodingDB.getEncodings().get(encodingName.getBytes()).getEncoding());
+            }
+            symbols[index] = symbol;
         }
         return symbol;
     }
