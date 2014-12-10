@@ -39,7 +39,6 @@ STDLIB_FILES = %w[
   optparse
   optparse.rb
   ostruct.rb
-  pathname.rb
   pp.rb
   prettyprint.rb
   prime.rb
