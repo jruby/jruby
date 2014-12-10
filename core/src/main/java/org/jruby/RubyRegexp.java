@@ -1139,6 +1139,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (a.isNil()) return newRegexp(runtime, quote(context, recv, args).getByteList());
 
             RubyArray aa = (RubyArray)a;
+            if (aa.size() == 0) return newRegexp(runtime, ByteList.create("(?!)"));
             int len = aa.getLength();
             realArgs = new IRubyObject[len];
             for(int i = 0; i<len; i++) {
