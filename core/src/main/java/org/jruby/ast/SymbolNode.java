@@ -32,8 +32,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.awt.image.ByteLookupTable;
 import java.util.List;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 
@@ -45,6 +48,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /** 
  * Represents a symbol (:symbol_name).
@@ -52,10 +56,24 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNode {
     private String name;
     private RubySymbol symbol;
+    private Encoding encoding;
 
     public SymbolNode(ISourcePosition position, String name) {
-	    super(position);
-	    this.name = name;
+        super(position);
+
+        this.name = name;
+        this.encoding = null;
+    }
+
+    public SymbolNode(ISourcePosition position, ByteList value) {
+        super(position);
+        this.name = value.toString().intern();
+        // FIXME: A full scan to determine whether we should back off to US-ASCII.  Lexer should just do this properly.
+        if (value.lengthEnc() == value.length()) {
+            this.encoding = USASCIIEncoding.INSTANCE;
+        } else {
+            this.encoding = value.getEncoding();
+        }
     }
 
     public NodeType getNodeType() {
@@ -81,7 +99,9 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNod
     public RubySymbol getSymbol(Ruby runtime) {
         RubySymbol sym;
         if ((sym = symbol) != null) return sym;
-        return symbol = runtime.fastNewSymbol(name);
+        sym = runtime.fastNewSymbol(name);
+        if (encoding != null) sym.associateEncoding(encoding);
+        return symbol = sym;
     }
     
     @Override
@@ -90,6 +110,6 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNod
     }
 
     public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-       return otherValue instanceof RubySymbol && ((RubySymbol) otherValue).asJavaString() == name;
+       return otherValue instanceof RubySymbol && otherValue.asJavaString() == name;
     }
 }

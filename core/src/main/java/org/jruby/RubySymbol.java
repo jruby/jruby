@@ -158,6 +158,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         return symbolBytes;
     }
 
+    /**
+     * RubySymbol is created by passing in a String and bytes are extracted from that.  We will
+     * pass in encoding of that string after construction but before use so it does not forget
+     * what it is.
+     */
+    public void associateEncoding(Encoding encoding) {
+        symbolBytes.setEncoding(encoding);
+    }
+
     /** short circuit for Symbol key comparison
      * 
      */

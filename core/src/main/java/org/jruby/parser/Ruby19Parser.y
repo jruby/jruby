@@ -1524,7 +1524,7 @@ opt_ensure      : kENSURE compstmt {
 literal         : numeric
                 | symbol {
                     // FIXME: We may be intern'ing more than once.
-                    $$ = new SymbolNode($1.getPosition(), ((String) $1.getValue()).intern());
+  $$ = new SymbolNode($1.getPosition(), new ByteList(((String)$<Token>1.getValue()).getBytes(), lexer.getEncoding()));
                 }
                 | dsym
 
@@ -1697,7 +1697,7 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      } else if ($2 instanceof DStrNode) {
                          $$ = new DSymbolNode($1.getPosition(), $<DStrNode>2);
                      } else if ($2 instanceof StrNode) {
-                         $$ = new SymbolNode($1.getPosition(), $<StrNode>2.getValue().toString().intern());
+                         $$ = new SymbolNode($1.getPosition(), $<StrNode>2.getValue());
                      } else {
                          $$ = new DSymbolNode($1.getPosition());
                          $<DSymbolNode>$.add($2);
@@ -1990,7 +1990,7 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tLABEL arg_value {
                     ISourcePosition pos = $1.getPosition();
-                    $$ = support.newArrayNode(pos, new SymbolNode(pos, (String) $1.getValue())).add($2);
+                    $$ = support.newArrayNode(pos, new SymbolNode(pos, new ByteList(((String) $1.getValue()).getBytes(), lexer.getEncoding()))).add($2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID

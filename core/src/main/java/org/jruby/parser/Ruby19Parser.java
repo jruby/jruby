@@ -3554,7 +3554,7 @@ states[412] = new ParserState() {
 states[415] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     /* FIXME: We may be intern'ing more than once.*/
-                    yyVal = new SymbolNode(((Token)yyVals[0+yyTop]).getPosition(), ((String) ((Token)yyVals[0+yyTop]).getValue()).intern());
+  yyVal = new SymbolNode(((Token)yyVals[0+yyTop]).getPosition(), new ByteList(((String)((Token)yyVals[0+yyTop]).getValue()).getBytes(), lexer.getEncoding()));
     return yyVal;
   }
 };
@@ -3795,7 +3795,7 @@ states[452] = new ParserState() {
                      } else if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
                          yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((DStrNode)yyVals[-1+yyTop]));
                      } else if (((Node)yyVals[-1+yyTop]) instanceof StrNode) {
-                         yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((StrNode)yyVals[-1+yyTop]).getValue().toString().intern());
+                         yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((StrNode)yyVals[-1+yyTop]).getValue());
                      } else {
                          yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition());
                          ((DSymbolNode)yyVal).add(((Node)yyVals[-1+yyTop]));
@@ -4242,7 +4242,7 @@ states[528] = new ParserState() {
 states[529] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = ((Token)yyVals[-1+yyTop]).getPosition();
-                    yyVal = support.newArrayNode(pos, new SymbolNode(pos, (String) ((Token)yyVals[-1+yyTop]).getValue())).add(((Node)yyVals[0+yyTop]));
+                    yyVal = support.newArrayNode(pos, new SymbolNode(pos, new ByteList(((String) ((Token)yyVals[-1+yyTop]).getValue()).getBytes(), lexer.getEncoding()))).add(((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };

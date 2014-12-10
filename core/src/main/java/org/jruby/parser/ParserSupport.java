@@ -1146,9 +1146,8 @@ public class ParserSupport {
     }
     
     public Node asSymbol(ISourcePosition position, Node value) {
-        // FIXME: This might have an encoding issue since toString generally uses iso-8859-1
-        if (value instanceof StrNode) return new SymbolNode(position, ((StrNode) value).getValue().toString().intern());
-        
+        if (value instanceof StrNode) return new SymbolNode(position, ((StrNode) value).getValue());
+
         return new DSymbolNode(position, (DStrNode) value);
     }
     
