@@ -4,9 +4,12 @@ class Gem::AvailableSet
 
   Tuple = Struct.new(:spec, :source)
 
+  attr_accessor :remote # :nodoc:
+
   def initialize
     @set = []
     @sorted = nil
+    @remote = true
   end
 
   attr_reader :set
@@ -116,18 +119,18 @@ class Gem::AvailableSet
 
   ##
   #
-  # Used by the DependencyResolver, the protocol to use a AvailableSet as a
+  # Used by the Resolver, the protocol to use a AvailableSet as a
   # search Set.
 
   def find_all(req)
     dep = req.dependency
 
     match = @set.find_all do |t|
-      dep.matches_spec? t.spec
+      dep.match? t.spec
     end
 
     match.map do |t|
-      Gem::DependencyResolver::InstalledSpecification.new(self, t.spec, t.source)
+      Gem::Resolver::LocalSpecification.new(self, t.spec, t.source)
     end
   end
 

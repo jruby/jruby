@@ -19,8 +19,36 @@ module Gem
     attr_accessor :requirement
   end
 
-  # FIX: does this need to exist? The subclass is the only other reference
-  # I can find.
+  # Raised when there are conflicting gem specs loaded
+
+  class ConflictError < LoadError
+
+    ##
+    # A Hash mapping conflicting specifications to the dependencies that
+    # caused the conflict
+
+    attr_reader :conflicts
+
+    ##
+    # The specification that had the conflict
+
+    attr_reader :target
+
+    def initialize target, conflicts
+      @target    = target
+      @conflicts = conflicts
+      @name      = target.name
+
+      reason = conflicts.map { |act, dependencies|
+        "#{act.full_name} conflicts with #{dependencies.join(", ")}"
+      }.join ", "
+
+      # TODO: improve message by saying who activated `con`
+
+      super("Unable to activate #{target.full_name}, because #{reason}")
+    end
+  end
+
   class ErrorReason; end
 
   # Generated when trying to lookup a gem to indicate that the gem
@@ -75,15 +103,35 @@ module Gem
   # data from a source
 
   class SourceFetchProblem < ErrorReason
+
+    ##
+    # Creates a new SourceFetchProblem for the given +source+ and +error+.
+
     def initialize(source, error)
       @source = source
       @error = error
     end
 
-    attr_reader :source, :error
+    ##
+    # The source that had the fetch problem.
+
+    attr_reader :source
+
+    ##
+    # The fetch error which is an Exception subclass.
+
+    attr_reader :error
+
+    ##
+    # An English description of the error.
 
     def wordy
       "Unable to download data from #{@source.uri} - #{@error.message}"
     end
+
+    ##
+    # The "exception" alias allows you to call raise on a SourceFetchProblem.
+
+    alias exception error
   end
 end
