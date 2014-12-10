@@ -1,2 +1,0 @@
-fails:Symbol#encoding for UTF-8 symbols is UTF-8
-fails:Symbol#encoding for UTF-8 symbols is UTF-8 after converting to string
