@@ -71,7 +71,7 @@ module UnicodeNormalize
   ## Canonical Ordering
   def self.canonical_ordering_one(string)
     sorting = string.each_char.collect { |c| [c, CLASS_TABLE[c]] }
-    (sorting.length-2).downto(0) do |i| # bubble sort
+    (sorting.length-2).downto(0) do |i| # almost, but not exactly bubble sort
       (0..i).each do |j|
         later_class = sorting[j+1].last
         if 0<later_class and later_class<sorting[j].last
@@ -79,34 +79,20 @@ module UnicodeNormalize
         end
       end
     end
-    return sorting.collect(&:first).join
+    return sorting.collect(&:first).join('')
   end
 
   ## Normalization Forms for Patterns (not whole Strings)
   def self.nfd_one(string)
-    string = string.dup
-    (0...string.length).each do |position|
-      if decomposition = DECOMPOSITION_TABLE[string[position]]
-        string[position] = decomposition
-      end
-    end
+    string = string.chars.map! {|c| DECOMPOSITION_TABLE[c] || c}.join('')
     canonical_ordering_one(hangul_decomp_one(string))
   end
 
   def self.nfkd_one(string)
-    string = string.dup
-    position = 0
-    while position < string.length
-      if decomposition = KOMPATIBLE_TABLE[string[position]]
-        string[position] = decomposition
-      else
-        position += 1
-      end
-    end
-    string
+    string.chars.map! {|c| KOMPATIBLE_TABLE[c] || c}.join('')
   end
 
-  def self.nfc_one (string)
+  def self.nfc_one(string)
     nfd_string = nfd_one string
     start = nfd_string[0]
     last_class = CLASS_TABLE[start]-1
@@ -116,7 +102,7 @@ module UnicodeNormalize
       if last_class<accent_class and composite = COMPOSITION_TABLE[start+accent]
         start = composite
       else
-        accents += accent
+        accents << accent
         last_class = accent_class
       end
     end
@@ -125,7 +111,8 @@ module UnicodeNormalize
 
   def self.normalize(string, form = :nfc)
     encoding = string.encoding
-    if encoding == Encoding::UTF_8
+    case encoding
+    when Encoding::UTF_8
       case form
       when :nfc then
         string.gsub REGEXP_C, NF_HASH_C
@@ -138,9 +125,9 @@ module UnicodeNormalize
       else
         raise ArgumentError, "Invalid normalization form #{form}."
       end
-    elsif encoding == Encoding::US_ASCII
+    when Encoding::US_ASCII
       string
-    elsif  UNICODE_ENCODINGS.include? encoding
+    when *UNICODE_ENCODINGS
       normalize(string.encode(Encoding::UTF_8), form).encode(encoding)
     else
       raise Encoding::CompatibilityError, "Unicode Normalization not appropriate for #{encoding}"
@@ -149,7 +136,8 @@ module UnicodeNormalize
 
   def self.normalized?(string, form = :nfc)
     encoding = string.encoding
-    if encoding == Encoding::UTF_8
+    case encoding
+    when Encoding::UTF_8
       case form
       when :nfc then
         string.scan REGEXP_C do |match|
@@ -168,9 +156,9 @@ module UnicodeNormalize
       else
         raise ArgumentError, "Invalid normalization form #{form}."
       end
-    elsif encoding == Encoding::US_ASCII
+    when Encoding::US_ASCII
       true
-    elsif  UNICODE_ENCODINGS.include? encoding
+    when *UNICODE_ENCODINGS
       normalized? string.encode(Encoding::UTF_8), form
     else
       raise Encoding::CompatibilityError, "Unicode Normalization not appropriate for #{encoding}"

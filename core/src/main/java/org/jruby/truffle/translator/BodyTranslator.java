@@ -702,13 +702,13 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateInterpolatedString(SourceSection sourceSection, List<org.jruby.ast.Node> childNodes) {
-        final List<RubyNode> children = new ArrayList<>();
+        final List<ToSNode> children = new ArrayList<>();
 
         for (org.jruby.ast.Node child : childNodes) {
-            children.add(child.accept(this));
+            children.add(ToSNodeFactory.create(context, sourceSection, child.accept(this)));
         }
 
-        return new InterpolatedStringNode(context, sourceSection, children.toArray(new RubyNode[children.size()]));
+        return new InterpolatedStringNode(context, sourceSection, children.toArray(new ToSNode[children.size()]));
     }
 
     @Override
