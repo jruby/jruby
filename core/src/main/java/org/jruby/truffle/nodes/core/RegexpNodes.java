@@ -78,7 +78,7 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.matchCommon(string.getBytes(), true) != getContext().getCoreLibrary().getNilObject();
+            return regexp.matchCommon(string.getBytes(), true, false) != getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -96,7 +96,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
-            return regexp.matchCommon(string.getBytes(), true);
+            return regexp.matchCommon(string.getBytes(), true, true);
         }
 
         @Specialization
@@ -238,7 +238,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
-            return regexp.matchCommon(string.getBytes(), false);
+            return regexp.matchCommon(string.getBytes(), false, false);
         }
 
     }

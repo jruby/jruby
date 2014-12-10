@@ -1,1 +1,0 @@
-fails:The =~ operator with named captures on syntax of /regexp/ =~ string_variable sets local variables by the captured pairs
