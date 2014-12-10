@@ -29,7 +29,7 @@ KRYPT_VERSION = '0.0.2'
 # the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.5', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.6.dev-SNAPSHOT', true ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
