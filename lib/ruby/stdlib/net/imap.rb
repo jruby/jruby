@@ -788,8 +788,10 @@ module Net
     # +attr+ is a list of attributes to fetch; see the documentation
     # for Net::IMAP::FetchData for a list of valid attributes.
     #
-    # The return value is an array of Net::IMAP::FetchData. For
-    # example:
+    # The return value is an array of Net::IMAP::FetchData or nil
+    # (instead of an empty array) if there is no matching message.
+    #
+    # For example:
     #
     #   p imap.fetch(6..8, "UID")
     #   #=> [#<Net::IMAP::FetchData seqno=6, attr={"UID"=>98}>, \\
@@ -1254,9 +1256,7 @@ module Net
       when nil
       when String
       when Integer
-        if data < 0 || data >= 4294967296
-          raise DataFormatError, num.to_s
-        end
+        NumValidator.ensure_number(data)
       when Array
         data.each do |i|
           validate_data(i)
@@ -1570,7 +1570,7 @@ module Net
         case data
         when "*"
         when Integer
-          ensure_nz_number(data)
+          NumValidator.ensure_nz_number(data)
         when Range
         when Array
           data.each do |i|
@@ -1584,11 +1584,42 @@ module Net
           raise DataFormatError, data.inspect
         end
       end
+    end
 
-      def ensure_nz_number(num)
-        if num < -1 || num == 0 || num >= 4294967296
-          msg = "nz_number must be non-zero unsigned 32-bit integer: " +
-                num.inspect
+    # Common validators of number and nz_number types
+    module NumValidator # :nodoc
+      class << self
+        # Check is passed argument valid 'number' in RFC 3501 terminology
+        def valid_number?(num)
+          # [RFC 3501]
+          # number          = 1*DIGIT
+          #                    ; Unsigned 32-bit integer
+          #                    ; (0 <= n < 4,294,967,296)
+          num >= 0 && num < 4294967296
+        end
+
+        # Check is passed argument valid 'nz_number' in RFC 3501 terminology
+        def valid_nz_number?(num)
+          # [RFC 3501]
+          # nz-number       = digit-nz *DIGIT
+          #                    ; Non-zero unsigned 32-bit integer
+          #                    ; (0 < n < 4,294,967,296)
+          num != 0 && valid_number?(num)
+        end
+
+        # Ensure argument is 'number' or raise DataFormatError
+        def ensure_number(num)
+          return if valid_number?(num)
+
+          msg = "number must be unsigned 32-bit integer: #{num}"
+          raise DataFormatError, msg
+        end
+
+        # Ensure argument is 'nz_number' or raise DataFormatError
+        def ensure_nz_number(num)
+          return if valid_nz_number?(num)
+
+          msg = "nz_number must be non-zero unsigned 32-bit integer: #{num}"
           raise DataFormatError, msg
         end
       end
@@ -2098,9 +2129,9 @@ module Net
 
       BEG_REGEXP = /\G(?:\
 (?# 1:  SPACE   )( +)|\
-(?# 2:  NIL     )(NIL)(?=[\x80-\xff(){ \x00-\x1f\x7f%*#{'"'}\\\[\]+])|\
-(?# 3:  NUMBER  )(\d+)(?=[\x80-\xff(){ \x00-\x1f\x7f%*#{'"'}\\\[\]+])|\
-(?# 4:  ATOM    )([^\x80-\xff(){ \x00-\x1f\x7f%*#{'"'}\\\[\]+]+)|\
+(?# 2:  NIL     )(NIL)(?=[\x80-\xff(){ \x00-\x1f\x7f%*"\\\[\]+])|\
+(?# 3:  NUMBER  )(\d+)(?=[\x80-\xff(){ \x00-\x1f\x7f%*"\\\[\]+])|\
+(?# 4:  ATOM    )([^\x80-\xff(){ \x00-\x1f\x7f%*"\\\[\]+]+)|\
 (?# 5:  QUOTED  )"((?:[^\x00\r\n"\\]|\\["\\])*)"|\
 (?# 6:  LPAR    )(\()|\
 (?# 7:  RPAR    )(\))|\
@@ -2863,8 +2894,15 @@ module Net
               break
             when T_SPACE
               shift_token
-            else
+            when T_NUMBER
               data.push(number)
+            when T_LPAR
+              # TODO: include the MODSEQ value in a response
+              shift_token
+              match(T_ATOM)
+              match(T_SPACE)
+              match(T_NUMBER)
+              match(T_RPAR)
             end
           end
         else
