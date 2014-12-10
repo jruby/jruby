@@ -362,6 +362,8 @@ public abstract class KernelNodes {
             super(prev);
         }
 
+        public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
+
         @Specialization
         public RubyClass getClass(boolean value) {
             notDesignedForCompilation();
