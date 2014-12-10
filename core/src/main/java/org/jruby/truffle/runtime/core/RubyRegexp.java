@@ -27,6 +27,7 @@ import org.jruby.util.ByteList;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Represents the Ruby {@code Regexp} class.
@@ -53,6 +54,8 @@ public class RubyRegexp extends RubyBasicObject {
 
     @CompilationFinal private Regex regex;
     @CompilationFinal private ByteList source;
+
+    private RubyEncoding encoding;
 
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
@@ -87,7 +90,7 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object matchCommon(ByteList bytes, boolean operator) {
+    public Object matchCommon(ByteList bytes, boolean operator, boolean setNamedCaptures) {
         final RubyContext context = getContext();
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
@@ -114,6 +117,14 @@ public class RubyRegexp extends RubyBasicObject {
             }
 
             setThread("$~", nil);
+
+            if (setNamedCaptures && regex.numberOfNames() > 0) {
+                for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext();) {
+                    final NameEntry e = i.next();
+                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+                    setFrame(frame, name, getContext().getCoreLibrary().getNilObject());
+                }
+            }
 
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -170,6 +181,46 @@ public class RubyRegexp extends RubyBasicObject {
         setFrame(frame, "$&", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup()));
 
         setThread("$~", matchObject);
+
+        if (setNamedCaptures && regex.numberOfNames() > 0) {
+            for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext();) {
+                final NameEntry e = i.next();
+                final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+                int nth = regex.nameToBackrefNumber(e.name, e.nameP, e.nameEnd, region);
+
+                final Object value;
+
+                // Copied from jubry/RubyRegexp - see copyright notice there
+
+                if (region == null) {
+                    if (nth >= 1 || (nth < 0 && ++nth <= 0)) {
+                        value = getContext().getCoreLibrary().getNilObject();
+                    } else {
+                        final int start = matcher.getBegin();
+                        final int end = matcher.getEnd();
+                        if (start != -1) {
+                            value = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
+                        } else {
+                            value = getContext().getCoreLibrary().getNilObject();
+                        }
+                    }
+                } else {
+                    if (nth >= region.numRegs || (nth < 0 && (nth+=region.numRegs) <= 0)) {
+                        value = getContext().getCoreLibrary().getNilObject();
+                    } else {
+                        final int start = region.beg[nth];
+                        final int end = region.end[nth];
+                        if (start != -1) {
+                            value = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
+                        } else {
+                            value = getContext().getCoreLibrary().getNilObject();
+                        }
+                    }
+                }
+
+                setFrame(frame, name, value);
+            }
+        }
 
         if (operator) {
             return matcher.getBegin();
@@ -335,11 +386,23 @@ public class RubyRegexp extends RubyBasicObject {
     public static Regex compile(RubyNode currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
         RubyNode.notDesignedForCompilation();
 
-        //try {
+        try {
             return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
-        //} catch (ValueException e) {
-        //    throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
-        //}
+        } catch (ValueException e) {
+            throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
+        }
+    }
+
+    public void forceEncoding(RubyEncoding encoding) {
+        this.encoding = encoding;
+    }
+
+    public RubyEncoding getEncoding() {
+        if (encoding == null) {
+            encoding = RubyEncoding.getEncoding(getContext(), regex.getEncoding());
+        }
+
+        return encoding;
     }
 
 }

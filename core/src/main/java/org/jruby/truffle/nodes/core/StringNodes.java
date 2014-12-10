@@ -257,7 +257,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
-            return regexp.matchCommon(string.getBytes(), true);
+            return regexp.matchCommon(string.getBytes(), true, false);
         }
     }
 
@@ -479,10 +479,14 @@ public abstract class StringNodes {
         @Specialization
         public RubyString forceEncoding(RubyString string, RubyString encodingName) {
             notDesignedForCompilation();
+            final RubyEncoding encoding = RubyEncoding.getEncoding(getContext(), encodingName.toString());
+            return forceEncoding(string, encoding);
+        }
 
-            RubyEncoding encoding = RubyEncoding.getEncoding(getContext(), encodingName.toString());
+        @Specialization
+        public RubyString forceEncoding(RubyString string, RubyEncoding encoding) {
+            notDesignedForCompilation();
             string.forceEncoding(encoding.getEncoding());
-
             return string;
         }
 
@@ -645,12 +649,12 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
-            return regexp.matchCommon(string.getBytes(), false);
+            return regexp.matchCommon(string.getBytes(), false, false);
         }
 
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
-            return regexp.matchCommon(string.getBytes(), false);
+            return regexp.matchCommon(string.getBytes(), false, false);
         }
     }
 

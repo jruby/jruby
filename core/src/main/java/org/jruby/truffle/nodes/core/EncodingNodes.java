@@ -9,12 +9,12 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
-import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.runtime.encoding.EncodingService;
@@ -188,9 +188,77 @@ public abstract class EncodingNodes {
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
         }
-
     }
 
+    @CoreMethod(names = "list", onSingleton = true)
+    public abstract static class ListNode extends CoreMethodNode {
 
+        public ListNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
 
+        public ListNode(ListNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray list() {
+            notDesignedForCompilation();
+
+            final EncodingService service = getContext().getRuntime().getEncodingService();
+
+            final Object[] array = new Object[service.getEncodings().size()];
+            int n = 0;
+
+            Hash.HashEntryIterator i;
+
+            i = service.getEncodings().entryIterator();
+
+            while (i.hasNext()) {
+                CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+                array[n++] = RubyEncoding.getEncoding(getContext(), e.value.getEncoding());
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
+        }
+    }
+
+    @CoreMethod(names = "to_s")
+    public abstract static class ToSNode extends CoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString toS(RubyEncoding encoding) {
+            return getContext().makeString(encoding.getName());
+        }
+    }
+
+    @CoreMethod(names = "inspect")
+    public abstract static class InspectNode extends CoreMethodNode {
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InspectNode(InspectNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString toS(RubyEncoding encoding) {
+            RubyString name = getContext().makeString(encoding.getName());
+
+            return getContext().makeString(String.format("#<Encoding:%s>", name.toString()));
+        }
+    }
 }

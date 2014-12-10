@@ -120,7 +120,7 @@ public class TranslatorDriver {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), "<main>", false, rootNode, false);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
 
         // Get the DATA constant
 

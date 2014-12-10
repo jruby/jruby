@@ -13,7 +13,11 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.joni.NameEntry;
 import org.joni.Regex;
+import org.joni.Syntax;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
@@ -674,7 +678,13 @@ public class BodyTranslator extends Translator {
             children.add(child.accept(this));
         }
 
-        return new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
+        final InteroplatedRegexpNode i = new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
+
+        if (node.getOptions().isOnce()) {
+            return new OnceNode(context, i.getEncapsulatingSourceSection(), i);
+        }
+
+        return i;
     }
 
     @Override
@@ -1231,19 +1241,20 @@ public class BodyTranslator extends Translator {
         if (lhs == null) {
             if (environment.hasOwnScopeForAssignments()) {
                 environment.declareVar(node.getName());
+            } else {
+                TranslatorEnvironment environmentToDeclareIn = environment;
+
+                while (!environmentToDeclareIn.hasOwnScopeForAssignments()) {
+                    environmentToDeclareIn = environmentToDeclareIn.getParent();
+                }
+
+                environmentToDeclareIn.declareVar(node.getName());
             }
 
-            TranslatorEnvironment environmentToDeclareIn = environment;
-
-            while (!environmentToDeclareIn.hasOwnScopeForAssignments()) {
-                environmentToDeclareIn = environmentToDeclareIn.getParent();
-            }
-
-            environmentToDeclareIn.declareVar(node.getName());
             lhs = environment.findLocalVarNode(node.getName(), sourceSection);
 
             if (lhs == null) {
-                throw new RuntimeException("shoudln't be here");
+                throw new RuntimeException("shouldn't be here");
             }
         }
 
@@ -1309,6 +1320,30 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitMatch2Node(org.jruby.ast.Match2Node node) {
+        if (node.getReceiverNode() instanceof org.jruby.ast.RegexpNode) {
+            final org.jruby.ast.RegexpNode regexpNode = (org.jruby.ast.RegexpNode) node.getReceiverNode();
+            final Regex regex = new Regex(regexpNode.getValue().bytes(), 0, regexpNode.getValue().length(), regexpNode.getOptions().toOptions(), regexpNode.getEncoding(), Syntax.RUBY);
+
+            if (regex.numberOfNames() > 0) {
+                for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext(); ) {
+                    final NameEntry e = i.next();
+                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+
+                    if (environment.hasOwnScopeForAssignments()) {
+                        environment.declareVar(name);
+                    } else {
+                        TranslatorEnvironment environmentToDeclareIn = environment;
+
+                        while (!environmentToDeclareIn.hasOwnScopeForAssignments()) {
+                            environmentToDeclareIn = environmentToDeclareIn.getParent();
+                        }
+
+                        environmentToDeclareIn.declareVar(name);
+                    }
+                }
+            }
+        }
+
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
         final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
         return callNode.accept(this);
@@ -1888,8 +1923,40 @@ public class BodyTranslator extends Translator {
         Regex regex = RubyRegexp.compile(currentNode, context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
 
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue());
+
+        if (node.getOptions().isEncodingNone()) {
+            // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
+
+            if (all7Bit(node.getValue().bytes())) {
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+            } else {
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII-8BIT").getValue());
+            }
+        } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
+            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue());
+        } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
+            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue());
+        } else {
+            regexp.forceEncoding(RubyEncoding.getEncoding(context, node.getEncoding()));
+        }
+
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
+
+        if (node.getOptions().isOnce()) {
+            return new OnceNode(context, literalNode.getEncapsulatingSourceSection(), literalNode);
+        }
+
         return literalNode;
+    }
+
+    private static boolean all7Bit(byte[] bytes) {
+        for (int n = 0; n < bytes.length; n++) {
+            if (bytes[n] < 0 || bytes[n] > 0x7F) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override

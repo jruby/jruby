@@ -240,6 +240,10 @@ public class RubyContext extends ExecutionContext {
         return makeString(Character.toString(string));
     }
 
+    public RubyString makeString(ByteList bytes) {
+        return RubyString.fromByteList(coreLibrary.getStringClass(), bytes);
+    }
+
     public IRubyObject toJRuby(Object object) {
         RubyNode.notDesignedForCompilation();
 

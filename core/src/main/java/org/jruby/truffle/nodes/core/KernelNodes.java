@@ -494,7 +494,10 @@ public abstract class KernelNodes {
         public Object eval(RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.toString(), this);
+            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
+                    getSourceSection(), new RubyNode[]{}).binding();
+
+            return eval(source, defaultBinding);
         }
 
         @Specialization
@@ -504,8 +507,18 @@ public abstract class KernelNodes {
             return getContext().eval(source.toString(), binding, this);
         }
 
-        @Specialization(guards = "!isString")
+        @Specialization(guards = "!isRubyString(arguments[0])")
         public Object eval(VirtualFrame frame, RubyBasicObject object, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
+            notDesignedForCompilation();
+
+            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
+                    getSourceSection(), new RubyNode[]{}).binding();
+
+            return eval(frame, object, defaultBinding);
+        }
+
+        @Specialization(guards = "!isRubyString(arguments[0])")
+        public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding) {
             notDesignedForCompilation();
 
             Object coerced;
@@ -524,7 +537,7 @@ public abstract class KernelNodes {
             }
 
             if (coerced instanceof RubyString) {
-                return getContext().eval(coerced.toString(), this);
+                return getContext().eval(coerced.toString(), binding, this);
             } else {
                 throw new RaiseException(
                         getContext().getCoreLibrary().typeError(
@@ -534,6 +547,15 @@ public abstract class KernelNodes {
                                         getContext().getCoreLibrary().getLogicalClass(coerced).getName()),
                                 this));
             }
+        }
+
+        @Specialization(guards = "!isRubyBinding(arguments[1])")
+        public Object eval(@SuppressWarnings("unused") RubyBasicObject source, RubyBasicObject badBinding) {
+            throw new RaiseException(
+                    getContext().getCoreLibrary().typeError(
+                            String.format("wrong argument type %s (expected binding)",
+                                    badBinding.getLogicalClass().getName()),
+                            this));
         }
     }
 
@@ -1140,6 +1162,34 @@ public abstract class KernelNodes {
             getContext().loadFile(file.toString(), this);
             return true;
         }
+    }
+
+    @CoreMethod(names = "local_variables", needsSelf = false)
+    public abstract static class LocalVariablesNode extends CoreMethodNode {
+
+        public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LocalVariablesNode(LocalVariablesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray localVariables() {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
+                if (name instanceof String) {
+                    array.slowPush(getContext().newSymbol((String) name));
+                }
+            }
+
+            return array;
+        }
+
     }
 
     @CoreMethod(names = "loop", isModuleFunction = true)

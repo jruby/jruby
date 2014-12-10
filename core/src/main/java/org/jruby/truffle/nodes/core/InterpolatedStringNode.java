@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
@@ -30,7 +31,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        toS = new DispatchHeadNode(context);
+        toS = new DispatchHeadNode(context, true);
     }
 
     @ExplodeLoop
@@ -39,7 +40,16 @@ public final class InterpolatedStringNode extends RubyNode {
         final RubyString[] strings = new RubyString[children.length];
 
         for (int n = 0; n < children.length; n++) {
-            strings[n] = (RubyString) toS.call(frame, children[n].execute(frame), "to_s", null);
+            Object result = toS.call(frame, children[n].execute(frame), "to_s", null);
+
+            if (result instanceof RubyString) {
+                strings[n] = (RubyString) result;
+            } else if (result instanceof RubyBasicObject) {
+                strings[n] = KernelNodesFactory.ToSNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}).toS((RubyBasicObject) result);
+            } else {
+                RubyBasicObject boxed = getContext().getCoreLibrary().getLogicalClass(result);
+                strings[n] = KernelNodesFactory.ToSNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}).toS(boxed);
+            }
         }
 
         return concat(strings);
