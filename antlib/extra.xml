@@ -32,6 +32,7 @@ build jruby-complete.jar
 <arg value='-rminitest/excludes'/>
 <arg value='lib/ruby/gems/shared/gems/rake-10.1.0/lib/rake/rake_test_loader.rb'/>
 <arg value='test/test_globals.rb'/>
+<arg value='test/test_adding_pem_to_x509store.rb'/>
 <arg value='test/test_argf.rb'/>
 <arg value='test/test_array.rb'/>
 <arg value='test/test_autoload.rb'/>
