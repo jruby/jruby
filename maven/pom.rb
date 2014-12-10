@@ -3,8 +3,8 @@ project 'JRuby Artifacts' do
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
-  id "org.jruby:jruby-artifacts:#{version}"
-  inherit "org.jruby:jruby-parent:#{version}"
+  id 'jruby-artifacts'
+  inherit 'org.jruby:jruby-parent', version
   packaging 'pom'
 
   properties( 'tesla.dump.pom' => 'pom.xml',

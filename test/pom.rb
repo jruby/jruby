@@ -44,8 +44,8 @@ project 'JRuby Integration Tests' do
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
-  id "org.jruby:jruby-tests:#{version}"
-  inherit "org.jruby:jruby-parent:#{version}"
+  id 'jruby-tests'
+  inherit 'org.jruby:jruby-parent', version
   packaging 'jar'
 
   repository( :id => 'rubygems-releases',

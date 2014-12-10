@@ -59,8 +59,7 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  doc = REXML::Document.new File.new(File.join( basedir, '../pom.xml'))
-  version = REXML::XPath.first(doc, "//project/version").text
+  version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id 'jruby-lib'
