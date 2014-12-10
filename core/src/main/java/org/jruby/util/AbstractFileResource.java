@@ -6,6 +6,11 @@ import java.io.InputStream;
 abstract class AbstractFileResource implements FileResource {
 
     @Override
+    public boolean canExecute() {
+        return false;
+    }
+
+    @Override
     public InputStream inputStream() throws ResourceException {
         if (!exists()) {
             throw new ResourceException.NotFound(absolutePath());

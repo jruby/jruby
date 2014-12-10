@@ -97,16 +97,19 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
     public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
-        FileStat stat = fileResource(filename).stat();
-
-        return recv.getRuntime().newBoolean(stat != null && stat.isExecutable());
+        return recv.getRuntime().newBoolean(fileResource(filename).canExecute());
     }
 
     @JRubyMethod(name = "executable_real?", required = 1, module = true)
     public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
-        FileStat stat = fileResource(filename).stat();
+        if (recv.getRuntime().getPosix().isNative()) {
+            FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(stat != null && stat.isExecutableReal());
+            return recv.getRuntime().newBoolean(stat != null && stat.isExecutableReal());
+        }
+        else {
+            return executable_p(recv, filename);
+        }
     }
 
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {

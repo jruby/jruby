@@ -17,6 +17,7 @@ public interface FileResource {
     boolean exists();
     boolean isDirectory();
     boolean isFile();
+    boolean canExecute();
 
     long lastModified();
     long length();

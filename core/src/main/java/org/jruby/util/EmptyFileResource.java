@@ -43,6 +43,11 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
+    public boolean canExecute() {
+        return false;
+    }
+
+    @Override
     public boolean canRead() {
         return false;
     }
