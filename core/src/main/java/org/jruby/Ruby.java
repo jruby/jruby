@@ -44,6 +44,7 @@ import jnr.constants.ConstantSet;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
 import org.jruby.RubyInstanceConfig.CompileMode;
@@ -156,6 +157,7 @@ import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -180,6 +182,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
+
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.util.cli.Options;
@@ -3025,7 +3028,7 @@ public final class Ruby {
         }
 
         EventHook[] hooks = eventHooks;
-        EventHook[] newHooks = new EventHook[hooks.length + 1];
+        EventHook[] newHooks = Arrays.copyOf(hooks, hooks.length + 1);
         newHooks[hooks.length] = hook;
         eventHooks = newHooks;
         hasEventHooks = true;
