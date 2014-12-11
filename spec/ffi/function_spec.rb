@@ -68,7 +68,7 @@ describe FFI::Function do
       Thread.new do
         time = Time.now
         fp.call(2)
-        expect(Time.now - time).to be > 2
+        expect(Time.now - time).to be >= 2
       end
     end
     threads.each { |t| t.join }
