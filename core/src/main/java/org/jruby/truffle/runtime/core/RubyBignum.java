@@ -145,17 +145,17 @@ public class RubyBignum extends RubyBasicObject {
 
     @CompilerDirectives.SlowPath
     public boolean isEqualTo(int b) {
-        return value.compareTo(BigInteger.valueOf(b)) == 0;
+        return value.equals(BigInteger.valueOf(b));
     }
 
     @CompilerDirectives.SlowPath
     public boolean isEqualTo(long b) {
-        return value.compareTo(BigInteger.valueOf(b)) == 0;
+        return value.equals(BigInteger.valueOf(b));
     }
 
     @CompilerDirectives.SlowPath
     public boolean isEqualTo(RubyBignum b) {
-        return value.compareTo(b.value) == 0;
+        return value.equals(b.value);
     }
 
     @CompilerDirectives.SlowPath
