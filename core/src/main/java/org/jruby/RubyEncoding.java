@@ -119,14 +119,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return new RubyEncoding(runtime, name, p, end, isDummy);
     }
 
-    public static RubyEncoding newEncoding(Ruby runtime, byte[] name, boolean isDummy) {
-        return new RubyEncoding(runtime, name, isDummy);
-    }
-
-    public static RubyEncoding newEncoding(Ruby runtime, Encoding encoding) {
-        return new RubyEncoding(runtime, encoding);
-    }
-
     public final Encoding getEncoding() {
         // TODO: make threadsafe
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
