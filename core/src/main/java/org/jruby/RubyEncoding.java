@@ -527,34 +527,4 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
     }
-    
-    @Deprecated
-    public static IRubyObject getDefaultInternal(IRubyObject recv) {
-        return getDefaultExternal(recv.getRuntime().getCurrentContext(), recv);
-    }
-    
-    @Deprecated
-    public static IRubyObject setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
-        return setDefaultExternal(recv.getRuntime().getCurrentContext(), recv, encoding);
-    }
-
-    @Deprecated
-    public static IRubyObject getDefaultExternal(Ruby runtime) {
-        return runtime.getEncodingService().getDefaultExternal();
-    }
-
-    @Deprecated
-    public static IRubyObject getDefaultInternal(Ruby runtime) {
-        return runtime.getEncodingService().getDefaultInternal();
-    }
-
-    @Deprecated
-    public static IRubyObject convertEncodingToRubyEncoding(Ruby runtime, Encoding defaultEncoding) {
-        return runtime.getEncodingService().convertEncodingToRubyEncoding(defaultEncoding);
-    }
-
-    @Deprecated
-    public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
-        return runtime.getEncodingService().getEncodingFromObject(arg);
-    }
 }
