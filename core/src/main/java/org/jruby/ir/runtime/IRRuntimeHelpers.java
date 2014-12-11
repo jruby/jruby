@@ -971,8 +971,12 @@ public class IRRuntimeHelpers {
 
     // Used by JIT
     public static RubyEncoding retrieveEncoding(ThreadContext context, String name) {
-        Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
-        return context.runtime.getEncodingService().getEncoding(encoding);
+        return context.runtime.getEncodingService().getEncoding(retrieveJCodingsEncoding(context, name));
+    }
+
+    // Used by JIT
+    public static Encoding retrieveJCodingsEncoding(ThreadContext context, String name) {
+        return context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
     }
 
     // Used by JIT

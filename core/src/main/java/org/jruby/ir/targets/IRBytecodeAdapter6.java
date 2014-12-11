@@ -5,6 +5,7 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
+import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -29,15 +30,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
-
-import java.math.BigInteger;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -170,10 +167,16 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void pushSymbol(String sym) {
+    public void pushSymbol(String sym, Encoding encoding) {
         loadRuntime();
         adapter.ldc(sym);
-        adapter.invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class));
+
+        // FIXME: Should be a helper somewhere?  Load Encoding
+        loadContext();
+        adapter.ldc(encoding.toString());
+        invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
+
+        adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
     }
 
     public void loadRuntime() {

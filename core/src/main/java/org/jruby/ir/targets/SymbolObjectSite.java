@@ -1,5 +1,8 @@
 package org.jruby.ir.targets;
 
+import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Handle;
@@ -17,20 +20,24 @@ import static org.jruby.util.CodegenUtils.sig;
 */
 public class SymbolObjectSite extends LazyObjectSite {
     private final String value;
+    private final String encoding;
 
-    public SymbolObjectSite(MethodType type, String value) {
+    public SymbolObjectSite(MethodType type, String value, String encoding) {
         super(type);
 
         this.value = value;
+        this.encoding = encoding;
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SymbolObjectSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class));
+    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SymbolObjectSite.class), "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class));
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value) {
-        return new SymbolObjectSite(type, value).bootstrap(lookup);
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encoding) {
+        return new SymbolObjectSite(type, value, encoding).bootstrap(lookup);
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return context.runtime.newSymbol(value);
+        return RubySymbol.newSymbol(context.runtime, value,
+                IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding));
     }
 }

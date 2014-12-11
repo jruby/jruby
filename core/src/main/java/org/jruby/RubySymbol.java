@@ -149,6 +149,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         return symbolBytes;
     }
 
+    /**
+     * RubySymbol is created by passing in a String and bytes are extracted from that.  We will
+     * pass in encoding of that string after construction but before use so it does not forget
+     * what it is.
+     */
+    public void associateEncoding(Encoding encoding) {
+        symbolBytes.setEncoding(encoding);
+    }
+
     /** short circuit for Symbol key comparison
      * 
      */
@@ -183,6 +192,17 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name);
+    }
+
+    // FIXME: same bytesequences will fight over encoding of the symbol once cached.  I think largely
+    // this will only happen in some ISO_8859_?? encodings making symbols at the same time so it should
+    // be pretty rare.
+    public static RubySymbol newSymbol(Ruby runtime, String name, Encoding encoding) {
+        RubySymbol newSymbol = newSymbol(runtime, name);
+
+        newSymbol.associateEncoding(encoding);
+
+        return newSymbol;
     }
 
     /**

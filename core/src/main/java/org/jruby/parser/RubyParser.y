@@ -1841,8 +1841,7 @@ opt_ensure      : kENSURE compstmt {
 
 literal         : numeric
                 | symbol {
-                    // FIXME: We may be intern'ing more than once.
-                    $$ = new SymbolNode(lexer.getPosition(), $1.intern());
+                    $$ = new SymbolNode(lexer.getPosition(), new ByteList($1.getBytes(), lexer.getEncoding()));
                 }
                 | dsym
 
@@ -2035,11 +2034,11 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      // EvStrNode :"#{some expression}"
                      // Ruby 1.9 allows empty strings as symbols
                      if ($2 == null) {
-                         $$ = new SymbolNode(lexer.getPosition(), "");
+                         $$ = new SymbolNode(lexer.getPosition(), new ByteList(new byte[0], lexer.getEncoding()));
                      } else if ($2 instanceof DStrNode) {
                          $$ = new DSymbolNode($2.getPosition(), $<DStrNode>2);
                      } else if ($2 instanceof StrNode) {
-                         $$ = new SymbolNode($2.getPosition(), $<StrNode>2.getValue().toString().intern());
+                         $$ = new SymbolNode($2.getPosition(), $<StrNode>2.getValue());
                      } else {
                          $$ = new DSymbolNode($2.getPosition());
                          $<DSymbolNode>$.add($2);
@@ -2444,7 +2443,8 @@ assoc           : arg_value tASSOC arg_value {
                     $$ = new KeyValuePair<Node,Node>($1, $3);
                 }
                 | tLABEL arg_value {
-                    $$ = new KeyValuePair<Node,Node>(new SymbolNode(support.getPosition($2), $1), $2);
+                    SymbolNode label = new SymbolNode(support.getPosition($2), new ByteList($1.getBytes(), lexer.getEncoding()));
+                    $$ = new KeyValuePair<Node,Node>(label, $2);
                 }
                 | tDSTAR arg_value {
                     $$ = new KeyValuePair<Node,Node>(null, $2);
