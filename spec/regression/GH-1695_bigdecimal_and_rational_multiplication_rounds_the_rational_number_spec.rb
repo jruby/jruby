@@ -1,4 +1,3 @@
-require 'rational'
 require 'bigdecimal'
 
 # https://github.com/jruby/jruby/issues/1695
