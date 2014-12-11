@@ -243,12 +243,10 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public BindingNode(BindingNode prev) {
-            super(prev);
-        }
+        public abstract RubyBinding executeBinding(VirtualFrame frame);
 
         @Specialization
-        public Object binding() {
+        public RubyBinding binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
             final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
@@ -482,6 +480,7 @@ public abstract class KernelNodes {
     public abstract static class EvalNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toStr;
+        @Child protected BindingNode bindingNode;
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -493,14 +492,19 @@ public abstract class KernelNodes {
             toStr = prev.toStr;
         }
 
+        protected RubyBinding getCallerBinding(VirtualFrame frame) {
+            if (bindingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+            return bindingNode.executeBinding(frame);
+        }
+
         @Specialization
-        public Object eval(RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
+        public Object eval(VirtualFrame frame, RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
-                    getSourceSection(), new RubyNode[]{}).binding();
-
-            return eval(source, defaultBinding);
+            return eval(source, getCallerBinding(frame));
         }
 
         @Specialization
@@ -514,10 +518,7 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyBasicObject object, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
-                    getSourceSection(), new RubyNode[]{}).binding();
-
-            return eval(frame, object, defaultBinding);
+            return eval(frame, object, getCallerBinding(frame));
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
