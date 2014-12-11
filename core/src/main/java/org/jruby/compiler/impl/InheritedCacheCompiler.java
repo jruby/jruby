@@ -169,12 +169,20 @@ public class InheritedCacheCompiler implements CacheCompiler {
         method.loadThreadContext();
         if (index < AbstractScript.NUMBERED_SYMBOL_COUNT) {
             method.method.ldc(symbol);
-            method.method.ldc(encoding.toString());
+            if (encoding == null) {
+                method.method.aconst_null();
+            } else {
+                method.method.ldc(encoding.toString());
+            }
             method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol" + index, sig(RubySymbol.class, ThreadContext.class, String.class, String.class));
         } else {
             method.method.ldc(index.intValue());
             method.method.ldc(symbol);
-            method.method.ldc(encoding.toString());
+            if (encoding == null) {
+                method.method.aconst_null();
+            } else {
+                method.method.ldc(encoding.toString());
+            }
             method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, ThreadContext.class, int.class, String.class, String.class));
         }
     }
