@@ -13,9 +13,9 @@ import org.jruby.embed.ScriptingContainer;
 public class ConstantCompilationTest extends TestCase{
     public void testConstantCompilation(){
         ScriptingContainer c = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.PERSISTENT);
-        c.setCompatVersion(CompatVersion.RUBY1_8);
+        c.setCompatVersion(CompatVersion.RUBY1_9);
         c.setCompileMode(CompileMode.FORCE);
         EmbedEvalUnit unit = c.parse("RUBY_VERSION", 0);
-        assertEquals("1.8.7", unit.run().toString());
+        assertEquals("1.9.3", unit.run().toString());
     }
 }
