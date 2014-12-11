@@ -6,7 +6,6 @@ fails:Predefined global $` is equivalent to MatchData#pre_match on the last matc
 fails(inherited):Predefined global $` sets an empty result to the encoding of the source String
 fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
 fails(inherited):Predefined global $' sets an empty result to the encoding of the source String
-fails:Predefined global $stdout is the same as $DEFAULT_OUTPUT from 'English' library
 fails:Predefined global $stdout raises TypeError error if assigned to nil
 fails:Predefined global $stdout raises TypeError error if assigned to object that doesn't respond to #write
 fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
@@ -41,7 +40,6 @@ fails:The predefined global constant STDIN retains the encoding set by #set_enco
 fails:The predefined global constant STDIN has the encodings set by #set_encoding
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external when that encoding is changed
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external
-fails:Processing RUBYOPT adds the -I path to $LOAD_PATH
 fails:Predefined global $` sets an empty result to the encoding of the source String
 fails:Predefined global $' sets an empty result to the encoding of the source String
 fails:Predefined global $/ changes $-0
