@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
 import org.jruby.truffle.nodes.core.ArraySliceNodeFactory;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
@@ -91,11 +92,54 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
+        if (node.hasKwargs() && node.getKeywords() != null) {
+            for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
+                sequence.add(arg.accept(this));
+            }
+        }
+
         if (node.getBlock() != null) {
             sequence.add(node.getBlock().accept(this));
         }
 
         return SequenceNode.sequence(context, sourceSection, sequence);
+    }
+
+    @Override
+    public RubyNode visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        final String name;
+        final RubyNode defaultValue;
+
+        final org.jruby.ast.Node firstChild = node.childNodes().get(0);
+
+        if (firstChild instanceof org.jruby.ast.LocalAsgnNode) {
+            final org.jruby.ast.LocalAsgnNode localAsgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
+            name = localAsgnNode.getName();
+
+            if (localAsgnNode.getValueNode() == null) {
+                defaultValue = new NilLiteralNode(context, sourceSection);
+            } else {
+                defaultValue = localAsgnNode.getValueNode().accept(this);
+            }
+        } else if (firstChild instanceof org.jruby.ast.DAsgnNode) {
+            final org.jruby.ast.DAsgnNode dAsgnNode = (org.jruby.ast.DAsgnNode) firstChild;
+            name = dAsgnNode.getName();
+
+            if (dAsgnNode.getValueNode() == null) {
+                defaultValue = new NilLiteralNode(context, sourceSection);
+            } else {
+                defaultValue = dAsgnNode.getValueNode().accept(this);
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
+
+        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, name, defaultValue);
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(name);
+
+        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
     }
 
     @Override
