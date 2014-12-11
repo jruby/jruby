@@ -83,12 +83,12 @@ public class JRubyOsgiEmbedTest {
         String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\"]");
 
-        // ensure we can load openssl (with its bouncy-castle jars)
-        loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
+        // ensure we have native working
+        loaded = (Boolean) jruby.runScriptlet( "JRuby.runtime.posix.is_native" );
         assertEquals(true, loaded);
 
-        // ensure we can load ffi
-        loaded = (Boolean) jruby.runScriptlet( "require 'ffi'" );
+        // ensure we can load openssl (with its bouncy-castle jars)
+        loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
         assertEquals(true, loaded);
 
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
