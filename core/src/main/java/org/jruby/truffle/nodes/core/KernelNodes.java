@@ -1982,19 +1982,34 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
+        @Child protected ClassNode classNode;
+        @Child protected BasicObjectNodes.IDNode idNode;
+
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            classNode = KernelNodesFactory.ClassNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            idNode = BasicObjectNodesFactory.IDNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
 
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
+        public abstract RubyString executeToS(VirtualFrame frame, Object self);
 
         @Specialization
-        public RubyString toS(RubyBasicObject self) {
+        public RubyString toS(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            return getContext().makeString("#<" + self.getLogicalClass().getName() + ":0x" + Long.toHexString(self.getObjectID()) + ">");
+            String className = classNode.executeGetClass(frame, self).getName();
+
+            Object id = idNode.executeObjectID(frame, self);
+            String hexID;
+            if (id instanceof Integer || id instanceof Long) {
+                hexID = Long.toHexString((long) id);
+            } else if (id instanceof RubyBignum) {
+                hexID = ((RubyBignum) id).toHexString();
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            return getContext().makeString("#<" + className + ":0x" + hexID + ">");
         }
 
     }

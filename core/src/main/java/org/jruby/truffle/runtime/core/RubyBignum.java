@@ -209,6 +209,11 @@ public class RubyBignum extends RubyBasicObject {
     }
 
     @CompilerDirectives.SlowPath
+    public String toHexString() {
+        return value.toString(16);
+    }
+
+    @CompilerDirectives.SlowPath
     public double doubleValue() {
         return value.doubleValue();
     }

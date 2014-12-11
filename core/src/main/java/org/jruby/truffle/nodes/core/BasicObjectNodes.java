@@ -84,6 +84,8 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
+        public abstract Object executeObjectID(VirtualFrame frame, Object value);
+
         @Specialization
         public int objectID(RubyNilClass nil) {
             return ObjectIDOperations.NIL;
