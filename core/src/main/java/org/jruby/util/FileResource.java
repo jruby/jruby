@@ -40,6 +40,7 @@ public interface FileResource {
     // otherwise.
     JRubyFile hackyGetJRubyFile();
 
+
     /**
      * Opens a new input stream to read the contents of a resource and returns it.
      * Note that implementations may be allocating native memory for the stream, so

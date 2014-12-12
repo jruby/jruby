@@ -69,7 +69,7 @@ class LibrarySearcher {
 
             // Since searching for a service library doesn't take the suffix into account, there's no need
             // to perform it more than once.
-            if ((library == null) && (searchedForServiceLibrary == false)) {
+            if (library == null && !searchedForServiceLibrary) {
                 library = findServiceLibrary(baseName, suffix);
                 searchedForServiceLibrary = true;
             }

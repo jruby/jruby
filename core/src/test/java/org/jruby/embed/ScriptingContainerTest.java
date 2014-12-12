@@ -2640,4 +2640,11 @@ public class ScriptingContainerTest {
             assertTrue(result + " containt lib/ruby/", result.contains("lib/ruby/"));
         }
     }
+
+    @Test
+    public void testClasspathScriptletHasClasspathFile() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        Object result = instance.runScriptlet(PathType.CLASSPATH, "__FILE__.rb");
+        assertEquals("classpath:/__FILE__.rb", result.toString());
+    }
 }

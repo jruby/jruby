@@ -43,9 +43,11 @@ import org.jruby.Ruby;
  */
 public class JarredScript implements Library {
     private final LoadServiceResource resource;
+    private final String searchName;
 
-    public JarredScript(LoadServiceResource resource) {
+    public JarredScript(LoadServiceResource resource, String searchName) {
         this.resource = resource;
+        this.searchName = searchName;
     }
 
     public LoadServiceResource getResource() {
@@ -60,6 +62,12 @@ public class JarredScript implements Library {
             runtime.getJRubyClassLoader().addURL(jarFile);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
+        }
+
+        // If an associated Service library exists, load it as well
+        ClassExtensionLibrary serviceExtension = ClassExtensionLibrary.tryFind(runtime, searchName);
+        if (serviceExtension != null) {
+          serviceExtension.load(runtime, wrap);
         }
     }
 }

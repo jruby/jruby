@@ -85,6 +85,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   java_options[:resultproperty] ||="spec.status.#{mspec_options[:compile_mode]}"
 
   puts "MSPEC: #{ms.inspect}"
+  rm_rf "rubyspec_temp"
 
   jruby(java_options) do
     classpath :refid => "test.class.path"
