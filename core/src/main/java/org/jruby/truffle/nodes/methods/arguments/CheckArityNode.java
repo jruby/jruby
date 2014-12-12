@@ -15,7 +15,10 @@ import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.methods.*;
+
+import java.util.Map;
 
 /**
  * Check arguments meet the arity of the method.
@@ -23,10 +26,18 @@ import org.jruby.truffle.runtime.methods.*;
 public class CheckArityNode extends RubyNode {
 
     private final Arity arity;
+    private final String[] keywords;
+    private final boolean keywordsRest;
 
     public CheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
+        this(context, sourceSection, arity, new String[]{}, false);
+    }
+
+    public CheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity, String[] keywords, boolean keywordsRest) {
         super(context, sourceSection);
         this.arity = arity;
+        this.keywords = keywords;
+        this.keywordsRest = keywordsRest;
     }
 
     @Override
@@ -37,20 +48,29 @@ public class CheckArityNode extends RubyNode {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
         }
+
+        if (!keywordsRest && arity.hasKeywords() && getKeywordsHash(frame) != null) {
+            for (Map.Entry<Object, Object> entry : getKeywordsHash(frame).slowToMap().entrySet()) {
+                for (String keyword : keywords) {
+                    if (!keyword.toString().equals(entry.getKey().toString())) {
+                        throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + entry.getKey().toString(), this));
+                    }
+                }
+            }
+        }
     }
 
     private boolean checkArity(int given) {
         if (arity.hasKeywords()) {
-            // TODO(CS): TODO
             return true;
-        }
-
-        if (arity.getRequired() != 0 && given < arity.getRequired()) {
-            return false;
-        } else if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
-            return false;
         } else {
-            return true;
+            if (arity.getRequired() != 0 && given < arity.getRequired()) {
+                return false;
+            } else if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
+                return false;
+            } else {
+                return true;
+            }
         }
     }
 
@@ -58,6 +78,22 @@ public class CheckArityNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         executeVoid(frame);
         return getContext().getCoreLibrary().getNilObject();
+    }
+
+    private RubyHash getKeywordsHash(VirtualFrame frame) {
+        // TODO(CS): duplicated in ReadKeywordArgumentNode
+
+        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= arity.getRequired()) {
+            return null;
+        }
+
+        final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
+
+        if (lastArgument instanceof RubyHash) {
+            return (RubyHash) lastArgument;
+        }
+
+        return null;
     }
 
 }

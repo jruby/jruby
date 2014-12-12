@@ -43,6 +43,8 @@ public class LoadArgumentsTranslator extends Translator {
     private int required;
     private int index;
     private State state;
+    private boolean hasKeywordArguments;
+    private List<String> excludedKeywords = new ArrayList<>();
 
     private org.jruby.ast.ArgsNode argsNode;
 
@@ -80,6 +82,8 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
+        hasKeywordArguments = node.hasKwargs() && node.getKeywords() != null;
+
         if (node.getRestArgNode() != null) {
             methodBodyTranslator.getEnvironment().hasRestParameter = true;
             sequence.add(node.getRestArgNode().accept(this));
@@ -95,10 +99,14 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
-        if (node.hasKwargs() && node.getKeywords() != null) {
+        if (hasKeywordArguments) {
             for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
                 sequence.add(arg.accept(this));
             }
+        }
+
+        if (node.getKeyRest() != null) {
+            sequence.add(node.getKeyRest().accept(this));
         }
 
         if (node.getBlock() != null) {
@@ -106,6 +114,16 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         return SequenceNode.sequence(context, sourceSection, sequence);
+    }
+
+    @Override
+    public RubyNode visitKeywordRestArgNode(org.jruby.ast.KeywordRestArgNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]));
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(node.getName());
+
+        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
     }
 
     @Override
@@ -138,6 +156,8 @@ public class LoadArgumentsTranslator extends Translator {
         } else {
             throw new UnsupportedOperationException();
         }
+
+        excludedKeywords.add(name);
 
         final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(name);
@@ -179,7 +199,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             readNode = ArraySliceNodeFactory.create(context, sourceSection, from, to, loadArray(sourceSection));
         } else {
-            readNode = new ReadRestArgumentNode(context, sourceSection, from, to);
+            readNode = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());

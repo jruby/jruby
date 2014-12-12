@@ -26,14 +26,16 @@ public class ReadRestArgumentNode extends RubyNode {
 
     private final int startIndex;
     private final int negativeEndIndex;
+    private final boolean keywordArguments;
 
     private final BranchProfile noArgumentsLeftProfile = new BranchProfile();
     private final BranchProfile subsetOfArgumentsProfile = new BranchProfile();
 
-    public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int negativeEndIndex) {
+    public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int negativeEndIndex, boolean keywordArguments) {
         super(context, sourceSection);
         this.startIndex = startIndex;
         this.negativeEndIndex = negativeEndIndex;
+        this.keywordArguments = keywordArguments;
     }
 
     @Override
@@ -41,7 +43,17 @@ public class ReadRestArgumentNode extends RubyNode {
         final RubyClass arrayClass = getContext().getCoreLibrary().getArrayClass();
 
         int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
-        final int endIndex = count + negativeEndIndex; // exclusive
+
+        int endIndex = count + negativeEndIndex;
+
+        if (keywordArguments) {
+            final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
+
+            if (lastArgument instanceof RubyHash) {
+                endIndex -= 1;
+            }
+        }
+
         final int length = endIndex - startIndex;
 
         if (startIndex == 0) {

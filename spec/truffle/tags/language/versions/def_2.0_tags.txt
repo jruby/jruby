@@ -1,4 +1,1 @@
-fails:An instance method with keyword arguments correctly distinguishes between rest and keyword arguments
-fails:An instance method with keyword arguments should allow keyword rest arguments
 fails:An instance method with keyword arguments when there is a single keyword argument raises an argument error when a non-keyword argument is provided
-fails:An instance method with keyword arguments when there is a single keyword argument raises an argument error when an unknown keyword argument is provided

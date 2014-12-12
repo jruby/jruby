@@ -129,10 +129,10 @@ class MethodTranslator extends BodyTranslator {
                             BooleanCastNodeFactory.create(context, sourceSection,
                                     new BehaveAsBlockNode(context, sourceSection, true)),
                             new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                            new CheckArityNode(context, sourceSection, arityForCheck)), preludeBuilder);
+                            new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
-                    new CheckArityNode(context, sourceSection, arityForCheck),
+                    new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
                     loadArguments);
         }
 
