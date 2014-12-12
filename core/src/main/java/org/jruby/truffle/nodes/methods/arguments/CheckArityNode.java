@@ -44,7 +44,7 @@ public class CheckArityNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         final int given = RubyArguments.getUserArgumentsCount(frame.getArguments());
 
-        if (!checkArity(given)) {
+        if (!checkArity(frame, given)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
         }
@@ -60,17 +60,17 @@ public class CheckArityNode extends RubyNode {
         }
     }
 
-    private boolean checkArity(int given) {
-        if (arity.hasKeywords()) {
-            return true;
+    private boolean checkArity(VirtualFrame frame, int given) {
+        if (arity.hasKeywords() && getKeywordsHash(frame) != null) {
+            given -= 1;
+        }
+
+        if (arity.getRequired() != 0 && given < arity.getRequired()) {
+            return false;
+        } else if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
+            return false;
         } else {
-            if (arity.getRequired() != 0 && given < arity.getRequired()) {
-                return false;
-            } else if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
-                return false;
-            } else {
-                return true;
-            }
+            return true;
         }
     }
 
