@@ -132,7 +132,7 @@ public class RubyFileStat extends RubyObject {
         file = JRubyFile.createResource(runtime.getPosix(), runtime.getCurrentDirectory(), filename);
         stat = lstat ? file.lstat() : file.stat();
 
-        if (stat == null) throw runtime.newErrnoFromInt(runtime.getPosix().errno(), filename);
+        if (stat == null) throw runtime.newErrnoFromInt(file.errno(), filename);
     }
 
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {

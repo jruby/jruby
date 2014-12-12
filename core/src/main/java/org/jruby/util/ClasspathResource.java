@@ -10,7 +10,7 @@ import jnr.posix.POSIX;
 
 import org.jruby.util.io.ModeFlags;
 
-public class ClasspathResource implements FileResource {
+public class ClasspathResource extends AbstractFileResource {
 
     public static final String CLASSPATH = "classpath:/";
 
@@ -137,12 +137,8 @@ public class ClasspathResource implements FileResource {
     }
 
     @Override
-    public InputStream openInputStream() {
-        try {
-            return getResourceURL(uri).openStream();
-        } catch (IOException ioE) {
-            return null;
-        }
+    InputStream openInputStream() throws IOException {
+        return getResourceURL(uri).openStream();
     }
 
     @Override

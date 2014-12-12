@@ -1,2 +1,0 @@
-fails:Regexps with interpolation throws RegexpError for malformed interpolation
-fails:Regexps with interpolation allows escape sequences in interpolated regexps

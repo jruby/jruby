@@ -226,7 +226,7 @@ public class Tempfile extends RubyFile implements Finalizable {
                 }
             } else {
                 // else, no-op, since we can't unlink the file without breaking stat et al
-                runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
+                context.runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
             }
         }
         return context.nil;

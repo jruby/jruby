@@ -1,5 +1,6 @@
 package org.jruby.runtime.load;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,7 +69,7 @@ class LibrarySearcher {
 
             // Since searching for a service library doesn't take the suffix into account, there's no need
             // to perform it more than once.
-            if ((library == null) && (searchedForServiceLibrary == false)) {
+            if (library == null && !searchedForServiceLibrary) {
                 library = findServiceLibrary(baseName, suffix);
                 searchedForServiceLibrary = true;
             }
@@ -196,7 +197,7 @@ class LibrarySearcher {
     }
 
     protected String resolveLoadName(FileResource resource, String ruby18path) {
-        return resource.canonicalPath();
+        return resource.absolutePath();
     }
 
     protected String resolveScriptName(FileResource resource, String ruby18Path) {
@@ -219,8 +220,11 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = resource.openInputStream();
-            if (is == null) {
+            InputStream is = null;
+            try {
+                is = new BufferedInputStream(resource.inputStream(), 32768);
+            }
+            catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             }
 
@@ -266,7 +270,7 @@ class LibrarySearcher {
                 }
                 else if (location.startsWith(URLResource.URI)){
                     url = null;
-                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(location));
+                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(runtime, location));
                 }
                 else {
                     File f = new File(location);

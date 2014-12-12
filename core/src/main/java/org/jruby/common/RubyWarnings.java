@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -36,7 +36,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** 
+/**
  *
  */
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
@@ -120,7 +120,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         warn(id, file, line, message);
     }
-    
+
     public void warnOnce(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
         if (oncelers.contains(id)) return;
@@ -142,8 +142,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Override
     public void warning(ID id, String message) {
-        if (!isVerbose()) return;
-        if (!runtime.warningsEnabled()) return;
+        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
         RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
         String file;
@@ -165,9 +164,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, ISourcePosition position, String message) {
-        if (!isVerbose()) return;
-        if (!runtime.warningsEnabled()) return;
-
         warning(id, position.getFile(), position.getLine() + 1, message);
     }
 
@@ -176,8 +172,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
-        if (!isVerbose()) return;
-        if (!runtime.warningsEnabled()) return;
+        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
         warn(id, fileName, lineNumber, message);
     }

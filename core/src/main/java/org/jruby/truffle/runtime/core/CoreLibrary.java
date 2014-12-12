@@ -73,6 +73,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass rangeClass;
     @CompilerDirectives.CompilationFinal private RubyClass rangeErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass regexpClass;
+    @CompilerDirectives.CompilationFinal private RubyClass regexpErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass rubyTruffleErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass runtimeErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass standardErrorClass;
@@ -215,6 +216,7 @@ public class CoreLibrary {
         rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
         rangeErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "RangeError");
         regexpClass = new RubyRegexp.RubyRegexpClass(context, objectClass);
+        regexpErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "RegexpError");
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "RuntimeError");
         signalModule = new RubyModule(context, objectClass, "Signal");
@@ -227,7 +229,7 @@ public class CoreLibrary {
         timeClass = new RubyTime.RubyTimeClass(context, objectClass);
         trueClass = new RubyClass(context, objectClass, objectClass, "TrueClass");
         truffleModule = new RubyModule(context, objectClass, "Truffle");
-        truffleDebugModule = new RubyModule(context, objectClass, "Debug");
+        truffleDebugModule = new RubyModule(context, truffleModule, "Debug");
         typeErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "TypeError");
         zeroDivisionErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "ZeroDivisionError");
         encodingConverterClass = new RubyEncodingConverter.RubyEncodingConverterClass(context, encodingClass, objectClass);
@@ -531,6 +533,10 @@ public class CoreLibrary {
         return nameError(String.format("%s is a read-only variable", name), currentNode);
     }
 
+    public RubyException nameErrorUndefinedLocalVariableOrMethod(String name, String object, Node currentNode) {
+        return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
+    }
+
     public RubyException noMethodError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
@@ -579,6 +585,11 @@ public class CoreLibrary {
     public RubyException internalError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), context.makeString("internal implementation error - " + message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException regexpError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(regexpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {

@@ -36,6 +36,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.Writer;
+import java.net.URL;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyRuntimeAdapter;
@@ -60,6 +63,7 @@ import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
@@ -122,7 +126,17 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                     istream = new FileInputStream(absolutePath);
                     break;
                 case CLASSPATH:
-                    istream = container.getProvider().getRuntime().getJRubyClassLoader().getResourceAsStream(filename);
+                    URL loc = container.getProvider().getRuntime().getJRubyClassLoader().getResource(filename);
+                    if (loc == null) {
+                        istream = null; // as in ClassLoader.getResourceAsStream
+                    } else {
+                        filename = LoadService.classpathFilenameFromURL(filename, loc, true);
+                        try {
+                            istream = loc.openStream();
+                        } catch (IOException ioe) {
+                            istream = null; // as in getClassLoader.getResourceAsStream
+                        }
+                    }
                     break;
             }
             return parse(istream, filename, lines);

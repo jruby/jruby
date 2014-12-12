@@ -1,1 +1,0 @@
-fails:Symbol#length returns 4 for name formed by 1 multibyte and 3 ASCII characters

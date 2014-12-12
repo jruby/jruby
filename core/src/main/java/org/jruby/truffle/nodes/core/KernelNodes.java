@@ -1979,16 +1979,47 @@ public abstract class KernelNodes {
 
     }
 
+    public abstract static class ToHexStringNode extends CoreMethodNode {
+
+        public ToHexStringNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToHexStringNode(ToHexStringNode prev) {
+            super(prev);
+        }
+
+        public abstract String executeToHexString(Object value);
+
+        @Specialization
+        public String toHexString(int value) {
+            return toHexString((long) value);
+        }
+
+        @Specialization
+        public String toHexString(long value) {
+            return Long.toHexString(value);
+        }
+
+        @Specialization
+        public String toHexString(RubyBignum value) {
+            return value.toHexString();
+        }
+
+    }
+
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
         @Child protected ClassNode classNode;
         @Child protected BasicObjectNodes.IDNode idNode;
+        @Child protected ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = KernelNodesFactory.ClassNodeFactory.create(context, sourceSection, new RubyNode[]{null});
             idNode = BasicObjectNodesFactory.IDNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
 
         public abstract RubyString executeToS(VirtualFrame frame, Object self);
@@ -1998,16 +2029,8 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             String className = classNode.executeGetClass(frame, self).getName();
-
             Object id = idNode.executeObjectID(frame, self);
-            String hexID;
-            if (id instanceof Integer || id instanceof Long) {
-                hexID = Long.toHexString((long) id);
-            } else if (id instanceof RubyBignum) {
-                hexID = ((RubyBignum) id).toHexString();
-            } else {
-                throw new UnsupportedOperationException();
-            }
+            String hexID = toHexStringNode.executeToHexString(id);
 
             return getContext().makeString("#<" + className + ":0x" + hexID + ">");
         }

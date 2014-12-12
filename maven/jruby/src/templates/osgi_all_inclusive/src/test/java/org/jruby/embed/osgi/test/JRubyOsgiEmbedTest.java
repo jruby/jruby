@@ -83,20 +83,19 @@ public class JRubyOsgiEmbedTest {
         String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\"]");
 
+        // ensure we have native working
+        loaded = (Boolean) jruby.runScriptlet( "JRuby.runtime.posix.is_native" );
+        assertEquals(true, loaded);
+
         // ensure we can load openssl (with its bouncy-castle jars)
         loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
         assertEquals(true, loaded);
 
-        // ensure we can load ffi
-        loaded = (Boolean) jruby.runScriptlet( "require 'ffi'" );
-	// false is good enough, i.e. it is already loaded
-        assertEquals(false, loaded);
-
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:bundle://META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
+        assertEquals( gemPath, "[\"uri:classloader:/specifications\", \"uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
 
-	jruby.runScriptlet( "require 'jar-dependencies'; require 'krypt'" );
+        jruby.runScriptlet( "require 'jar-dependencies'; require 'krypt'" );
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"ffi\", \"krypt-provider-jdk\", \"krypt-core\", \"krypt\"]");
 

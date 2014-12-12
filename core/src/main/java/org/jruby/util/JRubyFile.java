@@ -64,10 +64,14 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createResource(Ruby runtime, String pathname) {
-      return createResource(runtime.getPosix(), runtime.getCurrentDirectory(), pathname);
+      return createResource(runtime.getPosix(), runtime, runtime.getCurrentDirectory(), pathname);
     }
 
     public static FileResource createResource(POSIX posix, String cwd, String pathname) {
+      return createResource(posix, null, cwd, pathname);
+    }
+
+    public static FileResource createResource(POSIX posix, Ruby runtime, String cwd, String pathname) {
         FileResource emptyResource = EmptyFileResource.create(pathname);
         if (emptyResource != null) return emptyResource;
 
@@ -80,7 +84,7 @@ public class JRubyFile extends JavaSecuredFile {
             if (pathname.startsWith("classpath:")) return ClasspathResource.create(pathname);
 
             // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
-            if (pathname.startsWith("uri:")) return URLResource.create(pathname.replace("classpath:/", ""));
+            if (pathname.startsWith("uri:")) return URLResource.create(runtime, pathname.replace("classpath:/", ""));
 
             if (pathname.startsWith("file:")) {
                 pathname = pathname.substring(5);

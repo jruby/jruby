@@ -26,7 +26,7 @@ namespace :maven do
 
   desc "Dump pom.xml files"
   task :dump_poms do
-    maven.validate( '-Pall' )
+    maven.install( '-Pall' )
   end
 
   desc "Set new version"
