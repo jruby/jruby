@@ -48,4 +48,3 @@ fails:Predefined global $-0 does not call #to_str to convert the object to a Str
 fails:Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails:Predefined global $-0 raises a TypeError if assigned a boolean
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
-fails:Predefined global $~ is set at the method-scoped level rather than block-scoped

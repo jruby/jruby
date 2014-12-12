@@ -24,11 +24,13 @@ import java.util.Map;
 
 public class ReadKeywordArgumentNode extends RubyNode {
 
+    private final int minimum;
     private final String name;
     @Child protected RubyNode defaultValue;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, String name, RubyNode defaultValue) {
+    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
         super(context, sourceSection);
+        this.minimum = minimum;
         this.name = name;
         this.defaultValue = defaultValue;
     }
@@ -37,19 +39,11 @@ public class ReadKeywordArgumentNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final int last = RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1;
+        final RubyHash hash = getKeywordsHash(frame);
 
-        if (last == -1) {
+        if (hash == null) {
             return defaultValue.execute(frame);
         }
-
-        final Object hashValue = RubyArguments.getUserArgument(frame.getArguments(), last);
-
-        if (!(hashValue instanceof RubyHash)) {
-            return defaultValue.execute(frame);
-        }
-
-        final RubyHash hash = (RubyHash) hashValue;
 
         Object value = null;
 
@@ -65,6 +59,20 @@ public class ReadKeywordArgumentNode extends RubyNode {
         }
 
         return value;
+    }
+
+    private RubyHash getKeywordsHash(VirtualFrame frame) {
+        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= minimum) {
+            return null;
+        }
+
+        final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
+
+        if (lastArgument instanceof RubyHash) {
+            return (RubyHash) lastArgument;
+        }
+
+        return null;
     }
 
 }

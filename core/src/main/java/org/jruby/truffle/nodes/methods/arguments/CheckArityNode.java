@@ -41,7 +41,8 @@ public class CheckArityNode extends RubyNode {
 
     private boolean checkArity(int given) {
         if (arity.hasKeywords()) {
-            given -= 1;
+            // TODO(CS): TODO
+            return true;
         }
 
         if (arity.getRequired() != 0 && given < arity.getRequired()) {

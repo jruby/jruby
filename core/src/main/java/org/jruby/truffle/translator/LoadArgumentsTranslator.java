@@ -40,6 +40,7 @@ public class LoadArgumentsTranslator extends Translator {
         POST
     }
 
+    private int required;
     private int index;
     private State state;
 
@@ -65,6 +66,7 @@ public class LoadArgumentsTranslator extends Translator {
             for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
                 sequence.add(arg.accept(this));
                 ++index;
+                required++;
             }
         }
 
@@ -89,6 +91,7 @@ public class LoadArgumentsTranslator extends Translator {
             for (org.jruby.ast.Node arg : node.getPost().childNodes()) {
                 sequence.add(arg.accept(this));
                 ++index;
+                required++;
             }
         }
 
@@ -136,7 +139,7 @@ public class LoadArgumentsTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, name, defaultValue);
+        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(name);
 
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
@@ -224,7 +227,14 @@ public class LoadArgumentsTranslator extends Translator {
         } else {
             // Optional argument
             final RubyNode defaultValue = valueNode.accept(this);
-            readNode = new ReadOptionalArgumentNode(context, sourceSection, index, index + 1 + argsNode.getPostCount(), defaultValue);
+
+            int minimum = index + 1 + argsNode.getPostCount();
+
+            if (argsNode.hasKwargs()) {
+                minimum += 1;
+            }
+
+            readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(name);
