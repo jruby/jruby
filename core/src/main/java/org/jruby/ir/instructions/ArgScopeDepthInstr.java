@@ -11,7 +11,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArgScopeDepthInstr extends Instr implements ResultInstr,FixedArityInstr {
-    private Operand arg;
     private Variable result;
 
     public ArgScopeDepthInstr(Variable result) {
