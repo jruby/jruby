@@ -3032,6 +3032,95 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "reject", needsBlock = true)
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class RejectNode extends YieldingCoreMethodNode {
+
+        @Child protected ArrayBuilderNode arrayBuilder;
+
+        public RejectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
+        }
+
+        public RejectNode(RejectNode prev) {
+            super(prev);
+            arrayBuilder = prev.arrayBuilder;
+        }
+
+        @Specialization(guards = "isNull")
+        public Object selectNull(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        }
+
+        @Specialization(guards = "isObject")
+        public Object selectObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final Object[] store = (Object[]) array.getStore();
+
+            Object selectedStore = arrayBuilder.start(array.getSize());
+            int selectedSize = 0;
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    final Object value = store[n];
+
+                    notDesignedForCompilation();
+
+                    if (! yieldIsTruthy(frame, block,  new Object[]{value})) {
+                        selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
+                        selectedSize++;
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+        }
+
+        @Specialization(guards = "isIntegerFixnum")
+        public Object selectFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final int[] store = (int[]) array.getStore();
+
+            Object selectedStore = arrayBuilder.start(array.getSize());
+            int selectedSize = 0;
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    final Object value = store[n];
+
+                    notDesignedForCompilation();
+
+                    if (! yieldIsTruthy(frame, block, value)) {
+                        selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
+                        selectedSize++;
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+        }
+
+    }
+
     @CoreMethod(names = "reject!", needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {

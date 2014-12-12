@@ -85,14 +85,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     private RubyEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {
         this(runtime, new ByteList(name, p, end), null, isDummy);
     }
-    
-    private RubyEncoding(Ruby runtime, byte[] name, boolean isDummy) {
-        this(runtime, name, 0, name.length, isDummy);
-    }
-
-    private RubyEncoding(Ruby runtime, Encoding encoding) {
-        this(runtime, new ByteList(encoding.getName()), encoding, false);
-    }
 
     private RubyEncoding(Ruby runtime, byte[] name, Encoding encoding, boolean isDummy) {
         this(runtime, new ByteList(name), encoding, isDummy);
@@ -117,14 +109,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     public static RubyEncoding newEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {
         return new RubyEncoding(runtime, name, p, end, isDummy);
-    }
-
-    public static RubyEncoding newEncoding(Ruby runtime, byte[] name, boolean isDummy) {
-        return new RubyEncoding(runtime, name, isDummy);
-    }
-
-    public static RubyEncoding newEncoding(Ruby runtime, Encoding encoding) {
-        return new RubyEncoding(runtime, encoding);
     }
 
     public final Encoding getEncoding() {
@@ -534,35 +518,5 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_internal");
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
-    }
-    
-    @Deprecated
-    public static IRubyObject getDefaultInternal(IRubyObject recv) {
-        return getDefaultExternal(recv.getRuntime().getCurrentContext(), recv);
-    }
-    
-    @Deprecated
-    public static IRubyObject setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
-        return setDefaultExternal(recv.getRuntime().getCurrentContext(), recv, encoding);
-    }
-
-    @Deprecated
-    public static IRubyObject getDefaultExternal(Ruby runtime) {
-        return runtime.getEncodingService().getDefaultExternal();
-    }
-
-    @Deprecated
-    public static IRubyObject getDefaultInternal(Ruby runtime) {
-        return runtime.getEncodingService().getDefaultInternal();
-    }
-
-    @Deprecated
-    public static IRubyObject convertEncodingToRubyEncoding(Ruby runtime, Encoding defaultEncoding) {
-        return runtime.getEncodingService().convertEncodingToRubyEncoding(defaultEncoding);
-    }
-
-    @Deprecated
-    public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
-        return runtime.getEncodingService().getEncodingFromObject(arg);
     }
 }

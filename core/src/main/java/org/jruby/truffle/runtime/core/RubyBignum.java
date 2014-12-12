@@ -145,17 +145,17 @@ public class RubyBignum extends RubyBasicObject {
 
     @CompilerDirectives.TruffleBoundary
     public boolean isEqualTo(int b) {
-        return value.compareTo(BigInteger.valueOf(b)) == 0;
+        return value.equals(BigInteger.valueOf(b));
     }
 
     @CompilerDirectives.TruffleBoundary
     public boolean isEqualTo(long b) {
-        return value.compareTo(BigInteger.valueOf(b)) == 0;
+        return value.equals(BigInteger.valueOf(b));
     }
 
     @CompilerDirectives.TruffleBoundary
     public boolean isEqualTo(RubyBignum b) {
-        return value.compareTo(b.value) == 0;
+        return value.equals(b.value);
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -206,6 +206,11 @@ public class RubyBignum extends RubyBasicObject {
     @CompilerDirectives.TruffleBoundary
     public boolean isZero() {
         return value.equals(BigInteger.ZERO);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public String toHexString() {
+        return value.toString(16);
     }
 
     @CompilerDirectives.TruffleBoundary

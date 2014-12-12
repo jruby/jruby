@@ -132,7 +132,7 @@ public abstract class CoreMethodNodeManager {
             optional = methodDetails.getMethodAnnotation().optional();
         }
 
-        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray());
+        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 

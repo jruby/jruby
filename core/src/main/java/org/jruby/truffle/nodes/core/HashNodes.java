@@ -68,6 +68,8 @@ public abstract class HashNodes {
                 return false;
             }
 
+            // TODO(CS): this is badly broken - I think it assumes the hash is ordered?
+
             for (int n = 0; n < aSize * 2; n++) {
                 if (!equalNode.call(frame, aStore[n], "==", null, bStore[n])) {
                     return false;
@@ -81,6 +83,39 @@ public abstract class HashNodes {
         public boolean equalObjectLinkedHashMap(RubyHash a, RubyHash b) {
             notDesignedForCompilation();
             throw new UnsupportedOperationException();
+        }
+
+        @Specialization(guards = {"isObjectLinkedHashMap", "isOtherObjectArray"})
+        public boolean equalObjectLinkedHashMapArray(VirtualFrame frame, RubyHash a, RubyHash b) {
+            notDesignedForCompilation();
+
+            final LinkedHashMap<Object, Object> aStore = (LinkedHashMap<Object, Object>) a.getStore();
+            final int aSize = a.getStoreSize();
+
+            final Object[] bStore = (Object[]) b.getStore();
+            final int bSize = b.getStoreSize();
+
+            if (aSize != bSize) {
+                return false;
+            }
+
+            // TODO(CS): this is crap - doesn't check for duplicates or anything - badly need to improve the Hash stuff
+
+            for (Map.Entry<Object, Object> entry : aStore.entrySet()) {
+                boolean match = false;
+
+                for (int n = 0; n < aSize * 2; n += 1) {
+                    if (equalNode.call(frame, entry.getKey(), "==", null, bStore[n]) && equalNode.call(frame, entry.getValue(), "==", null, bStore[n + 1])) {
+                        match = true;
+                    }
+                }
+
+                if (!match) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         @Specialization(guards = "!isHash(arguments[1])")

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.cast;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -26,21 +27,25 @@ import org.jruby.truffle.runtime.core.RubyString;
 public abstract class ToSNode extends RubyNode {
 
     @Child protected DispatchHeadNode callToSNode;
-    @Child protected KernelNodes.ClassNode classNode;
-    @Child protected KernelNodes.ToSNode toSNode;
+    @Child protected KernelNodes.ToSNode kernelToSNode;
 
     public ToSNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         callToSNode = new DispatchHeadNode(context, true);
-        classNode = KernelNodesFactory.ClassNodeFactory.create(context, sourceSection, new RubyNode[]{null});
-        toSNode = KernelNodesFactory.ToSNodeFactory.create(context, sourceSection, new RubyNode[]{null});
     }
+
+    protected RubyString kernelToS(VirtualFrame frame, Object object) {
+        if (kernelToSNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {null}));
+        }
+        return kernelToSNode.executeToS(frame, object);
+    }
+
 
     public ToSNode(ToSNode prev) {
         super(prev);
         callToSNode = prev.callToSNode;
-        classNode = prev.classNode;
-        toSNode = prev.toSNode;
     }
 
     @Override
@@ -63,7 +68,7 @@ public abstract class ToSNode extends RubyNode {
         if (value instanceof RubyString) {
             return (RubyString) value;
         } else {
-            return toSNode.toS(classNode.executeGetClass(frame, object));
+            return kernelToS(frame, object);
         }
     }
 }

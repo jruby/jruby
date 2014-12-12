@@ -4218,8 +4218,7 @@ states[447] = new ParserState() {
 };
 states[450] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    /* FIXME: We may be intern'ing more than once.*/
-                    yyVal = new SymbolNode(lexer.getPosition(), ((String)yyVals[0+yyTop]).intern());
+                    yyVal = new SymbolNode(lexer.getPosition(), new ByteList(((String)yyVals[0+yyTop]).getBytes(), lexer.getEncoding()));
     return yyVal;
   }
 };
@@ -4504,11 +4503,11 @@ states[497] = new ParserState() {
                      /* EvStrNode :"#{some expression}"*/
                      /* Ruby 1.9 allows empty strings as symbols*/
                      if (((Node)yyVals[-1+yyTop]) == null) {
-                         yyVal = new SymbolNode(lexer.getPosition(), "");
+                         yyVal = new SymbolNode(lexer.getPosition(), new ByteList(new byte[0], lexer.getEncoding()));
                      } else if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
                          yyVal = new DSymbolNode(((Node)yyVals[-1+yyTop]).getPosition(), ((DStrNode)yyVals[-1+yyTop]));
                      } else if (((Node)yyVals[-1+yyTop]) instanceof StrNode) {
-                         yyVal = new SymbolNode(((Node)yyVals[-1+yyTop]).getPosition(), ((StrNode)yyVals[-1+yyTop]).getValue().toString().intern());
+                         yyVal = new SymbolNode(((Node)yyVals[-1+yyTop]).getPosition(), ((StrNode)yyVals[-1+yyTop]).getValue());
                      } else {
                          yyVal = new DSymbolNode(((Node)yyVals[-1+yyTop]).getPosition());
                          ((DSymbolNode)yyVal).add(((Node)yyVals[-1+yyTop]));
@@ -5165,7 +5164,8 @@ states[602] = new ParserState() {
 };
 states[603] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new KeyValuePair<Node,Node>(new SymbolNode(support.getPosition(((Node)yyVals[0+yyTop])), ((String)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                    SymbolNode label = new SymbolNode(support.getPosition(((Node)yyVals[0+yyTop])), new ByteList(((String)yyVals[-1+yyTop]).getBytes(), lexer.getEncoding()));
+                    yyVal = new KeyValuePair<Node,Node>(label, ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };

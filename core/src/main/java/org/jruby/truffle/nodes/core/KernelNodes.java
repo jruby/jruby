@@ -243,12 +243,10 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public BindingNode(BindingNode prev) {
-            super(prev);
-        }
+        public abstract RubyBinding executeBinding(VirtualFrame frame);
 
         @Specialization
-        public Object binding() {
+        public RubyBinding binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
             final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
@@ -481,6 +479,7 @@ public abstract class KernelNodes {
     public abstract static class EvalNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toStr;
+        @Child protected BindingNode bindingNode;
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -492,14 +491,19 @@ public abstract class KernelNodes {
             toStr = prev.toStr;
         }
 
+        protected RubyBinding getCallerBinding(VirtualFrame frame) {
+            if (bindingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+            return bindingNode.executeBinding(frame);
+        }
+
         @Specialization
-        public Object eval(RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
+        public Object eval(VirtualFrame frame, RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
-                    getSourceSection(), new RubyNode[]{}).binding();
-
-            return eval(source, defaultBinding);
+            return eval(source, getCallerBinding(frame));
         }
 
         @Specialization
@@ -513,10 +517,7 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyBasicObject object, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            RubyBinding defaultBinding = (RubyBinding) KernelNodesFactory.BindingNodeFactory.create(getContext(),
-                    getSourceSection(), new RubyNode[]{}).binding();
-
-            return eval(frame, object, defaultBinding);
+            return eval(frame, object, getCallerBinding(frame));
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
@@ -1981,19 +1982,34 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
+        @Child protected ClassNode classNode;
+        @Child protected BasicObjectNodes.IDNode idNode;
+
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            classNode = KernelNodesFactory.ClassNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            idNode = BasicObjectNodesFactory.IDNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
 
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
+        public abstract RubyString executeToS(VirtualFrame frame, Object self);
 
         @Specialization
-        public RubyString toS(RubyBasicObject self) {
+        public RubyString toS(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            return getContext().makeString("#<" + self.getLogicalClass().getName() + ":0x" + Long.toHexString(self.getObjectID()) + ">");
+            String className = classNode.executeGetClass(frame, self).getName();
+
+            Object id = idNode.executeObjectID(frame, self);
+            String hexID;
+            if (id instanceof Integer || id instanceof Long) {
+                hexID = Long.toHexString((long) id);
+            } else if (id instanceof RubyBignum) {
+                hexID = ((RubyBignum) id).toHexString();
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            return getContext().makeString("#<" + className + ":0x" + hexID + ">");
         }
 
     }

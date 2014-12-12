@@ -10,6 +10,7 @@
 package org.jruby.truffle.translator;
 
 import org.jruby.ast.*;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ast.visitor.NodeVisitor;
 
@@ -22,6 +23,7 @@ import java.util.List;
 public class ParameterCollector extends AbstractNodeVisitor {
 
     private final List<String> parameters = new ArrayList<>();
+    private final List<String> keywords = new ArrayList<>();
 
     public List<String> getParameters() {
         return new ArrayList<>(parameters);
@@ -35,6 +37,12 @@ public class ParameterCollector extends AbstractNodeVisitor {
     @Override
     public Object visitArgsNode(ArgsNode node) {
         visitChildren(node);
+        return null;
+    }
+
+    @Override
+    public Object visitKeywordArgNode(KeywordArgNode node) {
+        keywords.add(((INameNode) node.childNodes().get(0)).getName());
         return null;
     }
 
@@ -107,6 +115,16 @@ public class ParameterCollector extends AbstractNodeVisitor {
     public Object visitRestArgNode(RestArgNode node) {
         parameters.add(node.getName());
         return null;
+    }
+
+    @Override
+    public Object visitKeywordRestArgNode(KeywordRestArgNode node) {
+        parameters.add(node.getName());
+        return null;
+    }
+
+    public String[] getKeywords() {
+        return keywords.toArray(new String[keywords.size()]);
     }
 
 }

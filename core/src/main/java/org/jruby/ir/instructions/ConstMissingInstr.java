@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -20,7 +21,8 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedAr
     private final String missingConst;
 
     public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {
-        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, new MethAddr("const_missing"), currentModule, new Operand[]{new Symbol(missingConst)}, null);
+        // FIXME: Missing encoding knowledge of the constant name.
+        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, new MethAddr("const_missing"), currentModule, new Operand[]{new Symbol(missingConst, USASCIIEncoding.INSTANCE)}, null);
 
         this.missingConst = missingConst;
     }

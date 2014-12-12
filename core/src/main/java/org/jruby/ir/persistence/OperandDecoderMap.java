@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -57,7 +58,8 @@ class OperandDecoderMap {
             case STANDARD_ERROR: return new StandardError();
             case STRING_LITERAL: return new StringLiteral(d.decodeString());
             case SVALUE: return new SValue(d.decodeOperand());
-            case SYMBOL: return new Symbol(d.decodeString());
+            // FIXME: This is broken since there is no encode/decode for encoding
+            case SYMBOL: return new Symbol(d.decodeString(), USASCIIEncoding.INSTANCE);
             case TEMPORARY_VARIABLE: return decodeTemporaryVariable();
             case UNBOXED_BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
             case UNBOXED_FIXNUM: return new UnboxedFixnum(d.decodeLong());

@@ -1,8 +1,5 @@
-fails:Array#reject returns a new array without elements for which block is true
-fails:Array#reject returns self when called on an Array emptied with #shift
 fails:Array#reject properly handles recursive arrays
 fails:Array#reject does not return subclass instance on Array subclasses
-fails:Array#reject does not retain instance variables
 fails:Array#reject returns an Enumerator if no block given
 fails:Array#reject! removes elements for which block is true
 fails:Array#reject! properly handles recursive arrays

@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -1710,14 +1711,16 @@ public class IRBuilder {
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
         IRMethod method = defineNewMethod(node, s, true);
         addInstr(s, new DefineInstanceMethodInstr(method));
-        return new Symbol(method.getName());
+        // FIXME: Method name should save encoding
+        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
     }
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
         Operand container =  build(node.getReceiverNode(), s);
         IRMethod method = defineNewMethod(node, s, false);
         addInstr(s, new DefineClassMethodInstr(container, method));
-        return new Symbol(method.getName());
+        // FIXME: Method name should save encoding
+        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
     }
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
@@ -3293,7 +3296,7 @@ public class IRBuilder {
 
     public Operand buildSymbol(SymbolNode node) {
         // SSS: Since symbols are interned objects, no need to copyAndReturnValue(...)
-        return new Symbol(node.getName());
+        return new Symbol(node.getName(), node.getEncoding());
     }
 
     public Operand buildTrue() {

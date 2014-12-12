@@ -103,9 +103,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
      * Push a symbol on the stack
      * @param sym the symbol's string identifier
      */
-    public void pushSymbol(String sym) {
+    public void pushSymbol(String sym, Encoding encoding) {
         loadContext();
-        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, sym);
+        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, sym, new String(encoding.getName()));
     }
 
     public void loadRuntime() {

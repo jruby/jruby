@@ -63,9 +63,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ClassIndex;
@@ -1152,7 +1155,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
-        if (executeTask(getContext(), new Object[]{this, millis, 0}, SLEEP_TASK2) >= millis) {
+        Semaphore sem = new Semaphore(1);
+        sem.acquire();
+        if (executeTask(getContext(), new Object[]{sem, millis, 0}, SLEEP_TASK2) >= millis) {
             return true;
         } else {
             return false;
@@ -1221,20 +1226,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static final class SleepTask2 implements Task<Object[], Long> {
         @Override
         public Long run(ThreadContext context, Object[] data) throws InterruptedException {
-            Object syncObj = data[0];
             long millis = (Long)data[1];
             int nanos = (Integer)data[2];
-            synchronized (syncObj) {
-                long start = System.currentTimeMillis();
-                syncObj.wait(millis, nanos);
-                // TODO: nano handling?
-                return System.currentTimeMillis() - start;
+
+            long start = System.currentTimeMillis();
+            // TODO: nano handling?
+            if (millis == 0) {
+                ((Semaphore) data[0]).acquire();
+            } else {
+                ((Semaphore) data[0]).tryAcquire(millis, TimeUnit.MILLISECONDS);
             }
+            return System.currentTimeMillis() - start;
         }
 
         @Override
         public void wakeup(RubyThread thread, Object[] data) {
-            thread.getNativeThread().interrupt();
+            ((Semaphore)data[0]).release();
         }
     }
 

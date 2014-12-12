@@ -33,20 +33,25 @@
 package org.jruby.ast;
 
 import java.util.List;
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /** 
  * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode {
-    private String name;
+    private final String name;
+    private final Encoding encoding;
 
-    public SymbolNode(ISourcePosition position, String name) {
+    public SymbolNode(ISourcePosition position, ByteList value) {
 	    super(position);
-	    this.name = name;
+	    this.name = value.toString().intern();
+        encoding = value.lengthEnc() != value.length() ? value.getEncoding() : USASCIIEncoding.INSTANCE;
     }
 
     public NodeType getNodeType() {
@@ -63,6 +68,10 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
      */
     public String getName() {
         return name;
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
     
     public List<Node> childNodes() {

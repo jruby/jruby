@@ -6,20 +6,17 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -249,7 +246,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param sym the symbol's string identifier
      */
-    public abstract void pushSymbol(String sym);
+    public abstract void pushSymbol(String sym, Encoding encoding);
 
     /**
      * Push the JRuby runtime on the stack.
