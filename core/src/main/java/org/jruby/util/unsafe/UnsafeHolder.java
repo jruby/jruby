@@ -50,6 +50,9 @@ public final class UnsafeHolder {
             return (sun.misc.Unsafe) f.get(null);
         } catch (Exception e) {
             return null;
+        } catch (NoClassDefFoundError ncdfe) {
+            // Google AppEngine raises NCDFE for Unsafe rather than CNFE
+            return null;
         }
     }
     
