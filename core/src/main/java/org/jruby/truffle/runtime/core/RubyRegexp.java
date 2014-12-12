@@ -381,7 +381,7 @@ public class RubyRegexp extends RubyBasicObject {
 
     public static Regex compile(RubyNode currentNode, RubyContext context, ByteList bytes, int options) {
         RubyNode.notDesignedForCompilation();
-        return compile(currentNode, context, bytes.bytes(), UTF8Encoding.INSTANCE, options);
+        return compile(currentNode, context, bytes.bytes(), bytes.getEncoding(), options);
     }
 
     public static Regex compile(RubyNode currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {

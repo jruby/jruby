@@ -42,7 +42,8 @@ public class InteroplatedRegexpNode extends RubyNode {
             strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), ((RubyString) toS.call(frame, child, "to_s", null)).getBytes());
         }
 
-        return new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options).getByteList(), options.toOptions());
+        final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
+        return new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options.toOptions());
     }
 
     @Override
