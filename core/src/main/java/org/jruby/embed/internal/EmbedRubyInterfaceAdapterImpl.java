@@ -29,9 +29,6 @@
  */
 package org.jruby.embed.internal;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.embed.EmbedRubyInterfaceAdapter;
@@ -56,7 +53,7 @@ public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter 
 
     /**
      * Returns a instance of a requested interface type from a previously evaluated script.
-     * 
+     *
      * @param receiver a receiver of the previously evaluated script.
      * @param clazz an interface type of the returning instance.
      * @return an instance of requested interface type.
