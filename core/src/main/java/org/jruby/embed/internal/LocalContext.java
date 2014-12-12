@@ -71,12 +71,13 @@ public class LocalContext {
         return getRuntime();
     }
 
-    // this method is used in ConcurrentContextProvider. concurrent model uses
-    // global runtime and thread local variable map. don't want to create
-    // local runtime
     public BiVariableMap getVarMap(LocalContextProvider provider) {
         if (varMap == null) {
-            varMap = new BiVariableMap(provider, lazy);
+            synchronized(this) {
+                if (varMap == null) {
+                    varMap = new BiVariableMap(provider, lazy);
+                }
+            }
         }
         return varMap;
     }
@@ -101,13 +102,21 @@ public class LocalContext {
     }
 
     public void remove() {
-        if ( attributes != null ) attributes.clear();
-        if ( varMap != null ) varMap.clear();
+        if (attributes != null) {
+            synchronized(this) { attributes.clear(); }
+        }
+        if (varMap != null) {
+            synchronized(this) { varMap.clear(); }
+        }
     }
 
     Ruby getRuntime() {
         if (runtime == null) {
-            runtime = Ruby.newInstance(config);
+            synchronized(this) {
+                if (runtime == null) {
+                    runtime = Ruby.newInstance(config);
+                }
+            }
         }
         return runtime;
     }
