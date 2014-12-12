@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
+import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -390,6 +391,8 @@ public class RubyRegexp extends RubyBasicObject {
             return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
         } catch (ValueException e) {
             throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
+        } catch (SyntaxException e) {
+            throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().regexpError(e.getMessage(), currentNode));
         }
     }
 
