@@ -51,12 +51,11 @@ public class LocalContext {
 
     private Ruby runtime = null;
 
-    private BiVariableMap varMap;  // singleton doesn't use this varMap.
+    private BiVariableMap varMap;
     private Map<AttributeName, Object> attributes;
 
     public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
-        this.config = config;
-        this.behavior = behavior;
+        this(config, behavior, false);
     }
 
     public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
