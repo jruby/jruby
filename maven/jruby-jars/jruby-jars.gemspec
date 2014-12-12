@@ -1,14 +1,14 @@
 #-*- mode: ruby -*-
 
 require 'rake'
-require 'rexml/document'
-require 'rexml/xpath'
+require 'fileutils'
 
 version = File.read( File.join( File.dirname(File.expand_path(__FILE__)), '..', '..', 'VERSION' ) ).strip
 
 # this regexp can be refined to work with pre, rc1, rc2 and such cases
 ruby_version = version.sub( /-SNAPSHOT$/, '.SNAPSHOT' )
 
+FileUtils.mkdir_p( 'lib/jruby-jars' )
 File.open( 'lib/jruby-jars/version.rb', 'w' ) do |f|
   f.print <<EOF
 module JRubyJars

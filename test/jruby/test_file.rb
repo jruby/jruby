@@ -492,6 +492,22 @@ class TestFile < Test::Unit::TestCase
     assert(result == 'falsetruetrue')
   end
 
+  [ :executable?, :executable_real? ].each do |method|
+    define_method :"test_#{method}_query" do # - executable?/executable_real?
+      if WINDOWS
+        exec_file = 'bin/jruby.bat'
+      else
+        exec_file = 'bin/jruby.sh'
+      end
+      assert(File.send(method, exec_file))
+      assert(!File.send(method, 'test/test_file.rb'))
+      assert(File.send(method, 'test'))
+      assert(!File.send(method, 'test_not'))
+      result = jruby("-e 'print File.#{method}(\"#{exec_file}\");print File.#{method}(\"test_not\");print File.#{method}(\"test\");print File.#{method}(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
+      assert(result == 'truefalsetruefalse')
+    end
+  end 
+
   def test_file_exist_query
     assert(File.exist?('test'))
     assert(! File.exist?('test_not'))

@@ -161,6 +161,7 @@ import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -3037,7 +3038,7 @@ public final class Ruby implements Constantizable {
         }
 
         EventHook[] hooks = eventHooks;
-        EventHook[] newHooks = new EventHook[hooks.length + 1];
+        EventHook[] newHooks = Arrays.copyOf(hooks, hooks.length + 1);
         newHooks[hooks.length] = hook;
         eventHooks = newHooks;
         hasEventHooks = true;

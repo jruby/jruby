@@ -675,7 +675,7 @@ public class RubyClass extends RubyModule {
     // MRI: rb_method_call_status
     // FIXME: Partial impl because we don't have these "NOEX" flags
     public static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
-        return !method.isUndefined() && method.isCallableFrom(self, callType);
+        return method != null && !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {

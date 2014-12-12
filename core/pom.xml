@@ -71,12 +71,12 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.8-SNAPSHOT</version>
+      <version>3.0.8</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.6-SNAPSHOT</version>
+      <version>0.8.6</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -112,7 +112,7 @@
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.5-SNAPSHOT</version>
+      <version>1.5</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>

@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -502,16 +503,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        String name = get_path(context,args[0]).getUnicodeValue();
+        Ruby runtime = context.runtime;
+
+        RubyString origString = get_path(context,args[0]);
+        Encoding origEncoding = origString.getEncoding();
+        String name = origString.toString();
 
         // MRI-compatible basename handling for windows drive letter paths
         if (Platform.IS_WINDOWS) {
             if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
                 switch (name.length()) {
                 case 2:
-                    return RubyString.newEmptyString(context.runtime).infectBy(args[0]);
+                    return RubyString.newEmptyString(runtime, origString.getEncoding()).infectBy(args[0]);
                 case 3:
-                    return context.runtime.newString(name.substring(2)).infectBy(args[0]);
+                    if (origEncoding.getCharset() != null) {
+                        try {
+                            return RubyString.newString(runtime, new ByteList(name.substring(2).getBytes(origEncoding.getCharsetName()), origString.getEncoding())).infectBy(args[0]);
+                        } catch (UnsupportedEncodingException uee) {
+                            // fall through to UTF-8 logic
+                        }
+                    }
+
+                    return RubyString.newString(runtime, name.substring(2)).infectBy(args[0]);
                 default:
                     switch (name.charAt(2)) {
                     case '/':
@@ -566,7 +579,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 name = name.substring(0, name.length() - ext.length());
             }
         }
-        return context.runtime.newString(name).infectBy(args[0]);
+        if (origEncoding.getCharset() != null) {
+            try {
+                return RubyString.newString(runtime, new ByteList(name.getBytes(origEncoding.getCharsetName()), origString.getEncoding())).infectBy(args[0]);
+            } catch (UnsupportedEncodingException uee) {
+                // fall through to UTF-8 logic
+            }
+        }
+
+        return RubyString.newString(runtime, name).infectBy(args[0]);
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)

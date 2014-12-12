@@ -119,7 +119,7 @@ public class InvokeDynamicSupport {
     }
     
     public static Handle getSymbolHandle() {
-        return getBootstrapHandle("getSymbolBootstrap", BOOTSTRAP_STRING_SIG);
+        return getBootstrapHandle("getSymbolBootstrap", BOOTSTRAP_STRING_STRING_SIG);
     }
     
     public static Handle getFixnumHandle() {
@@ -291,13 +291,19 @@ public class InvokeDynamicSupport {
         return site;
     }
     
-    public static CallSite getSymbolBootstrap(Lookup lookup, String name, MethodType type, String symbol) {
+    public static CallSite getSymbolBootstrap(Lookup lookup, String name, MethodType type, String symbol, String encodingName) {
         MutableCallSite site = new MutableCallSite(type);
         MethodHandle init = findStatic(
                 InvokeDynamicSupport.class,
                 "initSymbol",
-                methodType(RubySymbol.class, MutableCallSite.class, ThreadContext.class, String.class));
-        init = insertArguments(init, 2, symbol);
+                methodType(RubySymbol.class, MutableCallSite.class, ThreadContext.class, String.class, Encoding.class));
+
+        Encoding encoding = null;
+        if (encodingName != null) {
+            encoding = EncodingDB.getEncodings().get(encodingName.getBytes()).getEncoding();
+        }
+
+        init = insertArguments(init, 2, symbol, encoding);
         init = insertArguments(
                 init,
                 0,
@@ -860,8 +866,9 @@ public class InvokeDynamicSupport {
         return regexp;
     }
     
-    public static RubySymbol initSymbol(MutableCallSite site, ThreadContext context, String symbol) {
+    public static RubySymbol initSymbol(MutableCallSite site, ThreadContext context, String symbol, Encoding encoding) {
         RubySymbol rubySymbol = context.runtime.newSymbol(symbol);
+        if (encoding != null) rubySymbol.associateEncoding(encoding);
         site.setTarget(dropArguments(constant(RubySymbol.class, rubySymbol), 0, ThreadContext.class));
         return rubySymbol;
     }

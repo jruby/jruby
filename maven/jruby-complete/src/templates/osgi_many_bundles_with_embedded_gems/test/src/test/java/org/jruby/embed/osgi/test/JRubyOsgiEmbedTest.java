@@ -78,7 +78,7 @@ public class JRubyOsgiEmbedTest {
         System.err.println();
 
 	// System.setProperty( "jruby.debug.loadService", "true" );
-	System.setProperty( "jruby.native.verbose", "true" );
+	//System.setProperty( "jruby.native.enabled", "true" );
 
 	IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
 	jruby.addLoadPath( Scripts.class.getClassLoader() );
@@ -102,11 +102,9 @@ public class JRubyOsgiEmbedTest {
         String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\"]");
 
-        // ensure we can load ffi
-        loaded = (Boolean) jruby.runScriptlet( "require 'ffi'" );
-        //assertEquals(true, loaded);
-        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\"]");
+        // ensure we have native working
+        loaded = (Boolean) jruby.runScriptlet( "JRuby.runtime.posix.is_native" );
+        assertEquals(true, loaded);
 
         // ensure we can load openssl (with its bouncy-castle jars)
         loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );

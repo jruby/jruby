@@ -773,6 +773,14 @@ public class ShellLauncher {
                 env = (Map)envHash;
             }
 
+            // Peel off options hash and warn that we don't support them
+            if (strings.length > 1 && !(envHash = TypeConverter.checkHashType(runtime, strings[strings.length - 1])).isNil()) {
+                if (!((RubyHash)envHash).isEmpty()) {
+                    runtime.getWarnings().warn("popen3 does not support spawn options in JRuby 1.7");
+                }
+                strings = Arrays.copyOfRange(strings, 0, strings.length - 1);
+            }
+
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
             boolean useShell = false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);

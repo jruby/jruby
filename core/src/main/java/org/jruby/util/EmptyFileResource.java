@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
@@ -32,6 +33,10 @@ public class EmptyFileResource implements FileResource {
         return false;
     }
 
+    public int errno() {
+        return Errno.ENOENT.intValue();
+    }
+
     @Override
     public boolean isDirectory() {
         return false;
@@ -39,6 +44,11 @@ public class EmptyFileResource implements FileResource {
 
     @Override
     public boolean isFile() {
+        return false;
+    }
+
+    @Override
+    public boolean canExecute() {
         return false;
     }
 

@@ -71,6 +71,15 @@ class RegularFileResource extends AbstractFileResource {
     }
 
     @Override
+    public boolean canExecute() {
+        return file.canExecute();
+    }
+
+    public int errno() {
+        return posix.errno();
+    }
+
+    @Override
     public boolean isFile() {
         return file.isFile();
     }
