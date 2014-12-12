@@ -4,10 +4,7 @@ before_script:
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
 
-jdk:
-  - oraclejdk7
-  - oraclejdk8
-  - openjdk6
+jdk: openjdk6
 
 env:
   # disable cext
@@ -22,17 +19,12 @@ env:
     - TARGET='main'
     - TARGET='osgi'
     - TARGET='j2ee'
+    - TARGET='test-jruby-jars'
+    - TARGET='jruby-jars-extended'
+    - TARGET='main-extended'
 
 matrix:
   fast_finish: true
-  include:
-    # these profile do no need to run for all JDKs
-    - env: TARGET='test-jruby-jars'
-      jdk: openjdk7
-    - env: TARGET='jruby-jars-extended'
-      jdk: oraclejdk7
-    - env: TARGET='main-extended'
-      jdk: oraclejdk8
 
 branches:
   only:
