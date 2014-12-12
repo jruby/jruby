@@ -11,12 +11,15 @@ package org.jruby.truffle.nodes.core;
 
 import java.util.*;
 
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
@@ -273,11 +276,23 @@ public abstract class BasicObjectNodes {
         }
 
         private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
-            if (self == getContext().getCoreLibrary().getMainObject()) {
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("undefined local variable or method `%s' for main:Object", name.toString()), this));
+            // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
+            if (lastCallWasVCall()) {
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(name.toString(), self.toString(), this));
+            } else {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
+            }
+        }
+
+        private boolean lastCallWasVCall() {
+            final RubyCallNode callNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), RubyCallNode.class);
+
+            if (callNode == null) {
+                return false;
             }
 
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
+            return callNode.isVCall();
+
         }
 
     }
