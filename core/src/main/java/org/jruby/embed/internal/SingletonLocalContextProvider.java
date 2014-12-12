@@ -29,13 +29,9 @@
  */
 package org.jruby.embed.internal;
 
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.embed.AttributeName;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
@@ -48,18 +44,23 @@ import org.jruby.embed.LocalVariableBehavior;
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
 
     private static volatile LocalContext localContext;
-    private static BiVariableMap varMap = null;
-    private static HashMap attribute = null;
 
     public static SingletonLocalContextProvider getProvider(final LocalVariableBehavior behavior, final boolean lazy) {
-        if (localContext == null) {
-            synchronized( SingletonLocalContextProvider.class ) {
-                if (localContext == null) {
-                    localContext = new LocalContext(getGlobalRuntimeConfigOrNew(), behavior, lazy);
-                }
+        if (localContext == null) initLocalContext(behavior, lazy);
+        return new SingletonLocalContextProvider(localContext.getLocalVariableBehavior(), lazy);
+    }
+
+    private static void initLocalContext(final LocalVariableBehavior behavior, final boolean lazy) {
+        synchronized( SingletonLocalContextProvider.class ) {
+            if (localContext == null) {
+                localContext = new LocalContext(getGlobalRuntimeConfigOrNew(), behavior, lazy);
             }
         }
-        return new SingletonLocalContextProvider(localContext.getLocalVariableBehavior(), lazy);
+    }
+
+    private LocalContext sharedLocalContext() {
+        if (localContext == null) initLocalContext(behavior, lazy);
+        return localContext;
     }
 
     @Deprecated // no longer used
@@ -78,27 +79,6 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
     public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
         if (localContext == null) return null;
         return localContext.getLocalVariableBehavior();
-    }
-
-    private static BiVariableMap getBiVariableInstance(LocalContextProvider provider, boolean lazy) {
-        if (varMap == null) {
-            synchronized (BiVariableMap.class) {
-                varMap = new BiVariableMap(provider, lazy);
-            }
-        }
-        return varMap;
-    }
-
-    private static HashMap getAttributeInstance() {
-        if (attribute == null) {
-            synchronized (HashMap.class) {
-                attribute = new HashMap();
-                attribute.put(AttributeName.READER, new InputStreamReader(System.in));
-                attribute.put(AttributeName.WRITER, new PrintWriter(System.out, true));
-                attribute.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
-            }
-        }
-        return attribute;
     }
 
     public SingletonLocalContextProvider(LocalVariableBehavior behavior) {
@@ -131,12 +111,12 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
 
     @Override
     public BiVariableMap getVarMap() {
-        return getBiVariableInstance(this, lazy);
+        return sharedLocalContext().getVarMap(this);
     }
 
     @Override
     public Map getAttributeMap() {
-        return getAttributeInstance();
+        return sharedLocalContext().getAttributeMap();
     }
 
     @Override
