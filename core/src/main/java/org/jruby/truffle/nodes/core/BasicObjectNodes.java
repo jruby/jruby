@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import java.util.*;
 
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
@@ -277,8 +276,9 @@ public abstract class BasicObjectNodes {
         }
 
         private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
+            // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
             if (lastCallWasVCall()) {
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("undefined local variable or method `%s' for main:Object", name.toString()), this));
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(name.toString(), self.toString(), this));
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
             }

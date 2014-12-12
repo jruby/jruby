@@ -532,6 +532,10 @@ public class CoreLibrary {
         return nameError(String.format("%s is a read-only variable", name), currentNode);
     }
 
+    public RubyException nameErrorUndefinedLocalVariableOrMethod(String name, String object, Node currentNode) {
+        return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
+    }
+
     public RubyException noMethodError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
