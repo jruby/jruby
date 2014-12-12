@@ -3079,7 +3079,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -3112,7 +3112,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
