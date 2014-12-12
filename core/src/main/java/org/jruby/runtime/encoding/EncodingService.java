@@ -32,7 +32,7 @@ public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> aliases;
 
     // for fast lookup: encoding entry => org.jruby.RubyEncoding
-    private final IRubyObject[] encodingList;
+    public final IRubyObject[] encodingList;
     // for fast lookup: org.joni.encoding.Encoding => org.jruby.RubyEncoding
     private RubyEncoding[] encodingIndex = new RubyEncoding[4];
     // the runtime
@@ -165,26 +165,29 @@ public final class EncodingService {
         if (index < encodingIndex.length && (rubyEncoding = encodingIndex[index]) != null) {
             return rubyEncoding;
         }
+
         enc = loadEncoding(new ByteList(enc.getName(), false));
         return encodingIndex[enc.getIndex()];
     }
 
     public interface EncodingDefinitionVisitor {
-        public void defineEncoding(int encodingListIndex, byte[] name, int p, int end, boolean isDummy);
+        public void defineEncoding(Entry encodingEntry, byte[] name, int p, int end);
 
         public void defineConstant(int encodingListIndex, String constName);
     }
 
     public interface EncodingAliasVisitor {
+        public void defineAlias(int encodingListIndex, String constName);
+
         public void defineConstant(int encodingListIndex, String constName);
     }
 
     public void defineEncodings() {
         defineEncodings(new EncodingDefinitionVisitor() {
             @Override
-            public void defineEncoding(int encodingListIndex, byte[] name, int p, int end, boolean isDummy) {
-                RubyEncoding encoding = RubyEncoding.newEncoding(runtime, name, p, end, isDummy);
-                encodingList[encodingListIndex] = encoding;
+            public void defineEncoding(Entry encodingEntry, byte[] name, int p, int end) {
+                RubyEncoding encoding = RubyEncoding.newEncoding(runtime, name, p, end, encodingEntry.isDummy());
+                encodingList[encodingEntry.getIndex()] = encoding;
             }
 
             @Override
@@ -201,7 +204,7 @@ public final class EncodingService {
                     ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value;
 
-            visitor.defineEncoding(ee.getIndex(), e.bytes, e.p, e.end, ee.isDummy());
+            visitor.defineEncoding(ee, e.bytes, e.p, e.end);
 
             for (String constName : encodingNames(e.bytes, e.p, e.end)) {
                 visitor.defineConstant(ee.getIndex(), constName);
@@ -211,6 +214,9 @@ public final class EncodingService {
 
     public void defineAliases() {
         defineAliases(new EncodingAliasVisitor() {
+            @Override
+            public void defineAlias(int encodingListIndex, String constName) { }
+
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
                 defineEncodingConstant(runtime, (RubyEncoding) encodingList[encodingListIndex], constName);
@@ -224,9 +230,9 @@ public final class EncodingService {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                     ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value;
-            RubyEncoding encoding = (RubyEncoding)encodingList[ee.getIndex()];
 
             for (String constName : encodingNames(e.bytes, e.p, e.end)) {
+                visitor.defineAlias(ee.getIndex(), constName);
                 visitor.defineConstant(ee.getIndex(), constName);
             }
         }
