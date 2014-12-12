@@ -1,9 +1,4 @@
-fails:Regexps with encoding modifiers preserves EUC-JP as /e encoding through interpolation
 fails:Regexps with encoding modifiers preserves US-ASCII as /n encoding through interpolation if all chars are 7-bit
 fails:Regexps with encoding modifiers preserves ASCII-8BIT as /n encoding through interpolation if all chars are 7-bit
 fails:Regexps with encoding modifiers preserves Windows-31J as /s encoding through interpolation
 fails:Regexps with encoding modifiers preserves UTF-8 as /u encoding through interpolation
-fails:Regexps with encoding modifiers supports /n (No encoding) with interpolation
-fails:Regexps with encoding modifiers supports /n (No encoding) with interpolation /o
-fails:Regexps with encoding modifiers supports /s (Windows_31J encoding) with interpolation
-fails:Regexps with encoding modifiers supports /s (Windows_31J encoding) with interpolation and /o
