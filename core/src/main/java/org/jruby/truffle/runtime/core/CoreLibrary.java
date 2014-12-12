@@ -227,7 +227,7 @@ public class CoreLibrary {
         timeClass = new RubyTime.RubyTimeClass(context, objectClass);
         trueClass = new RubyClass(context, objectClass, objectClass, "TrueClass");
         truffleModule = new RubyModule(context, objectClass, "Truffle");
-        truffleDebugModule = new RubyModule(context, objectClass, "Debug");
+        truffleDebugModule = new RubyModule(context, truffleModule, "Debug");
         typeErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "TypeError");
         zeroDivisionErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "ZeroDivisionError");
         encodingConverterClass = new RubyEncodingConverter.RubyEncodingConverterClass(context, encodingClass, objectClass);
