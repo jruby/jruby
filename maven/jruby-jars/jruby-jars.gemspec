@@ -1,6 +1,5 @@
 #-*- mode: ruby -*-
 
-require 'rake'
 require 'fileutils'
 
 version = File.read( File.join( File.dirname(File.expand_path(__FILE__)), '..', '..', 'VERSION' ) ).strip
