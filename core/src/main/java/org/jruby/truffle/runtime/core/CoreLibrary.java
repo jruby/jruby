@@ -311,7 +311,6 @@ public class CoreLibrary {
 
         globalVariablesObject.setInstanceVariable("$DEBUG", context.getRuntime().isDebug());
         globalVariablesObject.setInstanceVariable("$VERBOSE", context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject);
-
     }
 
     public void initializeAfterMethodsAdded() {

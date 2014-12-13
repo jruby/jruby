@@ -6,10 +6,6 @@ fails(inherited):Predefined global $-0 raises a TypeError if assigned a boolean
 fails(inherited):Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails(inherited):Predefined global $/ changes $-0
 fails(inherited):Predefined global $` sets an empty result to the encoding of the source String
-fails:Execution variable $: is the same object as $LOAD_PATH and $-I
-fails:Global variable $-d is an alias of $DEBUG
-fails:Global variable $-v is an alias of $VERBOSE
-fails:Global variable $-w is an alias of $VERBOSE
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
 fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
@@ -31,5 +27,3 @@ fails:Predefined global $~ changes the value of derived capture globals when ass
 fails:Predefined global $~ changes the value of the derived following match global
 fails:Predefined global $~ changes the value of the derived full match global
 fails:Predefined global $~ changes the value of the derived preceding match global
-fails:The predefined global constants includes TOPLEVEL_BINDING
-fails:The predefined standard objects includes ARGF

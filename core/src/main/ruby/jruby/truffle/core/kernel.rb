@@ -105,6 +105,8 @@ module STDERR
   end
 end
 
+ARGF = Object.new
+
 # Here temporarily while we adapt to the newly imported specs
 
 class Channel

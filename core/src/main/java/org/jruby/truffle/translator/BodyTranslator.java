@@ -1030,11 +1030,24 @@ public class BodyTranslator extends Translator {
         add("$-p");
     }};
 
+    private final Map<String, String> globalVariableAliases = new HashMap<String, String>() {{
+        put("$-I", "$LOAD_PATH");
+        put("$:", "$LOAD_PATH");
+        put("$-d", "$DEBUG");
+        put("$-v", "$VERBOSE");
+        put("$-w", "$VERBOSE");
+    }};
+
     @Override
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name = node.getName();
+        String name = node.getName();
+
+        if (globalVariableAliases.containsKey(name)) {
+            name = globalVariableAliases.get(name);
+        }
+
         RubyNode rhs = node.getValueNode().accept(this);
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1077,7 +1090,6 @@ public class BodyTranslator extends Translator {
             if (name.equals("$stdout")) {
                 rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
             }
-
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
 
@@ -1086,7 +1098,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitGlobalVarNode(org.jruby.ast.GlobalVarNode node) {
-        final String name = node.getName();
+        String name = node.getName();
+
+        if (globalVariableAliases.containsKey(name)) {
+            name = globalVariableAliases.get(name);
+        }
+
         final SourceSection sourceSection = translate(node.getPosition());
 
         if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
