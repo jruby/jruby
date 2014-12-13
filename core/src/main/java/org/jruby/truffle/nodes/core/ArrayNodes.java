@@ -2117,9 +2117,10 @@ public abstract class ArrayNodes {
                     builder.append(", ");
                 }
 
-                // TODO(CS): to string
+                // TODO(CS): cast
 
-                builder.append(inspect.call(frame, objects[n], "inspect", null));
+                final RubyString string = (RubyString) inspect.call(frame, objects[n], "inspect", null);
+                builder.append(string.getBytes().toString());
             }
 
             builder.append("]");

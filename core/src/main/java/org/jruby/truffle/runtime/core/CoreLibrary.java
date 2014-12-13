@@ -315,16 +315,6 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
-        // Just create a dummy object for $stdout - we can use Kernel#print and a special method TruffleDebug.flush_stdout
-
-        final RubyBasicObject stdout = new RubyBasicObject(objectClass);
-        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(stdout.getMetaClass(), "print").withVisibility(Visibility.PUBLIC));
-        stdout.getSingletonClass(null).addMethod(null, ModuleOperations.lookupMethod(truffleDebugModule.getSingletonClass(null), "flush_stdout").withNewName("flush"));
-        globalVariablesObject.setInstanceVariable("$stdout", stdout);
-
-        objectClass.setConstant(null, "STDIN", new RubyBasicObject(objectClass));
-        objectClass.setConstant(null, "STDOUT", stdout);
-        objectClass.setConstant(null, "STDERR", stdout);
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 

@@ -38,6 +38,7 @@ import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
+import org.jruby.truffle.nodes.globals.CheckStdoutVariableTypeNode;
 import org.jruby.truffle.nodes.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
@@ -1073,6 +1074,10 @@ public class BodyTranslator extends Translator {
 
             return ((ReadNode) localVarNode).makeWriteNode(rhs);
         } else {
+            if (name.equals("$stdout")) {
+                rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
+            }
+
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
 

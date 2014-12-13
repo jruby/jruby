@@ -547,7 +547,8 @@ public abstract class StringNodes {
         public RubyString inspect(RubyString string) {
             notDesignedForCompilation();
 
-            return getContext().makeString(org.jruby.RubyString.inspect19(getContext().getRuntime(), string.getBytes()).toString());
+            final org.jruby.RubyString inspected = (org.jruby.RubyString) org.jruby.RubyString.inspect19(getContext().getRuntime(), string.getBytes());
+            return getContext().makeString(inspected.getByteList());
         }
     }
 

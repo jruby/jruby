@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
@@ -244,7 +245,9 @@ public abstract class EncodingNodes {
         @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(RubyEncoding encoding) {
-            return getContext().makeString(encoding.getName());
+            final ByteList name = encoding.getName().dup();
+            name.setEncoding(ASCIIEncoding.INSTANCE);
+            return getContext().makeString(name);
         }
     }
 
@@ -262,12 +265,13 @@ public abstract class EncodingNodes {
         @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(RubyEncoding encoding) {
-            RubyString name = getContext().makeString(encoding.getName());
+            final ByteList nameByteList = encoding.getName().dup();
+            nameByteList.setEncoding(ASCIIEncoding.INSTANCE);
 
             if (encoding.isDummy()) {
-                return getContext().makeString(String.format("#<Encoding:%s (dummy)>", name.toString()));
+                return getContext().makeString(String.format("#<Encoding:%s (dummy)>", nameByteList.toString()));
             } else {
-                return getContext().makeString(String.format("#<Encoding:%s>", name.toString()));
+                return getContext().makeString(String.format("#<Encoding:%s>", nameByteList.toString()));
             }
         }
     }
