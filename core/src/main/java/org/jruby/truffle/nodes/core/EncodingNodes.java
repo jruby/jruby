@@ -211,6 +211,25 @@ public abstract class EncodingNodes {
         }
     }
 
+    @CoreMethod(names = "dummy?")
+    public abstract static class DummyNode extends CoreMethodNode {
+
+        public DummyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DummyNode(DummyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean isDummy(RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            return encoding.isDummy();
+        }
+    }
+
     @CoreMethod(names = { "name", "to_s" })
     public abstract static class ToSNode extends CoreMethodNode {
 

@@ -28,6 +28,7 @@ public class RubyEncoding extends RubyBasicObject {
 
     private final Encoding encoding;
     private final ByteList name;
+    private final boolean dummy;
 
     /**
      * The class from which we create the object that is {@code Encoding}. A subclass of
@@ -68,14 +69,15 @@ public class RubyEncoding extends RubyBasicObject {
         lookup.put(aliasName.toLowerCase(), encoding);
     }
 
-    public static RubyEncoding newEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean isDummy) {
-        return new RubyEncoding(context.getCoreLibrary().getEncodingClass(), encoding, new ByteList(name, p, end), isDummy);
+    public static RubyEncoding newEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
+        return new RubyEncoding(context.getCoreLibrary().getEncodingClass(), encoding, new ByteList(name, p, end), dummy);
     }
 
-    private RubyEncoding(RubyClass encodingClass, Encoding encoding, ByteList name, boolean isDummy) {
+    private RubyEncoding(RubyClass encodingClass, Encoding encoding, ByteList name, boolean dummy) {
         super(encodingClass);
         this.encoding = encoding;
         this.name = name;
+        this.dummy = dummy;
     }
 
     public Encoding getEncoding() {
@@ -84,6 +86,10 @@ public class RubyEncoding extends RubyBasicObject {
 
     public ByteList getName() {
         return name;
+    }
+
+    public boolean isDummy() {
+        return dummy;
     }
 
     public static RubyEncoding[] cloneEncodingList() {
