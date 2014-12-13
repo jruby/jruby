@@ -1,0 +1,2 @@
+fails:Magic comment must be at the first line
+fails:Magic comment must be the first token of the line

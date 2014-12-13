@@ -1,50 +1,29 @@
-fails:Predefined global $~ changes the value of derived capture globals when assigned
-fails:Predefined global $~ changes the value of the derived preceding match global
-fails:Predefined global $~ changes the value of the derived following match global
-fails:Predefined global $~ changes the value of the derived full match global
-fails:Predefined global $` is equivalent to MatchData#pre_match on the last match $~
-fails(inherited):Predefined global $` sets an empty result to the encoding of the source String
-fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
+fails(inherited):Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails(inherited):Predefined global $' sets an empty result to the encoding of the source String
-fails:Predefined global $stdout raises TypeError error if assigned to nil
-fails:Predefined global $stdout raises TypeError error if assigned to object that doesn't respond to #write
-fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
-fails(inherited):Predefined global $/ changes $-0
-fails:Predefined global $/ does not call #to_str to convert the object to a String
-fails:Predefined global $/ raises a TypeError if assigned a Fixnum
-fails:Predefined global $/ raises a TypeError if assigned a boolean
 fails(inherited):Predefined global $-0 changes $/
 fails(inherited):Predefined global $-0 does not call #to_str to convert the object to a String
-fails(inherited):Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails(inherited):Predefined global $-0 raises a TypeError if assigned a boolean
-fails:Predefined global $, raises TypeError if assigned a non-String
-fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
-fails:Predefined global $_ is set at the method-scoped level rather than block-scoped
-fails:Execution variable $: is the same object as $LOAD_PATH and $-I
-fails:Global variable $-d is an alias of $DEBUG
-fails:Global variable $-v is an alias of $VERBOSE
-fails:Global variable $-w is an alias of $VERBOSE
-fails(inherited):Global variable $0 raises a TypeError when not given an object that can be coerced to a String
-fails:The predefined standard objects includes ARGF
-fails:The predefined global constants includes TOPLEVEL_BINDING
-fails:The predefined global constant STDERR has nil for the external encoding despite Encoding.default_external being changed
-fails:The predefined global constant STDERR has the encodings set by #set_encoding
-fails:The predefined global constant ARGV contains Strings encoded in locale Encoding
-fails:The predefined global constant STDERR has nil for the external encoding
-fails:The predefined global constant STDOUT has the encodings set by #set_encoding
-fails:The predefined global constant STDOUT has nil for the external encoding despite Encoding.default_external being changed
-fails:The predefined global constant STDOUT has nil for the external encoding
-fails:The predefined global constant STDIN has nil for the internal encoding despite Encoding.default_internal being changed
-fails:The predefined global constant STDIN has nil for the internal encoding
-fails:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
-fails:The predefined global constant STDIN has the encodings set by #set_encoding
-fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external when that encoding is changed
-fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external
-fails:Predefined global $` sets an empty result to the encoding of the source String
+fails(inherited):Predefined global $-0 raises a TypeError if assigned a Fixnum
+fails(inherited):Predefined global $/ changes $-0
+fails(inherited):Predefined global $` sets an empty result to the encoding of the source String
+fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
+fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
+fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
 fails:Predefined global $' sets an empty result to the encoding of the source String
-fails:Predefined global $/ changes $-0
+fails:Predefined global $, raises TypeError if assigned a non-String
 fails:Predefined global $-0 changes $/
 fails:Predefined global $-0 does not call #to_str to convert the object to a String
-fails:Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails:Predefined global $-0 raises a TypeError if assigned a boolean
-fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
+fails:Predefined global $-0 raises a TypeError if assigned a Fixnum
+fails:Predefined global $/ changes $-0
+fails:Predefined global $/ does not call #to_str to convert the object to a String
+fails:Predefined global $/ raises a TypeError if assigned a boolean
+fails:Predefined global $/ raises a TypeError if assigned a Fixnum
+fails:Predefined global $_ is set at the method-scoped level rather than block-scoped
+fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
+fails:Predefined global $` is equivalent to MatchData#pre_match on the last match $~
+fails:Predefined global $` sets an empty result to the encoding of the source String
+fails:Predefined global $~ changes the value of derived capture globals when assigned
+fails:Predefined global $~ changes the value of the derived following match global
+fails:Predefined global $~ changes the value of the derived full match global
+fails:Predefined global $~ changes the value of the derived preceding match global

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
@@ -205,26 +206,32 @@ public abstract class EncodingNodes {
         public RubyArray list() {
             notDesignedForCompilation();
 
-            final EncodingService service = getContext().getRuntime().getEncodingService();
+            final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
 
-            final Object[] array = new Object[service.getEncodings().size()];
-            int n = 0;
-
-            Hash.HashEntryIterator i;
-
-            i = service.getEncodings().entryIterator();
-
-            while (i.hasNext()) {
-                CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
-                array[n++] = RubyEncoding.getEncoding(getContext(), e.value.getEncoding());
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), encodings, encodings.length);
         }
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(names = "dummy?")
+    public abstract static class DummyNode extends CoreMethodNode {
+
+        public DummyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DummyNode(DummyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean isDummy(RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            return encoding.isDummy();
+        }
+    }
+
+    @CoreMethod(names = { "name", "to_s" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -238,7 +245,9 @@ public abstract class EncodingNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyEncoding encoding) {
-            return getContext().makeString(encoding.getName());
+            final ByteList name = encoding.getName().dup();
+            name.setEncoding(ASCIIEncoding.INSTANCE);
+            return getContext().makeString(name);
         }
     }
 
@@ -256,9 +265,14 @@ public abstract class EncodingNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyEncoding encoding) {
-            RubyString name = getContext().makeString(encoding.getName());
+            final ByteList nameByteList = encoding.getName().dup();
+            nameByteList.setEncoding(ASCIIEncoding.INSTANCE);
 
-            return getContext().makeString(String.format("#<Encoding:%s>", name.toString()));
+            if (encoding.isDummy()) {
+                return getContext().makeString(String.format("#<Encoding:%s (dummy)>", nameByteList.toString()));
+            } else {
+                return getContext().makeString(String.format("#<Encoding:%s>", nameByteList.toString()));
+            }
         }
     }
 }

@@ -13,8 +13,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -40,6 +38,7 @@ import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
+import org.jruby.truffle.nodes.globals.CheckStdoutVariableTypeNode;
 import org.jruby.truffle.nodes.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
@@ -817,7 +816,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
-        return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getDefaultEncoding());
+        return new ObjectLiteralNode(context, sourceSection, RubyEncoding.getEncoding(context, node.getEncoding()));
     }
 
     @Override
@@ -1031,11 +1030,24 @@ public class BodyTranslator extends Translator {
         add("$-p");
     }};
 
+    private final Map<String, String> globalVariableAliases = new HashMap<String, String>() {{
+        put("$-I", "$LOAD_PATH");
+        put("$:", "$LOAD_PATH");
+        put("$-d", "$DEBUG");
+        put("$-v", "$VERBOSE");
+        put("$-w", "$VERBOSE");
+    }};
+
     @Override
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name = node.getName();
+        String name = node.getName();
+
+        if (globalVariableAliases.containsKey(name)) {
+            name = globalVariableAliases.get(name);
+        }
+
         RubyNode rhs = node.getValueNode().accept(this);
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1075,6 +1087,9 @@ public class BodyTranslator extends Translator {
 
             return ((ReadNode) localVarNode).makeWriteNode(rhs);
         } else {
+            if (name.equals("$stdout")) {
+                rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
+            }
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
 
@@ -1083,7 +1098,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitGlobalVarNode(org.jruby.ast.GlobalVarNode node) {
-        final String name = node.getName();
+        String name = node.getName();
+
+        if (globalVariableAliases.containsKey(name)) {
+            name = globalVariableAliases.get(name);
+        }
+
         final SourceSection sourceSection = translate(node.getPosition());
 
         if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {

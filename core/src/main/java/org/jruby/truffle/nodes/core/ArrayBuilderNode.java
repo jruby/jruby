@@ -233,7 +233,18 @@ public abstract class ArrayBuilderNode extends Node {
 
                 replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
 
-                final Object[] newStore = ArrayUtils.box((int[]) store);
+                // TODO(CS): not sure why this happens - need to investigate
+
+                final Object[] newStore;
+
+                if (store instanceof int[]) {
+                    newStore = ArrayUtils.box((int[]) store);
+                } else if (store instanceof Object[]) {
+                    newStore = (Object[]) store;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
                 newStore[index] = value;
                 return newStore;
             }

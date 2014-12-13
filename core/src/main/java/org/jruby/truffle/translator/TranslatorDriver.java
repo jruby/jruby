@@ -16,6 +16,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.runtime.*;
@@ -184,6 +185,10 @@ public class TranslatorDriver {
         // Custom node wrapper
 
         truffleNode = wrapper.wrap(truffleNode);
+
+        // Binding
+
+        truffleNode = SequenceNode.sequence(context, sourceSection, new SetTopLevelBindingNode(context, sourceSection), truffleNode);
 
         // Shell result
 
