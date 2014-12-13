@@ -13,12 +13,11 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import org.jcodings.specific.BIG5Encoding;
-import org.jcodings.specific.EUCJPEncoding;
-import org.jcodings.specific.SJISEncoding;
-import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -32,7 +31,6 @@ import org.jruby.util.cli.OutputStrings;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -356,14 +354,33 @@ public class CoreLibrary {
     }
 
     public void initializeEncodingConstants() {
-        encodingClass.setConstant(null, "US_ASCII", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant(null, "ASCII_8BIT", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant(null, "UTF_8", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant(null, "EUC_JP", RubyEncoding.getEncoding(context, EUCJPEncoding.INSTANCE));
-        encodingClass.setConstant(null, "Windows_31J", RubyEncoding.getEncoding(context, SJISEncoding.INSTANCE));
-        encodingClass.setConstant(null, "Big5", RubyEncoding.getEncoding(context, BIG5Encoding.INSTANCE));
-        encodingClass.setConstant(null, "IBM437", RubyEncoding.getEncoding(context, USASCIIEncoding.INSTANCE));
+        getContext().getRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
+            @Override
+            public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
+                Encoding e = encodingEntry.getEncoding();
 
+                RubyEncoding re = RubyEncoding.newEncoding(getContext(), e, name, p, end, encodingEntry.isDummy());
+                RubyEncoding.storeEncoding(encodingEntry.getIndex(), re);
+            }
+
+            @Override
+            public void defineConstant(int encodingListIndex, String constName) {
+                encodingClass.setConstant(null, constName, RubyEncoding.getEncoding(encodingListIndex));
+            }
+        });
+
+        getContext().getRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
+            @Override
+            public void defineAlias(int encodingListIndex, String constName) {
+                RubyEncoding re = RubyEncoding.getEncoding(encodingListIndex);
+                RubyEncoding.storeAlias(constName, re);
+            }
+
+            @Override
+            public void defineConstant(int encodingListIndex, String constName) {
+                encodingClass.setConstant(null, constName, RubyEncoding.getEncoding(encodingListIndex));
+            }
+        });
     }
 
     public RubyClass getMetaClass(Object object) {

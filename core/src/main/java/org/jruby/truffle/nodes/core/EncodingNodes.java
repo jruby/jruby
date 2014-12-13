@@ -205,22 +205,9 @@ public abstract class EncodingNodes {
         public RubyArray list() {
             notDesignedForCompilation();
 
-            final EncodingService service = getContext().getRuntime().getEncodingService();
+            final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
 
-            final Object[] array = new Object[service.getEncodings().size()];
-            int n = 0;
-
-            Hash.HashEntryIterator i;
-
-            i = service.getEncodings().entryIterator();
-
-            while (i.hasNext()) {
-                CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
-                array[n++] = RubyEncoding.getEncoding(getContext(), e.value.getEncoding());
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), encodings, encodings.length);
         }
     }
 

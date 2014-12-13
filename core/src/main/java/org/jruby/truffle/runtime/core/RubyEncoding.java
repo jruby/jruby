@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -22,7 +23,8 @@ import java.util.Map;
  */
 public class RubyEncoding extends RubyBasicObject {
 
-    private static Map<Encoding, RubyEncoding> map = new HashMap<>();
+    private static RubyEncoding[] encodingList = new RubyEncoding[EncodingDB.getEncodings().size()];
+    private static Map<String, RubyEncoding> lookup = new HashMap<>();
 
     private final Encoding encoding;
     private final ByteList name;
@@ -46,24 +48,34 @@ public class RubyEncoding extends RubyBasicObject {
     }
 
     public static synchronized RubyEncoding getEncoding(RubyContext context, Encoding encoding) {
-        RubyEncoding mapped = map.get(encoding);
-
-        if (mapped == null) {
-            mapped = new RubyEncoding(context.getCoreLibrary().getEncodingClass(), encoding);
-            map.put(encoding, mapped);
-        }
-
-        return mapped;
+        return lookup.get(new String(encoding.getName()).toLowerCase());
     }
 
     public static RubyEncoding getEncoding(RubyContext context, String name) {
-        return getEncoding(context, context.getRuntime().getEncodingService().getEncodingFromString(name));
+        return lookup.get(name.toLowerCase());
     }
 
-    private RubyEncoding(RubyClass encodingClass, Encoding encoding) {
+    public static RubyEncoding getEncoding(int index) {
+        return encodingList[index];
+    }
+
+    public static void storeEncoding(int encodingListIndex, RubyEncoding encoding) {
+        encodingList[encodingListIndex] = encoding;
+        lookup.put(encoding.getName().toString().toLowerCase(), encoding);
+    }
+
+    public static void storeAlias(String aliasName, RubyEncoding encoding) {
+        lookup.put(aliasName.toLowerCase(), encoding);
+    }
+
+    public static RubyEncoding newEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean isDummy) {
+        return new RubyEncoding(context.getCoreLibrary().getEncodingClass(), encoding, new ByteList(name, p, end), isDummy);
+    }
+
+    private RubyEncoding(RubyClass encodingClass, Encoding encoding, ByteList name, boolean isDummy) {
         super(encodingClass);
         this.encoding = encoding;
-        this.name = new ByteList(encoding.getName());
+        this.name = name;
     }
 
     public Encoding getEncoding() {
@@ -74,4 +86,11 @@ public class RubyEncoding extends RubyBasicObject {
         return name;
     }
 
+    public static RubyEncoding[] cloneEncodingList() {
+        final RubyEncoding[] clone = new RubyEncoding[encodingList.length];
+
+        System.arraycopy(encodingList, 0, clone, 0, encodingList.length);
+
+        return clone;
+    }
 }
