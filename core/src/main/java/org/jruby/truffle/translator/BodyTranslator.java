@@ -13,8 +13,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -817,7 +815,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
-        return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getDefaultEncoding());
+        return new ObjectLiteralNode(context, sourceSection, RubyEncoding.getEncoding(context, node.getEncoding()));
     }
 
     @Override
