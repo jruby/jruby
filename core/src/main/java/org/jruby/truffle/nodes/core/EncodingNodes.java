@@ -211,7 +211,7 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(names = { "name", "to_s" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
