@@ -264,7 +264,11 @@ public abstract class EncodingNodes {
         public RubyString toS(RubyEncoding encoding) {
             RubyString name = getContext().makeString(encoding.getName());
 
-            return getContext().makeString(String.format("#<Encoding:%s>", name.toString()));
+            if (encoding.isDummy()) {
+                return getContext().makeString(String.format("#<Encoding:%s (dummy)>", name.toString()));
+            } else {
+                return getContext().makeString(String.format("#<Encoding:%s>", name.toString()));
+            }
         }
     }
 }
