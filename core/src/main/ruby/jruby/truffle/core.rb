@@ -6,7 +6,10 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+require_relative 'core/main'
 require_relative 'core/kernel'
+require_relative 'core/float'
+require_relative 'core/math'
 
 require_relative 'core/rubinius/api/bootstrap/channel'
 require_relative 'core/rubinius/api/common/bytearray'

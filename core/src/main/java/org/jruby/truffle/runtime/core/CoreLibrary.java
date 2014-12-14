@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jruby.embed.variable.Constant;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.encoding.EncodingService;
@@ -239,10 +240,10 @@ public class CoreLibrary {
 
         // Set constants
 
-        objectClass.setConstant(null, "RUBY_VERSION", RubyString.fromJavaString(stringClass, "2.1.0"));
-        objectClass.setConstant(null, "RUBY_PATCHLEVEL", 0);
-        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, "jrubytruffle"));
-        objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
+        objectClass.setConstant(null, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
+        objectClass.setConstant(null, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
+        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
+        objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
 
         final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
         configHashMap.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
@@ -289,19 +290,9 @@ public class CoreLibrary {
         envHash = getSystemEnv();
         objectClass.setConstant(null, "ARGV", argv);
         objectClass.setConstant(null, "ENV", envHash);
-        objectClass.setConstant(null, "TRUE", true);
-        objectClass.setConstant(null, "FALSE", false);
-        objectClass.setConstant(null, "NIL", nilObject);
 
         final RubyHash configHash = new RubyHash(hashClass, null, null, configHashMap, 0);
         configModule.setConstant(null, "CONFIG", configHash);
-
-        floatClass.setConstant(null, "EPSILON", org.jruby.RubyFloat.EPSILON);
-        floatClass.setConstant(null, "INFINITY", org.jruby.RubyFloat.INFINITY);
-        floatClass.setConstant(null, "NAN", org.jruby.RubyFloat.NAN);
-
-        mathModule.setConstant(null, "PI", Math.PI);
-        mathModule.setConstant(null, "E", Math.E);
 
         fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
         fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
