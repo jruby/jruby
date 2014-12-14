@@ -13,6 +13,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Arrays;
 
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
@@ -138,7 +139,15 @@ public class FeatureManager {
          * is a valid file name, as well as a valid URL. We try as a file path first.
          */
 
-        if (new File(fileName).isFile()) {
+        if (fileName.startsWith("core:/")) {
+            try {
+                context.getCoreLibrary().loadRubyCore(fileName.substring("core:/".length()));
+                return true;
+            } catch (Exception e) {
+                // TODO(CS): obviously not the best way to do this
+                return false;
+            }
+        } else if (new File(fileName).isFile()) {
             context.loadFile(fileName, currentNode);
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
             return true;

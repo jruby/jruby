@@ -317,24 +317,18 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 
-        if (Options.TRUFFLE_LOAD_CORE.load()) {
-            final String[] files = new String[]{
-                    "jruby/truffle/core/kernel.rb"
-            };
-
-            for (String file : files) {
-                loadRubyCore(file);
-            }
-        }
-
         rubiniusLibrary = new RubiniusLibrary(this);
+
+        if (Options.TRUFFLE_LOAD_CORE.load()) {
+            loadRubyCore("jruby/truffle/core.rb");
+        }
     }
 
     public void loadRubyCore(String fileName) {
         final Source source;
 
         try {
-            source = Source.fromReader(new InputStreamReader(context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName).getInputStream()), fileName);
+            source = Source.fromReader(new InputStreamReader(context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName).getInputStream()), "core:/" + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
