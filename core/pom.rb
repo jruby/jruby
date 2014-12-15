@@ -26,6 +26,15 @@ project 'JRuby Core' do
               'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G' )
 
+  IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
+    line.chomp!
+    # skip comments
+    next if line =~ /(^\W*#|^$)/
+    # build const name
+    name, value = line.split("=", 2)
+    properties name => value
+  end
+
   jar 'org.ow2.asm:asm:${asm.version}'
   jar 'org.ow2.asm:asm-commons:${asm.version}'
   jar 'org.ow2.asm:asm-analysis:${asm.version}'

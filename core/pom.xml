@@ -10,22 +10,57 @@
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
   <properties>
-    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-    <jruby.basedir>${basedir}/..</jruby.basedir>
-    <unsafe.version>8.0</unsafe.version>
-    <main.basedir>${project.parent.basedir}</main.basedir>
-    <maven.test.skip>true</maven.test.skip>
-    <build.date>${maven.build.timestamp}</build.date>
-    <tzdata.scope>provided</tzdata.scope>
+    <version.ruby>2.2.0</version.ruby>
+    <prawn.dir>${test.dir}/prawn</prawn.dir>
+    <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
+    <pkg.dir>${build.dir}/pkg</pkg.dir>
     <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar</unsafe.jar>
+    <spec.dir>spec</spec.dir>
+    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
-    <jruby.test.memory>3G</jruby.test.memory>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <tzdata.version>2013d</tzdata.version>
-    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
+    <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
+    <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
+    <version.ruby.minor>0</version.ruby.minor>
+    <tzdata.version>2013d</tzdata.version>
+    <version.ruby.patchlevel>0</version.ruby.patchlevel>
+    <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
+    <jay.bin>jay</jay.bin>
+    <dest.lib.dir>${lib.dir}</dest.lib.dir>
+    <rails.git.repo>git://github.com/rails/rails.git</rails.git.repo>
+    <build.dir>target</build.dir>
+    <maven.test.skip>true</maven.test.skip>
+    <rubyspec.1.8.dir>${rubyspec.dir}/1.8</rubyspec.1.8.dir>
+    <jruby.launch.memory>1024M</jruby.launch.memory>
     <jruby.compile.memory>2G</jruby.compile.memory>
+    <version.ruby.major>2.2</version.ruby.major>
+    <unsafe.version>8.0</unsafe.version>
+    <release.dir>release</release.dir>
+    <lib.dir>lib</lib.dir>
+    <rails.dir>${test.dir}/rails</rails.dir>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
+    <jruby.basedir>${basedir}/..</jruby.basedir>
+    <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
+    <version.ruby.revision>48765</version.ruby.revision>
+    <jruby.test.memory>3G</jruby.test.memory>
+    <mspec.dir>${spec.dir}/mspec</mspec.dir>
+    <build.date>${maven.build.timestamp}</build.date>
+    <main.basedir>${project.parent.basedir}</main.basedir>
+    <tzdata.scope>provided</tzdata.scope>
+    <test.results.dir>${build.dir}/test-results</test.results.dir>
+    <prawn.stable.version>0.4.1</prawn.stable.version>
+    <mspec.tar.file>${build.dir}/mspec.tgz</mspec.tar.file>
+    <build.lib.dir>test/target</build.lib.dir>
+    <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
+    <rake.args></rake.args>
+    <test.dir>test</test.dir>
+    <jflex.bin>jflex</jflex.bin>
+    <jruby.win32ole.gem>jruby-win32ole</jruby.win32ole.gem>
+    <mspec.bin>${mspec.dir}/bin/mspec</mspec.bin>
+    <jruby.gem.home>lib/ruby/gems/shared</jruby.gem.home>
+    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
+    <test.classes.dir>${test.dir}/target/test-classes</test.classes.dir>
   </properties>
   <dependencies>
     <dependency>
