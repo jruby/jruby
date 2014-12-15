@@ -428,7 +428,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "getlocal", compat = RUBY1_9, optional = 1)
     public RubyTime getlocal19(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) {
+        if (args.length == 0 || args[0].isNil()) {
             return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), nsec);
         } else {
             Matcher tzMatcher = TIME_OFFSET_PATTERN.matcher(args[0].toString());
