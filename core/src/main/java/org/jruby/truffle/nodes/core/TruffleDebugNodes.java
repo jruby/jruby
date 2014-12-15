@@ -27,6 +27,10 @@ public abstract class TruffleDebugNodes {
             super(context, sourceSection);
         }
 
+        public DumpCallStackNode(FullTreeNode prev) {
+            super(prev);
+        }
+
         @Specialization
         public RubyNilClass dumpCallStack() {
             notDesignedForCompilation();
@@ -47,6 +51,10 @@ public abstract class TruffleDebugNodes {
             super(context, sourceSection);
         }
 
+        public FlushStdoutNode(PanicNode prev) {
+            super(prev);
+        }
+
         @Specialization
         public RubyNilClass flush() {
             getContext().getRuntime().getOut().flush();
@@ -60,6 +68,10 @@ public abstract class TruffleDebugNodes {
 
         public FullTreeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        public FullTreeNode(FullTreeNode prev) {
+            super(prev);
         }
 
         @Specialization
@@ -78,6 +90,10 @@ public abstract class TruffleDebugNodes {
             super(context, sourceSection);
         }
 
+        public JavaClassOfNode(JavaClassOfNode prev) {
+            super(prev);
+        }
+
         @Specialization
         public RubyString javaClassOf(Object value) {
             notDesignedForCompilation();
@@ -94,6 +110,10 @@ public abstract class TruffleDebugNodes {
             super(context, sourceSection);
         }
 
+        public PanicNode(PanicNode prev) {
+            super(prev);
+        }
+
         @Specialization
         public RubyNilClass doPanic() {
             DebugOperations.panic(getContext(), this, null);
@@ -107,6 +127,10 @@ public abstract class TruffleDebugNodes {
 
         public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        public ParseTreeNode(ParseTreeNode prev) {
+            super(prev);
         }
 
         @Specialization
@@ -129,6 +153,10 @@ public abstract class TruffleDebugNodes {
 
         public TreeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        public TreeNode(TreeNode prev) {
+            super(prev);
         }
 
         @Specialization
