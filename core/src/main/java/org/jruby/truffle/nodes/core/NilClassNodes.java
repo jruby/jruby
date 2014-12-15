@@ -25,10 +25,6 @@ public abstract class NilClassNodes {
             super(context, sourceSection);
         }
 
-        public InspectNode(InspectNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString inspect() {
             return getContext().makeString("nil");
@@ -40,10 +36,6 @@ public abstract class NilClassNodes {
 
         public NilNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public NilNode(NilNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -59,10 +51,6 @@ public abstract class NilClassNodes {
             super(context, sourceSection);
         }
 
-        public ToANode(ToANode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray toA() {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
@@ -74,10 +62,6 @@ public abstract class NilClassNodes {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToINode(ToINode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -93,10 +77,6 @@ public abstract class NilClassNodes {
             super(context, sourceSection);
         }
 
-        public ToFNode(ToFNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public double toF() {
             return 0.0f;
@@ -108,10 +88,6 @@ public abstract class NilClassNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -127,10 +103,6 @@ public abstract class NilClassNodes {
             super(context, sourceSection);
         }
 
-        public ToHNode(ToHNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyHash toH() {
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, getContext().getCoreLibrary().getNilObject(), null, 0);
@@ -144,10 +116,6 @@ public abstract class NilClassNodes {
             super(context, sourceSection);
         }
 
-        public DupNode(DupNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString dup() {
             throw new RaiseException(getContext().getCoreLibrary().typeError("can't dup NilClass", this));
@@ -159,10 +127,6 @@ public abstract class NilClassNodes {
 
         public AndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AndNode(AndNode prev) {
-            super(prev);
         }
 
         @Specialization
