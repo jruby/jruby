@@ -188,7 +188,7 @@ public class CFG {
         return graph.findVertexFor(block).getOutgoingDestinationsDataNotOfType(type);
     }
 
-    public Set<Edge<BasicBlock>> getOutgoingEdges(BasicBlock block) {
+    public Collection<Edge<BasicBlock>> getOutgoingEdges(BasicBlock block) {
         return graph.findVertexFor(block).getOutgoingEdges();
     }
 
