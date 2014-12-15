@@ -1080,8 +1080,8 @@ public class EncodingUtils {
             }
             str = s;
             len -= clen;
-            ((RubyString)str).modify(((RubyString)str).size() + len);
         }
+        ((RubyString)str).modifyExpand(((RubyString)str).size() + len);
         return str;
     }
 
