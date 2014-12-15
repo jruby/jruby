@@ -9,7 +9,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class NoVarsDynamicScope extends DynamicScope {
     private static final int SIZE = 0;
-    private static final String SIZE_ERROR = "NoVarsDynamicScope only supports scopes with one variable";
+    private static final String SIZE_ERROR = "NoVarsDynamicScope only supports scopes with no variables";
     private static final String GROW_ERROR = "NoVarsDynamicScope cannot be grown; use ManyVarsDynamicScope";
     
     public NoVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
