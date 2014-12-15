@@ -3144,6 +3144,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
 
             str.setValue(newBuffer);
+            str.clearCodeRange();
             str.setTaint(true);
 
             return str;
