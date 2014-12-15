@@ -93,7 +93,7 @@ public abstract class NilClassNodes {
             super(context, sourceSection);
         }
 
-        public ToFNode(ToINode prev) {
+        public ToFNode(ToFNode prev) {
             super(prev);
         }
 
