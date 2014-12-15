@@ -8,6 +8,10 @@
 
 module Kernel
 
+  def itself
+    self
+  end
+
   module_function
 
   def p(*args)
@@ -43,69 +47,6 @@ module Kernel
   end
 
 end
-
-# Standard file handle shims
-
-module STDIN
-  def self.external_encoding
-    @external || Encoding.default_external
-  end
-
-  def self.internal_encoding
-    @internal
-  end
-
-  def self.set_encoding(external, internal)
-    @external = external
-    @internal = internal
-  end
-end
-
-module STDOUT
-  def self.print(*values)
-    Kernel.send(:print, *values)
-  end
-
-  def self.write(value)
-    print value
-  end
-
-  def self.flush
-    Truffle::Debug.flush_stdout
-  end
-
-  def self.external_encoding
-    @external
-  end
-
-  def self.internal_encoding
-    @internal
-  end
-
-  def self.set_encoding(external, internal)
-    @external = external
-    @internal = internal
-  end
-end
-
-$stdout = STDOUT
-
-module STDERR
-  def self.external_encoding
-    @external
-  end
-
-  def self.internal_encoding
-    @internal
-  end
-
-  def self.set_encoding(external, internal)
-    @external = external
-    @internal = internal
-  end
-end
-
-ARGF = Object.new
 
 # Here temporarily while we adapt to the newly imported specs
 

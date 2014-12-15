@@ -63,21 +63,6 @@ public class RubiniusLibrary {
         vmExceptionClass = new RubyClass(context, rubiniusModule, coreLib.getExceptionClass(), "VMException");
         objectBoundsExceededErrorClass = new RubyClass(context, rubiniusModule, vmExceptionClass, "ObjectBoundsExceededError");
         assertionErrorClass = new RubyClass(context, rubiniusModule, vmExceptionClass, "AssertionError");
-
-        final String[] files = new String[]{
-                "jruby/truffle/core/rubinius/api/bootstrap/channel.rb",
-                "jruby/truffle/core/rubinius/api/common/bytearray.rb",
-                "jruby/truffle/core/rubinius/api/common/channel.rb",
-                "jruby/truffle/core/rubinius/api/common/thread.rb",
-                "jruby/truffle/core/rubinius/api/common/tuple.rb",
-                "jruby/truffle/core/rubinius/api/common/type.rb",
-                "jruby/truffle/core/rubinius/kernel/common/struct.rb"
-                //"jruby/truffle/core/rubinius/kernel/common/time.rb"
-        };
-
-        for (String file : files) {
-            coreLib.loadRubyCore(file);
-        }
 	}
 
     // helper function, should maybe be moved elsewhere

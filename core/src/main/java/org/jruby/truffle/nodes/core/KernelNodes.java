@@ -1606,6 +1606,34 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "require_relative", isModuleFunction = true, required = 1)
+    public abstract static class RequireRelativeNode extends CoreMethodNode {
+
+        public RequireRelativeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RequireRelativeNode(RequireRelativeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean require(VirtualFrame frame, RubyString feature) {
+            notDesignedForCompilation();
+
+            final String sourcePath = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getPath();
+            final String directoryPath = new File(sourcePath).getParent();
+
+            try {
+                getContext().getFeatureManager().requireInPath(directoryPath, feature.toString(), this);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return true;
+        }
+    }
+
     @CoreMethod(names = "respond_to?", required = 1, optional = 1)
     public abstract static class RespondToNode extends CoreMethodNode {
 
