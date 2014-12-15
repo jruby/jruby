@@ -436,6 +436,16 @@ public class RubyEnumerable {
         return result;
     }
 
+    @JRubyMethod(name = "to_h", rest = true)
+    public static IRubyObject to_h(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        RubyHash result = RubyHash.newHash(runtime);
+        Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
+                Arity.OPTIONAL, new PutKeyValueCallback(runtime, result), context));
+        result.infectBy(self);
+        return result;
+    }
+
     @JRubyMethod
     public static IRubyObject sort(ThreadContext context, IRubyObject self, final Block block) {
         Ruby runtime = context.runtime;
@@ -1863,6 +1873,41 @@ public class RubyEnumerable {
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
             result.append(packEnumValues(runtime, largs));
             return runtime.getNil();
+        }
+    }
+
+    public static final class PutKeyValueCallback implements BlockCallback {
+        private Ruby runtime;
+        private RubyHash result;
+
+        public PutKeyValueCallback(Ruby runtime, RubyHash result) {
+            this.runtime = runtime;
+            this.result = result;
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            IRubyObject value;
+
+            switch (largs.length) {
+                case 0:
+                    value = context.nil;
+                    break;
+                case 1:
+                    value = largs[0];
+                    break;
+                default:
+                    value = RubyArray.newArrayNoCopy(runtime, largs);
+                    break;
+            }
+
+            IRubyObject ary = TypeConverter.checkArrayType(runtime, value);
+            if (ary.isNil()) throw runtime.newTypeError("wrong element type " + value.getMetaClass().getName() + " (expected array)");
+            int size;
+            if ((size = ((RubyArray)ary).size()) != 2) {
+                throw runtime.newArgumentError("element has wrong array length (expected 2, was " + size + ")");
+            }
+            result.op_aset(context, ((RubyArray)ary).eltOk(0), ((RubyArray)ary).eltOk(1));
+            return context.nil;
         }
     }
 }
