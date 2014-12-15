@@ -91,9 +91,11 @@ maven/jruby-complete/src/it/osgi*
 # NetBeans files
 nbproject/private
 
-# Eclipse project files
+# Eclipse files
 /.metadata
+/.recommenders
 core/.classpath
+core/.gitignore
 core/.project
 core/.settings
 
