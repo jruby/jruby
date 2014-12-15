@@ -186,10 +186,6 @@ public class TranslatorDriver {
 
         truffleNode = wrapper.wrap(truffleNode);
 
-        // Binding
-
-        truffleNode = SequenceNode.sequence(context, sourceSection, new SetTopLevelBindingNode(context, sourceSection), truffleNode);
-
         // Shell result
 
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode);

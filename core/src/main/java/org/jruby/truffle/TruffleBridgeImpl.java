@@ -13,10 +13,12 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.TruffleBridge;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.TopLevelRaiseHandler;
+import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
@@ -143,7 +145,11 @@ public class TruffleBridgeImpl implements TruffleBridge {
         return truffleContext.execute(truffleContext, source, parserContext, self, parentFrame, null, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
-                return new TopLevelRaiseHandler(node.getContext(), node.getSourceSection(), node);
+                RubyContext context = node.getContext();
+                SourceSection sourceSection = node.getSourceSection();
+                return SequenceNode.sequence(context, sourceSection,
+                        new SetTopLevelBindingNode(context, sourceSection),
+                        new TopLevelRaiseHandler(context, sourceSection, node));
             }
         });
     }
