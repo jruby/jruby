@@ -52,7 +52,7 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        public CurrentNode(AliveNode prev) {
+        public CurrentNode(CurrentNode prev) {
             super(prev);
         }
 
