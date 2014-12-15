@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -25,6 +26,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
@@ -164,16 +166,23 @@ public abstract class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(context, sourceSection, UndefinedPlaceholder.INSTANCE));
         }
 
-        final RubyNode methodNode;
-        List<List<Class<?>>> signatures = methodDetails.getNodeFactory().getNodeSignatures();
-        if (signatures.size() < 1 || signatures.get(0).get(2) == RubyNode[].class) {
-            methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
-        } else {
-            Object[] args = new Object[2 + argumentsNodes.size()];
-            args[0] = context;
-            args[1] = sourceSection;
-            System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 2, argumentsNodes.size());
-            methodNode = methodDetails.getNodeFactory().createNode(args);
+        RubyNode methodNode = null;
+        final NodeFactory<?> nodeFactory = methodDetails.getNodeFactory();
+        List<List<Class<?>>> signatures = nodeFactory.getNodeSignatures();
+        assert !signatures.isEmpty();
+
+        for (List<Class<?>> signature : signatures) {
+            if (signature.size() >= 1 && signature.get(0) != RubyContext.class && signature.get(0) != nodeFactory.getNodeClass()) {
+                throw new TruffleFatalException("Copy constructor with wrong type for previous in "+nodeFactory.getNodeClass()+" : "+signature.get(0), null);
+            } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
+                methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
+            } else {
+                Object[] args = new Object[2 + argumentsNodes.size()];
+                args[0] = context;
+                args[1] = sourceSection;
+                System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 2, argumentsNodes.size());
+                methodNode = methodDetails.getNodeFactory().createNode(args);
+            }
         }
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
