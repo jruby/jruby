@@ -7765,4 +7765,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         return cr2;
     }
+    
+    @JRubyMethod(name ="b", compat = RUBY2_0)
+    public IRubyObject b(ThreadContext context) {
+      Encoding encoding = ASCIIEncoding.INSTANCE;
+      RubyString dup = (RubyString)dup();
+      dup.associateEncoding(encoding);
+      dup.clearCodeRange();
+      return dup;
+    }
 }
