@@ -16,9 +16,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ReadKeywordRestArgumentNode extends RubyNode {
 
@@ -38,22 +36,22 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         final RubyHash hash = getKeywordsHash(frame);
 
         if (hash == null) {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0, null);
         }
 
-        final LinkedHashMap<Object, Object> store = new LinkedHashMap<>();
+        final List<RubyHash.Entry> entries = new ArrayList<>();
 
-        outer: for (Map.Entry<Object, Object> entry : hash.slowToMap().entrySet()) {
+        outer: for (RubyHash.Entry entry : hash.verySlowToEntries()) {
             for (String excludedKeyword : excludedKeywords) {
                 if (excludedKeyword.toString().equals(entry.getKey().toString())) {
                     continue outer;
                 }
             }
 
-            store.put(entry.getKey(), entry.getValue());
+            entries.add(new RubyHash.Entry(entry.getKey(), entry.getValue()));
         }
 
-        return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, store, store.size());
+        return RubyHash.verySlowFromEntries(getContext(), entries);
     }
 
     private RubyHash getKeywordsHash(VirtualFrame frame) {

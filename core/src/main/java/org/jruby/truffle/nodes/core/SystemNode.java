@@ -45,7 +45,7 @@ public class SystemNode extends RubyNode {
         final List<String> envp = new ArrayList<>();
 
         // TODO(CS): cast
-        for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
+        for (RubyHash.Entry entry : env.verySlowToEntries()) {
             envp.add(entry.getKey().toString() + "=" + entry.getValue().toString());
         }
 

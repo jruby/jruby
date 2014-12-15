@@ -50,7 +50,7 @@ public class CheckArityNode extends RubyNode {
         }
 
         if (!keywordsRest && arity.hasKeywords() && getKeywordsHash(frame) != null) {
-            for (Map.Entry<Object, Object> entry : getKeywordsHash(frame).slowToMap().entrySet()) {
+            for (RubyHash.Entry entry : getKeywordsHash(frame).verySlowToEntries()) {
                 for (String keyword : keywords) {
                     if (!keyword.toString().equals(entry.getKey().toString())) {
                         throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + entry.getKey().toString(), this));

@@ -11,8 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import org.jruby.truffle.runtime.core.RubyHash;
 
-import java.util.LinkedHashMap;
-
 public class HashGuards {
 
     public static boolean isNull(RubyHash hash) {
@@ -20,23 +18,12 @@ public class HashGuards {
     }
 
     public static boolean isObjectArray(RubyHash hash) {
-        return hash.getStore() instanceof Object[];
+        // Arrays are covariant in Java!
+        return hash.getStore() instanceof Object[] && !(hash.getStore() instanceof RubyHash.Bucket[]);
     }
 
-    public static boolean isObjectLinkedHashMap(RubyHash hash) {
-        return hash.getStore() instanceof LinkedHashMap<?, ?>;
-    }
-
-    public static boolean isOtherNull(RubyHash hash, RubyHash other) {
-        return other.getStore() == null;
-    }
-
-    public static boolean isOtherObjectArray(RubyHash hash, RubyHash other) {
-        return other.getStore() instanceof Object[];
-    }
-
-    public static boolean isOtherObjectLinkedHashMap(RubyHash hash, RubyHash other) {
-        return other.getStore() instanceof LinkedHashMap<?, ?>;
+    public static boolean isBucketArray(RubyHash hash) {
+        return hash.getStore() instanceof RubyHash.Bucket[];
     }
 
 }

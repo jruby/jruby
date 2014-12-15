@@ -46,6 +46,7 @@ class MSpecScript
 
     # Can't load these - so tags aren't enough to exclude them
 
+    "^spec/ruby/core/array/pack",
     "^spec/ruby/core/class/dup_spec.rb",
     "^spec/ruby/core/class/inherited_spec.rb",
     "^spec/ruby/core/class/new_spec.rb",

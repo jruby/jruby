@@ -596,8 +596,7 @@ public abstract class KernelNodes {
 
             final RubyHash env = context.getCoreLibrary().getENV();
 
-            // TODO(CS): cast
-            for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
+            for (RubyHash.Entry entry : env.verySlowToEntries()) {
                 builder.environment().put(entry.getKey().toString(), entry.getValue().toString());
             }
 
@@ -839,23 +838,24 @@ public abstract class KernelNodes {
 
         @Specialization
         public int hash(int value) {
+            // TODO(CS): should check this matches MRI
             return value;
         }
 
         @Specialization
         public int hash(long value) {
-            return (int) (value ^ value >>> 32);
+            // TODO(CS): should check this matches MRI
+            return Long.valueOf(value).hashCode();
         }
 
         @Specialization
-        public int hash(RubyBignum value) {
-            return value.hashCode();
+        public int hash(double value) {
+            // TODO(CS): should check this matches MRI
+            return Double.valueOf(value).hashCode();
         }
 
         @Specialization
         public int hash(RubyBasicObject self) {
-            notDesignedForCompilation();
-
             return self.hashCode();
         }
 

@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
 
-import java.util.LinkedHashMap;
+import java.util.*;
 
 public abstract class HashLiteralNode extends RubyNode {
 
@@ -69,7 +69,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0, null);
         }
 
     }
@@ -111,40 +111,30 @@ public abstract class HashLiteralNode extends RubyNode {
                 position += 2;
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, storage, position / 2);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, storage, position / 2, null);
         }
 
     }
 
     public static class GenericHashLiteralNode extends HashLiteralNode {
 
-        @Child protected DispatchHeadNode equalNode;
-
         public GenericHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
-            equalNode = new DispatchHeadNode(context);
         }
 
-        @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
             notDesignedForCompilation();
 
-            final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
+            final List<RubyHash.Entry> entries = new ArrayList<>();
 
             for (int n = 0; n < keyValues.length; n += 2) {
-                Object key = keyValues[n].execute(frame);
-
-                if (key instanceof RubyString) {
-                    key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
-                }
-
+                final Object key = keyValues[n].execute(frame);
                 final Object value = keyValues[n + 1].execute(frame);
-
-                storage.put(key, value);
+                entries.add(new RubyHash.Entry(key, value));
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, storage, 0);
+            return RubyHash.verySlowFromEntries(getContext(), entries);
         }
 
     }

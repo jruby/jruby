@@ -52,3 +52,13 @@ end
 
 class Channel
 end
+
+# Here temporarily
+
+class Hash
+
+  def include?(key)
+    keys.include? key
+  end
+
+end

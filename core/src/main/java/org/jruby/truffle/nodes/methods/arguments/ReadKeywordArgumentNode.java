@@ -47,7 +47,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
         Object value = null;
 
-        for (Map.Entry<Object, Object> entry : hash.slowToMap().entrySet()) {
+        for (RubyHash.Entry entry : hash.verySlowToEntries()) {
             if (entry.getKey().toString().equals(name)) {
                 value = entry.getValue();
                 break;
