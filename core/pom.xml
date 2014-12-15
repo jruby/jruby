@@ -110,6 +110,11 @@
       <version>1.0.12</version>
     </dependency>
     <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>dirgra</artifactId>
+      <version>0.1</version>
+    </dependency>
+    <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
       <version>1.5</version>

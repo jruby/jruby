@@ -1,5 +1,6 @@
 package org.jruby.ir.dataflow.analyses;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -8,7 +9,6 @@ import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.util.Edge;
 
 import java.util.HashSet;
 import java.util.ListIterator;

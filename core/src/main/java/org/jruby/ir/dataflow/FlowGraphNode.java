@@ -1,9 +1,9 @@
 package org.jruby.ir.dataflow;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.util.Edge;
 
 import java.util.BitSet;
 import java.util.List;
