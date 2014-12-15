@@ -93,6 +93,9 @@ nbproject/private
 
 # Eclipse project files
 /.metadata
+core/.classpath
+core/.project
+core/.settings
 
 # Truffle benchmark stuff
 reference.txt
