@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashOperations;
 
 import java.util.*;
 
@@ -39,7 +40,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= RubyHash.HASHES_SMALL * 2) {
+        } else if (keyValues.length <= HashOperations.SMALL_HASH_SIZE * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);
@@ -87,7 +88,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            final Object[] storage = new Object[RubyHash.HASHES_SMALL * 2];
+            final Object[] storage = new Object[HashOperations.SMALL_HASH_SIZE * 2];
 
             int position = 0;
 
@@ -135,7 +136,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 entries.add(new Entry(key, value));
             }
 
-            return RubyHash.verySlowFromEntries(getContext(), entries);
+            return HashOperations.verySlowFromEntries(getContext(), entries);
         }
 
     }

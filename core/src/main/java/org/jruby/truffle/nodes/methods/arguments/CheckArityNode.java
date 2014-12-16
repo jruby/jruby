@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.*;
 
 /**
@@ -49,7 +50,7 @@ public class CheckArityNode extends RubyNode {
         }
 
         if (!keywordsRest && arity.hasKeywords() && getKeywordsHash(frame) != null) {
-            for (Entry entry : getKeywordsHash(frame).verySlowToEntries()) {
+            for (Entry entry : HashOperations.verySlowToEntries(getKeywordsHash(frame))) {
                 for (String keyword : keywords) {
                     if (!keyword.toString().equals(entry.getKey().toString())) {
                         throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + entry.getKey().toString(), this));

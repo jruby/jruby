@@ -38,6 +38,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
@@ -597,7 +598,7 @@ public abstract class KernelNodes {
 
             final RubyHash env = context.getCoreLibrary().getENV();
 
-            for (Entry entry : env.verySlowToEntries()) {
+            for (Entry entry : HashOperations.verySlowToEntries(env)) {
                 builder.environment().put(entry.getKey().toString(), entry.getValue().toString());
             }
 

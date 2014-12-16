@@ -16,6 +16,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashOperations;
 
 public class ReadKeywordArgumentNode extends RubyNode {
 
@@ -42,7 +43,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
         Object value = null;
 
-        for (Entry entry : hash.verySlowToEntries()) {
+        for (Entry entry : HashOperations.verySlowToEntries(hash)) {
             if (entry.getKey().toString().equals(name)) {
                 value = entry.getValue();
                 break;

@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
@@ -742,7 +743,7 @@ public class CoreLibrary {
             entries.add(new Entry(context.makeString(variable.getKey()), context.makeString(variable.getValue())));
         }
 
-        return RubyHash.verySlowFromEntries(context, entries);
+        return HashOperations.verySlowFromEntries(context, entries);
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {
