@@ -251,16 +251,27 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isBucketArray")
-        public Object getBucketArray(RubyHash hash, Object key) {
+        public Object getBucketArray(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
             final RubyHash.BucketAndIndex bucketAndIndex = hash.verySlowFindBucket(key);
 
-            if (bucketAndIndex.getBucket() == null) {
-                return getContext().getCoreLibrary().getNilObject();
+            if (bucketAndIndex.getBucket() != null) {
+                return bucketAndIndex.getBucket().value;
             }
 
-            return bucketAndIndex.getBucket().value;
+            notInHashProfile.enter();
+
+            if (hash.getDefaultBlock() != null) {
+                useDefaultProfile.enter();
+                return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
+            }
+
+            if (hash.getDefaultValue() != null) {
+                return hash.getDefaultValue();
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
