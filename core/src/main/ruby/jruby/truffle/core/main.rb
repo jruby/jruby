@@ -68,5 +68,3 @@ module STDERR
     @internal = internal
   end
 end
-
-ARGF = Object.new

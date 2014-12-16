@@ -18,3 +18,5 @@ require_relative 'core/rubinius/api/common/thread'
 require_relative 'core/rubinius/api/common/tuple'
 require_relative 'core/rubinius/api/common/type'
 require_relative 'core/rubinius/kernel/common/struct'
+
+require_relative 'core/shims'
