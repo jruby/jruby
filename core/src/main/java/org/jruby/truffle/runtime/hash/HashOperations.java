@@ -49,7 +49,9 @@ public class HashOperations {
     public static void dump(RubyHash hash) {
         final StringBuilder builder = new StringBuilder();
 
-        builder.append("(");
+        builder.append("[");
+        builder.append(hash.getSize());
+        builder.append("](");
 
         for (Bucket bucket : (Bucket[]) hash.getStore()) {
             builder.append("(");
@@ -109,7 +111,7 @@ public class HashOperations {
                 bucket = bucket.getNextInSequence();
             }
         } else if (hash.getStore() instanceof Object[]) {
-            for (int n = 0; n < hash.getStoreSize(); n++) {
+            for (int n = 0; n < hash.getSize(); n++) {
                 entries.add(new Entry(((Object[]) hash.getStore())[n * 2], ((Object[]) hash.getStore())[n * 2 + 1]));
             }
         } else if (hash.getStore() != null) {
@@ -208,6 +210,6 @@ public class HashOperations {
             }
         }
 
-        hash.setStoreSize(actualSize);
+        hash.setSize(actualSize);
     }
 }

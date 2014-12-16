@@ -74,11 +74,11 @@ public class RubyHash extends RubyBasicObject {
         this.lastInSequence = lastInSequence;
     }
 
-    public int getStoreSize() {
+    public int getSize() {
         return storeSize;
     }
 
-    public void setStoreSize(int storeSize) {
+    public void setSize(int storeSize) {
         this.storeSize = storeSize;
     }
 

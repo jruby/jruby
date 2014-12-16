@@ -90,7 +90,7 @@ public abstract class HashLiteralNode extends RubyNode {
         public RubyHash executeRubyHash(VirtualFrame frame) {
             final Object[] storage = new Object[HashOperations.SMALL_HASH_SIZE * 2];
 
-            int position = 0;
+            int end = 0;
 
             initializers: for (int n = 0; n < keyValues.length; n += 2) {
                 Object key = keyValues[n].execute(frame);
@@ -101,19 +101,19 @@ public abstract class HashLiteralNode extends RubyNode {
 
                 final Object value = keyValues[n + 1].execute(frame);
 
-                for (int i = 0; i < n; i += 2) {
+                for (int i = 0; i < end; i += 2) {
                     if (equalNode.call(frame, key, "eql?", null, storage[i])) {
                         storage[i + 1] = value;
                         continue initializers;
                     }
                 }
 
-                storage[position] = key;
-                storage[position + 1] = value;
-                position += 2;
+                storage[end] = key;
+                storage[end + 1] = value;
+                end += 2;
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, storage, position / 2, null);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, storage, end / 2, null);
         }
 
     }

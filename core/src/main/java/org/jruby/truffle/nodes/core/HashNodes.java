@@ -234,7 +234,7 @@ public abstract class HashNodes {
         @Specialization(guards = "isObjectArray")
         public Object getObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
             final Object[] store = (Object[]) hash.getStore();
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
 
             for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
                 if (n < size && eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
@@ -317,7 +317,7 @@ public abstract class HashNodes {
             hash.checkFrozen(this);
 
             final Object[] store = (Object[]) hash.getStore();
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
 
             for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
                 if (n < size && eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
@@ -334,7 +334,7 @@ public abstract class HashNodes {
                 extendProfile.enter();
                 store[size * 2] = key;
                 store[size * 2 + 1] = value;
-                hash.setStoreSize(newSize);
+                hash.setSize(newSize);
                 return value;
             }
 
@@ -360,7 +360,7 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             if (HashOperations.verySlowSetInBuckets(hash, key, value)) {
-                hash.setStoreSize(hash.getStoreSize() + 1);
+                hash.setSize(hash.getSize() + 1);
             }
 
             return value;
@@ -421,7 +421,7 @@ public abstract class HashNodes {
             hash.checkFrozen(this);
 
             final Object[] store = (Object[]) hash.getStore();
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
 
             for (int n = 0; n < HashOperations.SMALL_HASH_SIZE * 2; n += 2) {
                 if (n < size && eqlNode.call(frame, store[n], "eql?", null, key)) {
@@ -430,7 +430,7 @@ public abstract class HashNodes {
                     // Move the later values down
                     System.arraycopy(store, n + 2, store, n, HashOperations.SMALL_HASH_SIZE * 2 - n - 2);
 
-                    hash.setStoreSize(size - 1);
+                    hash.setSize(size - 1);
 
                     return value;
                 }
@@ -477,7 +477,7 @@ public abstract class HashNodes {
                 bucket.getNextInLookup().setPreviousInLookup(bucket.getPreviousInLookup());
             }
 
-            hash.setStoreSize(hash.getStoreSize() - 1);
+            hash.setSize(hash.getSize() - 1);
 
             return bucket.getValue();
         }
@@ -509,7 +509,7 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             final Object[] store = (Object[]) hash.getStore();
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
 
             int count = 0;
 
@@ -563,7 +563,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isNull")
         public boolean emptyObjectArray(RubyHash hash) {
-            return hash.getStoreSize() == 0;
+            return hash.getSize() == 0;
         }
 
     }
@@ -734,7 +734,7 @@ public abstract class HashNodes {
         public boolean keyObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
             final Object[] store = (Object[]) hash.getStore();
 
             for (int n = 0; n < store.length; n += 2) {
@@ -783,7 +783,7 @@ public abstract class HashNodes {
 
             final Object[] store = (Object[]) hash.getStore();
 
-            final Object[] keys = new Object[hash.getStoreSize()];
+            final Object[] keys = new Object[hash.getSize()];
 
             for (int n = 0; n < keys.length; n++) {
                 keys[n] = store[n * 2];
@@ -796,7 +796,7 @@ public abstract class HashNodes {
         public RubyArray keysBucketArray(RubyHash hash) {
             notDesignedForCompilation();
 
-            final Object[] keys = new Object[hash.getStoreSize()];
+            final Object[] keys = new Object[hash.getSize()];
 
             Bucket bucket = hash.getFirstInSequence();
             int n = 0;
@@ -828,7 +828,7 @@ public abstract class HashNodes {
         @Specialization(guards = "isObjectArray")
         public RubyArray mapObjectArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
             final Object[] store = (Object[]) hash.getStore();
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
 
             final int resultSize = store.length / 2;
             final Object[] result = new Object[resultSize];
@@ -899,7 +899,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getStoreSize(), null);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getSize(), null);
         }
 
         @ExplodeLoop
@@ -908,10 +908,10 @@ public abstract class HashNodes {
             // TODO(CS): what happens with the default block here? Which side does it get merged from?
 
             final Object[] storeA = (Object[]) hash.getStore();
-            final int storeASize = hash.getStoreSize();
+            final int storeASize = hash.getSize();
 
             final Object[] storeB = (Object[]) other.getStore();
-            final int storeBSize = hash.getStoreSize();
+            final int storeBSize = hash.getSize();
 
             final boolean[] mergeFromA = new boolean[storeASize];
             int mergeFromACount = 0;
@@ -983,16 +983,23 @@ public abstract class HashNodes {
 
 
         @Specialization
-        public RubyHash mergeBucketArrayBucketArray(VirtualFrame frame, RubyHash hash, RubyHash other) {
-            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, new Bucket[HashOperations.capacityGreaterThan(hash.getStoreSize() + hash.getStoreSize())], 0, null);
+        public RubyHash mergeBucketArrayBucketArray(RubyHash hash, RubyHash other) {
+            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, new Bucket[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
+
+            int size = 0;
 
             for (Entry entry : HashOperations.verySlowToEntries(hash)) {
                 HashOperations.verySlowSetInBuckets(merged, entry.getKey(), entry.getValue());
+                size++;
             }
 
             for (Entry entry : HashOperations.verySlowToEntries(other)) {
-                HashOperations.verySlowSetInBuckets(merged, entry.getKey(), entry.getValue());
+                if (HashOperations.verySlowSetInBuckets(merged, entry.getKey(), entry.getValue())) {
+                    size++;
+                }
             }
+
+            merged.setSize(size);
 
             return merged;
         }
@@ -1053,7 +1060,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isNull")
         public int sizeObjectArray(RubyHash hash) {
-            return hash.getStoreSize();
+            return hash.getSize();
         }
 
     }
@@ -1078,7 +1085,7 @@ public abstract class HashNodes {
         public RubyArray valuesObjectArray(RubyHash hash) {
             final Object[] store = (Object[]) hash.getStore();
 
-            final Object[] values = new Object[hash.getStoreSize()];
+            final Object[] values = new Object[hash.getSize()];
 
             for (int n = 0; n < values.length; n++) {
                 values[n] = store[n * 2 + 1];
@@ -1091,7 +1098,7 @@ public abstract class HashNodes {
         public RubyArray valuesBucketArray(RubyHash hash) {
             notDesignedForCompilation();
 
-            final Object[] values = new Object[hash.getStoreSize()];
+            final Object[] values = new Object[hash.getSize()];
 
             Bucket bucket = hash.getFirstInSequence();
             int n = 0;
@@ -1130,7 +1137,7 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             final Object[] store = (Object[]) hash.getStore();
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
             final Object[] pairs = new Object[size];
 
             for (int n = 0; n < size; n++) {
@@ -1144,7 +1151,7 @@ public abstract class HashNodes {
         public RubyArray toArrayBucketArray(RubyHash hash) {
             notDesignedForCompilation();
 
-            final int size = hash.getStoreSize();
+            final int size = hash.getSize();
             final Object[] pairs = new Object[size];
 
             int n = 0;
