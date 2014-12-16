@@ -18,11 +18,6 @@ public class HashGuards {
         return hash.getStore() == null;
     }
 
-    public static boolean isPackedArray(RubyHash hash) {
-        // Arrays are covariant in Java!
-        return hash.getStore() instanceof Object[] && !(hash.getStore() instanceof Entry[]);
-    }
-
     public static boolean isBuckets(RubyHash hash) {
         return hash.getStore() instanceof Entry[];
     }
