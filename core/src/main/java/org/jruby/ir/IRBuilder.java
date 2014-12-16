@@ -311,7 +311,7 @@ public class IRBuilder {
 
     private Operand getImplicitBlockArg(IRScope s) {
         int n = 0;
-        while (s != null && s instanceof IRClosure) {
+        while (s != null && (s instanceof IRClosure || s instanceof IRMetaClassBody)) {
             // We have this oddity of an extra inserted scope for instance/class/module evals
             if (s instanceof IREvalScript && ((IREvalScript)s).isModuleOrInstanceEval()) {
                 n++;
@@ -3509,12 +3509,7 @@ public class IRBuilder {
             bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
         }
 
-        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
-
-        if (body instanceof IRMetaClassBody) {  // def foo; class << self; yield; end; end
-            bodyBuilder.addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
-        }
-
+        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                               // %self
         bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
         bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
         // Create a new nested builder to ensure this gets its own IR builder state

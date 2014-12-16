@@ -49,7 +49,7 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @return the value here
      */
     public IRubyObject getValue(int offset, int depth) {
-//        assert depth != 0: SIZE_ERROR;
+        assert depth != 0: SIZE_ERROR;
         return parent.getValue(offset, depth - 1);
     }
     

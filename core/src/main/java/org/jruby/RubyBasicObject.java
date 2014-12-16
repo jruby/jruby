@@ -1871,15 +1871,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * using the module under as the context.
      */
     public IRubyObject evalUnder(final ThreadContext context, RubyModule under, RubyString src, String file, int line, EvalType evalType) {
-        Visibility savedVisibility = context.getCurrentVisibility();
-        context.setCurrentVisibility(PUBLIC);
-        context.preExecuteUnder(under, Block.NULL_BLOCK);
-        try {
-            return Interpreter.evalSimple(context, this, src, file, line, evalType);
-        } finally {
-            context.postExecuteUnder();
-            context.setCurrentVisibility(savedVisibility);
-        }
+        return Interpreter.evalSimple(context, under, this, src, file, line, evalType);
     }
 
     /**

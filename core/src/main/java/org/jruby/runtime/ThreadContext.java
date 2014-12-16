@@ -397,6 +397,13 @@ public final class ThreadContext {
         }
         return frame;
     }
+
+    public void pushEvalFrame() {
+        Frame frame = getCurrentFrame();
+        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), Block.NULL_BLOCK);
+        frame = getCurrentFrame();
+        frame.setVisibility(Visibility.PUBLIC);
+    }
     
     private void pushCallFrame(RubyModule clazz, String name, 
                                IRubyObject self, Block block) {
