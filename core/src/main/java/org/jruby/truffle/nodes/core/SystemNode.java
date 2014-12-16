@@ -18,7 +18,7 @@ import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
 
 /**
@@ -45,8 +45,8 @@ public class SystemNode extends RubyNode {
         final List<String> envp = new ArrayList<>();
 
         // TODO(CS): cast
-        for (Entry entry : HashOperations.verySlowToEntries(env)) {
-            envp.add(entry.getKey().toString() + "=" + entry.getValue().toString());
+        for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+            envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
         }
 
         final String command = child.execute(frame).toString();

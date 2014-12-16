@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes;
 
-import com.oracle.truffle.api.dsl.ImplicitCast;
 import com.oracle.truffle.api.dsl.TypeSystem;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -18,7 +17,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.hash.BucketSearchResult;
+import org.jruby.truffle.runtime.hash.HashSearchResult;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -62,7 +61,7 @@ import org.jruby.truffle.runtime.LexicalScope;
                 RubiniusByteArray.class, //
                 RubyEncodingConverter.class, //
                 RubyBasicObject.class, //
-                BucketSearchResult.class, //
+                HashSearchResult.class, //
                 Object[].class})
 
 public class RubyTypes {

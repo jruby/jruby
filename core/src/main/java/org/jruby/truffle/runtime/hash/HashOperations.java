@@ -38,11 +38,11 @@ public class HashOperations {
     }
 
     @CompilerDirectives.SlowPath
-    public static RubyHash verySlowFromEntries(RubyContext context, List<Entry> entries) {
+    public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries) {
         RubyNode.notDesignedForCompilation();
 
         final RubyHash hash = new RubyHash(context.getCoreLibrary().getHashClass(), null, null, null, 0, null);
-        verySlowSetEntries(hash, entries);
+        verySlowSetKeyValues(hash, entries);
         return hash;
     }
 
@@ -53,16 +53,16 @@ public class HashOperations {
         builder.append(hash.getSize());
         builder.append("](");
 
-        for (Bucket bucket : (Bucket[]) hash.getStore()) {
+        for (Entry entry : (Entry[]) hash.getStore()) {
             builder.append("(");
 
-            while (bucket != null) {
+            while (entry != null) {
                 builder.append("[");
-                builder.append(bucket.getKey());
+                builder.append(entry.getKey());
                 builder.append(",");
-                builder.append(bucket.getValue());
+                builder.append(entry.getValue());
                 builder.append("]");
-                bucket = bucket.getNextInLookup();
+                entry = entry.getNextInLookup();
             }
 
             builder.append(")");
@@ -70,28 +70,28 @@ public class HashOperations {
 
         builder.append(")~>(");
 
-        Bucket bucket = hash.getFirstInSequence();
+        Entry entry = hash.getFirstInSequence();
 
-        while (bucket != null) {
+        while (entry != null) {
             builder.append("[");
-            builder.append(bucket.getKey());
+            builder.append(entry.getKey());
             builder.append(",");
-            builder.append(bucket.getValue());
+            builder.append(entry.getValue());
             builder.append("]");
-            bucket = bucket.getNextInSequence();
+            entry = entry.getNextInSequence();
         }
 
         builder.append(")<~(");
 
-        bucket = hash.getLastInSequence();
+        entry = hash.getLastInSequence();
 
-        while (bucket != null) {
+        while (entry != null) {
             builder.append("[");
-            builder.append(bucket.getKey());
+            builder.append(entry.getKey());
             builder.append(",");
-            builder.append(bucket.getValue());
+            builder.append(entry.getValue());
             builder.append("]");
-            bucket = bucket.getPreviousInSequence();
+            entry = entry.getPreviousInSequence();
         }
 
         builder.append(")");
@@ -100,29 +100,29 @@ public class HashOperations {
     }
 
     @CompilerDirectives.SlowPath
-    public static List<Entry> verySlowToEntries(RubyHash hash) {
-        final List<Entry> entries = new ArrayList<>();
+    public static List<KeyValue> verySlowToKeyValues(RubyHash hash) {
+        final List<KeyValue> keyValues = new ArrayList<>();
 
-        if (hash.getStore() instanceof Bucket[]) {
-            Bucket bucket = hash.getFirstInSequence();
+        if (hash.getStore() instanceof Entry[]) {
+            Entry entry = hash.getFirstInSequence();
 
-            while (bucket != null) {
-                entries.add(new Entry(bucket.getKey(), bucket.getValue()));
-                bucket = bucket.getNextInSequence();
+            while (entry != null) {
+                keyValues.add(new KeyValue(entry.getKey(), entry.getValue()));
+                entry = entry.getNextInSequence();
             }
         } else if (hash.getStore() instanceof Object[]) {
             for (int n = 0; n < hash.getSize(); n++) {
-                entries.add(new Entry(((Object[]) hash.getStore())[n * 2], ((Object[]) hash.getStore())[n * 2 + 1]));
+                keyValues.add(new KeyValue(((Object[]) hash.getStore())[n * 2], ((Object[]) hash.getStore())[n * 2 + 1]));
             }
         } else if (hash.getStore() != null) {
             throw new UnsupportedOperationException();
         }
 
-        return entries;
+        return keyValues;
     }
 
     @CompilerDirectives.SlowPath
-    public static BucketSearchResult verySlowFindBucket(RubyHash hash, Object key) {
+    public static HashSearchResult verySlowFindBucket(RubyHash hash, Object key) {
         final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
 
         final int hashed;
@@ -135,53 +135,53 @@ public class HashOperations {
             throw new UnsupportedOperationException();
         }
 
-        final Bucket[] buckets = (Bucket[]) hash.getStore();
-        final int bucketIndex = (hashed & SIGN_BIT_MASK) % buckets.length;
-        Bucket bucket = buckets[bucketIndex];
+        final Entry[] entries = (Entry[]) hash.getStore();
+        final int bucketIndex = (hashed & SIGN_BIT_MASK) % entries.length;
+        Entry entry = entries[bucketIndex];
 
-        Bucket previousBucket = null;
+        Entry previousEntry = null;
 
-        while (bucket != null) {
+        while (entry != null) {
             // TODO: cast
 
-            if ((boolean) DebugOperations.send(hash.getContext(), key, "eql?", null, bucket.getKey())) {
-                return new BucketSearchResult(bucketIndex, previousBucket, bucket);
+            if ((boolean) DebugOperations.send(hash.getContext(), key, "eql?", null, entry.getKey())) {
+                return new HashSearchResult(bucketIndex, previousEntry, entry);
             }
 
-            previousBucket = bucket;
-            bucket = bucket.getNextInLookup();
+            previousEntry = entry;
+            entry = entry.getNextInLookup();
         }
 
-        return new BucketSearchResult(bucketIndex, previousBucket, null);
+        return new HashSearchResult(bucketIndex, previousEntry, null);
     }
 
-    public static void setAtBucket(RubyHash hash, BucketSearchResult bucketSearchResult, Object key, Object value) {
-        if (bucketSearchResult.getBucket() == null) {
-            final Bucket bucket = new Bucket(key, value);
+    public static void setAtBucket(RubyHash hash, HashSearchResult hashSearchResult, Object key, Object value) {
+        if (hashSearchResult.getEntry() == null) {
+            final Entry entry = new Entry(key, value);
 
-            if (bucketSearchResult.getPreviousBucket() == null) {
-                ((Bucket[]) hash.getStore())[bucketSearchResult.getIndex()] = bucket;
+            if (hashSearchResult.getPreviousEntry() == null) {
+                ((Entry[]) hash.getStore())[hashSearchResult.getIndex()] = entry;
             } else {
-                bucketSearchResult.getPreviousBucket().setNextInLookup(bucket);
+                hashSearchResult.getPreviousEntry().setNextInLookup(entry);
             }
 
             if (hash.getFirstInSequence() == null) {
-                hash.setFirstInSequence(bucket);
-                hash.setLastInSequence(bucket);
+                hash.setFirstInSequence(entry);
+                hash.setLastInSequence(entry);
             } else {
-                hash.getLastInSequence().setNextInSequence(bucket);
-                bucket.setPreviousInSequence(hash.getLastInSequence());
-                hash.setLastInSequence(bucket);
+                hash.getLastInSequence().setNextInSequence(entry);
+                entry.setPreviousInSequence(hash.getLastInSequence());
+                hash.setLastInSequence(entry);
             }
         } else {
-            final Bucket bucket = bucketSearchResult.getBucket();
+            final Entry entry = hashSearchResult.getEntry();
 
             // The bucket stays in the same place in the sequence
 
             // Update the key (it overwrites even it it's eql?) and value
 
-            bucket.setKey(key);
-            bucket.setValue(value);
+            entry.setKey(key);
+            entry.setValue(value);
         }
     }
 
@@ -191,20 +191,20 @@ public class HashOperations {
             key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
         }
 
-        final BucketSearchResult bucketSearchResult = verySlowFindBucket(hash, key);
-        setAtBucket(hash, bucketSearchResult, key, value);
-        return bucketSearchResult.getBucket() == null;
+        final HashSearchResult hashSearchResult = verySlowFindBucket(hash, key);
+        setAtBucket(hash, hashSearchResult, key, value);
+        return hashSearchResult.getEntry() == null;
     }
 
     @CompilerDirectives.SlowPath
-    public static void verySlowSetEntries(RubyHash hash, List<Entry> entries) {
-        final int size = entries.size();
-        hash.setStore(new Bucket[capacityGreaterThan(size)], 0, null, null);
+    public static void verySlowSetKeyValues(RubyHash hash, List<KeyValue> keyValues) {
+        final int size = keyValues.size();
+        hash.setStore(new Entry[capacityGreaterThan(size)], 0, null, null);
 
         int actualSize = 0;
 
-        for (Entry entry : entries) {
-            if (verySlowSetInBuckets(hash, entry.getKey(), entry.getValue())) {
+        for (KeyValue keyValue : keyValues) {
+            if (verySlowSetInBuckets(hash, keyValue.getKey(), keyValue.getValue())) {
                 actualSize++;
             }
         }

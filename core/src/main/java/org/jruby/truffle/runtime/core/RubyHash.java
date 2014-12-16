@@ -11,8 +11,8 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.hash.Bucket;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -35,10 +35,10 @@ public class RubyHash extends RubyBasicObject {
     private Object defaultValue;
     private Object store;
     private int storeSize;
-    private Bucket firstInSequence;
-    private Bucket lastInSequence;
+    private Entry firstInSequence;
+    private Entry lastInSequence;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int storeSize, Bucket firstInSequence) {
+    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int storeSize, Entry firstInSequence) {
         super(rubyClass);
         this.defaultBlock = defaultBlock;
         this.defaultValue = defaultValue;
@@ -67,7 +67,7 @@ public class RubyHash extends RubyBasicObject {
         return store;
     }
 
-    public void setStore(Object store, int storeSize, Bucket firstInSequence, Bucket lastInSequence) {
+    public void setStore(Object store, int storeSize, Entry firstInSequence, Entry lastInSequence) {
         this.store = store;
         this.storeSize = storeSize;
         this.firstInSequence = firstInSequence;
@@ -82,31 +82,31 @@ public class RubyHash extends RubyBasicObject {
         this.storeSize = storeSize;
     }
 
-    public Bucket getFirstInSequence() {
+    public Entry getFirstInSequence() {
         return firstInSequence;
     }
 
-    public void setFirstInSequence(Bucket firstInSequence) {
+    public void setFirstInSequence(Entry firstInSequence) {
         this.firstInSequence = firstInSequence;
     }
 
-    public Bucket getLastInSequence() {
+    public Entry getLastInSequence() {
         return lastInSequence;
     }
 
-    public void setLastInSequence(Bucket lastInSequence) {
+    public void setLastInSequence(Entry lastInSequence) {
         this.lastInSequence = lastInSequence;
     }
 
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        for (Entry entry : HashOperations.verySlowToEntries(this)) {
-            if (entry.getKey() instanceof RubyBasicObject) {
-                ((RubyBasicObject) entry.getKey()).visitObjectGraph(visitor);
+        for (KeyValue keyValue : HashOperations.verySlowToKeyValues(this)) {
+            if (keyValue.getKey() instanceof RubyBasicObject) {
+                ((RubyBasicObject) keyValue.getKey()).visitObjectGraph(visitor);
             }
 
-            if (entry.getValue() instanceof RubyBasicObject) {
-                ((RubyBasicObject) entry.getValue()).visitObjectGraph(visitor);
+            if (keyValue.getValue() instanceof RubyBasicObject) {
+                ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
             }
         }
     }

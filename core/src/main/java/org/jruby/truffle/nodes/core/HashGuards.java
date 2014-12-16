@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.hash.Bucket;
+import org.jruby.truffle.runtime.hash.Entry;
 
 public class HashGuards {
 
@@ -20,11 +20,11 @@ public class HashGuards {
 
     public static boolean isObjectArray(RubyHash hash) {
         // Arrays are covariant in Java!
-        return hash.getStore() instanceof Object[] && !(hash.getStore() instanceof Bucket[]);
+        return hash.getStore() instanceof Object[] && !(hash.getStore() instanceof Entry[]);
     }
 
     public static boolean isBucketArray(RubyHash hash) {
-        return hash.getStore() instanceof Bucket[];
+        return hash.getStore() instanceof Entry[];
     }
 
 }

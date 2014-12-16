@@ -19,15 +19,15 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
-import org.jruby.truffle.nodes.hash.FindBucketNode;
+import org.jruby.truffle.nodes.hash.FindEntryNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.hash.Bucket;
-import org.jruby.truffle.runtime.hash.BucketSearchResult;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashSearchResult;
+import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
 
 import java.util.ArrayList;
@@ -61,8 +61,8 @@ public abstract class HashNodes {
         public boolean equal(VirtualFrame frame, RubyHash a, RubyHash b) {
             notDesignedForCompilation();
 
-            final List<Entry> aEntries = HashOperations.verySlowToEntries(a);
-            final List<Entry> bEntries = HashOperations.verySlowToEntries(a);
+            final List<KeyValue> aEntries = HashOperations.verySlowToKeyValues(a);
+            final List<KeyValue> bEntries = HashOperations.verySlowToKeyValues(a);
 
             if (aEntries.size() != bEntries.size()) {
                 return false;
@@ -72,14 +72,14 @@ public abstract class HashNodes {
 
             final boolean[] bUsed = new boolean[bEntries.size()];
 
-            for (Entry aEntry : aEntries) {
+            for (KeyValue aKeyValue : aEntries) {
                 boolean found = false;
 
                 for (int n = 0; n < bEntries.size(); n++) {
                     if (!bUsed[n]) {
                         // TODO: cast
 
-                        if ((boolean) DebugOperations.send(getContext(), aEntry.getKey(), "eql?", null, bEntries.get(n).getKey())) {
+                        if ((boolean) DebugOperations.send(getContext(), aKeyValue.getKey(), "eql?", null, bEntries.get(n).getKey())) {
                             bUsed[n] = true;
                             found = true;
                             break;
@@ -181,10 +181,10 @@ public abstract class HashNodes {
             } else {
                 keyValues.enter();
 
-                final List<Entry> entries = new ArrayList<>();
+                final List<KeyValue> entries = new ArrayList<>();
 
                 for (int n = 0; n < args.length; n += 2) {
-                    entries.add(new Entry(args[n], args[n + 1]));
+                    entries.add(new KeyValue(args[n], args[n + 1]));
                 }
 
                 return HashOperations.verySlowFromEntries(getContext(), entries);
@@ -198,7 +198,7 @@ public abstract class HashNodes {
 
         @Child protected PredicateDispatchHeadNode eqlNode;
         @Child protected YieldDispatchHeadNode yield;
-        @Child protected FindBucketNode findBucketNode;
+        @Child protected FindEntryNode findEntryNode;
 
         private final BranchProfile notInHashProfile = new BranchProfile();
         private final BranchProfile useDefaultProfile = new BranchProfile();
@@ -207,14 +207,14 @@ public abstract class HashNodes {
             super(context, sourceSection);
             eqlNode = new PredicateDispatchHeadNode(context);
             yield = new YieldDispatchHeadNode(context);
-            findBucketNode = new FindBucketNode(context, sourceSection);
+            findEntryNode = new FindEntryNode(context, sourceSection);
         }
 
         public GetIndexNode(GetIndexNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
             yield = prev.yield;
-            findBucketNode = prev.findBucketNode;
+            findEntryNode = prev.findEntryNode;
         }
 
         @Specialization(guards = "isNull")
@@ -261,10 +261,10 @@ public abstract class HashNodes {
         public Object getBucketArray(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            final BucketSearchResult bucketSearchResult = findBucketNode.search(frame, hash, key);
+            final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
 
-            if (bucketSearchResult.getBucket() != null) {
-                return bucketSearchResult.getBucket().getValue();
+            if (hashSearchResult.getEntry() != null) {
+                return hashSearchResult.getEntry().getValue();
             }
 
             notInHashProfile.enter();
@@ -342,12 +342,12 @@ public abstract class HashNodes {
 
             // TODO(CS): need to watch for that transfer until we make the following fast path
 
-            final List<Entry> entries = HashOperations.verySlowToEntries(hash);
+            final List<KeyValue> entries = HashOperations.verySlowToKeyValues(hash);
 
-            hash.setStore(new Bucket[HashOperations.capacityGreaterThan(newSize)], newSize, null, null);
+            hash.setStore(new Entry[HashOperations.capacityGreaterThan(newSize)], newSize, null, null);
 
-            for (Entry entry : entries) {
-                HashOperations.verySlowSetInBuckets(hash, entry.getKey(), entry.getValue());
+            for (KeyValue keyValue : entries) {
+                HashOperations.verySlowSetInBuckets(hash, keyValue.getKey(), keyValue.getValue());
             }
 
             HashOperations.verySlowSetInBuckets(hash, key, value);
@@ -396,18 +396,18 @@ public abstract class HashNodes {
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         @Child protected PredicateDispatchHeadNode eqlNode;
-        @Child protected FindBucketNode findBucketNode;
+        @Child protected FindEntryNode findEntryNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = new PredicateDispatchHeadNode(context);
-            findBucketNode = new FindBucketNode(context, sourceSection);
+            findEntryNode = new FindEntryNode(context, sourceSection);
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
-            findBucketNode = prev.findBucketNode;
+            findEntryNode = prev.findEntryNode;
         }
 
         @Specialization(guards = "isNull")
@@ -443,39 +443,39 @@ public abstract class HashNodes {
         public Object delete(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            final BucketSearchResult bucketSearchResult = findBucketNode.search(frame, hash, key);
+            final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
 
-            if (bucketSearchResult.getBucket() == null) {
+            if (hashSearchResult.getEntry() == null) {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
-            final Bucket bucket = bucketSearchResult.getBucket();
+            final Entry entry = hashSearchResult.getEntry();
 
             // Remove from the sequence chain
 
-            if (bucket.getPreviousInSequence() == null) {
-                hash.setFirstInSequence(bucket.getNextInSequence());
+            if (entry.getPreviousInSequence() == null) {
+                hash.setFirstInSequence(entry.getNextInSequence());
             } else {
-                bucket.getPreviousInSequence().setNextInSequence(bucket.getNextInSequence());
+                entry.getPreviousInSequence().setNextInSequence(entry.getNextInSequence());
             }
 
-            if (bucket.getNextInSequence() == null) {
-                hash.setLastInSequence(bucket.getPreviousInSequence());
+            if (entry.getNextInSequence() == null) {
+                hash.setLastInSequence(entry.getPreviousInSequence());
             } else {
-                bucket.getNextInSequence().setPreviousInSequence(bucket.getPreviousInSequence());
+                entry.getNextInSequence().setPreviousInSequence(entry.getPreviousInSequence());
             }
 
             // Remove from the lookup chain
 
-            if (bucketSearchResult.getPreviousBucket() == null) {
-                ((Bucket[]) hash.getStore())[bucketSearchResult.getIndex()] = bucket.getNextInLookup();
+            if (hashSearchResult.getPreviousEntry() == null) {
+                ((Entry[]) hash.getStore())[hashSearchResult.getIndex()] = entry.getNextInLookup();
             } else {
-                bucketSearchResult.getPreviousBucket().setNextInLookup(bucket.getNextInLookup());
+                hashSearchResult.getPreviousEntry().setNextInLookup(entry.getNextInLookup());
             }
 
             hash.setSize(hash.getSize() - 1);
 
-            return bucket.getValue();
+            return entry.getValue();
         }
 
     }
@@ -532,8 +532,8 @@ public abstract class HashNodes {
         public RubyHash eachBucketArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
-            for (Entry entry : HashOperations.verySlowToEntries(hash)) {
-                yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getKey(), entry.getValue()));
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+                yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), keyValue.getKey(), keyValue.getValue()));
             }
 
             return hash;
@@ -650,7 +650,7 @@ public abstract class HashNodes {
                 return self;
             }
 
-            HashOperations.verySlowSetEntries(self, HashOperations.verySlowToEntries(from));
+            HashOperations.verySlowSetKeyValues(self, HashOperations.verySlowToKeyValues(from));
 
             return self;
         }
@@ -687,16 +687,16 @@ public abstract class HashNodes {
 
             builder.append("{");
 
-            for (Entry entry : HashOperations.verySlowToEntries(hash)) {
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
                 if (builder.length() > 1) {
                     builder.append(", ");
                 }
 
                 // TODO(CS): to string
 
-                builder.append(inspect.call(frame, entry.getKey(), "inspect", null));
+                builder.append(inspect.call(frame, keyValue.getKey(), "inspect", null));
                 builder.append("=>");
-                builder.append(inspect.call(frame, entry.getValue(), "inspect", null));
+                builder.append(inspect.call(frame, keyValue.getValue(), "inspect", null));
             }
 
             builder.append("}");
@@ -746,8 +746,8 @@ public abstract class HashNodes {
         public boolean keyBucketArray(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            for (Entry entry : HashOperations.verySlowToEntries(hash)) {
-                if (eqlNode.call(frame, entry.getKey(), "eql?", null, key)) {
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+                if (eqlNode.call(frame, keyValue.getKey(), "eql?", null, key)) {
                     return true;
                 }
             }
@@ -794,13 +794,13 @@ public abstract class HashNodes {
 
             final Object[] keys = new Object[hash.getSize()];
 
-            Bucket bucket = hash.getFirstInSequence();
+            Entry entry = hash.getFirstInSequence();
             int n = 0;
 
-            while (bucket != null) {
-                keys[n] = bucket.getKey();
+            while (entry != null) {
+                keys[n] = entry.getKey();
                 n++;
-                bucket = bucket.getNextInSequence();
+                entry = entry.getNextInSequence();
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
@@ -858,8 +858,8 @@ public abstract class HashNodes {
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
 
-            for (Entry entry : HashOperations.verySlowToEntries(hash)) {
-                array.slowPush(yield(frame, block, entry.getKey(), entry.getValue()));
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+                array.slowPush(yield(frame, block, keyValue.getKey(), keyValue.getValue()));
             }
 
             return array;
@@ -980,17 +980,17 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash mergeBucketArrayBucketArray(RubyHash hash, RubyHash other) {
-            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, new Bucket[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
+            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
 
             int size = 0;
 
-            for (Entry entry : HashOperations.verySlowToEntries(hash)) {
-                HashOperations.verySlowSetInBuckets(merged, entry.getKey(), entry.getValue());
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+                HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue());
                 size++;
             }
 
-            for (Entry entry : HashOperations.verySlowToEntries(other)) {
-                if (HashOperations.verySlowSetInBuckets(merged, entry.getKey(), entry.getValue())) {
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(other)) {
+                if (HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue())) {
                     size++;
                 }
             }
@@ -1096,13 +1096,13 @@ public abstract class HashNodes {
 
             final Object[] values = new Object[hash.getSize()];
 
-            Bucket bucket = hash.getFirstInSequence();
+            Entry entry = hash.getFirstInSequence();
             int n = 0;
 
-            while (bucket != null) {
-                values[n] = bucket.getValue();
+            while (entry != null) {
+                values[n] = entry.getValue();
                 n++;
-                bucket = bucket.getNextInSequence();
+                entry = entry.getNextInSequence();
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, values.length);
@@ -1152,8 +1152,8 @@ public abstract class HashNodes {
 
             int n = 0;
 
-            for (Entry entry : HashOperations.verySlowToEntries(hash)) {
-                pairs[n] = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getValue(), entry.getValue());
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+                pairs[n] = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), keyValue.getValue(), keyValue.getValue());
                 n++;
             }
 

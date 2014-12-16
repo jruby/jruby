@@ -16,22 +16,22 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.hash.Bucket;
-import org.jruby.truffle.runtime.hash.BucketSearchResult;
+import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashSearchResult;
 import org.jruby.truffle.runtime.hash.HashOperations;
 
-public class FindBucketNode extends RubyNode {
+public class FindEntryNode extends RubyNode {
 
     @Child DispatchHeadNode hashNode;
     @Child PredicateDispatchHeadNode eqlNode;
 
-    public FindBucketNode(RubyContext context, SourceSection sourceSection) {
+    public FindEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = new DispatchHeadNode(context);
         eqlNode = new PredicateDispatchHeadNode(context);
     }
 
-    public BucketSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
+    public HashSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
         final Object hashValue = hashNode.call(frame, key, "hash", null);
 
         final int hashed;
@@ -44,22 +44,22 @@ public class FindBucketNode extends RubyNode {
             throw new UnsupportedOperationException();
         }
 
-        final Bucket[] buckets = (Bucket[]) hash.getStore();
-        final int bucketIndex = (hashed & HashOperations.SIGN_BIT_MASK) % buckets.length;
-        Bucket bucket = buckets[bucketIndex];
+        final Entry[] entries = (Entry[]) hash.getStore();
+        final int index = (hashed & HashOperations.SIGN_BIT_MASK) % entries.length;
+        Entry entry = entries[index];
 
-        Bucket previousBucket = null;
+        Entry previousEntry = null;
 
-        while (bucket != null) {
-            if (eqlNode.call(frame, key, "eql?", null, bucket.getKey())) {
-                return new BucketSearchResult(bucketIndex, previousBucket, bucket);
+        while (entry != null) {
+            if (eqlNode.call(frame, key, "eql?", null, entry.getKey())) {
+                return new HashSearchResult(index, previousEntry, entry);
             }
 
-            previousBucket = bucket;
-            bucket = bucket.getNextInLookup();
+            previousEntry = entry;
+            entry = entry.getNextInLookup();
         }
 
-        return new BucketSearchResult(bucketIndex, previousBucket, null);
+        return new HashSearchResult(index, previousEntry, null);
     }
 
     @Override
