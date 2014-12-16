@@ -1116,9 +1116,9 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
         IRClassBody body = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
-        Variable tmpVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
+        Variable classVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
 
-        return buildModuleOrClassBody(s, tmpVar, body, classNode.getBodyNode(), classNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, classVar, body, classNode.getBodyNode(), classNode.getPosition().getLine());
     }
 
     // class Foo; class << self; end; end
@@ -1127,9 +1127,9 @@ public class IRBuilder {
     public Operand buildSClass(SClassNode sclassNode, IRScope s) {
         Operand receiver = build(sclassNode.getReceiverNode(), s);
         IRModuleBody body = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
-        Variable tmpVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
+        Variable sClassVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
 
-        return buildModuleOrClassBody(s, tmpVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, sClassVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
     }
 
     // @@c
@@ -2627,9 +2627,9 @@ public class IRBuilder {
         String moduleName = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
         IRModuleBody body = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
-        Variable tmpVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
+        Variable moduleVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
 
-        return buildModuleOrClassBody(s, tmpVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, moduleVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
@@ -3501,8 +3501,8 @@ public class IRBuilder {
         return newArgs;
     }
 
-    private Operand buildModuleOrClassBody(IRScope parent, Variable tmpVar, IRModuleBody body, Node bodyNode, int linenumber) {
-        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), tmpVar, getImplicitBlockArg(parent)));
+    private Operand buildModuleOrClassBody(IRScope parent, Variable moduleVar, IRModuleBody body, Node bodyNode, int linenumber) {
+        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), moduleVar));
         IRBuilder bodyBuilder = newIRBuilder(manager);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -3511,7 +3511,7 @@ public class IRBuilder {
 
         bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
 
-        if (body instanceof IRMetaClassBody) {
+        if (body instanceof IRMetaClassBody) {  // def foo; class << self; yield; end; end
             bodyBuilder.addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
         }
 
