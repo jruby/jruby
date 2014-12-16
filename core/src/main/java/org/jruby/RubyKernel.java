@@ -1009,10 +1009,7 @@ public class RubyKernel {
                 // filename given, but no line, start from the beginning.
                 binding.setLine(0);
             }
-        } else if (bindingGiven) {
-            // binding given, use binding's file and line-number
-        } else {
-            // no binding given, use (eval) and start from first line.
+        } else if (!bindingGiven) {  // no binding given, use (eval) and start from first line.
             binding.setFile("(eval)");
             binding.setLine(0);
         }

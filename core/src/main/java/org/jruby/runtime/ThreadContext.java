@@ -947,8 +947,7 @@ public final class ThreadContext {
     }
     
     public Frame preEvalWithBinding(Binding binding) {
-        Frame lastFrame = pushFrameForEval(binding);
-        return lastFrame;
+        return pushFrameForEval(binding);
     }
     
     public void postEvalWithBinding(Binding binding, Frame lastFrame) {

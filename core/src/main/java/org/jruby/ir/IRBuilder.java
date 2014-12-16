@@ -309,26 +309,19 @@ public class IRBuilder {
         }
     }
 
+    // FIXME: This all seems wrong to me.  IRClosures can receive explicit closures why are we searching only methods
+    // and by-passing closures
     private Operand getImplicitBlockArg(IRScope s) {
         int n = 0;
-        while (s != null && (s instanceof IRClosure || s instanceof IRMetaClassBody)) {
-            // We have this oddity of an extra inserted scope for instance/class/module evals
-            if (s instanceof IREvalScript && ((IREvalScript)s).isModuleOrInstanceEval()) {
-                n++;
-            }
+        while (s instanceof IRClosure || s instanceof IRMetaClassBody) {
             n++;
             s = s.getLexicalParent();
         }
 
         if (s != null) {
-            LocalVariable v = null;
-            if (s instanceof IRMethod || s instanceof IRMetaClassBody) {
-                v = s.getLocalVariable(Variable.BLOCK, 0);
-            }
+            LocalVariable v = s instanceof IRMethod ? s.getLocalVariable(Variable.BLOCK, 0) : null;
 
-            if (v != null) {
-                return n == 0 ? v : v.cloneForDepth(n);
-            }
+            if (v != null) return n == 0 ? v : v.cloneForDepth(n);
         }
 
         return manager.getNil();
@@ -3207,7 +3200,13 @@ public class IRBuilder {
 
     public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode, EvalType evalType) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
+        IREvalScript script;
+
+        if (evalType == EvalType.BINDING_EVAL) {
+            script = new IRBindingEvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
+        } else {
+            script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
+        }
 
         // Debug info: record line number
         addInstr(script, new LineNumberInstr(script, lineNumber));

@@ -55,61 +55,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static IRScope getEvalContainerScope(StaticScope evalScope) {
-        // We cannot get the containing IR scope from evalScope because of static-scope wrapping
-        // that is going on.
-        // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
-        // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to
-        //    the stack in ThreadContext.java:preExecuteUnder
-
-        // SSS FIXME: Hack! Have to figure out why moduleEvals introduce an extra static scope
-        // and, if possible, eliminate it.
-        //
-        // The unwrapping is based on the binding that is used for the eval.
-        // If the binding came from an instance/module eval, we need to unpeel 3 layers.
-        // If the binding came from a non-module eval, we need to unpeel 2 layers.
-        IRScope s = evalScope.getEnclosingScope().getIRScope();
-        if (s == null) {
-            s = evalScope.getEnclosingScope().getEnclosingScope().getIRScope();
-        }
-        return s;
-    }
-
-    /**
-     * Note: Currently a unique item in that we always interpret evals.  If we ever implement an eval
-     * cache then this should be migrated to use an eval interpreter context and save off things like
-     * their begin/end blocks so that the eval can eventually be JIT'd.
-     */
-    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, EvalType evalType) {
-        StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = getEvalContainerScope(ss);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, evalType);
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
-        ThreadContext context = runtime.getCurrentContext();
-
-        DynamicScope s = rootNode.getScope();
-        s.setEvalType(evalType);
-        context.pushScope(s);
-
-        try {
-            // Since IR introduces additional local vars, we may need to grow the dynamic scope.
-            // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
-            // Since the same static scope (the scope within which the eval string showed up)
-            // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
-            // forget about it.  We need to set this right before we are ready to grow the
-            // dynamic scope local var space.
-            evalScript.getStaticScope().setIRScope(evalScript);
-            s.growIfNeeded();
-
-            runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null);
-            return evalScript.call(context, self, evalScript.getStaticScope().getModule(), block, backtraceName);
-        } finally {
-            runEndBlocks(ic.getEndBlocks(), context, self, ss, null);
-            s.clearEvalType();
-            context.popScope();
-        }
-    }
-
     public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
         if (beBlocks == null) return;
 
@@ -777,6 +722,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             throw new UnsupportedOperationException();
         }
 
+        DynamicScope bindingScope = binding.getDynamicScope();
         DynamicScope evalScope = binding.getEvalScope(runtime);
         evalScope.setEvalType(EvalType.BINDING_EVAL);
         // FIXME:  This determine module is in a strange location and should somehow be in block
@@ -785,13 +731,34 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Frame lastFrame = context.preEvalWithBinding(binding);
         try {
             // Binding provided for scope, use it
-            RootNode node = (RootNode) runtime.parseEval(src.convertToString().getByteList(), binding.getFile(), evalScope, binding.getLine());
+            RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), binding.getFile(), evalScope, binding.getLine());
             Block block = binding.getFrame().getBlock();
+            StaticScope ss = evalScope.getStaticScope();
+            IRScope containingIRScope = bindingScope.getStaticScope().getIRScope();
+            IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, binding.getFile(), binding.getLine(), rootNode, EvalType.BINDING_EVAL);
+            BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
 
+            DynamicScope s = rootNode.getScope();
+            s.setEvalType(EvalType.BINDING_EVAL);
+            context.pushScope(s);
 
+            try {
+                // Since IR introduces additional local vars, we may need to grow the dynamic scope.
+                // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
+                // Since the same static scope (the scope within which the eval string showed up)
+                // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
+                // forget about it.  We need to set this right before we are ready to grow the
+                // dynamic scope local var space.
+                evalScript.getStaticScope().setIRScope(evalScript);
+                s.growIfNeeded();
 
-
-            return interpretCommonEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block, EvalType.BINDING_EVAL);
+                runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, ss, null);
+                return evalScript.call(context, self, evalScript.getStaticScope().getModule(), block, binding.getMethod());
+            } finally {
+                runEndBlocks(ic.getEndBlocks(), context, self, ss, null);
+                s.clearEvalType();
+                context.popScope();
+            }
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
         }
