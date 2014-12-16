@@ -48,18 +48,18 @@ public class FindBucketNode extends RubyNode {
         final int bucketIndex = (hashed & HashOperations.SIGN_BIT_MASK) % buckets.length;
         Bucket bucket = buckets[bucketIndex];
 
-        Bucket endOfLookupChain = null;
+        Bucket previousBucket = null;
 
         while (bucket != null) {
             if (eqlNode.call(frame, key, "eql?", null, bucket.getKey())) {
-                return new BucketSearchResult(bucketIndex, bucket, bucket);
+                return new BucketSearchResult(bucketIndex, previousBucket, bucket);
             }
 
-            endOfLookupChain = bucket;
+            previousBucket = bucket;
             bucket = bucket.getNextInLookup();
         }
 
-        return new BucketSearchResult(bucketIndex, endOfLookupChain, null);
+        return new BucketSearchResult(bucketIndex, previousBucket, null);
     }
 
     @Override

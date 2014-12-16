@@ -139,25 +139,31 @@ public class HashOperations {
         final int bucketIndex = (hashed & SIGN_BIT_MASK) % buckets.length;
         Bucket bucket = buckets[bucketIndex];
 
-        Bucket endOfLookupChain = null;
+        Bucket previousBucket = null;
 
         while (bucket != null) {
             // TODO: cast
 
             if ((boolean) DebugOperations.send(hash.getContext(), key, "eql?", null, bucket.getKey())) {
-                return new BucketSearchResult(bucketIndex, bucket, bucket);
+                return new BucketSearchResult(bucketIndex, previousBucket, bucket);
             }
 
-            endOfLookupChain = bucket;
+            previousBucket = bucket;
             bucket = bucket.getNextInLookup();
         }
 
-        return new BucketSearchResult(bucketIndex, endOfLookupChain, null);
+        return new BucketSearchResult(bucketIndex, previousBucket, null);
     }
 
     public static void setAtBucket(RubyHash hash, BucketSearchResult bucketSearchResult, Object key, Object value) {
         if (bucketSearchResult.getBucket() == null) {
             final Bucket bucket = new Bucket(key, value);
+
+            if (bucketSearchResult.getPreviousBucket() == null) {
+                ((Bucket[]) hash.getStore())[bucketSearchResult.getIndex()] = bucket;
+            } else {
+                bucketSearchResult.getPreviousBucket().setNextInLookup(bucket);
+            }
 
             if (hash.getFirstInSequence() == null) {
                 hash.setFirstInSequence(bucket);
@@ -166,13 +172,6 @@ public class HashOperations {
                 hash.getLastInSequence().setNextInSequence(bucket);
                 bucket.setPreviousInSequence(hash.getLastInSequence());
                 hash.setLastInSequence(bucket);
-            }
-
-            if (bucketSearchResult.getEndOfLookupChain() == null) {
-                ((Bucket[]) hash.getStore())[bucketSearchResult.getIndex()] = bucket;
-            } else {
-                bucketSearchResult.getEndOfLookupChain().setNextInLookup(bucket);
-                bucket.setPreviousInLookup(bucketSearchResult.getEndOfLookupChain());
             }
         } else {
             final Bucket bucket = bucketSearchResult.getBucket();

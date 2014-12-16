@@ -467,14 +467,10 @@ public abstract class HashNodes {
 
             // Remove from the lookup chain
 
-            if (bucket.getPreviousInLookup() == null) {
+            if (bucketSearchResult.getPreviousBucket() == null) {
                 ((Bucket[]) hash.getStore())[bucketSearchResult.getIndex()] = bucket.getNextInLookup();
             } else {
-                bucket.getPreviousInLookup().setNextInLookup(bucket.getNextInLookup());
-            }
-
-            if (bucket.getNextInLookup() != null) {
-                bucket.getNextInLookup().setPreviousInLookup(bucket.getPreviousInLookup());
+                bucketSearchResult.getPreviousBucket().setNextInLookup(bucket.getNextInLookup());
             }
 
             hash.setSize(hash.getSize() - 1);

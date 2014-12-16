@@ -10,27 +10,28 @@
 package org.jruby.truffle.runtime.hash;
 
 /**
- * The result of looking for a bucket (a {@link Bucket}) in a Ruby hash. We get the last bucket in the lookup chain for
- * this index, the bucket that was found, and the index that was used. There are three possible outcomes for a search.
+ * The result of looking for a bucket (a {@link Bucket}) in a Ruby hash. We get the previous bucket in the lookup chain
+ * for this index until the bucket was found, the bucket that was found, and the index that was used. There are three
+ * possible outcomes for a search.
  * <ul>
  *     <li>There is nothing at that index, in which case the bucket and last bucket in the chain will be
  *     {@code null}</li>
- *     <li>There were buckets at that index, but none for our key, in which case the bucket will be null, but the last
- *     bucket will the last bucket in the chain at that index, presumably where we will want to insert your new
- *     bucket</li>
- *     <li>A bucket was found for our key, in which case the bucket and the last bucket in the chain will be the
- *     same</li>
+ *     <li>There were buckets at that index, but none for our key, in which case the bucket will be null, but the
+ *     previous bucket will be the last bucket in the chain at that index, presumably where we will want to insert our
+ *     new bucket</li>
+ *     <li>A bucket was found for our key, in which case the bucket will be the one correspond to the key, and the
+ *     previous bucket will be the one in the bucket chain before that one</li>
  * </ul>
  */
 public class BucketSearchResult {
 
-    private final Bucket endOfLookupChain;
+    private final Bucket previousBucket;
     private final Bucket bucket;
     private final int index;
 
-    public BucketSearchResult(int index, Bucket endOfLookupChain, Bucket bucket) {
+    public BucketSearchResult(int index, Bucket previousBucket, Bucket bucket) {
         this.index = index;
-        this.endOfLookupChain = endOfLookupChain;
+        this.previousBucket = previousBucket;
         this.bucket = bucket;
     }
 
@@ -38,8 +39,8 @@ public class BucketSearchResult {
         return index;
     }
 
-    public Bucket getEndOfLookupChain() {
-        return endOfLookupChain;
+    public Bucket getPreviousBucket() {
+        return previousBucket;
     }
 
     public Bucket getBucket() {

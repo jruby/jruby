@@ -19,7 +19,6 @@ public class Bucket {
     private Object key;
     private Object value;
 
-    private Bucket previousInLookup;
     private Bucket nextInLookup;
 
     private Bucket previousInSequence;
@@ -44,14 +43,6 @@ public class Bucket {
 
     public void setValue(Object value) {
         this.value = value;
-    }
-
-    public Bucket getPreviousInLookup() {
-        return previousInLookup;
-    }
-
-    public void setPreviousInLookup(Bucket previousInLookup) {
-        this.previousInLookup = previousInLookup;
     }
 
     public Bucket getNextInLookup() {
