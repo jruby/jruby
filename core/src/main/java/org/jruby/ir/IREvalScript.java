@@ -1,13 +1,12 @@
 package org.jruby.ir;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
@@ -19,9 +18,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class IREvalScript extends IRClosure {
     private static final Logger LOG = LoggerFactory.getLogger("IREvalScript");
 
+    private IRScope nearestNonEvalScope;
+    private int     nearestNonEvalScopeDepth;
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
     private EvalType evalType;
@@ -32,16 +36,23 @@ public class IREvalScript extends IRClosure {
 
         this.evalType = evalType;
 
+        int n = 0;
+        IRScope s = lexicalParent;
+        while (s instanceof IREvalScript) {
+            n++;
+            s = s.getLexicalParent();
+        }
+
+        this.nearestNonEvalScope = s;
+        this.nearestNonEvalScopeDepth = n;
+        this.nearestNonEvalScope.initEvalScopeVariableAllocator(false);
+
         if (!getManager().isDryRun() && staticScope != null) {
             // SSS FIXME: This is awkward!
             if (evalType == EvalType.MODULE_EVAL) {
-                staticScope.setScopeType(getScopeType());
+                staticScope.setScopeType(this.getScopeType());
             } else {
-                IRScope s = lexicalParent;
-                while (s instanceof IREvalScript) {
-                    s = s.getLexicalParent();
-                }
-                staticScope.setScopeType(s.getScopeType());
+                staticScope.setScopeType(this.nearestNonEvalScope.getScopeType());
             }
         }
     }
@@ -107,16 +118,69 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
+    public LocalVariable lookupExistingLVar(String name) {
+        return nearestNonEvalScope.evalScopeVars.get(name);
+    }
+
+    @Override
+    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+        // Look in the nearest non-eval scope's shared eval scope vars first.
+        // If you dont find anything there, look in the nearest non-eval scope's regular vars.
+        LocalVariable lvar = lookupExistingLVar(name);
+        if (lvar != null || scopeDepth == 0) return lvar;
+        else return nearestNonEvalScope.findExistingLocalVariable(name, scopeDepth-nearestNonEvalScopeDepth-1);
+    }
+
+    @Override
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        // Reduce lookup depth by 1 since the AST seems to be adding
+        // an additional static/dynamic scope for which there is no
+        // corresponding IRScope.
+        //
+        // FIXME: Investigate if this is something left behind from
+        // 1.8 mode support. Or if we need to introduce the additional
+        // IRScope object.
+        int lookupDepth = isModuleOrInstanceEval() ? scopeDepth - 1 : scopeDepth;
+        LocalVariable lvar = findExistingLocalVariable(name, lookupDepth);
+        if (lvar == null) lvar = getNewLocalVariable(name, lookupDepth);
+        // Create a copy of the variable usable at the right depth
+        if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
+
+        return lvar;
+    }
+
+    @Override
+    public LocalVariable getNewLocalVariable(String name, int depth) {
+        assert depth == nearestNonEvalScopeDepth: "Local variable depth in IREvalScript:getNewLocalVariable for " + name + " must be " + nearestNonEvalScopeDepth + ".  Got " + depth;
+        LocalVariable lvar = new ClosureLocalVariable(this, name, 0, nearestNonEvalScope.evalScopeVars.size());
+        nearestNonEvalScope.evalScopeVars.put(name, lvar);
+        // CON: unsure how to get static scope to reflect this name as in IRClosure and IRMethod
+        return lvar;
+    }
+
+    @Override
     public LocalVariable getNewFlipStateVariable() {
         String flipVarName = "%flip_" + allocateNextPrefixedName("%flip");
         LocalVariable v = lookupExistingLVar(flipVarName);
+        if (v == null) {
+            v = getNewLocalVariable(flipVarName, 0);
+        }
+        return v;
+    }
 
-        return v == null ? getNewLocalVariable(flipVarName, 0) : v;
+    @Override
+    public int getUsedVariablesCount() {
+        return 1 + nearestNonEvalScope.evalScopeVars.size()+ getPrefixCountSize("%flip");
     }
 
     @Override
     public boolean isScriptScope() {
         return true;
+    }
+
+    @Override
+    public boolean isTopLocalVariableScope() {
+        return false;
     }
 
     @Override
