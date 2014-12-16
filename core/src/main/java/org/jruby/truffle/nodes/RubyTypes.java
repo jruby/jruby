@@ -61,7 +61,6 @@ import org.jruby.truffle.runtime.LexicalScope;
                 RubiniusByteArray.class, //
                 RubyEncodingConverter.class, //
                 RubyBasicObject.class, //
-                HashSearchResult.class, //
                 Object[].class})
 
 public class RubyTypes {

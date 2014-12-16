@@ -191,10 +191,6 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
     }
 
-    public HashSearchResult executeBucketSearchResult(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectHashSearchResult(execute(frame));
-    }
-
     public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) {
         throw new UnsupportedOperationException();
     }
