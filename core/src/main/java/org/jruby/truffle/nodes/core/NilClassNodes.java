@@ -9,11 +9,17 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyString;
+
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "NilClass")
 public abstract class NilClassNodes {
@@ -172,7 +178,7 @@ public abstract class NilClassNodes {
     }
 
     @CoreMethod(names = { "|", "^" }, needsSelf = false, required = 1)
-    public abstract static class OrXorNode extends CoreMethodNode {
+    public abstract static class OrXorNode extends UnaryCoreMethodNode {
 
         public OrXorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -182,19 +188,13 @@ public abstract class NilClassNodes {
             super(prev);
         }
 
+        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+        }
+
         @Specialization
         public boolean orXor(boolean other) {
             return other;
-        }
-
-        @Specialization
-        public boolean orXor(RubyNilClass other) {
-            return false;
-        }
-
-        @Specialization(guards = "!isRubyNilClass")
-        public boolean orXor(RubyBasicObject other) {
-            return true;
         }
     }
 }
