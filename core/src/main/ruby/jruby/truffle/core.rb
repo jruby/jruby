@@ -11,12 +11,16 @@ require_relative 'core/kernel'
 require_relative 'core/float'
 require_relative 'core/math'
 
-require_relative 'core/rubinius/api/bootstrap/channel'
-require_relative 'core/rubinius/api/common/bytearray'
-require_relative 'core/rubinius/api/common/channel'
-require_relative 'core/rubinius/api/common/thread'
-require_relative 'core/rubinius/api/common/tuple'
-require_relative 'core/rubinius/api/common/type'
+require_relative 'core/rubinius/api/compat/type'
+
+require_relative 'core/rubinius/api/kernel/bootstrap/channel'
+require_relative 'core/rubinius/api/kernel/common/bytearray'
+require_relative 'core/rubinius/api/kernel/common/channel'
+require_relative 'core/rubinius/api/kernel/common/thread'
+require_relative 'core/rubinius/api/kernel/common/tuple'
+require_relative 'core/rubinius/api/kernel/common/type'
+
+require_relative 'core/rubinius/kernel/common/kernel'
 require_relative 'core/rubinius/kernel/common/struct'
 
 require_relative 'core/shims'

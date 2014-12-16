@@ -35,6 +35,7 @@ class Struct
     if klass_name
       begin
         klass_name = StringValue klass_name
+        p klass_name
       rescue TypeError
         attrs.unshift klass_name
         klass_name = nil

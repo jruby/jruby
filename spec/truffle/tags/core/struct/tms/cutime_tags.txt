@@ -1,2 +1,0 @@
-fails:Struct::Tms#cutime needs to be reviewed for spec completeness
-fails:Struct::Tms#cutime= needs to be reviewed for spec completeness

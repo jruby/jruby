@@ -1,1 +1,0 @@
-fails:Struct::Tms.[] needs to be reviewed for spec completeness
