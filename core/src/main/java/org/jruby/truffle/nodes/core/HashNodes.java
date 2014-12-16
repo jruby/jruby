@@ -19,6 +19,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.hash.FindBucketNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -197,6 +198,7 @@ public abstract class HashNodes {
 
         @Child protected PredicateDispatchHeadNode eqlNode;
         @Child protected YieldDispatchHeadNode yield;
+        @Child protected FindBucketNode findBucketNode;
 
         private final BranchProfile notInHashProfile = new BranchProfile();
         private final BranchProfile useDefaultProfile = new BranchProfile();
@@ -205,12 +207,14 @@ public abstract class HashNodes {
             super(context, sourceSection);
             eqlNode = new PredicateDispatchHeadNode(context);
             yield = new YieldDispatchHeadNode(context);
+            findBucketNode = new FindBucketNode(context, sourceSection);
         }
 
         public GetIndexNode(GetIndexNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
             yield = prev.yield;
+            findBucketNode = prev.findBucketNode;
         }
 
         @Specialization(guards = "isNull")
@@ -257,7 +261,7 @@ public abstract class HashNodes {
         public Object getBucketArray(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            final BucketSearchResult bucketSearchResult = HashOperations.verySlowFindBucket(hash, key);
+            final BucketSearchResult bucketSearchResult = findBucketNode.search(frame, hash, key);
 
             if (bucketSearchResult.getBucket() != null) {
                 return bucketSearchResult.getBucket().getValue();
@@ -392,15 +396,18 @@ public abstract class HashNodes {
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         @Child protected PredicateDispatchHeadNode eqlNode;
+        @Child protected FindBucketNode findBucketNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = new PredicateDispatchHeadNode(context);
+            findBucketNode = new FindBucketNode(context, sourceSection);
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
+            findBucketNode = prev.findBucketNode;
         }
 
         @Specialization(guards = "isNull")
@@ -433,10 +440,10 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isBucketArray")
-        public Object delete(RubyHash hash, Object key) {
+        public Object delete(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            final BucketSearchResult bucketSearchResult = HashOperations.verySlowFindBucket(hash, key);
+            final BucketSearchResult bucketSearchResult = findBucketNode.search(frame, hash, key);
 
             if (bucketSearchResult.getBucket() == null) {
                 return getContext().getCoreLibrary().getNilObject();

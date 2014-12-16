@@ -24,6 +24,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.hash.BucketSearchResult;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
 
@@ -189,6 +190,10 @@ public abstract class RubyNode extends Node {
 
     public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
+    }
+
+    public BucketSearchResult executeBucketSearchResult(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectBucketSearchResult(execute(frame));
     }
 
     public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) {

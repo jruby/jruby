@@ -121,12 +121,6 @@ public class HashOperations {
 
     @CompilerDirectives.SlowPath
     public static BucketSearchResult verySlowFindBucket(RubyHash hash, Object key) {
-        final Bucket[] buckets = (Bucket[]) hash.getStore();
-
-        // Hash
-
-        // TODO: cast
-
         final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
 
         final int hashed;
@@ -139,13 +133,9 @@ public class HashOperations {
             throw new UnsupportedOperationException();
         }
 
+        final Bucket[] buckets = (Bucket[]) hash.getStore();
         final int bucketIndex = (hashed & SIGN_BIT_MASK) % buckets.length;
-
-        // Find the initial bucket
-
         Bucket bucket = buckets[bucketIndex];
-
-        // Go through the chain of buckets to see if we're going to overwrite a key or append a new bucket
 
         Bucket endOfLookupChain = null;
 
@@ -163,8 +153,7 @@ public class HashOperations {
         return new BucketSearchResult(bucketIndex, endOfLookupChain, null);
     }
 
-    @CompilerDirectives.SlowPath
-    public static void verySlowSetAtBucket(RubyHash hash, BucketSearchResult bucketSearchResult, Object key, Object value) {
+    public static void setAtBucket(RubyHash hash, BucketSearchResult bucketSearchResult, Object key, Object value) {
         if (bucketSearchResult.getBucket() == null) {
             final Bucket bucket = new Bucket(key, value);
 
@@ -202,7 +191,7 @@ public class HashOperations {
         }
 
         final BucketSearchResult bucketSearchResult = verySlowFindBucket(hash, key);
-        verySlowSetAtBucket(hash, bucketSearchResult, key, value);
+        setAtBucket(hash, bucketSearchResult, key, value);
         return bucketSearchResult.getBucket() == null;
     }
 
