@@ -9,6 +9,19 @@
  */
 package org.jruby.truffle.runtime.hash;
 
+/**
+ * The result of looking for a bucket (a {@link Bucket}) in a Ruby hash. We get the last bucket in the lookup chain for
+ * this index, the bucket that was found, and the index that was used. There are three possible outcomes for a search.
+ * <ul>
+ *     <li>There is nothing at that index, in which case the bucket and last bucket in the chain will be
+ *     {@code null}</li>
+ *     <li>There were buckets at that index, but none for our key, in which case the bucket will be null, but the last
+ *     bucket will the last bucket in the chain at that index, presumably where we will want to insert your new
+ *     bucket</li>
+ *     <li>A bucket was found for our key, in which case the bucket and the last bucket in the chain will be the
+ *     same</li>
+ * </ul>
+ */
 public class BucketSearchResult {
 
     private final Bucket endOfLookupChain;

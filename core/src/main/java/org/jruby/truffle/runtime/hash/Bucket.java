@@ -9,6 +9,11 @@
  */
 package org.jruby.truffle.runtime.hash;
 
+/**
+ * A bucket in the Ruby hash. That is, a container for a key and a value, and a member of two lists - the chain of
+ * buckets for a given index, and the chain of buckets for the insertion order across the whole hash. Both of those
+ * chains are doubly-linked to enable O(1) deletions (after the correct bucket is found).
+ */
 public class Bucket {
 
     private Object key;

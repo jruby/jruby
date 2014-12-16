@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.runtime.hash;
 
+/**
+ * A simple key-value for inserting or retrieving from a hash.
+ */
 public class Entry {
 
     private final Object key;
