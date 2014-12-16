@@ -11,15 +11,14 @@ package org.jruby.truffle.nodes.core;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.hash.Entry;
 
 /**
  * Represents an expression that is evaluated by running it as a system command via forking and
@@ -45,7 +44,7 @@ public class SystemNode extends RubyNode {
         final List<String> envp = new ArrayList<>();
 
         // TODO(CS): cast
-        for (RubyHash.Entry entry : env.verySlowToEntries()) {
+        for (Entry entry : env.verySlowToEntries()) {
             envp.add(entry.getKey().toString() + "=" + entry.getValue().toString());
         }
 

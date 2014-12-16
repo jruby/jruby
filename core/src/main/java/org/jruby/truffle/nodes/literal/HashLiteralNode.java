@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.hash.Entry;
 
 import java.util.*;
 
@@ -126,12 +127,12 @@ public abstract class HashLiteralNode extends RubyNode {
         public RubyHash executeRubyHash(VirtualFrame frame) {
             notDesignedForCompilation();
 
-            final List<RubyHash.Entry> entries = new ArrayList<>();
+            final List<Entry> entries = new ArrayList<>();
 
             for (int n = 0; n < keyValues.length; n += 2) {
                 final Object key = keyValues[n].execute(frame);
                 final Object value = keyValues[n + 1].execute(frame);
-                entries.add(new RubyHash.Entry(key, value));
+                entries.add(new Entry(key, value));
             }
 
             return RubyHash.verySlowFromEntries(getContext(), entries);

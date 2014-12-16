@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
@@ -30,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -736,10 +736,10 @@ public class CoreLibrary {
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding(context, "US-ASCII"); }
 
     private RubyHash getSystemEnv() {
-        final List<RubyHash.Entry> entries = new ArrayList<>();
+        final List<Entry> entries = new ArrayList<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
-            entries.add(new RubyHash.Entry(context.makeString(variable.getKey()), context.makeString(variable.getValue())));
+            entries.add(new Entry(context.makeString(variable.getKey()), context.makeString(variable.getValue())));
         }
 
         return RubyHash.verySlowFromEntries(context, entries);

@@ -15,6 +15,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.hash.Bucket;
+import org.jruby.truffle.runtime.hash.BucketSearchResult;
+import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.util.cli.Options;
 
@@ -59,7 +62,7 @@ public class RubyHash extends RubyBasicObject {
     public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int storeSize, Bucket firstInSequence) {
         super(rubyClass);
 
-        final boolean isObjectArray = store instanceof Object[] && !(store instanceof RubyHash.Bucket[]);
+        final boolean isObjectArray = store instanceof Object[] && !(store instanceof Bucket[]);
         assert store == null || store instanceof Object[] || store instanceof Bucket[] : store.getClass();
         assert !isObjectArray || ((Object[]) store).length == HASHES_SMALL * 2 : store.getClass();
         assert !isObjectArray || storeSize <= HASHES_SMALL : store.getClass();
@@ -97,7 +100,7 @@ public class RubyHash extends RubyBasicObject {
     }
 
     public void setStore(Object store, int storeSize, Bucket firstInSequence, Bucket lastInSequence) {
-        final boolean isObjectArray = store instanceof Object[] && !(store instanceof RubyHash.Bucket[]);
+        final boolean isObjectArray = store instanceof Object[] && !(store instanceof Bucket[]);
         assert store == null || store instanceof Object[] || store instanceof Bucket[] : store.getClass();
         assert !isObjectArray || ((Object[]) store).length == HASHES_SMALL * 2 : store.getClass();
         assert !isObjectArray || storeSize <= HASHES_SMALL : store.getClass();
@@ -120,8 +123,8 @@ public class RubyHash extends RubyBasicObject {
             Bucket bucket = firstInSequence;
 
             while (bucket != null) {
-                entries.add(new Entry(bucket.key, bucket.value));
-                bucket = bucket.nextInSequence;
+                entries.add(new Entry(bucket.getKey(), bucket.getValue()));
+                bucket = bucket.getNextInSequence();
             }
         } else if (store instanceof Object[]) {
             for (int n = 0; n < storeSize; n++) {
@@ -136,7 +139,7 @@ public class RubyHash extends RubyBasicObject {
 
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        for (RubyHash.Entry entry : verySlowToEntries()) {
+        for (Entry entry : verySlowToEntries()) {
             if (entry.getKey() instanceof RubyBasicObject) {
                 ((RubyBasicObject) entry.getKey()).visitObjectGraph(visitor);
             }
@@ -145,67 +148,6 @@ public class RubyHash extends RubyBasicObject {
                 ((RubyBasicObject) entry.getValue()).visitObjectGraph(visitor);
             }
         }
-    }
-
-    public static class BucketAndIndex {
-
-        private final Bucket bucket;
-        private final int index;
-        private final Bucket endOfLookupChain;
-
-        public BucketAndIndex(Bucket bucket, int index, Bucket endOfLookupChain) {
-            this.bucket = bucket;
-            this.index = index;
-            this.endOfLookupChain = endOfLookupChain;
-        }
-
-        public Bucket getBucket() {
-            return bucket;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public Bucket getEndOfLookupChain() {
-            return endOfLookupChain;
-        }
-    }
-
-    public static class Entry {
-
-        private final Object key;
-        private final Object value;
-
-        public Entry(Object key, Object value) {
-            assert key != null;
-            assert value != null;
-
-            this.key = key;
-            this.value = value;
-        }
-
-        public Object getValue() {
-            return value;
-        }
-
-        public Object getKey() {
-            return key;
-        }
-
-    }
-
-    public static class Bucket {
-
-        public Object key;
-        public Object value;
-
-        public Bucket previousInLookup;
-        public Bucket nextInLookup;
-
-        public Bucket previousInSequence;
-        public Bucket nextInSequence;
-
     }
 
     public static int capacityGreaterThan(int size) {
@@ -219,7 +161,7 @@ public class RubyHash extends RubyBasicObject {
     }
 
     @CompilerDirectives.SlowPath
-    public BucketAndIndex verySlowFindBucket(Object key) {
+    public BucketSearchResult verySlowFindBucket(Object key) {
         final Bucket[] buckets = (Bucket[]) store;
 
         // Hash
@@ -251,48 +193,46 @@ public class RubyHash extends RubyBasicObject {
         while (bucket != null) {
             // TODO: cast
 
-            if ((boolean) DebugOperations.send(getContext(), key, "eql?", null, bucket.key)) {
-                return new BucketAndIndex(bucket, bucketIndex, bucket);
+            if ((boolean) DebugOperations.send(getContext(), key, "eql?", null, bucket.getKey())) {
+                return new BucketSearchResult(bucketIndex, bucket, bucket);
             }
 
             endOfLookupChain = bucket;
-            bucket = bucket.nextInLookup;
+            bucket = bucket.getNextInLookup();
         }
 
-        return new BucketAndIndex(null, bucketIndex, endOfLookupChain);
+        return new BucketSearchResult(bucketIndex, endOfLookupChain, null);
     }
 
     @CompilerDirectives.SlowPath
-    public void verySlowSetAtBucket(BucketAndIndex bucketAndIndex, Object key, Object value) {
-        if (bucketAndIndex.getBucket() == null) {
-            final Bucket bucket = new RubyHash.Bucket();
-            bucket.key = key;
-            bucket.value = value;
+    public void verySlowSetAtBucket(BucketSearchResult bucketSearchResult, Object key, Object value) {
+        if (bucketSearchResult.getBucket() == null) {
+            final Bucket bucket = new Bucket(key, value);
 
             if (firstInSequence == null) {
                 firstInSequence = bucket;
                 lastInSequence = bucket;
             } else {
-                lastInSequence.nextInSequence = bucket;
-                bucket.previousInSequence = lastInSequence;
+                lastInSequence.setNextInSequence(bucket);
+                bucket.setPreviousInSequence(lastInSequence);
                 lastInSequence = bucket;
             }
 
-            if (bucketAndIndex.getEndOfLookupChain() == null) {
-                ((Bucket[]) store)[bucketAndIndex.getIndex()] = bucket;
+            if (bucketSearchResult.getEndOfLookupChain() == null) {
+                ((Bucket[]) store)[bucketSearchResult.getIndex()] = bucket;
             } else {
-                bucketAndIndex.getEndOfLookupChain().nextInLookup = bucket;
-                bucket.previousInLookup = bucketAndIndex.getEndOfLookupChain();
+                bucketSearchResult.getEndOfLookupChain().setNextInLookup(bucket);
+                bucket.setPreviousInLookup(bucketSearchResult.getEndOfLookupChain());
             }
         } else {
-            final Bucket bucket = bucketAndIndex.getBucket();
+            final Bucket bucket = bucketSearchResult.getBucket();
 
             // The bucket stays in the same place in the sequence
 
             // Update the key (it overwrites even it it's eql?) and value
 
-            bucket.key = key;
-            bucket.value = value;
+            bucket.setKey(key);
+            bucket.setValue(value);
         }
     }
 
@@ -302,9 +242,9 @@ public class RubyHash extends RubyBasicObject {
             key = DebugOperations.send(getContext(), DebugOperations.send(getContext(), key, "dup", null), "freeze", null);
         }
 
-        final BucketAndIndex bucketAndIndex = verySlowFindBucket(key);
-        verySlowSetAtBucket(bucketAndIndex, key, value);
-        return bucketAndIndex.getBucket() == null;
+        final BucketSearchResult bucketSearchResult = verySlowFindBucket(key);
+        verySlowSetAtBucket(bucketSearchResult, key, value);
+        return bucketSearchResult.getBucket() == null;
     }
 
     @CompilerDirectives.SlowPath
@@ -342,11 +282,11 @@ public class RubyHash extends RubyBasicObject {
 
             while (bucket != null) {
                 builder.append("[");
-                builder.append(bucket.key);
+                builder.append(bucket.getKey());
                 builder.append(",");
-                builder.append(bucket.value);
+                builder.append(bucket.getValue());
                 builder.append("]");
-                bucket = bucket.nextInLookup;
+                bucket = bucket.getNextInLookup();
             }
 
             builder.append(")");
@@ -358,11 +298,11 @@ public class RubyHash extends RubyBasicObject {
 
         while (bucket != null) {
             builder.append("[");
-            builder.append(bucket.key);
+            builder.append(bucket.getKey());
             builder.append(",");
-            builder.append(bucket.value);
+            builder.append(bucket.getValue());
             builder.append("]");
-            bucket = bucket.nextInSequence;
+            bucket = bucket.getNextInSequence();
         }
 
         builder.append(")<~(");
@@ -371,11 +311,11 @@ public class RubyHash extends RubyBasicObject {
 
         while (bucket != null) {
             builder.append("[");
-            builder.append(bucket.key);
+            builder.append(bucket.getKey());
             builder.append(",");
-            builder.append(bucket.value);
+            builder.append(bucket.getValue());
             builder.append("]");
-            bucket = bucket.previousInSequence;
+            bucket = bucket.getPreviousInSequence();
         }
 
         builder.append(")");

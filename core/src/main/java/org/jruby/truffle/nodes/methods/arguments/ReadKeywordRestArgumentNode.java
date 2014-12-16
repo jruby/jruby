@@ -15,6 +15,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.hash.Entry;
 
 import java.util.*;
 
@@ -39,16 +40,16 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0, null);
         }
 
-        final List<RubyHash.Entry> entries = new ArrayList<>();
+        final List<Entry> entries = new ArrayList<>();
 
-        outer: for (RubyHash.Entry entry : hash.verySlowToEntries()) {
+        outer: for (Entry entry : hash.verySlowToEntries()) {
             for (String excludedKeyword : excludedKeywords) {
                 if (excludedKeyword.toString().equals(entry.getKey().toString())) {
                     continue outer;
                 }
             }
 
-            entries.add(new RubyHash.Entry(entry.getKey(), entry.getValue()));
+            entries.add(new Entry(entry.getKey(), entry.getValue()));
         }
 
         return RubyHash.verySlowFromEntries(getContext(), entries);
