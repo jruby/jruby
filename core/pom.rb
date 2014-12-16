@@ -126,15 +126,6 @@ project 'JRuby Core' do
             } )
   end
 
-  plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
-    execute_goals( 'read-project-properties',
-                   :id => 'properties',
-                   :phase => 'initialize',
-                   'files' => [ '${jruby.basedir}/default.build.properties',
-                                '${jruby.basedir}/build.properties' ],
-                   'quiet' =>  'true' )
-  end
-
   plugin 'org.codehaus.mojo:buildnumber-maven-plugin:1.2' do
     execute_goals( 'create',
                    :id => 'jruby-revision',
@@ -347,6 +338,22 @@ project 'JRuby Core' do
   profile 'test' do
 
     properties( 'maven.test.skip' => 'false' )
+
+  end
+
+  profile 'build.properties' do
+
+    activation do
+      file( :exits => '../build.properties' )
+    end
+
+    plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
+      execute_goals( 'read-project-properties',
+                     :id => 'properties',
+                     :phase => 'initialize',
+                     'files' => [ '${jruby.basedir}/build.properties' ],
+                     'quiet' =>  'true' )
+    end
 
   end
 
