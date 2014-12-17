@@ -74,9 +74,6 @@ branches:
     - /^test-.*$/
     - /^ha-feature/
 
-before_install:
-  - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
-
 script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn -q -Pbootstrap clean package ; mvn install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
 install: /bin/true
 notifications:
