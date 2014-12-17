@@ -662,9 +662,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      */
     public static IRubyObject evalSimple(ThreadContext context, RubyModule under, IRubyObject self, RubyString src, String file, int lineNumber, EvalType evalType) {
         Ruby runtime = context.runtime;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
-            throw new UnsupportedOperationException();
-        }
+        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) throw new UnsupportedOperationException();
 
         Visibility savedVisibility = context.getCurrentVisibility();
         context.setCurrentVisibility(Visibility.PUBLIC);
@@ -674,63 +672,20 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         evalScope.getStaticScope().setModule(under);
         context.pushEvalFrame();
-        StaticScope ss = evalScope.getStaticScope();
-        IRScope containingIRScope = ss.getEnclosingScope().getIRScope(); //getEvalContainerScope(ss);
-        BeginEndInterpreterContext ic = prepareIC(runtime, evalScope, containingIRScope, src, file, lineNumber, evalType);
-
-        evalScope.setEvalType(evalType);
-        context.pushScope(evalScope);
 
         try {
-            evalScope.growIfNeeded();
-
-            runBeginEndBlocks(ic.getBeginBlocks(), context, self, ss, null);
-
-            return Interpreter.INTERPRET_EVAL(context, self, ic, under, new IRubyObject[] {}, "(eval)", Block.NULL_BLOCK, null);
+            return evalCommon(context, evalScope, self, src, file, lineNumber, "(eval)", Block.NULL_BLOCK, evalType);
         } finally {
-            runEndBlocks(ic.getEndBlocks(), context, self, ss, null);
-            evalScope.clearEvalType();
-            context.popScope();
             context.popFrame();
             context.setCurrentVisibility(savedVisibility);
         }
     }
 
-    /**
-     * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
-     * (RubyProc or RubyBinding) throw an appropriate type error.
-     * @param context the thread context for the current thread
-     * @param self the self against which eval was called; used as self in the eval in 1.9 mode
-     * @param src The string containing the text to be evaluated
-     * @param binding The binding object under which to perform the evaluation
-     * @return An IRubyObject result from the evaluation
-     */
-    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
-        Ruby runtime = context.runtime;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) throw new UnsupportedOperationException();
-
-        DynamicScope bindingScope = binding.getDynamicScope();
-        DynamicScope evalScope = binding.getEvalScope(runtime);
-        // FIXME:  This determine module is in a strange location and should somehow be in block
-        evalScope.getStaticScope().determineModule();
-        Block block = binding.getFrame().getBlock();
-        IRScope containingIRScope = bindingScope.getStaticScope().getIRScope();
-
-        Frame lastFrame = context.preEvalWithBinding(binding);
-        try {
-            return evalCommon(context, evalScope, containingIRScope, self, src, binding.getFile(),
-                    binding.getLine(), binding.getMethod(), block, EvalType.BINDING_EVAL);
-        } finally {
-            context.postEvalWithBinding(binding, lastFrame);
-        }
-    }
-
-    private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRScope containingIRScope, IRubyObject self,
-                                          IRubyObject src, String file, int lineNumber, String name, Block block, EvalType evalType) {
+    private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
+                                          String file, int lineNumber, String name, Block block, EvalType evalType) {
         Ruby runtime = context.runtime;
         StaticScope ss = evalScope.getStaticScope();
-
-        BeginEndInterpreterContext ic = prepareIC(runtime, evalScope, containingIRScope, src, file, lineNumber, evalType);
+        BeginEndInterpreterContext ic = prepareIC(runtime, evalScope, src, file, lineNumber, evalType);
 
         evalScope.setEvalType(evalType);
         context.pushScope(evalScope);
@@ -747,8 +702,34 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static BeginEndInterpreterContext prepareIC(Ruby runtime, DynamicScope evalScope, IRScope containingIRScope,
-                                                        IRubyObject src, String file, int lineNumber, EvalType evalType) {
+    /**
+     * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
+     * (RubyProc or RubyBinding) throw an appropriate type error.
+     * @param context the thread context for the current thread
+     * @param self the self against which eval was called; used as self in the eval in 1.9 mode
+     * @param src The string containing the text to be evaluated
+     * @param binding The binding object under which to perform the evaluation
+     * @return An IRubyObject result from the evaluation
+     */
+    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
+        Ruby runtime = context.runtime;
+        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) throw new UnsupportedOperationException();
+
+        DynamicScope evalScope = binding.getEvalScope(runtime);
+        evalScope.getStaticScope().determineModule(); // FIXME: It would be nice to just set this or remove it from staticScope altogether
+
+        Frame lastFrame = context.preEvalWithBinding(binding);
+        try {
+            return evalCommon(context, evalScope, self, src, binding.getFile(),
+                    binding.getLine(), binding.getMethod(), binding.getFrame().getBlock(), EvalType.BINDING_EVAL);
+        } finally {
+            context.postEvalWithBinding(binding, lastFrame);
+        }
+    }
+
+    private static BeginEndInterpreterContext prepareIC(Ruby runtime, DynamicScope evalScope, IRubyObject src,
+                                                        String file, int lineNumber, EvalType evalType) {
+        IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(evalScope.getStaticScope(), containingIRScope, file, lineNumber, rootNode, evalType);
 

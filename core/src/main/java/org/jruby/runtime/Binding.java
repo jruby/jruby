@@ -216,6 +216,11 @@ public class Binding {
             this.dynamicScope == bOther.dynamicScope;
     }
 
+    // FIXME: This is because we clone the same explicit binding whenever we execute because both the captured Frame
+    // and the binding gets mutated during execution.  This means that we cannot share the same instance across
+    // concurrent evals of the same binding.  The mutated Frames I think can become new frames during execution and
+    // most of the binding clone can probably go away and we can push the values stored in a binding through the execution
+    // path.
     public final DynamicScope getEvalScope(Ruby runtime) {
         // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
         // 'b' will get put into this new dynamic scope.  The original scope does not see the new
