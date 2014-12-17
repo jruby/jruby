@@ -3,25 +3,15 @@ package org.jruby.ir;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.EvalType;
-import org.jruby.RubyModule;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 public class IREvalScript extends IRClosure {
-    private static final Logger LOG = LoggerFactory.getLogger("IREvalScript");
-
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
     private EvalType evalType;
@@ -92,18 +82,6 @@ public class IREvalScript extends IRClosure {
 
     public List<IRClosure> getEndBlocks() {
         return endBlocks;
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, Block block, String backtraceName) {
-        if (IRRuntimeHelpers.isDebug()) {
-            LOG.info("Graph:\n" + cfg().toStringGraph());
-            LOG.info("CFG:\n" + cfg().toStringInstrs());
-        }
-
-        InterpreterContext ic = prepareForInterpretation();
-
-        // FIXME: Do not push new empty arg array in every time
-        return Interpreter.INTERPRET_EVAL(context, self, ic, clazz, new IRubyObject[] {}, backtraceName, block, null);
     }
 
     @Override

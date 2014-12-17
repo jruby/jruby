@@ -3208,6 +3208,10 @@ public class IRBuilder {
             script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
         }
 
+        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
+        // we end up growing dynamicscope potentially based on any changes made.
+        staticScope.setIRScope(script);
+
         // Debug info: record line number
         addInstr(script, new LineNumberInstr(script, lineNumber));
 
