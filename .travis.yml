@@ -1,8 +1,14 @@
 language: java
+
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.m2
+
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
-  - "export JAVA_OPTS='-XX:+TieredCompilation -XX:TieredStopAtLevel=1'"
   - echo $HOME
 
 jdk:
@@ -11,7 +17,6 @@ jdk:
 
 os:
   - linux
-  - osx
 
 env:
   global:
@@ -67,6 +72,7 @@ branches:
     - master
     - jruby-1_7
     - /^test-.*$/
+    - /^ha-feature/
 
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
