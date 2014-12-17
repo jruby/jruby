@@ -7,7 +7,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   include TestHelper
 
   # FIXME: currently fails on Windows
-  if (!WINDOWS)
+  if (!WINDOWS and not IS_JAR_EXECUTION)
     def test_dash_0_splits_records
       output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 -n -e 'puts $_ + " "'})
       assert_equal 0, $?.exitstatus
