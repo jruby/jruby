@@ -1688,7 +1688,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * with this implementation.
      */
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block, EvalType evalType) {
-        context.preExecuteUnder(under, block);
+        context.preExecuteUnder(this, under, block);
 
         IRubyObject savedBindingSelf = block.getBinding().getSelf();
         IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();
@@ -1730,7 +1730,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * with this implementation.
      */
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block, EvalType evalType) {
-        context.preExecuteUnder(under, block);
+        context.preExecuteUnder(this, under, block);
 
         IRubyObject savedBindingSelf = block.getBinding().getSelf();
         IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();

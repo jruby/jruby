@@ -671,7 +671,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         DynamicScope evalScope = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(parentScope.getStaticScope()), parentScope);
 
         evalScope.getStaticScope().setModule(under);
-        context.pushEvalFrame();
+        context.pushEvalSimpleFrame(self);
 
         try {
             return evalCommon(context, evalScope, self, src, file, lineNumber, "(eval)", Block.NULL_BLOCK, evalType);
