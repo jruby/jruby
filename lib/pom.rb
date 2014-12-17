@@ -24,8 +24,6 @@ end
 require 'rexml/document'
 require 'rexml/xpath'
 
-KRYPT_VERSION = '0.0.2'
-
 # the versions are declared in ../pom.xml
 default_gems =
   [
@@ -33,10 +31,6 @@ default_gems =
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
-   ImportedGem.new( 'krypt', KRYPT_VERSION, true ),
-   ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
-   ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
-   ImportedGem.new( 'ffi', '1.9.3', true ),
    ImportedGem.new( 'jar-dependencies', '0.1.2', true )
   ]
 
@@ -194,22 +188,6 @@ project 'JRuby Lib Setup' do
     f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
 
-    # PATCH krypt
-    if KRYPT_VERSION == '0.0.2'
-      file = ctx.basedir.to_pathname + '/ruby/shared/krypt/provider.rb'
-      content = File.read( file )
-      content.sub! /begin(.|[\n])*/, <<EOS
-unless java?
-  require_relative 'provider/ffi'
-end
-EOS
-      File.open( file, 'w' ) do |f|
-        f.print content
-      end
-    else
-      raise "please remove the obsolete PATCH for krypt in lib/pom.rb"
-    end
-
     # we do not want rubygems_plugin.rb within jruby
     f = File.join( ruby_dir, 'shared', 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
@@ -218,5 +196,5 @@ EOS
     ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
       File.chmod( 0644, f ) rescue nil if File.file?( f )
     end
-  end
+  end  
 end
