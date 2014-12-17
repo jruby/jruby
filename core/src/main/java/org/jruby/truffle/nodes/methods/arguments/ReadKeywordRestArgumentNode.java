@@ -15,10 +15,10 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.hash.HashOperations;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ReadKeywordRestArgumentNode extends RubyNode {
 
@@ -38,22 +38,22 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         final RubyHash hash = getKeywordsHash(frame);
 
         if (hash == null) {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0, null);
         }
 
-        final LinkedHashMap<Object, Object> store = new LinkedHashMap<>();
+        final List<KeyValue> entries = new ArrayList<>();
 
-        outer: for (Map.Entry<Object, Object> entry : hash.slowToMap().entrySet()) {
+        outer: for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
             for (String excludedKeyword : excludedKeywords) {
-                if (excludedKeyword.toString().equals(entry.getKey().toString())) {
+                if (excludedKeyword.toString().equals(keyValue.getKey().toString())) {
                     continue outer;
                 }
             }
 
-            store.put(entry.getKey(), entry.getValue());
+            entries.add(new KeyValue(keyValue.getKey(), keyValue.getValue()));
         }
 
-        return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, store, store.size());
+        return HashOperations.verySlowFromEntries(getContext(), entries);
     }
 
     private RubyHash getKeywordsHash(VirtualFrame frame) {

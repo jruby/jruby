@@ -10,8 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import org.jruby.truffle.runtime.core.RubyHash;
-
-import java.util.LinkedHashMap;
+import org.jruby.truffle.runtime.hash.Entry;
 
 public class HashGuards {
 
@@ -19,24 +18,8 @@ public class HashGuards {
         return hash.getStore() == null;
     }
 
-    public static boolean isObjectArray(RubyHash hash) {
-        return hash.getStore() instanceof Object[];
-    }
-
-    public static boolean isObjectLinkedHashMap(RubyHash hash) {
-        return hash.getStore() instanceof LinkedHashMap<?, ?>;
-    }
-
-    public static boolean isOtherNull(RubyHash hash, RubyHash other) {
-        return other.getStore() == null;
-    }
-
-    public static boolean isOtherObjectArray(RubyHash hash, RubyHash other) {
-        return other.getStore() instanceof Object[];
-    }
-
-    public static boolean isOtherObjectLinkedHashMap(RubyHash hash, RubyHash other) {
-        return other.getStore() instanceof LinkedHashMap<?, ?>;
+    public static boolean isBuckets(RubyHash hash) {
+        return hash.getStore() instanceof Entry[];
     }
 
 }

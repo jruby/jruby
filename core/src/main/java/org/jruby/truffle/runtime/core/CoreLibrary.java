@@ -15,15 +15,14 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.embed.variable.Constant;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
-import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
@@ -32,7 +31,8 @@ import org.jruby.util.cli.OutputStrings;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class CoreLibrary {
@@ -245,13 +245,6 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
         objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
 
-        final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
-        configHashMap.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        configHashMap.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        configHashMap.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
-        configHashMap.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
-        configHashMap.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-
         edomClass = new RubyException.RubyExceptionClass(context, errnoModule, systemCallErrorClass, "EDOM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
@@ -262,9 +255,6 @@ public class CoreLibrary {
 
         // TODO(cs): this should be a separate exception
         mathModule.setConstant(null, "DomainError", edomClass);
-
-        // TODO(cs): the alias should be the other way round, Config is legacy (and should warn).
-        objectClass.setConstant(null, "RbConfig", configModule);
 
         // Create some key objects
 
@@ -287,12 +277,7 @@ public class CoreLibrary {
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
         argv = new RubyArray(arrayClass);
-        envHash = getSystemEnv();
         objectClass.setConstant(null, "ARGV", argv);
-        objectClass.setConstant(null, "ENV", envHash);
-
-        final RubyHash configHash = new RubyHash(hashClass, null, null, configHashMap, 0);
-        configModule.setConstant(null, "CONFIG", configHash);
 
         fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
         fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
@@ -313,6 +298,11 @@ public class CoreLibrary {
         if (Options.TRUFFLE_LOAD_CORE.load()) {
             loadRubyCore("jruby/truffle/core.rb");
         }
+
+        // ENV is supposed to be an object that actually updates the environment, and sees any updates
+
+        envHash = getSystemEnv();
+        objectClass.setConstant(null, "ENV", envHash);
     }
 
     public void loadRubyCore(String fileName) {
@@ -747,13 +737,13 @@ public class CoreLibrary {
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding(context, "US-ASCII"); }
 
     private RubyHash getSystemEnv() {
-        final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
+        final List<KeyValue> entries = new ArrayList<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
-            storage.put(context.makeString(variable.getKey()), context.makeString(variable.getValue()));
+            entries.add(new KeyValue(context.makeString(variable.getKey()), context.makeString(variable.getValue())));
         }
 
-        return new RubyHash(context.getCoreLibrary().getHashClass(), null, null, storage, 0);
+        return HashOperations.verySlowFromEntries(context, entries);
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

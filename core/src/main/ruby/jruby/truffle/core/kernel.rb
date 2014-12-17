@@ -38,3 +38,13 @@ module Kernel
   end
 
 end
+
+# Here temporarily
+
+class Hash
+
+  def include?(key)
+    keys.include? key
+  end
+
+end

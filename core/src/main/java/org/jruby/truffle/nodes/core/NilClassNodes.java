@@ -139,7 +139,7 @@ public abstract class NilClassNodes {
 
         @Specialization
         public RubyHash toH() {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, getContext().getCoreLibrary().getNilObject(), null, 0);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, getContext().getCoreLibrary().getNilObject(), null, 0, null);
         }
     }
 

@@ -37,6 +37,8 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
@@ -596,9 +598,8 @@ public abstract class KernelNodes {
 
             final RubyHash env = context.getCoreLibrary().getENV();
 
-            // TODO(CS): cast
-            for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
-                builder.environment().put(entry.getKey().toString(), entry.getValue().toString());
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+                builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
             Process process;
@@ -839,23 +840,24 @@ public abstract class KernelNodes {
 
         @Specialization
         public int hash(int value) {
+            // TODO(CS): should check this matches MRI
             return value;
         }
 
         @Specialization
         public int hash(long value) {
-            return (int) (value ^ value >>> 32);
+            // TODO(CS): should check this matches MRI
+            return Long.valueOf(value).hashCode();
         }
 
         @Specialization
-        public int hash(RubyBignum value) {
-            return value.hashCode();
+        public int hash(double value) {
+            // TODO(CS): should check this matches MRI
+            return Double.valueOf(value).hashCode();
         }
 
         @Specialization
         public int hash(RubyBasicObject self) {
-            notDesignedForCompilation();
-
             return self.hashCode();
         }
 
