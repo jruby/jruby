@@ -6,7 +6,7 @@ class TestOpenssl < Test::Unit::TestCase
 OpenSSL.debug = true
     # mimic what rubygems/request#add_rubygems_trusted_certs does
     # to find the pem certificates
-    base = $LOAD_PATH.detect { |p| p =~ /shared/ }
+p    base = $LOAD_PATH.detect { |p| p =~ /ruby\/shared/ }
     pems = Dir[ File.join(base, 'rubygems/ssl_certs/*pem') ]
     assert_equal( 9, pems.size )
     pems.each do |pem|
