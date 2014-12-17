@@ -1,8 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
-import org.jruby.RubyNil;
-import org.jruby.RubyProc;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -20,21 +18,19 @@ import java.util.Map;
 public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand  moduleBody;
-    private Operand  block;
 
-    public ProcessModuleBodyInstr(Variable result, Operand moduleBody, Operand block) {
+    public ProcessModuleBodyInstr(Variable result, Operand moduleBody) {
         super(Operation.PROCESS_MODULE_BODY);
 
         assert result != null: "ProcessModuleBodyInstr result is null";
 
         this.result = result;
         this.moduleBody = moduleBody;
-        this.block = block;
     }
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{moduleBody, block};
+        return new Operand[]{moduleBody};
     }
 
     @Override
@@ -50,27 +46,23 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         moduleBody = moduleBody.getSimplifiedOperand(valueMap, force);
-        block = block.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + moduleBody + "," + block + ")";
+        return super.toString() + "(" + moduleBody + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ProcessModuleBodyInstr(ii.getRenamedVariable(result), moduleBody.cloneForInlining(ii), block.cloneForInlining(ii));
+        return new ProcessModuleBodyInstr(ii.getRenamedVariable(result), moduleBody.cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         InterpretedIRMethod bodyMethod = (InterpretedIRMethod)moduleBody.retrieve(context, self, currScope, currDynScope, temp);
 		RubyModule implClass = bodyMethod.getImplementationClass();
-        Object blk = block.retrieve(context, self, currScope, currDynScope, temp);
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        return bodyMethod.call(context, implClass, implClass, null, new IRubyObject[]{}, (Block)blk);
+        return bodyMethod.call(context, implClass, implClass, null, new IRubyObject[]{}, Block.NULL_BLOCK);
     }
 
     @Override
@@ -80,9 +72,5 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
 
     public Operand getModuleBody() {
         return moduleBody;
-    }
-
-    public Operand getBlockArg() {
-        return block;
     }
 }

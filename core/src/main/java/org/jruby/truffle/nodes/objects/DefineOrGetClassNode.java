@@ -9,9 +9,11 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -22,10 +24,19 @@ import org.jruby.truffle.runtime.core.*;
 public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     @Child protected RubyNode superClass;
+    @Child protected DispatchHeadNode inheritedNode;
 
     public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection, name, lexicalParent);
         this.superClass = superClass;
+    }
+
+    private void callInherited(VirtualFrame frame, RubyClass superClass, RubyClass subClass) {
+        if (inheritedNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            inheritedNode = insert(new DispatchHeadNode(getContext(), true));
+        }
+        inheritedNode.call(frame, superClass, "inherited", null, subClass);
     }
 
     @Override
@@ -50,6 +61,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
             } else {
                 definingClass = new RubyClass(context, lexicalParent, superClassObject, name);
             }
+            callInherited(frame, superClassObject, definingClass);
         } else {
             if (constant.getValue() instanceof RubyClass) {
                 definingClass = (RubyClass) constant.getValue();

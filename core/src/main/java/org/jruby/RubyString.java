@@ -987,7 +987,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         value.invalidate();
     }
 
-    public final void modify19(int length) {
+    /**
+     * rb_str_modify_expand
+     */
+    public final void modifyExpand(int length) {
         modify(length);
         clearCodeRange();
     }
@@ -6605,5 +6608,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @Deprecated
     final RubyString strDup(RubyClass clazz) {
         return strDup(getRuntime(), getMetaClass());
+    }
+
+    @Deprecated
+    public final void modify19(int length) {
+        modifyExpand(length);
     }
 }

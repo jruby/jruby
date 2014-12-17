@@ -43,16 +43,6 @@ public class StaticScopeFactory {
         return new StaticScope(StaticScope.Type.BLOCK, parent);
     }
 
-    // We only call these from inside IR impl (IR is all or nothing)
-    public static StaticScope newIRLocalScope(StaticScope parent) {
-        return new StaticScope(StaticScope.Type.LOCAL, parent);
-    }
-
-    // We only call these from inside IR impl (IR is all or nothing)
-    public static StaticScope newIREvalScope(StaticScope parent) {
-        return new StaticScope(StaticScope.Type.EVAL, parent);
-    }
-
     public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names) {
         if(names == null) {
             return new StaticScope(type, parent);

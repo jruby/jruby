@@ -26,24 +26,34 @@ project 'JRuby Core' do
               'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G' )
 
+  IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
+    line.chomp!
+    # skip comments
+    next if line =~ /(^\W*#|^$)/
+    # build const name
+    name, value = line.split("=", 2)
+    properties name => value
+  end
+
   jar 'org.ow2.asm:asm:${asm.version}'
   jar 'org.ow2.asm:asm-commons:${asm.version}'
   jar 'org.ow2.asm:asm-analysis:${asm.version}'
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
-  jar 'com.github.jnr:jnr-netdb:1.1.3'
-  jar 'com.github.jnr:jnr-enxio:0.5'
+  jar 'com.github.jnr:jnr-netdb:1.1.4'
+  jar 'com.github.jnr:jnr-enxio:0.6'
   jar 'com.github.jnr:jnr-x86asm:1.0.2'
-  jar 'com.github.jnr:jnr-unixsocket:0.4'
-  jar 'com.github.jnr:jnr-posix:3.0.8'
+  jar 'com.github.jnr:jnr-unixsocket:0.5'
+  jar 'com.github.jnr:jnr-posix:3.0.9'
   jar 'com.github.jnr:jnr-constants:0.8.6'
-  jar 'com.github.jnr:jnr-ffi:2.0.0'
+  jar 'com.github.jnr:jnr-ffi:2.0.1'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.3'
+  jar 'org.jruby.joni:joni:2.1.5'
   jar 'org.jruby.extras:bytelist:1.0.12'
   jar 'org.jruby.jcodings:jcodings:1.0.12'
+  jar 'org.jruby:dirgra:0.1'
 
   jar 'com.headius:invokebinder:1.5'
   jar 'com.headius:options:1.1'
@@ -114,15 +124,6 @@ project 'JRuby Core' do
                                           'ignore' =>  ''
                                         } } ]
             } )
-  end
-
-  plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
-    execute_goals( 'read-project-properties',
-                   :id => 'properties',
-                   :phase => 'initialize',
-                   'files' => [ '${jruby.basedir}/default.build.properties',
-                                '${jruby.basedir}/build.properties' ],
-                   'quiet' =>  'true' )
   end
 
   plugin 'org.codehaus.mojo:buildnumber-maven-plugin:1.2' do
@@ -337,6 +338,22 @@ project 'JRuby Core' do
   profile 'test' do
 
     properties( 'maven.test.skip' => 'false' )
+
+  end
+
+  profile 'build.properties' do
+
+    activation do
+      file( :exits => '../build.properties' )
+    end
+
+    plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
+      execute_goals( 'read-project-properties',
+                     :id => 'properties',
+                     :phase => 'initialize',
+                     'files' => [ '${jruby.basedir}/build.properties' ],
+                     'quiet' =>  'true' )
+    end
 
   end
 

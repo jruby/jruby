@@ -169,7 +169,7 @@ public final class Block {
 
         return newBlock;
     }
-    
+
     public Block cloneBlockAndFrame() {
         Binding oldBinding = binding;
         Binding binding = new Binding(

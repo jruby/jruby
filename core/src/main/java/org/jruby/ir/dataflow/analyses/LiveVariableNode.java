@@ -1,5 +1,6 @@
 package org.jruby.ir.dataflow.analyses;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -13,7 +14,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.util.Edge;
 
 import java.util.*;
 

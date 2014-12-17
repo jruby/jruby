@@ -37,18 +37,14 @@ module Kernel
     end
   end
 
-  # Minimal support for language specs
-  def Rational(numerator, denominator)
-    numerator
-  end
-
-  def Complex(real, imaginary)
-    imaginary
-  end
-
 end
 
-# Here temporarily while we adapt to the newly imported specs
+# Here temporarily
 
-class Channel
+class Hash
+
+  def include?(key)
+    keys.include? key
+  end
+
 end

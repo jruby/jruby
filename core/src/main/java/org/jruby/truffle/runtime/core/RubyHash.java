@@ -9,25 +9,15 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.*;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
-import org.jruby.util.cli.Options;
 
-/**
- * Represents the Ruby {@code Hash} class.
- */
 public class RubyHash extends RubyBasicObject {
 
-    public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
-
-    /**
-     * The class from which we create the object that is {@code Hash}. A subclass of
-     * {@link org.jruby.truffle.runtime.core.RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyHash} rather than a normal {@link org.jruby.truffle.runtime.core.RubyBasicObject}.
-     */
     public static class RubyHashClass extends RubyClass {
 
         public RubyHashClass(RubyContext context, RubyClass objectClass) {
@@ -36,7 +26,7 @@ public class RubyHash extends RubyBasicObject {
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyHash(this, null, null, null, 0);
+            return new RubyHash(this, null, null, null, 0, null);
         }
 
     }
@@ -45,86 +35,78 @@ public class RubyHash extends RubyBasicObject {
     private Object defaultValue;
     private Object store;
     private int storeSize;
+    private Entry firstInSequence;
+    private Entry lastInSequence;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int storeSize) {
+    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int storeSize, Entry firstInSequence) {
         super(rubyClass);
-
-        assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
-        assert !(store instanceof Object[]) || ((Object[]) store).length == HASHES_SMALL * 2;
-        assert !(store instanceof Object[]) || storeSize <= HASHES_SMALL;
-
         this.defaultBlock = defaultBlock;
         this.defaultValue = defaultValue;
         this.store = store;
         this.storeSize = storeSize;
+        this.firstInSequence = firstInSequence;
     }
 
     public RubyProc getDefaultBlock() {
         return defaultBlock;
     }
 
-    public Object getDefaultValue() {
-        return defaultValue;
-    }
-
-    public Object getStore() {
-        return store;
-    }
-
-    public int getStoreSize() {
-        return storeSize;
-    }
-
     public void setDefaultBlock(RubyProc defaultBlock) {
         this.defaultBlock = defaultBlock;
+    }
+
+    public Object getDefaultValue() {
+        return defaultValue;
     }
 
     public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 
-    public void setStore(Object store, int storeSize) {
-        assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
-        assert !(store instanceof Object[]) || ((Object[]) store).length == HASHES_SMALL * 2;
-        assert !(store instanceof Object[]) || storeSize <= HASHES_SMALL;
+    public Object getStore() {
+        return store;
+    }
 
-
+    public void setStore(Object store, int storeSize, Entry firstInSequence, Entry lastInSequence) {
         this.store = store;
         this.storeSize = storeSize;
+        this.firstInSequence = firstInSequence;
+        this.lastInSequence = lastInSequence;
     }
 
-    public void setStoreSize(int storeSize) {
-        assert storeSize <= HASHES_SMALL;
+    public int getSize() {
+        return storeSize;
+    }
+
+    public void setSize(int storeSize) {
         this.storeSize = storeSize;
     }
 
-    public Map<Object, Object> slowToMap() {
-        if (store == null) {
-            return Collections.EMPTY_MAP;
-        } if (store instanceof Object[]) {
-            final Map<Object, Object> map = new HashMap<>();
+    public Entry getFirstInSequence() {
+        return firstInSequence;
+    }
 
-            for (int n = 0; n < storeSize; n++) {
-                map.put(((Object[]) store)[n * 2], ((Object[]) store)[n * 2 + 1]);
-            }
+    public void setFirstInSequence(Entry firstInSequence) {
+        this.firstInSequence = firstInSequence;
+    }
 
-            return map;
-        } else if (store instanceof LinkedHashMap) {
-            return (LinkedHashMap<Object, Object>) store;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+    public Entry getLastInSequence() {
+        return lastInSequence;
+    }
+
+    public void setLastInSequence(Entry lastInSequence) {
+        this.lastInSequence = lastInSequence;
     }
 
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        for (Map.Entry<Object, Object> entry : slowToMap().entrySet()) {
-            if (entry.getKey() instanceof RubyBasicObject) {
-                ((RubyBasicObject) entry.getKey()).visitObjectGraph(visitor);
+        for (KeyValue keyValue : HashOperations.verySlowToKeyValues(this)) {
+            if (keyValue.getKey() instanceof RubyBasicObject) {
+                ((RubyBasicObject) keyValue.getKey()).visitObjectGraph(visitor);
             }
 
-            if (entry.getValue() instanceof RubyBasicObject) {
-                ((RubyBasicObject) entry.getValue()).visitObjectGraph(visitor);
+            if (keyValue.getValue() instanceof RubyBasicObject) {
+                ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
             }
         }
     }

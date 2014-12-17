@@ -5,7 +5,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.*;
-import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
@@ -132,9 +131,6 @@ public abstract class IRScope implements ParseResult {
     /** # of thread poll instrs added to this scope */
     private int threadPollInstrsCount;
 
-    /** Should we re-run compiler passes -- yes after we've inlined, for example */
-    private boolean relinearizeCFG;
-
     private IRManager manager;
 
     // Used by cloning code
@@ -161,7 +157,6 @@ public abstract class IRScope implements ParseResult {
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
-        this.relinearizeCFG = false;
 
         this.executedPasses = new ArrayList<CompilerPass>();
 
@@ -208,7 +203,6 @@ public abstract class IRScope implements ParseResult {
 
         this.localVars = new HashMap<String, LocalVariable>();
         this.scopeId = globalScopeCount.getAndIncrement();
-        this.relinearizeCFG = false;
 
         this.executedPasses = new ArrayList<CompilerPass>();
 
@@ -550,10 +544,6 @@ public abstract class IRScope implements ParseResult {
     // and we may need to update the method to return the new method.  Also,
     // if this scope is held in multiple locations how do we update all references?
     private void runCompilerPasses(List<CompilerPass> passes) {
-        // SSS FIXME: Why is this again?  Document this weirdness!
-        // Forcibly clear out the shared eval-scope variable allocator each time this method executes
-        initEvalScopeVariableAllocator(true);
-
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
         // worth the effort. It is simpler to just go fully safe in scopes
@@ -868,7 +858,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {
-        if (reset || evalScopeVars == null) evalScopeVars = new HashMap<String, LocalVariable>();
+        if (reset || evalScopeVars == null) evalScopeVars = new HashMap<>();
     }
 
     public TemporaryLocalVariable createTemporaryVariable() {
@@ -1040,7 +1030,6 @@ public abstract class IRScope implements ParseResult {
 
     public void resetLinearizationData() {
         linearizedBBList = null;
-        relinearizeCFG = false;
     }
 
     public List<BasicBlock> buildLinearization() {

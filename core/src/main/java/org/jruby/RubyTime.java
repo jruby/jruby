@@ -485,7 +485,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "getlocal", optional = 1)
     public RubyTime getlocal19(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) {
+        if (args.length == 0 || args[0].isNil()) {
             return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), nsec);
         } else {
             DateTimeZone dtz = getTimeZoneFromUtcOffset(context.runtime, args[0]);

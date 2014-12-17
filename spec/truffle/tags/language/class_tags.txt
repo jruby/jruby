@@ -1,5 +1,3 @@
-fails(inherited):A class definition extending an object (sclass) allows accessing the block of the original scope
 fails:A class definition extending an object (sclass) can use return to cause the enclosing method to return
-fails:class provides hooks calls inherited when a class is created
 fails:Reopening a class raises a TypeError when superclasses mismatch
 fails:A class definition extending an object (sclass) allows accessing the block of the original scope

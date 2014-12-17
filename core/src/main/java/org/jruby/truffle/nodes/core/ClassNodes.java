@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -145,6 +146,24 @@ public abstract class ClassNodes {
             rubyClass.initialize(superclass);
             moduleInitialize(frame, rubyClass, block);
             return rubyClass;
+        }
+
+    }
+
+    @CoreMethod(names = "inherited", required = 1, visibility = Visibility.PRIVATE)
+    public abstract static class InheritedNode extends CoreMethodNode {
+
+        public InheritedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InheritedNode(InheritedNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass inherited(Object subclass) {
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

@@ -309,26 +309,19 @@ public class IRBuilder {
         }
     }
 
+    // FIXME: This all seems wrong to me.  IRClosures can receive explicit closures why are we searching only methods
+    // and by-passing closures
     private Operand getImplicitBlockArg(IRScope s) {
         int n = 0;
-        while (s != null && s instanceof IRClosure) {
-            // We have this oddity of an extra inserted scope for instance/class/module evals
-            if (s instanceof IREvalScript && ((IREvalScript)s).isModuleOrInstanceEval()) {
-                n++;
-            }
+        while (s instanceof IRClosure || s instanceof IRMetaClassBody) {
             n++;
             s = s.getLexicalParent();
         }
 
         if (s != null) {
-            LocalVariable v = null;
-            if (s instanceof IRMethod || s instanceof IRMetaClassBody) {
-                v = s.getLocalVariable(Variable.BLOCK, 0);
-            }
+            LocalVariable v = s instanceof IRMethod ? s.getLocalVariable(Variable.BLOCK, 0) : null;
 
-            if (v != null) {
-                return n == 0 ? v : v.cloneForDepth(n);
-            }
+            if (v != null) return n == 0 ? v : v.cloneForDepth(n);
         }
 
         return manager.getNil();
@@ -1116,9 +1109,9 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
         IRClassBody body = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
-        Variable tmpVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
+        Variable classVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
 
-        return buildModuleOrClassBody(s, tmpVar, body, classNode.getBodyNode(), classNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, classVar, body, classNode.getBodyNode(), classNode.getPosition().getLine());
     }
 
     // class Foo; class << self; end; end
@@ -1127,9 +1120,9 @@ public class IRBuilder {
     public Operand buildSClass(SClassNode sclassNode, IRScope s) {
         Operand receiver = build(sclassNode.getReceiverNode(), s);
         IRModuleBody body = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
-        Variable tmpVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
+        Variable sClassVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
 
-        return buildModuleOrClassBody(s, tmpVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, sClassVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
     }
 
     // @@c
@@ -2627,9 +2620,9 @@ public class IRBuilder {
         String moduleName = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
         IRModuleBody body = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
-        Variable tmpVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
+        Variable moduleVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
 
-        return buildModuleOrClassBody(s, tmpVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, moduleVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
@@ -3207,7 +3200,17 @@ public class IRBuilder {
 
     public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode, EvalType evalType) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
+        IREvalScript script;
+
+        if (evalType == EvalType.BINDING_EVAL) {
+            script = new IRBindingEvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
+        } else {
+            script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
+        }
+
+        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
+        // we end up growing dynamicscope potentially based on any changes made.
+        staticScope.setIRScope(script);
 
         // Debug info: record line number
         addInstr(script, new LineNumberInstr(script, lineNumber));
@@ -3501,20 +3504,15 @@ public class IRBuilder {
         return newArgs;
     }
 
-    private Operand buildModuleOrClassBody(IRScope parent, Variable tmpVar, IRModuleBody body, Node bodyNode, int linenumber) {
-        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), tmpVar, getImplicitBlockArg(parent)));
+    private Operand buildModuleOrClassBody(IRScope parent, Variable moduleVar, IRModuleBody body, Node bodyNode, int linenumber) {
+        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), moduleVar));
         IRBuilder bodyBuilder = newIRBuilder(manager);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
         }
 
-        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
-
-        if (body instanceof IRMetaClassBody) {
-            bodyBuilder.addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
-        }
-
+        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                               // %self
         bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
         bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
         // Create a new nested builder to ensure this gets its own IR builder state

@@ -27,7 +27,7 @@ public abstract class TruffleDebugNodes {
             super(context, sourceSection);
         }
 
-        public DumpCallStackNode(FullTreeNode prev) {
+        public DumpCallStackNode(DumpCallStackNode prev) {
             super(prev);
         }
 
@@ -51,7 +51,7 @@ public abstract class TruffleDebugNodes {
             super(context, sourceSection);
         }
 
-        public FlushStdoutNode(PanicNode prev) {
+        public FlushStdoutNode(FlushStdoutNode prev) {
             super(prev);
         }
 

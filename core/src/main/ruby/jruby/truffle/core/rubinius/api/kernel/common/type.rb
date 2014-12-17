@@ -42,7 +42,6 @@ module Rubinius
 
     def self.coerce_to(obj, cls, meth)
       return obj if object_kind_of?(obj, cls)
-
       begin
         ret = obj.__send__(meth)
       rescue Exception => orig
@@ -50,9 +49,7 @@ module Rubinius
               "Coercion error: #{obj.inspect}.#{meth} => #{cls} failed",
               orig
       end
-
       return ret if object_kind_of?(ret, cls)
-
       msg = "Coercion error: obj.#{meth} did NOT return a #{cls} (was #{object_class(ret)})"
       raise TypeError, msg
     end

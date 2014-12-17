@@ -397,6 +397,11 @@ public final class ThreadContext {
         }
         return frame;
     }
+
+    public void pushEvalSimpleFrame(IRubyObject executeObject) {
+        Frame frame = getCurrentFrame();
+        pushCallFrame(frame.getKlazz(), frame.getName(), executeObject, Block.NULL_BLOCK);
+    }
     
     private void pushCallFrame(RubyModule clazz, String name, 
                                IRubyObject self, Block block) {
@@ -881,14 +886,14 @@ public final class ThreadContext {
     }
     
     // XXX: Again, screwy evaling under previous frame's scope
-    public void preExecuteUnder(RubyModule executeUnderClass, Block block) {
+    public void preExecuteUnder(IRubyObject executeUnderObj, RubyModule executeUnderClass, Block block) {
         Frame frame = getCurrentFrame();
         
         DynamicScope scope = getCurrentScope();
         StaticScope sScope = runtime.getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(DynamicScope.newDynamicScope(sScope, scope));
-        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block);
+        pushCallFrame(frame.getKlazz(), frame.getName(), executeUnderObj, block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
@@ -940,8 +945,7 @@ public final class ThreadContext {
     }
     
     public Frame preEvalWithBinding(Binding binding) {
-        Frame lastFrame = pushFrameForEval(binding);
-        return lastFrame;
+        return pushFrameForEval(binding);
     }
     
     public void postEvalWithBinding(Binding binding, Frame lastFrame) {

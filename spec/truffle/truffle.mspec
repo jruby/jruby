@@ -39,6 +39,7 @@ class MSpecScript
     "spec/ruby/core/regexp",
     "spec/ruby/core/signal",
     "spec/ruby/core/string",
+    "spec/ruby/core/struct",
     "spec/ruby/core/symbol",
     "spec/ruby/core/thread",
     "spec/ruby/core/time",

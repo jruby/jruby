@@ -1,2 +1,0 @@
-fails:Struct#to_a returns the values for this instance as an array
-fails:Struct#to_a does not override the instance accessor method

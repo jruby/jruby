@@ -9,16 +9,20 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyString;
+
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "TrueClass")
 public abstract class TrueClassNodes {
 
     @CoreMethod(names = "&", needsSelf = false, required = 1)
-    public abstract static class AndNode extends CoreMethodNode {
+    public abstract static class AndNode extends UnaryCoreMethodNode {
 
         public AndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -28,19 +32,13 @@ public abstract class TrueClassNodes {
             super(prev);
         }
 
+        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+        }
+
         @Specialization
         public boolean and(boolean other) {
             return other;
-        }
-
-        @Specialization
-        public boolean and(RubyNilClass other) {
-            return false;
-        }
-
-        @Specialization(guards = "!isRubyNilClass")
-        public boolean and(RubyBasicObject other) {
-            return true;
         }
     }
 
@@ -62,7 +60,7 @@ public abstract class TrueClassNodes {
     }
 
     @CoreMethod(names = "^", needsSelf = false, required = 1)
-    public abstract static class XorNode extends CoreMethodNode {
+    public abstract static class XorNode extends UnaryCoreMethodNode {
 
         public XorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -72,19 +70,13 @@ public abstract class TrueClassNodes {
             super(prev);
         }
 
+        @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
+            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+        }
+
         @Specialization
         public boolean xor(boolean other) {
-            return true ^ other;
-        }
-
-        @Specialization
-        public boolean xor(RubyNilClass other) {
-            return true;
-        }
-
-        @Specialization(guards = "!isRubyNilClass")
-        public boolean xor(RubyBasicObject other) {
-            return false;
+            return !other;
         }
     }
 

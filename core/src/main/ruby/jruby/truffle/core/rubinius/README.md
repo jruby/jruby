@@ -19,4 +19,8 @@ We try not to modify files, so that they can easily be merged from upstream in
 the future, but we have found it easier to modify inline in a few cases, rather
 than somehow patch things from within JRuby+Truffle.
 
-We have also directly attached copyright and license information to each file.
+We have also tried to keep files from `rubinius-core-api` and Rubinius itself
+separate and to be consistent about what we're using, but in the end it's a bit
+of a mix from the two that works for us.
+
+We have directly attached copyright and license information to each file.

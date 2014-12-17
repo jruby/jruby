@@ -1,5 +1,6 @@
 package org.jruby.ir.transformations.inlining;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -9,7 +10,6 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
-import org.jruby.ir.util.Edge;
 
 import java.util.ArrayList;
 import java.util.List;
