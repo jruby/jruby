@@ -664,8 +664,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Ruby runtime = context.runtime;
         if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) throw new UnsupportedOperationException();
 
-        Visibility savedVisibility = context.getCurrentVisibility();
-        context.setCurrentVisibility(Visibility.PUBLIC);
         // no binding, just eval in "current" frame (caller's frame)
         DynamicScope parentScope = context.getCurrentScope();
         DynamicScope evalScope = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(parentScope.getStaticScope()), parentScope);
@@ -677,15 +675,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return evalCommon(context, evalScope, self, src, file, lineNumber, "(eval)", Block.NULL_BLOCK, evalType);
         } finally {
             context.popFrame();
-            context.setCurrentVisibility(savedVisibility);
         }
     }
 
     private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
                                           String file, int lineNumber, String name, Block block, EvalType evalType) {
-        Ruby runtime = context.runtime;
         StaticScope ss = evalScope.getStaticScope();
-        BeginEndInterpreterContext ic = prepareIC(runtime, evalScope, src, file, lineNumber, evalType);
+        BeginEndInterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType);
 
         evalScope.setEvalType(evalType);
         context.pushScope(evalScope);
@@ -727,8 +723,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static BeginEndInterpreterContext prepareIC(Ruby runtime, DynamicScope evalScope, IRubyObject src,
+    private static BeginEndInterpreterContext prepareIC(ThreadContext context, DynamicScope evalScope, IRubyObject src,
                                                         String file, int lineNumber, EvalType evalType) {
+        Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(evalScope.getStaticScope(), containingIRScope, file, lineNumber, rootNode, evalType);
