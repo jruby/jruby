@@ -49,30 +49,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>krypt</artifactId>
-      <version>0.0.2</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>krypt-core</artifactId>
-      <version>0.0.2</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>krypt-provider-jdk</artifactId>
-      <version>0.0.2</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>ffi</artifactId>
-      <version>1.9.3</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
       <version>0.1.2</version>
       <type>gem</type>
