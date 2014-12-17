@@ -1865,7 +1865,8 @@ public class RubyInstanceConfig {
         } else if (specDecimal.compareTo(BIGDECIMAL_1_5) >= 0) {
             return Opcodes.V1_5;
         } else {
-            throw new RuntimeException("unsupported Java version: " + specVersion);
+            System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.5");
+            return Opcodes.V1_5;
         }
     }
 
