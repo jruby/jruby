@@ -1,11 +1,19 @@
 language: java
+
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.m2
+
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
-  - "export JAVA_OPTS='-XX:+TieredCompilation -XX:TieredStopAtLevel=1'"
   - echo $HOME
 
-jdk: openjdk7
+jdk:
+  - openjdk7
+  - oraclejdk8
 
 os:
   - linux
@@ -29,16 +37,30 @@ env:
     - PHASE='-Prake -Dtask=spec:profiler'
     - PHASE='-Ptruffle-specs-language'
     - PHASE='-Ptruffle-specs-core'
-    - PHASE='-Pmain'
-    - PHASE='-Pcomplete'
-    - PHASE='-Posgi'
-    - PHASE='-Pj2ee'
-    - PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-    - PHASE='-Pmain,test -Dinvoker.test=extended'
-    - PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
-    - COMMAND=test/check_versions.sh
 
 matrix:
+  include:
+    # these profile do no need to run for all JDKs
+    - env: PHASE='-Pdist'
+      jdk: oraclejdk8
+    - env: PHASE='-Pjruby-jars'
+      jdk: openjdk7
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk7
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk8
+    - env: PHASE='-Posgi'
+      jdk: openjdk7
+    - env: PHASE='-Pj2ee'
+      jdk: oraclejdk7
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+      jdk: oraclejdk7
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+      jdk: openjdk7
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+      jdk: oraclejdk8
+    - env: COMMAND=test/check_versions.sh
+      jdk: oraclejdk8
   fast_finish: true
   allow_failures:
     - env: PHASE='-Pcomplete'
@@ -50,9 +72,7 @@ branches:
     - master
     - jruby-1_7
     - /^test-.*$/
-
-before_install:
-  - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
+    - /^ha-feature/
 
 script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn -q -Pbootstrap clean package ; mvn install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
 install: /bin/true
