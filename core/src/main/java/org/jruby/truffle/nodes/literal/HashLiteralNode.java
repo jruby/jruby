@@ -102,7 +102,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 final Object value = keyValues[n + 1].execute(frame);
 
                 for (int i = 0; i < n; i += 2) {
-                    if (n < end && equalNode.call(frame, key, "eql?", null, storage[i])) {
+                    if (i < end && equalNode.call(frame, key, "eql?", null, storage[i])) {
                         storage[i + 1] = value;
                         continue initializers;
                     }
