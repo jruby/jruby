@@ -1,15 +1,12 @@
 fails(inherited):Global variable $0 raises a TypeError when not given an object that can be coerced to a String
-fails(inherited):Predefined global $' sets an empty result to the encoding of the source String
 fails(inherited):Predefined global $-0 changes $/
 fails(inherited):Predefined global $-0 does not call #to_str to convert the object to a String
 fails(inherited):Predefined global $-0 raises a TypeError if assigned a boolean
 fails(inherited):Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails(inherited):Predefined global $/ changes $-0
-fails(inherited):Predefined global $` sets an empty result to the encoding of the source String
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
 fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
-fails:Predefined global $' sets an empty result to the encoding of the source String
 fails:Predefined global $, raises TypeError if assigned a non-String
 fails:Predefined global $-0 changes $/
 fails:Predefined global $-0 does not call #to_str to convert the object to a String
@@ -22,7 +19,6 @@ fails:Predefined global $/ raises a TypeError if assigned a Fixnum
 fails:Predefined global $_ is set at the method-scoped level rather than block-scoped
 fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
 fails:Predefined global $` is equivalent to MatchData#pre_match on the last match $~
-fails:Predefined global $` sets an empty result to the encoding of the source String
 fails:Predefined global $~ changes the value of derived capture globals when assigned
 fails:Predefined global $~ changes the value of the derived following match global
 fails:Predefined global $~ changes the value of the derived full match global
