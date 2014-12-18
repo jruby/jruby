@@ -575,6 +575,14 @@ public abstract class FloatNodes {
         public Object round(double n) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
+            if (Double.isInfinite(n)) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
+            }
+
+            if (Double.isNaN(n)) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
+            }
+
             double f = n;
 
             if (f > 0.0) {
