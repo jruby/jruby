@@ -830,7 +830,7 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = (argsNode == null) ? manager.getNil() : buildCallArgs(args, argsNode, s);
-        addInstr(s, new AttrAssignInstr(obj, new MethAddr(attrAssignNode.getName()), args.toArray(new Operand[args.size()])));
+        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
         return lastArg;
     }
 
@@ -839,7 +839,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         args.add(value);
-        addInstr(s, new AttrAssignInstr(obj, new MethAddr(attrAssignNode.getName()), args.toArray(new Operand[args.size()])));
+        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
         return value;
     }
 
@@ -987,7 +987,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
+        CallInstr     callInstr    = CallInstr.create(callResult, callNode.getName(), receiver, args.toArray(new Operand[args.size()]), block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (
@@ -2204,7 +2204,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), s.getSelf(), args.toArray(new Operand[args.size()]), block);
+        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args.toArray(new Operand[args.size()]), block);
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -2321,7 +2321,7 @@ public class IRBuilder {
         Variable result = s.createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), s);
         Operand  forBlock = buildForIter(forNode, s);
-        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock);
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, "each", receiver, NO_ARGS, forBlock);
         receiveBreakException(s, forBlock, callInstr);
 
         return result;
@@ -2711,7 +2711,7 @@ public class IRBuilder {
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
-        addInstr(s, CallInstr.create(readerValue, new MethAddr(opAsgnNode.getVariableName()), v1, NO_ARGS, null));
+        addInstr(s, CallInstr.create(readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -2722,7 +2722,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
-            addInstr(s, CallInstr.create(writerValue, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
+            addInstr(s, CallInstr.create(writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -2736,10 +2736,10 @@ public class IRBuilder {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
             Variable setValue = s.createTemporaryVariable();
-            addInstr(s, CallInstr.create(setValue, new MethAddr(opAsgnNode.getOperatorName()), readerValue, new Operand[]{v2}, null));
+            addInstr(s, CallInstr.create(setValue, opAsgnNode.getOperatorName(), readerValue, new Operand[]{v2}, null));
 
             // set attr
-            addInstr(s, CallInstr.create(writerValue, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {setValue}, null));
+            addInstr(s, CallInstr.create(writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect becuase the assignment method
             // might return something else other than the value being set!
             return setValue;
@@ -2823,11 +2823,11 @@ public class IRBuilder {
         Label    l     = s.getNewLabel();
         Variable elt   = s.createTemporaryVariable();
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        addInstr(s, CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
+        addInstr(s, CallInstr.create(elt, "[]", array, argList.toArray(new Operand[argList.size()]), null));
         addInstr(s, BEQInstr.create(elt, manager.getTrue(), l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         argList.add(value);
-        addInstr(s, CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
+        addInstr(s, CallInstr.create(elt, "[]=", array, argList.toArray(new Operand[argList.size()]), null));
         addInstr(s, new CopyInstr(elt, value));
         addInstr(s, new LabelInstr(l));
         return elt;
@@ -2839,11 +2839,11 @@ public class IRBuilder {
         Label    l     = s.getNewLabel();
         Variable elt   = s.createTemporaryVariable();
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        addInstr(s, CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
+        addInstr(s, CallInstr.create(elt, "[]", array, argList.toArray(new Operand[argList.size()]), null));
         addInstr(s, BEQInstr.create(elt, manager.getFalse(), l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         argList.add(value);
-        addInstr(s, CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
+        addInstr(s, CallInstr.create(elt, "[]=", array, argList.toArray(new Operand[argList.size()]), null));
         addInstr(s, new CopyInstr(elt, value));
         addInstr(s, new LabelInstr(l));
         return elt;
@@ -2860,15 +2860,15 @@ public class IRBuilder {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         Variable elt = s.createTemporaryVariable();
-        addInstr(s, CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null)); // elt = a[args]
+        addInstr(s, CallInstr.create(elt, "[]", array, argList.toArray(new Operand[argList.size()]), null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode(), s);                                       // Load 'value'
         String  operation = opElementAsgnNode.getOperatorName();
-        addInstr(s, CallInstr.create(elt, new MethAddr(operation), elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
+        addInstr(s, CallInstr.create(elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = s.createTemporaryVariable();
         argList.add(elt);
-        addInstr(s, CallInstr.create(tmp, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));   // a[args] = elt
+        addInstr(s, CallInstr.create(tmp, "[]=", array, argList.toArray(new Operand[argList.size()]), null));   // a[args] = elt
         return elt;
     }
 
@@ -3264,9 +3264,9 @@ public class IRBuilder {
         if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody)) {
             IRMethod m = (IRMethod)s;
             if (m.isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block);
+                superInstr = new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), s.getName(), args, block);
             } else {
-                superInstr = new ClassSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block);
+                superInstr = new ClassSuperInstr(ret, s.getCurrentModuleVariable(), s.getName(), args, block);
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
@@ -3378,7 +3378,7 @@ public class IRBuilder {
 
     public Operand buildVCall(VCallNode node, IRScope s) {
         Variable callResult = s.createTemporaryVariable();
-        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, new MethAddr(node.getName()), s.getSelf(), NO_ARGS, null);
+        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, node.getName(), s.getSelf(), NO_ARGS, null);
         addInstr(s, callInstr);
         return callResult;
     }

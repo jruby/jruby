@@ -242,10 +242,10 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             // Process calls specially -- these are what we want to optimize!
             if (i instanceof CallBase && o == null) {
                 CallBase c = (CallBase)i;
-                MethAddr m = c.getMethodAddr();
+                String m = c.getName();
                 Operand  r = c.getReceiver();
                 Operand[] args = c.getCallArgs();
-                if (dst != null && args.length == 1 && m.resemblesALUOp()) {
+                if (dst != null && args.length == 1 && resemblesALUOp(m)) {
                     Operand a = args[0];
                     Class receiverType = getOperandType(tmpState, r);
                     Class argType = getOperandType(tmpState, a);
@@ -255,7 +255,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     {
                         dirtied = true;
 
-                        Class dstType = m.getUnboxedResultType(Float.class);
+                        Class dstType = getUnboxedResultType(Float.class, m);
                         setOperandType(tmpState, dst, dstType);
                         tmpState.unboxedVars.put(dst, dstType);
 
@@ -272,7 +272,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     {
                         dirtied = true;
 
-                        Class dstType = m.getUnboxedResultType(Fixnum.class);
+                        Class dstType = getUnboxedResultType(Fixnum.class, m);
                         setOperandType(tmpState, dst, dstType);
                         tmpState.unboxedVars.put(dst, dstType);
 
@@ -641,21 +641,21 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                     if (i instanceof CallBase && o == null) {
                         CallBase c = (CallBase)i;
-                        MethAddr m = c.getMethodAddr();
+                        String m = c.getName();
                         Operand  r = c.getReceiver();
                         Operand[] args = c.getCallArgs();
-                        if (dst != null && args.length == 1 && m.resemblesALUOp()) {
+                        if (dst != null && args.length == 1 && resemblesALUOp(m)) {
                             Operand a = args[0];
                             Class receiverType = getOperandType(tmpState, r);
                             Class argType = getOperandType(tmpState, a);
                             // Optimistically assume that call is an ALU op
                             Operation unboxedOp;
                             if ((receiverType == Float.class || (receiverType == Fixnum.class && argType == Float.class)) &&
-                                (unboxedOp = m.getUnboxedOp(Float.class)) != null)
+                                (unboxedOp = getUnboxedOp(Float.class, m)) != null)
                             {
                                 dirtied = true;
 
-                                Class dstType = m.getUnboxedResultType(Float.class);
+                                Class dstType = getUnboxedResultType(Float.class, m);
                                 setOperandType(tmpState, dst, dstType);
                                 tmpState.unboxedVars.put(dst, dstType);
 
@@ -664,11 +664,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                                 a = unboxOperand(tmpState, Float.class, unboxMap, a, newInstrs);
                                 newInstrs.add(new AluInstr(unboxedOp, unboxedDst, r, a));
                             } else if ((receiverType == Float.class || (receiverType == Fixnum.class && argType == Fixnum.class)) &&
-                                    (unboxedOp = m.getUnboxedOp(Fixnum.class)) != null)
+                                    (unboxedOp = getUnboxedOp(Fixnum.class, m)) != null)
                             {
                                 dirtied = true;
 
-                                Class dstType = m.getUnboxedResultType(Fixnum.class);
+                                Class dstType = getUnboxedResultType(Fixnum.class, m);
                                 setOperandType(tmpState, dst, dstType);
                                 tmpState.unboxedVars.put(dst, dstType);
 
@@ -753,6 +753,66 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 */
 
         basicBlock.replaceInstrs(newInstrs);
+    }
+
+    private boolean resemblesALUOp(String name) {
+        return name.equals("+") || name.equals("-") || name.equals("*") || name.equals("/") ||
+                name.equals("|") || name.equals("&") || name.equals(">>") || name.equals("<<") ||
+                name.equals(">") || name.equals("<") || name.equals("==") || name.equals("!=");
+    }
+
+    private Class getUnboxedResultType(Class operandType, String name) {
+        if (name.length() == 1) {
+            switch (name.charAt(0)) {
+                case '+' :
+                case '-' :
+                case '*' :
+                case '/' : return operandType == Float.class ? Float.class : operandType == Fixnum.class ? Fixnum.class : null;
+                case '>' :
+                case '<' : return operandType == Float.class || operandType == Fixnum.class ? UnboxedBoolean.class : null;
+            }
+        }
+        return null;
+    }
+
+    public Operation getUnboxedOp(Class unboxedType, String name) {
+        if (unboxedType == Float.class) {
+            if (name.length() == 1) {
+                switch (name.charAt(0)) {
+                    case '+' : return Operation.FADD;
+                    case '-' : return Operation.FSUB;
+                    case '*' : return Operation.FMUL;
+                    case '/' : return Operation.FDIV;
+                    case '>' : return Operation.FGT;
+                    case '<' : return Operation.FLT;
+                }
+            } else if (name.length() == 2) {
+                if (name.equals("==")) return Operation.FEQ;
+            } else if (name.equals("===")) {
+                return Operation.FEQ;
+            }
+        } else if (unboxedType == Fixnum.class) {
+            if (name.length() == 1) {
+                switch (name.charAt(0)) {
+                    case '+' : return Operation.IADD;
+                    case '-' : return Operation.ISUB;
+                    case '*' : return Operation.IMUL;
+                    case '/' : return Operation.IDIV;
+                    case '>' : return Operation.IGT;
+                    case '<' : return Operation.ILT;
+                    case '|' : return Operation.IOR;
+                    case '&' : return Operation.IAND;
+                    case '^' : return Operation.IXOR;
+                }
+            } else if (name.length() == 2) {
+                if (name.equals(">>")) return Operation.ISHR;
+                if (name.equals("<<")) return Operation.ISHL;
+                if (name.equals("==")) return Operation.IEQ;
+            } else if (name.equals("===")) {
+                return Operation.IEQ;
+            }
+        }
+        return null;
     }
 
     @Override

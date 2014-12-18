@@ -25,8 +25,6 @@ public enum OperandType {
     HASH((byte) '{'),
     IR_EXCEPTION((byte) '!'),
     LABEL((byte) 'L'),
-    METH_ADDR((byte) 'M'),
-    METHOD_HANDLE((byte) 'm'),
     NIL((byte) 'N'),
     NTH_REF((byte) '1'),
     OBJECT_CLASS((byte) 'O'),

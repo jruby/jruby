@@ -3,7 +3,6 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -13,8 +12,8 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassSuperInstr extends CallInstr {
-    public ClassSuperInstr(Variable result, Operand definingModule, MethAddr superMeth, Operand[] args, Operand closure) {
-        super(Operation.CLASS_SUPER, CallType.SUPER, result, superMeth, definingModule, args, closure);
+    public ClassSuperInstr(Variable result, Operand definingModule, String name, Operand[] args, Operand closure) {
+        super(Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure);
     }
 
     public Operand getDefiningModule() {
@@ -23,7 +22,7 @@ public class ClassSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ClassSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), (MethAddr)getMethodAddr().cloneForInlining(ii),
+        return new ClassSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), name,
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
@@ -42,9 +41,9 @@ public class ClassSuperInstr extends CallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
-        String methodName = methAddr.getName();
         RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.classSuper(context, self, methodName, definingModule, args, block);
+
+        return IRRuntimeHelpers.classSuper(context, self, getName(), definingModule, args, block);
     }
 
     @Override

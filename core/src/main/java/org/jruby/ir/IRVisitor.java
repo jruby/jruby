@@ -71,7 +71,6 @@ public abstract class IRVisitor {
     public void Match2Instr(Match2Instr match2instr) { error(match2instr); }
     public void Match3Instr(Match3Instr match3instr) { error(match3instr); }
     public void MatchInstr(MatchInstr matchinstr) { error(matchinstr); }
-    public void MethodLookupInstr(MethodLookupInstr methodlookupinstr) { error(methodlookupinstr); }
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) { error(moduleversionguardinstr); }
     public void NonlocalReturnInstr(NonlocalReturnInstr nonlocalreturninstr) { error(nonlocalreturninstr); }
     public void NopInstr(NopInstr nopinstr) { error(nopinstr); }
@@ -153,8 +152,6 @@ public abstract class IRVisitor {
     public void IRException(IRException irexception) { error(irexception); }
     public void Label(Label label) { error(label); }
     public void LocalVariable(LocalVariable localvariable) { error(localvariable); }
-    public void MethAddr(MethAddr methaddr) { error(methaddr); }
-    public void MethodHandle(MethodHandle methodhandle) { error(methodhandle); }
     public void Nil(Nil nil) { error(nil); }
     public void NthRef(NthRef nthref) { error(nthref); }
     public void ObjectClass(ObjectClass objectclass) { error(objectclass); }
