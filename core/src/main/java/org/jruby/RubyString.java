@@ -2030,10 +2030,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "dump")
     public IRubyObject dump19() {
-        return dumpCommon(true);
+        return dumpCommon();
     }
 
-    private IRubyObject dumpCommon(boolean is1_9) {
+    private IRubyObject dumpCommon() {
         Ruby runtime = getRuntime();
         ByteList buf = null;
         Encoding enc = value.getEncoding();
@@ -2058,7 +2058,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 if (ASCII.isPrint(c)) {
                     len++;
                 } else {
-                    if (is1_9 && enc instanceof UTF8Encoding) {
+                    if (enc instanceof UTF8Encoding) {
                         int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
                         if (n > 0) {
                             if (buf == null) buf = new ByteList();
@@ -2076,7 +2076,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
         }
 
-        if (is1_9 && !enc.isAsciiCompatible()) {
+        if (!enc.isAsciiCompatible()) {
             len += ".force_encoding(\"".length() + enc.getName().length + "\")".length();
         }
 
@@ -2095,8 +2095,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             } else if (c == '#') {
                 if (isEVStr(bytes, p, end)) out[q++] = '\\';
                 out[q++] = '#';
-            } else if (!is1_9 && ASCII.isPrint(c)) {
-                out[q++] = (byte)c;
             } else if (c == '\n') {
                 out[q++] = '\\';
                 out[q++] = 'n';
@@ -2121,30 +2119,24 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             } else if (c == '\033') {
                 out[q++] = '\\';
                 out[q++] = 'e';
-            } else if (is1_9 && ASCII.isPrint(c)) {
+            } else if (ASCII.isPrint(c)) {
                 out[q++] = (byte)c;
             } else {
                 out[q++] = '\\';
-                if (is1_9) {
-                    if (enc instanceof UTF8Encoding) {
-                        int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
-                        if (n > 0) {
-                            int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                            p += n;
-                            outBytes.setRealSize(q);
-                            Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
-                            q = outBytes.getRealSize();
-                            continue;
-                        }
+                if (enc instanceof UTF8Encoding) {
+                    int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
+                    if (n > 0) {
+                        int cc = codePoint(runtime, enc, bytes, p - 1, end);
+                        p += n;
+                        outBytes.setRealSize(q);
+                        Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
+                        q = outBytes.getRealSize();
+                        continue;
                     }
-                    outBytes.setRealSize(q);
-                    Sprintf.sprintf(runtime, outBytes, "x%02X", c);
-                    q = outBytes.getRealSize();
-                } else {
-                    outBytes.setRealSize(q);
-                    Sprintf.sprintf(runtime, outBytes, "%03o", c);
-                    q = outBytes.getRealSize();
                 }
+                outBytes.setRealSize(q);
+                Sprintf.sprintf(runtime, outBytes, "x%02X", c);
+                q = outBytes.getRealSize();
             }
         }
         out[q++] = '"';
@@ -2152,16 +2144,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
         final RubyString result = new RubyString(runtime, getMetaClass(), outBytes);
-        if (is1_9) {
-            if (!enc.isAsciiCompatible()) {
-                result.cat(".force_encoding(\"".getBytes());
-                result.cat(enc.getName());
-                result.cat((byte)'"').cat((byte)')');
-                enc = ASCII;
-            }
-            result.associateEncoding(enc);
-            result.setCodeRange(CR_7BIT);
+
+        if (!enc.isAsciiCompatible()) {
+            result.cat(".force_encoding(\"".getBytes());
+            result.cat(enc.getName());
+            result.cat((byte)'"').cat((byte)')');
+            enc = ASCII;
         }
+        result.associateEncoding(enc);
+        result.setCodeRange(CR_7BIT);
+
         return result.infectBy(this);
     }
 
