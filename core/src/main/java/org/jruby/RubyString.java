@@ -2030,7 +2030,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "dump")
     public IRubyObject dump19() {
-        ByteList outBytes = dumpCommon(getRuntime(), value);
+        ByteList outBytes = StringSupport.dumpCommon(getRuntime(), value);
 
         final RubyString result = new RubyString(getRuntime(), getMetaClass(), outBytes);
         Encoding enc = value.getEncoding();
@@ -2045,118 +2045,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         result.setCodeRange(CR_7BIT);
 
         return result.infectBy(this);
-    }
-
-    public static ByteList dumpCommon(Ruby runtime, ByteList byteList) {
-        ByteList buf = null;
-        Encoding enc = byteList.getEncoding();
-
-        int p = byteList.getBegin();
-        int end = p + byteList.getRealSize();
-        byte[]bytes = byteList.getUnsafeBytes();
-
-        int len = 2;
-        while (p < end) {
-            int c = bytes[p++] & 0xff;
-
-            switch (c) {
-            case '"':case '\\':case '\n':case '\r':case '\t':case '\f':
-            case '\013': case '\010': case '\007': case '\033':
-                len += 2;
-                break;
-            case '#':
-                len += isEVStr(bytes, p, end) ? 2 : 1;
-                break;
-            default:
-                if (ASCII.isPrint(c)) {
-                    len++;
-                } else {
-                    if (enc instanceof UTF8Encoding) {
-                        int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
-                        if (n > 0) {
-                            if (buf == null) buf = new ByteList();
-                            int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                            Sprintf.sprintf(runtime, buf, "%x", cc);
-                            len += buf.getRealSize() + 4;
-                            buf.setRealSize(0);
-                            p += n;
-                            break;
-                        }
-                    }
-                    len += 4;
-                }
-                break;
-            }
-        }
-
-        if (!enc.isAsciiCompatible()) {
-            len += ".force_encoding(\"".length() + enc.getName().length + "\")".length();
-        }
-
-        ByteList outBytes = new ByteList(len);
-        byte out[] = outBytes.getUnsafeBytes();
-        int q = 0;
-        p = byteList.getBegin();
-        end = p + byteList.getRealSize();
-
-        out[q++] = '"';
-        while (p < end) {
-            int c = bytes[p++] & 0xff;
-            if (c == '"' || c == '\\') {
-                out[q++] = '\\';
-                out[q++] = (byte)c;
-            } else if (c == '#') {
-                if (isEVStr(bytes, p, end)) out[q++] = '\\';
-                out[q++] = '#';
-            } else if (c == '\n') {
-                out[q++] = '\\';
-                out[q++] = 'n';
-            } else if (c == '\r') {
-                out[q++] = '\\';
-                out[q++] = 'r';
-            } else if (c == '\t') {
-                out[q++] = '\\';
-                out[q++] = 't';
-            } else if (c == '\f') {
-                out[q++] = '\\';
-                out[q++] = 'f';
-            } else if (c == '\013') {
-                out[q++] = '\\';
-                out[q++] = 'v';
-            } else if (c == '\010') {
-                out[q++] = '\\';
-                out[q++] = 'b';
-            } else if (c == '\007') {
-                out[q++] = '\\';
-                out[q++] = 'a';
-            } else if (c == '\033') {
-                out[q++] = '\\';
-                out[q++] = 'e';
-            } else if (ASCII.isPrint(c)) {
-                out[q++] = (byte)c;
-            } else {
-                out[q++] = '\\';
-                if (enc instanceof UTF8Encoding) {
-                    int n = StringSupport.preciseLength(enc, bytes, p - 1, end) - 1;
-                    if (n > 0) {
-                        int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                        p += n;
-                        outBytes.setRealSize(q);
-                        Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
-                        q = outBytes.getRealSize();
-                        continue;
-                    }
-                }
-                outBytes.setRealSize(q);
-                Sprintf.sprintf(runtime, outBytes, "x%02X", c);
-                q = outBytes.getRealSize();
-            }
-        }
-        out[q++] = '"';
-        outBytes.setRealSize(q);
-        assert out == outBytes.getUnsafeBytes(); // must not reallocate
-
-        return outBytes;
     }
 
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
@@ -2198,14 +2086,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private void raiseIndexOutOfString(int index) {
         throw getRuntime().newIndexError("index " + index + " out of string");
-    }
-
-    public static boolean isEVStr(byte[]bytes, int p, int end) {
-        return p < end ? isEVStr(bytes[p] & 0xff) : false;
-    }
-
-    public static boolean isEVStr(int c) {
-        return c == '$' || c == '@' || c == '{';
     }
 
     /** rb_str_inspect
