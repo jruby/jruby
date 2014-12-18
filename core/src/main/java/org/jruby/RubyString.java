@@ -4140,19 +4140,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return scan19(context, arg, block);
     }
 
-    public static int positionEnd(ByteList value, Matcher matcher, Encoding enc, int begin, int range) {
-        int end = matcher.getEnd();
-        if (matcher.getBegin() == end) {
-            if (value.getRealSize() > end) {
-                return end + enc.length(value.getUnsafeBytes(), begin + end, range);
-            } else {
-                return end + 1;
-            }
-        } else {
-            return end;
-        }
-    }
-
     private IRubyObject populateCapturesForScan(Ruby runtime, Matcher matcher, int range, int tuFlags, boolean is19) {
         Region region = matcher.getRegion();
         RubyArray result = getRuntime().newArray(region.numRegs);
@@ -4207,7 +4194,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyMatchData match = null;
         if (pattern.numberOfCaptures() == 0) {
             while (RubyRegexp.matcherSearch(runtime, matcher, begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(value, matcher, enc, begin, range);
+                end = StringSupport.positionEndForScan(value, matcher, enc, begin, range);
                 match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
                 match.regexp = regexp;
                 RubyString substr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
@@ -4219,7 +4206,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
         } else {
             while (RubyRegexp.matcherSearch(runtime, matcher, begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(value, matcher, enc, begin, range);
+                end = StringSupport.positionEndForScan(value, matcher, enc, begin, range);
                 match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
                 match.regexp = regexp;
                 match.infectBy(tuFlags);
@@ -4244,14 +4231,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int end = 0;
         if (pattern.numberOfCaptures() == 0) {
             while (RubyRegexp.matcherSearch(runtime, matcher, begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(value, matcher, enc, begin, range);
+                end = StringSupport.positionEndForScan(value, matcher, enc, begin, range);
                 RubyString substr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
                 substr.infectBy(tuFlags);
                 ary.append(substr);
             }
         } else {
             while (RubyRegexp.matcherSearch(runtime, matcher, begin + end, range, Option.NONE) >= 0) {
-                end = positionEnd(value, matcher, enc, begin, range);
+                end = StringSupport.positionEndForScan(value, matcher, enc, begin, range);
                 ary.append(populateCapturesForScan(runtime, matcher, range, tuFlags, true));
             }
         }

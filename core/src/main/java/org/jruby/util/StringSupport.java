@@ -30,6 +30,7 @@ import static org.jcodings.Encoding.CHAR_INVALID;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.joni.Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -661,5 +662,18 @@ public final class StringSupport {
         ptrBytes[term_fill_ptr] = '\0';
         if (term_fill_len > 1)
         Arrays.fill(ptrBytes, term_fill_ptr, term_fill_len, (byte)0);
+    }
+
+    public static int positionEndForScan(ByteList value, Matcher matcher, Encoding enc, int begin, int range) {
+        int end = matcher.getEnd();
+        if (matcher.getBegin() == end) {
+            if (value.getRealSize() > end) {
+                return end + enc.length(value.getUnsafeBytes(), begin + end, range);
+            } else {
+                return end + 1;
+            }
+        } else {
+            return end;
+        }
     }
 }

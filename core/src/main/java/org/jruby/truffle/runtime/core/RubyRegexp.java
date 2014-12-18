@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -362,7 +363,7 @@ public class RubyRegexp extends RubyBasicObject {
 
                 strings.add((RubyString) values[0]);
 
-                end = org.jruby.RubyString.positionEnd(string.getBytes(), matcher, encoding, p, range);
+                end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
             return strings.toArray(new RubyString[strings.size()]);
@@ -388,7 +389,7 @@ public class RubyRegexp extends RubyBasicObject {
                 RubyString[] matches = parts.toArray(new RubyString[parts.size()]);
                 strings.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matches));
 
-                end = org.jruby.RubyString.positionEnd(string.getBytes(), matcher, encoding, p, range);
+                end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
             return strings.toArray(new Object[strings.size()]);
