@@ -1213,4 +1213,9 @@ class TestFile < Test::Unit::TestCase
     io.close
     File.unlink(filename)
   end
+
+  # jruby/jruby#2331
+  def test_classpath_realpath
+    assert_equal("classpath:/java/lang/String.class", File.realpath("classpath:/java/lang/String.class"))
+  end
 end
