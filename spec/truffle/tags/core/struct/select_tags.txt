@@ -1,1 +1,0 @@
-fails:Struct#select without block returns an instance of Enumerator

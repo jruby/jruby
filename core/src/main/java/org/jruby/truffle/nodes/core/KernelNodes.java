@@ -1035,7 +1035,7 @@ public abstract class KernelNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (String name : instanceVariableNames) {
-                array.slowPush(RubyString.fromJavaString(getContext().getCoreLibrary().getStringClass(), name));
+                array.slowPush(getContext().getSymbolTable().getSymbol(name));
             }
 
             return array;
@@ -1096,7 +1096,12 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object integer(VirtualFrame frame, Object value) {
-            return toInt.call(frame, value, "to_int", null);
+            if (toInt.doesRespondTo(frame, "to_int", value)) {
+                return toInt.call(frame, value, "to_int", null);
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(value, getContext().getCoreLibrary().getIntegerClass(), this));
+            }
         }
 
     }
@@ -1543,6 +1548,11 @@ public abstract class KernelNodes {
 
             final RubyException exception = ((RubyException.RubyExceptionClass) exceptionClass).newInstance(this);
             initialize.call(frame, exception, "initialize", null, message);
+            throw new RaiseException(exception);
+        }
+
+        @Specialization
+        public Object raise(RubyException exception, UndefinedPlaceholder undefined1, Object undefined2) {
             throw new RaiseException(exception);
         }
 
@@ -2060,29 +2070,15 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             String className = classNode.executeGetClass(frame, self).getName();
+
+            if (className == null) {
+                className = "Class";
+            }
+
             Object id = idNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(id);
 
             return getContext().makeString("#<" + className + ":0x" + hexID + ">");
-        }
-
-    }
-
-    // Rubinius API
-    @CoreMethod(names = "undefined", isModuleFunction = true)
-    public abstract static class UndefinedNode extends CoreMethodNode {
-
-        public UndefinedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public UndefinedNode(UndefinedNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public UndefinedPlaceholder undefined() {
-            return UndefinedPlaceholder.INSTANCE;
         }
 
     }

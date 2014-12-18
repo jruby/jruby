@@ -74,7 +74,7 @@ public class ObjectLayout {
             final String name = entry.getKey();
             final Class type = entry.getValue();
 
-            if (parent == null || parent.findStorageLocation(name) == null) {
+            //if (parent == null || parent.findStorageLocation(name) == null) {
                 boolean canStoreInPrimitive = false;
                 int primitivesNeeded = 0;
 
@@ -110,7 +110,7 @@ public class ObjectLayout {
                     storageLocations.put(entry.getKey(), newStorageLocation);
                     objectStorageLocationIndex++;
                 }
-            }
+            //}
         }
 
         primitiveStorageLocationsUsed = primitiveStorageLocationIndex;

@@ -1,2 +1,0 @@
-fails:Struct#each_pair returns self if passed a block
-fails:Struct#each_pair returns an Enumerator if not passed a block

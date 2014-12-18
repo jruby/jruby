@@ -135,9 +135,17 @@ public class ObjectStorage {
              * layout and update the layout of this object.
              */
 
-            changeLayout(objectLayout.withGeneralisedVariable(name));
+            final ObjectLayout oldLayout = objectLayout;
+            final ObjectLayout newLayout = objectLayout.withGeneralisedVariable(name);
+            changeLayout(newLayout);
+
+            assert getObjectLayout() == newLayout;
+            assert getObjectLayout() != oldLayout;
+            assert newLayout.findStorageLocation(name) != null;
+            assert newLayout.findStorageLocation(name) instanceof ObjectStorageLocation;
 
             storageLocation = getObjectLayout().findStorageLocation(name);
+            assert storageLocation instanceof ObjectStorageLocation : storageLocation.getClass();
 
             // Try to write to the generalized storage location
 

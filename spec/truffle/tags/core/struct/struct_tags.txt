@@ -1,2 +1,0 @@
-fails:Struct includes Enumerable
-fails:Struct anonymous class instance methods includes Enumerable

@@ -65,7 +65,7 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(names = {"message", "to_s"})
+    @CoreMethod(names = "message")
     public abstract static class MessageNode extends CoreMethodNode {
 
         public MessageNode(RubyContext context, SourceSection sourceSection) {
@@ -79,6 +79,24 @@ public abstract class ExceptionNodes {
         @Specialization
         public RubyString message(RubyException exception) {
             return exception.getMessage();
+        }
+
+    }
+
+    @CoreMethod(names = "to_s")
+    public abstract static class ToSNode extends CoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toS(RubyException exception) {
+            return getContext().makeString(exception.getLogicalClass().getName());
         }
 
     }

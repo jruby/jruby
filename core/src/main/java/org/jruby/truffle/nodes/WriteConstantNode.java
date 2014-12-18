@@ -24,12 +24,14 @@ import org.jruby.truffle.runtime.core.*;
 public class WriteConstantNode extends RubyNode {
 
     private final String name;
+    private final LexicalScope lexicalScope;
     @Child protected RubyNode module;
     @Child protected RubyNode rhs;
 
-    public WriteConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module, RubyNode rhs) {
+    public WriteConstantNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope, RubyNode module, RubyNode rhs) {
         super(context, sourceSection);
         this.name = name;
+        this.lexicalScope = lexicalScope;
         this.module = module;
         this.rhs = rhs;
     }
@@ -41,8 +43,13 @@ public class WriteConstantNode extends RubyNode {
         // Evaluate RHS first.
         final Object rhsValue = rhs.execute(frame);
 
-        assert rhsValue != null;
-        assert !(rhsValue instanceof String);
+        if (rhsValue instanceof RubyModule) {
+            final RubyModule setModule = (RubyModule) rhsValue;
+            if (setModule.getName() == null) {
+                setModule.setLexicalScope(lexicalScope);
+                setModule.setName(name);
+            }
+        }
 
         final Object receiverObject = module.execute(frame);
 

@@ -1,6 +1,0 @@
-fails:Struct.new creates a constant in Struct namespace with string as first argument
-fails:Struct.new calls to_str on its first argument (constant name)
-fails:Struct.new creates a new anonymous class with nil first argument
-fails:Struct.new creates a new anonymous class with symbol arguments
-fails:Struct.new fails with invalid constant name as first argument
-fails:Struct.new processes passed block with instance_eval

@@ -89,8 +89,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     private final RubyContext context;
 
     @CompilationFinal protected ModuleChain parentModule;
-
-    @CompilationFinal private String name;
+    private LexicalScope lexicalScope;
+    private String name;
 
     private final Map<String, RubyMethod> methods = new HashMap<>();
     private final Map<String, RubyConstant> constants = new HashMap<>();
@@ -329,11 +329,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return super.toString() + "(" + name + ")";
     }
 
-    @Override
-    public int hashCode() {
-        return name.hashCode();
-    }
-
     public void newVersion() {
         RubyNode.notDesignedForCompilation();
 
@@ -529,6 +524,18 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
                 return new IncludedModulesIterator(top);
             }
         };
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setLexicalScope(LexicalScope lexicalScope) {
+        this.lexicalScope = lexicalScope;
+    }
+
+    public LexicalScope getLexicalScope() {
+        return lexicalScope;
     }
 
 }
