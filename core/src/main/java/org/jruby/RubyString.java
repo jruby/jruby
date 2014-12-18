@@ -2030,17 +2030,31 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "dump")
     public IRubyObject dump19() {
-        return dumpCommon();
-    }
+        ByteList outBytes = dumpCommon(value);
 
-    private IRubyObject dumpCommon() {
-        Ruby runtime = getRuntime();
-        ByteList buf = null;
+        final RubyString result = new RubyString(getRuntime(), getMetaClass(), outBytes);
         Encoding enc = value.getEncoding();
 
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        if (!enc.isAsciiCompatible()) {
+            result.cat(".force_encoding(\"".getBytes());
+            result.cat(enc.getName());
+            result.cat((byte)'"').cat((byte)')');
+            enc = ASCII;
+        }
+        result.associateEncoding(enc);
+        result.setCodeRange(CR_7BIT);
+
+        return result.infectBy(this);
+    }
+
+    private ByteList dumpCommon(ByteList byteList) {
+        Ruby runtime = getRuntime();
+        ByteList buf = null;
+        Encoding enc = byteList.getEncoding();
+
+        int p = byteList.getBegin();
+        int end = p + byteList.getRealSize();
+        byte[]bytes = byteList.getUnsafeBytes();
 
         int len = 2;
         while (p < end) {
@@ -2083,8 +2097,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         ByteList outBytes = new ByteList(len);
         byte out[] = outBytes.getUnsafeBytes();
         int q = 0;
-        p = value.getBegin();
-        end = p + value.getRealSize();
+        p = byteList.getBegin();
+        end = p + byteList.getRealSize();
 
         out[q++] = '"';
         while (p < end) {
@@ -2143,18 +2157,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         outBytes.setRealSize(q);
         assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
-        final RubyString result = new RubyString(runtime, getMetaClass(), outBytes);
-
-        if (!enc.isAsciiCompatible()) {
-            result.cat(".force_encoding(\"".getBytes());
-            result.cat(enc.getName());
-            result.cat((byte)'"').cat((byte)')');
-            enc = ASCII;
-        }
-        result.associateEncoding(enc);
-        result.setCodeRange(CR_7BIT);
-
-        return result.infectBy(this);
+        return outBytes;
     }
 
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
