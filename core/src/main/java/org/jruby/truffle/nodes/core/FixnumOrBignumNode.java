@@ -14,6 +14,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends Node {
@@ -62,7 +63,7 @@ public class FixnumOrBignumNode extends Node {
 
         bignumProfile.enter();
 
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), BigInteger.valueOf((long) value));
+        return new RubyBignum(context.getCoreLibrary().getBignumClass(), new BigDecimal(value).toBigInteger());
     }
 
 }
