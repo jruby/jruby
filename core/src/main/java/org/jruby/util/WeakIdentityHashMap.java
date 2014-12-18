@@ -151,7 +151,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
         table = new Entry[range];
     }
 
-    private void expunge() {
+    protected void expunge() {
         Entry e;
         while ((e = (Entry) queue.poll()) != null) {
             removeEntry(e);
@@ -219,11 +219,15 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
             idx = index(hash);
         }
 
-        table[idx] = new Entry(hash, masked_key, value, table[idx], queue);
+        table[idx] = newEntry(hash, masked_key, value, table[idx], queue);
 
         size += 1;
 
         return null;
+    }
+
+    protected Entry newEntry(int hash, Object masked_key, Object value, Entry next, ReferenceQueue queue) {
+        return new Entry(hash, masked_key, value, next, queue);
     }
 
     public Object remove(Object key) {
@@ -242,6 +246,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
             if (entry.sameKey(hash, key)) {
                 table[idx] = entry.next;
                 size -= 1;
+                entryRemoved(entry);
                 return entry.getValue();
 
             } else {
@@ -251,6 +256,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
                     if (ahead.sameKey(hash, key)) {
                         entry.next = ahead.next;
                         size -= 1;
+                        entryRemoved(ahead);
                         return ahead.getValue();
                     }
 
@@ -264,7 +270,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
         return null;
     }
 
-    private void removeEntry(Entry ent) {
+    protected void removeEntry(Entry ent) {
         int idx = index(ent.key_hash);
 
         Entry entry = table[idx];
@@ -273,6 +279,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
             if (entry == ent) {
                 table[idx] = entry.next;
                 size -= 1;
+                entryRemoved(entry);
                 return;
 
             } else {
@@ -282,6 +289,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
                     if (ahead == ent) {
                         entry.next = ahead.next;
                         size -= 1;
+                        entryRemoved(ahead);
                         return;
                     }
 
@@ -290,8 +298,11 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
                 }
             }
         }
-        
-        valueRemoved(ent.value);
+    }
+
+    // can be overridden to be informed when entries are removed
+    protected void entryRemoved(Entry entry) {
+        valueRemoved(entry.value);
     }
 
     // can be overridden to be informed when objects are removed
