@@ -198,7 +198,7 @@ public class RubyRegexp extends RubyBasicObject {
 
                 final Object value;
 
-                // Copied from jubry/RubyRegexp - see copyright notice there
+                // Copied from jruby/RubyRegexp - see copyright notice there
 
                 if (region == null) {
                     if (nth >= 1 || (nth < 0 && ++nth <= 0)) {
