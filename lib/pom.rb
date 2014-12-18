@@ -34,23 +34,6 @@ default_gems =
 
 project 'JRuby Lib Setup' do
  
-  # TODO move those to method to ruby-maven
-  class ::Java::JavaIo::File
-    def to_pathname
-      to_s.gsub( /\\/, '/' )
-    end
-  end
-  class ::Java::JavaLang::String
-    def to_pathname
-      to_s.gsub( /\\/, '/' )
-    end
-  end
-  class ::String
-    def to_pathname
-      self.gsub( /\\/, '/' )
-    end
-  end
-
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
