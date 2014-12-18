@@ -1798,7 +1798,8 @@ public class RubyInstanceConfig {
         } else if (specVersion.equals("1.7") || specVersion.equals("1.8")) {
             return Opcodes.V1_7;
         } else {
-            throw new RuntimeException("unsupported Java version: " + specVersion);
+            System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.5");
+            return Opcodes.V1_5;
         }
     }
     public void setTruffleHooks(TruffleHooksStub truffleHooks) {
