@@ -533,6 +533,10 @@ public final class ThreadContext {
         context.backtraceIndex--;
     }
 
+    public boolean hasAnyScopes() {
+        return scopeIndex > -1;
+    }
+
     /**
      * Check if a static scope is present on the call stack.
      * This is the IR equivalent of isJumpTargetAlive
