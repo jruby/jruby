@@ -708,6 +708,26 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "dump")
+    public abstract static class DumpNode extends CoreMethodNode {
+
+        public DumpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DumpNode(DumpNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString rstrip(RubyString string) {
+            notDesignedForCompilation();
+
+            return string.dump();
+        }
+
+    }
+
     @CoreMethod(names = "scan", required = 1, needsBlock = true)
     public abstract static class ScanNode extends YieldingCoreMethodNode {
 
