@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
@@ -29,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Represents the Ruby {@code Regexp} class.
@@ -92,13 +92,20 @@ public class RubyRegexp extends RubyBasicObject {
 
     @CompilerDirectives.SlowPath
     public Object matchCommon(ByteList bytes, boolean operator, boolean setNamedCaptures) {
+        final byte[] stringBytes = bytes.bytes();
+        final Matcher matcher = regex.matcher(stringBytes);
+        int range = stringBytes.length;
+
+        return matchCommon(bytes, operator, setNamedCaptures, matcher, 0, range);
+    }
+
+    @CompilerDirectives.SlowPath
+    public Object matchCommon(ByteList bytes, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
         final RubyContext context = getContext();
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
-        final byte[] stringBytes = bytes.bytes();
-        final Matcher matcher = regex.matcher(stringBytes);
-        final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
+        final int match = matcher.search(startPos, range, Option.DEFAULT);
 
         final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
 
@@ -327,29 +334,65 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @CompilerDirectives.SlowPath
-    public RubyString[] scan(RubyString string) {
+    public Object scan(RubyString string) {
         final RubyContext context = getContext();
 
         final byte[] stringBytes = string.getBytes().bytes();
+        final Encoding encoding = string.getBytes().getEncoding();
         final Matcher matcher = regex.matcher(stringBytes);
 
-        final ArrayList<RubyString> strings = new ArrayList<>();
+        int p = string.getBytes().getBegin();
+        int end = 0;
+        int range = p + string.getBytes().getRealSize();
 
-        int p = 0;
+        if (regex.numberOfCaptures() == 0) {
+            final ArrayList<RubyString> strings = new ArrayList<>();
 
-        while (true) {
-            final int match = matcher.search(p, stringBytes.length, Option.DEFAULT);
+            while (true) {
+                Object matchData = matchCommon(string.getBytes(), false, true, matcher, p + end, range);
 
-            if (match == -1) {
-                break;
-            } else {
-                strings.add(context.makeString(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, matcher.getBegin(), matcher.getEnd() - matcher.getBegin())).toString()));
+                if (matchData == context.getCoreLibrary().getNilObject()) {
+                    break;
+                }
+
+                RubyMatchData md = (RubyMatchData) matchData;
+                Object[] values = md.getValues();
+
+                assert values.length == 1;
+
+                strings.add((RubyString) values[0]);
+
+                end = org.jruby.RubyString.positionEnd(string.getBytes(), matcher, encoding, p, range);
             }
 
-            p = matcher.getEnd();
-        }
+            return strings.toArray(new RubyString[strings.size()]);
+        } else {
+            final List<RubyArray> strings = new ArrayList<>();
 
-        return strings.toArray(new RubyString[strings.size()]);
+            while (true) {
+                Object matchData = matchCommon(string.getBytes(), false, true, matcher, p + end, stringBytes.length);
+
+                if (matchData == context.getCoreLibrary().getNilObject()) {
+                    break;
+                }
+
+                RubyMatchData md = (RubyMatchData) matchData;
+
+                final List<RubyString> parts = new ArrayList<>();
+
+                Object[] values = md.getValues();
+                for (int i = 1; i < values.length; i++) {
+                    parts.add((RubyString) values[i]);
+                }
+
+                RubyString[] matches = parts.toArray(new RubyString[parts.size()]);
+                strings.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matches));
+
+                end = org.jruby.RubyString.positionEnd(string.getBytes(), matcher, encoding, p, range);
+            }
+
+            return strings.toArray(new Object[strings.size()]);
+        }
     }
 
     @Override
