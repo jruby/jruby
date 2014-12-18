@@ -48,6 +48,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -863,12 +864,16 @@ public class ChannelDescriptor {
         filenoDescriptorMap.put(descriptor.getFileno(), descriptor);
     }
 
-    private static void unregisterDescriptor(int aFileno) {
+    public static void unregisterDescriptor(int aFileno) {
         filenoDescriptorMap.remove(aFileno);
     }
 
     public static ChannelDescriptor getDescriptorByFileno(int aFileno) {
         return filenoDescriptorMap.get(aFileno);
+    }
+
+    public static Map<Integer, ChannelDescriptor> getFilenoDescriptorMapReadOnly() {
+        return Collections.unmodifiableMap(filenoDescriptorMap);
     }
     
     private static final Map<Integer, ChannelDescriptor> filenoDescriptorMap = new ConcurrentHashMap<Integer, ChannelDescriptor>();
