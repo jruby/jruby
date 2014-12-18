@@ -2030,7 +2030,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "dump")
     public IRubyObject dump19() {
-        ByteList outBytes = dumpCommon(value);
+        ByteList outBytes = dumpCommon(getRuntime(), value);
 
         final RubyString result = new RubyString(getRuntime(), getMetaClass(), outBytes);
         Encoding enc = value.getEncoding();
@@ -2047,8 +2047,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result.infectBy(this);
     }
 
-    private ByteList dumpCommon(ByteList byteList) {
-        Ruby runtime = getRuntime();
+    public static ByteList dumpCommon(Ruby runtime, ByteList byteList) {
         ByteList buf = null;
         Encoding enc = byteList.getEncoding();
 
@@ -2201,11 +2200,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         throw getRuntime().newIndexError("index " + index + " out of string");
     }
 
-    private boolean isEVStr(byte[]bytes, int p, int end) {
+    public static boolean isEVStr(byte[]bytes, int p, int end) {
         return p < end ? isEVStr(bytes[p] & 0xff) : false;
     }
 
-    public boolean isEVStr(int c) {
+    public static boolean isEVStr(int c) {
         return c == '$' || c == '@' || c == '{';
     }
 
