@@ -52,7 +52,7 @@ public class WeakIdentityLinkedHashMap extends WeakIdentityHashMap {
     protected void entryRemoved(WeakIdentityHashMap.Entry entry) {
         Entry ent = (Entry) entry;
         if (ent.before == null) {
-            head = ent;
+            head = ent.after;
         }
         else {
             ent.before.after = ent.after;
