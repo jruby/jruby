@@ -44,7 +44,7 @@ public class FixnumOrBignumNode extends Node {
     }
 
     public Object fixnumOrBignum(RubyContext context, double value) {
-        if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+        if (value > Integer.MIN_VALUE && value < Integer.MAX_VALUE) {
             // TODO(CS): reusing profiles might not be a good idea
             integerProfile.enter();
 
@@ -53,7 +53,7 @@ public class FixnumOrBignumNode extends Node {
 
         checkLongProfile.enter();
 
-        if (value >= Long.MIN_VALUE && value <= Long.MAX_VALUE) {
+        if (value > Long.MIN_VALUE && value < Long.MAX_VALUE) {
             // TODO(CS): reusing profiles might not be a good idea
             longProfile.enter();
 
