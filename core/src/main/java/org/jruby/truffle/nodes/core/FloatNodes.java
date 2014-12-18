@@ -600,6 +600,47 @@ public abstract class FloatNodes {
 
     }
 
+    @CoreMethod(names = { "to_i", "to_int", "truncate" })
+    public abstract static class ToINode extends CoreMethodNode {
+
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
+        private final BranchProfile greaterZero = new BranchProfile();
+        private final BranchProfile lessZero = new BranchProfile();
+
+        public ToINode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
+        }
+
+        public ToINode(ToINode prev) {
+            super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
+        }
+
+        @Specialization
+        public Object toI(double value) {
+            if (Double.isInfinite(value)) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
+            }
+
+            if (Double.isNaN(value)) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
+            }
+
+            double truncated = value;
+
+            if (value > 0.0) {
+                truncated = Math.floor(value);
+            } else if (value < 0.0) {
+                truncated = Math.ceil(value);
+            }
+
+            return fixnumOrBignum.fixnumOrBignum(getContext(), truncated);
+        }
+
+    }
+
     @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends CoreMethodNode {
 
