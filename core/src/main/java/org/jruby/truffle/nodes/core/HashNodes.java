@@ -139,7 +139,7 @@ public abstract class HashNodes {
                         if (store.length <= HashOperations.SMALL_HASH_SIZE) {
                             smallPackedArray.enter();
 
-                            final int size = store.length;
+                            final int size = array.getSize();
                             final Object[] newStore = new Object[HashOperations.SMALL_HASH_SIZE * 2];
 
                             for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
@@ -168,15 +168,39 @@ public abstract class HashNodes {
                             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, newStore, size, null);
                         } else {
                             largePackedArray.enter();
-                            throw new UnsupportedOperationException();
+
+                            final List<KeyValue> keyValues = new ArrayList<>();
+
+                            final int size = array.getSize();
+
+                            for (int n = 0; n < size; n++) {
+                                final Object pair = store[n];
+
+                                if (!(pair instanceof RubyArray)) {
+                                    CompilerDirectives.transferToInterpreter();
+                                    throw new UnsupportedOperationException();
+                                }
+
+                                final RubyArray pairArray = (RubyArray) pair;
+
+                                if (!(pairArray.getStore() instanceof Object[])) {
+                                    CompilerDirectives.transferToInterpreter();
+                                    throw new UnsupportedOperationException();
+                                }
+
+                                final Object[] pairStore = (Object[]) pairArray.getStore();
+                                keyValues.add(new KeyValue(pairStore[0], pairStore[1]));
+                            }
+
+                            return HashOperations.verySlowFromEntries(getContext(), keyValues);
                         }
                     } else {
                         otherArray.enter();
-                        throw new UnsupportedOperationException();
+                        throw new UnsupportedOperationException("other array");
                     }
                 } else {
                     singleOther.enter();
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("single other");
                 }
             } else {
                 keyValues.enter();

@@ -206,7 +206,7 @@ public class CoreLibrary {
         localJumpErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LocalJumpError");
         matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
         mathModule = new RubyModule(context, objectClass, "Math");
-        nameErrorClass = new RubyClass(context, objectClass, standardErrorClass, "NameError");
+        nameErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "NameError");
         nilClass = new RubyClass(context, objectClass, objectClass, "NilClass");
         noMethodErrorClass = new RubyException.RubyExceptionClass(context, objectClass, nameErrorClass, "NoMethodError");
         objectSpaceModule = new RubyModule(context, objectClass, "ObjectSpace");

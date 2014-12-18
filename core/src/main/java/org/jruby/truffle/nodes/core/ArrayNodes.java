@@ -21,6 +21,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.RubyFixnum;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1765,6 +1766,24 @@ public abstract class ArrayNodes {
         @Specialization
         public RubyArray flatten(RubyArray array) {
             throw new UnsupportedOperationException();
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public long hashNumber(RubyArray array) {
+            return array.hashCode();
         }
 
     }
@@ -3657,21 +3676,4 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "hash")
-    public abstract static class HashNode extends CoreMethodNode {
-
-        public HashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public HashNode(HashNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public long hashNumber(RubyArray array) {
-            return array.hashCode();
-        }
-
-    }
 }

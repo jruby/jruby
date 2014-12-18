@@ -34,6 +34,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -677,18 +678,33 @@ public abstract class ModuleNodes {
         @Specialization
         public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
             notDesignedForCompilation();
-
-            module.setConstant(this, name.toString(), object);
+            setConstant(module, name.toString(), object);
             return module;
         }
 
         @Specialization
         public RubyModule setConstant(RubyModule module, RubySymbol name, Object object) {
             notDesignedForCompilation();
-
-            module.setConstant(this, name.toString(), object);
+            setConstant(module, name.toString(), object);
             return module;
         }
+
+        public void setConstant(RubyModule module, String name, Object object) {
+            if (!IdUtil.isConstant(name)) {
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
+            }
+
+            if (object instanceof RubyModule) {
+                final RubyModule setModule = (RubyModule) object;
+                if (setModule.getName() == null) {
+                    setModule.setLexicalScope(new LexicalScope(null, module));
+                    setModule.setName(name);
+                }
+            }
+
+            module.setConstant(this, name, object);
+        }
+
     }
 
     @CoreMethod(names = "define_method", needsBlock = true, required = 1, optional = 1)
@@ -837,6 +853,39 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "include?", required = 1)
+    public abstract static class IncludePNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode appendFeaturesNode;
+
+        public IncludePNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            appendFeaturesNode = new DispatchHeadNode(context);
+        }
+
+        public IncludePNode(IncludePNode prev) {
+            super(prev);
+            appendFeaturesNode = prev.appendFeaturesNode;
+        }
+
+        @Specialization
+        public boolean include(RubyModule module, RubyModule included) {
+            notDesignedForCompilation();
+
+            ModuleChain ancestor = module.getParentModule();
+
+            while (ancestor != null) {
+                if (ancestor.getActualModule() == included) {
+                    return true;
+                }
+
+                ancestor = ancestor.getParentModule();
+            }
+
+            return false;
+        }
+    }
+
     @CoreMethod(names = "method_defined?", required = 1, optional = 1)
     public abstract static class MethodDefinedNode extends CoreMethodNode {
 
@@ -939,10 +988,26 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyString name(RubyModule module) {
+        public Object name(RubyModule module) {
             notDesignedForCompilation();
 
-            return getContext().makeString(module.getName());
+            if (module.getName() == null) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            final StringBuilder builder = new StringBuilder();
+
+            builder.append(module.getName());
+
+            LexicalScope lexicalScope = module.getLexicalScope();
+
+            while (lexicalScope != null && lexicalScope.getLiveModule() != getContext().getCoreLibrary().getObjectClass()) {
+                builder.insert(0, "::");
+                builder.insert(0, lexicalScope.getLiveModule().getName());
+                lexicalScope = lexicalScope.getParent();
+            }
+
+            return getContext().makeString(builder.toString());
         }
     }
 
@@ -1342,23 +1407,6 @@ public abstract class ModuleNodes {
             return module;
         }
 
-    }
-
-    @CoreMethod(names = {"to_s", "inspect"})
-    public abstract static class ToSNode extends CoreMethodNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString toS(RubyModule module) {
-            return getContext().makeString(module.getName());
-        }
     }
 
     @CoreMethod(names = "undef_method", required = 1)

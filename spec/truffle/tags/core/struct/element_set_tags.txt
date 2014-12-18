@@ -1,1 +1,0 @@
-fails:Struct#[]= fails when trying to assign attributes which don't exist
