@@ -26,7 +26,7 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.6.dev-SNAPSHOT</version>
+      <version>0.9.6</version>
       <type>gem</type>
     </dependency>
     <dependency>
