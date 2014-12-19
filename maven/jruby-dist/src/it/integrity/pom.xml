@@ -142,7 +142,6 @@
 		<argument>
 		  require 'jar-dependencies'
 		  require 'openssl'
-		  require 'krypt'
 		  puts Gem.loaded_specs.keys.sort.join(',')
 		</argument>
               </arguments>

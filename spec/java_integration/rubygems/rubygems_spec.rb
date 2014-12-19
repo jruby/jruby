@@ -17,7 +17,7 @@ describe "RubyGems extensions" do
     url_paths = ["file:/var/tmp",
                  "http://jruby.org",
                  "classpath:/META-INF/jruby.home",
-                 "uri:jar:file://META-INF/jruby.home",
+                 "uri:jar:file://META-INF/jruby.home!/some/path",
                  "jar:file:/var/tmp/some.jar!/some/path"]
     Gem.use_paths(nil, url_paths)
     Gem.path.should include(*url_paths)
@@ -32,6 +32,6 @@ describe "RubyGems extensions" do
     File.exist?("file:").should be_false
     Gem.ensure_gem_subdirectories("uri:file://bogus/classpath")
     File.exist?("uri:file:///nothing").should be_false
-    File.exist?("uri:jar://bogus/classpath").should be_false
+    File.exist?("uri:file://bogus/classpath").should be_false
   end
 end
