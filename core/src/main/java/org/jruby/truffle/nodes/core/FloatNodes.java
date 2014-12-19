@@ -613,9 +613,6 @@ public abstract class FloatNodes {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile greaterZero = new BranchProfile();
-        private final BranchProfile lessZero = new BranchProfile();
-
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode();
@@ -636,15 +633,7 @@ public abstract class FloatNodes {
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
             }
 
-            double truncated = value;
-
-            if (value > 0.0) {
-                truncated = Math.floor(value);
-            } else if (value < 0.0) {
-                truncated = Math.ceil(value);
-            }
-
-            return fixnumOrBignum.fixnumOrBignum(getContext(), truncated);
+            return fixnumOrBignum.fixnumOrBignum(getContext(), value);
         }
 
     }
