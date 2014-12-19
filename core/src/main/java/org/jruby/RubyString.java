@@ -4813,8 +4813,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, context.runtime, table, null, true, enc);
-        return StringSupport.countCommon19(this, value, runtime, table, tables, enc);
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, context.runtime, table, null, true, enc);
+        return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
     }
 
     @JRubyMethod(name = "count", required = 1, rest = true)
@@ -4825,14 +4825,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
         final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, table, null, true, enc);
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, table, null, true, enc);
         for (int i = 1; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
-            tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, table, tables, false, enc);
+            tables = StringSupport.trSetupTable(otherStr.value, runtime, table, tables, false, enc);
         }
 
-        return StringSupport.countCommon19(this, value, runtime, table, tables, enc);
+        return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
     }
 
     /** rb_str_delete / rb_str_delete_bang
@@ -4894,7 +4894,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString otherStr = arg.convertToString();
         Encoding enc = checkEncoding(otherStr);
         final boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, enc);
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
         return delete_bangCommon19(runtime, squeeze, tables, enc);
     }
 
@@ -4906,11 +4906,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
         boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, enc);
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
         for (int i=1; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
-            tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, tables, false, enc);
+            tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
         return delete_bangCommon19(runtime, squeeze, tables, enc);
@@ -5051,7 +5051,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         RubyString otherStr = arg.convertToString();
         final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, checkEncoding(otherStr));
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, checkEncoding(otherStr));
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
@@ -5073,14 +5073,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
         final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, enc);
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
 
         boolean singlebyte = singleByteOptimizable() && otherStr.singleByteOptimizable();
         for (int i=1; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
             singlebyte = singlebyte && otherStr.singleByteOptimizable();
-            tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, tables, false, enc);
+            tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
         modifyAndKeepCodeRange();

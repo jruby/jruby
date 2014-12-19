@@ -812,7 +812,7 @@ public final class StringSupport {
      * rb_str_count
      */
 
-    public static IRubyObject countCommon19(RubyString rubyString, ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+    public static int countCommon19(ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
         int i = 0;
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
@@ -831,7 +831,7 @@ public final class StringSupport {
             }
         }
 
-        return runtime.newFixnum(i);
+        return i;
     }
 
     /**
@@ -860,7 +860,7 @@ public final class StringSupport {
         private IntHash<IRubyObject> del, noDel;
     }
 
-    public static TrTables trSetupTable(RubyString rubyString, ByteList value, Ruby runtime, boolean[] table, TrTables tables, boolean init, Encoding enc) {
+    public static TrTables trSetupTable(ByteList value, Ruby runtime, boolean[] table, TrTables tables, boolean init, Encoding enc) {
         final TR tr = new TR(value);
         boolean cflag = false;
         if (value.getRealSize() > 1) {
