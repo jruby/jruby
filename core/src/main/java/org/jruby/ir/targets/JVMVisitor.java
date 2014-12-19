@@ -123,7 +123,7 @@ public class JVMVisitor extends IRVisitor {
 
         int i = 0;
         for (BasicBlock bb : scope.buildLinearization()) {
-            for (Instr instr : bb.getInstrsArray()) {
+            for (Instr instr : bb.getInstrs()) {
                 if (i > 0) b.append("\n");
 
                 b.append("  ").append(i).append('\t').append(instr);

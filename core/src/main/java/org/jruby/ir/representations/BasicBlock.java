@@ -21,7 +21,6 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     private Label       label;          // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
     private boolean     isRescueEntry;  // Is this basic block entry of a rescue?
-    private Instr[]     instrsArray;
 
     public BasicBlock(CFG cfg, Label label) {
         this.label = label;
@@ -30,13 +29,12 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         isRescueEntry = false;
 
         assert label != null : "label is null";
-        assert cfg != null : "cfg is null";
 
         initInstrs();
     }
 
     private void initInstrs() {
-        instrs = new ArrayList<Instr>();
+        instrs = new ArrayList<>();
         if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
             IRManager irManager = cfg.getScope().getManager();
             InstructionsListener listener = irManager.getInstructionsListener();
@@ -44,7 +42,6 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
                 instrs = new InstructionsListenerDecorator(instrs, listener);
             }
         }
-        instrsArray = null;
     }
 
     @Override
@@ -79,7 +76,6 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
     public void replaceInstrs(List<Instr> instrs) {
         this.instrs = instrs;
-        this.instrsArray = null;
     }
 
     public void addInstr(Instr i) {
@@ -94,23 +90,13 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return instrs;
     }
 
-    public int instrCount() {
-        return instrs.size();
-    }
-
-    public Instr[] getInstrsArray() {
-        if (instrsArray == null) instrsArray = instrs.toArray(new Instr[instrs.size()]);
-
-        return instrsArray;
-    }
-
     public Instr getLastInstr() {
         int n = instrs.size();
         return (n == 0) ? null : instrs.get(n-1);
     }
 
     public boolean removeInstr(Instr i) {
-       return i == null? false : instrs.remove(i);
+       return i != null && instrs.remove(i);
     }
 
     public boolean isEmpty() {
