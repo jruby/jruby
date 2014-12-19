@@ -16,19 +16,18 @@ public class AsString extends Operand {
     public AsString(Operand source) {
         super(OperandType.AS_STRING);
 
-        if (source == null) source = new StringLiteral("");
-        this.source = source;
+        this.source = source == null ? StringLiteral.EMPTY_STRING : source;
     }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return ((IRubyObject)source.retrieve(context, self, currScope, currDynScope, temp)).asString();
+        return ((IRubyObject) source.retrieve(context, self, currScope, currDynScope, temp)).asString();
     }
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newSource = source.getSimplifiedOperand(valueMap, force);
-        return (newSource == source) ? this : new AsString(newSource);
+        return newSource == source ? this : new AsString(newSource);
     }
 
     @Override

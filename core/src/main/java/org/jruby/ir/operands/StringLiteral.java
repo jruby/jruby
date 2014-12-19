@@ -22,6 +22,8 @@ import java.util.List;
  * This is not like a Java string.
  */
 public class StringLiteral extends Operand {
+    public static final StringLiteral EMPTY_STRING = new StringLiteral("");
+
     // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 
     final public ByteList bytelist;
