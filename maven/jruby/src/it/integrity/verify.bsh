@@ -28,12 +28,12 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "gems count 12";
+expected = "gems count 8";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "ffi,jar-dependencies,jruby-openssl,krypt,krypt-core,krypt-provider-jdk";
+expected = "jar-dependencies,jruby-openssl";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
