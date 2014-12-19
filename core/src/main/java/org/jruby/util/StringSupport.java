@@ -31,8 +31,10 @@ import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,6 +52,7 @@ public final class StringSupport {
 
     public static final Object UNSAFE = getUnsafe();
     private static final int OFFSET = UNSAFE != null ? ((Unsafe)UNSAFE).arrayBaseOffset(byte[].class) : 0;
+    public static final int TRANS_SIZE = 256;
 
     private static Object getUnsafe() {
         try {
@@ -803,5 +806,159 @@ public final class StringSupport {
 
     public static boolean isEVStr(int c) {
         return c == '$' || c == '@' || c == '{';
+    }
+
+    /**
+     * rb_str_count
+     */
+
+    public static IRubyObject countCommon19(RubyString rubyString, ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+        int i = 0;
+        byte[]bytes = value.getUnsafeBytes();
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+
+        int c;
+        while (p < end) {
+            if (enc.isAsciiCompatible() && (c = bytes[p] & 0xff) < 0x80) {
+                if (table[c]) i++;
+                p++;
+            } else {
+                c = codePoint(runtime, enc, bytes, p, end);
+                int cl = codeLength(runtime, enc, c);
+                if (trFind(c, table, tables)) i++;
+                p += cl;
+            }
+        }
+
+        return runtime.newFixnum(i);
+    }
+
+    /**
+     * rb_str_tr / rb_str_tr_bang
+     */
+
+    // TODO (nirvdrum Dec. 19, 2014): Neither the constructor nor the fields should be public. I temporarily escalated visibility during a refactoring that moved the inner class to a new parent class, while the old parent class still needs access.
+    public static final class TR {
+        public TR(ByteList bytes) {
+            p = bytes.getBegin();
+            pend = bytes.getRealSize() + p;
+            buf = bytes.getUnsafeBytes();
+            now = max = 0;
+            gen = false;
+        }
+
+        public int p, pend, now, max;
+        public boolean gen;
+        public byte[]buf;
+    }
+
+    /**
+     * tr_setup_table
+     */
+    public static final class TrTables {
+        private IntHash<IRubyObject> del, noDel;
+    }
+
+    public static TrTables trSetupTable(RubyString rubyString, ByteList value, Ruby runtime, boolean[] table, TrTables tables, boolean init, Encoding enc) {
+        final TR tr = new TR(value);
+        boolean cflag = false;
+        if (value.getRealSize() > 1) {
+            if (enc.isAsciiCompatible()) {
+                if ((value.getUnsafeBytes()[value.getBegin()] & 0xff) == '^') {
+                    cflag = true;
+                    tr.p++;
+                }
+            } else {
+                int l = preciseLength(enc, tr.buf, tr.p, tr.pend);
+                if (enc.mbcToCode(tr.buf, tr.p, tr.pend) == '^') {
+                    cflag = true;
+                    tr.p += l;
+                }
+            }
+        }
+
+        if (init) {
+            for (int i=0; i< TRANS_SIZE; i++) table[i] = true;
+            table[TRANS_SIZE] = cflag;
+        } else if (table[TRANS_SIZE] && !cflag) {
+            table[TRANS_SIZE] = false;
+        }
+
+        final boolean[]buf = new boolean[TRANS_SIZE];
+        for (int i=0; i< TRANS_SIZE; i++) buf[i] = cflag;
+
+        int c;
+        IntHash<IRubyObject> hash = null, phash = null;
+        while ((c = trNext(tr, runtime, enc)) >= 0) {
+            if (c < TRANS_SIZE) {
+                buf[c & 0xff] = !cflag;
+            } else {
+                if (hash == null) {
+                    hash = new IntHash<IRubyObject>();
+                    if (tables == null) tables = new TrTables();
+                    if (cflag) {
+                        phash = tables.noDel;
+                        tables.noDel = hash;
+                    } else {
+                        phash  = tables.del;
+                        tables.del = hash;
+                    }
+                }
+                if (phash == null || phash.get(c) != null) hash.put(c, RubyBasicObject.NEVER);
+            }
+        }
+
+        for (int i=0; i< TRANS_SIZE; i++) table[i] = table[i] && buf[i];
+        return tables;
+    }
+
+    public static boolean trFind(int c, boolean[] table, TrTables tables) {
+        if (c < TRANS_SIZE) {
+            return table[c];
+        } else {
+            if (tables != null) {
+                if (tables.del != null) {
+                    if (tables.noDel == null || tables.noDel.get(c) == null) return true;
+                } else if (tables.noDel != null && tables.noDel.get(c) != null) return false;
+            }
+            return table[TRANS_SIZE];
+        }
+    }
+
+    public static int trNext(TR t, Ruby runtime, Encoding enc) {
+        byte[]buf = t.buf;
+
+        for (;;) {
+            if (!t.gen) {
+                if (t.p == t.pend) return -1;
+                if (t.p < t.pend -1 && buf[t.p] == '\\') t.p++;
+                t.now = codePoint(runtime, enc, buf, t.p, t.pend);
+                t.p += codeLength(runtime, enc, t.now);
+                if (t.p < t.pend - 1 && buf[t.p] == '-') {
+                    t.p++;
+                    if (t.p < t.pend) {
+                        int c = codePoint(runtime, enc, buf, t.p, t.pend);
+                        t.p += codeLength(runtime, enc, c);
+                        if (t.now > c) {
+                            if (t.now < 0x80 && c < 0x80) {
+                                throw runtime.newArgumentError("invalid range \""
+                                        + (char) t.now + "-" + (char) c + "\" in string transliteration");
+                            }
+
+                            throw runtime.newArgumentError("invalid range in string transliteration");
+                        }
+                        t.gen = true;
+                        t.max = c;
+                    }
+                }
+                return t.now;
+            } else if (++t.now < t.max) {
+                return t.now;
+            } else {
+                t.gen = false;
+                return t.max;
+            }
+        }
     }
 }

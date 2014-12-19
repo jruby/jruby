@@ -4812,9 +4812,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return RubyFixnum.newFixnum(runtime, n);
         }
 
-        final boolean[]table = new boolean[TRANS_SIZE + 1];
-        TrTables tables = otherStr.trSetupTable(context.runtime, table, null, true, enc);
-        return countCommon19(this, value, runtime, table, tables, enc);
+        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, context.runtime, table, null, true, enc);
+        return StringSupport.countCommon19(this, value, runtime, table, tables, enc);
     }
 
     @JRubyMethod(name = "count", required = 1, rest = true)
@@ -4824,37 +4824,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean[]table = new boolean[TRANS_SIZE + 1];
-        TrTables tables = otherStr.trSetupTable(runtime, table, null, true, enc);
+        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, table, null, true, enc);
         for (int i = 1; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
-            tables = otherStr.trSetupTable(runtime, table, tables, false, enc);
+            tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, table, tables, false, enc);
         }
 
-        return countCommon19(this, value, runtime, table, tables, enc);
-    }
-
-    private static IRubyObject countCommon19(RubyString rubyString, ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
-        int i = 0;
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-
-        int c;
-        while (p < end) {
-            if (enc.isAsciiCompatible() && (c = bytes[p] & 0xff) < 0x80) {
-                if (table[c]) i++;
-                p++;
-            } else {
-                c = codePoint(runtime, enc, bytes, p, end);
-                int cl = codeLength(runtime, enc, c);
-                if (rubyString.trFind(c, table, tables)) i++;
-                p += cl;
-            }
-        }
-
-        return runtime.newFixnum(i);
+        return StringSupport.countCommon19(this, value, runtime, table, tables, enc);
     }
 
     /** rb_str_delete / rb_str_delete_bang
@@ -4915,8 +4893,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         RubyString otherStr = arg.convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean[]squeeze = new boolean[TRANS_SIZE + 1];
-        TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, enc);
+        final boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, enc);
         return delete_bangCommon19(runtime, squeeze, tables, enc);
     }
 
@@ -4927,18 +4905,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
-        boolean[]squeeze = new boolean[TRANS_SIZE + 1];
-        TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, enc);
+        boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, enc);
         for (int i=1; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
-            tables = otherStr.trSetupTable(runtime, squeeze, tables, false, enc);
+            tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
         return delete_bangCommon19(runtime, squeeze, tables, enc);
     }
 
-    private IRubyObject delete_bangCommon19(Ruby runtime, boolean[]squeeze, TrTables tables, Encoding enc) {
+    private IRubyObject delete_bangCommon19(Ruby runtime, boolean[]squeeze, StringSupport.TrTables tables, Encoding enc) {
         modifyAndKeepCodeRange();
 
         int s = value.getBegin();
@@ -4961,7 +4939,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             } else {
                 c = codePoint(runtime, enc, bytes, s, send);
                 int cl = codeLength(runtime, enc, c);
-                if (trFind(c, squeeze, tables)) {
+                if (StringSupport.trFind(c, squeeze, tables)) {
                     modify = true;
                 } else {
                     if (t != s) enc.codeToMbc(c, bytes, t);
@@ -5052,8 +5030,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             modifyCheck();
             return runtime.getNil();
         }
-        final boolean squeeze[] = new boolean[TRANS_SIZE];
-        for (int i=0; i<TRANS_SIZE; i++) squeeze[i] = true;
+        final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE];
+        for (int i=0; i< StringSupport.TRANS_SIZE; i++) squeeze[i] = true;
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable()) {
@@ -5072,8 +5050,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         RubyString otherStr = arg.convertToString();
-        final boolean squeeze[] = new boolean[TRANS_SIZE + 1];
-        TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, checkEncoding(otherStr));
+        final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, checkEncoding(otherStr));
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
@@ -5094,15 +5072,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean squeeze[] = new boolean[TRANS_SIZE + 1];
-        TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, enc);
+        final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, null, true, enc);
 
         boolean singlebyte = singleByteOptimizable() && otherStr.singleByteOptimizable();
         for (int i=1; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
             singlebyte = singlebyte && otherStr.singleByteOptimizable();
-            tables = otherStr.trSetupTable(runtime, squeeze, tables, false, enc);
+            tables = StringSupport.trSetupTable(otherStr, otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
         modifyAndKeepCodeRange();
@@ -5113,7 +5091,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
-    private IRubyObject squeezeCommon19(Ruby runtime, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+    private IRubyObject squeezeCommon19(Ruby runtime, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
         int s = value.getBegin();
         int t = s;
         int send = s + value.getRealSize();
@@ -5128,7 +5106,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             } else {
                 c = codePoint(runtime, enc, bytes, s, send);
                 int cl = codeLength(runtime, enc, c);
-                if (c != save || (isArg && !trFind(c, squeeze, tables))) {
+                if (c != save || (isArg && !StringSupport.trFind(c, squeeze, tables))) {
                     if (t != s) enc.codeToMbc(c, bytes, t);
                     save = c;
                     t += cl;
@@ -5168,95 +5146,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return trTrans19(context, src, repl, false);
     }
 
-    private static final class TR {
-        TR(ByteList bytes) {
-            p = bytes.getBegin();
-            pend = bytes.getRealSize() + p;
-            buf = bytes.getUnsafeBytes();
-            now = max = 0;
-            gen = false;
-        }
-
-        int p, pend, now, max;
-        boolean gen;
-        byte[]buf;
-    }
-
-    private static final int TRANS_SIZE = 256;
-
-    /** tr_setup_table
-     *
-     */
-    private static final class TrTables {
-        private IntHash<IRubyObject> del, noDel;
-    }
-
-    private TrTables trSetupTable(Ruby runtime, boolean[]table, TrTables tables, boolean init, Encoding enc) {
-        final TR tr = new TR(value);
-        boolean cflag = false;
-        if (value.getRealSize() > 1) {
-            if (enc.isAsciiCompatible()) {
-                if ((value.getUnsafeBytes()[value.getBegin()] & 0xff) == '^') {
-                    cflag = true;
-                    tr.p++;
-                }
-            } else {
-                int l = StringSupport.preciseLength(enc, tr.buf, tr.p, tr.pend);
-                if (enc.mbcToCode(tr.buf, tr.p, tr.pend) == '^') {
-                    cflag = true;
-                    tr.p += l;
-                }
-            }
-        }
-
-        if (init) {
-            for (int i=0; i<TRANS_SIZE; i++) table[i] = true;
-            table[TRANS_SIZE] = cflag;
-        } else if (table[TRANS_SIZE] && !cflag) {
-            table[TRANS_SIZE] = false;
-        }
-
-        final boolean[]buf = new boolean[TRANS_SIZE];
-        for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
-
-        int c;
-        IntHash<IRubyObject> hash = null, phash = null;
-        while ((c = trNext(tr, runtime, enc)) >= 0) {
-            if (c < TRANS_SIZE) {
-                buf[c & 0xff] = !cflag;
-            } else {
-                if (hash == null) {
-                    hash = new IntHash<IRubyObject>();
-                    if (tables == null) tables = new TrTables();
-                    if (cflag) {
-                        phash = tables.noDel;
-                        tables.noDel = hash;
-                    } else {
-                        phash  = tables.del;
-                        tables.del = hash;
-                    }
-                }
-                if (phash == null || phash.get(c) != null) hash.put(c, NEVER);
-            }
-        }
-
-        for (int i=0; i<TRANS_SIZE; i++) table[i] = table[i] && buf[i];
-        return tables;
-    }
-
-    private boolean trFind(int c, boolean[]table, TrTables tables) {
-        if (c < TRANS_SIZE) {
-            return table[c];
-        } else {
-            if (tables != null) {
-                if (tables.del != null) {
-                    if (tables.noDel == null || tables.noDel.get(c) == null) return true;
-                } else if (tables.noDel != null && tables.noDel.get(c) != null) return false;
-            }
-            return table[TRANS_SIZE];
-        }
-    }
-
     private IRubyObject trTrans19(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
@@ -5273,7 +5162,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         int cr = getCodeRange();
 
-        final TR trSrc = new TR(srcList);
+        final StringSupport.TR trSrc = new StringSupport.TR(srcList);
         boolean cflag = false;
         if (value.getRealSize() > 0) {
             if (enc.isAsciiCompatible()) {
@@ -5293,34 +5182,34 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         boolean singlebyte = singleByteOptimizable();
 
         int c;
-        final int[]trans = new int[TRANS_SIZE];
+        final int[]trans = new int[StringSupport.TRANS_SIZE];
         IntHash<Integer> hash = null;
-        final TR trRepl = new TR(replList);
+        final StringSupport.TR trRepl = new StringSupport.TR(replList);
 
         int last = 0;
         if (cflag) {
-            for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
+            for (int i=0; i< StringSupport.TRANS_SIZE; i++) trans[i] = 1;
 
-            while ((c = trNext(trSrc, runtime, enc)) >= 0) {
-                if (c < TRANS_SIZE) {
+            while ((c = StringSupport.trNext(trSrc, runtime, enc)) >= 0) {
+                if (c < StringSupport.TRANS_SIZE) {
                     trans[c & 0xff] = -1;
                 } else {
                     if (hash == null) hash = new IntHash<Integer>();
                     hash.put(c, 1); // QTRUE
                 }
             }
-            while ((c = trNext(trRepl, runtime, enc)) >= 0) {}  /* retrieve last replacer */
+            while ((c = StringSupport.trNext(trRepl, runtime, enc)) >= 0) {}  /* retrieve last replacer */
             last = trRepl.now;
-            for (int i=0; i<TRANS_SIZE; i++) {
+            for (int i=0; i< StringSupport.TRANS_SIZE; i++) {
                 if (trans[i] >= 0) trans[i] = last;
             }
         } else {
-            for (int i=0; i<TRANS_SIZE; i++) trans[i] = -1;
+            for (int i=0; i< StringSupport.TRANS_SIZE; i++) trans[i] = -1;
 
-            while ((c = trNext(trSrc, runtime, enc)) >= 0) {
-                int r = trNext(trRepl, runtime, enc);
+            while ((c = StringSupport.trNext(trSrc, runtime, enc)) >= 0) {
+                int r = StringSupport.trNext(trRepl, runtime, enc);
                 if (r == -1) r = trRepl.now;
-                if (c < TRANS_SIZE) {
+                if (c < StringSupport.TRANS_SIZE) {
                     trans[c] = r;
                     if (codeLength(runtime, enc, r) != 1) singlebyte = false;
                 } else {
@@ -5440,7 +5329,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private int trCode(int c, int[]trans, IntHash<Integer> hash, boolean cflag, int last, boolean set) {
-        if (c < TRANS_SIZE) {
+        if (c < StringSupport.TRANS_SIZE) {
             return trans[c];
         } else if (hash != null) {
             Integer tmp = hash.get(c);
@@ -5451,42 +5340,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
         } else {
             return cflag && set ? last : -1;
-        }
-    }
-
-    private int trNext(TR t, Ruby runtime, Encoding enc) {
-        byte[]buf = t.buf;
-
-        for (;;) {
-            if (!t.gen) {
-                if (t.p == t.pend) return -1;
-                if (t.p < t.pend -1 && buf[t.p] == '\\') t.p++;
-                t.now = codePoint(runtime, enc, buf, t.p, t.pend);
-                t.p += codeLength(runtime, enc, t.now);
-                if (t.p < t.pend - 1 && buf[t.p] == '-') {
-                    t.p++;
-                    if (t.p < t.pend) {
-                        int c = codePoint(runtime, enc, buf, t.p, t.pend);
-                        t.p += codeLength(runtime, enc, c);
-                        if (t.now > c) {
-                            if (t.now < 0x80 && c < 0x80) {
-                                throw runtime.newArgumentError("invalid range \""
-                                        + (char) t.now + "-" + (char) c + "\" in string transliteration");
-                            }
-
-                            throw runtime.newArgumentError("invalid range in string transliteration");
-                        }
-                        t.gen = true;
-                        t.max = c;
-                    }
-                }
-                return t.now;
-            } else if (++t.now < t.max) {
-                return t.now;
-            } else {
-                t.gen = false;
-                return t.max;
-            }
         }
     }
 
