@@ -204,8 +204,7 @@ public enum Operation {
     PUSH_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    METHOD_LOOKUP(0); /* for splitting calls into method-lookup and call -- unused **/
+    POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
     public final OpClass opClass;
     private int flags;

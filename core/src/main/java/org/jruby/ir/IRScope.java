@@ -887,7 +887,7 @@ public abstract class IRScope implements ParseResult {
             }
             case LOCAL: {
                 temporaryVariableIndex++;
-                return new TemporaryLocalVariable(temporaryVariableIndex);
+                return manager.newTemporaryLocalVariable(temporaryVariableIndex);
             }
         }
 

@@ -712,8 +712,28 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "scan", required = 1)
-    public abstract static class ScanNode extends CoreMethodNode {
+    @CoreMethod(names = "dump")
+    public abstract static class DumpNode extends CoreMethodNode {
+
+        public DumpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DumpNode(DumpNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString rstrip(RubyString string) {
+            notDesignedForCompilation();
+
+            return string.dump();
+        }
+
+    }
+
+    @CoreMethod(names = "scan", required = 1, needsBlock = true)
+    public abstract static class ScanNode extends YieldingCoreMethodNode {
 
         public ScanNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -724,20 +744,40 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray scan(RubyString string, RubyString regexpString) {
+        public RubyArray scan(RubyString string, RubyString regexpString, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
-            return scan(string, regexp);
+            return scan(string, regexp, block);
         }
 
         @Specialization
-        public RubyArray scan(RubyString string, RubyRegexp regexp) {
+        public RubyString scan(VirtualFrame frame, RubyString string, RubyString regexpString, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
+            return scan(frame, string, regexp, block);
+        }
+
+        @Specialization
+        public RubyArray scan(RubyString string, RubyRegexp regexp, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
         }
 
+        @Specialization
+        public RubyString scan(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyProc block) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum Dec. 18, 2014): Find a way to yield results without needing to materialize as an array first.
+            Object[] matches = (Object[]) regexp.scan(string);
+            for (Object match : matches) {
+                yield(frame, block, match);
+            }
+
+            return string;
+        }
     }
 
     @CoreMethod(names = "setbyte", required = 2)

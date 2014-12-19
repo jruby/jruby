@@ -30,10 +30,11 @@ import static org.jcodings.Encoding.CHAR_INVALID;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.joni.Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import sun.misc.Unsafe;
@@ -661,5 +662,146 @@ public final class StringSupport {
         ptrBytes[term_fill_ptr] = '\0';
         if (term_fill_len > 1)
         Arrays.fill(ptrBytes, term_fill_ptr, term_fill_len, (byte)0);
+    }
+
+    /**
+     * rb_str_scan
+     */
+
+    public static int positionEndForScan(ByteList value, Matcher matcher, Encoding enc, int begin, int range) {
+        int end = matcher.getEnd();
+        if (matcher.getBegin() == end) {
+            if (value.getRealSize() > end) {
+                return end + enc.length(value.getUnsafeBytes(), begin + end, range);
+            } else {
+                return end + 1;
+            }
+        } else {
+            return end;
+        }
+    }
+
+    /**
+     * rb_str_dump
+     */
+
+    public static ByteList dumpCommon(Ruby runtime, ByteList byteList) {
+        ByteList buf = null;
+        Encoding enc = byteList.getEncoding();
+
+        int p = byteList.getBegin();
+        int end = p + byteList.getRealSize();
+        byte[]bytes = byteList.getUnsafeBytes();
+
+        int len = 2;
+        while (p < end) {
+            int c = bytes[p++] & 0xff;
+
+            switch (c) {
+            case '"':case '\\':case '\n':case '\r':case '\t':case '\f':
+            case '\013': case '\010': case '\007': case '\033':
+                len += 2;
+                break;
+            case '#':
+                len += isEVStr(bytes, p, end) ? 2 : 1;
+                break;
+            default:
+                if (ASCIIEncoding.INSTANCE.isPrint(c)) {
+                    len++;
+                } else {
+                    if (enc instanceof UTF8Encoding) {
+                        int n = preciseLength(enc, bytes, p - 1, end) - 1;
+                        if (n > 0) {
+                            if (buf == null) buf = new ByteList();
+                            int cc = codePoint(runtime, enc, bytes, p - 1, end);
+                            Sprintf.sprintf(runtime, buf, "%x", cc);
+                            len += buf.getRealSize() + 4;
+                            buf.setRealSize(0);
+                            p += n;
+                            break;
+                        }
+                    }
+                    len += 4;
+                }
+                break;
+            }
+        }
+
+        if (!enc.isAsciiCompatible()) {
+            len += ".force_encoding(\"".length() + enc.getName().length + "\")".length();
+        }
+
+        ByteList outBytes = new ByteList(len);
+        byte out[] = outBytes.getUnsafeBytes();
+        int q = 0;
+        p = byteList.getBegin();
+        end = p + byteList.getRealSize();
+
+        out[q++] = '"';
+        while (p < end) {
+            int c = bytes[p++] & 0xff;
+            if (c == '"' || c == '\\') {
+                out[q++] = '\\';
+                out[q++] = (byte)c;
+            } else if (c == '#') {
+                if (isEVStr(bytes, p, end)) out[q++] = '\\';
+                out[q++] = '#';
+            } else if (c == '\n') {
+                out[q++] = '\\';
+                out[q++] = 'n';
+            } else if (c == '\r') {
+                out[q++] = '\\';
+                out[q++] = 'r';
+            } else if (c == '\t') {
+                out[q++] = '\\';
+                out[q++] = 't';
+            } else if (c == '\f') {
+                out[q++] = '\\';
+                out[q++] = 'f';
+            } else if (c == '\013') {
+                out[q++] = '\\';
+                out[q++] = 'v';
+            } else if (c == '\010') {
+                out[q++] = '\\';
+                out[q++] = 'b';
+            } else if (c == '\007') {
+                out[q++] = '\\';
+                out[q++] = 'a';
+            } else if (c == '\033') {
+                out[q++] = '\\';
+                out[q++] = 'e';
+            } else if (ASCIIEncoding.INSTANCE.isPrint(c)) {
+                out[q++] = (byte)c;
+            } else {
+                out[q++] = '\\';
+                if (enc instanceof UTF8Encoding) {
+                    int n = preciseLength(enc, bytes, p - 1, end) - 1;
+                    if (n > 0) {
+                        int cc = codePoint(runtime, enc, bytes, p - 1, end);
+                        p += n;
+                        outBytes.setRealSize(q);
+                        Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
+                        q = outBytes.getRealSize();
+                        continue;
+                    }
+                }
+                outBytes.setRealSize(q);
+                Sprintf.sprintf(runtime, outBytes, "x%02X", c);
+                q = outBytes.getRealSize();
+            }
+        }
+        out[q++] = '"';
+        outBytes.setRealSize(q);
+        assert out == outBytes.getUnsafeBytes(); // must not reallocate
+
+        return outBytes;
+    }
+
+    public static boolean isEVStr(byte[]bytes, int p, int end) {
+        return p < end ? isEVStr(bytes[p] & 0xff) : false;
+    }
+
+    public static boolean isEVStr(int c) {
+        return c == '$' || c == '@' || c == '{';
     }
 }

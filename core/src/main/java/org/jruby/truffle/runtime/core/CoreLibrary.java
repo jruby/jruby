@@ -54,6 +54,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass fileClass;
     @CompilerDirectives.CompilationFinal private RubyClass fixnumClass;
     @CompilerDirectives.CompilationFinal private RubyClass floatClass;
+    @CompilerDirectives.CompilationFinal private RubyClass floatDomainErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass hashClass;
     @CompilerDirectives.CompilationFinal private RubyClass integerClass;
     @CompilerDirectives.CompilationFinal private RubyClass indexErrorClass;
@@ -198,6 +199,7 @@ public class CoreLibrary {
         fileClass = new RubyClass(context, objectClass, ioClass, "File");
         fixnumClass = new RubyClass(context, objectClass, integerClass, "Fixnum");
         floatClass = new RubyClass(context, objectClass, numericClass, "Float");
+        floatDomainErrorClass = new RubyException.RubyExceptionClass(context, objectClass, rangeErrorClass, "FloatDomainError");
         gcModule = new RubyModule(context, objectClass, "GC");
         hashClass = new RubyHash.RubyHashClass(context, objectClass);
         indexErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "IndexError");
@@ -551,6 +553,11 @@ public class CoreLibrary {
     public RubyException syntaxError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(syntaxErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException floatDomainError(String value, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(floatDomainErrorClass, context.makeString(value), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException mathDomainError(String method, Node currentNode) {

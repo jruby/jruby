@@ -16,6 +16,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Represents the Ruby {@code String} class.
@@ -105,6 +106,14 @@ public class RubyString extends RubyBasicObject {
         builder.append(string);
 
         return builder.toString();
+    }
+
+    public RubyString dump() {
+        ByteList outputBytes = StringSupport.dumpCommon(getContext().getRuntime(), bytes);
+
+        final RubyString result = getContext().makeString(outputBytes);
+
+        return result;
     }
 
     @Override

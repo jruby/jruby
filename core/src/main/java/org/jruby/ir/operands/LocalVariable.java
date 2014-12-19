@@ -82,7 +82,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
 
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new LocalVariable(name, scopeDepth, offset);
+        return this;
     }
 
     public LocalVariable cloneForDepth(int n) {

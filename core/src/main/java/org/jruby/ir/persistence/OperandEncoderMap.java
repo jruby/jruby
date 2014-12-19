@@ -1,13 +1,10 @@
 package org.jruby.ir.persistence;
 
-import org.jcodings.Encoding;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.util.KeyValuePair;
-
-import java.util.List;
 
 /**
  * Can cycles develop or will IR output guarantee non-cyclical nested operands?
@@ -78,13 +75,6 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void LocalVariable(LocalVariable variable) {
         encoder.encode(variable.getName());
         encoder.encode(variable.getScopeDepth());
-    }
-
-    @Override public void MethAddr(MethAddr methaddr) { encoder.encode(methaddr.getName()); }
-
-    @Override public void MethodHandle(MethodHandle methodhandle) {
-        encoder.encode(methodhandle.getReceiver());
-        encoder.encode(methodhandle.getMethodNameOperand());
     }
 
     @Override public void Nil(Nil nil) {} // No data

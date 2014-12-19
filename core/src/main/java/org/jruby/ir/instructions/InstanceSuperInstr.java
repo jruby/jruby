@@ -3,13 +3,11 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
@@ -17,8 +15,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceSuperInstr extends CallInstr {
-    public InstanceSuperInstr(Variable result, Operand definingModule, MethAddr superMeth, Operand[] args, Operand closure) {
-        super(Operation.INSTANCE_SUPER, CallType.SUPER, result, superMeth, definingModule, args, closure);
+    public InstanceSuperInstr(Variable result, Operand definingModule, String name, Operand[] args, Operand closure) {
+        super(Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure);
     }
 
     public Operand getDefiningModule() {
@@ -27,7 +25,7 @@ public class InstanceSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new InstanceSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), (MethAddr)getMethodAddr().cloneForInlining(ii),
+        return new InstanceSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), getName(),
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
@@ -47,8 +45,8 @@ public class InstanceSuperInstr extends CallInstr {
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = ((RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp)).getMethodLocation();
-        String methodName = methAddr.getName();
-        return IRRuntimeHelpers.instanceSuper(context, self, methodName, definingModule, args, block);
+
+        return IRRuntimeHelpers.instanceSuper(context, self, getName(), definingModule, args, block);
     }
 
     @Override

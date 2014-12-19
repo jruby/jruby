@@ -4,7 +4,6 @@ import org.jruby.ir.*;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -60,7 +59,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
             if (requireBinding || requireFrame) {
                 BasicBlock entryBB = cfg.getEntryBB();
                 // Push
-                if (requireFrame) entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
+                if (requireFrame) entryBB.addInstr(new PushFrameInstr(scope.getName()));
                 if (requireBinding) entryBB.addInstr(new PushBindingInstr());
 
                 // SSS FIXME: We are doing this conservatively.

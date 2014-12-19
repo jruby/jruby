@@ -1,12 +1,10 @@
 package org.jruby.ir.persistence;
 
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 
@@ -46,8 +44,6 @@ class OperandDecoderMap {
             case IR_EXCEPTION: return IRException.getExceptionFromOrdinal(d.decodeByte());
             case LABEL: return decodeLabel();
             case LOCAL_VARIABLE: return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
-            case METHOD_HANDLE: return new MethodHandle(d.decodeOperand(), d.decodeOperand());
-            case METH_ADDR: return new MethAddr(d.decodeString());
             case NIL: return manager.getNil();
             case NTH_REF: return new NthRef(d.decodeInt());
             case OBJECT_CLASS: return new ObjectClass();

@@ -4,6 +4,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.Nil;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
@@ -166,5 +167,39 @@ public class IRManager {
 
     public String getMetaClassName() {
         return "<DUMMY_MC:" + dummyMetaClassCount++ + ">";
+    }
+
+    private TemporaryLocalVariable[] temporaryLocalVariables = new TemporaryLocalVariable[1600];
+
+    protected TemporaryLocalVariable[] growTemporaryVariablePool(int index) {
+        int newLength = index * 2;
+        TemporaryLocalVariable[] newPool = new TemporaryLocalVariable[newLength];
+
+        System.arraycopy(temporaryLocalVariables, 0, newPool, 0, temporaryLocalVariables.length);
+        temporaryLocalVariables = newPool;
+        return newPool;
+    }
+
+    // FIXME: Consider IRBuilder not using so many temporary variables for literal initialization.  This is the
+    // vast majority of high index temp variables.
+    /**
+     * Temporary local variables are immutable and always start from a low index value and increment up
+     * to a higher index value per scope.  So we can share these and store the ones in a simple list.  If
+     * hard pinning is ever an issue we can periodically evict the list and start over at the cost of more
+     * live objects but this list cache reduces a simple empty Rails app console from over 140K instances
+     * to about 1200 instances.
+     *
+     */
+    public TemporaryLocalVariable newTemporaryLocalVariable(int index) {
+        if (index >= temporaryLocalVariables.length-1) growTemporaryVariablePool(index);
+
+        TemporaryLocalVariable tempVar = temporaryLocalVariables[index];
+
+        if (tempVar == null) {
+            tempVar = new TemporaryLocalVariable(index);
+            temporaryLocalVariables[index] = tempVar;
+        }
+
+        return tempVar;
     }
 }

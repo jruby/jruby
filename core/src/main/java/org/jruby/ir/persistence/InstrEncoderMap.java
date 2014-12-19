@@ -78,7 +78,6 @@ public class InstrEncoderMap {
             case MATCH: encodeMatchInstr((MatchInstr) instr); break;
             case MATCH2: encodeMatch2Instr((Match2Instr) instr); break;
             case MATCH3: encodeMatch3Instr((Match3Instr) instr); break;
-            case METHOD_LOOKUP: encodeMethodLookupInstr((MethodLookupInstr) instr); break;
             case NONLOCAL_RETURN: encodeNonlocalReturnInstr((NonlocalReturnInstr) instr); break;
             case NOP: /* no state */ break;
             case NORESULT_CALL: encodeCallBaseInstr((NoResultCallInstr) instr); break;
@@ -128,7 +127,7 @@ public class InstrEncoderMap {
 
     private void encodeAttrAssignInstr(AttrAssignInstr instr) {
         e.encode(instr.getReceiver());
-        e.encode(instr.getMethodAddr().getName());
+        e.encode(instr.getName());
         Operand[] args = instr.getCallArgs();
 
         e.encode(args.length);
@@ -349,10 +348,6 @@ public class InstrEncoderMap {
         e.encode(instr.getArg());
     }
 
-    private void encodeMethodLookupInstr(MethodLookupInstr instr) {
-        e.encode(instr.getMethodHandle());
-    }
-
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
         e.encode(instr.getReturnValue());
         e.encode(instr.methodName);
@@ -362,7 +357,7 @@ public class InstrEncoderMap {
         boolean hasClosure = instr.getClosureArg(null) != null;
 
         e.encode(instr.getCallType().ordinal());
-        e.encode(instr.getMethodAddr().getName());
+        e.encode(instr.getName());
         e.encode(instr.getReceiver());
         e.encode(calculateArity(instr.getCallArgs(), hasClosure));
 

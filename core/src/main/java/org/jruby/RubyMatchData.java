@@ -593,10 +593,8 @@ public class RubyMatchData extends RubyObject {
 
         checkFrozen();
 
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         if (!(original instanceof RubyMatchData)) {
-            throw runtime.newTypeError("wrong argument class");
+            throw getRuntime().newTypeError("wrong argument class");
         }
 
         RubyMatchData origMatchData = (RubyMatchData)original;

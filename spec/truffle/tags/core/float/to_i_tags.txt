@@ -1,1 +1,0 @@
-fails:Float#to_i returns self truncated to an Integer

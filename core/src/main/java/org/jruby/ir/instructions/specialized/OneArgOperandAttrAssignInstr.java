@@ -23,7 +23,7 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
         IRubyObject value = (IRubyObject) args[0].retrieve(context, self, currScope, dynamicScope, temp);
 
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
-        Helpers.invoke(context, object, getMethodAddr().getName(), value, callType, Block.NULL_BLOCK);
+        Helpers.invoke(context, object, getName(), value, callType, Block.NULL_BLOCK);
         return null;
     }
 }

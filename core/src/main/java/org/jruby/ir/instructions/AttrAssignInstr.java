@@ -4,7 +4,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -16,12 +15,12 @@ import static org.jruby.ir.IRFlags.*;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[](i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
-    public AttrAssignInstr(Operand obj, MethAddr attr, Operand[] args) {
+    public AttrAssignInstr(Operand obj, String attr, Operand[] args) {
         super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null);
     }
 
     public AttrAssignInstr(AttrAssignInstr instr) {
-        this(instr.getReceiver(), instr.getMethodAddr(), instr.getCallArgs());
+        this(instr.getReceiver(), instr.getName(), instr.getCallArgs());
     }
 
     @Override
@@ -37,8 +36,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new AttrAssignInstr(receiver.cloneForInlining(ii),
-                (MethAddr)getMethodAddr().cloneForInlining(ii), cloneCallArgs(ii));
+        return new AttrAssignInstr(receiver.cloneForInlining(ii), getName(), cloneCallArgs(ii));
     }
 
     @Override
@@ -59,7 +57,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
         IRubyObject[] values = prepareArguments(context, self, getCallArgs(), currScope, dynamicScope, temp);
 
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
-        Helpers.invoke(context, object, getMethodAddr().getName(), values, callType, Block.NULL_BLOCK);
+        Helpers.invoke(context, object, getName(), values, callType, Block.NULL_BLOCK);
         return null;
     }
 

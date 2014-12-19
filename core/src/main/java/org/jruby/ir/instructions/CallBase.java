@@ -25,7 +25,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     protected Operand   receiver;
     protected Operand[] arguments;
     protected Operand   closure;
-    protected MethAddr methAddr;
+    protected String name;
     protected CallSite callSite;
 
     private boolean flagsComputed;
@@ -36,16 +36,16 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     private boolean containsArgSplat;
     private boolean procNew;
 
-    protected CallBase(Operation op, CallType callType, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
+    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
         super(op);
 
         this.callSiteId = callSiteCounter++;
         this.receiver = receiver;
         this.arguments = args;
         this.closure = closure;
-        this.methAddr = methAddr;
+        this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, methAddr);
+        this.callSite = getCallSiteFor(callType, name);
         containsArgSplat = containsArgSplat(args);
         flagsComputed = false;
         canBeEval = true;
@@ -59,11 +59,11 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     public Operand[] getOperands() {
         // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
         Fixnum arity = new Fixnum(closure != null ? -1*(arguments.length + 1) : arguments.length);
-        return buildAllArgs(new Fixnum(callType.ordinal()), getMethodAddr(), receiver, arity, arguments, closure);
+        return buildAllArgs(new Fixnum(callType.ordinal()), receiver, arity, arguments, closure);
     }
 
-    public MethAddr getMethodAddr() {
-        return methAddr;
+    public String getName() {
+        return name;
     }
 
     /** From interface ClosureAcceptingInstr */
@@ -111,10 +111,8 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return dontInline;
     }
 
-    private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
+    private static CallSite getCallSiteFor(CallType callType, String name) {
         assert callType != null: "Calltype should never be null";
-
-        String name = methAddr.getName();
 
         switch (callType) {
             case NORMAL: return MethodIndex.getCallSite(name);
@@ -181,7 +179,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         // and JRuby implementation uses dyn-scope to access the static-scope
         // to output the local variables => we cannot strip dynscope in those cases.
         // FIXME: We need to decouple static-scope and dyn-scope.
-        String mname = getMethodAddr().getName();
+        String mname = getName();
         if (mname.equals("local_variables")) {
             scope.getFlags().add(REQUIRES_DYNSCOPE);
         } else if (mname.equals("send") || mname.equals("__send__")) {
@@ -210,7 +208,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         // FIXME: receiver should never be null (checkArity seems to be one culprit)
         if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap, force);
-        methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap, force);
+
         for (int i = 0; i < arguments.length; i++) {
             arguments[i] = arguments[i].getSimplifiedOperand(valueMap, force);
         }
@@ -222,7 +220,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         flagsComputed = false; // Forces recomputation of flags
 
         // recompute whenever instr operands change! (can this really change though?)
-        callSite = getCallSiteFor(callType, methAddr);
+        callSite = getCallSiteFor(callType, name);
     }
 
     public Operand[] cloneCallArgs(CloneInfo ii) {
@@ -248,7 +246,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     // How about aliasing of 'call', 'eval', 'send', 'module_eval', 'class_eval', 'instance_eval'?
     private boolean computeEvalFlag() {
         // ENEBO: This could be made into a recursive two-method thing so then: send(:send, :send, :send, :send, :eval, "Hosed") works
-        String mname = getMethodAddr().getName();
+        String mname = getName();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
         // CON: Removed "call" check because we didn't do it in 1.7 and it deopts all callers of Method or Proc objects.
         if (/*mname.equals("call") ||*/ mname.equals("eval") || mname.equals("module_eval") || mname.equals("class_eval") || mname.equals("instance_eval")) return true;
@@ -280,7 +278,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         // literal closures can be used to capture surrounding binding
         if (hasLiteralClosure()) return true;
 
-        String mname = getMethodAddr().getName();
+        String mname = getName();
         if (MethodIndex.SCOPE_AWARE_METHODS.contains(mname)) {
             return true;
         } else if (mname.equals("send") || mname.equals("__send__")) {
@@ -339,7 +337,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
 
         if (procNew) return true;
 
-        String mname = getMethodAddr().getName();
+        String mname = getName();
         if (MethodIndex.FRAME_AWARE_METHODS.contains(mname)) {
             // Known frame-aware methods.
             return true;
@@ -389,7 +387,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
 
     @Override
     public String toString() {
-        return "" + getOperation()  + "(" + callType + ", " + getMethodAddr() + ", " + receiver +
+        return "" + getOperation()  + "(" + callType + ", " + getName() + ", " + receiver +
                 ", " + Arrays.toString(getCallArgs()) +
                 (closure == null ? "" : ", &" + closure) + ")";
     }
@@ -402,20 +400,18 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return false;
     }
 
-    private final static int REQUIRED_OPERANDS = 4;
-    private static Operand[] buildAllArgs(Operand callType, Operand methAddr, Operand receiver,
+    private final static int REQUIRED_OPERANDS = 3;
+    private static Operand[] buildAllArgs(Operand callType, Operand receiver,
             Fixnum argsCount, Operand[] callArgs, Operand closure) {
         Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
 
-        assert methAddr != null : "METHADDR is null";
         assert receiver != null : "RECEIVER is null";
 
 
         allArgs[0] = callType;
-        allArgs[1] = methAddr;
-        allArgs[2] = receiver;
+        allArgs[1] = receiver;
         // -0 not possible so if closure exists we are negative and we subtract one to get real arg count.
-        allArgs[3] = argsCount;
+        allArgs[2] = argsCount;
         for (int i = 0; i < callArgs.length; i++) {
             assert callArgs[i] != null : "ARG " + i + " is null";
 

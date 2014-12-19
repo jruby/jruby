@@ -85,7 +85,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             case MATCH: return new MatchInstr(d.decodeVariable(), d.decodeOperand());
             case MATCH2: return new Match2Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case MATCH3: return new Match3Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
-            case METHOD_LOOKUP: return new MethodLookupInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString());
             case NOP: return NopInstr.NOP;
             case NORESULT_CALL: return decodeNoResultCall();
@@ -140,7 +139,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             args[i] = d.decodeOperand();
         }
 
-        return new AttrAssignInstr(op, new MethAddr(methAddr), args);
+        return new AttrAssignInstr(op, methAddr, args);
     }
 
     private Instr decodeCall() {
@@ -164,12 +163,12 @@ class InstrDecoderMap implements IRPersistenceValues {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return CallInstr.create(CallType.fromOrdinal(callTypeOrdinal), result, new MethAddr(methAddr), receiver, args, closure);
+        return CallInstr.create(CallType.fromOrdinal(callTypeOrdinal), result, methAddr, receiver, args, closure);
     }
 
     private Instr decodeFrame() {
         String methAddr = d.decodeString();
-        return new PushFrameInstr(new MethAddr(methAddr));
+        return new PushFrameInstr(methAddr);
     }
 
     private Instr decodeConstMissingInstr() {
@@ -201,7 +200,7 @@ class InstrDecoderMap implements IRPersistenceValues {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return new NoResultCallInstr(Operation.NORESULT_CALL, CallType.fromOrdinal(callTypeOrdinal), new MethAddr(methAddr), receiver, args, closure);
+        return new NoResultCallInstr(Operation.NORESULT_CALL, CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure);
     }
 
     private Instr decodeCopy() {
@@ -280,7 +279,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, result:  "+ result);
         int callTypeOrdinal = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, calltype(ord):  "+ callTypeOrdinal);
-        MethAddr methAddr = new MethAddr(d.decodeString());
+        String methAddr = d.decodeString();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, methaddr:  "+ methAddr);
         Operand receiver = d.decodeOperand();
         int argsCount = d.decodeInt();

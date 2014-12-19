@@ -6,7 +6,6 @@ import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -18,21 +17,21 @@ import org.jruby.runtime.CallType;
 public class CallInstr extends CallBase implements ResultInstr {
     protected Variable result;
 
-    public static CallInstr create(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        return new CallInstr(CallType.NORMAL, result, methAddr, receiver, args, closure);
+    public static CallInstr create(Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        return new CallInstr(CallType.NORMAL, result, name, receiver, args, closure);
     }
 
-    public static CallInstr create(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        return new CallInstr(callType, result, methAddr, receiver, args, closure);
+    public static CallInstr create(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        return new CallInstr(callType, result, name, receiver, args, closure);
     }
 
 
-    public CallInstr(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        this(Operation.CALL, callType, result, methAddr, receiver, args, closure);
+    public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        this(Operation.CALL, callType, result, name, receiver, args, closure);
     }
 
-    protected CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(op, callType, methAddr, receiver, args, closure);
+    protected CallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        super(op, callType, name, receiver, args, closure);
 
         assert result != null;
 
@@ -41,7 +40,7 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     public CallInstr(Operation op, CallInstr ordinary) {
         this(op, ordinary.getCallType(), ordinary.getResult(),
-                ordinary.getMethodAddr(), ordinary.getReceiver(), ordinary.getCallArgs(),
+                ordinary.getName(), ordinary.getReceiver(), ordinary.getCallArgs(),
                 ordinary.getClosureArg(null));
     }
 
@@ -70,15 +69,13 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     public Instr discardResult() {
-        return new NoResultCallInstr(Operation.NORESULT_CALL, getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);
+        return new NoResultCallInstr(Operation.NORESULT_CALL, getCallType(), getName(), getReceiver(), getCallArgs(), closure);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result),
-                (MethAddr) getMethodAddr().cloneForInlining(ii),
-                receiver.cloneForInlining(ii), cloneCallArgs(ii),
-                closure == null ? null : closure.cloneForInlining(ii));
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(), receiver.cloneForInlining(ii),
+                cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
     @Override

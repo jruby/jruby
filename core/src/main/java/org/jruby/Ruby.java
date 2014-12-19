@@ -42,6 +42,7 @@ package org.jruby;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -3163,6 +3164,16 @@ public final class Ruby implements Constantizable {
 
         // clear out threadlocals so they don't leak
         recursive = new ThreadLocal<Map<String, RubyHash>>();
+
+        ThreadContext context = getCurrentContext();
+
+        // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
+        // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
+        // bogus scope back for at_exit block run.  This is buggy if at_exit is capturing vars.
+        if (!context.hasAnyScopes()) {
+            StaticScope topStaticScope = getStaticScopeFactory().newLocalScope(null);
+            context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+        }
 
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();

@@ -18,7 +18,6 @@ import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -421,7 +420,7 @@ public class JVMVisitor extends IRVisitor {
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
         compileCallCommon(
                 jvmMethod(),
-                attrAssignInstr.getMethodAddr().getName(),
+                attrAssignInstr.getName(),
                 attrAssignInstr.getCallArgs(),
                 attrAssignInstr.getReceiver(),
                 attrAssignInstr.getCallArgs().length,
@@ -783,7 +782,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void CallInstr(CallInstr callInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = callInstr.getMethodAddr().getName();
+        String name = callInstr.getName();
         Operand[] args = callInstr.getCallArgs();
         Operand receiver = callInstr.getReceiver();
         int numArgs = args.length;
@@ -865,7 +864,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
-        String name = classsuperinstr.getMethodAddr().getName();
+        String name = classsuperinstr.getName();
         Operand[] args = classsuperinstr.getCallArgs();
         Operand definingModule = classsuperinstr.getDefiningModule();
         boolean containsArgSplat = classsuperinstr.containsArgSplat();
@@ -1105,7 +1104,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
-        String name = instancesuperinstr.getMethodAddr().getName();
+        String name = instancesuperinstr.getName();
         Operand[] args = instancesuperinstr.getCallArgs();
         Operand definingModule = instancesuperinstr.getDefiningModule();
         boolean containsArgSplat = instancesuperinstr.containsArgSplat();
@@ -1260,12 +1259,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void MethodLookupInstr(MethodLookupInstr methodlookupinstr) {
-        // SSS FIXME: Unused at this time
-        throw new NotCompilableException("Unsupported instruction: " + methodlookupinstr);
-    }
-
-    @Override
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) {
         // SSS FIXME: Unused at this time
         throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
@@ -1279,7 +1272,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = noResultCallInstr.getMethodAddr().getName();
+        String name = noResultCallInstr.getName();
         Operand[] args = noResultCallInstr.getCallArgs();
         Operand receiver = noResultCallInstr.getReceiver();
         int numArgs = args.length;
@@ -1342,7 +1335,7 @@ public class JVMVisitor extends IRVisitor {
     public void PushFrameInstr(PushFrameInstr pushframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadFrameClass();
-        jvmAdapter().ldc(pushframeinstr.getFrameName().getName());
+        jvmAdapter().ldc(pushframeinstr.getFrameName());
         jvmMethod().loadSelf();
         jvmMethod().loadBlock();
         jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameOnly(org.jruby.RubyModule, String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block)"));
@@ -1753,7 +1746,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
-        String name = unresolvedsuperinstr.getMethodAddr().getName();
+        String name = unresolvedsuperinstr.getName();
         Operand[] args = unresolvedsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
@@ -1781,7 +1774,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
-        String name = zsuperinstr.getMethodAddr().getName();
+        String name = zsuperinstr.getName();
         Operand[] args = zsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
@@ -1976,17 +1969,6 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().ldc(localvariable.getScopeDepth());
         jvmMethod().pushNil();
         jvmAdapter().invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
-    }
-
-    @Override
-    public void MethAddr(MethAddr methaddr) {
-        jvmAdapter().ldc(methaddr.getName());
-    }
-
-    @Override
-    public void MethodHandle(MethodHandle methodhandle) {
-        // SSS FIXME: Unused at this time
-        throw new NotCompilableException("Unsupported operand: " + methodhandle);
     }
 
     @Override

@@ -4,7 +4,6 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -17,9 +16,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class UnresolvedSuperInstr extends CallInstr {
+    public static final String UNKNOWN_SUPER_TARGET  = "-unknown-super-target-";
+
     // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
     public UnresolvedSuperInstr(Operation op, Variable result, Operand receiver, Operand[] args, Operand closure) {
-        super(op, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, receiver, args, closure);
+        super(op, CallType.SUPER, result, UNKNOWN_SUPER_TARGET, receiver, args, closure);
     }
 
     public UnresolvedSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure) {
