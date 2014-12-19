@@ -27,7 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import jnr.posix.JavaSecuredFile;
 import org.jruby.Ruby;
+
+import java.net.URL;
 
 /**
  * The ClassExtensionLibrary wraps a class which implements BasicLibraryService,
@@ -41,40 +44,121 @@ public class ClassExtensionLibrary implements Library {
     private final Class theClass;
     private final String name;
 
+    /**
+     * Try to locate an extension service in the current classloader resources. This happens
+     * after the jar has been added to JRuby's URLClassLoader (JRubyClassLoader) and is how
+     * extensions can magically load.
+     *
+     * The basic logic is to use the require name (@param searchName) to build the name of
+     * a class ending in "Service", and then invoke that class to boot the extension.
+     *
+     * The looping logic here was in response to a RubyGems change that started absolutizing
+     * the path to the extension jar under some circumstances, leading to an incorrect
+     * package/class name for the service contained therein. The new logic will try
+     * successively more trailing elements until one of them is not a valid package
+     * name or all elements have been exhausted.
+     *
+     * @param runtime the current JRuby runtime
+     * @param searchName the name passed to `require`
+     * @return a ClassExtensionLibrary that will boot the ext, or null if none was found
+     */
     static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
-      // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
-      String[] all = searchName.split("/");
+        // Create package name, by splitting on / and successively accumulating elements to form a class name
+        String[] elts = searchName.split("/");
 
-      StringBuilder finName = new StringBuilder();
-      for(int i=0, j=(all.length-1); i<j; i++) {
-        finName.append(all[i].toLowerCase()).append(".");
-      }
+        boolean isAbsolute = new JavaSecuredFile(searchName).isAbsolute();
 
-      try {
-        // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
-        // the, together without anything separating them, and last put on "Service" at the end.
-        String[] last = all[all.length-1].split("_");
-        for(int i=0, j=last.length; i<j; i++) {
-          if ("".equals(last[i])) break;
-          finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+        String simpleName = buildSimpleName(elts[elts.length - 1]);
+
+        int firstElement = isAbsolute ? elts.length - 1 : 0;
+        for (; firstElement >= 0; firstElement--) {
+            String className = buildClassName(elts, firstElement, elts.length - 1, simpleName);
+            ClassExtensionLibrary library = tryServiceLoad(runtime, className);
+
+            if (library != null) return library;
         }
-        finName.append("Service");
 
-        // We don't want a package name beginning with dots, so we remove them
-        String className = finName.toString().replaceAll("^\\.*","");
-
-        // quietly try to load the class
-        Class theClass = runtime.getJavaSupport().loadJavaClass(className);
-        return new ClassExtensionLibrary(className + ".java", theClass);
-      } catch (ClassNotFoundException cnfe) {
-        if (runtime.isDebug()) cnfe.printStackTrace();
-
-        // So apparently the class doesn't exist
         return null;
-      } catch (UnsupportedClassVersionError ucve) {
-        if (runtime.isDebug()) ucve.printStackTrace();
-        throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve, finName.toString());
-      }
+    }
+
+    /**
+     * Build the "simple" part of a service class name from the given require path element
+     * by splitting on "_" and concatenating as CamelCase, plus "Service" suffix.
+     *
+     * @param element the element from which to build a simple service class name
+     * @return the resulting simple service class name
+     */
+    private static String buildSimpleName(String element) {
+        StringBuilder nameBuilder = new StringBuilder(element.length() + "Service".length());
+
+        String[] last = element.split("_");
+        for (String part : last) {
+            if (part.isEmpty()) break;
+
+            nameBuilder
+                    .append(Character.toUpperCase(part.charAt(0)))
+                    .append(part, 1, part.length());
+        }
+        nameBuilder.append("Service");
+
+        return nameBuilder.toString();
+    }
+
+    /**
+     * Build the full class name for a service by joining the specified package elements
+     * with '.' and appending the given simple class name.
+     *
+     * @param elts the array from which to retrieve the package elements
+     * @param firstElement the first element to use
+     * @param end the end index at which to stop building the package name
+     * @param simpleName the simple class name for the service
+     * @return the full class name for the service
+     */
+    private static String buildClassName(String[] elts, int firstElement, int end, String simpleName) {
+        StringBuilder nameBuilder = new StringBuilder();
+        for (int offset = firstElement; offset < end; offset++) {
+            // avoid blank elements from leading or double slashes
+            if (elts[offset].isEmpty()) continue;
+
+            nameBuilder
+                    .append(elts[offset].toLowerCase())
+                    .append('.');
+        }
+
+        nameBuilder.append(simpleName);
+
+        return nameBuilder.toString();
+    }
+
+    /**
+     * Try loading the given service class. Rather than raise ClassNotFoundException for
+     * jars that do not contain any service class, we require that the service class be a
+     * "normal" .class file accessible as a classloader resource. If it can be found
+     * using ClassLoader.getResource, we proceed to attempt to load it as a class.
+     *
+     * @param runtime the Ruby runtime into which the extension service will load
+     * @param className the class name of the service class
+     * @return a ClassExtensionLibrary if the service class was found; null otherwise.
+     */
+    private static ClassExtensionLibrary tryServiceLoad(Ruby runtime, String className) {
+        String classFile = className.replaceAll("\\.", "/") + ".class";
+
+        try {
+            // quietly try to load the class, which must be reachable as a .class resource
+            URL resource = runtime.getJRubyClassLoader().getResource(classFile);
+            if (resource != null) {
+                Class theClass = runtime.getJavaSupport().loadJavaClass(className);
+                return new ClassExtensionLibrary(className + ".java", theClass);
+            }
+        } catch (ClassNotFoundException cnfe) {
+            if (runtime.isDebug()) cnfe.printStackTrace();
+        } catch (UnsupportedClassVersionError ucve) {
+            if (runtime.isDebug()) ucve.printStackTrace();
+            throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className);
+        }
+
+        // The class doesn't exist
+        return null;
     }
 
     public ClassExtensionLibrary(String name, Class extension) {

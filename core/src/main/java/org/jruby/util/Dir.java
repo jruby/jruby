@@ -580,6 +580,15 @@ public class Dir {
 
     private static int addToResultIfExists(POSIX posix, String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
         String fileName = newStringFromUTF8(bytes, begin, end - begin);
+
+        // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
+        // paths and using system drive make it absolute.  MRI does this on many methods we don't.
+        if (Platform.IS_WINDOWS && cwd == null && !fileName.isEmpty() && fileName.charAt(0) == '/') {
+            cwd = System.getenv("SYSTEMDRIVE");
+            if (cwd == null) cwd = "C:";
+            cwd = cwd + "/";
+        }
+
         FileResource file = JRubyFile.createResource(posix, cwd, fileName);
 
         if (file.exists()) {

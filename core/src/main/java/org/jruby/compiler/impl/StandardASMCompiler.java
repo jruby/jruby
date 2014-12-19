@@ -520,10 +520,20 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor(), ACC_PUBLIC | ACC_STATIC, "main", sig(Void.TYPE, params(String[].class)), null, null);
             method.start();
 
+            // init script filename to simple class name in case we don't assign it (null ClassLoader)
+            method.ldc(getClassname().replaceAll("\\\\.", "/"));
+            method.astore(1);
+
             // new instance to invoke run against
             method.newobj(getClassname());
             method.dup();
             method.invokespecial(getClassname(), "<init>", sig(Void.TYPE));
+
+            // guard against null classloader
+            method.ldc(Type.getType("L" + getClassname() + ";"));
+            method.invokevirtual(p(Class.class), "getClassLoader", sig(ClassLoader.class));
+            Label skip = new Label();
+            method.ifnull(skip);
 
             // set filename for the loaded script class (JRUBY-4825)
             method.dup();
@@ -535,6 +545,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.astore(1);
             method.aload(1);
             method.invokevirtual(p(AbstractScript.class), "setFilename", sig(void.class, String.class));
+
+            // ifnull ClassLoader
+            method.label(skip);
 
             // instance config for the script run
             method.newobj(p(RubyInstanceConfig.class));
