@@ -422,6 +422,11 @@ public class CoreLibrary {
         return argumentError(String.format("wrong number of arguments (%d for %d..%d)", passed, required, required + optional), currentNode);
     }
 
+    public RubyException argumentErrorEmptyVarargs(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError("wrong number of arguments (0 for 1+)", currentNode);
+    }
+
     public RubyException indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(indexErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
@@ -490,6 +495,11 @@ public class CoreLibrary {
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("%s is not a %s", value, expectedType), currentNode);
+    }
+
+    public RubyException typeErrorNoImplicitConversion(Object from, String to, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError(String.format("no implicit conversion of %s into %s", getLogicalClass(from).getName(), to), currentNode);
     }
 
     public RubyException nameError(String message, Node currentNode) {

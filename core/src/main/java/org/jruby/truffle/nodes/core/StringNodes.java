@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
@@ -338,10 +339,30 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int chomp(RubyString string, Object... otherStrings) {
+        public int count(RubyString string, Object[] otherStrings) {
             notDesignedForCompilation();
 
-            return string.count(otherStrings);
+            if (otherStrings.length == 0) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
+            }
+
+            return countSlow(string, otherStrings);
+        }
+
+        @CompilerDirectives.SlowPath
+        private int countSlow(RubyString string, Object[] args) {
+            RubyString[] coerced = new RubyString[args.length];
+
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof RubyString) {
+                    coerced[i] = (RubyString) args[i];
+                } else {
+                    throw new RaiseException(
+                            getContext().getCoreLibrary().typeErrorNoImplicitConversion(args[i], "String", this));
+                }
+            }
+
+            return string.count(coerced);
         }
     }
 
