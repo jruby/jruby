@@ -4814,7 +4814,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         final boolean[]table = new boolean[TRANS_SIZE + 1];
         TrTables tables = otherStr.trSetupTable(context.runtime, table, null, true, enc);
-        return countCommon19(runtime, table, tables, enc);
+        return countCommon19(this, value, runtime, table, tables, enc);
     }
 
     @JRubyMethod(name = "count", required = 1, rest = true)
@@ -4832,10 +4832,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             tables = otherStr.trSetupTable(runtime, table, tables, false, enc);
         }
 
-        return countCommon19(runtime, table, tables, enc);
+        return countCommon19(this, value, runtime, table, tables, enc);
     }
 
-    private IRubyObject countCommon19(Ruby runtime, boolean[]table, TrTables tables, Encoding enc) {
+    private static IRubyObject countCommon19(RubyString rubyString, ByteList value, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
         int i = 0;
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
@@ -4849,7 +4849,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             } else {
                 c = codePoint(runtime, enc, bytes, p, end);
                 int cl = codeLength(runtime, enc, c);
-                if (trFind(c, table, tables)) i++;
+                if (rubyString.trFind(c, table, tables)) i++;
                 p += cl;
             }
         }
