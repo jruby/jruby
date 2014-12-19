@@ -326,6 +326,25 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "count", argumentsAsArray = true)
+    public abstract static class CountNode extends CoreMethodNode {
+
+        public CountNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CountNode(CountNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int chomp(RubyString string, Object... otherStrings) {
+            notDesignedForCompilation();
+
+            return string.count(otherStrings);
+        }
+    }
+
     @CoreMethod(names = "downcase")
     public abstract static class DowncaseNode extends CoreMethodNode {
 

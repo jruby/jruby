@@ -107,6 +107,25 @@ public class RubyString extends RubyBasicObject {
         return builder.toString();
     }
 
+    public int count(Object... otherStrings) {
+        if (bytes.getRealSize() == 0) {
+            return 0;
+        }
+
+        RubyString otherStr = (RubyString) otherStrings[0];
+        Encoding enc = otherStr.getBytes().getEncoding();
+
+        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, null, true, enc);
+        for (int i = 1; i < otherStrings.length; i++) {
+            otherStr = (RubyString) otherStrings[i];
+            //enc = checkEncoding(otherStr);
+            tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, tables, false, enc);
+        }
+
+        return StringSupport.countCommon19(getBytes(), getContext().getRuntime(), table, tables, enc);
+    }
+
     public RubyString dump() {
         ByteList outputBytes = StringSupport.dumpCommon(getContext().getRuntime(), bytes);
 
