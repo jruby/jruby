@@ -52,16 +52,18 @@ function pack {
 
     tar -zxf $buildname || exit $?
     chmod -R +w graalvm-jdk1.8.0
+    
     cp -r graalvm-jdk1.8.0 jruby-$version || exit $?
     rm -rf jruby-$version/graalvm-jdk1.8.0/src.zip jruby-$version/graalvm-jdk1.8.0/demo jruby-$version/graalvm-jdk1.8.0/include jruby-$version/graalvm-jdk1.8.0/sample || exit $?
     targetname=jruby-dist-$version+graal-$1-x86_64-bin.tar.gz
     tar -zcf $targetname jruby-$version || exit $?
     shasum -a 1 $targetname > $targetname.sha1 || exit $?
-    cp -r jruby-$version jruby-master || exit $?
-    targetname=jruby-dist-master+graal-$1-x86_64-bin.tar.gz
-    tar -zcf $targetname jruby-master || exit $?
-    shasum -a 1 $targetname > $targetname.sha1 || exit $?
+    
+    #cp -r jruby-$version jruby-master || exit $?
+    #targetname=jruby-dist-master+graal-$1-x86_64-bin.tar.gz
+    #tar -zcf $targetname jruby-master || exit $?
+    #shasum -a 1 $targetname > $targetname.sha1 || exit $?
 }
 
-pack "linux" "b132" "0.5"
-pack "macosx" "b132" "0.5"
+pack "linux" "b132" "0.6"
+pack "macosx" "b132" "0.6"
