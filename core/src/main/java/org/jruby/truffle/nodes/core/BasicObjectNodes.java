@@ -258,14 +258,14 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object methodMissing(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object methodMissing(Object self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             return methodMissing(self, args, (RubyProc) null);
         }
 
         @Specialization
-        public Object methodMissing(RubyBasicObject self, Object[] args, RubyProc block) {
+        public Object methodMissing(Object self, Object[] args, RubyProc block) {
             notDesignedForCompilation();
 
             final RubySymbol name = (RubySymbol) args[0];
@@ -273,12 +273,20 @@ public abstract class BasicObjectNodes {
             return methodMissing(self, name, sentArgs, block);
         }
 
-        private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
+        private Object methodMissing(Object self, RubySymbol name, Object[] args, RubyProc block) {
             // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
             if (lastCallWasVCall()) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(name.toString(), self.toString(), this));
+                throw new RaiseException(
+                        getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
+                                name.toString(),
+                                getContext().getCoreLibrary().getLogicalClass(self).getName(),
+                                this));
             } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), self.toString(), this));
+                throw new RaiseException(
+                        getContext().getCoreLibrary().noMethodError(
+                                name.toString(),
+                                getContext().getCoreLibrary().getLogicalClass(self).getName(),
+                                this));
             }
         }
 
