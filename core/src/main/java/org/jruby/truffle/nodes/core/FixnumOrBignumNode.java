@@ -20,8 +20,11 @@ import java.math.BigInteger;
 public class FixnumOrBignumNode extends Node {
 
     private final BranchProfile lowerProfile = BranchProfile.create();
-    private final BranchProfile integerProfile = BranchProfile.create();
-    private final BranchProfile longProfile = BranchProfile.create();
+    private final BranchProfile integerFromBignumProfile = BranchProfile.create();
+    private final BranchProfile longFromBignumProfile = BranchProfile.create();
+
+    private final BranchProfile integerFromDoubleProfile = BranchProfile.create();
+    private final BranchProfile longFromDoubleProfile = BranchProfile.create();
 
     private final BranchProfile bignumProfile = BranchProfile.create();
     private final BranchProfile checkLongProfile = BranchProfile.create();
@@ -33,10 +36,10 @@ public class FixnumOrBignumNode extends Node {
             final long longValue = value.longValue();
 
             if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
-                integerProfile.enter();
+                integerFromBignumProfile.enter();
                 return (int) longValue;
             } else {
-                longProfile.enter();
+                longFromBignumProfile.enter();
                 return longValue;
             }
         } else {
@@ -46,18 +49,14 @@ public class FixnumOrBignumNode extends Node {
 
     public Object fixnumOrBignum(RubyContext context, double value) {
         if (value > Integer.MIN_VALUE && value < Integer.MAX_VALUE) {
-            // TODO(CS): reusing profiles might not be a good idea
-            integerProfile.enter();
-
+            integerFromDoubleProfile.enter();
             return (int) value;
         }
 
         checkLongProfile.enter();
 
         if (value > Long.MIN_VALUE && value < Long.MAX_VALUE) {
-            // TODO(CS): reusing profiles might not be a good idea
-            longProfile.enter();
-
+            longFromDoubleProfile.enter();
             return (long) value;
         }
 
