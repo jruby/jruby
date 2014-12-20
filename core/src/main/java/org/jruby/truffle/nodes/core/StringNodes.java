@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.core.*;
@@ -330,39 +331,61 @@ public abstract class StringNodes {
     @CoreMethod(names = "count", argumentsAsArray = true)
     public abstract static class CountNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode toStr;
+
         public CountNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStr = new DispatchHeadNode(context);
         }
 
         public CountNode(CountNode prev) {
             super(prev);
+            toStr = prev.toStr;
         }
 
         @Specialization
-        public int count(RubyString string, Object[] otherStrings) {
+        public int count(VirtualFrame frame, RubyString string, Object[] otherStrings) {
             notDesignedForCompilation();
 
             if (otherStrings.length == 0) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
-            return countSlow(string, otherStrings);
+            return countSlow(frame, string, otherStrings);
         }
 
         @CompilerDirectives.SlowPath
-        private int countSlow(RubyString string, Object[] args) {
-            RubyString[] coerced = new RubyString[args.length];
+        private int countSlow(VirtualFrame frame, RubyString string, Object[] args) {
+            RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
                 if (args[i] instanceof RubyString) {
-                    coerced[i] = (RubyString) args[i];
+                    otherStrings[i] = (RubyString) args[i];
                 } else {
-                    throw new RaiseException(
-                            getContext().getCoreLibrary().typeErrorNoImplicitConversion(args[i], "String", this));
+                    Object coerced;
+
+                    try {
+                        coerced = toStr.call(frame, args[i], "to_str", null);
+                    } catch (RaiseException e) {
+                        if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+                            throw new RaiseException(
+                                    getContext().getCoreLibrary().typeErrorNoImplicitConversion(args[i], "String", this));
+                        } else {
+                            throw e;
+                        }
+                    }
+
+                    if (coerced instanceof RubyString) {
+                        otherStrings[i] = (RubyString) coerced;
+                    } else {
+                        throw new RaiseException(
+                                getContext().getCoreLibrary().typeErrorBadCoercion(args[i], "String", "to_str", coerced, this));
+
+                    }
                 }
             }
 
-            return string.count(coerced);
+            return string.count(otherStrings);
         }
     }
 

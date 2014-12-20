@@ -119,6 +119,8 @@ public class RubyString extends RubyBasicObject {
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, null, true, enc);
         for (int i = 1; i < otherStrings.length; i++) {
             otherStr = otherStrings[i];
+
+            // TODO (nirvdrum Dec. 19, 2014): This method should be encoding aware and check that the strings have compatible encodings.  See non-Truffle JRuby for a more complete solution.
             //enc = checkEncoding(otherStr);
             tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, tables, false, enc);
         }

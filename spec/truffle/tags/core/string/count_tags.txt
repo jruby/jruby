@@ -1,3 +1,1 @@
 fails:String#count raises if the given sequences are invalid
-fails:String#count calls #to_str to convert each set arg to a String
-passes:String#count raises a TypeError when a set arg can't be converted to a string

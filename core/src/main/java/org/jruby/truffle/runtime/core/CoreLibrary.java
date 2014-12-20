@@ -502,6 +502,17 @@ public class CoreLibrary {
         return typeError(String.format("no implicit conversion of %s into %s", getLogicalClass(from).getName(), to), currentNode);
     }
 
+    public RubyException typeErrorBadCoercion(Object from, String to, String coercionMethod, Object coercedTo, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String badClassName = getLogicalClass(from).getName();
+        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
+                badClassName,
+                to,
+                badClassName,
+                coercionMethod,
+                getLogicalClass(coercedTo).getName()), currentNode);
+    }
+
     public RubyException nameError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
