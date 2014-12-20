@@ -59,10 +59,10 @@ function pack {
     tar -zcf $targetname jruby-$version || exit $?
     shasum -a 1 $targetname > $targetname.sha1 || exit $?
     
-    #cp -r jruby-$version jruby-master || exit $?
-    #targetname=jruby-dist-master+graal-$1-x86_64-bin.tar.gz
-    #tar -zcf $targetname jruby-master || exit $?
-    #shasum -a 1 $targetname > $targetname.sha1 || exit $?
+    cp -r jruby-$version jruby-master || exit $?
+    targetname=jruby-dist-master+graal-$1-x86_64-bin.tar.gz
+    tar -zcf $targetname jruby-master || exit $?
+    shasum -a 1 $targetname > $targetname.sha1 || exit $?
 }
 
 pack "linux" "b132" "0.6"
