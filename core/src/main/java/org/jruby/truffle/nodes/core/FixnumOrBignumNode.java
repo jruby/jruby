@@ -19,6 +19,12 @@ import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends Node {
 
+    public FixnumOrBignumNode(RubyContext context) {
+        this.context = context;
+    }
+
+    private final RubyContext context;
+
     private final BranchProfile lowerProfile = BranchProfile.create();
     private final BranchProfile integerFromBignumProfile = BranchProfile.create();
     private final BranchProfile longFromBignumProfile = BranchProfile.create();
@@ -47,7 +53,7 @@ public class FixnumOrBignumNode extends Node {
         }
     }
 
-    public Object fixnumOrBignum(RubyContext context, double value) {
+    public Object fixnumOrBignum(double value) {
         if (value > Integer.MIN_VALUE && value < Integer.MAX_VALUE) {
             integerFromDoubleProfile.enter();
             return (int) value;

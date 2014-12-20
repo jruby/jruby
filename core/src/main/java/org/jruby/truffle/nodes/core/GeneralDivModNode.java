@@ -34,8 +34,8 @@ public class GeneralDivModNode extends Node {
     public GeneralDivModNode(RubyContext context) {
         assert context != null;
         this.context = context;
-        fixnumOrBignumQuotient = new FixnumOrBignumNode();
-        fixnumOrBignumRemainder = new FixnumOrBignumNode();
+        fixnumOrBignumQuotient = new FixnumOrBignumNode(context);
+        fixnumOrBignumRemainder = new FixnumOrBignumNode(context);
     }
 
     public RubyArray execute(int a, int b) {
