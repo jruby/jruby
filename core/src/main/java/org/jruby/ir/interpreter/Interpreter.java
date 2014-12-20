@@ -55,7 +55,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
+    public static void runBeginBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
         if (beBlocks == null) return;
 
         for (IRClosure b: beBlocks) {
@@ -70,7 +70,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         if (blocks == null) return;
 
         for (WrappedIRClosure block: blocks) {
-            ((Block) block.retrieve(context, self, currScope, context.getCurrentScope(), temp)).yield(context, null);
+            try {
+                ((Block) block.retrieve(context, self, currScope, context.getCurrentScope(), temp)).yield(context, null);
+            } catch (Exception e) {
+                System.err.println(e);
+            }
         }
     }
 
@@ -104,7 +108,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+            runBeginBlocks(ic.getBeginBlocks(), context, self, scope, null);
             return INTERPRET_ROOT(context, self, ic, currModule, name);
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
@@ -688,7 +692,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             evalScope.growIfNeeded();
 
-            runBeginEndBlocks(ic.getBeginBlocks(), context, self, ss, null);
+            runBeginBlocks(ic.getBeginBlocks(), context, self, ss, null);
 
             return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), EMPTY_ARGS, name, block, null);
         } finally {
