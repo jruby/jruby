@@ -91,7 +91,7 @@ public class RubyRegexp extends RubyBasicObject {
         return source;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public Object matchCommon(ByteList bytes, boolean operator, boolean setNamedCaptures) {
         final byte[] stringBytes = bytes.bytes();
         final Matcher matcher = regex.matcher(stringBytes);
@@ -100,7 +100,7 @@ public class RubyRegexp extends RubyBasicObject {
         return matchCommon(bytes, operator, setNamedCaptures, matcher, 0, range);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public Object matchCommon(ByteList bytes, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
         final RubyContext context = getContext();
 
@@ -259,7 +259,7 @@ public class RubyRegexp extends RubyBasicObject {
         getContext().getThreadManager().getCurrentThread().getThreadLocals().setInstanceVariable(name, value);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyString gsub(String string, String replacement) {
         final RubyContext context = getContext();
 
@@ -287,7 +287,7 @@ public class RubyRegexp extends RubyBasicObject {
         return context.makeString(builder.toString());
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyString sub(String string, String replacement) {
         final RubyContext context = getContext();
 
@@ -307,7 +307,7 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyString[] split(String string) {
         final RubyContext context = getContext();
 
@@ -334,7 +334,7 @@ public class RubyRegexp extends RubyBasicObject {
         return strings.toArray(new RubyString[strings.size()]);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public Object scan(RubyString string) {
         final RubyContext context = getContext();
 

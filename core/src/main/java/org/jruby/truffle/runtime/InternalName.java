@@ -7,13 +7,19 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.objectstorage;
+package org.jruby.truffle.runtime;
 
-public abstract class ReadObjectFieldChainNode extends ReadObjectFieldNode {
+public class InternalName {
 
-    @Child protected ReadObjectFieldNode next;
+    private final String name;
 
-    public ReadObjectFieldChainNode(ReadObjectFieldNode next) {
-        this.next = next;
+    public InternalName(String name) {
+        this.name = name;
     }
+
+    @Override
+    public String toString() {
+        return String.format("internal(%s)", name);
+    }
+
 }

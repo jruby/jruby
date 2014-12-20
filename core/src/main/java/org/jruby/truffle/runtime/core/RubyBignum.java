@@ -37,52 +37,52 @@ public class RubyBignum extends RubyBasicObject {
         this.value = value;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum negate() {
         return create(value.negate());
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum create(BigInteger value) {
         return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum add(RubyBignum other) {
         return create(value.add(other.value));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum add(long other) {
         return create(value.add(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum subtract(RubyBignum other) {
         return create(value.subtract(other.value));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum subtract(long other) {
         return create(value.subtract(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum multiply(RubyBignum other) {
         return create(value.multiply(other.value));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum multiply(long other) {
         return create(value.multiply(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum pow(int other) {
         return create(value.pow(other));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum pow(long other) {
         if (other < Integer.MAX_VALUE) {
             return pow((int) other);
@@ -97,7 +97,7 @@ public class RubyBignum extends RubyBasicObject {
         }
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum pow(RubyBignum other) {
         BigInteger result = BigInteger.ONE;
 
@@ -108,112 +108,112 @@ public class RubyBignum extends RubyBasicObject {
         return create(result);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum divide(RubyBignum other) {
         return create(value.divide(other.value));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum divide(long other) {
         return create(value.divide(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum mod(long other) {
         return create(value.mod(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public int compareTo(int other) {
         return value.compareTo(BigInteger.valueOf(other));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public int compareTo(long other) {
         return value.compareTo(BigInteger.valueOf(other));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public int compareTo(RubyBignum other) {
         return value.compareTo(other.value);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public int compareTo(double other) {
         return compareTo((long) other);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public boolean isEqualTo(int b) {
         return value.equals(BigInteger.valueOf(b));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public boolean isEqualTo(long b) {
         return value.equals(BigInteger.valueOf(b));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public boolean isEqualTo(RubyBignum b) {
         return value.equals(b.value);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum and(RubyBignum other) {
         return create(value.and(other.value));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum and(long other) {
         return create(value.and(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum or(RubyBignum other) {
         return create(value.or(other.value));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum or(long other) {
         return create(value.or(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum xor(RubyBignum other) {
         return create(value.xor(other.value));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum xor(long other) {
         return create(value.xor(BigInteger.valueOf(other)));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum shiftLeft(int n) {
         return create(value.shiftLeft(n));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyBignum shiftRight(int n) {
         return create(value.shiftRight(n));
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public long longValue() {
         return value.longValue();
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public boolean isZero() {
         return value.equals(BigInteger.ZERO);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public String toHexString() {
         return value.toString(16);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public double doubleValue() {
         return value.doubleValue();
     }

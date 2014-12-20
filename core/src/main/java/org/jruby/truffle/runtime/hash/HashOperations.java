@@ -37,7 +37,7 @@ public class HashOperations {
         return CAPACITIES[CAPACITIES.length - 1];
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries) {
         RubyNode.notDesignedForCompilation();
 
@@ -99,7 +99,7 @@ public class HashOperations {
         System.err.println(builder);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static List<KeyValue> verySlowToKeyValues(RubyHash hash) {
         final List<KeyValue> keyValues = new ArrayList<>();
 
@@ -121,7 +121,7 @@ public class HashOperations {
         return keyValues;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static HashSearchResult verySlowFindBucket(RubyHash hash, Object key) {
         final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
 
@@ -185,7 +185,7 @@ public class HashOperations {
         }
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static boolean verySlowSetInBuckets(RubyHash hash, Object key, Object value) {
         if (key instanceof RubyString) {
             key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
@@ -196,7 +196,7 @@ public class HashOperations {
         return hashSearchResult.getEntry() == null;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static void verySlowSetKeyValues(RubyHash hash, List<KeyValue> keyValues) {
         final int size = keyValues.size();
         hash.setStore(new Entry[capacityGreaterThan(size)], 0, null, null);

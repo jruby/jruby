@@ -9,35 +9,56 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
-import org.jruby.truffle.runtime.objectstorage.IntegerStorageLocation;
-import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
+import com.oracle.truffle.api.object.FinalLocationException;
+import com.oracle.truffle.api.object.IntLocation;
+import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteIntegerObjectFieldNode extends WriteObjectFieldChainNode {
 
-    private final ObjectLayout objectLayout;
-    private final IntegerStorageLocation storageLocation;
+    private final Shape expectedLayout;
+    private final Shape newLayout;
+    private final IntLocation storageLocation;
 
-    public WriteIntegerObjectFieldNode(ObjectLayout objectLayout, IntegerStorageLocation storageLocation, WriteObjectFieldNode next) {
+    public WriteIntegerObjectFieldNode(Shape expectedLayout, Shape newLayout, IntLocation storageLocation, WriteObjectFieldNode next) {
         super(next);
-        this.objectLayout = objectLayout;
+        this.expectedLayout = expectedLayout;
+        this.newLayout = newLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
-    public void execute(ObjectStorage object, int value) {
-        if (object.getObjectLayout() == objectLayout) {
-            storageLocation.writeInteger(object, value);
+    public void execute(RubyBasicObject object, int value) {
+        try {
+            expectedLayout.getValidAssumption().check();
+            newLayout.getValidAssumption().check();
+        } catch (InvalidAssumptionException e) {
+            replace(next);
+            next.execute(object, value);
+            return;
+        }
+
+        if (object.getObjectLayout() == expectedLayout) {
+            try {
+                if (newLayout == expectedLayout) {
+                    storageLocation.setInt(object.getDynamicObject(), value, expectedLayout);
+                } else {
+                    storageLocation.setInt(object.getDynamicObject(), value, expectedLayout, newLayout);
+                }
+            } catch (FinalLocationException e) {
+                replace(next, "!final").execute(object, value);
+            }
         } else {
             next.execute(object, value);
         }
     }
 
     @Override
-    public void execute(ObjectStorage object, Object value) {
+    public void execute(RubyBasicObject object, Object value) {
         if (value instanceof Integer) {
             execute(object, (int) value);
         } else {

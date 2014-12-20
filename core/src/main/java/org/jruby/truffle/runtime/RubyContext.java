@@ -17,7 +17,7 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.*;
 
-import com.oracle.truffle.api.instrument.SourceCallback;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
@@ -27,10 +27,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -46,7 +46,6 @@ public class RubyContext extends ExecutionContext {
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
-    private final RubyASTProber astProber;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
     private final TraceManager traceManager;
@@ -55,12 +54,12 @@ public class RubyContext extends ExecutionContext {
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
+    private final Shape emptyShape;
     private final Warnings warnings;
     private final SafepointManager safepointManager;
     private final Random random = new Random();
     private final LexicalScope rootLexicalScope;
-
-    private SourceCallback sourceCallback = null;
+    private final CompilerOptions compilerOptions;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -76,16 +75,27 @@ public class RubyContext extends ExecutionContext {
     public RubyContext(Ruby runtime) {
         assert runtime != null;
 
+        compilerOptions = Truffle.getRuntime().createCompilerOptions();
+
+        if (compilerOptions.supportsOption("MinTimeThreshold")) {
+            compilerOptions.setOption("MinTimeThreshold", 100000000);
+        }
+
+        if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
+            compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
+        }
+
         safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
         translator = new TranslatorDriver(this);
-        astProber = new RubyASTProber();
 
         warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
+
+        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
 
         // See note in CoreLibrary#initialize to see why we need to break this into two statements
         coreLibrary = new CoreLibrary(this);
@@ -101,6 +111,10 @@ public class RubyContext extends ExecutionContext {
         fiberManager = new FiberManager(this);
 
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+    }
+
+    public Shape getEmptyShape() {
+        return emptyShape;
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, RubyNode currentNode) {
@@ -156,12 +170,12 @@ public class RubyContext extends ExecutionContext {
         return symbolTable;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubySymbol newSymbol(String name) {
         return symbolTable.getSymbol(name);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubySymbol newSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
@@ -356,21 +370,8 @@ public class RubyContext extends ExecutionContext {
         return "ruby";
     }
 
-    @Override
-    public void setSourceCallback(SourceCallback sourceCallback) {
-        this.sourceCallback = sourceCallback;
-    }
-
-    public SourceCallback getSourceCallback() {
-        return sourceCallback;
-    }
-
     public TruffleHooks getHooks() {
         return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
-    }
-
-    public RubyASTProber getASTProber() {
-        return astProber;
     }
 
     public TraceManager getTraceManager() {
@@ -396,4 +397,9 @@ public class RubyContext extends ExecutionContext {
     public LexicalScope getRootLexicalScope() {
         return rootLexicalScope;
     }
+
+    public CompilerOptions getCompilerOptions() {
+        return compilerOptions;
+    }
+
 }

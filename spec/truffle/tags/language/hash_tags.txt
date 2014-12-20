@@ -1,6 +1,2 @@
-fails:Hash literal expands an '**{}' element into the containing Hash literal initialization
-fails:Hash literal expands an '**obj' element into the containing Hash literal initialization
 fails:Hash literal calls #to_hash to convert an '**obj' element
 fails:Hash literal raises a TypeError if #to_hash does not return a Hash
-fails:Hash literal merges the containing Hash into the **obj before importing obj's items
-fails:Hash literal merges multiple nested '**obj' in Hash literals

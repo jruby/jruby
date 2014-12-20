@@ -320,14 +320,14 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "/", required = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
-        private final BranchProfile bGreaterZero = new BranchProfile();
-        private final BranchProfile bGreaterZeroAGreaterEqualZero = new BranchProfile();
-        private final BranchProfile bGreaterZeroALessZero = new BranchProfile();
-        private final BranchProfile aGreaterZero = new BranchProfile();
-        private final BranchProfile bMinusOne = new BranchProfile();
-        private final BranchProfile bMinusOneAMinimum = new BranchProfile();
-        private final BranchProfile bMinusOneANotMinimum = new BranchProfile();
-        private final BranchProfile finalCase = new BranchProfile();
+        private final BranchProfile bGreaterZero = BranchProfile.create();
+        private final BranchProfile bGreaterZeroAGreaterEqualZero = BranchProfile.create();
+        private final BranchProfile bGreaterZeroALessZero = BranchProfile.create();
+        private final BranchProfile aGreaterZero = BranchProfile.create();
+        private final BranchProfile bMinusOne = BranchProfile.create();
+        private final BranchProfile bMinusOneAMinimum = BranchProfile.create();
+        private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
+        private final BranchProfile finalCase = BranchProfile.create();
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -499,7 +499,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "%", required = 1)
     public abstract static class ModNode extends BignumNodes.BignumCoreMethodNode {
 
-        private final BranchProfile adjustProfile = new BranchProfile();
+        private final BranchProfile adjustProfile = BranchProfile.create();
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1281,13 +1281,13 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(int n) {
             return getContext().makeString(Integer.toString(n));
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(long n) {
             return getContext().makeString(Long.toString(n));

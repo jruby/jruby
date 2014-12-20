@@ -49,7 +49,7 @@ public abstract class TimeNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyTime now() {
             return RubyTime.fromDate(getContext().getCoreLibrary().getTimeClass(), System.currentTimeMillis());
@@ -68,7 +68,7 @@ public abstract class TimeNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyTime fromArray(int second,
                                   int minute,
@@ -95,7 +95,7 @@ public abstract class TimeNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyTime time) {
             return getContext().makeString(new SimpleDateFormat("Y-MM-d H:m:ss Z").format(time.toDate()));

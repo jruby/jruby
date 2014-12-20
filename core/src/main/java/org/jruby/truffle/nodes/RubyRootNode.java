@@ -24,8 +24,6 @@ import org.jruby.util.cli.Options;
  */
 public class RubyRootNode extends RootNode {
 
-    public static final boolean COMPILER_PASS_LOOPS_THROUGH_BLOCKS = Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load();
-
     private final RubyContext context;
     private final SharedMethodInfo sharedMethodInfo;
     @Child protected RubyNode body;
@@ -45,57 +43,15 @@ public class RubyRootNode extends RootNode {
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
-        context.getSafepointManager().poll();
-
-        return body.execute(frame);
-    }
-
-    @Override
-    public RootNode split() {
-        return cloneRubyRootNode();
-    }
-
-    @Override
-    public boolean isSplittable() {
+    public boolean isCloningAllowed() {
         return true;
     }
 
-    public void reportLoopCountThroughBlocks(final int count) {
-        CompilerAsserts.neverPartOfCompilation();
+    @Override
+    public Object execute(VirtualFrame frame) {
+            context.getSafepointManager().poll();
 
-        if (COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
-            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-
-                @Override
-                public Object visitFrame(FrameInstance frameInstance) {
-                    // The call node for the top level is null and should be ignored
-
-                    if (frameInstance.getCallNode() == null) {
-                        return null;
-                    }
-
-                    final RootNode rootNode = frameInstance.getCallNode().getRootNode();
-
-                    if (!(rootNode instanceof RubyRootNode)) {
-                        return frameInstance;
-                    }
-
-                    final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
-
-                    rootNode.reportLoopCount(count);
-
-                    if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
-                        return frameInstance;
-                    }
-
-                    return null;
-                }
-
-            });
-        }
-
-        reportLoopCount(count);
+        return body.execute(frame);
     }
 
     @Override
@@ -109,5 +65,10 @@ public class RubyRootNode extends RootNode {
 
     public RubyNode getBody() {
         return body;
+    }
+
+    @Override
+    public ExecutionContext getExecutionContext() {
+        return context;
     }
 }

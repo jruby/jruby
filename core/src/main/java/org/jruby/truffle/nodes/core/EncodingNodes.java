@@ -242,7 +242,7 @@ public abstract class EncodingNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyEncoding encoding) {
             final ByteList name = encoding.getName().dup();
@@ -262,7 +262,7 @@ public abstract class EncodingNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyEncoding encoding) {
             final ByteList nameByteList = encoding.getName().dup();

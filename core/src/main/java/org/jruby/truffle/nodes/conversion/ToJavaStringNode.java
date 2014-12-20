@@ -34,13 +34,13 @@ public abstract class ToJavaStringNode extends RubyNode {
 
     // TODO(CS): cache the conversion to a Java String? Or should the user do that themselves?
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     @Specialization
     protected String toJavaString(RubySymbol symbol) {
         return symbol.toString();
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     @Specialization
     protected String toJavaString(RubyString string) {
         return string.toString();

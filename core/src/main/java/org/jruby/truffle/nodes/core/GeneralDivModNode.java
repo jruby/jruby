@@ -25,11 +25,11 @@ public class GeneralDivModNode extends Node {
     @Child protected FixnumOrBignumNode fixnumOrBignumQuotient;
     @Child protected FixnumOrBignumNode fixnumOrBignumRemainder;
 
-    private final BranchProfile bZeroProfile = new BranchProfile();
-    private final BranchProfile bMinusOneProfile = new BranchProfile();
-    private final BranchProfile bigIntegerFixnumProfile = new BranchProfile();
-    private final BranchProfile useFixnumPairProfile = new BranchProfile();
-    private final BranchProfile useObjectPairProfile = new BranchProfile();
+    private final BranchProfile bZeroProfile = BranchProfile.create();
+    private final BranchProfile bMinusOneProfile = BranchProfile.create();
+    private final BranchProfile bigIntegerFixnumProfile = BranchProfile.create();
+    private final BranchProfile useFixnumPairProfile = BranchProfile.create();
+    private final BranchProfile useObjectPairProfile = BranchProfile.create();
 
     public GeneralDivModNode(RubyContext context) {
         assert context != null;
@@ -78,7 +78,7 @@ public class GeneralDivModNode extends Node {
      * div-mod algorithms copied from org.jruby.RubyFixnum and org.jruby.RubyBignum. See license and contributors there.
      */
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     private RubyArray divMod(long a, long b) {
         if (b == 0) {
             bZeroProfile.enter();
@@ -121,7 +121,7 @@ public class GeneralDivModNode extends Node {
         }
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     private RubyArray divMod(BigInteger a, BigInteger b) {
         if (b.signum() == 0) {
             bZeroProfile.enter();

@@ -19,58 +19,59 @@ import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 
-/**
- * Represents a Ruby {@code while} statement.
- */
 public class WhileNode extends RubyNode {
 
-    @Child protected BooleanCastNode condition;
-    @Child protected RubyNode body;
-
-    private final BranchProfile breakProfile = new BranchProfile();
-    private final BranchProfile nextProfile = new BranchProfile();
-    private final BranchProfile redoProfile = new BranchProfile();
+    @Child protected LoopNode loopNode;
 
     public WhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
         super(context, sourceSection);
-        this.condition = condition;
-        this.body = body;
+        loopNode = Truffle.getRuntime().createLoopNode(new WhileRepeatingNode(context, condition, body));
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        int count = 0;
-
         try {
-            outer: while (condition.executeBoolean(frame)) {
-                while (true) {
-                    getContext().getSafepointManager().poll();
-
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    try {
-                        body.execute(frame);
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
-                    }
-                }
-            }
-        } finally {
-            if (CompilerDirectives.inInterpreter()) {
-                ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-            }
+            loopNode.executeLoop(frame);
+        } catch (BreakException e) {
+            return e.getResult();
         }
 
         return getContext().getCoreLibrary().getNilObject();
+    }
+
+    private static class WhileRepeatingNode extends Node implements RepeatingNode {
+
+        private final RubyContext context;
+
+        @Child protected BooleanCastNode condition;
+        @Child protected RubyNode body;
+
+        public WhileRepeatingNode(RubyContext context, BooleanCastNode condition, RubyNode body) {
+            this.context = context;
+            this.condition = condition;
+            this.body = body;
+        }
+
+        @Override
+        public boolean executeRepeating(VirtualFrame frame) {
+            if (!condition.executeBoolean(frame)) {
+                return false;
+            }
+
+            while (true) { // for redo
+                context.getSafepointManager().poll();
+
+                try {
+                    body.execute(frame);
+                    return true;
+                } catch (NextException e) {
+                    return true;
+                } catch (RedoException e) {
+                    // Just continue in the while(true) loop.
+                }
+            }
+        }
+
     }
 
 }

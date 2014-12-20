@@ -558,8 +558,8 @@ public abstract class FloatNodes {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile greaterZero = new BranchProfile();
-        private final BranchProfile lessZero = new BranchProfile();
+        private final BranchProfile greaterZero = BranchProfile.create();
+        private final BranchProfile lessZero = BranchProfile.create();
 
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -667,7 +667,7 @@ public abstract class FloatNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(double value) {
             return getContext().makeString(Double.toString(value));

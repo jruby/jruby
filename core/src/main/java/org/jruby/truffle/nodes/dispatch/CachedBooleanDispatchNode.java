@@ -31,14 +31,14 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
 
     private final Assumption falseUnmodifiedAssumption;
     private final RubyMethod falseMethod;
-    private final BranchProfile falseProfile = new BranchProfile();
+    private final BranchProfile falseProfile = BranchProfile.create();
 
     private final Object falseValue;
     @Child protected DirectCallNode falseCallDirect;
 
     private final Assumption trueUnmodifiedAssumption;
     private final RubyMethod trueMethod;
-    private final BranchProfile trueProfile = new BranchProfile();
+    private final BranchProfile trueProfile = BranchProfile.create();
 
     private final Object trueValue;
     @Child protected DirectCallNode trueCallDirect;
@@ -60,9 +60,9 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             if (!indirect) {
                 falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
 
-                if (falseCallDirect.isSplittable() && falseMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if (falseCallDirect.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
                     insert(falseCallDirect);
-                    falseCallDirect.split();
+                    falseCallDirect.cloneCallTarget();
                 }
             }
         }
@@ -75,9 +75,9 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             if (!indirect) {
                 trueCallDirect = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
 
-                if (trueCallDirect.isSplittable() && trueMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if (trueCallDirect.isCallTargetCloningAllowed() && trueMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
                     insert(trueCallDirect);
-                    trueCallDirect.split();
+                    trueCallDirect.cloneCallTarget();
                 }
             }
         }

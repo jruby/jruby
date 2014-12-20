@@ -9,24 +9,32 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
-import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
+import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
 
-    private final ObjectLayout objectLayout;
+    private final Shape objectLayout;
 
-    public ReadMissingObjectFieldNode(ObjectLayout objectLayout, ReadObjectFieldNode next) {
+    public ReadMissingObjectFieldNode(Shape objectLayout, ReadObjectFieldNode next) {
         super(next);
         this.objectLayout = objectLayout;
     }
 
     @Override
-    public Object execute(ObjectStorage object) {
-        if (object.getObjectLayout() == objectLayout) {
+    public Object execute(RubyBasicObject object) {
+        try {
+            objectLayout.getValidAssumption().check();
+        } catch (InvalidAssumptionException e) {
+            replace(next);
+            return next.execute(object);
+        }
+
+        if (object.getDynamicObject().getShape() == objectLayout) {
             return null;
         } else {
             return next.execute(object);

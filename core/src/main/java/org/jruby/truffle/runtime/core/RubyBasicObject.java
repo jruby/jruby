@@ -13,33 +13,44 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Layout;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.InternalName;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.RubyOperations;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Represents the Ruby {@code BasicObject} class - the root of the Ruby class hierarchy.
  */
-public class RubyBasicObject extends ObjectStorage {
+public class RubyBasicObject {
+
+    public static final InternalName OBJECT_ID_IDENTIFIER = new InternalName("object_id");
+
+    public static Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
+
+    private final DynamicObject dynamicObject;
 
     /** The class of the object, not a singleton class. */
     @CompilationFinal protected RubyClass logicalClass;
     /** Either the singleton class if it exists or the logicalClass. */
     @CompilationFinal protected RubyClass metaClass;
 
-    protected long objectID = -1;
     private boolean frozen = false;
-    public boolean hasPrivateLayout = false;
 
     public RubyBasicObject(RubyClass rubyClass) {
-        super(rubyClass != null ? rubyClass.getObjectLayoutForInstances() : ObjectLayout.EMPTY);
+        this(rubyClass, rubyClass.getContext());
+    }
+
+    public RubyBasicObject(RubyClass rubyClass, RubyContext context) {
+        dynamicObject = LAYOUT.newInstance(context.getEmptyShape());
 
         if (rubyClass != null) {
             unsafeSetLogicalClass(rubyClass);
@@ -98,52 +109,36 @@ public class RubyBasicObject extends ObjectStorage {
 
     public void setInstanceVariable(String name, Object value) {
         RubyNode.notDesignedForCompilation();
-
-        updateLayoutToMatchClass();
-
-        setField(name, value);
-
-        if (logicalClass.getObjectLayoutForInstances() != objectLayout) {
-            logicalClass.setObjectLayoutForInstances(objectLayout);
-        }
+        getOperations().setInstanceVariable(this, name, value);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public long getObjectID() {
-        if (objectID == -1) {
-            objectID = getContext().getNextObjectID();
+        // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
+        Property property = dynamicObject.getShape().getProperty(OBJECT_ID_IDENTIFIER);
+
+        if (property != null) {
+            return (long) property.get(dynamicObject, false);
         }
 
+        final long objectID = getContext().getNextObjectID();
+        dynamicObject.define(OBJECT_ID_IDENTIFIER, objectID, 0);
         return objectID;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public void setInstanceVariables(Map<String, Object> instanceVariables) {
-        updateLayoutToMatchClass();
-        setFields(instanceVariables);
+        getOperations().setInstanceVariables(this, instanceVariables);
     }
 
-    public void updateLayoutToMatchClass() {
-        RubyNode.notDesignedForCompilation();
 
-        if (objectLayout != logicalClass.getObjectLayoutForInstances()) {
-            changeLayout(logicalClass.getObjectLayoutForInstances());
-        }
+    @CompilerDirectives.TruffleBoundary
+    public Map<String, Object>  getInstanceVariables() {
+        return getOperations().getInstanceVariables(this);
     }
 
-    public void switchToPrivateLayout() {
-        RubyNode.notDesignedForCompilation();
-
-        final Map<String, Object> instanceVariables = getFields();
-
-        hasPrivateLayout = true;
-        objectLayout = ObjectLayout.EMPTY;
-
-        for (Entry<String, Object> entry : instanceVariables.entrySet()) {
-            objectLayout = objectLayout.withNewVariable(entry.getKey(), entry.getValue().getClass());
-        }
-
-        setInstanceVariables(instanceVariables);
+    public String[] getFieldNames() {
+        return getOperations().getFieldNames(this);
     }
 
     public void extend(RubyModule module, RubyNode currentNode) {
@@ -166,7 +161,7 @@ public class RubyBasicObject extends ObjectStorage {
     public Object getInstanceVariable(String name) {
         RubyNode.notDesignedForCompilation();
 
-        final Object value = getField(name);
+        final Object value = getOperations().getInstanceVariable(this, name);
 
         if (value == null) {
             return getContext().getCoreLibrary().getNilObject();
@@ -175,15 +170,15 @@ public class RubyBasicObject extends ObjectStorage {
         }
     }
 
-    public boolean hasPrivateLayout() {
-        return hasPrivateLayout;
+    public boolean isFieldDefined(String name) {
+        return getOperations().isFieldDefined(this, name);
     }
 
     public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
             metaClass.visitObjectGraph(visitor);
 
-            for (Object instanceVariable : getFields().values()) {
+            for (Object instanceVariable : getOperations().getInstanceVariables(this).values()) {
                 if (instanceVariable instanceof RubyBasicObject) {
                     ((RubyBasicObject) instanceVariable).visitObjectGraph(visitor);
                 }
@@ -204,8 +199,19 @@ public class RubyBasicObject extends ObjectStorage {
         return logicalClass.getContext();
     }
 
+    public Shape getObjectLayout() {
+        return dynamicObject.getShape();
+    }
+
+    public RubyOperations getOperations() {
+        return (RubyOperations) dynamicObject.getShape().getObjectType();
+    }
+
     public RubyClass getLogicalClass() {
         return logicalClass;
     }
 
+    public DynamicObject getDynamicObject() {
+        return dynamicObject;
+    }
 }

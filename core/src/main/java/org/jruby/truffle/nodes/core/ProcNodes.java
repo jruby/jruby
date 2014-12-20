@@ -130,7 +130,7 @@ public abstract class ProcNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray parameters(RubyProc proc) {
             final ArgsNode argsNode = proc.getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);

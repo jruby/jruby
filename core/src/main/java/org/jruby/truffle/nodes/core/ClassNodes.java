@@ -54,6 +54,8 @@ public abstract class ClassNodes {
 
         @Child protected AllocateNode allocateNode;
         @Child protected DispatchHeadNode initialize;
+        @CompilerDirectives.CompilationFinal private boolean isCached = true;
+        @CompilerDirectives.CompilationFinal private RubyClass cachedClass;
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -83,6 +85,23 @@ public abstract class ClassNodes {
             return instance;
         }
 
+        private RubyClass cachedClass(RubyClass rubyClass) {
+            if (isCached) {
+                if (cachedClass == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    cachedClass = rubyClass;
+                }
+
+                if (rubyClass == cachedClass) {
+                    return cachedClass;
+                } else {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    isCached = false;
+                    cachedClass = null;
+                }
+            }
+            return rubyClass;
+        }
     }
 
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)

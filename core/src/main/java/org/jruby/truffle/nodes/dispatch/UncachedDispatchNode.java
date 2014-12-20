@@ -35,8 +35,8 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     @Child protected ToSymbolNode toSymbolNode;
     @Child protected ToJavaStringNode toJavaStringNode;
 
-    private final BranchProfile constantMissingProfile = new BranchProfile();
-    private final BranchProfile methodMissingProfile = new BranchProfile();
+    private final BranchProfile constantMissingProfile = BranchProfile.create();
+    private final BranchProfile methodMissingProfile = BranchProfile.create();
 
     public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility) {
         super(context);

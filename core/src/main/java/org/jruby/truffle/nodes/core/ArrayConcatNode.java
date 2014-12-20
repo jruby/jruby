@@ -26,8 +26,8 @@ public final class ArrayConcatNode extends RubyNode {
     @Children protected final RubyNode[] children;
     @Child protected ArrayBuilderNode arrayBuilderNode;
 
-    private final BranchProfile appendArrayProfile = new BranchProfile();
-    private final BranchProfile appendObjectProfile = new BranchProfile();
+    private final BranchProfile appendArrayProfile = BranchProfile.create();
+    private final BranchProfile appendObjectProfile = BranchProfile.create();
 
     public ArrayConcatNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);

@@ -16,7 +16,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 
 public class StringFormatter {
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static String format(String format, List<Object> values) {
         final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
         final PrintStream printStream = new PrintStream(byteArray);
@@ -26,7 +26,7 @@ public class StringFormatter {
         return byteArray.toString();
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public static void format(PrintStream stream, String format, List<Object> values) {
         /*
          * See http://www.ruby-doc.org/core-1.9.3/Kernel.html#method-i-sprintf.

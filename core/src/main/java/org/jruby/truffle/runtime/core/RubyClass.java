@@ -16,7 +16,6 @@ import com.oracle.truffle.api.CompilerDirectives.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.objectstorage.*;
 
 /**
  * Represents the Ruby {@code Class} class. Note that most of the functionality you might associate
@@ -26,7 +25,6 @@ public class RubyClass extends RubyModule {
 
     private boolean isSingleton;
     private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
-    private ObjectLayout objectLayoutForInstances = null;
 
     /**
      * The class from which we create the object that is {@code Class}. A subclass of
@@ -70,9 +68,7 @@ public class RubyClass extends RubyModule {
         super(context, context.getCoreLibrary().getClassClass(), lexicalParent, name, null);
         this.isSingleton = isSingleton;
 
-        if (superclass == null) {
-            objectLayoutForInstances = ObjectLayout.EMPTY;
-        } else {
+        if (superclass != null) {
             unsafeSetSuperclass(superclass);
         }
     }
@@ -87,7 +83,6 @@ public class RubyClass extends RubyModule {
         super.initCopy(other);
         assert other instanceof RubyClass;
         final RubyClass otherClass = (RubyClass) other;
-        this.objectLayoutForInstances = otherClass.objectLayoutForInstances;
     }
 
     private RubyClass ensureSingletonConsistency() {
@@ -135,50 +130,16 @@ public class RubyClass extends RubyModule {
         unsafeSetParent(newSuperclass);
         newSuperclass.subClasses.add(this);
 
-        objectLayoutForInstances = new ObjectLayout(newSuperclass.objectLayoutForInstances);
+        newVersion();
     }
 
-    @SlowPath
+    @TruffleBoundary
     public RubyBasicObject newInstance(RubyNode currentNode) {
         return new RubyBasicObject(this);
     }
 
     public boolean isSingleton() {
         return isSingleton;
-    }
-
-    /**
-     * Returns the object layout that objects of this class should use. Do not confuse with
-     * {@link #getObjectLayout}, which for {@link RubyClass} will return the layout of the class
-     * object itself.
-     */
-    public ObjectLayout getObjectLayoutForInstances() {
-        return objectLayoutForInstances;
-    }
-
-    /**
-     * Change the layout to be used for instances of this object.
-     */
-    public void setObjectLayoutForInstances(ObjectLayout newObjectLayoutForInstances) {
-        RubyNode.notDesignedForCompilation();
-
-        assert newObjectLayoutForInstances != objectLayoutForInstances;
-
-        objectLayoutForInstances = newObjectLayoutForInstances;
-
-        for (RubyClass subClass : subClasses) {
-            subClass.renewObjectLayoutForInstances();
-        }
-    }
-
-    private void renewObjectLayoutForInstances() {
-        RubyNode.notDesignedForCompilation();
-
-        objectLayoutForInstances = objectLayoutForInstances.withNewParent(getSuperClass().objectLayoutForInstances);
-
-        for (RubyClass subClass : subClasses) {
-            subClass.renewObjectLayoutForInstances();
-        }
     }
 
     public RubyClass getSuperClass() {

@@ -159,8 +159,6 @@ class MethodTranslator extends BodyTranslator {
             body = new CatchBreakAsReturnNode(context, sourceSection, body);
         }
 
-        body = context.getASTProber().probeAsPeriodic(body);
-
         if (!isBlock) {
             body = new ExceptionTranslatingNode(context, sourceSection, body);
         }

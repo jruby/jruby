@@ -19,12 +19,12 @@ import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends Node {
 
-    private final BranchProfile lowerProfile = new BranchProfile();
-    private final BranchProfile integerProfile = new BranchProfile();
-    private final BranchProfile longProfile = new BranchProfile();
+    private final BranchProfile lowerProfile = BranchProfile.create();
+    private final BranchProfile integerProfile = BranchProfile.create();
+    private final BranchProfile longProfile = BranchProfile.create();
 
-    private final BranchProfile bignumProfile = new BranchProfile();
-    private final BranchProfile checkLongProfile = new BranchProfile();
+    private final BranchProfile bignumProfile = BranchProfile.create();
+    private final BranchProfile checkLongProfile = BranchProfile.create();
 
     public Object fixnumOrBignum(RubyBignum value) {
         if (value.compareTo(Long.MIN_VALUE) >= 0 && value.compareTo(Long.MAX_VALUE) <= 0) {

@@ -9,82 +9,70 @@
  */
 package org.jruby.truffle.nodes.control;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.nodes.LoopNode;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RepeatingNode;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.NodeInfo;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 
-/**
- * Represents a Ruby {@code while} statement where the body is executed before the condition for the first time.
- */
 public class DoWhileNode extends RubyNode {
 
-    @Child protected BooleanCastNode condition;
-    @Child protected RubyNode body;
-
-    private final BranchProfile breakProfile = new BranchProfile();
-    private final BranchProfile nextProfile = new BranchProfile();
-    private final BranchProfile redoProfile = new BranchProfile();
+    @Child protected LoopNode loopNode;
 
     public DoWhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
         super(context, sourceSection);
-        this.condition = condition;
-        this.body = body;
+        loopNode = Truffle.getRuntime().createLoopNode(new DoWhileRepeatingNode(context, condition, body));
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        int count = 0;
-
         try {
-            outer: while (true) {
-                while (true) {
-                    getContext().getSafepointManager().poll();
-
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    try {
-                        body.execute(frame);
-                        break;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        break;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
-                    }
-                }
-
-                if (condition.executeBoolean(frame)) {
-                    nextProfile.enter();
-                    continue outer;
-                } else {
-                    breakProfile.enter();
-                    break outer;
-                }
-            }
-        } finally {
-            if (CompilerDirectives.inInterpreter()) {
-                ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
-            }
+            loopNode.executeLoop(frame);
+        } catch (BreakException e) {
+            return e.getResult();
         }
 
         return getContext().getCoreLibrary().getNilObject();
+    }
+
+    private static class DoWhileRepeatingNode extends Node implements RepeatingNode {
+
+        private final RubyContext context;
+
+        @Child protected BooleanCastNode condition;
+        @Child protected RubyNode body;
+
+        public DoWhileRepeatingNode(RubyContext context, BooleanCastNode condition, RubyNode body) {
+            this.context = context;
+            this.condition = condition;
+            this.body = body;
+        }
+
+        @Override
+        public boolean executeRepeating(VirtualFrame frame) {
+            while (true) { // for redo
+                context.getSafepointManager().poll();
+
+                try {
+                    body.execute(frame);
+                    break;
+                } catch (NextException e) {
+                    break;
+                } catch (RedoException e) {
+                    // Just continue in the while(true) loop.
+                }
+            }
+
+            return condition.executeBoolean(frame);
+        }
+
     }
 
 }

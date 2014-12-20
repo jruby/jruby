@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
@@ -152,6 +153,7 @@ public class RubyString extends RubyBasicObject {
     }
 
     @Override
+    @TruffleBoundary
     public String toString() {
         RubyNode.notDesignedForCompilation();
 

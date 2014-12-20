@@ -556,7 +556,7 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<<", required = 1)
     public abstract static class LeftShiftNode extends BignumCoreMethodNode {
 
-        private final BranchProfile bLessThanZero = new BranchProfile();
+        private final BranchProfile bLessThanZero = BranchProfile.create();
 
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -581,7 +581,7 @@ public abstract class BignumNodes {
     @CoreMethod(names = ">>", required = 1)
     public abstract static class RightShiftNode extends BignumCoreMethodNode {
 
-        private final BranchProfile bLessThanZero = new BranchProfile();
+        private final BranchProfile bLessThanZero = BranchProfile.create();
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -614,7 +614,7 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyBignum value) {
             return getContext().makeString(value.bigIntegerValue().toString());

@@ -53,7 +53,7 @@ public abstract class DispatchNode extends RubyNode {
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction);
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     protected RubyConstant lookupConstant(
             LexicalScope lexicalScope,
             RubyModule module,
@@ -74,7 +74,7 @@ public abstract class DispatchNode extends RubyNode {
         return constant;
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     protected RubyMethod lookup(
             RubyClass callerClass,
             Object receiver,

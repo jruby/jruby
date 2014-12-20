@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,37 +13,37 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.object.DoubleLocation;
+import com.oracle.truffle.api.object.BooleanLocation;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
-public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
+public class ReadBooleanObjectFieldNode extends ReadObjectFieldChainNode {
 
     private final Shape objectLayout;
-    private final DoubleLocation storageLocation;
+    private final BooleanLocation storageLocation;
 
-    public ReadDoubleObjectFieldNode(Shape objectLayout, DoubleLocation storageLocation, ReadObjectFieldNode next) {
+    public ReadBooleanObjectFieldNode(Shape objectLayout, BooleanLocation storageLocation, ReadObjectFieldNode next) {
         super(next);
         this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
-    public double executeDouble(RubyBasicObject object) throws UnexpectedResultException {
+    public boolean executeBoolean(RubyBasicObject object) throws UnexpectedResultException {
         try {
             objectLayout.getValidAssumption().check();
         } catch (InvalidAssumptionException e) {
             replace(next);
-            return next.executeDouble(object);
+            return next.executeBoolean(object);
         }
 
         final boolean condition = object.getObjectLayout() == objectLayout;
 
         if (condition) {
-            return storageLocation.getDouble(object.getDynamicObject(), objectLayout);
+            return storageLocation.getBoolean(object.getDynamicObject(), objectLayout);
         } else {
-            return next.executeDouble(object);
+            return next.executeBoolean(object);
         }
     }
 

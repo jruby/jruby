@@ -7,25 +7,23 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.debug;
+package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.Instrument;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 
-public class TraceInstrument extends Instrument {
+public class TraceNode extends WrapperNode {
 
     private final RubyContext context;
 
@@ -37,7 +35,8 @@ public class TraceInstrument extends Instrument {
     private final RubyString file;
     private final int line;
 
-    public TraceInstrument(RubyContext context, SourceSection sourceSection) {
+    public TraceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+        super(context, sourceSection, child);
         this.context = context;
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
@@ -48,11 +47,10 @@ public class TraceInstrument extends Instrument {
     }
 
     @Override
-    public void enter(Node node, VirtualFrame frame) {
+    public void enter(VirtualFrame frame) {
         try {
             traceAssumption.check();
         } catch (InvalidAssumptionException e) {
-
             traceAssumption = context.getTraceManager().getTraceAssumption();
             traceFunc = context.getTraceManager().getTraceFunc();
 
@@ -85,4 +83,31 @@ public class TraceInstrument extends Instrument {
         }
     }
 
+    @Override
+    void leave(VirtualFrame frame) {
+    }
+
+    @Override
+    void leave(VirtualFrame frame, boolean result) {
+    }
+
+    @Override
+    void leave(VirtualFrame frame, int result) {
+    }
+
+    @Override
+    void leave(VirtualFrame frame, long result) {
+    }
+
+    @Override
+    void leave(VirtualFrame frame, double result) {
+    }
+
+    @Override
+    void leave(VirtualFrame frame, Object result) {
+    }
+
+    @Override
+    void leaveExceptional(VirtualFrame frame, Exception e) {
+    }
 }

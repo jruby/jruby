@@ -185,6 +185,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
                           '<arg value="-J-ea" />' +
+                          '<arg value="-J-Xmx1G" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
                           '<arg value="run" />' +
                           '<arg value="-t" />' +
@@ -235,6 +236,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
                           '<arg value="-J-ea" />' +
+                          '<arg value="-J-Xmx1G" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
                           '<arg value="run" />' +
                           '<arg value="-t" />' +
@@ -278,8 +280,7 @@ project 'JRuby Integration Tests' do
                       '<target>' + 
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-J-server" />' +
-                          '<arg value="-J-G:-TruffleBackgroundCompilation" />' +
-                          '<arg value="-J-G:+TruffleCompilationExceptionsAreFatal" />' +
+                          '<arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />' +
                           '<arg value="-X+T" />' +
                           '<arg value="-Xtruffle.proc.binding=false" />' +
                           '<arg value="-Xtruffle.debug.enable_assert_constant=true" />' +

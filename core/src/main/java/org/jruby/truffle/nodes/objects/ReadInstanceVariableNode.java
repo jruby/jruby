@@ -9,55 +9,31 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.RespecializeHook;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.objectstorage.*;
 
 public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
-
-    private final RespecializeHook hook = new RespecializeHook() {
-
-        @Override
-        public void hookRead(ObjectStorage object, String name) {
-            final RubyBasicObject rubyObject = (RubyBasicObject) object;
-
-            if (!rubyObject.hasPrivateLayout()) {
-                rubyObject.updateLayoutToMatchClass();
-            }
-        }
-
-        @Override
-        public void hookWrite(ObjectStorage object, String name, Object value) {
-            final RubyBasicObject rubyObject = (RubyBasicObject) object;
-
-            if (!rubyObject.hasPrivateLayout()) {
-                rubyObject.updateLayoutToMatchClass();
-            }
-
-            rubyObject.setInstanceVariable(name, value);
-        }
-
-    };
 
     @Child protected RubyNode receiver;
     @Child protected ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
-    private final BranchProfile nullProfile = new BranchProfile();
-    private final BranchProfile primitiveProfile = new BranchProfile();
+    private final BranchProfile nullProfile = BranchProfile.create();
+    private final BranchProfile primitiveProfile = BranchProfile.create();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = new ReadHeadObjectFieldNode(name, hook);
+        readNode = new ReadHeadObjectFieldNode(name);
         this.isGlobal = isGlobal;
     }
 
@@ -150,10 +126,10 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             if (receiverObject instanceof RubyBasicObject) {
                 final RubyBasicObject receiverRubyObject = (RubyBasicObject) receiverObject;
 
-                final ObjectLayout layout = receiverRubyObject.getObjectLayout();
-                final StorageLocation storageLocation = layout.findStorageLocation(readNode.getName());
+                final Shape layout = receiverRubyObject.getDynamicObject().getShape();
+                final Property storageLocation = layout.getProperty(readNode.getName());
 
-                if (storageLocation.isSet(receiverRubyObject)) {
+                if (storageLocation != null) {
                     return context.makeString("instance-variable");
                 } else {
                     return getContext().getCoreLibrary().getNilObject();

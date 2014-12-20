@@ -28,8 +28,8 @@ public class ReadRestArgumentNode extends RubyNode {
     private final int negativeEndIndex;
     private final boolean keywordArguments;
 
-    private final BranchProfile noArgumentsLeftProfile = new BranchProfile();
-    private final BranchProfile subsetOfArgumentsProfile = new BranchProfile();
+    private final BranchProfile noArgumentsLeftProfile = BranchProfile.create();
+    private final BranchProfile subsetOfArgumentsProfile = BranchProfile.create();
 
     public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int negativeEndIndex, boolean keywordArguments) {
         super(context, sourceSection);

@@ -24,10 +24,10 @@ public class ReadPreArgumentNode extends RubyNode {
 
     private final int index;
 
-    private final BranchProfile outOfRangeProfile = new BranchProfile();
+    private final BranchProfile outOfRangeProfile = BranchProfile.create();
     private final MissingArgumentBehaviour missingArgumentBehaviour;
 
-    private final RubyValueProfile argumentValueProfile = new RubyValueProfile();
+    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
 
     public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index, MissingArgumentBehaviour missingArgumentBehaviour) {
         super(context, sourceSection);

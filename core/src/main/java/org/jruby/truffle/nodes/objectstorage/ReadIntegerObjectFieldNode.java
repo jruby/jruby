@@ -9,42 +9,57 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.runtime.objectstorage.IntegerStorageLocation;
-import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
+import com.oracle.truffle.api.object.IntLocation;
+import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadIntegerObjectFieldNode extends ReadObjectFieldChainNode {
 
-    private final ObjectLayout objectLayout;
-    private final IntegerStorageLocation storageLocation;
+    private final Shape objectLayout;
+    private final IntLocation storageLocation;
 
-    public ReadIntegerObjectFieldNode(ObjectLayout objectLayout, IntegerStorageLocation storageLocation, ReadObjectFieldNode next) {
+    public ReadIntegerObjectFieldNode(Shape objectLayout, IntLocation storageLocation, ReadObjectFieldNode next) {
         super(next);
         this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
-    public int executeInteger(ObjectStorage object) throws UnexpectedResultException {
+    public int executeInteger(RubyBasicObject object) throws UnexpectedResultException {
+        try {
+            objectLayout.getValidAssumption().check();
+        } catch (InvalidAssumptionException e) {
+            replace(next);
+            return next.executeInteger(object);
+        }
+
         final boolean condition = object.getObjectLayout() == objectLayout;
 
         if (condition) {
-            return storageLocation.readInteger(object, condition);
+            return storageLocation.getInt(object.getDynamicObject(), objectLayout);
         } else {
             return next.executeInteger(object);
         }
     }
 
     @Override
-    public Object execute(ObjectStorage object) {
+    public Object execute(RubyBasicObject object) {
+        try {
+            objectLayout.getValidAssumption().check();
+        } catch (InvalidAssumptionException e) {
+            replace(next);
+            return next.execute(object);
+        }
+
         final boolean condition = object.getObjectLayout() == objectLayout;
 
         if (condition) {
-            return storageLocation.read(object, condition);
+            return storageLocation.get(object.getDynamicObject(), objectLayout);
         } else {
             return next.execute(object);
         }

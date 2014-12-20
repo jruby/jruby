@@ -39,19 +39,40 @@ module PETests
 
   def self.example(description)
     describe "#{description} is constant" do
-      inner_example do
-        yield
+      begin
+        1_000_000.times do
+          yield
+        end
+
+        @successes.push @description_stack.join(" ")
+        print "."
+      rescue RubyTruffleError
+        @failures.push @description_stack.join(" ")
+        print "E"
+      ensure
+        @dots += 1
+        puts if @dots == 80
       end
     end
   end
 
   def self.counter_example(description)
-    puts "warning: counter examples not run"
-    #describe "#{description} is not constant" do
-    #  inner_example do
-    #    yield
-    #  end
-    #end
+    describe "#{description} is constant" do
+      begin
+        1_000_000.times do
+          yield
+        end
+
+        @failures.push @description_stack.join(" ")
+        print "E"
+      rescue RubyTruffleError
+        @successes.push @description_stack.join(" ")
+        print "."
+      ensure
+        @dots += 1
+        puts if @dots == 80
+      end
+    end
   end
 
   def self.broken_example(description)
@@ -78,21 +99,6 @@ module PETests
 
       false
     end
-  end
-
-  def self.inner_example
-    1_000_000.times do
-      yield
-    end
-
-    @successes.push @description_stack.join(" ")
-    print "."
-  rescue RubyTruffleError
-    @failures.push @description_stack.join(" ")
-    print "E"
-  ensure
-    @dots += 1
-    puts if @dots == 80
   end
 
 end

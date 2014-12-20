@@ -7,12 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.debug;
+package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.KillException;
-import com.oracle.truffle.api.instrument.Wrapper;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -20,13 +18,12 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 
-public abstract class ProxyNode extends RubyNode implements Wrapper {
+public abstract class WrapperNode extends RubyNode {
 
     @Child protected RubyNode child;
 
-    public ProxyNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public WrapperNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        assert !(child instanceof ProxyNode);
         this.child = child;
     }
 
@@ -608,11 +605,6 @@ public abstract class ProxyNode extends RubyNode implements Wrapper {
     @Override
     public Object isDefined(VirtualFrame frame) {
         return child.isDefined(frame);
-    }
-
-    @Override
-    public Node getChild() {
-        return child;
     }
 
 }

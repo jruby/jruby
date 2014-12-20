@@ -13,7 +13,7 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 
-import com.oracle.truffle.api.CompilerDirectives.SlowPath;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
@@ -429,7 +429,7 @@ public abstract class KernelNodes {
                 newObject.getSingletonClass(this).initCopy(self.getMetaClass());
             }
 
-            newObject.setInstanceVariables(self.getFields());
+            newObject.setInstanceVariables(self.getInstanceVariables());
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
 
             return newObject;
@@ -458,8 +458,7 @@ public abstract class KernelNodes {
             // This method is pretty crappy for compilation - it should improve with the OM
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
-
-            newObject.setInstanceVariables(self.getFields());
+            newObject.setInstanceVariables(self.getInstanceVariables());
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
 
             return newObject;
@@ -591,7 +590,7 @@ public abstract class KernelNodes {
             return null;
         }
 
-        @SlowPath
+        @TruffleBoundary
         private static void exec(RubyContext context, String[] commandLine) {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
@@ -806,7 +805,7 @@ public abstract class KernelNodes {
             return rubyLine;
         }
 
-        @SlowPath
+        @TruffleBoundary
         private static String gets(RubyContext context) throws IOException {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
 
@@ -921,7 +920,7 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        @SlowPath
+        @TruffleBoundary
         @Specialization
         public boolean instanceOf(Object self, RubyClass rubyClass) {
             // TODO(CS): fast path
@@ -1124,7 +1123,7 @@ public abstract class KernelNodes {
             return false;
         }
 
-        @SlowPath
+        @TruffleBoundary
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
             // TODO(CS): fast path
@@ -1355,7 +1354,7 @@ public abstract class KernelNodes {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        @SlowPath
+        @TruffleBoundary
         private void write(byte[] bytes) {
             try{
                 getContext().getRuntime().getInstanceConfig().getOutput().write(bytes);
@@ -1941,7 +1940,7 @@ public abstract class KernelNodes {
             return doSleep(duration);
         }
 
-        @SlowPath
+        @TruffleBoundary
         private double doSleep(final double duration) {
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 

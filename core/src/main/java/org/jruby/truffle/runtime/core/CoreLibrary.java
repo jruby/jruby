@@ -266,7 +266,6 @@ public class CoreLibrary {
         // Create the globals object
 
         globalVariablesObject = new RubyBasicObject(objectClass);
-        globalVariablesObject.switchToPrivateLayout();
         globalVariablesObject.setInstanceVariable("$LOAD_PATH", new RubyArray(arrayClass));
         globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass));
         globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));

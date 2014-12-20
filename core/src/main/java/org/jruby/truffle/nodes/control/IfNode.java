@@ -28,8 +28,8 @@ public class IfNode extends RubyNode {
     @Child protected RubyNode thenBody;
     @Child protected RubyNode elseBody;
 
-    private final BranchProfile thenProfile = new BranchProfile();
-    private final BranchProfile elseProfile = new BranchProfile();
+    private final BranchProfile thenProfile = BranchProfile.create();
+    private final BranchProfile elseProfile = BranchProfile.create();
 
     @CompilerDirectives.CompilationFinal private int thenCount;
     @CompilerDirectives.CompilationFinal private int elseCount;

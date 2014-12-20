@@ -93,7 +93,11 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @Specialization
+        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
+            return false;
+        }
+
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
             return a.equals(b.toString());
@@ -157,15 +161,15 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        private final BranchProfile singleArrayProfile = new BranchProfile();
-        private final BranchProfile multipleArgumentsProfile = new BranchProfile();
+        private final BranchProfile singleArrayProfile = BranchProfile.create();
+        private final BranchProfile multipleArgumentsProfile = BranchProfile.create();
 
         @Specialization
         public RubyString format(RubyString format, Object[] args) {
             return formatSlow(format, args);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         private RubyString formatSlow(RubyString format, Object[] args) {
             final RubyContext context = getContext();
 
@@ -1112,7 +1116,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getBytes(), format.getBytes());

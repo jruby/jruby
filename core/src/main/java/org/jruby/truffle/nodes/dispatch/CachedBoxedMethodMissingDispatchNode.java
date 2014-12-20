@@ -58,9 +58,9 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
              * to manually clone the call target and to inline it.
              */
 
-            if (callNode.isSplittable() && (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load() || method.getSharedMethodInfo().shouldAlwaysSplit())) {
+            if (callNode.isCallTargetCloningAllowed() && (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load() || method.getSharedMethodInfo().shouldAlwaysSplit())) {
                 insert(callNode);
-                callNode.split();
+                callNode.cloneCallTarget();
             }
 
             if (callNode.isInlinable() && Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load()) {

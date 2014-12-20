@@ -11,31 +11,31 @@ package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class ReadHeadObjectFieldNode extends Node {
 
     private final String name;
     @Child protected ReadObjectFieldNode first;
 
-    public ReadHeadObjectFieldNode(String name, RespecializeHook hook) {
+    public ReadHeadObjectFieldNode(String name) {
         this.name = name;
-        first = new UninitializedReadObjectFieldNode(name, hook);
+        first = new UninitializedReadObjectFieldNode(name);
     }
 
-    public int executeInteger(ObjectStorage object) throws UnexpectedResultException {
+    public int executeInteger(RubyBasicObject object) throws UnexpectedResultException {
         return first.executeInteger(object);
     }
 
-    public long executeLong(ObjectStorage object) throws UnexpectedResultException {
+    public long executeLong(RubyBasicObject object) throws UnexpectedResultException {
         return first.executeLong(object);
     }
 
-    public double executeDouble(ObjectStorage object) throws UnexpectedResultException {
+    public double executeDouble(RubyBasicObject object) throws UnexpectedResultException {
         return first.executeDouble(object);
     }
 
-    public Object execute(ObjectStorage object) {
+    public Object execute(RubyBasicObject object) {
         return first.execute(object);
     }
 
@@ -43,7 +43,7 @@ public class ReadHeadObjectFieldNode extends Node {
         return name;
     }
 
-    public boolean isSet(ObjectStorage object) {
+    public boolean isSet(RubyBasicObject object) {
         return first.isSet(object);
     }
 

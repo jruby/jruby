@@ -45,7 +45,7 @@ public final class InterpolatedStringNode extends RubyNode {
         return concat(strings);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     private RubyString concat(RubyString[] strings) {
         // TODO(CS): what happens to encoding here
 

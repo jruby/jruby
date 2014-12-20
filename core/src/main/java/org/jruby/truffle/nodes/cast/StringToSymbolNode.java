@@ -31,7 +31,7 @@ public abstract class StringToSymbolNode extends RubyNode {
         super(prev);
     }
 
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     @Specialization
     public RubySymbol doString(RubyString string) {
         notDesignedForCompilation();

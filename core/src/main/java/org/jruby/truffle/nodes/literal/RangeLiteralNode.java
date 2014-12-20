@@ -23,11 +23,11 @@ public abstract class RangeLiteralNode extends RubyNode {
 
     private final boolean excludeEnd;
 
-    private final BranchProfile beginIntegerProfile = new BranchProfile();
-    private final BranchProfile beginLongProfile = new BranchProfile();
-    private final BranchProfile endIntegerProfile = new BranchProfile();
-    private final BranchProfile endLongProfile = new BranchProfile();
-    private final BranchProfile objectProfile = new BranchProfile();
+    private final BranchProfile beginIntegerProfile = BranchProfile.create();
+    private final BranchProfile beginLongProfile = BranchProfile.create();
+    private final BranchProfile endIntegerProfile = BranchProfile.create();
+    private final BranchProfile endLongProfile = BranchProfile.create();
+    private final BranchProfile objectProfile = BranchProfile.create();
 
     public RangeLiteralNode(RubyContext context, SourceSection sourceSection, boolean excludeEnd) {
         super(context, sourceSection);

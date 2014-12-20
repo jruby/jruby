@@ -77,9 +77,9 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public TimesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -129,7 +129,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -163,7 +163,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -227,9 +227,9 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "upto", needsBlock = true, required = 1)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = new BranchProfile();
-        private final BranchProfile nextProfile = new BranchProfile();
-        private final BranchProfile redoProfile = new BranchProfile();
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public UpToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -267,7 +267,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -304,7 +304,7 @@ public abstract class IntegerNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 

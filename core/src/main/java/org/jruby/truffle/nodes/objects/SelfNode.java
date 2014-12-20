@@ -13,12 +13,13 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.ValueProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
 public class SelfNode extends RubyNode {
 
-    private final RubyValueProfile valueProfile = new RubyValueProfile();
+    private final ValueProfile valueProfile = ValueProfile.createPrimitiveProfile();
 
     public SelfNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -26,7 +27,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return RubyArguments.getSelf(frame.getArguments());
+        return valueProfile.profile(RubyArguments.getSelf(frame.getArguments()));
     }
 
     @Override

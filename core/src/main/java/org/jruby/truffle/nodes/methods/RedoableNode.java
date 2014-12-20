@@ -20,7 +20,7 @@ public class RedoableNode extends RubyNode {
 
     @Child protected RubyNode body;
 
-    private final BranchProfile redoProfile = new BranchProfile();
+    private final BranchProfile redoProfile = BranchProfile.create();
 
     public RedoableNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);

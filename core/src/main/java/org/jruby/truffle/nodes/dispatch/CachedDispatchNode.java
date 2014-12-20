@@ -26,7 +26,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     @Child protected DispatchNode next;
 
-    private final BranchProfile moreThanReferenceCompare = new BranchProfile();
+    private final BranchProfile moreThanReferenceCompare = BranchProfile.create();
 
     public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next, boolean indirect) {
         super(context);

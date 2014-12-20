@@ -32,8 +32,8 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
         callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTarget());
         insert(callNode);
 
-        if (Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load() && callNode.isSplittable()) {
-            callNode.split();
+        if (Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load() && callNode.isCallTargetCloningAllowed()) {
+            callNode.cloneCallTarget();
         }
 
         if (Options.TRUFFLE_INLINER_ALWAYS_INLINE_YIELD.load() && callNode.isInlinable()) {

@@ -99,14 +99,14 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true)
     public abstract static class ConstructNode extends HashCoreMethodNode {
 
-        private final BranchProfile singleObject = new BranchProfile();
-        private final BranchProfile singleArray = new BranchProfile();
-        private final BranchProfile objectArray = new BranchProfile();
-        private final BranchProfile smallPackedArray = new BranchProfile();
-        private final BranchProfile largePackedArray = new BranchProfile();
-        private final BranchProfile otherArray = new BranchProfile();
-        private final BranchProfile singleOther = new BranchProfile();
-        private final BranchProfile keyValues = new BranchProfile();
+        private final BranchProfile singleObject = BranchProfile.create();
+        private final BranchProfile singleArray = BranchProfile.create();
+        private final BranchProfile objectArray = BranchProfile.create();
+        private final BranchProfile smallPackedArray = BranchProfile.create();
+        private final BranchProfile largePackedArray = BranchProfile.create();
+        private final BranchProfile otherArray = BranchProfile.create();
+        private final BranchProfile singleOther = BranchProfile.create();
+        private final BranchProfile keyValues = BranchProfile.create();
 
         public ConstructNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -224,8 +224,8 @@ public abstract class HashNodes {
         @Child protected YieldDispatchHeadNode yield;
         @Child protected FindEntryNode findEntryNode;
 
-        private final BranchProfile notInHashProfile = new BranchProfile();
-        private final BranchProfile useDefaultProfile = new BranchProfile();
+        private final BranchProfile notInHashProfile = BranchProfile.create();
+        private final BranchProfile useDefaultProfile = BranchProfile.create();
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -312,8 +312,8 @@ public abstract class HashNodes {
 
         @Child protected PredicateDispatchHeadNode eqlNode;
 
-        private final BranchProfile considerExtendProfile = new BranchProfile();
-        private final BranchProfile extendProfile = new BranchProfile();
+        private final BranchProfile considerExtendProfile = BranchProfile.create();
+        private final BranchProfile extendProfile = BranchProfile.create();
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -545,7 +545,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -869,7 +869,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
                 }
             }
 
@@ -896,11 +896,11 @@ public abstract class HashNodes {
 
         @Child protected PredicateDispatchHeadNode eqlNode;
 
-        private final BranchProfile nothingFromFirstProfile = new BranchProfile();
-        private final BranchProfile considerNothingFromSecondProfile = new BranchProfile();
-        private final BranchProfile nothingFromSecondProfile = new BranchProfile();
-        private final BranchProfile considerResultIsSmallProfile = new BranchProfile();
-        private final BranchProfile resultIsSmallProfile = new BranchProfile();
+        private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
+        private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();
+        private final BranchProfile nothingFromSecondProfile = BranchProfile.create();
+        private final BranchProfile considerResultIsSmallProfile = BranchProfile.create();
+        private final BranchProfile resultIsSmallProfile = BranchProfile.create();
 
         private final int smallHashSize = HashOperations.SMALL_HASH_SIZE;
 

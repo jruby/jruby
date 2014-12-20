@@ -41,7 +41,7 @@ public class ThreadManager {
      * from the current Java thread. Remember to call {@link #leaveGlobalLock} again before
      * blocking.
      */
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public void enterGlobalLock(RubyThread thread) {
         globalLock.lock();
         currentThread = thread;
@@ -53,7 +53,7 @@ public class ThreadManager {
      * executing any Ruby code. You probably want to use this with a {@code finally} statement to
      * make sure that happens
      */
-    @CompilerDirectives.SlowPath
+    @CompilerDirectives.TruffleBoundary
     public RubyThread leaveGlobalLock() {
         if (!globalLock.isHeldByCurrentThread()) {
             throw new RuntimeException("You don't own this lock!");

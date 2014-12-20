@@ -66,9 +66,9 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if (callNode.isSplittable() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
                     insert(callNode);
-                    callNode.split();
+                    callNode.cloneCallTarget();
                 }
             }
         }
