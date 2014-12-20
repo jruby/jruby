@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
@@ -68,7 +69,12 @@ public class FixnumOrBignumNode extends Node {
 
         bignumProfile.enter();
 
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), new BigDecimal(value).toBigInteger());
+        return new RubyBignum(context.getCoreLibrary().getBignumClass(), doubleToBigInteger(value));
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private static BigInteger doubleToBigInteger(double value) {
+        return new BigDecimal(value).toBigInteger();
     }
 
 }
