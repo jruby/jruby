@@ -576,10 +576,12 @@ public abstract class FloatNodes {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(n)) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
             }
 
