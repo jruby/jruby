@@ -563,7 +563,7 @@ public abstract class FloatNodes {
 
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
+            fixnumOrBignum = new FixnumOrBignumNode(context);
         }
 
         public RoundNode(RoundNode prev) {
@@ -576,10 +576,12 @@ public abstract class FloatNodes {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(n)) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
             }
 
@@ -603,7 +605,7 @@ public abstract class FloatNodes {
                 }
             }
 
-            return fixnumOrBignum.fixnumOrBignum(getContext(), f);
+            return fixnumOrBignum.fixnumOrBignum(f);
         }
 
     }
@@ -615,7 +617,7 @@ public abstract class FloatNodes {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
+            fixnumOrBignum = new FixnumOrBignumNode(context);
         }
 
         public ToINode(ToINode prev) {
@@ -633,7 +635,7 @@ public abstract class FloatNodes {
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
             }
 
-            return fixnumOrBignum.fixnumOrBignum(getContext(), value);
+            return fixnumOrBignum.fixnumOrBignum(value);
         }
 
     }

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
@@ -19,9 +20,18 @@ import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends Node {
 
+    public FixnumOrBignumNode(RubyContext context) {
+        this.context = context;
+    }
+
+    private final RubyContext context;
+
     private final BranchProfile lowerProfile = BranchProfile.create();
-    private final BranchProfile integerProfile = BranchProfile.create();
-    private final BranchProfile longProfile = BranchProfile.create();
+    private final BranchProfile integerFromBignumProfile = BranchProfile.create();
+    private final BranchProfile longFromBignumProfile = BranchProfile.create();
+
+    private final BranchProfile integerFromDoubleProfile = BranchProfile.create();
+    private final BranchProfile longFromDoubleProfile = BranchProfile.create();
 
     private final BranchProfile bignumProfile = BranchProfile.create();
     private final BranchProfile checkLongProfile = BranchProfile.create();
@@ -33,10 +43,10 @@ public class FixnumOrBignumNode extends Node {
             final long longValue = value.longValue();
 
             if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
-                integerProfile.enter();
+                integerFromBignumProfile.enter();
                 return (int) longValue;
             } else {
-                longProfile.enter();
+                longFromBignumProfile.enter();
                 return longValue;
             }
         } else {
@@ -44,26 +54,27 @@ public class FixnumOrBignumNode extends Node {
         }
     }
 
-    public Object fixnumOrBignum(RubyContext context, double value) {
+    public Object fixnumOrBignum(double value) {
         if (value > Integer.MIN_VALUE && value < Integer.MAX_VALUE) {
-            // TODO(CS): reusing profiles might not be a good idea
-            integerProfile.enter();
-
+            integerFromDoubleProfile.enter();
             return (int) value;
         }
 
         checkLongProfile.enter();
 
         if (value > Long.MIN_VALUE && value < Long.MAX_VALUE) {
-            // TODO(CS): reusing profiles might not be a good idea
-            longProfile.enter();
-
+            longFromDoubleProfile.enter();
             return (long) value;
         }
 
         bignumProfile.enter();
 
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), new BigDecimal(value).toBigInteger());
+        return new RubyBignum(context.getCoreLibrary().getBignumClass(), doubleToBigInteger(value));
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private static BigInteger doubleToBigInteger(double value) {
+        return new BigDecimal(value).toBigInteger();
     }
 
 }

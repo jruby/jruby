@@ -28,7 +28,7 @@ public abstract class BignumNodes {
 
         public BignumCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
+            fixnumOrBignum = new FixnumOrBignumNode(context);
         }
 
         public BignumCoreMethodNode(BignumCoreMethodNode prev) {
