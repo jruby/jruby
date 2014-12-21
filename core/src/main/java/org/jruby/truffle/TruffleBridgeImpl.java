@@ -128,6 +128,11 @@ public class TruffleBridgeImpl implements TruffleBridge {
             }
         }
 
+        // Load our own stdlib path
+
+        // Libraries copied unmodified from MRI
+        loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/mri").toString()));
+
         // Hook
 
         if (truffleContext.getHooks() != null) {
