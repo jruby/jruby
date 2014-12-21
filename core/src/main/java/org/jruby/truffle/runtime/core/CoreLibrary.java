@@ -59,6 +59,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass integerClass;
     @CompilerDirectives.CompilationFinal private RubyClass indexErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass ioClass;
+    @CompilerDirectives.CompilationFinal private RubyClass keyErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass loadErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass localJumpErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass matchDataClass;
@@ -204,6 +205,7 @@ public class CoreLibrary {
         hashClass = new RubyHash.RubyHashClass(context, objectClass);
         indexErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "IndexError");
         kernelModule = new RubyModule(context, objectClass, "Kernel");
+        keyErrorClass = new RubyException.RubyExceptionClass(context, objectClass, indexErrorClass, "KeyError");
         loadErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LoadError");
         localJumpErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LocalJumpError");
         matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
