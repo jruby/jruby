@@ -107,7 +107,7 @@ class MSpecScript
     "^spec/ruby/core/thread/raise_spec.rb",
   ]
 
-  set :stdlib, [
+  set :rubysl, [
     "spec/truffle/spec/rubysl/rubysl-erb/spec"
   ]
 
@@ -124,6 +124,6 @@ class MSpecScript
   MSpec.enable_feature :fork
   MSpec.enable_feature :generator
 
-  set :files, get(:language) + get(:core) + get(:stdlib)
+  set :files, get(:language) + get(:core) + get(:rubysl)
 
 end

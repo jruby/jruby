@@ -189,7 +189,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     modules [ 'test' ]
   end
 
-  [ 'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core', 'truffle-test-pe' ].each do |name|
+  [
+    'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core',
+    'truffle-specs-rubysl', 'truffle-test-pe'
+  ].each do |name|
     profile name do
 
       modules [ 'test' ]

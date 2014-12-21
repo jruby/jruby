@@ -580,6 +580,15 @@
       </modules>
     </profile>
     <profile>
+      <id>truffle-specs-rubysl</id>
+      <build>
+        <defaultGoal>package</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>truffle-test-pe</id>
       <build>
         <defaultGoal>package</defaultGoal>
