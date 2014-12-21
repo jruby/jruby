@@ -27,9 +27,12 @@ import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TruffleBridgeImpl implements TruffleBridge {
 
@@ -110,8 +113,19 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
         final RubyArray loadPath = (RubyArray) truffleContext.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$:");
 
+        final String home = runtime.getInstanceConfig().getJRubyHome();
+
+        // We don't want JRuby's stdlib paths, but we do want any extra paths set by -I and things like that
+
+        final List<String> excludedLibPaths = new ArrayList<>();
+        excludedLibPaths.add(new File(home, "lib/ruby/2.2/site_ruby").toString());
+        excludedLibPaths.add(new File(home, "lib/ruby/shared").toString());
+        excludedLibPaths.add(new File(home, "lib/ruby/stdlib").toString());
+
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
-            loadPath.slowPush(truffleContext.makeString(path.toString()));
+            if (!excludedLibPaths.contains(path.toString())) {
+                loadPath.slowPush(truffleContext.makeString(path.toString()));
+            }
         }
 
         // Hook
