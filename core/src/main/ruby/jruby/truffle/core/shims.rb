@@ -30,10 +30,10 @@ class Hash
   def fetch(key, default=nil)
     if key?(key)
       self[key]
-    elsif default
-      default
     elsif block_given?
       yield(key)
+    elsif default
+      default
     else
       raise(KeyError, "key not found: #{key}")
     end
