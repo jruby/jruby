@@ -225,7 +225,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"include?", "==="}, optional = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
+    @CoreMethod(names = {"include?", "==="}, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child protected PredicateDispatchHeadNode callLess;
