@@ -1809,8 +1809,25 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public boolean includeFixnum(VirtualFrame frame, RubyArray array, Object value) {
+        public boolean includeIntegerFixnum(VirtualFrame frame, RubyArray array, Object value) {
             final int[] store = (int[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                final Object stored = store[n];
+
+                notDesignedForCompilation();
+
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public boolean includeLongFixnum(VirtualFrame frame, RubyArray array, Object value) {
+            final long[] store = (long[]) array.getStore();
 
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
