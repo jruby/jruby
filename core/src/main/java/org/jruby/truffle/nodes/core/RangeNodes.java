@@ -202,7 +202,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "first")
+    @CoreMethod(names = {"first", "begin"})
     public abstract static class FirstNode extends CoreMethodNode {
 
         public FirstNode(RubyContext context, SourceSection sourceSection) {
