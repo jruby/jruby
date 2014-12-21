@@ -27,6 +27,7 @@ end
 ARGF = Object.new
 
 class Hash
+
   def fetch(key, default=nil)
     if key?(key)
       self[key]
@@ -38,4 +39,11 @@ class Hash
       raise(KeyError, "key not found: #{key}")
     end
   end
+
+  def each_key
+    each do |key, value|
+      yield key
+    end
+  end
+
 end
