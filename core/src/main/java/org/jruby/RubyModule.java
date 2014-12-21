@@ -2816,6 +2816,10 @@ public class RubyModule extends RubyObject {
         String symbol = fullName;
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
+        if (symbol.indexOf("::") == 0) {
+            symbol = symbol.substring(2);
+        }
+
         RubyModule mod = this;
         int sep;
         while((sep = symbol.indexOf("::")) != -1) {
