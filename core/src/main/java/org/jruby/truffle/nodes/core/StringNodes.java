@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Option;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -261,6 +262,26 @@ public abstract class StringNodes {
         public Object match(RubyString string, RubyRegexp regexp) {
             return regexp.matchCommon(string.getBytes(), true, false);
         }
+    }
+
+    @CoreMethod(names = "b")
+    public abstract static class BNode extends CoreMethodNode {
+
+        public BNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BNode(BNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString b(RubyString string) {
+            final ByteList bytes = string.getBytes();
+            bytes.setEncoding(ASCIIEncoding.INSTANCE);
+            return getContext().makeString(bytes);
+        }
+
     }
 
     @CoreMethod(names = "bytes")
