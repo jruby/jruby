@@ -277,7 +277,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString b(RubyString string) {
-            final ByteList bytes = string.getBytes();
+            final ByteList bytes = string.getBytes().dup();
             bytes.setEncoding(ASCIIEncoding.INSTANCE);
             return getContext().makeString(bytes);
         }
