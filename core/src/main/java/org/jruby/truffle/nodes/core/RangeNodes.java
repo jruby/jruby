@@ -273,7 +273,7 @@ public abstract class RangeNodes {
         }
     }
 
-    @CoreMethod(names = "last")
+    @CoreMethod(names = {"last", "end"})
     public abstract static class LastNode extends CoreMethodNode {
 
         public LastNode(RubyContext context, SourceSection sourceSection) {
