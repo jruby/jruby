@@ -25,3 +25,17 @@ class Channel
 end
 
 ARGF = Object.new
+
+class Hash
+  def fetch(key, default=nil)
+    if key?(key)
+      self[key]
+    elsif default
+      default
+    elsif block_given?
+      yield(key)
+    else
+      raise(KeyError, "key not found: #{key}")
+    end
+  end
+end
