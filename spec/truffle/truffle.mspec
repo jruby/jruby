@@ -107,9 +107,14 @@ class MSpecScript
     "^spec/ruby/core/thread/raise_spec.rb",
   ]
 
+  set :stdlib, [
+    "spec/truffle/spec/rubysl/rubysl-erb/spec"
+  ]
+
   set :tags_patterns, [
                         [%r(^.*/language/),     'spec/truffle/tags/language/'],
                         [%r(^.*/core/),         'spec/truffle/tags/core/'],
+                        [%r(^.*/rubysl/),       'spec/truffle/tags/rubysl/'],
                         [/_spec.rb$/,           '_tags.txt']
                       ]
 
@@ -119,6 +124,6 @@ class MSpecScript
   MSpec.enable_feature :fork
   MSpec.enable_feature :generator
 
-  set :files, get(:language) + get(:core)
+  set :files, get(:language) + get(:core) + get(:stdlib)
 
 end
