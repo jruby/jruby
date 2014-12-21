@@ -37,6 +37,7 @@ env:
     - PHASE='-Prake -Dtask=spec:profiler'
     - PHASE='-Ptruffle-specs-language'
     - PHASE='-Ptruffle-specs-core'
+    - PHASE='-Ptruffle-specs-rubysl'
 
 matrix:
   include:
@@ -66,6 +67,7 @@ matrix:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Ptruffle-specs-rubysl'
 
 branches:
   only:
