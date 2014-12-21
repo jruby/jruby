@@ -17,12 +17,14 @@ require_relative 'core/module'
 require_relative 'core/rubinius/api/compat/type'
 
 require_relative 'core/rubinius/api/kernel/bootstrap/channel'
+
 require_relative 'core/rubinius/api/kernel/common/bytearray'
 require_relative 'core/rubinius/api/kernel/common/channel'
 require_relative 'core/rubinius/api/kernel/common/thread'
 require_relative 'core/rubinius/api/kernel/common/tuple'
 require_relative 'core/rubinius/api/kernel/common/type'
 
+require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/type'
@@ -33,5 +35,6 @@ require_relative 'core/rubinius/kernel/common/undefined'
 require_relative 'core/rubinius/kernel/common/kernel'
 require_relative 'core/rubinius/kernel/common/array'
 require_relative 'core/rubinius/kernel/common/struct'
+require_relative 'core/rubinius/kernel/common/enumerable'
 
 require_relative 'core/shims'
