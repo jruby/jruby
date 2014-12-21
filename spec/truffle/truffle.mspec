@@ -119,7 +119,6 @@ class MSpecScript
                       ]
 
   MSpec.enable_feature :encoding
-  MSpec.enable_feature :continuation
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fork
   MSpec.enable_feature :generator
