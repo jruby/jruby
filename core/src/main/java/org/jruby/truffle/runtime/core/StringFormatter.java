@@ -13,21 +13,23 @@ import java.io.*;
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyContext;
 
 public class StringFormatter {
 
     @CompilerDirectives.TruffleBoundary
-    public static String format(String format, List<Object> values) {
+    public static String format(RubyContext context, String format, List<Object> values) {
         final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
         final PrintStream printStream = new PrintStream(byteArray);
 
-        format(printStream, format, values);
+        format(context, printStream, format, values);
 
         return byteArray.toString();
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static void format(PrintStream stream, String format, List<Object> values) {
+    public static void format(RubyContext context, PrintStream stream, String format, List<Object> values) {
         /*
          * See http://www.ruby-doc.org/core-1.9.3/Kernel.html#method-i-sprintf.
          * 
@@ -111,7 +113,8 @@ public class StringFormatter {
                 switch (type) {
                     case 's': {
                         formatBuilder.append("s");
-                        stream.printf(formatBuilder.toString(), values.get(v));
+                        assert formatBuilder.toString().equals("%s");
+                        stream.print(DebugOperations.send(context, values.get(v), "to_s", null));
                         break;
                     }
 

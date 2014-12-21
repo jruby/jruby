@@ -176,10 +176,10 @@ public abstract class StringNodes {
 
             if (args.length == 1 && args[0] instanceof RubyArray) {
                 singleArrayProfile.enter();
-                return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(((RubyArray) args[0]).slowToArray())));
+                return context.makeString(StringFormatter.format(getContext(), format.toString(), Arrays.asList(((RubyArray) args[0]).slowToArray())));
             } else {
                 multipleArgumentsProfile.enter();
-                return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(args)));
+                return context.makeString(StringFormatter.format(getContext(), format.toString(), Arrays.asList(args)));
             }
         }
     }

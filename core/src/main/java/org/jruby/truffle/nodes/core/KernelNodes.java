@@ -1957,7 +1957,7 @@ public abstract class KernelNodes {
                 final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
                 try {
-                    StringFormatter.format(printStream, format, values);
+                    StringFormatter.format(getContext(), printStream, format, values);
                 } finally {
                     getContext().getThreadManager().enterGlobalLock(runningThread);
                 }
