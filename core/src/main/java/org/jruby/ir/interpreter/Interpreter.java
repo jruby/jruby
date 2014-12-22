@@ -716,11 +716,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(evalScope.getStaticScope(), containingIRScope, file, lineNumber, rootNode, evalType);
 
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
+
         if (IRRuntimeHelpers.isDebug()) {
             LOG.info("Graph:\n" + evalScript.cfg().toStringGraph());
             LOG.info("CFG:\n" + evalScript.cfg().toStringInstrs());
         }
 
-        return (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
+        return ic;
     }
 }
