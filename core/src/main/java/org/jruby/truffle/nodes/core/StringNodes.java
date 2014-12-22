@@ -440,8 +440,10 @@ public abstract class StringNodes {
         @Specialization
         public RubyString downcase(RubyString string) {
             notDesignedForCompilation();
+            ByteList newByteList = ByteList.create(string.toString().toLowerCase());
+            newByteList.setEncoding(string.getBytes().getEncoding());
 
-            return string.getContext().makeString(string.toString().toLowerCase());
+            return string.getContext().makeString(newByteList);
         }
     }
 
