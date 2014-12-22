@@ -457,11 +457,18 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString downcase(RubyString string) {
+        public RubyBasicObject downcase(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(ByteList.create(string.toString().toLowerCase()));
-            return string;
+            ByteList newByteList = ByteList.create(string.toString().toLowerCase());
+            newByteList.setEncoding(string.getBytes().getEncoding());
+
+            if (newByteList.equals(string.getBytes())) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                string.set(newByteList);
+                return string;
+            }
         }
     }
 
