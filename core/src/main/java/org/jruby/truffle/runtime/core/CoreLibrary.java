@@ -479,6 +479,11 @@ public class CoreLibrary {
         return typeError(String.format("can't convert %s to %s", from, to), currentNode);
     }
 
+    public RubyException typeErrorCantConvertTo(String from, String to, String methodUsed, String given, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)", from, to, from, methodUsed, given), currentNode);
+    }
+
     public RubyException typeErrorCantConvertInto(String from, String to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("can't convert %s into %s", from, to), currentNode);

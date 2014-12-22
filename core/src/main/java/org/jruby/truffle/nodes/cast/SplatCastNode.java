@@ -13,12 +13,14 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.RubyNil;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.core.ArrayDupNode;
 import org.jruby.truffle.nodes.core.ArrayDupNodeFactory;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -96,6 +98,16 @@ public abstract class SplatCastNode extends RubyNode {
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
+            } else if (array instanceof RubyNilClass) {
+                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+            } else {
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
+                        getContext().getCoreLibrary().getLogicalClass(object).getName(),
+                        "Array",
+                        "to_a",
+                        getContext().getCoreLibrary().getLogicalClass(array).getName(),
+                        this)
+                );
             }
         }
 
