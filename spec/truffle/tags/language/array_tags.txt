@@ -1,2 +1,0 @@
-fails:The unpacking splat operator (*) unpacks arguments as if they were listed statically
-fails:The unpacking splat operator (*) unpacks the start and count arguments in an array slice assignment

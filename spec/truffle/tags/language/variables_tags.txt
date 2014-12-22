@@ -39,7 +39,6 @@ fails:Multiple assignment with a single splatted RHS value assigns a grouped LHS
 fails:Multiple assignment with a single splatted RHS value assigns a grouped LHS with splats
 fails:Multiple assignment with a single splatted RHS value does not mutate a RHS Array
 fails:Multiple assignment with a MRHS value calls #to_a to convert a splatted Object as part of a MRHS with a splat MLHS
-fails:Multiple assignment with a MRHS value raises a TypeError if #to_a does not return an Array
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object as part of a MRHS with a splat MRHS
 fails:Multiple assignment with a MRHS value assigns a grouped LHS without splat from a simple Array
 fails:Multiple assignment with a MRHS value assigns a grouped LHS without splat from nested Arrays

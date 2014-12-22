@@ -1,11 +1,5 @@
-fails:An attribute assignment method send with a single splatted Object argument raises a TypeError if #to_a does not return an Array
-fails:An attribute assignment method send with a leading splatted Object argument raises a TypeError if #to_a does not return an Array
-fails:An attribute assignment method send with a middle splatted Object argument raises a TypeError if #to_a does not return an Array
-fails:An attribute assignment method send with a trailing splatted Object argument raises a TypeError if #to_a does not return an Array
 fails:"A method assigns local variables from method parameters for definition \n    def m((*a, b)) [a, b] end"
 fails:"A method assigns local variables from method parameters for definition \n    def m(a:) a end"
-fails:"A method assigns local variables from method parameters for definition \n    def m(**) end"
-fails:"A method assigns local variables from method parameters for definition \n    def m(**k) k end"
 fails:"A method assigns local variables from method parameters for definition \n    def m((*a), (*b)) [a, b] end"
 fails:"A method assigns local variables from method parameters for definition \n    def m((a, *b), (*c, d))\n      [a, b, c, d]\n    end"
 fails:"A method assigns local variables from method parameters for definition \n    def m((a, b, *c, d), (*e, f, g), (*h))\n      [a, b, c, d, e, f, g, h]\n    end"
