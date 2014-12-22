@@ -1264,8 +1264,10 @@ public abstract class StringNodes {
         @Specialization
         public RubyString clear(RubyString string) {
             notDesignedForCompilation();
+            ByteList empty = ByteList.EMPTY_BYTELIST;
+            empty.setEncoding(string.getBytes().getEncoding());
 
-            string.set(ByteList.create(""));
+            string.set(empty);
             return string;
         }
     }
