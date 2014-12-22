@@ -355,9 +355,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case LINE_NUM:
             context.setLine(((LineNumberInstr)instr).lineNumber);
             break;
-        case RECORD_END_BLOCK:
-            ((RecordEndBlockInstr)instr).interpret();
-            break;
         case TRACE: {
             if (context.runtime.hasEventHooks()) {
                 TraceInstr trace = (TraceInstr) instr;

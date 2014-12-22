@@ -153,7 +153,7 @@ public enum Operation {
     MASGN_REST(0),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
     RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
-    RECORD_END_BLOCK(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    RECORD_END_BLOCK(OpFlags.f_has_side_effect),
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     SET_CAPTURED_VAR(OpFlags.f_can_raise_exception),

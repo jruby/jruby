@@ -5,6 +5,11 @@ import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     private final IRScope declaringScope;
@@ -47,8 +52,11 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
         return new RecordEndBlockInstr(declaringScope, (WrappedIRClosure) endBlockClosure.cloneForInlining(ii));
     }
 
-    public void interpret() {
-        ((BeginEndInterpreterContext) declaringScope.getTopLevelScope().getInterpreterContext()).recordEndBlock(endBlockClosure);
+    @Override
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        Block blk = (Block) endBlockClosure.retrieve(context, self, currScope, context.getCurrentScope(), temp);
+        context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+        return null;
     }
 
     @Override
