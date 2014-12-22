@@ -38,6 +38,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.ascii.AsciiTables;
@@ -2657,8 +2658,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             throw context.runtime.newArgumentError("salt too short(need >=2 bytes)");
         }
 
-        RubyString result = RubyString.newString(context.runtime,
-                context.runtime.getPosix().crypt(asJavaString(), salt).toString());
+        POSIX posix = context.runtime.getPosix();
+        CharSequence cryptedString = posix.crypt(asJavaString(), salt);
+        // We differ from MRI in that we do not process salt to make it work and we will
+        // return any errors via errno.
+        if (cryptedString == null) throw context.runtime.newErrnoFromInt(posix.errno());
+
+        RubyString result = RubyString.newString(context.runtime, cryptedString.toString());
         result.associateEncoding(ascii8bit);
         result.infectBy(this);
         result.infectBy(otherStr);
