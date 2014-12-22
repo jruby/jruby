@@ -2917,6 +2917,9 @@ public class IRBuilder {
         closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
+        // END does not have either explicit or implicit return, so we add one
+        closureBuilder.addInstr(endClosure, new ReturnInstr(new Nil()));
+
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
         // might be broken currently. We could either fix it or consider dropping support
@@ -2935,6 +2938,9 @@ public class IRBuilder {
         closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(0)));
         closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(preExeNode.getBodyNode(), beginClosure);
+
+        // BEGIN does not have either explicit or implicit return, so we add one
+        closureBuilder.addInstr(beginClosure, new ReturnInstr(new Nil()));
 
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);

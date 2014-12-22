@@ -1,9 +1,9 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
-import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -55,7 +55,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Block blk = (Block) endBlockClosure.retrieve(context, self, currScope, context.getCurrentScope(), temp);
-        context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+        IRRuntimeHelpers.pushExitBlock(context, blk);
         return null;
     }
 

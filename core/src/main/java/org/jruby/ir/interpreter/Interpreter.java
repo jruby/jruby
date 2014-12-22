@@ -572,8 +572,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         // Control should never get here!
-        // SSS FIXME: But looks like BEGIN/END blocks get here -- needs fixing
-        return null;
+        throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
     }
 
     /*

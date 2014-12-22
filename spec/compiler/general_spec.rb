@@ -670,12 +670,12 @@ modes.each do |mode|
       run("def foo; yield; end; x = false; foo { break 5 if x; begin; ensure; x = true; redo; end; break 6}") {|result| expect(result).to eq 5 }
     end
 
-    it "compiles END BLocks", pending: "JIT support" do
+    it "compiles END Blocks" do
       # END block
       expect { run("END {}"){} }.to_not raise_error
     end
 
-    it "compiles BEGIN blocks", pending: "JIT support" do
+    it "compiles BEGIN blocks" do
       # BEGIN block
       run("BEGIN { $begin = 5 }; $begin") {|result| expect(result).to eq 5 }
     end

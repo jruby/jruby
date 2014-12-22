@@ -1287,4 +1287,9 @@ public class IRRuntimeHelpers {
     public static RaiseException newRequiredKeywordArgumentError(ThreadContext context, String name) {
         return context.runtime.newArgumentError("missing keyword: " + name);
     }
+
+    @JIT
+    public static void pushExitBlock(ThreadContext context, Block blk) {
+        context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+    }
 }

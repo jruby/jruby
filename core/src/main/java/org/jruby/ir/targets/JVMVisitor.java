@@ -1495,6 +1495,17 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void RecordEndBlockInstr(RecordEndBlockInstr recordEndBlockInstr) {
+        jvmMethod().loadContext();
+
+        jvmMethod().loadContext();
+        visit(recordEndBlockInstr.getEndBlockClosure());
+        jvmMethod().invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+
+        jvmMethod().invokeIRHelper("pushExitBlock", sig(void.class, ThreadContext.class, Block.class));
+    }
+
+    @Override
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) {
         jvmMethod().loadContext();
         visit(reqdargmultipleasgninstr.getArrayArg());
