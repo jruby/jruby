@@ -1172,7 +1172,10 @@ public abstract class StringNodes {
         @Specialization
         public RubyString upcase(RubyString string) {
             notDesignedForCompilation();
-            return string.getContext().makeString(string.toString().toUpperCase());
+            ByteList byteListString = ByteList.create(string.toString().toUpperCase());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+
+            return string.getContext().makeString(byteListString);
         }
 
     }
@@ -1191,8 +1194,10 @@ public abstract class StringNodes {
         @Specialization
         public RubyString upcaseBang(RubyString string) {
             notDesignedForCompilation();
+            ByteList byteListString = ByteList.create(string.toString().toUpperCase());
+            byteListString.setEncoding(string.getBytes().getEncoding());
 
-            string.set(ByteList.create(string.toString().toUpperCase()));
+            string.set(byteListString);
             return string;
         }
     }
