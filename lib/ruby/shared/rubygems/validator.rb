@@ -14,7 +14,7 @@ class Gem::Validator
 
   include Gem::UserInteraction
 
-  def initialize # :nodoc:
+  def initialize
     require 'find'
   end
 
@@ -57,11 +57,8 @@ class Gem::Validator
 
   public
 
-  ##
-  # Describes a problem with a file in a gem.
-
   ErrorData = Struct.new :path, :problem do
-    def <=> other # :nodoc:
+    def <=> other
       return nil unless self.class === other
 
       [path, problem] <=> [other.path, other.problem]
@@ -86,7 +83,6 @@ class Gem::Validator
 
     Gem::Specification.each do |spec|
       next unless gems.include? spec.name unless gems.empty?
-      next if spec.default_gem?
 
       gem_name      = spec.file_name
       gem_path      = spec.cache_file

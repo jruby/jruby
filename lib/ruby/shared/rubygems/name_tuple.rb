@@ -53,7 +53,7 @@ class Gem::NameTuple
       "#{@name}-#{@version}"
     else
       "#{@name}-#{@version}-#{@platform}"
-    end.untaint
+    end
   end
 
   ##
@@ -90,9 +90,7 @@ class Gem::NameTuple
   alias to_s inspect # :nodoc:
 
   def <=> other
-    [@name, @version, @platform == Gem::Platform::RUBY ? -1 : 1] <=>
-      [other.name, other.version,
-       other.platform == Gem::Platform::RUBY ? -1 : 1]
+    to_a <=> other.to_a
   end
 
   include Comparable

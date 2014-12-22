@@ -16,8 +16,6 @@ class Gem::Commands::UpdateCommand < Gem::Command
 
   attr_reader :installer # :nodoc:
 
-  attr_reader :updated # :nodoc:
-
   def initialize
     super 'update', 'Update installed gems to the latest version',
       :document => %w[rdoc ri],
@@ -47,7 +45,7 @@ class Gem::Commands::UpdateCommand < Gem::Command
   end
 
   def arguments # :nodoc:
-    "REGEXP        regexp to search for in gem name"
+    "GEMNAME       name of gem to update"
   end
 
   def defaults_str # :nodoc:
@@ -58,13 +56,13 @@ class Gem::Commands::UpdateCommand < Gem::Command
     <<-EOF
 The update command will update your gems to the latest version.
 
-The update command does not remove the previous version. Use the cleanup
+The update comamnd does not remove the previous version.  Use the cleanup
 command to remove old versions.
     EOF
   end
 
   def usage # :nodoc:
-    "#{program_name} REGEXP [REGEXP ...]"
+    "#{program_name} GEMNAME [GEMNAME ...]"
   end
 
   def check_latest_rubygems version # :nodoc:
@@ -84,6 +82,8 @@ command to remove old versions.
   end
 
   def execute
+    hig = {}
+
     if options[:system] then
       update_rubygems
       return
@@ -97,14 +97,10 @@ command to remove old versions.
 
     updated = update_gems gems_to_update
 
-    updated_names = updated.map { |spec| spec.name }
-    not_updated_names = options[:args].uniq - updated_names
-
     if updated.empty? then
       say "Nothing to update"
     else
-      say "Gems updated: #{updated_names.join(' ')}"
-      say "Gems already up-to-date: #{not_updated_names.join(' ')}" unless not_updated_names.empty?
+      say "Gems updated: #{updated.map { |spec| spec.name }.join ' '}"
     end
   end
 
@@ -114,11 +110,7 @@ command to remove old versions.
 
     fetcher = Gem::SpecFetcher.fetcher
 
-    spec_tuples, errors = fetcher.search_for_dependency dependency
-
-    error = errors.find { |e| e.respond_to? :exception }
-
-    raise error if error
+    spec_tuples, _ = fetcher.search_for_dependency dependency
 
     spec_tuples
   end
@@ -142,7 +134,7 @@ command to remove old versions.
       g.name == spec.name and g.match_platform?
     end
 
-    highest_remote_gem = matching_gems.max_by { |g,_| g.version }
+    highest_remote_gem = matching_gems.sort_by { |g,_| g.version }.last
 
     highest_remote_gem ||= [Gem::NameTuple.null]
 
@@ -201,16 +193,17 @@ command to remove old versions.
   def update_gem name, version = Gem::Requirement.default
     return if @updated.any? { |spec| spec.name == name }
 
-    update_options = options.dup
-    update_options[:prerelease] = version.prerelease?
+    @installer ||= Gem::DependencyInstaller.new options
 
-    @installer = Gem::DependencyInstaller.new update_options
+    success = false
 
     say "Updating #{name}"
     begin
       @installer.install name, Gem::Requirement.new(version)
-    rescue Gem::InstallError, Gem::DependencyError => e
+      success = true
+    rescue Gem::InstallError => e
       alert_error "Error installing #{name}:\n\t#{e.message}"
+      success = false
     end
 
     @installer.installed_gems.each do |spec|
@@ -251,9 +244,6 @@ command to remove old versions.
     args << '--no-rdoc' unless options[:document].include? 'rdoc'
     args << '--no-ri'   unless options[:document].include? 'ri'
     args << '--no-format-executable' if options[:no_format_executable]
-    args << '--previous-version' << Gem::VERSION if
-      options[:system] == true or
-        Gem::Version.new(options[:system]) >= Gem::Version.new(2)
     args
   end
 
@@ -262,7 +252,7 @@ command to remove old versions.
 
     highest_installed_gems.each do |l_name, l_spec|
       next if not gem_names.empty? and
-              gem_names.none? { |name| name == l_spec.name }
+              gem_names.all? { |name| /#{name}/ !~ l_spec.name }
 
       highest_remote_ver = highest_remote_version l_spec
 
@@ -275,3 +265,4 @@ command to remove old versions.
   end
 
 end
+

@@ -1,17 +1,4 @@
-##
-# A source representing a single .gem file.  This is used for installation of
-# local gems.
-
 class Gem::Source::SpecificFile < Gem::Source
-
-  ##
-  # The path to the gem for this specific file.
-
-  attr_reader :path
-
-  ##
-  # Creates a new SpecificFile for the gem in +file+
-
   def initialize(file)
     @uri = nil
     @path = ::File.expand_path(file)
@@ -21,28 +8,25 @@ class Gem::Source::SpecificFile < Gem::Source
     @name = @spec.name_tuple
   end
 
-  ##
-  # The Gem::Specification extracted from this .gem.
-
   attr_reader :spec
 
-  def load_specs *a # :nodoc:
+  def load_specs(*a)
     [@name]
   end
 
-  def fetch_spec name # :nodoc:
+  def fetch_spec(name)
     return @spec if name == @name
     raise Gem::Exception, "Unable to find '#{name}'"
     @spec
   end
 
-  def download spec, dir = nil # :nodoc:
+  def download(spec, dir=nil)
     return @path if spec == @spec
     raise Gem::Exception, "Unable to download '#{spec.full_name}'"
   end
 
   def pretty_print q # :nodoc:
-    q.group 2, '[SpecificFile:', ']' do
+    q.group 2, '[Local:', ']' do
       q.breakable
       q.text @path
     end

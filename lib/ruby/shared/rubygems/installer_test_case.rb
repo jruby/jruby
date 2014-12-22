@@ -56,6 +56,11 @@ class Gem::Installer
   ##
   # Available through requiring rubygems/installer_test_case
 
+  attr_writer :spec
+
+  ##
+  # Available through requiring rubygems/installer_test_case
+
   attr_writer :wrappers
 end
 
@@ -101,8 +106,6 @@ class Gem::InstallerTestCase < Gem::TestCase
 
     @installer      = util_installer @spec, @gemhome
     @user_installer = util_installer @user_spec, Gem.user_dir, :user
-
-    Gem::Installer.path_warning = false
   end
 
   def util_gem_bindir spec = @spec # :nodoc:

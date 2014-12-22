@@ -235,7 +235,7 @@ class Gem::Indexer
         sanitize spec
 
         spec
-      rescue SignalException
+      rescue SignalException => e
         alert_error "Received signal, exiting"
         raise
       rescue Exception => e

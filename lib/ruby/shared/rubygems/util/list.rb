@@ -36,10 +36,6 @@ module Gem
       List.new value, self
     end
 
-    def pretty_print q # :nodoc:
-      q.pp to_a
-    end
-
     def self.prepend(list, value)
       return List.new(value) unless list
       List.new value, list

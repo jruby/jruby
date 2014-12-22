@@ -16,7 +16,7 @@ require 'gauntlet'
 # rvsh-0.4.5           : No such file or directory - bin/rvsh
 # xen-0.1.2.1          : authors must be Array of Strings
 
-class GemGauntlet < Gauntlet # :nodoc:
+class GemGauntlet < Gauntlet
   def run(name)
     warn name
 

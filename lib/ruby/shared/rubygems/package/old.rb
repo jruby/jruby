@@ -37,7 +37,7 @@ class Gem::Package::Old < Gem::Package
 
     return @contents if @contents
 
-    @gem.with_read_io do |io|
+    open @gem, 'rb' do |io|
       read_until_dashes io # spec
       header = file_list io
 
@@ -53,7 +53,7 @@ class Gem::Package::Old < Gem::Package
 
     errstr = "Error reading files from gem"
 
-    @gem.with_read_io do |io|
+    open @gem, 'rb' do |io|
       read_until_dashes io # spec
       header = file_list io
       raise Gem::Exception, errstr unless header
@@ -83,7 +83,7 @@ class Gem::Package::Old < Gem::Package
           out.write file_data
         end
 
-        verbose destination
+        say destination if Gem.configuration.really_verbose
       end
     end
   rescue Zlib::DataError
@@ -136,7 +136,7 @@ class Gem::Package::Old < Gem::Package
 
     yaml = ''
 
-    @gem.with_read_io do |io|
+    open @gem, 'rb' do |io|
       skip_ruby io
       read_until_dashes io do |line|
         yaml << line
@@ -145,7 +145,7 @@ class Gem::Package::Old < Gem::Package
 
     yaml_error = if RUBY_VERSION < '1.9' then
                    YAML::ParseError
-                 elsif YAML.const_defined?(:ENGINE) && YAML::ENGINE.yamler == 'syck' then
+                 elsif YAML::ENGINE.yamler == 'syck' then
                    YAML::ParseError
                  else
                    YAML::SyntaxError
@@ -153,10 +153,10 @@ class Gem::Package::Old < Gem::Package
 
     begin
       @spec = Gem::Specification.from_yaml yaml
-    rescue yaml_error
+    rescue yaml_error => e
       raise Gem::Exception, "Failed to parse gem specification out of gem file"
     end
-  rescue ArgumentError
+  rescue ArgumentError => e
     raise Gem::Exception, "Failed to parse gem specification out of gem file"
   end
 

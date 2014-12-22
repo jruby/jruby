@@ -48,7 +48,6 @@ class Gem::CommandManager
     :list,
     :lock,
     :mirror,
-    :open,
     :outdated,
     :owner,
     :pristine,
@@ -137,7 +136,7 @@ class Gem::CommandManager
   def run(args, build_args=nil)
     process_args(args, build_args)
   rescue StandardError, Timeout::Error => ex
-    alert_error "While executing gem ... (#{ex.class})\n    #{ex}"
+    alert_error "While executing gem ... (#{ex.class})\n    #{ex.to_s}"
     ui.backtrace ex
 
     terminate_interaction(1)

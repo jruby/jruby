@@ -8,13 +8,13 @@ require 'rubygems/commands/query_command'
 class Gem::Commands::ListCommand < Gem::Commands::QueryCommand
 
   def initialize
-    super 'list', 'Display local gems whose name matches REGEXP'
+    super 'list', 'Display local gems whose name starts with STRING'
 
     remove_option('--name-matches')
   end
 
   def arguments # :nodoc:
-    "REGEXP        regexp to look for in gem name"
+    "STRING        start of gem name to look for"
   end
 
   def defaults_str # :nodoc:
@@ -33,7 +33,13 @@ To search for remote gems use the search command.
   end
 
   def usage # :nodoc:
-    "#{program_name} [STRING ...]"
+    "#{program_name} [STRING]"
+  end
+
+  def execute
+    string = get_one_optional_argument || ''
+    options[:name] = /^#{string}/i
+    super
   end
 
 end

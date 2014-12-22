@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'rubygems/dependency_list'
+require 'rubygems/dependency_resolver'
 require 'rubygems/package'
 require 'rubygems/installer'
 require 'rubygems/spec_fetcher'
@@ -72,7 +73,6 @@ class Gem::DependencyInstaller
   def initialize options = {}
     @only_install_dir = !!options[:install_dir]
     @install_dir = options[:install_dir] || Gem.dir
-    @build_root = options[:build_root]
 
     options = DEFAULT_OPTIONS.merge options
 
@@ -103,7 +103,7 @@ class Gem::DependencyInstaller
 
     @cache_dir = options[:cache_dir] || @install_dir
 
-    @errors = []
+    @errors = nil
   end
 
   ##
@@ -158,7 +158,6 @@ class Gem::DependencyInstaller
 
     dependency_list.remove_specs_unsatisfied_by dependencies
   end
-
   ##
   # Creates an AvailableSet to install from based on +dep_or_name+ and
   # +version+
@@ -197,7 +196,7 @@ class Gem::DependencyInstaller
   # sources.  Gems are sorted with newer gems preferred over older gems, and
   # local gems preferred over remote gems.
 
-  def find_gems_with_sources dep, best_only=false # :nodoc:
+  def find_gems_with_sources dep # :nodoc:
     set = Gem::AvailableSet.new
 
     if consider_local?
@@ -212,26 +211,7 @@ class Gem::DependencyInstaller
 
     if consider_remote?
       begin
-        # TODO this is pulled from #spec_for_dependency to allow
-        # us to filter tuples before fetching specs.
-        #
-        tuples, errors = Gem::SpecFetcher.fetcher.search_for_dependency dep
-
-        if best_only && !tuples.empty?
-          tuples.sort! { |a,b| b[0].version <=> a[0].version }
-          tuples = [tuples.first]
-        end
-
-        specs = []
-        tuples.each do |tup, source|
-          begin
-            spec = source.fetch_spec(tup)
-          rescue Gem::RemoteFetcher::FetchError => e
-            errors << Gem::SourceFetchProblem.new(source, e)
-          else
-            specs << [spec, source]
-          end
-        end
+        found, errors = Gem::SpecFetcher.fetcher.spec_for_dependency dep
 
         if @errors
           @errors += errors
@@ -239,15 +219,15 @@ class Gem::DependencyInstaller
           @errors = errors
         end
 
-        set << specs
+        set << found
 
       rescue Gem::RemoteFetcher::FetchError => e
         # FIX if there is a problem talking to the network, we either need to always tell
         # the user (no really_verbose) or fail hard, not silently tell them that we just
         # couldn't find their requested gem.
-        verbose do
-          "Error fetching remote data:\t\t#{e.message}\n" \
-            "Falling back to local-only install"
+        if Gem.configuration.really_verbose then
+          say "Error fetching remote data:\t\t#{e.message}"
+          say "Falling back to local-only install"
         end
         @domain = :local
       end
@@ -270,14 +250,6 @@ class Gem::DependencyInstaller
       if gem_name =~ /\.gem$/ and File.file? gem_name then
         src = Gem::Source::SpecificFile.new(gem_name)
         set.add src.spec, src
-      elsif gem_name =~ /\.gem$/ then
-        Dir[gem_name].each do |name|
-          begin
-            src = Gem::Source::SpecificFile.new name
-            set.add src.spec, src
-          rescue Gem::Package::FormatError
-          end
-        end
       else
         local = Gem::Source::Local.new
 
@@ -291,7 +263,7 @@ class Gem::DependencyInstaller
       dep = Gem::Dependency.new gem_name, version
       dep.prerelease = true if prerelease
 
-      set = find_gems_with_sources(dep, true)
+      set = find_gems_with_sources(dep)
       set.match_platform!
     end
 
@@ -306,7 +278,7 @@ class Gem::DependencyInstaller
   # Gathers all dependencies necessary for the installation from local and
   # remote sources unless the ignore_dependencies was given.
   #--
-  # TODO remove at RubyGems 3
+  # TODO remove, no longer used
 
   def gather_dependencies # :nodoc:
     specs = @available.all_specs
@@ -377,16 +349,13 @@ class Gem::DependencyInstaller
     options = {
       :bin_dir             => @bin_dir,
       :build_args          => @build_args,
-      :document            => @document,
       :env_shebang         => @env_shebang,
       :force               => @force,
       :format_executable   => @format_executable,
       :ignore_dependencies => @ignore_dependencies,
-      :prerelease          => @prerelease,
       :security_policy     => @security_policy,
       :user_install        => @user_install,
       :wrappers            => @wrappers,
-      :build_root          => @build_root,
       :install_as_default  => @install_as_default
     }
     options[:install_dir] = @install_dir if @only_install_dir
@@ -420,59 +389,23 @@ class Gem::DependencyInstaller
   end
 
   def resolve_dependencies dep_or_name, version # :nodoc:
-    request_set = Gem::RequestSet.new
-    request_set.development         = @development
-    request_set.development_shallow = @dev_shallow
+    as = available_set_for dep_or_name, version
+
+    request_set = as.to_request_set install_development_deps
     request_set.soft_missing = @force
-    request_set.prerelease = @prerelease
-    request_set.remote = false unless consider_remote?
 
-    installer_set = Gem::Resolver::InstallerSet.new @domain
+    installer_set = Gem::DependencyResolver::InstallerSet.new @domain
+    installer_set.always_install.concat request_set.always_install
     installer_set.ignore_installed = @only_install_dir
-
-    if consider_local?
-      if dep_or_name =~ /\.gem$/ and File.file? dep_or_name then
-        src = Gem::Source::SpecificFile.new dep_or_name
-        installer_set.add_local dep_or_name, src.spec, src
-        version = src.spec.version if version == Gem::Requirement.default
-      elsif dep_or_name =~ /\.gem$/ then
-        Dir[dep_or_name].each do |name|
-          begin
-            src = Gem::Source::SpecificFile.new name
-            installer_set.add_local dep_or_name, src.spec, src
-          rescue Gem::Package::FormatError
-          end
-        end
-      # else This is a dependency. InstallerSet handles this case
-      end
-    end
-
-    dependency =
-      if spec = installer_set.local?(dep_or_name) then
-        Gem::Dependency.new spec.name, version
-      elsif String === dep_or_name then
-        Gem::Dependency.new dep_or_name, version
-      else
-        dep_or_name
-      end
-
-    dependency.prerelease = @prerelease
-
-    request_set.import [dependency]
-
-    installer_set.add_always_install dependency
-
-    request_set.always_install = installer_set.always_install
 
     if @ignore_dependencies then
       installer_set.ignore_dependencies = true
-      request_set.ignore_dependencies   = true
-      request_set.soft_missing          = true
+      request_set.soft_missing = true
     end
 
-    request_set.resolve installer_set
+    composed_set = Gem::DependencyResolver.compose_sets as, installer_set
 
-    @errors.concat request_set.errors
+    request_set.resolve composed_set
 
     request_set
   end

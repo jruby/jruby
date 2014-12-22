@@ -148,8 +148,6 @@ class Gem::Command
 
   ##
   # Display to the user that a gem couldn't be found and reasons why
-  #--
-  # TODO: replace +domain+ with a parameter to suppress suggestions
 
   def show_lookup_failure(gem_name, version, errors, domain)
     if errors and !errors.empty?
@@ -559,8 +557,7 @@ basic help message containing pointers to more information.
   Further help:
     gem help commands            list all 'gem' commands
     gem help examples            show some examples of usage
-    gem help gem_dependencies    gem dependencies file guide
-    gem help platforms           gem platforms guide
+    gem help platforms           show information about platforms
     gem help <COMMAND>           show help on COMMAND
                                    (e.g. 'gem help install')
     gem server                   present a web page at

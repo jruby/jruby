@@ -67,10 +67,10 @@ If no gems are named all gems in GEM_HOME are cleaned.
 
     say "Clean Up Complete"
 
-    verbose do
+    if Gem.configuration.really_verbose then
       skipped = @default_gems.map { |spec| spec.full_name }
 
-      "Skipped default gems: #{skipped.join ', '}"
+      say "Skipped default gems: #{skipped.join ', '}"
     end
   end
 

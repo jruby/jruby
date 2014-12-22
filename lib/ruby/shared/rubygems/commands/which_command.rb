@@ -35,7 +35,7 @@ requiring to see why it does not behave as you expect.
   end
 
   def execute
-    found = true
+    found = false
 
     options[:args].each do |arg|
       arg = arg.sub(/#{Regexp.union(*Gem.suffixes)}$/, '')
@@ -45,9 +45,9 @@ requiring to see why it does not behave as you expect.
 
       if spec then
         if options[:search_gems_first] then
-          dirs = spec.full_require_paths + $LOAD_PATH
+          dirs = gem_paths(spec) + $LOAD_PATH
         else
-          dirs = $LOAD_PATH + spec.full_require_paths
+          dirs = $LOAD_PATH + gem_paths(spec)
         end
       end
 
@@ -56,10 +56,9 @@ requiring to see why it does not behave as you expect.
 
       if paths.empty? then
         alert_error "Can't find ruby library file or shared library #{arg}"
-
-        found &&= false
       else
         say paths
+        found = true
       end
     end
 
@@ -80,6 +79,10 @@ requiring to see why it does not behave as you expect.
     end
 
     result
+  end
+
+  def gem_paths(spec)
+    spec.require_paths.collect { |d| File.join spec.full_gem_path, d }
   end
 
   def usage # :nodoc:
