@@ -1249,4 +1249,25 @@ public abstract class StringNodes {
 
     }
 
+
+    @CoreMethod(names = "clear")
+    public abstract static class ClearNode extends CoreMethodNode {
+
+        public ClearNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClearNode(ClearNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString clear(RubyString string) {
+            notDesignedForCompilation();
+
+            string.set(ByteList.create(""));
+            return string;
+        }
+    }
+
 }
