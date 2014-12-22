@@ -44,7 +44,8 @@ class Proc
   def self.__make_curry_proc__(proc, passed, arity)
     f = __send__((proc.lambda? ? :lambda : :proc)) do |*argv, &passed_proc|
       my_passed = passed + argv
-      if my_passed.length < arity
+      abs_arity = (arity < 0 ? (-arity - 1) : arity)
+      if my_passed.length < abs_arity
         if !passed_proc.nil?
           warn "#{caller[0]}: given block not used"
         end
