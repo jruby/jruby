@@ -3,6 +3,7 @@ require 'socket'
 require 'thread'
 require 'test/test_helper'
 require 'ipaddr'
+require 'timeout'
 
 WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
@@ -511,6 +512,24 @@ class ServerTest < Test::Unit::TestCase
     if !WINDOWS
       assert Errno::EPIPE === ex
     end
+  end
+
+  # jruby/jruby#1637
+  def test_read_zero_never_blocks
+    assert_nothing_raised do
+      server = TCPServer.new(nil, 12345)
+      t = Thread.new do
+        s = server.accept
+      end
+      client = TCPSocket.new(nil, 12345)
+      Timeout.timeout(1) do
+        assert_equal "", client.read(0)
+      end
+      t.join
+    end
+  ensure
+    server.close rescue nil
+    client.close rescue nil
   end
 end
 
