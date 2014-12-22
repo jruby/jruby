@@ -193,6 +193,11 @@ public class BodyTranslator extends Translator {
 
         // The last argument is the value we assign, and we need to return that as the whole result of this node
 
+        final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp("attrasgn"));
+        final WriteLocalVariableNode writeValue;
+
+        final org.jruby.ast.ArrayNode newArgsNode;
+
         if (extraArgument == null) {
             // Get that last argument out
             final List<org.jruby.ast.Node> argChildNodes = new ArrayList<>(node.getArgsNode().childNodes());
@@ -200,31 +205,20 @@ public class BodyTranslator extends Translator {
             argChildNodes.remove(argChildNodes.size() - 1);
 
             // Evaluate the value and store it in a local variable
-            final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp("attrasgn"));
-            final WriteLocalVariableNode writeValue = WriteLocalVariableNodeFactory.create(context, sourceSection, frameSlot, valueNode.accept(this));
+            writeValue = WriteLocalVariableNodeFactory.create(context, sourceSection, frameSlot, valueNode.accept(this));
 
             // Recreate the arguments array, reading that local instead of including the RHS for the last argument
             argChildNodes.add(new ReadLocalDummyNode(sourceSection, frameSlot));
-            final org.jruby.ast.ArrayNode newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
+            newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
             argChildNodes.remove(0);
             for (org.jruby.ast.Node child : argChildNodes) {
                 newArgsNode.add(child);
             }
-
-            final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), newArgsNode, null);
-            boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
-            final RubyNode actualCall = visitCallNodeExtraArgument(callNode, null, isAccessorOnSelf, false);
-
-            return SequenceNode.sequence(context, sourceSection,
-                    writeValue,
-                    actualCall,
-                    ReadLocalVariableNodeFactory.create(context, sourceSection, frameSlot));
         } else {
             final RubyNode valueNode = extraArgument;
 
             // Evaluate the value and store it in a local variable
-            final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp("attrasgn"));
-            final WriteLocalVariableNode writeValue = WriteLocalVariableNodeFactory.create(context, sourceSection, frameSlot, valueNode);
+            writeValue = WriteLocalVariableNodeFactory.create(context, sourceSection, frameSlot, valueNode);
 
             // Recreate the arguments array, reading that local instead of including the RHS for the last argument
             final List<org.jruby.ast.Node> argChildNodes = new ArrayList<>();
@@ -232,22 +226,21 @@ public class BodyTranslator extends Translator {
                 argChildNodes.addAll(node.getArgsNode().childNodes());
             }
             argChildNodes.add(new ReadLocalDummyNode(sourceSection, frameSlot));
-            final org.jruby.ast.ArrayNode newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
+            newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
             argChildNodes.remove(0);
             for (org.jruby.ast.Node child : argChildNodes) {
                 newArgsNode.add(child);
             }
-
-            final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), newArgsNode, null);
-            boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
-            final RubyNode actualCall = visitCallNodeExtraArgument(callNode, null, isAccessorOnSelf, false);
-
-            return SequenceNode.sequence(context, sourceSection,
-                    writeValue,
-                    actualCall,
-                    ReadLocalVariableNodeFactory.create(context, sourceSection, frameSlot));
         }
 
+        final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), newArgsNode, null);
+        boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
+        final RubyNode actualCall = visitCallNodeExtraArgument(callNode, null, isAccessorOnSelf, false);
+
+        return SequenceNode.sequence(context, sourceSection,
+                writeValue,
+                actualCall,
+                ReadLocalVariableNodeFactory.create(context, sourceSection, frameSlot));
     }
 
     @Override
