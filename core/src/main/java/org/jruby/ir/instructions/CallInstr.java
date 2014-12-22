@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
@@ -62,6 +63,7 @@ public class CallInstr extends CallBase implements ResultInstr {
                 return hasClosure() ? this : new ZeroOperandArgNoBlockCallInstr(this);
             case 1:
                 if (isAllFixnums() && !hasClosure()) return new OneFixnumArgNoBlockCallInstr(this);
+                if (isAllFloats() && !hasClosure()) return new OneFloatArgNoBlockCallInstr(this);
 
                 return hasClosure() ? new OneOperandArgBlockCallInstr(this) : new OneOperandArgNoBlockCallInstr(this);
         }
