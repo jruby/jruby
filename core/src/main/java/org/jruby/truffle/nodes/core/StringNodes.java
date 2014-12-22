@@ -1217,7 +1217,10 @@ public abstract class StringNodes {
             } else {
                 String head = javaString.substring(0, 1).toUpperCase();
                 String tail = javaString.substring(1, javaString.length()).toLowerCase();
-                string.set(ByteList.create((head + tail)));
+                ByteList byteListString = ByteList.create(head + tail);
+                byteListString.setEncoding(string.getBytes().getEncoding());
+
+                string.set(byteListString);
                 return string;
             }
         }
@@ -1243,7 +1246,10 @@ public abstract class StringNodes {
             } else {
                 String head = javaString.substring(0, 1).toUpperCase();
                 String tail = javaString.substring(1, javaString.length()).toLowerCase();
-                return string.getContext().makeString(head + tail);
+                ByteList byteListString = ByteList.create(head + tail);
+                byteListString.setEncoding(string.getBytes().getEncoding());
+
+                return string.getContext().makeString(byteListString);
             }
         }
 
