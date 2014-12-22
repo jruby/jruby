@@ -790,7 +790,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity);
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
 
         /*
          * In the top-level, methods are defined in the class of the main object. This is
@@ -1245,7 +1245,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
     }
 
     @Override
@@ -2281,7 +2281,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false);
+        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }

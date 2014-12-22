@@ -24,6 +24,7 @@ import java.util.Set;
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
     public static final Set<String> PRINT_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_AST.load().split(",")));
+    public static final Set<String> PRINT_PARSE_TREE_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE.load().split(",")));
 
     protected final RubyNode currentNode;
     protected final RubyContext context;

@@ -41,7 +41,12 @@ class MethodTranslator extends BodyTranslator {
         this.isTopLevel = isTopLevel;
     }
 
-    public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
+    public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity, SharedMethodInfo sharedMethodInfo) {
+        if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
+            System.err.println(methodName);
+            System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
+        }
+
         final ParameterCollector parameterCollector = new ParameterCollector();
         argsNode.accept(parameterCollector);
 
