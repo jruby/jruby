@@ -1177,4 +1177,24 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "upcase!")
+    public abstract static class UpcaseBangNode extends CoreMethodNode {
+
+        public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UpcaseBangNode(UpcaseBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString upcaseBang(RubyString string) {
+            notDesignedForCompilation();
+
+            string.set(ByteList.create(string.toString().toUpperCase()));
+            return string;
+        }
+    }
+
 }
