@@ -314,7 +314,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "chomp")
+    @CoreMethod(names = "chomp", optional=1)
     public abstract static class ChompNode extends CoreMethodNode {
 
         public ChompNode(RubyContext context, SourceSection sourceSection) {
@@ -326,11 +326,24 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString chomp(RubyString string) {
+        public RubyString chomp(RubyString string, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
-
             return string.getContext().makeString(string.toString().trim());
         }
+
+        @Specialization
+        public RubyString chompWithString(RubyString string, RubyString stringToChomp) {
+            notDesignedForCompilation();
+
+            String tempString = string.toString();
+
+            if (tempString.endsWith(stringToChomp.toString())) {
+                tempString = tempString.substring(0, tempString.length() - stringToChomp.toString().length());
+            }
+
+            return getContext().makeString(tempString);
+        }
+
     }
 
     @CoreMethod(names = "chomp!")
