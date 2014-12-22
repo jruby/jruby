@@ -1220,4 +1220,28 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "capitalize")
+    public abstract static class CapitalizeNode extends CoreMethodNode {
+
+        public CapitalizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CapitalizeNode(CapitalizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString capitalize(RubyString string) {
+            notDesignedForCompilation();
+
+            String javaString = string.toString();
+            String head = javaString.substring(0, 1).toUpperCase();
+            String tail = javaString.substring(1, javaString.length()).toLowerCase();
+
+            return string.getContext().makeString(head + tail);
+        }
+
+    }
+
 }
