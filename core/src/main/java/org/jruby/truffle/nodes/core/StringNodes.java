@@ -1158,4 +1158,23 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "upcase")
+    public abstract static class UpcaseNode extends CoreMethodNode {
+
+        public UpcaseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UpcaseNode(UpcaseNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString upcase(RubyString string) {
+            notDesignedForCompilation();
+            return string.getContext().makeString(string.toString().toUpperCase());
+        }
+
+    }
+
 }
