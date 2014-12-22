@@ -2917,9 +2917,6 @@ public class IRBuilder {
         closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
-        // Record to IRScope so JIT can pre-compile all potentially activated END blocks.
-        topLevel.recordEndBlock(endClosure);
-
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
         // might be broken currently. We could either fix it or consider dropping support

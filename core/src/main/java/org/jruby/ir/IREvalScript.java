@@ -13,7 +13,6 @@ import org.jruby.parser.StaticScope;
 
 public class IREvalScript extends IRClosure {
     private List<IRClosure> beginBlocks;
-    private List<IRClosure> endBlocks;
     private EvalType evalType;
 
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
@@ -68,20 +67,8 @@ public class IREvalScript extends IRClosure {
         beginBlocks.add(beginBlockClosure);
     }
 
-    /* Record an end block -- not all scope implementations can handle them */
-    @Override
-    public void recordEndBlock(IRClosure endBlockClosure) {
-        if (endBlocks == null) endBlocks = new ArrayList<>();
-        endBlockClosure.setBeginEndBlock();
-        endBlocks.add(endBlockClosure);
-    }
-
     public List<IRClosure> getBeginBlocks() {
         return beginBlocks;
-    }
-
-    public List<IRClosure> getEndBlocks() {
-        return endBlocks;
     }
 
     @Override

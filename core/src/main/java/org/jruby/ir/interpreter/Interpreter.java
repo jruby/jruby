@@ -66,18 +66,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static void runEndBlocks(List<WrappedIRClosure> blocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
-        if (blocks == null) return;
-
-        for (WrappedIRClosure block: blocks) {
-            try {
-                ((Block) block.retrieve(context, self, currScope, context.getCurrentScope(), temp)).yield(context, null);
-            } catch (Exception e) {
-                System.err.println(e);
-            }
-        }
-    }
-
     @Override
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.prepareForInterpretation();
@@ -113,7 +101,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
-            runEndBlocks(ic.getEndBlocks(), context, self, scope, null);
             dumpStats();
             context.popScope();
         }
@@ -693,7 +680,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), EMPTY_ARGS, name, block, null);
         } finally {
-            runEndBlocks(ic.getEndBlocks(), context, self, ss, null);
             evalScope.clearEvalType();
             context.popScope();
         }
