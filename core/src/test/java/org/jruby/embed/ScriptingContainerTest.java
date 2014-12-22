@@ -72,6 +72,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
+import org.jruby.util.io.ChannelDescriptor;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -2756,5 +2757,17 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         Object result = instance.runScriptlet(PathType.CLASSPATH, "__FILE__.rb");
         assertEquals("classpath:/__FILE__.rb", result.toString());
+    }
+
+    @Test
+    public void testContainerScrubsStdioDescriptors() {
+        Map<Integer, ChannelDescriptor> orig = ChannelDescriptor.getFilenoDescriptorMapReadOnly();
+
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.runScriptlet("1");
+
+        instance.terminate();
+
+        assertEquals(orig, ChannelDescriptor.getFilenoDescriptorMapReadOnly());
     }
 }
