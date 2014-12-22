@@ -1212,11 +1212,14 @@ public abstract class StringNodes {
         public RubyString capitalizeBang(RubyString string) {
             notDesignedForCompilation();
             String javaString = string.toString();
-            String head = javaString.substring(0, 1).toUpperCase();
-            String tail = javaString.substring(1, javaString.length()).toLowerCase();
-
-            string.set(ByteList.create((head + tail)));
-            return string;
+            if (javaString.isEmpty()) {
+                return string;
+            } else {
+                String head = javaString.substring(0, 1).toUpperCase();
+                String tail = javaString.substring(1, javaString.length()).toLowerCase();
+                string.set(ByteList.create((head + tail)));
+                return string;
+            }
         }
     }
 
@@ -1234,12 +1237,14 @@ public abstract class StringNodes {
         @Specialization
         public RubyString capitalize(RubyString string) {
             notDesignedForCompilation();
-
             String javaString = string.toString();
-            String head = javaString.substring(0, 1).toUpperCase();
-            String tail = javaString.substring(1, javaString.length()).toLowerCase();
-
-            return string.getContext().makeString(head + tail);
+            if (javaString.isEmpty()) {
+                return string;
+            } else {
+                String head = javaString.substring(0, 1).toUpperCase();
+                String tail = javaString.substring(1, javaString.length()).toLowerCase();
+                return string.getContext().makeString(head + tail);
+            }
         }
 
     }
