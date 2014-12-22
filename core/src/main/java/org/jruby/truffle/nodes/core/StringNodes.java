@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -1159,20 +1158,4 @@ public abstract class StringNodes {
 
     }
 
-    // Rubinius API
-    @CoreMethod(names = "data")
-    public abstract static class DataNode extends CoreMethodNode {
-        public DataNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DataNode(DataNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyBasicObject data(RubyString string) {
-            return new RubiniusByteArray(getContext().getCoreLibrary().getRubiniusLibrary().getByteArrayCLass(), string.getBytes().getUnsafeBytes());
-        }
-    }
 }

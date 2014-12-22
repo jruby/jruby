@@ -26,6 +26,10 @@ module STDIN
 end
 
 module STDOUT
+  def self.puts(*values)
+    Kernel.send(:puts, *values)
+  end
+
   def self.print(*values)
     Kernel.send(:print, *values)
   end
@@ -55,6 +59,10 @@ end
 $stdout = STDOUT
 
 module STDERR
+  def self.puts(*values)
+    Kernel.send(:puts, *values)
+  end
+
   def self.external_encoding
     @external
   end

@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -110,8 +109,6 @@ public class CoreLibrary {
 
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
-
-    @CompilerDirectives.CompilationFinal private RubiniusLibrary rubiniusLibrary;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -296,8 +293,6 @@ public class CoreLibrary {
     public void initializeAfterMethodsAdded() {
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
-
-        rubiniusLibrary = new RubiniusLibrary(this);
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
             loadRubyCore("jruby/truffle/core.rb");
@@ -790,10 +785,6 @@ public class CoreLibrary {
 
     public RubyClass getIntegerClass() {
         return integerClass;
-    }
-
-    public RubiniusLibrary getRubiniusLibrary() {
-        return rubiniusLibrary;
     }
 
     public RubyClass getArgumentErrorClass() {
