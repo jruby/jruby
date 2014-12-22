@@ -13,3 +13,5 @@ module Rubinius
   end
 
 end
+
+PrimitiveFailures = StandardError
