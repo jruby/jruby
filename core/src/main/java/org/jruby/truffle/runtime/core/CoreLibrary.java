@@ -409,6 +409,11 @@ public class CoreLibrary {
         return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException argumentErrorMissingKeyword(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError(String.format("missing keyword: %s", name), currentNode);
+    }
+
     public RubyException argumentError(int passed, int required, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
