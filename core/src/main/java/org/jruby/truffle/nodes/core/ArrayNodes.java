@@ -1765,7 +1765,20 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray flatten(RubyArray array) {
-            throw new UnsupportedOperationException();
+            notDesignedForCompilation();
+            final List<Object> flattened = new ArrayList<>();
+            flatten(flattened, array.slowToArray());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), flattened.toArray(), array.getSize());
+        }
+
+        private void flatten(List<Object> flattened, Object[] store) {
+            for (Object value : store) {
+                if (value instanceof RubyArray) {
+                    flatten(flattened, ((RubyArray) value).slowToArray());
+                } else {
+                    flattened.add(value);
+                }
+            }
         }
 
     }
@@ -3564,6 +3577,49 @@ public abstract class ArrayNodes {
 
         protected static boolean isSmall(RubyArray array) {
             return array.getSize() <= RubyArray.ARRAYS_SMALL;
+        }
+
+    }
+
+    @CoreMethod(names = "sort!")
+    public abstract static class SortBangNode extends ArrayCoreMethodNode {
+
+        @Child protected DispatchHeadNode compareDispatchNode;
+
+        public SortBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compareDispatchNode = new DispatchHeadNode(context);
+        }
+
+        public SortBangNode(SortBangNode prev) {
+            super(prev);
+            compareDispatchNode = prev.compareDispatchNode;
+        }
+
+        @Specialization
+        public RubyArray sort(VirtualFrame frame, RubyArray array) {
+            notDesignedForCompilation();
+
+            final Object[] store = array.slowToArray();
+            sort(frame, store);
+            array.setStore(store, array.getSize());
+            return array;
+        }
+
+        // TODO(CS): copied from #sort
+
+        private <T> void sort(VirtualFrame frame, T[] objects) {
+            final VirtualFrame finalFrame = frame;
+
+            Arrays.sort(objects, new Comparator<Object>() {
+
+                @Override
+                public int compare(Object a, Object b) {
+                    // TODO(CS): node for this cast
+                    return (int) compareDispatchNode.call(finalFrame, a, "<=>", null, b);
+                }
+
+            });
         }
 
     }
