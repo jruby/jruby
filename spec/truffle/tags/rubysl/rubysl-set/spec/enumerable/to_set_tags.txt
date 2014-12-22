@@ -1,0 +1,1 @@
+fails:Emumerable#to_set returns a new Set created from self

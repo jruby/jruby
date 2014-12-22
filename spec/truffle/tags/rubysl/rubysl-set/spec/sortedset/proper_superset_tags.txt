@@ -1,0 +1,2 @@
+fails:SortedSet#proper_superset? returns true if passed a SortedSet that self is a proper superset of
+fails:SortedSet#proper_superset? raises an ArgumentError when passed a non-SortedSet

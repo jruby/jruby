@@ -1,0 +1,3 @@
+fails:Set#collect! yields each Object in self
+fails:Set#collect! returns self
+fails:Set#collect! replaces self with the return values of the block

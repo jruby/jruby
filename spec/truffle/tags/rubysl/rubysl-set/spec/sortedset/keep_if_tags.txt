@@ -1,0 +1,4 @@
+fails:SortedSet#keep_if yields each Object in self in sorted order
+fails:SortedSet#keep_if keeps every element from self for which the passed block returns true
+fails:SortedSet#keep_if returns self
+fails:SortedSet#keep_if returns an Enumerator when passed no block

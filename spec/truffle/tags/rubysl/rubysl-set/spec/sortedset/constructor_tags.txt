@@ -1,0 +1,1 @@
+fails:SortedSet[] returns a new SortedSet populated with the passed Objects

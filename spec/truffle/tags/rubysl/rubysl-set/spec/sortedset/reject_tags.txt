@@ -1,0 +1,5 @@
+fails:SortedSet#reject! yields each Object in self in sorted order
+fails:SortedSet#reject! deletes every element from self for which the passed block returns true
+fails:SortedSet#reject! returns self when self was modified
+fails:SortedSet#reject! returns nil when self was not modified
+fails:SortedSet#reject! returns an Enumerator when passed no block

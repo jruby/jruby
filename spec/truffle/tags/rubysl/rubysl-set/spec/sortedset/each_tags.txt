@@ -1,0 +1,3 @@
+fails:SortedSet#each yields each Object in self in sorted order
+fails:SortedSet#each returns self
+fails:SortedSet#each returns an Enumerator when not passed a block

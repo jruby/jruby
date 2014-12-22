@@ -1,0 +1,3 @@
+fails:SortedSet#merge adds the elements of the passed Enumerable to self
+fails:SortedSet#merge returns self
+fails:SortedSet#merge raises an ArgumentError when passed a non-Enumerable
