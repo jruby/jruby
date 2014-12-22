@@ -208,7 +208,7 @@ public class BodyTranslator extends Translator {
             writeValue = WriteLocalVariableNodeFactory.create(context, sourceSection, frameSlot, valueNode.accept(this));
 
             // Recreate the arguments array, reading that local instead of including the RHS for the last argument
-            argChildNodes.add(new ReadLocalDummyNode(sourceSection, frameSlot));
+            argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
             newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
             argChildNodes.remove(0);
             for (org.jruby.ast.Node child : argChildNodes) {
@@ -225,7 +225,7 @@ public class BodyTranslator extends Translator {
             if (node.getArgsNode() != null) {
                 argChildNodes.addAll(node.getArgsNode().childNodes());
             }
-            argChildNodes.add(new ReadLocalDummyNode(sourceSection, frameSlot));
+            argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
             newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
             argChildNodes.remove(0);
             for (org.jruby.ast.Node child : argChildNodes) {
@@ -233,7 +233,37 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), newArgsNode, null);
+        /*
+         * If the original call was of the form:
+         *
+            (AttrAssignNode:[]= 10
+                (LocalVarNode:f 9)
+                (ArgsPushNode 9
+                    (SplatNode 9
+                        (LocalVarNode:x 9)
+                    )
+                    (FixnumNode 9)
+                )
+            )
+         *
+         * Then we will have lost that args push and we will have ended up with (Array (Splat (Local x) (Fixnum))
+         *
+         * Restory the args push.
+         */
+
+        final org.jruby.ast.Node fixedArgsNode;
+
+        if (node.getArgsNode() instanceof org.jruby.ast.ArgsPushNode) {
+            if (newArgsNode.size() != 2) {
+                throw new UnsupportedOperationException();
+            }
+
+            fixedArgsNode = new org.jruby.ast.ArgsPushNode(newArgsNode.getPosition(), newArgsNode.childNodes().get(0), newArgsNode.childNodes().get(1));
+        } else {
+            fixedArgsNode = newArgsNode;
+        }
+
+        final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), fixedArgsNode, null);
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
         final RubyNode actualCall = visitCallNodeExtraArgument(callNode, null, isAccessorOnSelf, false);
 
