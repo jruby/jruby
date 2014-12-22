@@ -166,6 +166,11 @@ class MethodTranslator extends BodyTranslator {
         final RubyRootNode rootNode = new RubyRootNode(
                 context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
+        if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
+            System.err.println(methodName);
+            NodeUtil.printCompactTree(System.err, rootNode);
+        }
+
         if (isBlock) {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final CallTarget callTargetForMethods = withoutBlockDestructureSemantics(callTarget);
