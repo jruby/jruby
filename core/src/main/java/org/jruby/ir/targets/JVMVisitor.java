@@ -151,13 +151,11 @@ public class JVMVisitor extends IRVisitor {
 
         // Some scopes (closures, module/class bodies) do not have explicit call protocol yet.
         // Unconditionally load current dynamic scope for those bodies.
-        // FIXME: If I don't load this there are some scopes that end up trying to use it before it is there
-        // Try uncommenting and running compiler specs.
-//        if (!scope.hasExplicitCallProtocol()) {
+        if (!scope.hasExplicitCallProtocol()) {
             jvmMethod().loadContext();
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
-//        }
+        }
 
         IRBytecodeAdapter m = jvmMethod();
 
