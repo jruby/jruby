@@ -1,0 +1,4 @@
+fails:SortedSet#divide divides self into a set of subsets based on the blocks return values
+fails:SortedSet#divide yields each Object in self in sorted order
+fails:SortedSet#divide when passed a block with an arity of 2 divides self into a set of subsets based on the blocks return values
+fails:SortedSet#divide when passed a block with an arity of 2 yields each two Objects to the block

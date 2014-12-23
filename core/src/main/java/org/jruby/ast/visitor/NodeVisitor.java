@@ -146,4 +146,5 @@ public interface NodeVisitor<T> {
     public T visitYieldNode(YieldNode iVisited);
     public T visitZArrayNode(ZArrayNode iVisited);
     public T visitZSuperNode(ZSuperNode iVisited);
+    public T visitOther(Node iVisited);
 }

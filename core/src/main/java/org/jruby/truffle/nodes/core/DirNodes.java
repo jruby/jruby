@@ -149,6 +149,26 @@ public abstract class DirNodes {
 
     }
 
+    @CoreMethod(names = "mkdir", needsSelf = false, onSingleton = true, required = 1)
+    public abstract static class MkdirNode extends CoreMethodNode {
+
+        public MkdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MkdirNode(MkdirNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int mkdir(RubyString path) {
+            notDesignedForCompilation();
+            new File(path.toString()).mkdir();
+            return 0;
+        }
+
+    }
+
     @CoreMethod(names = {"pwd", "getwd"}, onSingleton = true)
     public abstract static class PwdNode extends CoreMethodNode {
 

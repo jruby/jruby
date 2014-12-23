@@ -1,6 +1,2 @@
 fails:Invoking a method with optional argument(s), expands an array to arguments grouped in parentheses
-fails:Invoking a method allows []= with a *args and multiple rhs args
-fails:Invoking a method allows []= with multiple *args and does not unwrap the last splat
-fails:Invoking a method allows []= with multiple *args
-fails:Invoking a method allows []= with *args in the [] expanded to individual arguments
 fails:Invoking a method expands an array to arguments grouped in parentheses which in turn takes rest arguments

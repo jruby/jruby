@@ -1,0 +1,2 @@
+fails:SortedSet#clear removes all elements from self
+fails:SortedSet#clear returns self

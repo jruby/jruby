@@ -24,8 +24,6 @@ import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.hash.HashSearchResult;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
-import org.jruby.truffle.runtime.rubinius.RubiniusChannel;
 
 import java.math.BigInteger;
 
@@ -177,14 +175,6 @@ public abstract class RubyNode extends Node {
 
     public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectUndefinedPlaceholder(execute(frame));
-    }
-
-    public RubiniusByteArray executeRubiniusByteArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubiniusByteArray(execute(frame));
-    }
-
-    public RubiniusChannel executeRubiniusChannel(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubiniusChannel(execute(frame));
     }
 
     public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
@@ -381,16 +371,6 @@ public abstract class RubyNode extends Node {
     @SuppressWarnings("static-method")
     public boolean isRubyTime(Object value) {
         return value instanceof RubyTime;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubiniusChannel(Object value) {
-        return value instanceof RubiniusChannel;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubiniusByteArray(Object value) {
-        return value instanceof RubiniusByteArray;
     }
 
     @SuppressWarnings("static-method")

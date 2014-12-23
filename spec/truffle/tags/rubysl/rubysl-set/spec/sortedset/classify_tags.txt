@@ -1,0 +1,3 @@
+fails:SortedSet#classify yields each Object in self in sorted order
+fails:SortedSet#classify returns an Enumerator when passed no block
+fails:SortedSet#classify classifies the Objects in self based on the block's return value

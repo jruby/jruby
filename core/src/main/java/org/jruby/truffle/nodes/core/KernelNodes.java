@@ -40,6 +40,7 @@ import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 @CoreClass(name = "Kernel")
@@ -1365,38 +1366,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "printf", isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class PrintfNode extends CoreMethodNode {
-
-        public PrintfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PrintfNode(PrintfNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyNilClass printf(Object[] args) {
-            notDesignedForCompilation();
-
-            if (args.length > 0) {
-                final String format = args[0].toString();
-                final List<Object> values = Arrays.asList(args).subList(1, args.length);
-
-                final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-                try {
-                    StringFormatter.format(getContext().getRuntime().getInstanceConfig().getOutput(), format, values);
-                } finally {
-                    getContext().getThreadManager().enterGlobalLock(runningThread);
-                }
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-    }
-
     @CoreMethod(names = "private_methods", optional = 1)
     public abstract static class PrivateMethodsNode extends CoreMethodNode {
 
@@ -1961,6 +1930,41 @@ public abstract class KernelNodes {
             }
         }
 
+    }
+
+    @CoreMethod(names = "sprintf", isModuleFunction = true, argumentsAsArray = true)
+    public abstract static class SPrintfNode extends CoreMethodNode {
+
+        public SPrintfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SPrintfNode(SPrintfNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString sprintf(Object[] args) {
+            notDesignedForCompilation();
+
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            final PrintStream printStream = new PrintStream(outputStream);
+
+            if (args.length > 0) {
+                final String format = args[0].toString();
+                final List<Object> values = Arrays.asList(args).subList(1, args.length);
+
+                final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+
+                try {
+                    StringFormatter.format(getContext(), printStream, format, values);
+                } finally {
+                    getContext().getThreadManager().enterGlobalLock(runningThread);
+                }
+            }
+
+            return getContext().makeString(new ByteList(outputStream.toByteArray()));
+        }
     }
 
     @CoreMethod(names = "system", isModuleFunction = true, argumentsAsArray = true)

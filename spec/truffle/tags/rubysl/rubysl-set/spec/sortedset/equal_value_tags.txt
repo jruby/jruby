@@ -1,0 +1,1 @@
+fails:SortedSet#== returns true when the passed Object is a SortedSet and self and the Object contain the same elements

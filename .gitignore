@@ -98,6 +98,3 @@ core/.classpath
 core/.gitignore
 core/.project
 core/.settings
-
-# Truffle benchmark stuff
-reference.txt

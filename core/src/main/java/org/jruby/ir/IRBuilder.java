@@ -987,7 +987,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(callResult, callNode.getName(), receiver, args.toArray(new Operand[args.size()]), block);
+        CallInstr     callInstr    = (CallInstr)CallInstr.create(callResult, callNode.getName(), receiver, args.toArray(new Operand[args.size()]), block).specializeForInterpretation();
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (
@@ -2204,7 +2204,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args.toArray(new Operand[args.size()]), block);
+        CallInstr     callInstr    = (CallInstr)CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args.toArray(new Operand[args.size()]), block).specializeForInterpretation();
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -2917,8 +2917,8 @@ public class IRBuilder {
         closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
-        // Record to IRScope so JIT can pre-compile all potentially activated END blocks.
-        topLevel.recordEndBlock(endClosure);
+        // END does not have either explicit or implicit return, so we add one
+        closureBuilder.addInstr(endClosure, new ReturnInstr(new Nil()));
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -2938,6 +2938,9 @@ public class IRBuilder {
         closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(0)));
         closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(preExeNode.getBodyNode(), beginClosure);
+
+        // BEGIN does not have either explicit or implicit return, so we add one
+        closureBuilder.addInstr(beginClosure, new ReturnInstr(new Nil()));
 
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);
@@ -3378,7 +3381,7 @@ public class IRBuilder {
 
     public Operand buildVCall(VCallNode node, IRScope s) {
         Variable callResult = s.createTemporaryVariable();
-        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, node.getName(), s.getSelf(), NO_ARGS, null);
+        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, node.getName(), s.getSelf(), NO_ARGS, null).specializeForInterpretation();
         addInstr(s, callInstr);
         return callResult;
     }

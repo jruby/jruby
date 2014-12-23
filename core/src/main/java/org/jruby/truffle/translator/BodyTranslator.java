@@ -189,9 +189,88 @@ public class BodyTranslator extends Translator {
      * See translateDummyAssignment to understand what this is for.
      */
     public RubyNode visitAttrAssignNodeExtraArgument(org.jruby.ast.AttrAssignNode node, RubyNode extraArgument) {
-        final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), node.getArgsNode(), null);
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        // The last argument is the value we assign, and we need to return that as the whole result of this node
+
+        final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp("attrasgn"));
+        final WriteLocalVariableNode writeValue;
+
+        final org.jruby.ast.ArrayNode newArgsNode;
+
+        if (extraArgument == null) {
+            // Get that last argument out
+            final List<org.jruby.ast.Node> argChildNodes = new ArrayList<>(node.getArgsNode().childNodes());
+            final org.jruby.ast.Node valueNode = argChildNodes.get(argChildNodes.size() - 1);
+            argChildNodes.remove(argChildNodes.size() - 1);
+
+            // Evaluate the value and store it in a local variable
+            writeValue = WriteLocalVariableNodeFactory.create(context, sourceSection, frameSlot, valueNode.accept(this));
+
+            // Recreate the arguments array, reading that local instead of including the RHS for the last argument
+            argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
+            newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
+            argChildNodes.remove(0);
+            for (org.jruby.ast.Node child : argChildNodes) {
+                newArgsNode.add(child);
+            }
+        } else {
+            final RubyNode valueNode = extraArgument;
+
+            // Evaluate the value and store it in a local variable
+            writeValue = WriteLocalVariableNodeFactory.create(context, sourceSection, frameSlot, valueNode);
+
+            // Recreate the arguments array, reading that local instead of including the RHS for the last argument
+            final List<org.jruby.ast.Node> argChildNodes = new ArrayList<>();
+            if (node.getArgsNode() != null) {
+                argChildNodes.addAll(node.getArgsNode().childNodes());
+            }
+            argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
+            newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
+            argChildNodes.remove(0);
+            for (org.jruby.ast.Node child : argChildNodes) {
+                newArgsNode.add(child);
+            }
+        }
+
+        /*
+         * If the original call was of the form:
+         *
+            (AttrAssignNode:[]= 10
+                (LocalVarNode:f 9)
+                (ArgsPushNode 9
+                    (SplatNode 9
+                        (LocalVarNode:x 9)
+                    )
+                    (FixnumNode 9)
+                )
+            )
+         *
+         * Then we will have lost that args push and we will have ended up with (Array (Splat (Local x) (Fixnum))
+         *
+         * Restory the args push.
+         */
+
+        final org.jruby.ast.Node fixedArgsNode;
+
+        if (node.getArgsNode() instanceof org.jruby.ast.ArgsPushNode) {
+            if (newArgsNode.size() != 2) {
+                throw new UnsupportedOperationException();
+            }
+
+            fixedArgsNode = new org.jruby.ast.ArgsPushNode(newArgsNode.getPosition(), newArgsNode.childNodes().get(0), newArgsNode.childNodes().get(1));
+        } else {
+            fixedArgsNode = newArgsNode;
+        }
+
+        final CallNode callNode = new CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), fixedArgsNode, null);
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
-        return visitCallNodeExtraArgument(callNode, extraArgument, isAccessorOnSelf, false);
+        final RubyNode actualCall = visitCallNodeExtraArgument(callNode, null, isAccessorOnSelf, false);
+
+        return SequenceNode.sequence(context, sourceSection,
+                writeValue,
+                actualCall,
+                ReadLocalVariableNodeFactory.create(context, sourceSection, frameSlot));
     }
 
     @Override
@@ -790,7 +869,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity);
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
 
         /*
          * In the top-level, methods are defined in the class of the main object. This is
@@ -1245,7 +1324,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
     }
 
     @Override
@@ -2281,7 +2360,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false);
+        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }
@@ -2322,6 +2401,16 @@ public class BodyTranslator extends Translator {
             return methodParent.getNamedMethodName();
         } else {
             return environment.getNamedMethodName();
+        }
+    }
+
+    @Override
+    public RubyNode visitOther(Node node) {
+        if (node instanceof ReadLocalDummyNode) {
+            final ReadLocalDummyNode readLocal = (ReadLocalDummyNode) node;
+            return ReadLocalVariableNodeFactory.create(context, readLocal.getSourceSection(), readLocal.getFrameSlot());
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 

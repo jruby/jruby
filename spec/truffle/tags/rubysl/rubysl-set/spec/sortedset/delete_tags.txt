@@ -1,0 +1,5 @@
+fails:SortedSet#delete deletes the passed Object from self
+fails:SortedSet#delete returns self
+fails:SortedSet#delete? deletes the passed Object from self
+fails:SortedSet#delete? returns self when the passed Object is in self
+fails:SortedSet#delete? returns nil when the passed Object is not in self

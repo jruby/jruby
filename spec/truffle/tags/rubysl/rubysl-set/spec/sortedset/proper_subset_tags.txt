@@ -1,0 +1,2 @@
+fails:SortedSet#proper_subset? returns true if passed a SortedSet that self is a proper subset of
+fails:SortedSet#proper_subset? raises an ArgumentError when passed a non-SortedSet

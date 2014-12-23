@@ -1,0 +1,2 @@
+fails:SortedSet#replace replaces the contents with other and returns self
+fails:SortedSet#replace accepts any enumerable as other

@@ -9,13 +9,9 @@ written in Ruby, in some cases modified. We have taken files from commit
 8d01207061518355da9b53274fe8766ecf85fdfe. This code was written by Evan Phoenix,
 Charles Nutter, et al.
 
-`api/shims` is our own code.
-
-Some of the code from `rubinius-core-api` is also found at
-`core/src/main/java/org/jruby/truffle/runtime/rubinius`, and again may be
-modified.
-
 https://github.com/rubinius/rubinius-core-api
+
+`api/shims` is our own code.
 
 We try not to modify files from Rubinius, so that they can easily be merged from
 upstream in the future. In some cases there are shims that patch up Rubinius

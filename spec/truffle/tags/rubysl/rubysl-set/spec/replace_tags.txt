@@ -1,0 +1,1 @@
+fails:Set#replace replaces the contents with other and returns self

@@ -628,10 +628,12 @@ public abstract class FloatNodes {
         @Specialization
         public Object toI(double value) {
             if (Double.isInfinite(value)) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
             }
 
             if (Double.isNaN(value)) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
             }
 

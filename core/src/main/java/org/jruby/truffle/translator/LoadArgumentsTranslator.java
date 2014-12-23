@@ -12,6 +12,7 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
@@ -141,6 +142,12 @@ public class LoadArgumentsTranslator extends Translator {
 
             if (localAsgnNode.getValueNode() == null) {
                 defaultValue = new NilLiteralNode(context, sourceSection);
+            } else if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
+                /*
+                 * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
+                 * the semantic action of executing this node is to report an error, and we do the same thing.
+                 */
+                defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
             } else {
                 defaultValue = localAsgnNode.getValueNode().accept(this);
             }

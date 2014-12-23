@@ -1,0 +1,5 @@
+fails:SortedSet#select! yields each Object in self in sorted order
+fails:SortedSet#select! keeps every element from self for which the passed block returns true
+fails:SortedSet#select! returns self when self was modified
+fails:SortedSet#select! returns nil when self was not modified
+fails:SortedSet#select! returns an Enumerator when passed no block

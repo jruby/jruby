@@ -20,6 +20,8 @@ import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.*;
 
+import java.util.Arrays;
+
 /**
  * Check arguments meet the arity of the method.
  */
@@ -51,10 +53,8 @@ public class CheckArityNode extends RubyNode {
 
         if (!keywordsRest && arity.hasKeywords() && getKeywordsHash(frame) != null) {
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(getKeywordsHash(frame))) {
-                for (String keyword : keywords) {
-                    if (!keyword.toString().equals(keyValue.getKey().toString())) {
-                        throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
-                    }
+                if (!keywordAllowed(keyValue.getKey().toString())) {
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
                 }
             }
         }
@@ -72,6 +72,16 @@ public class CheckArityNode extends RubyNode {
         } else {
             return true;
         }
+    }
+
+    private boolean keywordAllowed(String keyword) {
+        for (String allowedKeyword : keywords) {
+            if (keyword.equals(allowedKeyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override

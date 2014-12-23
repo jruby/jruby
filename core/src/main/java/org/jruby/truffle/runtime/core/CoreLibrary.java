@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.rubinius.RubiniusLibrary;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -59,6 +58,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass integerClass;
     @CompilerDirectives.CompilationFinal private RubyClass indexErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass ioClass;
+    @CompilerDirectives.CompilationFinal private RubyClass keyErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass loadErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass localJumpErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass matchDataClass;
@@ -109,8 +109,6 @@ public class CoreLibrary {
 
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
-
-    @CompilerDirectives.CompilationFinal private RubiniusLibrary rubiniusLibrary;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -204,6 +202,7 @@ public class CoreLibrary {
         hashClass = new RubyHash.RubyHashClass(context, objectClass);
         indexErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "IndexError");
         kernelModule = new RubyModule(context, objectClass, "Kernel");
+        keyErrorClass = new RubyException.RubyExceptionClass(context, objectClass, indexErrorClass, "KeyError");
         loadErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LoadError");
         localJumpErrorClass = new RubyException.RubyExceptionClass(context, objectClass, standardErrorClass, "LocalJumpError");
         matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
@@ -239,6 +238,7 @@ public class CoreLibrary {
 
         objectClass.include(null, kernelModule);
         numericClass.include(null, comparableModule);
+        arrayClass.include(null, enumerableModule);
 
         // Set constants
 
@@ -293,8 +293,6 @@ public class CoreLibrary {
     public void initializeAfterMethodsAdded() {
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
-
-        rubiniusLibrary = new RubiniusLibrary(this);
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
             loadRubyCore("jruby/truffle/core.rb");
@@ -411,6 +409,11 @@ public class CoreLibrary {
         return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException argumentErrorMissingKeyword(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError(String.format("missing keyword: %s", name), currentNode);
+    }
+
     public RubyException argumentError(int passed, int required, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required), currentNode);
@@ -479,6 +482,11 @@ public class CoreLibrary {
     public RubyException typeErrorCantConvertTo(String from, String to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError(String.format("can't convert %s to %s", from, to), currentNode);
+    }
+
+    public RubyException typeErrorCantConvertTo(String from, String to, String methodUsed, String given, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)", from, to, from, methodUsed, given), currentNode);
     }
 
     public RubyException typeErrorCantConvertInto(String from, String to, Node currentNode) {
@@ -787,10 +795,6 @@ public class CoreLibrary {
 
     public RubyClass getIntegerClass() {
         return integerClass;
-    }
-
-    public RubiniusLibrary getRubiniusLibrary() {
-        return rubiniusLibrary;
     }
 
     public RubyClass getArgumentErrorClass() {

@@ -1,0 +1,2 @@
+fails:SortedSet#difference returns a new SortedSet containting self's elements excluding the elements in the passed Enumerable
+fails:SortedSet#difference raises an ArgumentError when passed a non-Enumerable

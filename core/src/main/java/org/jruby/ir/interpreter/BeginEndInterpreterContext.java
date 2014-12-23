@@ -13,7 +13,6 @@ import org.jruby.ir.operands.WrappedIRClosure;
  */
 public class BeginEndInterpreterContext extends InterpreterContext {
     private List<IRClosure> beginBlocks;
-    private List<WrappedIRClosure> endBlocks = null;
 
     public BeginEndInterpreterContext(IRScope scope, Instr[] instructions) {
         super(scope, instructions);
@@ -21,17 +20,7 @@ public class BeginEndInterpreterContext extends InterpreterContext {
         beginBlocks = scope.getBeginBlocks();
     }
 
-    public void recordEndBlock(WrappedIRClosure block) {
-        if (endBlocks == null) endBlocks = new ArrayList<>();
-
-        if (!endBlocks.contains(block)) endBlocks.add(block);
-    }
-
     public List<IRClosure> getBeginBlocks() {
         return beginBlocks;
-    }
-
-    public List<WrappedIRClosure> getEndBlocks() {
-        return endBlocks;
     }
 }

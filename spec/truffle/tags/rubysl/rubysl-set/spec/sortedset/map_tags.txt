@@ -1,0 +1,3 @@
+fails:SortedSet#map! yields each Object in self in sorted order
+fails:SortedSet#map! returns self
+fails:SortedSet#map! replaces self with the return values of the block

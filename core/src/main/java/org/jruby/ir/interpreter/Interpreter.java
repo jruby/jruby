@@ -55,7 +55,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
+    public static void runBeginBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
         if (beBlocks == null) return;
 
         for (IRClosure b: beBlocks) {
@@ -63,14 +63,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             b.prepareForInterpretation();
             Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
             blk.yield(context, null);
-        }
-    }
-
-    public static void runEndBlocks(List<WrappedIRClosure> blocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
-        if (blocks == null) return;
-
-        for (WrappedIRClosure block: blocks) {
-            ((Block) block.retrieve(context, self, currScope, context.getCurrentScope(), temp)).yield(context, null);
         }
     }
 
@@ -104,12 +96,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+            runBeginBlocks(ic.getBeginBlocks(), context, self, scope, null);
             return INTERPRET_ROOT(context, self, ic, currModule, name);
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
-            runEndBlocks(ic.getEndBlocks(), context, self, scope, null);
             dumpStats();
             context.popScope();
         }
@@ -282,6 +273,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, call.getResult(), result);
             break;
         }
+        case CALL_1D: {
+            OneFloatArgNoBlockCallInstr call = (OneFloatArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+            result = call.getCallSite().call(context, self, r, call.getFloatArg());
+            setResult(temp, currDynScope, call.getResult(), result);
+            break;
+        }
         case CALL_1O: {
             OneOperandArgNoBlockCallInstr call = (OneOperandArgNoBlockCallInstr)instr;
             IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
@@ -350,9 +348,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             break;
         case LINE_NUM:
             context.setLine(((LineNumberInstr)instr).lineNumber);
-            break;
-        case RECORD_END_BLOCK:
-            ((RecordEndBlockInstr)instr).interpret();
             break;
         case TRACE: {
             if (context.runtime.hasEventHooks()) {
@@ -584,8 +579,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         // Control should never get here!
-        // SSS FIXME: But looks like BEGIN/END blocks get here -- needs fixing
-        return null;
+        throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
     }
 
     /*
@@ -688,11 +682,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             evalScope.growIfNeeded();
 
-            runBeginEndBlocks(ic.getBeginBlocks(), context, self, ss, null);
+            runBeginBlocks(ic.getBeginBlocks(), context, self, ss, null);
 
             return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), EMPTY_ARGS, name, block, null);
         } finally {
-            runEndBlocks(ic.getEndBlocks(), context, self, ss, null);
             evalScope.clearEvalType();
             context.popScope();
         }
@@ -730,11 +723,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(evalScope.getStaticScope(), containingIRScope, file, lineNumber, rootNode, evalType);
 
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
+
         if (IRRuntimeHelpers.isDebug()) {
             LOG.info("Graph:\n" + evalScript.cfg().toStringGraph());
             LOG.info("CFG:\n" + evalScript.cfg().toStringInstrs());
         }
 
-        return (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
+        return ic;
     }
 }

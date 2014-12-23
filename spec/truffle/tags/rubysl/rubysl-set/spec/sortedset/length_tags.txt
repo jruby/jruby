@@ -1,0 +1,1 @@
+fails:SortedSet#length returns the number of elements in the set

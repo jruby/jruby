@@ -1,0 +1,1 @@
+fails:SortedSet#flatten_merge is protected

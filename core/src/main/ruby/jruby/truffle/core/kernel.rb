@@ -37,6 +37,10 @@ module Kernel
     end
   end
 
+  def printf(*args)
+    puts sprintf(*args)
+  end
+
 end
 
 # Here temporarily

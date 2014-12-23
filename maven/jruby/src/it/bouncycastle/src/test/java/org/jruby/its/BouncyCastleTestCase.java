@@ -22,13 +22,13 @@ public class BouncyCastleTestCase {
 
     @Test
     public void java(){
-        assertEquals( "BouncyCastle Security Provider v1.49", new BouncyCastleProvider().getInfo() );
+        assertEquals( "BouncyCastle Security Provider v1.47", new BouncyCastleProvider().getInfo() );
     }
 
     @Test
     public void ruby(){
         ScriptingContainer container = new ScriptingContainer();
         Object result = container.parse( "require 'openssl'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
-        assertEquals( "BouncyCastle Security Provider v1.47", result.toString() );
+        assertEquals( "BouncyCastle Security Provider v1.49", result.toString() );
     }
 }

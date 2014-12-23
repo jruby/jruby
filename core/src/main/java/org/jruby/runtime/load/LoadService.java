@@ -149,23 +149,10 @@ public class LoadService {
         // NOTE: always search .rb first for speed
         public static final String[] sourceSuffixes =
                 Options.AOT_LOADCLASSES.load() ? arrayOf(".rb", ".class") : arrayOf(".rb");
-        public static final String[] extensionSuffixes;
+        public static final String[] extensionSuffixes = arrayOf(".jar");
         private static final String[] allSuffixes;
 
         static {
-            // compute based on platform
-//            if (Options.CEXT_ENABLED.load()) {
-//                if (Platform.IS_WINDOWS) {
-//                    extensionSuffixes = new String[]{".jar", ".dll", ".jar.rb"};
-//                } else if (Platform.IS_MAC) {
-//                    extensionSuffixes = new String[]{".jar", ".bundle", ".jar.rb"};
-//                } else {
-//                    extensionSuffixes = new String[]{".jar", ".so", ".jar.rb"};
-//                }
-//            } else {
-//                extensionSuffixes = new String[]{".jar", ".jar.rb"};
-//            }
-            extensionSuffixes = new String[]{".jar", ".jar.rb"};
             allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
             System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
             System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);

@@ -1,0 +1,4 @@
+fails:SortedSet#delete_if yields each Object in self in sorted order
+fails:SortedSet#delete_if deletes every element from self for which the passed block returns true
+fails:SortedSet#delete_if returns self
+fails:SortedSet#delete_if returns an Enumerator when passed no block

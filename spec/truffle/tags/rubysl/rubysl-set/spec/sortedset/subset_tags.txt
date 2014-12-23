@@ -1,0 +1,2 @@
+fails:SortedSet#subset? returns true if passed a SortedSet that is equal to self or self is a subset of
+fails:SortedSet#subset? raises an ArgumentError when passed a non-SortedSet

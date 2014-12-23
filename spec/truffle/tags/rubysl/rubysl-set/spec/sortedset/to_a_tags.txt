@@ -1,0 +1,1 @@
+fails:SortedSet#to_a returns an array containing elements of self

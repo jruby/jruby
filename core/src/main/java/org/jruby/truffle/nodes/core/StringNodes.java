@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Option;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -24,7 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -175,10 +175,10 @@ public abstract class StringNodes {
 
             if (args.length == 1 && args[0] instanceof RubyArray) {
                 singleArrayProfile.enter();
-                return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(((RubyArray) args[0]).slowToArray())));
+                return context.makeString(StringFormatter.format(getContext(), format.toString(), Arrays.asList(((RubyArray) args[0]).slowToArray())));
             } else {
                 multipleArgumentsProfile.enter();
-                return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(args)));
+                return context.makeString(StringFormatter.format(getContext(), format.toString(), Arrays.asList(args)));
             }
         }
     }
@@ -263,6 +263,26 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "b")
+    public abstract static class BNode extends CoreMethodNode {
+
+        public BNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BNode(BNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString b(RubyString string) {
+            final ByteList bytes = string.getBytes().dup();
+            bytes.setEncoding(ASCIIEncoding.INSTANCE);
+            return getContext().makeString(bytes);
+        }
+
+    }
+
     @CoreMethod(names = "bytes")
     public abstract static class BytesNode extends CoreMethodNode {
 
@@ -293,7 +313,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "chomp")
+    @CoreMethod(names = "chomp", optional=1)
     public abstract static class ChompNode extends CoreMethodNode {
 
         public ChompNode(RubyContext context, SourceSection sourceSection) {
@@ -305,11 +325,17 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString chomp(RubyString string) {
+        public RubyString chomp(RubyString string, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
-
-            return string.getContext().makeString(string.toString().trim());
+            return string.getContext().makeString(StringNodesHelper.chomp(string));
         }
+
+        @Specialization
+        public RubyString chompWithString(RubyString string, RubyString stringToChomp) {
+            notDesignedForCompilation();
+            return getContext().makeString(StringNodesHelper.chompWithString(string, stringToChomp));
+        }
+
     }
 
     @CoreMethod(names = "chomp!")
@@ -327,7 +353,7 @@ public abstract class StringNodes {
         public RubyString chompBang(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(ByteList.create(string.toString().trim()));
+            string.set(StringNodesHelper.chomp(string));
             return string;
         }
     }
@@ -407,8 +433,9 @@ public abstract class StringNodes {
         @Specialization
         public RubyString downcase(RubyString string) {
             notDesignedForCompilation();
+            ByteList newByteList = StringNodesHelper.downcase(string);
 
-            return string.getContext().makeString(string.toString().toLowerCase());
+            return string.getContext().makeString(newByteList);
         }
     }
 
@@ -424,11 +451,17 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString downcase(RubyString string) {
+        public RubyBasicObject downcase(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(ByteList.create(string.toString().toLowerCase()));
-            return string;
+            ByteList newByteList = StringNodesHelper.downcase(string);
+
+            if (newByteList.equals(string.getBytes())) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                string.set(newByteList);
+                return string;
+            }
         }
     }
 
@@ -1081,7 +1114,7 @@ public abstract class StringNodes {
         public RubyString reverse(RubyString string) {
             notDesignedForCompilation();
 
-            return RubyString.fromJavaString(string.getLogicalClass(), new StringBuilder(string.toString()).reverse().toString());
+            return RubyString.fromByteList(string.getLogicalClass(), StringNodesHelper.reverse(string));
         }
     }
 
@@ -1100,7 +1133,7 @@ public abstract class StringNodes {
         public RubyString reverse(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(ByteList.create(new StringBuilder(string.toString()).reverse().toString()));
+            string.set(StringNodesHelper.reverse(string));
             return string;
         }
     }
@@ -1125,20 +1158,199 @@ public abstract class StringNodes {
 
     }
 
-    // Rubinius API
-    @CoreMethod(names = "data")
-    public abstract static class DataNode extends CoreMethodNode {
-        public DataNode(RubyContext context, SourceSection sourceSection) {
+    @CoreMethod(names = "upcase")
+    public abstract static class UpcaseNode extends CoreMethodNode {
+
+        public UpcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public DataNode(DataNode prev) {
+        public UpcaseNode(UpcaseNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyBasicObject data(RubyString string) {
-            return new RubiniusByteArray(getContext().getCoreLibrary().getRubiniusLibrary().getByteArrayCLass(), string.getBytes().getUnsafeBytes());
+        public RubyString upcase(RubyString string) {
+            notDesignedForCompilation();
+            final ByteList byteListString = StringNodesHelper.upcase(string);
+
+            return string.getContext().makeString(byteListString);
+        }
+
+    }
+
+    @CoreMethod(names = "upcase!")
+    public abstract static class UpcaseBangNode extends CoreMethodNode {
+
+        public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UpcaseBangNode(UpcaseBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString upcaseBang(RubyString string) {
+            notDesignedForCompilation();
+            final ByteList byteListString = StringNodesHelper.upcase(string);
+            string.set(byteListString);
+
+            return string;
         }
     }
+
+    @CoreMethod(names = "capitalize!")
+    public abstract static class CapitalizeBangNode extends CoreMethodNode {
+
+        public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CapitalizeBangNode(CapitalizeBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString capitalizeBang(RubyString string) {
+            notDesignedForCompilation();
+            String javaString = string.toString();
+            if (javaString.isEmpty()) {
+                return string;
+            } else {
+                final ByteList byteListString = StringNodesHelper.capitalize(string);
+
+                string.set(byteListString);
+                return string;
+            }
+        }
+    }
+
+    @CoreMethod(names = "capitalize")
+    public abstract static class CapitalizeNode extends CoreMethodNode {
+
+        public CapitalizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CapitalizeNode(CapitalizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString capitalize(RubyString string) {
+            notDesignedForCompilation();
+            String javaString = string.toString();
+
+            if (javaString.isEmpty()) {
+                return string;
+            } else {
+                final ByteList byteListString = StringNodesHelper.capitalize(string);
+                return string.getContext().makeString(byteListString);
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "clear")
+    public abstract static class ClearNode extends CoreMethodNode {
+
+        public ClearNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClearNode(ClearNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString clear(RubyString string) {
+            notDesignedForCompilation();
+            ByteList empty = ByteList.EMPTY_BYTELIST;
+            empty.setEncoding(string.getBytes().getEncoding());
+
+            string.set(empty);
+            return string;
+        }
+    }
+
+    @CoreMethod(names = "chr")
+    public abstract static class ChrNode extends CoreMethodNode {
+
+        public ChrNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ChrNode(ChrNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString chr(RubyString string) {
+            notDesignedForCompilation();
+            if (string.toString().isEmpty()) {
+                return string;
+            } else {
+                String head = string.toString().substring(0, 1);
+                ByteList byteString = ByteList.create(head);
+                byteString.setEncoding(string.getBytes().getEncoding());
+
+                return string.getContext().makeString(byteString);
+            }
+        }
+    }
+
+    static class StringNodesHelper {
+
+        public static ByteList capitalize(RubyString string) {
+            String javaString = string.toString();
+            String head = javaString.substring(0, 1).toUpperCase();
+            String tail = javaString.substring(1, javaString.length()).toLowerCase();
+            ByteList byteListString = ByteList.create(head + tail);
+            byteListString.setEncoding(string.getBytes().getEncoding());
+            return byteListString;
+        }
+
+        public static ByteList upcase(RubyString string) {
+            ByteList byteListString = ByteList.create(string.toString().toUpperCase());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+            return byteListString;
+        }
+
+        public static ByteList downcase(RubyString string) {
+            ByteList newByteList = ByteList.create(string.toString().toLowerCase());
+            newByteList.setEncoding(string.getBytes().getEncoding());
+
+            return newByteList;
+        }
+
+        public static ByteList chomp(RubyString string) {
+            ByteList byteListString = ByteList.create(string.toString().trim());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+
+            return byteListString;
+        }
+
+        public static ByteList chompWithString(RubyString string, RubyString stringToChomp) {
+
+            String tempString = string.toString();
+
+            if (tempString.endsWith(stringToChomp.toString())) {
+                tempString = tempString.substring(0, tempString.length() - stringToChomp.toString().length());
+            }
+
+            ByteList byteList = ByteList.create(tempString);
+            byteList.setEncoding(string.getBytes().getEncoding());
+
+            return byteList;
+        }
+
+        public static ByteList reverse(RubyString string) {
+            ByteList byteListString = ByteList.create(new StringBuilder(string.toString()).reverse().toString());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+
+            return byteListString;
+        }
+    }
+
 }

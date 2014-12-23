@@ -1,0 +1,2 @@
+fails:SortedSet#^ returns a new SortedSet containing elements that are not in both self and the passed Enumberable
+fails:SortedSet#^ raises an ArgumentError when passed a non-Enumerable

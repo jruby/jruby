@@ -1,0 +1,1 @@
+fails:SortedSet#include? returns true when self contains the passed Object

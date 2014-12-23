@@ -202,7 +202,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "first")
+    @CoreMethod(names = {"first", "begin"})
     public abstract static class FirstNode extends CoreMethodNode {
 
         public FirstNode(RubyContext context, SourceSection sourceSection) {
@@ -225,7 +225,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"include?", "==="}, optional = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
+    @CoreMethod(names = {"include?", "==="}, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child protected PredicateDispatchHeadNode callLess;
@@ -273,7 +273,7 @@ public abstract class RangeNodes {
         }
     }
 
-    @CoreMethod(names = "last")
+    @CoreMethod(names = {"last", "end"})
     public abstract static class LastNode extends CoreMethodNode {
 
         public LastNode(RubyContext context, SourceSection sourceSection) {
