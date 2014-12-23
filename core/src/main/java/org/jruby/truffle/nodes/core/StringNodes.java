@@ -327,20 +327,13 @@ public abstract class StringNodes {
         @Specialization
         public RubyString chomp(RubyString string, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
-            return string.getContext().makeString(string.toString().trim());
+            return string.getContext().makeString(StringNodesHelper.chomp(string));
         }
 
         @Specialization
         public RubyString chompWithString(RubyString string, RubyString stringToChomp) {
             notDesignedForCompilation();
-
-            String tempString = string.toString();
-
-            if (tempString.endsWith(stringToChomp.toString())) {
-                tempString = tempString.substring(0, tempString.length() - stringToChomp.toString().length());
-            }
-
-            return getContext().makeString(tempString);
+            return getContext().makeString(StringNodesHelper.chompWithString(string, stringToChomp));
         }
 
     }
@@ -360,7 +353,7 @@ public abstract class StringNodes {
         public RubyString chompBang(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(ByteList.create(string.toString().trim()));
+            string.set(StringNodesHelper.chomp(string));
             return string;
         }
     }
@@ -440,8 +433,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString downcase(RubyString string) {
             notDesignedForCompilation();
-            ByteList newByteList = ByteList.create(string.toString().toLowerCase());
-            newByteList.setEncoding(string.getBytes().getEncoding());
+            ByteList newByteList = StringNodesHelper.downcase(string);
 
             return string.getContext().makeString(newByteList);
         }
@@ -462,8 +454,7 @@ public abstract class StringNodes {
         public RubyBasicObject downcase(RubyString string) {
             notDesignedForCompilation();
 
-            ByteList newByteList = ByteList.create(string.toString().toLowerCase());
-            newByteList.setEncoding(string.getBytes().getEncoding());
+            ByteList newByteList = StringNodesHelper.downcase(string);
 
             if (newByteList.equals(string.getBytes())) {
                 return getContext().getCoreLibrary().getNilObject();
@@ -1181,8 +1172,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString upcase(RubyString string) {
             notDesignedForCompilation();
-            ByteList byteListString = ByteList.create(string.toString().toUpperCase());
-            byteListString.setEncoding(string.getBytes().getEncoding());
+            final ByteList byteListString = StringNodesHelper.upcase(string);
 
             return string.getContext().makeString(byteListString);
         }
@@ -1203,10 +1193,9 @@ public abstract class StringNodes {
         @Specialization
         public RubyString upcaseBang(RubyString string) {
             notDesignedForCompilation();
-            ByteList byteListString = ByteList.create(string.toString().toUpperCase());
-            byteListString.setEncoding(string.getBytes().getEncoding());
-
+            final ByteList byteListString = StringNodesHelper.upcase(string);
             string.set(byteListString);
+
             return string;
         }
     }
@@ -1229,10 +1218,7 @@ public abstract class StringNodes {
             if (javaString.isEmpty()) {
                 return string;
             } else {
-                String head = javaString.substring(0, 1).toUpperCase();
-                String tail = javaString.substring(1, javaString.length()).toLowerCase();
-                ByteList byteListString = ByteList.create(head + tail);
-                byteListString.setEncoding(string.getBytes().getEncoding());
+                final ByteList byteListString = StringNodesHelper.capitalize(string);
 
                 string.set(byteListString);
                 return string;
@@ -1255,14 +1241,11 @@ public abstract class StringNodes {
         public RubyString capitalize(RubyString string) {
             notDesignedForCompilation();
             String javaString = string.toString();
+
             if (javaString.isEmpty()) {
                 return string;
             } else {
-                String head = javaString.substring(0, 1).toUpperCase();
-                String tail = javaString.substring(1, javaString.length()).toLowerCase();
-                ByteList byteListString = ByteList.create(head + tail);
-                byteListString.setEncoding(string.getBytes().getEncoding());
-
+                final ByteList byteListString = StringNodesHelper.capitalize(string);
                 return string.getContext().makeString(byteListString);
             }
         }
@@ -1314,6 +1297,52 @@ public abstract class StringNodes {
 
                 return string.getContext().makeString(byteString);
             }
+        }
+    }
+
+    static class StringNodesHelper {
+
+        public static ByteList capitalize(RubyString string) {
+            String javaString = string.toString();
+            String head = javaString.substring(0, 1).toUpperCase();
+            String tail = javaString.substring(1, javaString.length()).toLowerCase();
+            ByteList byteListString = ByteList.create(head + tail);
+            byteListString.setEncoding(string.getBytes().getEncoding());
+            return byteListString;
+        }
+
+        public static ByteList upcase(RubyString string) {
+            ByteList byteListString = ByteList.create(string.toString().toUpperCase());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+            return byteListString;
+        }
+
+        public static ByteList downcase(RubyString string) {
+            ByteList newByteList = ByteList.create(string.toString().toLowerCase());
+            newByteList.setEncoding(string.getBytes().getEncoding());
+
+            return newByteList;
+        }
+
+        public static ByteList chomp(RubyString string) {
+            ByteList byteListString = ByteList.create(string.toString().trim());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+
+            return byteListString;
+        }
+
+        public static ByteList chompWithString(RubyString string, RubyString stringToChomp) {
+
+            String tempString = string.toString();
+
+            if (tempString.endsWith(stringToChomp.toString())) {
+                tempString = tempString.substring(0, tempString.length() - stringToChomp.toString().length());
+            }
+
+            ByteList byteList = ByteList.create(tempString);
+            byteList.setEncoding(string.getBytes().getEncoding());
+
+            return byteList;
         }
     }
 
