@@ -14,7 +14,6 @@ import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
@@ -1296,6 +1295,9 @@ public class JVMVisitor extends IRVisitor {
         String name = oneFixnumArgNoBlockCallInstr.getName();
         long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
         Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
+        Operand closure = oneFixnumArgNoBlockCallInstr.getClosureArg(null);
+        boolean hasClosure = closure != null;
+        CallType callType = oneFixnumArgNoBlockCallInstr.getCallType();
         Variable result = oneFixnumArgNoBlockCallInstr.getResult();
 
         m.loadContext();
@@ -1313,44 +1315,6 @@ public class JVMVisitor extends IRVisitor {
                 signature,
                 InvokeDynamicSupport.getFixnumOperatorHandle(),
                 fixnum,
-                "",
-                0);
-
-        if (result != null) {
-            jvmStoreLocal(result);
-        } else {
-            // still need to drop, since all dyncalls return something (FIXME)
-            m.adapter.pop();
-        }
-    }
-
-    @Override
-    public void OneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) {
-        if (MethodIndex.getFastFloatOpsMethod(oneFloatArgNoBlockCallInstr.getName()) == null) {
-            CallInstr(oneFloatArgNoBlockCallInstr);
-            return;
-        }
-        IRBytecodeAdapter m = jvmMethod();
-        String name = oneFloatArgNoBlockCallInstr.getName();
-        double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
-        Operand receiver = oneFloatArgNoBlockCallInstr.getReceiver();
-        Variable result = oneFloatArgNoBlockCallInstr.getResult();
-
-        m.loadContext();
-
-        // for visibility checking without requiring frame self
-        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
-        m.loadSelf(); // caller
-
-        visit(receiver);
-
-        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-
-        m.adapter.invokedynamic(
-                "floatOperator:" + JavaNameMangler.mangleMethodName(name),
-                signature,
-                InvokeDynamicSupport.getFloatOperatorHandle(),
-                flote,
                 "",
                 0);
 
