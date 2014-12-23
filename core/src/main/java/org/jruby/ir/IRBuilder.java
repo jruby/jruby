@@ -987,7 +987,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(callResult, callNode.getName(), receiver, args.toArray(new Operand[args.size()]), block);
+        CallInstr     callInstr    = (CallInstr)CallInstr.create(callResult, callNode.getName(), receiver, args.toArray(new Operand[args.size()]), block).specializeForInterpretation();
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (
@@ -2204,7 +2204,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args.toArray(new Operand[args.size()]), block);
+        CallInstr     callInstr    = (CallInstr)CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args.toArray(new Operand[args.size()]), block).specializeForInterpretation();
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -3381,7 +3381,7 @@ public class IRBuilder {
 
     public Operand buildVCall(VCallNode node, IRScope s) {
         Variable callResult = s.createTemporaryVariable();
-        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, node.getName(), s.getSelf(), NO_ARGS, null);
+        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, node.getName(), s.getSelf(), NO_ARGS, null).specializeForInterpretation();
         addInstr(s, callInstr);
         return callResult;
     }

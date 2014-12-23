@@ -1,8 +1,8 @@
 package org.jruby.ir.instructions.specialized;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
-import org.jruby.ir.operands.Operand;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -23,5 +23,10 @@ public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
 
         return getCallSite().call(context, self, object);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ZeroOperandArgNoBlockCallInstr(this);
     }
 }
