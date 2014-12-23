@@ -13,9 +13,6 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -26,7 +23,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
@@ -1286,52 +1282,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void OneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {
-        if (MethodIndex.getFastFixnumOpsMethod(oneFixnumArgNoBlockCallInstr.getName()) == null) {
-            CallInstr(oneFixnumArgNoBlockCallInstr);
-            return;
-        }
-        IRBytecodeAdapter m = jvmMethod();
-        String name = oneFixnumArgNoBlockCallInstr.getName();
-        long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
-        Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
-        Operand closure = oneFixnumArgNoBlockCallInstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
-        CallType callType = oneFixnumArgNoBlockCallInstr.getCallType();
-        Variable result = oneFixnumArgNoBlockCallInstr.getResult();
-
-        m.loadContext();
-
-        // for visibility checking without requiring frame self
-        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
-        m.loadSelf(); // caller
-
-        visit(receiver);
-
-        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-
-        m.adapter.invokedynamic(
-                "fixnumOperator:" + JavaNameMangler.mangleMethodName(name),
-                signature,
-                InvokeDynamicSupport.getFixnumOperatorHandle(),
-                fixnum,
-                "",
-                0);
-
-        if (result != null) {
-            jvmStoreLocal(result);
-        } else {
-            // still need to drop, since all dyncalls return something (FIXME)
-            m.adapter.pop();
-        }
-    }
-
-    @Override
-    public void OneOperandArgNoBlockCallInstr(OneOperandArgNoBlockCallInstr oneOperandArgNoBlockCallInstr) {
-        CallInstr(oneOperandArgNoBlockCallInstr);
-    }
-
-    @Override
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) {
         visit(optargmultipleasgninstr.getArrayArg());
         jvmAdapter().checkcast(p(RubyArray.class));
@@ -1829,11 +1779,6 @@ public class JVMVisitor extends IRVisitor {
         }
 
         jvmStoreLocal(yieldinstr.getResult());
-    }
-
-    @Override
-    public void ZeroOperandArgNoBlockCallInstr(ZeroOperandArgNoBlockCallInstr zeroOperandArgNoBlockCallInstr) {
-        CallInstr(zeroOperandArgNoBlockCallInstr);
     }
 
     @Override
