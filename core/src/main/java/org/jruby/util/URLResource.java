@@ -155,8 +155,11 @@ public class URLResource extends AbstractFileResource {
         if (cl == null ) {
             cl = Thread.currentThread().getContextClassLoader();
         }
-        if (pathname.startsWith("/")) {
-            pathname = pathname.substring(1);
+        try
+        {
+            pathname = new NormalizedFile("/" + pathname).getCanonicalPath().substring(1);
+        } catch (IOException e) {
+            pathname = pathname.replaceAll("^[.]?/+", "");
         }
         URL url = cl.getResource(pathname);
         String[] files = listClassLoaderFiles(cl, pathname);
@@ -256,7 +259,8 @@ public class URLResource extends AbstractFileResource {
         }
         try
         {
-            Enumeration<URL> urls = classloader.getResources(pathname + "/.jrubydir");
+            pathname = pathname + (pathname.equals("") ? ".jrubydir" : "/.jrubydir");
+            Enumeration<URL> urls = classloader.getResources(pathname);
             if (!urls.hasMoreElements()) {
                 return null;
             }
