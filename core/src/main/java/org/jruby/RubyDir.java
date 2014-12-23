@@ -188,6 +188,9 @@ public class RubyDir extends RubyObject {
     }
 
     private static String getCWD(Ruby runtime) {
+        if (runtime.getCurrentDirectory().startsWith("uri:")) {
+            return runtime.getCurrentDirectory();
+        }
         try {
             return new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
         } catch (Exception e) {
@@ -310,17 +313,22 @@ public class RubyDir extends RubyObject {
             RubyFile.get_path(context, args[0]) : getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
-        JRubyFile dir = getDir(runtime, adjustedPath, true);
         String realPath = null;
         String oldCwd = runtime.getCurrentDirectory();
+        if (adjustedPath.startsWith("uri:")){
+            realPath = adjustedPath;
+        }
+        else {
+            JRubyFile dir = getDir(runtime, adjustedPath, true);
 
-        // We get canonical path to try and flatten the path out.
-        // a dir '/subdir/..' should return as '/'
-        // cnutter: Do we want to flatten path out?
-        try {
-            realPath = dir.getCanonicalPath();
-        } catch (IOException e) {
-            realPath = dir.getAbsolutePath();
+            // We get canonical path to try and flatten the path out.
+            // a dir '/subdir/..' should return as '/'
+            // cnutter: Do we want to flatten path out?
+            try {
+                realPath = dir.getCanonicalPath();
+            } catch (IOException e) {
+                realPath = dir.getAbsolutePath();
+            }
         }
 
         IRubyObject result = null;
@@ -330,7 +338,6 @@ public class RubyDir extends RubyObject {
             try {
                 result = block.yield(context, path);
             } finally {
-                dir = getDir(runtime, oldCwd, true);
                 runtime.setCurrentDirectory(oldCwd);
             }
         } else {
