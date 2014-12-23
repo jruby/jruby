@@ -28,6 +28,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
@@ -1291,5 +1292,10 @@ public class IRRuntimeHelpers {
     @JIT
     public static void pushExitBlock(ThreadContext context, Block blk) {
         context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+    }
+    
+    @JIT
+    public static FunctionalCachingCallSite newFunctionalCachingCallSite(String name) {
+        return new FunctionalCachingCallSite(name);
     }
 }
