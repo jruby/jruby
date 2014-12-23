@@ -1114,7 +1114,7 @@ public abstract class StringNodes {
         public RubyString reverse(RubyString string) {
             notDesignedForCompilation();
 
-            return RubyString.fromJavaString(string.getLogicalClass(), new StringBuilder(string.toString()).reverse().toString());
+            return RubyString.fromByteList(string.getLogicalClass(), StringNodesHelper.reverse(string));
         }
     }
 
@@ -1133,7 +1133,7 @@ public abstract class StringNodes {
         public RubyString reverse(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(ByteList.create(new StringBuilder(string.toString()).reverse().toString()));
+            string.set(StringNodesHelper.reverse(string));
             return string;
         }
     }
@@ -1343,6 +1343,13 @@ public abstract class StringNodes {
             byteList.setEncoding(string.getBytes().getEncoding());
 
             return byteList;
+        }
+
+        public static ByteList reverse(RubyString string) {
+            ByteList byteListString = ByteList.create(new StringBuilder(string.toString()).reverse().toString());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+
+            return byteListString;
         }
     }
 
