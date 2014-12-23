@@ -273,6 +273,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, call.getResult(), result);
             break;
         }
+        case CALL_1D: {
+            OneFloatArgNoBlockCallInstr call = (OneFloatArgNoBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+            result = call.getCallSite().call(context, self, r, call.getFloatArg());
+            setResult(temp, currDynScope, call.getResult(), result);
+            break;
+        }
         case CALL_1O: {
             OneOperandArgNoBlockCallInstr call = (OneOperandArgNoBlockCallInstr)instr;
             IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);

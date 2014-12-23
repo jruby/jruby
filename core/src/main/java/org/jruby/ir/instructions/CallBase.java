@@ -4,6 +4,7 @@ import org.jruby.RubyArray;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Float;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -144,6 +145,14 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     public boolean isAllFixnums() {
         for (Operand argument : arguments) {
             if (!(argument instanceof Fixnum)) return false;
+        }
+
+        return true;
+    }
+
+    public boolean isAllFloats() {
+        for (Operand argument : arguments) {
+            if (!(argument instanceof Float)) return false;
         }
 
         return true;
