@@ -12,8 +12,12 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
+import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
+import org.jruby.ast.StarNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
@@ -21,19 +25,40 @@ import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
 import org.jruby.truffle.nodes.core.ArraySliceNodeFactory;
+import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.omg.Dynamic.Parameter;
 
 import java.util.*;
 
 public class LoadArgumentsTranslator extends Translator {
 
+    private static class ArraySlot {
+
+        private FrameSlot arraySlot;
+        private int previousIndex;
+
+        public ArraySlot(FrameSlot arraySlot, int previousIndex) {
+            this.arraySlot = arraySlot;
+            this.previousIndex = previousIndex;
+        }
+
+        public FrameSlot getArraySlot() {
+            return arraySlot;
+        }
+
+        public int getPreviousIndex() {
+            return previousIndex;
+        }
+    }
+
     private final boolean isBlock;
     private final BodyTranslator methodBodyTranslator;
-    private final Deque<FrameSlot> arraySlotStack = new ArrayDeque<>();
+    private final Deque<ArraySlot> arraySlotStack = new ArrayDeque<>();
 
     private enum State {
         PRE,
@@ -43,6 +68,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     private int required;
     private int index;
+    private int indexFromEnd = 1;
     private State state;
     private boolean hasKeywordArguments;
     private List<String> excludedKeywords = new ArrayList<>();
@@ -161,7 +187,7 @@ public class LoadArgumentsTranslator extends Translator {
                 defaultValue = dAsgnNode.getValueNode().accept(this);
             }
         } else {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("unsupported keyword arg " + node);
         }
 
         excludedKeywords.add(name);
@@ -243,30 +269,33 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode readNode;
 
-        if (valueNode instanceof org.jruby.ast.NilImplicitNode) {
-            // Multiple assignment
+        if (indexFromEnd == 1) {
+            if (valueNode instanceof org.jruby.ast.NilImplicitNode) {
+                // Multiple assignment
 
-            if (useArray()) {
-                readNode = ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
+                if (useArray()) {
+                    readNode = ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
+                } else {
+                    readNode = readArgument(sourceSection);
+                }
             } else {
-                readNode = readArgument(sourceSection);
+                // Optional argument
+                final RubyNode defaultValue = valueNode.accept(this);
+
+                int minimum = index + 1 + argsNode.getPostCount();
+
+                if (argsNode.hasKwargs()) {
+                    minimum += 1;
+                }
+
+                readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
             }
         } else {
-            // Optional argument
-            final RubyNode defaultValue = valueNode.accept(this);
-
-            int minimum = index + 1 + argsNode.getPostCount();
-
-            if (argsNode.hasKwargs()) {
-                minimum += 1;
-            }
-
-            readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
+            readNode = ArraySliceNodeFactory.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
         }
 
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(name);
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
-
     }
 
     @Override
@@ -298,9 +327,29 @@ public class LoadArgumentsTranslator extends Translator {
 
         final List<RubyNode> notNilSequence = new ArrayList<>();
 
-        for (int n = 0; n < childNodes.size(); n++) {
-            index = n;
-            notNilSequence.add(childNodes.get(n).accept(this));
+        if (node.getPre() != null) {
+            index = 0;
+            for (org.jruby.ast.Node child : node.getPre().childNodes()) {
+                notNilSequence.add(child.accept(this));
+                index++;
+            }
+        }
+
+        if (node.getRest() != null) {
+            index = node.getPreCount();
+            indexFromEnd = -node.getPostCount();
+            notNilSequence.add(node.getRest().accept(this));
+            indexFromEnd = 1;
+        }
+
+        if (node.getPost() != null) {
+            index = -1;
+            final List<org.jruby.ast.Node> children = new ArrayList<>(node.getPost().childNodes());
+            Collections.reverse(children);
+            for (org.jruby.ast.Node child : children) {
+                notNilSequence.add(child.accept(this));
+                index--;
+            }
         }
 
         final RubyNode notNil = SequenceNode.sequence(context, sourceSection, notNilSequence);
@@ -308,6 +357,35 @@ public class LoadArgumentsTranslator extends Translator {
         popArraySlot(arraySlot);
 
         final List<RubyNode> nilSequence = new ArrayList<>();
+
+        final ParameterCollector parametersToClearCollector = new ParameterCollector();
+
+        if (node.getPre() != null) {
+            for (org.jruby.ast.Node child : node.getPre().childNodes()) {
+                child.accept(parametersToClearCollector);
+            }
+        }
+
+        if (node.getRest() != null) {
+            if (node.getRest() instanceof INameNode) {
+                final String name = ((INameNode) node.getRest()).getName();
+                nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)).makeWriteNode(new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, new RubyNode[]{})));
+            } else if (node.getRest() instanceof StarNode) {
+                // Don't think we need to do anything
+            } else {
+                throw new UnsupportedOperationException("unsupported rest node " + node.getRest());
+            }
+        }
+
+        if (node.getPost() != null) {
+            for (org.jruby.ast.Node child : node.getPost().childNodes()) {
+                child.accept(parametersToClearCollector);
+            }
+        }
+
+        for (String parameterToClear : parametersToClearCollector.getParameters()) {
+            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(new NilLiteralNode(context, sourceSection)));
+        }
 
         if (!childNodes.isEmpty()) {
             // We haven't pushed a new array slot, so this will read the value which we couldn't convert to an array into the first destructured argument
@@ -325,7 +403,7 @@ public class LoadArgumentsTranslator extends Translator {
                         BooleanCastNodeFactory.create(context, sourceSection,
                                 new IsNilNode(context, sourceSection, ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlot))),
                         nil,
-                        notNil));
+                        notNil == null ? new NilLiteralNode(context, sourceSection) : notNil));
     }
 
     @Override
@@ -335,11 +413,11 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     public void pushArraySlot(FrameSlot slot) {
-        arraySlotStack.push(slot);
+        arraySlotStack.push(new ArraySlot(slot, index));
     }
 
     public void popArraySlot(FrameSlot slot) {
-        arraySlotStack.pop();
+        index = arraySlotStack.pop().getPreviousIndex();
     }
 
     protected boolean useArray() {
@@ -347,7 +425,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     protected RubyNode loadArray(SourceSection sourceSection) {
-        return ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlotStack.peek());
+        return ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlotStack.peek().getArraySlot());
     }
 
     @Override
