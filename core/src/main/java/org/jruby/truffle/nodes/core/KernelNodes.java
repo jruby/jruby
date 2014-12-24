@@ -513,7 +513,7 @@ public abstract class KernelNodes {
         public Object eval(RubyString source, RubyBinding binding) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.toString(), binding, this);
+            return getContext().eval(source.getBytes(), binding, this);
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
@@ -543,7 +543,7 @@ public abstract class KernelNodes {
             }
 
             if (coerced instanceof RubyString) {
-                return getContext().eval(coerced.toString(), binding, this);
+                return getContext().eval(((RubyString) coerced).getBytes(), binding, this);
             } else {
                 throw new RaiseException(
                         getContext().getCoreLibrary().typeError(

@@ -18,6 +18,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.*;
 
 import com.oracle.truffle.api.object.Shape;
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
@@ -138,7 +140,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void load(Source source, RubyNode currentNode) {
-        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
+        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
     public void loadFile(String fileName, RubyNode currentNode) {
@@ -163,7 +165,7 @@ public class RubyContext extends ExecutionContext {
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
 
         coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
-        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
+        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
     public RubySymbol.SymbolTable getSymbolTable() {
@@ -180,27 +182,27 @@ public class RubyContext extends ExecutionContext {
         return symbolTable.getSymbol(name);
     }
 
-    public Object eval(String code, RubyNode currentNode) {
+    public Object eval(ByteList code, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
-    public Object eval(String code, Object self, RubyNode currentNode) {
+    public Object eval(ByteList code, Object self, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode);
     }
 
-    public Object eval(String code, RubyBinding binding, RubyNode currentNode) {
+    public Object eval(ByteList code, RubyBinding binding, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);
     }
 
-    public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
-        return execute(context, source, parserContext, self, parentFrame, currentNode, NodeWrapper.IDENTITY);
+    public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
+        return execute(context, source, defaultEncoding, parserContext, self, parentFrame, currentNode, NodeWrapper.IDENTITY);
     }
 
-    public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
-        final RubyRootNode rootNode = translator.parse(context, source, parserContext, parentFrame, currentNode, wrapper);
+    public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
+        final RubyRootNode rootNode = translator.parse(context, source, defaultEncoding, parserContext, parentFrame, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         // TODO(CS): we really need a method here - it's causing problems elsewhere

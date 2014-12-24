@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
@@ -313,7 +314,7 @@ public class CoreLibrary {
             throw new RuntimeException(e);
         }
 
-        context.execute(context, source, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null);
+        context.execute(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null);
     }
 
     public void initializeEncodingConstants() {
