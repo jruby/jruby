@@ -7601,7 +7601,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject toEncoding,
             IRubyObject forcedEncoding, IRubyObject opts) {
-        Ruby runtime = context.runtime;
         
         return EncodingUtils.strEncode(context, this, toEncoding, forcedEncoding, opts);
     }
