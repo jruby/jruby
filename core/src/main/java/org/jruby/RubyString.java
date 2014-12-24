@@ -7615,8 +7615,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "force_encoding", compat = RUBY1_9)
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
+        return force_encoding(context, context.runtime.getEncodingService().getEncodingFromObject(enc));
+    }
+
+    private IRubyObject force_encoding(ThreadContext context, Encoding encoding) {
         modify19();
-        Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
         associateEncoding(encoding);
         clearCodeRange();
         return this;
@@ -7773,10 +7776,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     
     @JRubyMethod(name ="b", compat = RUBY2_0)
     public IRubyObject b(ThreadContext context) {
-      Encoding encoding = ASCIIEncoding.INSTANCE;
-      RubyString dup = (RubyString)dup();
-      dup.associateEncoding(encoding);
-      dup.clearCodeRange();
-      return dup;
+        RubyString dup = strDup(context.runtime);
+
+        return dup.force_encoding(context, ASCIIEncoding.INSTANCE);
     }
 }
