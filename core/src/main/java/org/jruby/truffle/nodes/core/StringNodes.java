@@ -588,7 +588,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "gsub", required = 2)
+    @CoreMethod(names = "gsub", required = 1, optional = 1, needsBlock = true)
     public abstract static class GsubNode extends RegexpNodes.EscapingNode {
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
@@ -600,15 +600,30 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
-            return gsub(string, regexp, replacement);
+            return gsub(string, regexp, replacement, block);
         }
 
         @Specialization
-        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement) {
+        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            return regexp.gsub(string, replacement.toString());
+        }
+
+        @Specialization
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
+            return gsub(string, regexp, replacement, block);
+        }
+
+        @Specialization
+        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") RubyProc block) {
             notDesignedForCompilation();
 
             return regexp.gsub(string, replacement.toString());
