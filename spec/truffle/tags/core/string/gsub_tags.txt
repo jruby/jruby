@@ -1,11 +1,3 @@
-fails:String#gsub with pattern and replacement inserts the replacement around every character when the pattern collapses
-fails:String#gsub with pattern and replacement respects $KCODE when the pattern collapses
-fails:String#gsub with pattern and replacement doesn't freak out when replacing ^
-fails:String#gsub with pattern and replacement returns a copy of self with all occurrences of pattern replaced with replacement
-fails:String#gsub with pattern and replacement ignores a block if supplied
-fails:String#gsub with pattern and replacement supports \G which matches at the beginning of the remaining (non-matched) string
-fails:String#gsub with pattern and replacement supports /i for ignoring case
-fails:String#gsub with pattern and replacement doesn't interpret regexp metacharacters if pattern is a string
 fails:String#gsub with pattern and replacement replaces \1 sequences with the regexp's corresponding capture
 fails:String#gsub with pattern and replacement treats \1 sequences without corresponding captures as empty strings
 fails:String#gsub with pattern and replacement replaces \& and \0 with the complete match
@@ -14,11 +6,8 @@ fails:String#gsub with pattern and replacement replaces \' with everything after
 fails:String#gsub with pattern and replacement replaces \+ with the last paren that actually matched
 fails:String#gsub with pattern and replacement treats \+ as an empty string if there was no captures
 fails:String#gsub with pattern and replacement maps \\ in replacement to \
-fails:String#gsub with pattern and replacement leaves unknown \x escapes in replacement untouched
-fails:String#gsub with pattern and replacement leaves \ at the end of replacement untouched
 fails:String#gsub with pattern and replacement replaces \k named backreferences with the regexp's corresponding capture
 fails:String#gsub with pattern and replacement taints the result if the original string or replacement is tainted
-fails:String#gsub with pattern and replacement handles pattern collapse without $KCODE
 fails:String#gsub with pattern and replacement untrusts the result if the original string or replacement is untrusted
 fails:String#gsub with pattern and replacement tries to convert pattern to a string using to_str
 fails:String#gsub with pattern and replacement raises a TypeError when pattern can't be converted to a string

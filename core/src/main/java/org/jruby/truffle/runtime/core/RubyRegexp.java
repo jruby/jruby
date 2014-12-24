@@ -260,28 +260,42 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubyString gsub(String string, String replacement) {
+    public RubyString gsub(RubyString string, String replacement) {
         final RubyContext context = getContext();
 
-        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+        final byte[] stringBytes = string.getBytes().bytes();
+        final Encoding encoding = string.getBytes().getEncoding();
         final Matcher matcher = regex.matcher(stringBytes);
+
+        int p = string.getBytes().getBegin();
+        int end = 0;
+        int range = p + string.getBytes().getRealSize();
+        int lastMatchEnd = 0;
 
         final StringBuilder builder = new StringBuilder();
 
-        int p = 0;
-
         while (true) {
-            final int match = matcher.search(p, stringBytes.length, Option.DEFAULT);
+            Object matchData = matchCommon(string.getBytes(), false, false, matcher, p + end, range);
 
-            if (match == -1) {
-                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, stringBytes.length - p)));
+            if (matchData == context.getCoreLibrary().getNilObject()) {
+                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, range - lastMatchEnd)));
+
                 break;
-            } else {
-                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, matcher.getBegin() - p)));
-                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
             }
 
-            p = matcher.getEnd();
+            Region region = matcher.getEagerRegion();
+
+            for (int i = 0; i < region.numRegs; i++) {
+                int regionStart = region.beg[i];
+                int regionEnd = region.end[i];
+
+                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, regionStart - lastMatchEnd)));
+                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
+
+                lastMatchEnd = regionEnd;
+            }
+
+            end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
         }
 
         return context.makeString(builder.toString());
@@ -382,6 +396,9 @@ public class RubyRegexp extends RubyBasicObject {
                 final List<RubyString> parts = new ArrayList<>();
 
                 Object[] values = md.getValues();
+
+                // The first element is the entire matched string, so skip over it because we're only interested in
+                // the constituent matched parts.
                 for (int i = 1; i < values.length; i++) {
                     parts.add((RubyString) values[i]);
                 }

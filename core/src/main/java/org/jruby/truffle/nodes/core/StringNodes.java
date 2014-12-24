@@ -611,7 +611,7 @@ public abstract class StringNodes {
         public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement) {
             notDesignedForCompilation();
 
-            return regexp.gsub(string.toString(), replacement.toString());
+            return regexp.gsub(string, replacement.toString());
         }
     }
 
