@@ -597,12 +597,16 @@ public abstract class StringNodes {
     @CoreMethod(names = "gsub", required = 1, optional = 1, needsBlock = true)
     public abstract static class GsubNode extends RegexpNodes.EscapingYieldingNode {
 
+        @Child protected DispatchHeadNode toS;
+
         public GsubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toS = new DispatchHeadNode(context);
         }
 
         public GsubNode(GsubNode prev) {
             super(prev);
+            toS = prev.toS;
         }
 
         @Specialization
@@ -680,8 +684,11 @@ public abstract class StringNodes {
                 int regionStart = region.beg[matchedStringIndex];
                 int regionEnd = region.end[matchedStringIndex];
 
+                // TODO (nirvdrum Dec. 24, 2014): There's probably a better way of doing this than converting back and forth between String and RubyString.
                 builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, regionStart - lastMatchEnd)));
-                builder.append(yield(frame, block, values[matchedStringIndex]).toString());
+
+                Object yieldResult = yield(frame, block, values[matchedStringIndex]);
+                builder.append(toS.call(frame, yieldResult, "to_s", null).toString());
 
                 lastMatchEnd = regionEnd;
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);

@@ -264,6 +264,7 @@ public class RubyRegexp extends RubyBasicObject {
         final RubyContext context = getContext();
 
         final byte[] stringBytes = string.getBytes().bytes();
+
         final Encoding encoding = string.getBytes().getEncoding();
         final Matcher matcher = regex.matcher(stringBytes);
 
