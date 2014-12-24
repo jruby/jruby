@@ -20,7 +20,7 @@ public class Array extends Operand {
 
     // SSS FIXME: Do we create a special-case for zero-length arrays?
     public Array() {
-        this(new Operand[0]);
+        this(EMPTY_ARRAY);
     }
 
     public Array(List<Operand> elts) {
@@ -30,7 +30,7 @@ public class Array extends Operand {
     public Array(Operand[] elts) {
         super(OperandType.ARRAY);
 
-        this.elts = elts == null ? new Operand[0] : elts;
+        this.elts = elts == null ? EMPTY_ARRAY : elts;
     }
 
     public boolean isBlank() {

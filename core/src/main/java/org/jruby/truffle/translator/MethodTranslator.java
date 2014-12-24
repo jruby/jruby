@@ -176,6 +176,11 @@ class MethodTranslator extends BodyTranslator {
             NodeUtil.printCompactTree(System.err, rootNode);
         }
 
+        if (PRINT_FULL_AST_METHOD_NAMES.contains(methodName)) {
+            System.err.println(methodName);
+            NodeUtil.printTree(System.err, rootNode);
+        }
+
         if (isBlock) {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final CallTarget callTargetForMethods = withoutBlockDestructureSemantics(callTarget);

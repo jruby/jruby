@@ -9,7 +9,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents a Complex literal.
  */
 public class Complex extends ImmutableLiteral {
-    private ImmutableLiteral number;
+    private final ImmutableLiteral number;
 
     public Complex(ImmutableLiteral number) {
         super(OperandType.COMPLEX);

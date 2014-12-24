@@ -254,10 +254,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         Label doCall = new Label();
         adapter2.ifnonnull(doCall);
         adapter2.pop();
-        adapter2.newobj(p(FunctionalCachingCallSite.class));
-        adapter2.dup();
         adapter2.ldc(name);
-        adapter2.invokespecial(p(FunctionalCachingCallSite.class), "<init>", sig(void.class, String.class));
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newFunctionalCachingCallSite", sig(FunctionalCachingCallSite.class, String.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
 
@@ -320,6 +318,94 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.invokestatic(p(Helpers.class), "aastoreIRubyObjects", sig(IRubyObject[].class, params(IRubyObject[].class, IRubyObject.class, j, int.class)));
             i += j;
         }
+    }
+
+    public void invokeOtherOneFixnum(String name, long fixnum) {
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
+        String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
+
+        String methodName = "invokeOtherOneFixnum" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+
+        adapter2 = new SkinnyMethodAdapter(
+                adapter.getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                methodName,
+                incomingSig,
+                null,
+                null);
+
+        // call site object field
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CachingCallSite.class), null, null).visitEnd();
+
+        // lazily construct it
+        adapter2.getstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        adapter2.dup();
+        Label doCall = new Label();
+        adapter2.ifnonnull(doCall);
+        adapter2.pop();
+        adapter2.ldc(name);
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newFunctionalCachingCallSite", sig(FunctionalCachingCallSite.class, String.class));
+        adapter2.dup();
+        adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+
+        // use call site to invoke
+        adapter2.label(doCall);
+        adapter2.aload(0); // context
+        adapter2.aload(1); // caller
+        adapter2.aload(2); // target
+        adapter2.ldc(fixnum); // fixnum
+
+        adapter2.invokevirtual(p(CachingCallSite.class), "call", outgoingSig);
+        adapter2.areturn();
+        adapter2.end();
+
+        // now call it
+        adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
+    }
+
+    public void invokeOtherOneFloat(String name, double flote) {
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
+        String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
+
+        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+
+        adapter2 = new SkinnyMethodAdapter(
+                adapter.getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                methodName,
+                incomingSig,
+                null,
+                null);
+
+        // call site object field
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CachingCallSite.class), null, null).visitEnd();
+
+        // lazily construct it
+        adapter2.getstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        adapter2.dup();
+        Label doCall = new Label();
+        adapter2.ifnonnull(doCall);
+        adapter2.pop();
+        adapter2.ldc(name);
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newFunctionalCachingCallSite", sig(FunctionalCachingCallSite.class, String.class));
+        adapter2.dup();
+        adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+
+        // use call site to invoke
+        adapter2.label(doCall);
+        adapter2.aload(0); // context
+        adapter2.aload(1); // caller
+        adapter2.aload(2); // target
+        adapter2.ldc(flote); // float
+
+        adapter2.invokevirtual(p(CachingCallSite.class), "call", outgoingSig);
+        adapter2.areturn();
+        adapter2.end();
+
+        // now call it
+        adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
     public void invokeSelf(String name, int arity, boolean hasClosure) {

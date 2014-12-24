@@ -123,7 +123,7 @@ public class JVMVisitor extends IRVisitor {
 
         int i = 0;
         for (BasicBlock bb : scope.buildLinearization()) {
-            for (Instr instr : bb.getInstrsArray()) {
+            for (Instr instr : bb.getInstrs()) {
                 if (i > 0) b.append("\n");
 
                 b.append("  ").append(i).append('\t').append(instr);
@@ -1306,15 +1306,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-
-        m.adapter.invokedynamic(
-                "fixnumOperator:" + JavaNameMangler.mangleMethodName(name),
-                signature,
-                InvokeDynamicSupport.getFixnumOperatorHandle(),
-                fixnum,
-                "",
-                0);
+        m.invokeOtherOneFixnum(name, fixnum);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1344,15 +1336,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
-
-        m.adapter.invokedynamic(
-                "floatOperator:" + JavaNameMangler.mangleMethodName(name),
-                signature,
-                InvokeDynamicSupport.getFloatOperatorHandle(),
-                flote,
-                "",
-                0);
+        m.invokeOtherOneFloat(name, flote);
 
         if (result != null) {
             jvmStoreLocal(result);

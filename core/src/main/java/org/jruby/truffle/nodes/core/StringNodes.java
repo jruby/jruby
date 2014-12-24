@@ -1325,10 +1325,20 @@ public abstract class StringNodes {
         }
 
         public static ByteList chomp(RubyString string) {
-            ByteList byteListString = ByteList.create(string.toString().trim());
-            byteListString.setEncoding(string.getBytes().getEncoding());
+            String javaString = string.toString();
+            if (javaString.endsWith("\r")) {
+                String newString = javaString.substring(0, javaString.length()-1);
+                ByteList byteListString = ByteList.create(newString);
+                byteListString.setEncoding(string.getBytes().getEncoding());
 
-            return byteListString;
+                return byteListString;
+            } else {
+                ByteList byteListString = ByteList.create(javaString.trim());
+                byteListString.setEncoding(string.getBytes().getEncoding());
+
+                return byteListString;
+            }
+
         }
 
         public static ByteList chompWithString(RubyString string, RubyString stringToChomp) {

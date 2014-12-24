@@ -36,6 +36,11 @@ public class IfNode extends RubyNode {
 
     public IfNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
+
+        assert condition != null;
+        assert thenBody != null;
+        assert elseBody != null;
+
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;

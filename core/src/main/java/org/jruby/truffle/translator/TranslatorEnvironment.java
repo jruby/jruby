@@ -119,6 +119,17 @@ public class TranslatorEnvironment {
         return null;
     }
 
+    public RubyNode findOrAddLocalVarNodeDangerous(String name, SourceSection sourceSection) {
+        RubyNode localVar = findLocalVarNode(name, sourceSection);
+
+        if (localVar == null) {
+            declareVar(name);
+            localVar = findLocalVarNode(name, sourceSection);
+        }
+
+        return localVar;
+    }
+
     public RubyNode findLocalVarNode(String name, SourceSection sourceSection) {
         TranslatorEnvironment current = this;
         int level = -1;

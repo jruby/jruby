@@ -275,6 +275,24 @@ public abstract class IRBytecodeAdapter {
      */
     public abstract void invokeOther(String name, int arity, boolean hasClosure);
 
+    /**
+     * Invoke a fixnum-receiving method on an object other than self.
+     *
+     * Stack required: context, self, receiver (fixnum will be handled separately)
+     *
+     * @param name name of the method to invoke
+     */
+    public abstract void invokeOtherOneFixnum(String name, long fixnum);
+
+    /**
+     * Invoke a float-receiving method on an object other than self.
+     *
+     * Stack required: context, self, receiver (float will be handled separately)
+     *
+     * @param name name of the method to invoke
+     */
+    public abstract void invokeOtherOneFloat(String name, double flote);
+
 
     /**
      * Invoke a method on self.

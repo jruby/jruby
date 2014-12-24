@@ -136,6 +136,30 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         }
     }
 
+    public void invokeOtherOneFixnum(String name, long fixnum) {
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+
+        adapter.invokedynamic(
+                "fixnumOperator:" + JavaNameMangler.mangleMethodName(name),
+                signature,
+                InvokeDynamicSupport.getFixnumOperatorHandle(),
+                fixnum,
+                "",
+                0);
+    }
+
+    public void invokeOtherOneFloat(String name, double flote) {
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        
+        adapter.invokedynamic(
+            "floatOperator:" + JavaNameMangler.mangleMethodName(name),
+            signature,
+            InvokeDynamicSupport.getFloatOperatorHandle(),
+            flote,
+            "",
+            0);
+    }
+
     public void invokeSelf(String name, int arity, boolean hasClosure) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
