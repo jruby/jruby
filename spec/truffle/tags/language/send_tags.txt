@@ -1,3 +1,2 @@
-fails:Invoking a method with optional argument(s), expands an array to arguments grouped in parentheses
 fails:Invoking a method expands an array to arguments grouped in parentheses which in turn takes rest arguments
 fails:Invoking a method converts a final splatted explicit Hash to an Array
