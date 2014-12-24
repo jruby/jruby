@@ -684,7 +684,6 @@ public abstract class StringNodes {
                 builder.append(yield(frame, block, values[matchedStringIndex]).toString());
 
                 lastMatchEnd = regionEnd;
-
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 

@@ -272,6 +272,9 @@ public class RubyRegexp extends RubyBasicObject {
         int range = p + string.getBytes().getRealSize();
         int lastMatchEnd = 0;
 
+        // We only ever care about the entire matched string, not each of the matched parts, so we can hard-code the index.
+        int matchedStringIndex = 0;
+
         final StringBuilder builder = new StringBuilder();
 
         while (true) {
@@ -285,16 +288,13 @@ public class RubyRegexp extends RubyBasicObject {
 
             Region region = matcher.getEagerRegion();
 
-            for (int i = 0; i < region.numRegs; i++) {
-                int regionStart = region.beg[i];
-                int regionEnd = region.end[i];
+            int regionStart = region.beg[matchedStringIndex];
+            int regionEnd = region.end[matchedStringIndex];
 
-                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, regionStart - lastMatchEnd)));
-                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
+            builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, regionStart - lastMatchEnd)));
+            builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
 
-                lastMatchEnd = regionEnd;
-            }
-
+            lastMatchEnd = regionEnd;
             end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
         }
 
