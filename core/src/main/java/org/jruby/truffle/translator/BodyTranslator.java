@@ -2026,10 +2026,10 @@ public class BodyTranslator extends Translator {
         if (node.getOptions().isEncodingNone()) {
             // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
 
-            if (all7Bit(node.getValue().bytes())) {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+            if (!all7Bit(node.getValue().bytes())) {
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII_8BIT").getValue());
             } else {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII-8BIT").getValue());
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
             }
         } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
             regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue());
@@ -2048,10 +2048,20 @@ public class BodyTranslator extends Translator {
         return literalNode;
     }
 
-    private static boolean all7Bit(byte[] bytes) {
+    public static boolean all7Bit(byte[] bytes) {
         for (int n = 0; n < bytes.length; n++) {
-            if (bytes[n] < 0 || bytes[n] > 0x7F) {
+            if (bytes[n] < 0 || bytes[n] > Byte.MAX_VALUE) {
                 return false;
+            }
+
+            if (bytes[n] == '\\' && n + 1 < bytes.length && bytes[n + 1] == 'x') {
+                int b = Integer.parseInt(new String(Arrays.copyOfRange(bytes, n + 2, n + 4)), 16);
+
+                if (b > 0x7F) {
+                    return false;
+                }
+
+                n += 3;
             }
         }
 

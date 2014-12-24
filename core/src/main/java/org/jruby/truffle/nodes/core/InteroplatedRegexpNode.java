@@ -14,8 +14,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.translator.BodyTranslator;
 import org.jruby.util.RegexpOptions;
 
 public class InteroplatedRegexpNode extends RubyNode {
@@ -43,7 +45,20 @@ public class InteroplatedRegexpNode extends RubyNode {
         }
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
-        return new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options.toOptions());
+
+        final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options.toOptions());
+
+        if (options.isEncodingNone()) {
+            // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
+
+            if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
+                regexp.forceEncoding((RubyEncoding) getContext().getCoreLibrary().getEncodingClass().getConstants().get("ASCII_8BIT").getValue());
+            } else {
+                regexp.forceEncoding((RubyEncoding) getContext().getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+            }
+        }
+
+        return regexp;
     }
 
     @Override

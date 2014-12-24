@@ -1,2 +1,0 @@
-fails:Regexps with encoding modifiers preserves US-ASCII as /n encoding through interpolation if all chars are 7-bit
-fails:Regexps with encoding modifiers uses ASCII-8BIT as /n encoding if not all chars are 7-bit
