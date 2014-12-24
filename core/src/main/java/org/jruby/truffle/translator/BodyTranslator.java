@@ -1206,23 +1206,35 @@ public class BodyTranslator extends Translator {
     public RubyNode visitHashNode(org.jruby.ast.HashNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
+        final List<RubyNode> hashConcats = new ArrayList<>();
+
         final List<RubyNode> keyValues = new ArrayList<>();
 
         for (KeyValuePair<Node, Node> pair: node.getPairs()) {
             if (pair.getKey() == null) {
-                keyValues.add(new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
+                final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
+                hashConcats.add(hashLiteralSoFar);
+                hashConcats.add(HashCastNodeFactory.create(context, sourceSection, pair.getValue().accept(this)));
+                keyValues.clear();
             } else {
                 keyValues.add(pair.getKey().accept(this));
-            }
 
-            if (pair.getValue() == null) {
-                keyValues.add(new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
-            } else {
-                keyValues.add(pair.getValue().accept(this));
+                if (pair.getValue() == null) {
+                    keyValues.add(new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
+                } else {
+                    keyValues.add(pair.getValue().accept(this));
+                }
             }
         }
 
-        return HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
+        if (hashConcats.size() == 1) {
+            return hashConcats.get(0);
+        }
+
+        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
+        hashConcats.add(hashLiteralSoFar);
+
+        return new ConcatHashLiteralNode(context, sourceSection, hashConcats.toArray(new RubyNode[hashConcats.size()]));
     }
 
     @Override
