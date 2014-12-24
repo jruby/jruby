@@ -530,6 +530,6 @@ class ServerTest < Test::Unit::TestCase
   ensure
     server.close rescue nil
     client.close rescue nil
-  end
+  end if RUBY_VERSION >= '1.9'
 end
 

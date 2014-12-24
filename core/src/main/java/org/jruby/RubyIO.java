@@ -3136,7 +3136,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         str.empty();
 
-        if (length == 0) return str;
+        if (runtime.is1_9() && length == 0) return str;
 
         try {
             ByteList newBuffer = readNotAllCommon(context, myOpenFile, length);
@@ -3163,7 +3163,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length) {
         Ruby runtime = context.runtime;
 
-        if (length == 0) return RubyString.newEmptyString(runtime);
+        if (runtime.is1_9() && length == 0) return RubyString.newEmptyString(runtime);
 
         try {
             ByteList newBuffer = readNotAllCommon(context, myOpenFile, length);
