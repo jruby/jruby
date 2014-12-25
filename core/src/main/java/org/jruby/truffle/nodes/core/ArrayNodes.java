@@ -1948,6 +1948,13 @@ public abstract class ArrayNodes {
             return array;
         }
 
+        @Specialization
+        public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+            array.setStore(copy.slowToArray(), copy.getSize());
+            return array;
+        }
+
     }
 
     @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)

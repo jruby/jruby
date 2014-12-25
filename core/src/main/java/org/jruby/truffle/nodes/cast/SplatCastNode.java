@@ -33,7 +33,8 @@ public abstract class SplatCastNode extends RubyNode {
 
     public static enum NilBehavior {
         EMPTY_ARRAY,
-        ARRAY_WITH_NIL
+        ARRAY_WITH_NIL,
+        NIL
     }
 
     private final NilBehavior nilBehavior;
@@ -91,7 +92,8 @@ public abstract class SplatCastNode extends RubyNode {
     public RubyArray splat(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
-        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, "to_a", true))) {
+        // TODO(CS): why are we directly calling #respond_to? instead of using a respondsTo on a dispatch head node?
+        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, getContext().makeString("to_a"), true))) {
             final Object array = toA.call(frame, object, "to_a", null);
 
             if (array instanceof RubyArray) {
