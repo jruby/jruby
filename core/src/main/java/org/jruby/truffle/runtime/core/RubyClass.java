@@ -12,9 +12,11 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.*;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 
 /**
@@ -23,26 +25,11 @@ import org.jruby.truffle.runtime.*;
  */
 public class RubyClass extends RubyModule {
 
+    // TODO(CS): is this compilation final needed? Is it a problem for correctness?
+    @CompilationFinal Allocator allocator = new RubyBasicObject.BasicObjectAllocator();
+
     private boolean isSingleton;
     private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
-
-    /**
-     * The class from which we create the object that is {@code Class}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
-     * {@link RubyClass} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyClassClass extends RubyClass {
-
-        public RubyClassClass(RubyContext context) {
-            super(context, null, null, "Class", false);
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyClass(getContext(), null, null, null, false);
-        }
-
-    }
 
     /**
      * This constructor supports initialization and solves boot-order problems and should not
@@ -73,9 +60,14 @@ public class RubyClass extends RubyModule {
         }
     }
 
+    public void setAllocator(Allocator allocator) {
+        this.allocator = allocator;
+    }
+
     public void initialize(RubyClass superclass) {
         unsafeSetSuperclass(superclass);
         ensureSingletonConsistency();
+        allocator = superclass.allocator;
     }
 
     @Override
@@ -133,9 +125,8 @@ public class RubyClass extends RubyModule {
         newVersion();
     }
 
-    @TruffleBoundary
-    public RubyBasicObject newInstance(RubyNode currentNode) {
-        return new RubyBasicObject(this);
+    public RubyBasicObject allocate(RubyNode currentNode) {
+        return allocator.allocate(getContext(), this, currentNode);
     }
 
     public boolean isSingleton() {
@@ -152,6 +143,19 @@ public class RubyClass extends RubyModule {
         }
 
         return null;
+    }
+
+    public Allocator getAllocator() {
+        return allocator;
+    }
+
+    public static class ClassAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyClass(context, null, null, null, false);
+        }
+
     }
 
 }

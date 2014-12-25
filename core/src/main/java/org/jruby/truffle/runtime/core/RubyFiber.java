@@ -13,6 +13,7 @@ import java.util.concurrent.*;
 
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.*;
 
@@ -24,19 +25,6 @@ import org.jruby.truffle.runtime.subsystems.*;
  * {@link #resume}.
  */
 public class RubyFiber extends RubyBasicObject {
-
-    public static class RubyFiberClass extends RubyClass {
-
-        public RubyFiberClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Fiber");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyFiber(this, getContext().getFiberManager(), getContext().getThreadManager());
-        }
-
-    }
 
     private interface FiberMessage {
     }
@@ -175,6 +163,15 @@ public class RubyFiber extends RubyBasicObject {
         RubyNode.notDesignedForCompilation();
 
         messageQueue.add(new FiberExitMessage());
+    }
+
+    public static class FiberAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyFiber(rubyClass, context.getFiberManager(), context.getThreadManager());
+        }
+
     }
 
 }

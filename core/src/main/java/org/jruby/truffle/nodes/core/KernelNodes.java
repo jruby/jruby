@@ -427,7 +427,7 @@ public abstract class KernelNodes {
         public Object clone(VirtualFrame frame, RubyBasicObject self) {
             notDesignedForCompilation();
 
-            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
+            final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
 
             // Copy the singleton class if any.
             if (self.getMetaClass().isSingleton()) {
@@ -462,7 +462,7 @@ public abstract class KernelNodes {
         public Object dup(VirtualFrame frame, RubyBasicObject self) {
             // This method is pretty crappy for compilation - it should improve with the OM
 
-            final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
+            final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
             newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
 
@@ -1517,14 +1517,15 @@ public abstract class KernelNodes {
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, Object undefined1) {
             notDesignedForCompilation();
 
-            if (!(exceptionClass instanceof RubyException.RubyExceptionClass)) {
+            final Object exception = exceptionClass.allocate(this);
+            initialize.call(frame, exception, "initialize", null, message);
+
+            if (!(exception instanceof RubyException)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
             }
 
-            final RubyException exception = ((RubyException.RubyExceptionClass) exceptionClass).newInstance(this);
-            initialize.call(frame, exception, "initialize", null, message);
-            throw new RaiseException(exception);
+            throw new RaiseException((RubyException) exception);
         }
 
         @Specialization

@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.KeyValue;
@@ -17,19 +18,6 @@ import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 public class RubyHash extends RubyBasicObject {
-
-    public static class RubyHashClass extends RubyClass {
-
-        public RubyHashClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Hash");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyHash(this, null, null, null, 0, null);
-        }
-
-    }
 
     private RubyProc defaultBlock;
     private Object defaultValue;
@@ -109,6 +97,15 @@ public class RubyHash extends RubyBasicObject {
                 ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
             }
         }
+    }
+
+    public static class HashAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyHash(rubyClass, null, null, null, 0, null);
+        }
+
     }
 
 }

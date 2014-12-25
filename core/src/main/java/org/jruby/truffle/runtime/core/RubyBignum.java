@@ -11,24 +11,12 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.math.BigInteger;
 
 public class RubyBignum extends RubyBasicObject {
-
-    public static class RubyBignumClass extends RubyClass {
-
-        public RubyBignumClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name) {
-            super(context, lexicalParent, superclass, name);
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyBignum(this, BigInteger.ZERO);
-        }
-
-    }
 
     private BigInteger value;
 
@@ -225,6 +213,15 @@ public class RubyBignum extends RubyBasicObject {
     @Override
     public int hashCode() {
         return value.hashCode();
+    }
+
+    public static class BignumAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyBignum(rubyClass, BigInteger.ZERO);
+        }
+
     }
 
 }

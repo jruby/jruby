@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
@@ -29,24 +30,6 @@ public class RubyEncoding extends RubyBasicObject {
     private final Encoding encoding;
     private final ByteList name;
     private final boolean dummy;
-
-    /**
-     * The class from which we create the object that is {@code Encoding}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyEncoding} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyEncodingClass extends RubyClass {
-
-        public RubyEncodingClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Encoding");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            throw new UnsupportedOperationException();
-        }
-
-    }
 
     public static synchronized RubyEncoding getEncoding(RubyContext context, Encoding encoding) {
         return lookup.get(new String(encoding.getName()).toLowerCase());
@@ -99,4 +82,14 @@ public class RubyEncoding extends RubyBasicObject {
 
         return clone;
     }
+
+    public static class EncodingAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
 }

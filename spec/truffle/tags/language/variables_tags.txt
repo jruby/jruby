@@ -4,12 +4,9 @@ fails:Multiple assignment with a single RHS value does not call #to_ary if #resp
 fails:Multiple assignment with a single RHS value wraps the Object in an Array if #to_ary returns nil
 fails:Multiple assignment with a single RHS value raises a TypeError of #to_ary does not return an Array
 fails:Multiple assignment with a single RHS value does not call #to_a to convert an Object RHS when assigning a simple MLHS
-fails:Multiple assignment with a single RHS value does not call #to_ary on an Array subclass instance
-fails:Multiple assignment with a single RHS value does not call #to_a on an Array subclass instance
 fails:Multiple assignment with a single RHS value assigns a single LHS splat
 fails:Multiple assignment with a single RHS value calls #to_ary to convert an Object RHS
 fails:Multiple assignment with a single RHS value raises a TypeError if #to_ary does not return an Array
-fails:Multiple assignment with a single RHS value does not call #to_ary on an Array subclass
 fails:Multiple assignment with a single RHS value assigns an Array when the RHS is an Array subclass
 fails:Multiple assignment with a single RHS value calls #to_ary to convert an Object RHS with MLHS
 fails:Multiple assignment with a single RHS value does not call #to_a to convert an Object RHS with a MLHS
@@ -21,7 +18,6 @@ fails:Multiple assignment with a single RHS value calls #to_ary on the value ret
 fails:Multiple assignment with a single RHS value assigns global variables
 fails:Multiple assignment with a single RHS value assigns indexed elements
 fails:Multiple assignment with a single splatted RHS value calls #to_a to convert nil to an empty Array
-fails:Multiple assignment with a single splatted RHS value returns an Array when the splatted object is an Array subclass
 fails:Multiple assignment with a single splatted RHS value does not call #to_a if #respond_to? returns false
 fails:Multiple assignment with a single splatted RHS value assigns a MLHS with leading splat
 fails:Multiple assignment with a single splatted RHS value calls #to_a to convert an Object RHS with MLHS
@@ -38,5 +34,3 @@ fails:Multiple assignment with a MRHS value calls #to_ary to convert a splatted 
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert an Object when the position receiving the value is a rest variable
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object when the position receiving the value is a simple variable
 fails:Multiple assignment with a RHS assignment value does not mutate a RHS Array
-fails:Multiple assignment with a single splatted RHS value does not call #to_a on an Array subclass
-fails:Multiple assignment with a single RHS value returns the RHS when it is an Array subclass

@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import java.util.Date;
 
@@ -19,24 +20,6 @@ import java.util.Date;
  */
 
 public class RubyTime extends RubyBasicObject {
-
-    /**
-     * The class from which we create the object that is {@code Time}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyTime} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyTimeClass extends RubyClass {
-
-        public RubyTimeClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Time");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyTime(this, milisecondsToSeconds(System.currentTimeMillis()), milisecondsToNanoseconds(System.currentTimeMillis()));
-        }
-
-    }
 
     private long seconds;
     private long nanoseconds;
@@ -97,6 +80,15 @@ public class RubyTime extends RubyBasicObject {
 
     public static long secondsToMiliseconds(long seconds) {
         return seconds * 1000;
+    }
+
+    public static class TimeAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyTime(rubyClass, milisecondsToSeconds(System.currentTimeMillis()), milisecondsToNanoseconds(System.currentTimeMillis()));
+        }
+
     }
 
 }

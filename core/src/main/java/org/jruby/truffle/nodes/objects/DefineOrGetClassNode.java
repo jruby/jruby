@@ -54,13 +54,8 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         RubyClass superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            if (superClassObject instanceof RubyException.RubyExceptionClass) {
-                definingClass = new RubyException.RubyExceptionClass(context, lexicalParent, superClassObject, name);
-            } else if (superClassObject instanceof RubyString.RubyStringClass) {
-                definingClass = new RubyString.RubyStringClass(context, lexicalParent, superClassObject, name);
-            } else {
-                definingClass = new RubyClass(context, lexicalParent, superClassObject, name);
-            }
+            definingClass = new RubyClass(context, lexicalParent, superClassObject, name);
+            definingClass.setAllocator(superClassObject.getAllocator());
             callInherited(frame, superClassObject, definingClass);
         } else {
             if (constant.getValue() instanceof RubyClass) {

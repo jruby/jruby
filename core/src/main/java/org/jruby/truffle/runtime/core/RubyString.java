@@ -14,6 +14,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -22,24 +23,6 @@ import org.jruby.util.StringSupport;
  * Represents the Ruby {@code String} class.
  */
 public class RubyString extends RubyBasicObject {
-
-    /**
-     * The class from which we create the object that is {@code String}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyString} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyStringClass extends RubyClass {
-
-        public RubyStringClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name) {
-            super(context, lexicalParent, superclass, name);
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyString(this, new ByteList());
-        }
-
-    }
 
     private ByteList bytes;
 
@@ -173,6 +156,15 @@ public class RubyString extends RubyBasicObject {
 
     public int clampExclusiveIndex(int index) {
         return RubyArray.clampExclusiveIndex(bytes.length(), index);
+    }
+
+    public static class StringAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyString(rubyClass, new ByteList());
+        }
+
     }
 
 }

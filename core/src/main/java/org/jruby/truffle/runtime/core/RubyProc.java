@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.*;
@@ -26,24 +27,6 @@ import org.jruby.util.cli.Options;
 public class RubyProc extends RubyBasicObject implements MethodLike {
 
     public static final boolean PROC_BINDING = Options.TRUFFLE_PROC_BINDING.load();
-
-    /**
-     * The class from which we create the object that is {@code Proc}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyProc} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyProcClass extends RubyClass {
-
-        public RubyProcClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Proc");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyProc(this, Type.PROC);
-        }
-
-    }
 
     public static enum Type {
         PROC, LAMBDA
@@ -143,6 +126,15 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         getContext().getObjectSpaceManager().visitFrame(declarationFrame, visitor);
+    }
+
+    public static class ProcAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyProc(rubyClass, Type.PROC);
+        }
+
     }
 
 }

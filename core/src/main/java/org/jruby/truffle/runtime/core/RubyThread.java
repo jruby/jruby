@@ -16,6 +16,7 @@ import java.util.concurrent.*;
 import org.jcodings.util.Hash;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
@@ -38,24 +39,6 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void shutdown() {
-    }
-
-    /**
-     * The class from which we create the object that is {@code Thread}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyThread} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyThreadClass extends RubyClass {
-
-        public RubyThreadClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Thread");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyThread(this, getContext().getThreadManager());
-        }
-
     }
 
     private final ThreadManager manager;
@@ -147,6 +130,15 @@ public class RubyThread extends RubyBasicObject {
 
     public RubyBasicObject getThreadLocals() {
         return threadLocals;
+    }
+
+    public static class ThreadAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyThread(rubyClass, context.getThreadManager());
+        }
+
     }
 
 }
