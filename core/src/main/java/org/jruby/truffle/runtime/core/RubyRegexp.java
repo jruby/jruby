@@ -20,6 +20,7 @@ import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -36,24 +37,7 @@ import java.util.List;
  */
 public class RubyRegexp extends RubyBasicObject {
 
-    /**
-     * The class from which we create the object that is {@code Regexp}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyRegexp} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyRegexpClass extends RubyClass {
-
-        public RubyRegexpClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Regexp");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyRegexp(getContext().getCoreLibrary().getRegexpClass());
-        }
-
-    }
-
+    // TODO(CS): not sure these compilation finals are correct - are they needed anyway?
     @CompilationFinal private Regex regex;
     @CompilationFinal private ByteList source;
 
@@ -469,6 +453,15 @@ public class RubyRegexp extends RubyBasicObject {
         }
 
         return encoding;
+    }
+
+    public static class RegexpAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyRegexp(context.getCoreLibrary().getRegexpClass());
+        }
+
     }
 
 }

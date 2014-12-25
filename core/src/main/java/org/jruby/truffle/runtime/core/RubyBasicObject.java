@@ -18,6 +18,7 @@ import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.InternalName;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -195,4 +196,16 @@ public class RubyBasicObject {
     public DynamicObject getDynamicObject() {
         return dynamicObject;
     }
+
+    public static class BasicObjectAllocator implements Allocator {
+
+        // TODO(CS): why on earth is this a boundary? Seems like a really bad thing.
+        @CompilerDirectives.TruffleBoundary
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyBasicObject(rubyClass);
+        }
+
+    }
+
 }

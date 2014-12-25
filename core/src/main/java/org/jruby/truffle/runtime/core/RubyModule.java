@@ -20,6 +20,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.RubyMethod;
@@ -107,24 +108,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      * Lexical dependent modules, to take care of changes to a module constants.
      */
     private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
-
-    /**
-     * The class from which we create the object that is {@code Module}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance(org.jruby.truffle.nodes.RubyNode)}} and allocate a
-     * {@link RubyModule} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyModuleClass extends RubyClass {
-
-        public RubyModuleClass(RubyContext context) {
-            super(context, null, null, "Module", false);
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyModule(getContext(), null, null);
-        }
-
-    }
 
     public RubyModule(RubyContext context, RubyModule lexicalParent, String name) {
         this(context, lexicalParent, name, null);
@@ -536,6 +519,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     public LexicalScope getLexicalScope() {
         return lexicalScope;
+    }
+
+    public static class ModuleAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyModule(context, null, null);
+        }
+
     }
 
 }

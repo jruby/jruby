@@ -220,14 +220,15 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyString message) {
-            if (!(exceptionClass instanceof RubyException.RubyExceptionClass)) {
+            final Object exception = exceptionClass.allocate(this);
+            initialize.call(frame, exception, "initialize", null, message);
+
+            if (!(exception instanceof RubyException)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
             }
 
-            final RubyException exception = ((RubyException.RubyExceptionClass) exceptionClass).newInstance(this);
-            initialize.call(frame, exception, "initialize", null, message);
-            final RaiseException exceptionWrapper = new RaiseException(exception);
+            final RaiseException exceptionWrapper = new RaiseException((RubyException) exception);
 
             getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
 

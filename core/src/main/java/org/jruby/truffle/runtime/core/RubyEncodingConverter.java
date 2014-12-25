@@ -11,25 +11,13 @@ package org.jruby.truffle.runtime.core;
 
 import org.jcodings.transcode.EConv;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class RubyEncodingConverter extends RubyBasicObject {
 
     public EConv getEConv() {
         return econv;
-    }
-
-    public static class RubyEncodingConverterClass extends RubyClass {
-
-        public RubyEncodingConverterClass(RubyContext context, RubyClass encodingClass, RubyClass objectClass) {
-            super(context, encodingClass, objectClass, "Converter");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyEncodingConverter(this, null);
-        }
-
     }
 
     private EConv econv;
@@ -41,6 +29,15 @@ public class RubyEncodingConverter extends RubyBasicObject {
 
     public void setEConv(EConv econv) {
         this.econv = econv;
+    }
+
+    public static class EncodingConverterAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyEncodingConverter(rubyClass, null);
+        }
+
     }
 
 }

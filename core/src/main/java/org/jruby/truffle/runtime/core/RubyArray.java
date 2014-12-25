@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.truffle.runtime.util.ArrayUtils;
@@ -26,19 +27,6 @@ import java.util.Arrays;
 public final class RubyArray extends RubyBasicObject {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
-
-    public static class RubyArrayClass extends RubyClass {
-
-        public RubyArrayClass(RubyContext context, RubyClass objectClass) {
-            super(context, objectClass, objectClass, "Array");
-        }
-
-        @Override
-        public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyArray(this);
-        }
-
-    }
 
     private final ArrayAllocationSite allocationSite;
     private Object store;
@@ -283,5 +271,13 @@ public final class RubyArray extends RubyBasicObject {
         }
     }
 
+    public static class ArrayAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyArray(rubyClass);
+        }
+
+    }
 
 }

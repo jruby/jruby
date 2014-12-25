@@ -44,7 +44,7 @@ public abstract class ClassNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
             }
-            return rubyClass.newInstance(this);
+            return rubyClass.allocate(this);
         }
 
     }

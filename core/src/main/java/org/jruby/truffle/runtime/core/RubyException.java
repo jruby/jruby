@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 
@@ -17,24 +18,6 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
  * Represents the Ruby {@code Exception} class.
  */
 public class RubyException extends RubyBasicObject {
-
-    /**
-     * The class from which we create the object that is {@code Exception}. A subclass of
-     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
-     * {@link RubyException} rather than a normal {@link RubyBasicObject}.
-     */
-    public static class RubyExceptionClass extends RubyClass {
-
-        public RubyExceptionClass(RubyContext context, RubyModule lexicalParent, RubyClass superClass, String name) {
-            super(context, lexicalParent, superClass, name);
-        }
-
-        @Override
-        public RubyException newInstance(RubyNode currentNode) {
-            return new RubyException(this);
-        }
-
-    }
 
     private RubyString message;
     private Backtrace backtrace;
@@ -75,6 +58,15 @@ public class RubyException extends RubyBasicObject {
         }
 
         return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), array);
+    }
+
+    public static class ExceptionAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyException(rubyClass);
+        }
+
     }
 
 }
