@@ -1227,12 +1227,12 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
+        hashConcats.add(hashLiteralSoFar);
+
         if (hashConcats.size() == 1) {
             return hashConcats.get(0);
         }
-
-        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
-        hashConcats.add(hashLiteralSoFar);
 
         return new ConcatHashLiteralNode(context, sourceSection, hashConcats.toArray(new RubyNode[hashConcats.size()]));
     }
