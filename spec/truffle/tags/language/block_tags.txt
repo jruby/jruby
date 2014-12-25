@@ -1,5 +1,4 @@
 fails:Block-local variables override shadowed variables from the outer scope
-fails:Post-args with pattern matching extracts matched blocks with post arguments
 fails:A block yielded a single Array assigns nil to unassigned required arguments
 fails:A block yielded a single Array assigns elements to optional arguments
 fails:A block yielded a single Array assgins elements to post arguments

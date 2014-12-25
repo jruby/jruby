@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
@@ -266,11 +267,11 @@ public class CoreLibrary {
         // Create the globals object
 
         globalVariablesObject = new RubyBasicObject(objectClass);
-        globalVariablesObject.setInstanceVariable("$LOAD_PATH", new RubyArray(arrayClass));
-        globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass));
-        globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
-        globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
-        globalVariablesObject.setInstanceVariable("$,", nilObject);
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOAD_PATH", new RubyArray(arrayClass));
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOADED_FEATURES", new RubyArray(arrayClass));
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$,", nilObject);
 
         initializeEncodingConstants();
 
@@ -286,8 +287,11 @@ public class CoreLibrary {
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
-        globalVariablesObject.setInstanceVariable("$DEBUG", context.getRuntime().isDebug());
-        globalVariablesObject.setInstanceVariable("$VERBOSE", context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject);
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$DEBUG", context.getRuntime().isDebug());
+        Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$VERBOSE", value);
     }
 
     public void initializeAfterMethodsAdded() {
@@ -313,7 +317,7 @@ public class CoreLibrary {
             throw new RuntimeException(e);
         }
 
-        context.execute(context, source, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null);
+        context.execute(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null);
     }
 
     public void initializeEncodingConstants() {

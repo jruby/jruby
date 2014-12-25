@@ -1206,23 +1206,35 @@ public class BodyTranslator extends Translator {
     public RubyNode visitHashNode(org.jruby.ast.HashNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
+        final List<RubyNode> hashConcats = new ArrayList<>();
+
         final List<RubyNode> keyValues = new ArrayList<>();
 
         for (KeyValuePair<Node, Node> pair: node.getPairs()) {
             if (pair.getKey() == null) {
-                keyValues.add(new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
+                final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
+                hashConcats.add(hashLiteralSoFar);
+                hashConcats.add(HashCastNodeFactory.create(context, sourceSection, pair.getValue().accept(this)));
+                keyValues.clear();
             } else {
                 keyValues.add(pair.getKey().accept(this));
-            }
 
-            if (pair.getValue() == null) {
-                keyValues.add(new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
-            } else {
-                keyValues.add(pair.getValue().accept(this));
+                if (pair.getValue() == null) {
+                    keyValues.add(new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
+                } else {
+                    keyValues.add(pair.getValue().accept(this));
+                }
             }
         }
 
-        return HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
+        if (hashConcats.size() == 1) {
+            return hashConcats.get(0);
+        }
+
+        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
+        hashConcats.add(hashLiteralSoFar);
+
+        return new ConcatHashLiteralNode(context, sourceSection, hashConcats.toArray(new RubyNode[hashConcats.size()]));
     }
 
     @Override
@@ -1557,7 +1569,19 @@ public class BodyTranslator extends Translator {
              * a, b, c, = *x
              *
              * So we insert the splat cast node, even though it isn't there.
+             *
+             * In either case, we return the RHS
              */
+
+            final List<RubyNode> sequence = new ArrayList<>();
+
+            /*
+             * Store the RHS in a temp.
+             */
+
+            final String tempRHSName = environment.allocateLocalTemp("rhs");
+            final RubyNode writeTempRHS = ((ReadNode) environment.findLocalVarNode(tempRHSName, sourceSection)).makeWriteNode(rhsTranslated);
+            sequence.add(writeTempRHS);
 
             /*
              * Create a temp for the array.
@@ -1570,9 +1594,7 @@ public class BodyTranslator extends Translator {
              * the temp.
              */
 
-            final List<RubyNode> sequence = new ArrayList<>();
-
-            final RubyNode splatCastNode = SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, rhsTranslated);
+            final RubyNode splatCastNode = ArrayCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, environment.findLocalVarNode(tempRHSName, sourceSection));
 
             final RubyNode writeTemp = ((ReadNode) environment.findLocalVarNode(tempName, sourceSection)).makeWriteNode(splatCastNode);
 
@@ -1594,7 +1616,7 @@ public class BodyTranslator extends Translator {
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
             }
 
-            result = SequenceNode.sequence(context, sourceSection, sequence);
+            result = new ElidableResultNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, sourceSection));
         } else if (node.getPre() == null
                 && node.getPost() == null
                 && node.getRest() instanceof org.jruby.ast.StarNode) {
@@ -2026,10 +2048,10 @@ public class BodyTranslator extends Translator {
         if (node.getOptions().isEncodingNone()) {
             // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
 
-            if (all7Bit(node.getValue().bytes())) {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+            if (!all7Bit(node.getValue().bytes())) {
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII_8BIT").getValue());
             } else {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII-8BIT").getValue());
+                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
             }
         } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
             regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue());
@@ -2048,10 +2070,20 @@ public class BodyTranslator extends Translator {
         return literalNode;
     }
 
-    private static boolean all7Bit(byte[] bytes) {
+    public static boolean all7Bit(byte[] bytes) {
         for (int n = 0; n < bytes.length; n++) {
-            if (bytes[n] < 0 || bytes[n] > 0x7F) {
+            if (bytes[n] < 0 || bytes[n] > Byte.MAX_VALUE) {
                 return false;
+            }
+
+            if (bytes[n] == '\\' && n + 1 < bytes.length && bytes[n + 1] == 'x') {
+                int b = Integer.parseInt(new String(Arrays.copyOfRange(bytes, n + 2, n + 4)), 16);
+
+                if (b > 0x7F) {
+                    return false;
+                }
+
+                n += 3;
             }
         }
 

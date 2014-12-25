@@ -43,6 +43,26 @@ public abstract class RegexpNodes {
         }
     }
 
+    public abstract static class EscapingYieldingNode extends YieldingCoreMethodNode {
+        @Child protected EscapeNode escapeNode;
+
+        public EscapingYieldingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EscapingYieldingNode(EscapingYieldingNode prev) {
+            super(prev);
+        }
+
+        protected RubyString escape(VirtualFrame frame, RubyString string) {
+            if (escapeNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
+            }
+            return escapeNode.executeEscape(frame, string);
+        }
+    }
+
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 

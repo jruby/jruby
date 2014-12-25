@@ -18,8 +18,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
 
-    private final String name;
-    public UninitializedWriteObjectFieldNode(String name) {
+    private final Object name;
+    public UninitializedWriteObjectFieldNode(Object name) {
         this.name = name;
 
     }

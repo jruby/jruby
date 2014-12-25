@@ -15,8 +15,11 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.joni.Matcher;
 import org.joni.Option;
+import org.joni.Region;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.runtime.Visibility;
@@ -27,8 +30,11 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
+import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -588,30 +594,107 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "gsub", required = 2)
-    public abstract static class GsubNode extends RegexpNodes.EscapingNode {
+    @CoreMethod(names = "gsub", required = 1, optional = 1, needsBlock = true)
+    public abstract static class GsubNode extends RegexpNodes.EscapingYieldingNode {
+
+        @Child protected DispatchHeadNode toS;
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toS = new DispatchHeadNode(context);
         }
 
         public GsubNode(GsubNode prev) {
             super(prev);
+            toS = prev.toS;
         }
 
         @Specialization
-        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
-            return gsub(string, regexp, replacement);
+            return gsub(string, regexp, replacement, block);
         }
 
         @Specialization
-        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement) {
+        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            return regexp.gsub(string.toString(), replacement.toString());
+            return regexp.gsub(string, replacement.toString());
+        }
+
+        @Specialization
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
+            return gsub(string, regexp, replacement, block);
+        }
+
+        @Specialization
+        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") RubyProc block) {
+            notDesignedForCompilation();
+
+            return regexp.gsub(string, replacement.toString());
+        }
+
+        @Specialization
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, @SuppressWarnings("unused") UndefinedPlaceholder replacement, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
+            return gsub(frame, string, regexp, replacement, block);
+        }
+
+        @Specialization
+        public RubyString gsub(VirtualFrame frame, RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder replacement, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyContext context = getContext();
+
+            final byte[] stringBytes = string.getBytes().bytes();
+            final Encoding encoding = string.getBytes().getEncoding();
+            final Matcher matcher = regexp.getRegex().matcher(stringBytes);
+
+            int p = string.getBytes().getBegin();
+            int end = 0;
+            int range = p + string.getBytes().getRealSize();
+            int lastMatchEnd = 0;
+
+            // We only ever care about the entire matched string, not each of the matched parts, so we can hard-code the index.
+            int matchedStringIndex = 0;
+
+            final StringBuilder builder = new StringBuilder();
+
+            while (true) {
+                Object matchData = regexp.matchCommon(string.getBytes(), false, true, matcher, p + end, range);
+
+                if (matchData == context.getCoreLibrary().getNilObject()) {
+                    builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, range - lastMatchEnd)));
+
+                    break;
+                }
+
+                Region region = matcher.getEagerRegion();
+
+                RubyMatchData md = (RubyMatchData) matchData;
+                Object[] values = md.getValues();
+
+                int regionStart = region.beg[matchedStringIndex];
+                int regionEnd = region.end[matchedStringIndex];
+
+                // TODO (nirvdrum Dec. 24, 2014): There's probably a better way of doing this than converting back and forth between String and RubyString.
+                builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, regionStart - lastMatchEnd)));
+
+                Object yieldResult = yield(frame, block, values[matchedStringIndex]);
+                builder.append(toS.call(frame, yieldResult, "to_s", null).toString());
+
+                lastMatchEnd = regionEnd;
+                end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
+            }
+
+            return context.makeString(builder.toString());
         }
     }
 

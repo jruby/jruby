@@ -15,6 +15,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -28,6 +29,8 @@ import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.literal.*;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Activation;
@@ -341,7 +344,8 @@ public abstract class KernelNodes {
             } catch (ThrowException e) {
                 if (e.getTag().equals(tag)) {
                     // TODO(cs): unset rather than set to Nil?
-                    getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", getContext().getCoreLibrary().getNilObject());
+                    notDesignedForCompilation();
+                    getContext().getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(getContext().getCoreLibrary().getGlobalVariablesObject(), "$!", getContext().getCoreLibrary().getNilObject());
                     return e.getValue();
                 } else {
                     throw e;
@@ -430,7 +434,7 @@ public abstract class KernelNodes {
                 newObject.getSingletonClass(this).initCopy(self.getMetaClass());
             }
 
-            newObject.setInstanceVariables(self.getInstanceVariables());
+            newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
 
             return newObject;
@@ -459,7 +463,7 @@ public abstract class KernelNodes {
             // This method is pretty crappy for compilation - it should improve with the OM
 
             final RubyBasicObject newObject = self.getLogicalClass().newInstance(this);
-            newObject.setInstanceVariables(self.getInstanceVariables());
+            newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
 
             return newObject;
@@ -513,7 +517,7 @@ public abstract class KernelNodes {
         public Object eval(RubyString source, RubyBinding binding) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.toString(), binding, this);
+            return getContext().eval(source.getBytes(), binding, this);
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
@@ -543,7 +547,7 @@ public abstract class KernelNodes {
             }
 
             if (coerced instanceof RubyString) {
-                return getContext().eval(coerced.toString(), binding, this);
+                return getContext().eval(((RubyString) coerced).getBytes(), binding, this);
             } else {
                 throw new RaiseException(
                         getContext().getCoreLibrary().typeError(
@@ -999,7 +1003,8 @@ public abstract class KernelNodes {
         public Object isInstanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
             notDesignedForCompilation();
 
-            object.setInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            notDesignedForCompilation();
+            object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -1007,7 +1012,8 @@ public abstract class KernelNodes {
         public Object isInstanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
             notDesignedForCompilation();
 
-            object.setInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            notDesignedForCompilation();
+            object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -1028,14 +1034,16 @@ public abstract class KernelNodes {
         public RubyArray instanceVariables(RubyBasicObject self) {
             notDesignedForCompilation();
 
-            final String[] instanceVariableNames = self.getFieldNames();
+            final Object[] instanceVariableNames = self.getOperations().getFieldNames(self);
 
             Arrays.sort(instanceVariableNames);
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
-            for (String name : instanceVariableNames) {
-                array.slowPush(getContext().getSymbolTable().getSymbol(name));
+            for (Object name : instanceVariableNames) {
+                if (name instanceof String) {
+                    array.slowPush(getContext().getSymbolTable().getSymbol((String) name));
+                }
             }
 
             return array;
@@ -1987,6 +1995,101 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "taint")
+    public abstract static class TaintNode extends CoreMethodNode {
+
+        @Child protected WriteHeadObjectFieldNode writeTaintNode;
+
+        public TaintNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
+        }
+
+        public TaintNode(TaintNode prev) {
+            super(prev);
+            writeTaintNode = prev.writeTaintNode;
+        }
+
+        @Specialization
+        public Object taint(boolean object) {
+            return frozen(object);
+        }
+
+        @Specialization
+        public Object taint(int object) {
+            return frozen(object);
+        }
+
+        @Specialization
+        public Object taint(long object) {
+            return frozen(object);
+        }
+
+        @Specialization
+        public Object taint(double object) {
+            return frozen(object);
+        }
+
+        private Object frozen(Object object) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+        }
+
+
+        @Specialization
+        public Object taint(RubyBasicObject object) {
+            writeTaintNode.execute(object, true);
+            return object;
+        }
+
+    }
+
+    @CoreMethod(names = "tainted?")
+    public abstract static class TaintedNode extends CoreMethodNode {
+
+        @Child protected ReadHeadObjectFieldNode readTaintNode;
+
+        public TaintedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            readTaintNode = new ReadHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
+        }
+
+        public TaintedNode(TaintedNode prev) {
+            super(prev);
+            readTaintNode = prev.readTaintNode;
+        }
+
+        @Specialization
+        public boolean tainted(boolean object) {
+            return false;
+        }
+
+        @Specialization
+        public boolean tainted(int object) {
+            return false;
+        }
+
+        @Specialization
+        public boolean tainted(long object) {
+            return false;
+        }
+
+        @Specialization
+        public boolean tainted(double object) {
+            return false;
+        }
+
+        @Specialization
+        public boolean tainted(RubyBasicObject object) {
+            try {
+                return readTaintNode.isSet(object) && readTaintNode.executeBoolean(object);
+            } catch (UnexpectedResultException e) {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+    }
+
     @CoreMethod(names = "throw", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class ThrowNode extends CoreMethodNode {
 
@@ -2082,6 +2185,55 @@ public abstract class KernelNodes {
             String hexID = toHexStringNode.executeToHexString(id);
 
             return getContext().makeString("#<" + className + ":0x" + hexID + ">");
+        }
+
+    }
+
+    @CoreMethod(names = "untaint")
+    public abstract static class UntaintNode extends CoreMethodNode {
+
+        @Child protected WriteHeadObjectFieldNode writeTaintNode;
+
+        public UntaintNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
+        }
+
+        public UntaintNode(UntaintNode prev) {
+            super(prev);
+            writeTaintNode = prev.writeTaintNode;
+        }
+
+        @Specialization
+        public Object taint(boolean object) {
+            return frozen(object);
+        }
+
+        @Specialization
+        public Object taint(int object) {
+            return frozen(object);
+        }
+
+        @Specialization
+        public Object taint(long object) {
+            return frozen(object);
+        }
+
+        @Specialization
+        public Object taint(double object) {
+            return frozen(object);
+        }
+
+        private Object frozen(Object object) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+        }
+
+
+        @Specialization
+        public Object taint(RubyBasicObject object) {
+            writeTaintNode.execute(object, false);
+            return object;
         }
 
     }

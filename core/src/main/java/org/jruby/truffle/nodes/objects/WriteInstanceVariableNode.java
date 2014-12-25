@@ -26,7 +26,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     @Child protected WriteHeadObjectFieldNode writeNode;
     private final boolean isGlobal;
 
-    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
+    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, Object name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;

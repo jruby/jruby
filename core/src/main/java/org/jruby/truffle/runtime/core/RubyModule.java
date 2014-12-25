@@ -121,7 +121,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         @Override
         public RubyBasicObject newInstance(RubyNode currentNode) {
-            return new RubyModule(getContext(), null, "(unnamed module)");
+            return new RubyModule(getContext(), null, null);
         }
 
     }

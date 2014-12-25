@@ -23,19 +23,30 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
+/*
+ * TODO(CS): could probably unify this with SplatCastNode with some final configuration options.
+ */
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {
+
+    private final SplatCastNode.NilBehavior nilBehavior;
 
     @Child protected DispatchHeadNode toArrayNode;
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
+        this(context, sourceSection, SplatCastNode.NilBehavior.NIL);
+    }
+
+    public ArrayCastNode(RubyContext context, SourceSection sourceSection, SplatCastNode.NilBehavior nilBehavior) {
         super(context, sourceSection);
         toArrayNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+        this.nilBehavior = nilBehavior;
     }
 
     public ArrayCastNode(ArrayCastNode prev) {
         super(prev);
         toArrayNode = prev.toArrayNode;
+        nilBehavior = prev.nilBehavior;
     }
 
     protected abstract RubyNode getChild();
@@ -71,8 +82,22 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyNilClass cast(RubyNilClass nil) {
-        return nil;
+    public Object cast(RubyNilClass nil) {
+        switch (nilBehavior) {
+            case EMPTY_ARRAY:
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            case ARRAY_WITH_NIL:
+                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
+
+            case NIL:
+                return nil;
+
+            default: {
+                CompilerAsserts.neverPartOfCompilation();
+                throw new UnsupportedOperationException();
+            }
+        }
     }
 
     @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})

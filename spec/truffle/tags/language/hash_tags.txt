@@ -1,2 +1,0 @@
-fails:Hash literal calls #to_hash to convert an '**obj' element
-fails:Hash literal raises a TypeError if #to_hash does not return a Hash

@@ -11,6 +11,7 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
+import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -68,7 +69,7 @@ public class TranslatorDriver {
         return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false, sharedMethod);
     }
 
-    public RubyRootNode parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
+    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
@@ -97,6 +98,7 @@ public class TranslatorDriver {
         }
 
         final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, false, parserContext == ParserContext.TOP_LEVEL, true);
+        parserConfiguration.setDefaultEncoding(defaultEncoding);
 
         // Parse to the JRuby AST
 

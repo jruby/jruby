@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.ToSNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
@@ -28,9 +29,16 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children protected final ToSNode[] children;
 
+    @Child protected KernelNodes.TaintedNode taintedNode;
+    @Child protected KernelNodes.TaintNode taintNode;
+
+    private final ConditionProfile taintProfile = ConditionProfile.createCountingProfile();
+
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
         super(context, sourceSection);
         this.children = children;
+        taintedNode = KernelNodesFactory.TaintedNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        taintNode = KernelNodesFactory.TaintNodeFactory.create(context, sourceSection, new RubyNode[]{});
     }
 
     @ExplodeLoop
@@ -38,11 +46,21 @@ public final class InterpolatedStringNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final RubyString[] strings = new RubyString[children.length];
 
+        boolean tainted = false;
+
         for (int n = 0; n < children.length; n++) {
-            strings[n] = children[n].executeString(frame);
+            final RubyString toInterpolate = children[n].executeString(frame);
+            strings[n] = toInterpolate;
+            tainted |= taintedNode.tainted(toInterpolate);
         }
 
-        return concat(strings);
+        final RubyString string =  concat(strings);
+
+        if (taintProfile.profile(tainted)) {
+            taintNode.taint(string);
+        }
+
+        return string;
     }
 
     @CompilerDirectives.TruffleBoundary

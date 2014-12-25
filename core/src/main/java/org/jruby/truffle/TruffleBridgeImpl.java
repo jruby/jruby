@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.TruffleBridge;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
@@ -161,7 +162,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
             source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
         }
 
-        return truffleContext.execute(truffleContext, source, parserContext, self, parentFrame, null, new NodeWrapper() {
+        return truffleContext.execute(truffleContext, source, UTF8Encoding.INSTANCE, parserContext, self, parentFrame, null, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 RubyContext context = node.getContext();

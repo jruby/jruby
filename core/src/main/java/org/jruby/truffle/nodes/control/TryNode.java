@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
@@ -73,7 +72,8 @@ public class TryNode extends RubyNode {
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerAsserts.neverPartOfCompilation();
 
-        getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", exception.getRubyException());
+        notDesignedForCompilation();
+        getContext().getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(getContext().getCoreLibrary().getGlobalVariablesObject(), "$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {
             if (rescue.canHandle(frame, exception.getRubyException())) {
