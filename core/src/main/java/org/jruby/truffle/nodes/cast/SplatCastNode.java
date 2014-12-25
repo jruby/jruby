@@ -38,13 +38,14 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     private final NilBehavior nilBehavior;
+    private final boolean useToAry;
 
     @Child protected ArrayDupNode dup;
     @Child protected DispatchHeadNode respondToToA;
     @Child protected BooleanCastNode respondToCast;
     @Child protected DispatchHeadNode toA;
 
-    public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
+    public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior, boolean useToAry) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
@@ -52,6 +53,7 @@ public abstract class SplatCastNode extends RubyNode {
         respondToToA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
         respondToCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         toA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
+        this.useToAry = useToAry;
     }
 
     public SplatCastNode(SplatCastNode prev) {
@@ -61,6 +63,7 @@ public abstract class SplatCastNode extends RubyNode {
         respondToToA = prev.respondToToA;
         respondToCast = prev.respondToCast;
         toA = prev.toA;
+        useToAry = prev.useToAry;
     }
 
     protected abstract RubyNode getChild();
@@ -92,9 +95,17 @@ public abstract class SplatCastNode extends RubyNode {
     public RubyArray splat(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
+        final String method;
+
+        if (useToAry) {
+            method = "to_ary";
+        } else {
+            method = "to_a";
+        }
+
         // TODO(CS): why are we directly calling #respond_to? instead of using a respondsTo on a dispatch head node?
-        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, getContext().makeString("to_a"), true))) {
-            final Object array = toA.call(frame, object, "to_a", null);
+        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, getContext().makeString(method), true))) {
+            final Object array = toA.call(frame, object, method, null);
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
@@ -104,7 +115,7 @@ public abstract class SplatCastNode extends RubyNode {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
                         getContext().getCoreLibrary().getLogicalClass(object).getName(),
                         "Array",
-                        "to_a",
+                        method,
                         getContext().getCoreLibrary().getLogicalClass(array).getName(),
                         this)
                 );
