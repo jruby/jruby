@@ -267,11 +267,16 @@ public class CoreLibrary {
         // Create the globals object
 
         globalVariablesObject = new RubyBasicObject(objectClass);
-        globalVariablesObject.setInstanceVariable("$LOAD_PATH", new RubyArray(arrayClass));
-        globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass));
-        globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
-        globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
-        globalVariablesObject.setInstanceVariable("$,", nilObject);
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOAD_PATH", new RubyArray(arrayClass));
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOADED_FEATURES", new RubyArray(arrayClass));
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$,", nilObject);
 
         initializeEncodingConstants();
 
@@ -287,8 +292,11 @@ public class CoreLibrary {
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
-        globalVariablesObject.setInstanceVariable("$DEBUG", context.getRuntime().isDebug());
-        globalVariablesObject.setInstanceVariable("$VERBOSE", context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject);
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$DEBUG", context.getRuntime().isDebug());
+        Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
+        RubyNode.notDesignedForCompilation();
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$VERBOSE", value);
     }
 
     public void initializeAfterMethodsAdded() {

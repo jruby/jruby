@@ -33,6 +33,7 @@ import java.util.Map;
 public class RubyBasicObject {
 
     public static final InternalName OBJECT_ID_IDENTIFIER = new InternalName("object_id");
+    public static final InternalName TAINTED_IDENTIFIER = new InternalName("tainted?");
 
     public static Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
 
@@ -107,11 +108,6 @@ public class RubyBasicObject {
         return metaClass;
     }
 
-    public void setInstanceVariable(String name, Object value) {
-        RubyNode.notDesignedForCompilation();
-        getOperations().setInstanceVariable(this, name, value);
-    }
-
     @CompilerDirectives.TruffleBoundary
     public long getObjectID() {
         // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
@@ -126,24 +122,9 @@ public class RubyBasicObject {
         return objectID;
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public void setInstanceVariables(Map<String, Object> instanceVariables) {
-        getOperations().setInstanceVariables(this, instanceVariables);
-    }
-
-
-    @CompilerDirectives.TruffleBoundary
-    public Map<String, Object>  getInstanceVariables() {
-        return getOperations().getInstanceVariables(this);
-    }
-
-    public String[] getFieldNames() {
-        return getOperations().getFieldNames(this);
-    }
 
     public void extend(RubyModule module, RubyNode currentNode) {
         RubyNode.notDesignedForCompilation();
-
         getSingletonClass(currentNode).include(currentNode, module);
     }
 

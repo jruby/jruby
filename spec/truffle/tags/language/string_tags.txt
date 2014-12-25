@@ -1,5 +1,3 @@
-fails:Ruby character strings taints the result of interpolation when an interpolated value is tainted
-fails:Ruby character strings untrusts the result of interpolation when an interpolated value is untrusted
 fails:Ruby character strings Unicode escaping can be done with \u{} and one to six hex digits
 fails:Ruby character strings Unicode escaping can be done with \u and four hex digits
 fails:Ruby String interpolation creates a String having an Encoding compatible with all components

@@ -15,12 +15,16 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class ReadHeadObjectFieldNode extends Node {
 
-    private final String name;
+    private final Object name;
     @Child protected ReadObjectFieldNode first;
 
-    public ReadHeadObjectFieldNode(String name) {
+    public ReadHeadObjectFieldNode(Object name) {
         this.name = name;
         first = new UninitializedReadObjectFieldNode(name);
+    }
+
+    public boolean executeBoolean(RubyBasicObject object) throws UnexpectedResultException {
+        return first.executeBoolean(object);
     }
 
     public int executeInteger(RubyBasicObject object) throws UnexpectedResultException {
@@ -39,7 +43,7 @@ public class ReadHeadObjectFieldNode extends Node {
         return first.execute(object);
     }
 
-    public String getName() {
+    public Object getName() {
         return name;
     }
 

@@ -18,9 +18,9 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
 
-    private final String name;
+    private final Object name;
 
-    public UninitializedReadObjectFieldNode(String name) {
+    public UninitializedReadObjectFieldNode(Object name) {
         this.name = name;
     }
 

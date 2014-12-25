@@ -41,6 +41,10 @@ module Kernel
     puts sprintf(*args)
   end
 
+  alias_method :trust, :untaint
+  alias_method :untrust, :taint
+  alias_method :untrusted?, :tainted?
+
 end
 
 # Here temporarily

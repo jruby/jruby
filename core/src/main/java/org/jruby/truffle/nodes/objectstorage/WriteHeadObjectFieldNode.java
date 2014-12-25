@@ -14,10 +14,10 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class WriteHeadObjectFieldNode extends Node {
 
-    private final String name;
+    private final Object name;
     @Child protected WriteObjectFieldNode first;
 
-    public WriteHeadObjectFieldNode(String name) {
+    public WriteHeadObjectFieldNode(Object name) {
         this.name = name;
         first = new UninitializedWriteObjectFieldNode(name);
     }
@@ -38,7 +38,7 @@ public class WriteHeadObjectFieldNode extends Node {
         first.execute(object, value);
     }
 
-    public String getName() {
+    public Object getName() {
         return name;
     }
 

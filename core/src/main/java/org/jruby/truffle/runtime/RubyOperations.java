@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -24,7 +25,8 @@ public class RubyOperations extends ObjectType {
         this.context = context;
     }
 
-    public void setInstanceVariable(RubyBasicObject receiver, String name, Object value) {
+    @CompilerDirectives.TruffleBoundary
+    public void setInstanceVariable(RubyBasicObject receiver, Object name, Object value) {
         Shape shape = receiver.getDynamicObject().getShape();
         Property property = shape.getProperty(name);
         if (property != null) {
@@ -34,13 +36,15 @@ public class RubyOperations extends ObjectType {
         }
     }
 
-    public void setInstanceVariables(RubyBasicObject receiver, Map<String, Object> instanceVariables) {
-        for (Map.Entry<String, Object> entry : instanceVariables.entrySet()) {
+    @CompilerDirectives.TruffleBoundary
+    public void setInstanceVariables(RubyBasicObject receiver, Map<Object, Object> instanceVariables) {
+        for (Map.Entry<Object, Object> entry : instanceVariables.entrySet()) {
             setInstanceVariable(receiver, entry.getKey(), entry.getValue());
         }
     }
 
-    public Object getInstanceVariable(RubyBasicObject receiver, String name) {
+    @CompilerDirectives.TruffleBoundary
+    public Object getInstanceVariable(RubyBasicObject receiver, Object name) {
         Shape shape = receiver.getDynamicObject().getShape();
         Property property = shape.getProperty(name);
         if (property != null) {
@@ -50,9 +54,10 @@ public class RubyOperations extends ObjectType {
         }
     }
 
-    public Map<String,Object> getInstanceVariables(RubyBasicObject receiver) {
+    @CompilerDirectives.TruffleBoundary
+    public Map<Object, Object> getInstanceVariables(RubyBasicObject receiver) {
         Shape shape = receiver.getDynamicObject().getShape();
-        Map<String, Object> vars = new LinkedHashMap<>();
+        Map<Object, Object> vars = new LinkedHashMap<>();
         List<Property> properties = shape.getPropertyList();
         for (Property property : properties) {
             if (property.getKey() != RubyBasicObject.OBJECT_ID_IDENTIFIER) {
@@ -62,10 +67,12 @@ public class RubyOperations extends ObjectType {
         return vars;
     }
 
-    public String[] getFieldNames(RubyBasicObject receiver) {
-        return receiver.getDynamicObject().getShape().getKeyList().toArray(new String[0]);
+    @CompilerDirectives.TruffleBoundary
+    public Object[] getFieldNames(RubyBasicObject receiver) {
+        return receiver.getDynamicObject().getShape().getKeyList().toArray(new Object[0]);
     }
 
+    @CompilerDirectives.TruffleBoundary
     public boolean isFieldDefined(RubyBasicObject receiver, String name) {
         return receiver.getDynamicObject().getShape().hasProperty(name);
     }
