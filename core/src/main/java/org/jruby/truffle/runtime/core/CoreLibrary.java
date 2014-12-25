@@ -267,15 +267,10 @@ public class CoreLibrary {
         // Create the globals object
 
         globalVariablesObject = new RubyBasicObject(objectClass);
-        RubyNode.notDesignedForCompilation();
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOAD_PATH", new RubyArray(arrayClass));
-        RubyNode.notDesignedForCompilation();
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOADED_FEATURES", new RubyArray(arrayClass));
-        RubyNode.notDesignedForCompilation();
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
-        RubyNode.notDesignedForCompilation();
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
-        RubyNode.notDesignedForCompilation();
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$,", nilObject);
 
         initializeEncodingConstants();
