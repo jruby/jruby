@@ -91,9 +91,7 @@ public abstract class SplatCastNode extends RubyNode {
     public RubyArray splat(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
-        RubyString toAString = getContext().makeString("to_a"); // TODO
-
-        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, toAString, true))) {
+        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, "to_a", true))) {
             final Object array = toA.call(frame, object, "to_a", null);
 
             if (array instanceof RubyArray) {
