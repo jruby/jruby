@@ -118,10 +118,12 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (node.getPost() != null) {
             state = State.POST;
-            index = -argsNode.getPostCount();
-            for (org.jruby.ast.Node arg : node.getPost().childNodes()) {
+            index = -1;
+            final List<org.jruby.ast.Node> children = new ArrayList<>(node.getPost().childNodes());
+            Collections.reverse(children);
+            for (org.jruby.ast.Node arg : children) {
                 sequence.add(arg.accept(this));
-                ++index;
+                index--;
                 required++;
             }
         }
