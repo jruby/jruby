@@ -37,10 +37,7 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
-import org.jruby.truffle.nodes.globals.CheckProgramNameVariableTypeNode;
-import org.jruby.truffle.nodes.globals.CheckStdoutVariableTypeNode;
-import org.jruby.truffle.nodes.globals.WriteReadOnlyGlobalNode;
+import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
@@ -1116,6 +1113,7 @@ public class BodyTranslator extends Translator {
         put("$-d", "$DEBUG");
         put("$-v", "$VERBOSE");
         put("$-w", "$VERBOSE");
+        put("$-0", "$/");
     }};
 
     @Override
@@ -1134,6 +1132,8 @@ public class BodyTranslator extends Translator {
             rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$0")) {
             rhs = new CheckProgramNameVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$/")) {
+            rhs = new CheckRecordSeparatorVariableTypeNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {

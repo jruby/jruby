@@ -20,6 +20,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.globals.CheckRecordSeparatorVariableTypeNode;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.KeyValue;
@@ -561,6 +562,11 @@ public class CoreLibrary {
         return typeError(String.format("no implicit conversion of %s into %s", getLogicalClass(from).getName(), to), currentNode);
     }
 
+    public RubyException typeErrorMustBe(String variable, String type, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError(String.format("value of %s must be %s", variable, type), currentNode);
+    }
+
     public RubyException typeErrorBadCoercion(Object from, String to, String coercionMethod, Object coercedTo, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         String badClassName = getLogicalClass(from).getName();
@@ -866,5 +872,4 @@ public class CoreLibrary {
     public RubyClass getEncodingConverterClass() {
         return encodingConverterClass;
     }
-
 }
