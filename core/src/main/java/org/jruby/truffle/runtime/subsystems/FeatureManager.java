@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.cli.Options;
 
 /**
@@ -114,11 +115,11 @@ public class FeatureManager {
             return true;
         }
 
-        if (requireFile(path + File.separator + feature, currentNode)) {
+        if (requireFile(new File(path, feature).getPath(), currentNode)) {
             return true;
         }
 
-        if (requireFile(path + File.separator + feature + ".rb", currentNode)) {
+        if (requireFile(new File(path, feature).getPath() + ".rb", currentNode)) {
             return true;
         }
 
@@ -126,18 +127,7 @@ public class FeatureManager {
     }
 
     private boolean requireFile(String fileName, RubyNode currentNode) throws IOException {
-        if (Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray()).contains(fileName)) {
-            return true;
-        }
-
-        if (Options.TRUFFLE_LOAD_PRINT.load()) {
-            context.getWarnings().warn("%s being loaded", fileName);
-        }
-
-        /*
-         * There is unfortunately no way to check if a string is a file path, or a URL. file:foo.txt
-         * is a valid file name, as well as a valid URL. We try as a file path first.
-         */
+        // Loading from core:/ always just goes ahead without a proper check
 
         if (fileName.startsWith("core:/")) {
             try {
@@ -147,35 +137,27 @@ public class FeatureManager {
                 // TODO(CS): obviously not the best way to do this
                 return false;
             }
-        } else if (new File(fileName).isFile()) {
-            context.loadFile(fileName, currentNode);
-            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
-            return true;
-        } else {
-            URL url;
-
-            try {
-                url = new URL(fileName);
-            } catch (MalformedURLException e) {
-                return false;
-            }
-
-            InputStream inputStream;
-
-            try {
-                inputStream = url.openConnection().getInputStream();
-            } catch (IOException e) {
-                return false;
-            }
-
-            // TODO(CS): can probably simplify this with the new Source API in Truffle
-
-            context.load(Source.fromReader(new InputStreamReader(inputStream), url.toString()), currentNode);
-            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
-            ((RubyArray) context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOADED_FEATURES")).slowPush(context.makeString(fileName));
-            return true;
-
         }
+
+        final File file = new File(fileName);
+
+        if (!file.isFile()) {
+            return false;
+        }
+
+        final String canonicalFileName = file.getCanonicalPath();
+
+        for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
+            if (loaded.toString().equals(canonicalFileName)) {
+                return true;
+            }
+        }
+
+        context.loadFile(fileName, currentNode);
+
+        context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(canonicalFileName));
+
+        return true;
     }
 
 }

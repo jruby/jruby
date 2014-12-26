@@ -163,8 +163,6 @@ public class RubyContext extends ExecutionContext {
         // Assume UTF-8 for the moment
 
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
-
-        coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
         execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
