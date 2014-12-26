@@ -1,2 +1,0 @@
-fails:Ruby character strings Unicode escaping can be done with \u{} and one to six hex digits
-fails:Ruby character strings Unicode escaping can be done with \u and four hex digits

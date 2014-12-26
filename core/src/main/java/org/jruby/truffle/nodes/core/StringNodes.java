@@ -861,6 +861,24 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "ord")
+    public abstract static class OrdNode extends CoreMethodNode {
+
+        public OrdNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OrdNode(OrdNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int ord(RubyString string) {
+            notDesignedForCompilation();
+            return ((org.jruby.RubyFixnum) getContext().toJRuby(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
+        }
+    }
+
     @CoreMethod(names = "rjust", required = 1, optional = 1, lowerFixnumParameters = 0)
     public abstract static class RjustNode extends CoreMethodNode {
 

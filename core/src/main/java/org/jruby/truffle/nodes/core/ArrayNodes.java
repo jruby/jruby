@@ -64,6 +64,11 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @Specialization(guards = {"isObject", "isOtherNull"})
+        public RubyArray addObjectNull(RubyArray a, RubyArray b) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) a.getStore(), a.getSize()), a.getSize());
+        }
+
         @Specialization(guards = "areBothIntegerFixnum")
         public RubyArray addBothIntegerFixnum(RubyArray a, RubyArray b) {
             final int combinedSize = a.getSize() + b.getSize();
