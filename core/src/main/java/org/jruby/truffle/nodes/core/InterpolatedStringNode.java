@@ -85,12 +85,4 @@ public final class InterpolatedStringNode extends RubyNode {
         return getContext().toTruffle(builder);
     }
 
-    @ExplodeLoop
-    @Override
-    public void executeVoid(VirtualFrame frame) {
-        for (int n = 0; n < children.length; n++) {
-            children[n].executeVoid(frame);
-        }
-    }
-
 }
