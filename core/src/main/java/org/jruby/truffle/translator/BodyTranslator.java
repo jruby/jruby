@@ -38,6 +38,7 @@ import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
+import org.jruby.truffle.nodes.globals.CheckProgramNameVariableTypeNode;
 import org.jruby.truffle.nodes.globals.CheckStdoutVariableTypeNode;
 import org.jruby.truffle.nodes.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.nodes.literal.*;
@@ -1129,13 +1130,15 @@ public class BodyTranslator extends Translator {
 
         RubyNode rhs = node.getValueNode().accept(this);
 
+        if (name.equals("$~")) {
+            rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$0")) {
+            rhs = new CheckProgramNameVariableTypeNode(context, sourceSection, rhs);
+        }
+
         if (readOnlyGlobalVariables.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            if (name.equals("$~")) {
-                rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
-            }
-
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
             return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {

@@ -4,7 +4,6 @@ fails(inherited):Predefined global $-0 does not call #to_str to convert the obje
 fails(inherited):Predefined global $-0 raises a TypeError if assigned a boolean
 fails(inherited):Predefined global $-0 raises a TypeError if assigned a Fixnum
 fails(inherited):Predefined global $/ changes $-0
-fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
 fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
 fails:Predefined global $, raises TypeError if assigned a non-String
