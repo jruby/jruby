@@ -4147,9 +4147,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean start_with_pCommon(IRubyObject arg) {
-        IRubyObject tmp = arg.checkStringType();
-        if (tmp.isNil()) return false;
-        RubyString otherString = (RubyString)tmp;
+        RubyString otherString = arg.convertToString();
         checkEncoding(otherString);
         if (value.getRealSize() < otherString.value.getRealSize()) return false;
         return value.startsWith(otherString.value);
@@ -4174,9 +4172,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean end_with_pCommon(IRubyObject arg) {
-        IRubyObject tmp = arg.checkStringType();
-        if (tmp.isNil()) return false;
-        RubyString otherString = (RubyString)tmp;
+        RubyString otherString = arg.convertToString();
         int otherLength = otherString.value.getRealSize();
         Encoding enc = checkEncoding(otherString);
         if (value.getRealSize() < otherLength) return false;
