@@ -1134,6 +1134,8 @@ public class BodyTranslator extends Translator {
             rhs = new CheckProgramNameVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$/")) {
             rhs = new CheckRecordSeparatorVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$,")) {
+            rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
