@@ -101,6 +101,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
     @CompilerDirectives.CompilationFinal private RubyClass edomClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingConverterClass;
+    @CompilerDirectives.CompilationFinal private RubyClass encodingCompatibilityErrorClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -268,6 +269,9 @@ public class CoreLibrary {
         zeroDivisionErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
         encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
+
+        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
+        encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // Includes
 
@@ -655,6 +659,16 @@ public class CoreLibrary {
     public RubyException regexpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(regexpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return encodingCompatibilityError(String.format("incompatible character encodings: %s and %s", a, b), currentNode);
+    }
+
+    public RubyException encodingCompatibilityError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(encodingCompatibilityErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {

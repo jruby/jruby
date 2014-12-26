@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.ToSNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
@@ -65,21 +66,23 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @CompilerDirectives.TruffleBoundary
     private RubyString concat(RubyString[] strings) {
-        // TODO(CS): what happens to encoding here
+        // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 
-        int length = 0;
-
-        for (RubyString string : strings) {
-            length += string.getBytes().length();
-        }
-
-        final ByteList bytes = new ByteList(length);
+        org.jruby.RubyString builder = null;
 
         for (RubyString string : strings) {
-            bytes.append(string.getBytes());
+            if (builder == null) {
+                builder = getContext().toJRuby(string);
+            } else {
+                try {
+                    builder.append19(getContext().toJRuby(string));
+                } catch (org.jruby.exceptions.RaiseException e) {
+                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), string.getBytes().getEncoding().getCharsetName(), this));
+                }
+            }
         }
 
-        return new RubyString(getContext().getCoreLibrary().getStringClass(), bytes);
+        return getContext().toTruffle(builder);
     }
 
     @ExplodeLoop

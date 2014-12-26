@@ -286,7 +286,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public org.jruby.RubyString toJRuby(RubyString string) {
-        return runtime.newString(string.getBytes());
+        return runtime.newString(string.getBytes().dup());
     }
 
     public Object toTruffle(IRubyObject object) {
@@ -332,7 +332,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public RubyString toTruffle(org.jruby.RubyString string) {
-        return new RubyString(getCoreLibrary().getStringClass(), string.getByteList());
+        return new RubyString(getCoreLibrary().getStringClass(), string.getByteList().dup());
     }
 
     public Ruby getRuntime() {
