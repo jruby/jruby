@@ -94,21 +94,7 @@ public class RubyRegexp extends RubyBasicObject {
 
         final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
 
-        if (operator) {
-            for (int n = 1; n < 10; n++) {
-                setThread("$" + n, nil);
-            }
-        }
-
         if (match == -1) {
-            setFrame(frame, "$&", nil);
-            setFrame(frame, "$`", nil);
-            setFrame(frame, "$'", nil);
-
-            if (operator) {
-                setFrame(frame, "$+", nil);
-            }
-
             setThread("$~", nil);
 
             if (setNamedCaptures && regex.numberOfNames() > 0) {
@@ -139,10 +125,6 @@ public class RubyRegexp extends RubyBasicObject {
                 }
 
                 values[n] = groupString;
-
-                if (n > 0 && n < 10) {
-                    setThread("$" + n, groupString);
-                }
             } else {
                 if (start == -1 || end == -1) {
                     values[n] = getContext().getCoreLibrary().getNilObject();
@@ -153,7 +135,11 @@ public class RubyRegexp extends RubyBasicObject {
             }
         }
 
-        final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+        final RubyString pre = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(0, region.beg[0]).dup());
+        final RubyString post = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup());
+        final RubyString global = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup());
+
+        final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values, pre, post, global);
 
         if (operator) {
             if (values.length > 0) {
@@ -162,16 +148,8 @@ public class RubyRegexp extends RubyBasicObject {
                 while (values[nonNil] == getContext().getCoreLibrary().getNilObject()) {
                     nonNil--;
                 }
-
-                setFrame(frame, "$+", values[nonNil]);
-            } else {
-                setFrame(frame, "$+", getContext().getCoreLibrary().getNilObject());
             }
         }
-
-        setFrame(frame, "$`", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(0, region.beg[0]).dup()));
-        setFrame(frame, "$'", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup()));
-        setFrame(frame, "$&", new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup()));
 
         setThread("$~", matchObject);
 

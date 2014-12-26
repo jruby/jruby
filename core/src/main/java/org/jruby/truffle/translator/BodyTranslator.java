@@ -18,6 +18,7 @@ import org.joni.Regex;
 import org.joni.Syntax;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
@@ -1850,13 +1851,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNthRefNode(org.jruby.ast.NthRefNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        // This is wrong I think - should reference one of the existing global variables or something like that
-
-        final String name = "$" + node.getMatchNumber();
-
-        return new GlobalVarNode(node.getPosition(), name).accept(this);
+        return new ReadMatchReferenceNode(context, translate(node.getPosition()), node.getMatchNumber());
     }
 
     @Override
@@ -2369,7 +2364,26 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBackRefNode(org.jruby.ast.BackRefNode node) {
-       return new org.jruby.ast.GlobalVarNode(node.getPosition(), "$" + Character.toString(node.getType())).accept(this);
+        int index = 0;
+
+        switch (node.getType()) {
+            case '`':
+                index = ReadMatchReferenceNode.PRE;
+                break;
+            case '\'':
+                index = ReadMatchReferenceNode.POST;
+                break;
+            case '&':
+                index = ReadMatchReferenceNode.GLOBAL;
+                break;
+            case '+':
+                index = ReadMatchReferenceNode.HIGHEST;
+                break;
+            default:
+                throw new UnsupportedOperationException(Character.toString(node.getType()));
+        }
+
+        return new ReadMatchReferenceNode(context, translate(node.getPosition()), index);
     }
 
     public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
