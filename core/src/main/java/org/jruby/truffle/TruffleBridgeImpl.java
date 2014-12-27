@@ -143,6 +143,10 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public Object execute(final TranslatorDriver.ParserContext parserContext, final Object self, final MaterializedFrame parentFrame, final org.jruby.ast.RootNode rootNode) {
+        truffleContext.getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(
+                truffleContext.getCoreLibrary().getGlobalVariablesObject(), "$0",
+                truffleContext.toTruffle(runtime.getGlobalVariables().get("$0")));
+
         final String inputFile = rootNode.getPosition().getFile();
         final Source source;
 

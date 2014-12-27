@@ -18,6 +18,7 @@ import org.joni.Regex;
 import org.joni.Syntax;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
@@ -37,9 +38,7 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
-import org.jruby.truffle.nodes.globals.CheckStdoutVariableTypeNode;
-import org.jruby.truffle.nodes.globals.WriteReadOnlyGlobalNode;
+import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
@@ -1115,6 +1114,7 @@ public class BodyTranslator extends Translator {
         put("$-d", "$DEBUG");
         put("$-v", "$VERBOSE");
         put("$-w", "$VERBOSE");
+        put("$-0", "$/");
     }};
 
     @Override
@@ -1129,13 +1129,19 @@ public class BodyTranslator extends Translator {
 
         RubyNode rhs = node.getValueNode().accept(this);
 
+        if (name.equals("$~")) {
+            rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$0")) {
+            rhs = new CheckProgramNameVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$/")) {
+            rhs = new CheckRecordSeparatorVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$,")) {
+            rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
+        }
+
         if (readOnlyGlobalVariables.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            if (name.equals("$~")) {
-                rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
-            }
-
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
             return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
@@ -1845,13 +1851,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNthRefNode(org.jruby.ast.NthRefNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        // This is wrong I think - should reference one of the existing global variables or something like that
-
-        final String name = "$" + node.getMatchNumber();
-
-        return new GlobalVarNode(node.getPosition(), name).accept(this);
+        return new ReadMatchReferenceNode(context, translate(node.getPosition()), node.getMatchNumber());
     }
 
     @Override
@@ -2364,7 +2364,26 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBackRefNode(org.jruby.ast.BackRefNode node) {
-       return new org.jruby.ast.GlobalVarNode(node.getPosition(), "$" + Character.toString(node.getType())).accept(this);
+        int index = 0;
+
+        switch (node.getType()) {
+            case '`':
+                index = ReadMatchReferenceNode.PRE;
+                break;
+            case '\'':
+                index = ReadMatchReferenceNode.POST;
+                break;
+            case '&':
+                index = ReadMatchReferenceNode.GLOBAL;
+                break;
+            case '+':
+                index = ReadMatchReferenceNode.HIGHEST;
+                break;
+            default:
+                throw new UnsupportedOperationException(Character.toString(node.getType()));
+        }
+
+        return new ReadMatchReferenceNode(context, translate(node.getPosition()), index);
     }
 
     public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {

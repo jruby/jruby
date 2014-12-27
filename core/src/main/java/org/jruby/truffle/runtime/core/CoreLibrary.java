@@ -20,6 +20,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.globals.CheckRecordSeparatorVariableTypeNode;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.KeyValue;
@@ -101,6 +102,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
     @CompilerDirectives.CompilationFinal private RubyClass edomClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingConverterClass;
+    @CompilerDirectives.CompilationFinal private RubyClass encodingCompatibilityErrorClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -268,6 +270,9 @@ public class CoreLibrary {
         zeroDivisionErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
         encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
+
+        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
+        encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // Includes
 
@@ -557,6 +562,11 @@ public class CoreLibrary {
         return typeError(String.format("no implicit conversion of %s into %s", getLogicalClass(from).getName(), to), currentNode);
     }
 
+    public RubyException typeErrorMustBe(String variable, String type, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError(String.format("value of %s must be %s", variable, type), currentNode);
+    }
+
     public RubyException typeErrorBadCoercion(Object from, String to, String coercionMethod, Object coercedTo, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         String badClassName = getLogicalClass(from).getName();
@@ -655,6 +665,16 @@ public class CoreLibrary {
     public RubyException regexpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(regexpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return encodingCompatibilityError(String.format("incompatible character encodings: %s and %s", a, b), currentNode);
+    }
+
+    public RubyException encodingCompatibilityError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(encodingCompatibilityErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {
@@ -852,5 +872,4 @@ public class CoreLibrary {
     public RubyClass getEncodingConverterClass() {
         return encodingConverterClass;
     }
-
 }

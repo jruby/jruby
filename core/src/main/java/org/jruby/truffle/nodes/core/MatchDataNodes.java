@@ -42,6 +42,42 @@ public abstract class MatchDataNodes {
 
     }
 
+    @CoreMethod(names = "pre_match")
+    public abstract static class PreMatchNode extends CoreMethodNode {
+
+        public PreMatchNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PreMatchNode(PreMatchNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString preMatch(RubyMatchData matchData) {
+            return matchData.getPre();
+        }
+
+    }
+
+    @CoreMethod(names = "post_match")
+    public abstract static class PostMatchNode extends CoreMethodNode {
+
+        public PostMatchNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PostMatchNode(PostMatchNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString postMatch(RubyMatchData matchData) {
+            return matchData.getPost();
+        }
+
+    }
+
     @CoreMethod(names = {"to_a", "captures"})
     public abstract static class ToANode extends CoreMethodNode {
 

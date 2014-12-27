@@ -18,10 +18,16 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 public class RubyMatchData extends RubyBasicObject {
 
     private final Object[] values;
+    private final RubyString pre;
+    private final RubyString post;
+    private final RubyString global;
 
-    public RubyMatchData(RubyClass rubyClass, Object[] values) {
+    public RubyMatchData(RubyClass rubyClass, Object[] values, RubyString pre, RubyString post, RubyString global) {
         super(rubyClass);
         this.values = values;
+        this.pre = pre;
+        this.post = post;
+        this.global = global;
     }
 
     public Object[] valuesAt(int... indices) {
@@ -47,6 +53,18 @@ public class RubyMatchData extends RubyBasicObject {
                 ((RubyBasicObject) object).visitObjectGraph(visitor);
             }
         }
+    }
+
+    public RubyString getPre() {
+        return pre;
+    }
+
+    public RubyString getPost() {
+        return post;
+    }
+
+    public RubyString getGlobal() {
+        return global;
     }
 
 }

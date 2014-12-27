@@ -163,8 +163,6 @@ public class RubyContext extends ExecutionContext {
         // Assume UTF-8 for the moment
 
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
-
-        coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
         execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
@@ -286,7 +284,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public org.jruby.RubyString toJRuby(RubyString string) {
-        return runtime.newString(string.getBytes());
+        return runtime.newString(string.getBytes().dup());
     }
 
     public Object toTruffle(IRubyObject object) {
@@ -332,7 +330,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public RubyString toTruffle(org.jruby.RubyString string) {
-        return new RubyString(getCoreLibrary().getStringClass(), string.getByteList());
+        return new RubyString(getCoreLibrary().getStringClass(), string.getByteList().dup());
     }
 
     public Ruby getRuntime() {

@@ -143,7 +143,6 @@ public class Options {
     public static final Option<Integer> TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH = integer(TRUFFLE, "truffle.backtrace.max_value_length", 20, "Max length for values when displayed in a backtrace.");
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
     public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
-    public static final Option<Boolean> TRUFFLE_LOAD_PRINT = bool(TRUFFLE, "truffle.load.print", false, "Print the name of files as they're loaded.");
     public static final Option<Boolean> TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT = bool(TRUFFLE, "truffle.debug.enable_assert_constant", false, "Enable special 'truffle_assert_constant' form.");
     public static final Option<Boolean> TRUFFLE_PANIC_ON_JAVA_ASSERT = bool(TRUFFLE, "truffle.debug.panic_on_java_assert", false, "Panic as soon as a Java assertion failure is found.");
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_CLONE_YIELD = bool(TRUFFLE, "truffle.inliner.always_clone_yield", true, "Always clone yield call targets.");

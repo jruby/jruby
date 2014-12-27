@@ -529,6 +529,29 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "encode", required = 1)
+    public abstract static class EncodeNode extends CoreMethodNode {
+
+        public EncodeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodeNode(EncodeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString encode(RubyString string, RubyString encoding) {
+            notDesignedForCompilation();
+
+            final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
+            final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(encoding);
+            final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
+
+            return getContext().toTruffle(jrubyTranscoded);
+        }
+    }
+
     @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodNode {
 
@@ -835,6 +858,24 @@ public abstract class StringNodes {
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
             return regexp.matchCommon(string.getBytes(), false, false);
+        }
+    }
+
+    @CoreMethod(names = "ord")
+    public abstract static class OrdNode extends CoreMethodNode {
+
+        public OrdNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OrdNode(OrdNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int ord(RubyString string) {
+            notDesignedForCompilation();
+            return ((org.jruby.RubyFixnum) getContext().toJRuby(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
         }
     }
 

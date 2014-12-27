@@ -1,5 +1,0 @@
-fails:Ruby character strings Unicode escaping can be done with \u{} and one to six hex digits
-fails:Ruby character strings Unicode escaping can be done with \u and four hex digits
-fails:Ruby String interpolation creates a String having an Encoding compatible with all components
-fails:Ruby String interpolation creates a String having the Encoding of the components when all are the same Encoding
-fails:Ruby String interpolation raises an Encoding::CompatibilityError if the Encodings are not compatible
