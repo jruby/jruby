@@ -714,4 +714,17 @@ EXPECTED
     $VERBOSE = verbose
   end
 
+  def test_invalid_warning
+    assert_warning(/unknown pack directive ',' in ','/) {
+      [].pack(",")
+    }
+    assert_warning(/\A[ -~]+\Z/) {
+      [].pack("\x7f")
+    }
+    assert_warning(/\A(.* in '\u{3042}'\n)+\z/) {
+      EnvUtil.with_default_external(Encoding::UTF_8) {
+        [].pack("\u{3042}")
+      }
+    }
+  end
 end

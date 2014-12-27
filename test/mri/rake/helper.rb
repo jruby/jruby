@@ -2,7 +2,7 @@ require 'rubygems'
 $:.unshift File.expand_path('../../lib', __FILE__)
 
 begin
-  gem 'minitest', '~> 4'
+  gem 'minitest', '~> 5'
 rescue Gem::LoadError
 end
 
@@ -13,7 +13,6 @@ require File.expand_path('../file_creation', __FILE__)
 
 
 begin
-  require_relative '../ruby/envutil'
   require_relative 'support/ruby_runner'
   require_relative 'support/rakefile_definitions'
 rescue NoMethodError, LoadError
@@ -22,7 +21,7 @@ rescue NoMethodError, LoadError
   require 'test/support/rakefile_definitions'
 end
 
-class Rake::TestCase < MiniTest::Unit::TestCase
+class Rake::TestCase < Minitest::Test
   include FileCreation
 
   include Rake::DSL

@@ -1,7 +1,6 @@
 # -*- coding: us-ascii -*-
 require 'test/unit'
 require 'timeout'
-require_relative 'envutil'
 
 module TestStruct
   def test_struct
@@ -185,6 +184,48 @@ module TestStruct
     o = klass.new(1, 2, 3, 4, 5, 6)
     assert_equal([1, 3, 5], o.select {|v| v % 2 != 0 })
     assert_raise(ArgumentError) { o.select(1) }
+  end
+
+  def test_big_struct
+    klass1 = @Struct.new(*('a'..'z').map(&:to_sym))
+    o = klass1.new
+    assert_nil o.z
+    assert_equal(:foo, o.z = :foo)
+    assert_equal(:foo, o.z)
+    assert_equal(:foo, o[25])
+  end
+
+  def test_overridden_aset
+    bug10601 = '[ruby-core:66846] [Bug #10601]: should not be affected by []= method'
+
+    struct = Class.new(Struct.new(*(:a..:z), :result)) do
+      def []=(*args)
+        raise args.inspect
+      end
+    end
+
+    obj = struct.new
+    assert_nothing_raised(RuntimeError, bug10601) do
+      obj.result = 42
+    end
+    assert_equal(42, obj.result, bug10601)
+  end
+
+  def test_overridden_aref
+    bug10601 = '[ruby-core:66846] [Bug #10601]: should not be affected by [] method'
+
+    struct = Class.new(Struct.new(*(:a..:z), :result)) do
+      def [](*args)
+        raise args.inspect
+      end
+    end
+
+    obj = struct.new
+    obj.result = 42
+    result = assert_nothing_raised(RuntimeError, bug10601) do
+      break obj.result
+    end
+    assert_equal(42, result, bug10601)
   end
 
   def test_equal

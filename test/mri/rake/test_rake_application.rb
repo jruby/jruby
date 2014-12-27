@@ -370,7 +370,7 @@ class TestRakeApplication < Rake::TestCase
     # HACK no assertions
   end
 
-  def test_handle_options_should_strip_options_from_argv
+  def test_handle_options_should_not_strip_options_from_argv
     assert !@app.options.trace
 
     valid_option = '--trace'
@@ -378,7 +378,7 @@ class TestRakeApplication < Rake::TestCase
 
     @app.handle_options
 
-    assert !ARGV.include?(valid_option)
+    assert ARGV.include?(valid_option)
     assert @app.options.trace
   end
 

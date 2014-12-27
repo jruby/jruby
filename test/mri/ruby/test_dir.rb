@@ -237,16 +237,8 @@ class TestDir < Test::Unit::TestCase
       return unless File.exist?("filewithcases")
       assert_equal(%w"FileWithCases", Dir.glob("filewithcases"), feature5994)
     end
-    Dir.chdir(File.join(@root, "c")) do
-      open("FileWithCases", "w") {}
-      mode = File.stat(".").mode
-      begin
-        File.chmod(mode & ~0444, ".")
-        return if mode == File.stat(".").mode
-        assert_equal(%w"filewithcases", Dir.glob("filewithcases"), feature5994)
-      ensure
-        File.chmod(mode, ".")
-      end
+    Dir.chdir(@root) do
+      assert_equal(%w"a/FileWithCases", Dir.glob("A/filewithcases"), feature5994)
     end
   end
 
@@ -303,5 +295,22 @@ class TestDir < Test::Unit::TestCase
         assert_raise(NotImplementedError) { d.fileno }
       end
     }
+  end
+
+  def test_insecure_chdir
+    assert_raise(SecurityError) do
+      proc do
+        $SAFE=3
+        Dir.chdir("/")
+      end.call
+    end
+    m = "\u{79fb 52d5}"
+    d = Class.new(Dir) {singleton_class.class_eval {alias_method m, :chdir}}
+    assert_raise_with_message(SecurityError, /#{m}/) do
+      proc do
+        $SAFE=3
+        d.__send__(m, "/")
+      end.call
+    end
   end
 end

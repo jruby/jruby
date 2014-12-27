@@ -51,27 +51,27 @@ class WEBrick::TestFileHandler < Test::Unit::TestCase
 
     res = make_range_response(filename, "bytes=#{filesize-100}-")
     assert_match(%r{^text/plain}, res["content-type"])
-    assert_equal(get_res_body(res).size, 100)
+    assert_equal(100, get_res_body(res).size)
 
     res = make_range_response(filename, "bytes=-100")
     assert_match(%r{^text/plain}, res["content-type"])
-    assert_equal(get_res_body(res).size, 100)
+    assert_equal(100, get_res_body(res).size)
 
     res = make_range_response(filename, "bytes=0-99")
     assert_match(%r{^text/plain}, res["content-type"])
-    assert_equal(get_res_body(res).size, 100)
+    assert_equal(100, get_res_body(res).size)
 
     res = make_range_response(filename, "bytes=100-199")
     assert_match(%r{^text/plain}, res["content-type"])
-    assert_equal(get_res_body(res).size, 100)
+    assert_equal(100, get_res_body(res).size)
 
     res = make_range_response(filename, "bytes=0-0")
     assert_match(%r{^text/plain}, res["content-type"])
-    assert_equal(get_res_body(res).size, 1)
+    assert_equal(1, get_res_body(res).size)
 
     res = make_range_response(filename, "bytes=-1")
     assert_match(%r{^text/plain}, res["content-type"])
-    assert_equal(get_res_body(res).size, 1)
+    assert_equal(1, get_res_body(res).size)
 
     res = make_range_response(filename, "bytes=0-0, -2")
     assert_match(%r{^multipart/byteranges}, res["content-type"])
@@ -165,8 +165,13 @@ class WEBrick::TestFileHandler < Test::Unit::TestCase
 
   def test_non_disclosure_name
     config = { :DocumentRoot => File.dirname(__FILE__), }
+    log_tester = lambda {|log, access_log|
+      log = log.reject {|s| /ERROR `.*' not found\./ =~ s }
+      log = log.reject {|s| /WARN  the request refers nondisclosure name/ =~ s }
+      assert_equal([], log)
+    }
     this_file = File.basename(__FILE__)
-    TestWEBrick.start_httpserver(config) do |server, addr, port, log|
+    TestWEBrick.start_httpserver(config, log_tester) do |server, addr, port, log|
       http = Net::HTTP.new(addr, port)
       doc_root_opts = server[:DocumentRootOptions]
       doc_root_opts[:NondisclosureName] = %w(.ht* *~ test_*)
@@ -189,7 +194,12 @@ class WEBrick::TestFileHandler < Test::Unit::TestCase
 
   def test_directory_traversal
     config = { :DocumentRoot => File.dirname(__FILE__), }
-    TestWEBrick.start_httpserver(config) do |server, addr, port, log|
+    log_tester = lambda {|log, access_log|
+      log = log.reject {|s| /ERROR bad URI/ =~ s }
+      log = log.reject {|s| /ERROR `.*' not found\./ =~ s }
+      assert_equal([], log)
+    }
+    TestWEBrick.start_httpserver(config, log_tester) do |server, addr, port, log|
       http = Net::HTTP.new(addr, port)
       req = Net::HTTP::Get.new("/../../")
       http.request(req){|res| assert_equal("400", res.code, log.call) }
@@ -217,7 +227,12 @@ class WEBrick::TestFileHandler < Test::Unit::TestCase
       :DocumentRoot => File.dirname(__FILE__),
       :CGIPathEnv => ENV['PATH'],
     }
-    TestWEBrick.start_httpserver(config) do |server, addr, port, log|
+    log_tester = lambda {|log, access_log|
+      log = log.reject {|s| /ERROR `.*' not found\./ =~ s }
+      log = log.reject {|s| /WARN  the request refers nondisclosure name/ =~ s }
+      assert_equal([], log)
+    }
+    TestWEBrick.start_httpserver(config, log_tester) do |server, addr, port, log|
       http = Net::HTTP.new(addr, port)
       if windows?
         fname = nil
@@ -260,7 +275,11 @@ class WEBrick::TestFileHandler < Test::Unit::TestCase
         end
       },
     }
-    TestWEBrick.start_httpserver(config) do |server, addr, port, log|
+    log_tester = lambda {|log, access_log|
+      log = log.reject {|s| /ERROR `.*' not found\./ =~ s }
+      assert_equal([], log)
+    }
+    TestWEBrick.start_httpserver(config, log_tester) do |server, addr, port, log|
       http = Net::HTTP.new(addr, port)
 
       req = Net::HTTP::Get.new("/webrick.cgi/test")

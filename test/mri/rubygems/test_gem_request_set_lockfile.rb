@@ -303,6 +303,34 @@ DEPENDENCIES
     assert_equal expected, @set.dependencies
   end
 
+  def test_parse_DEPENDENCIES_git_version
+    write_lockfile <<-LOCKFILE
+GIT
+  remote: git://github.com/progrium/ruby-jwt.git
+  revision: 8d74770c6cd92ea234b428b5d0c1f18306a4f41c
+  specs:
+    jwt (1.1)
+
+GEM
+  remote: http://gems.example/
+  specs:
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  jwt (= 1.1)!
+    LOCKFILE
+
+    @lockfile.parse
+
+    expected = [
+      dep('jwt', '= 1.1'),
+    ]
+
+    assert_equal expected, @set.dependencies
+  end
+
   def test_parse_GEM
     write_lockfile <<-LOCKFILE
 GEM
@@ -646,7 +674,7 @@ DEPENDENCIES
   def test_relative_path_from
     path = @lockfile.relative_path_from '/foo', '/foo/bar'
 
-    assert_equal '/foo', path
+    assert_equal File.expand_path('/foo'), path
 
     path = @lockfile.relative_path_from '/foo', '/foo'
 

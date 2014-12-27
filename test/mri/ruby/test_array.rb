@@ -1,6 +1,5 @@
 # coding: US-ASCII
 require 'test/unit'
-require_relative 'envutil'
 
 class TestArray < Test::Unit::TestCase
   def setup
@@ -806,7 +805,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_flatten_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     o = Object.new
     def o.to_ary() callcc {|k| @cont = k; [1,2,3]} end
     begin
@@ -820,7 +819,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_permutation_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -837,7 +836,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_product_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -854,7 +853,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_combination_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -871,7 +870,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_permutation_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -888,7 +887,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_combination_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = [1,2,3]
@@ -1366,7 +1365,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_sort_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     n = 1000
     cont = nil
     ary = (1..100).to_a
@@ -2031,7 +2030,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_reject_with_callcc
-    respond_to?(:callcc, true) or require 'continuation'
+    need_continuation
     bug9727 = '[ruby-dev:48101] [Bug #9727]'
     cont = nil
     a = [*1..10].reject do |i|
@@ -2494,6 +2493,13 @@ class TestArray < Test::Unit::TestCase
     EOS
     rescue Timeout::Error => e
       skip e.message
+    end
+  end
+
+  private
+  def need_continuation
+    unless respond_to?(:callcc, true)
+      EnvUtil.suppress_warning {require 'continuation'}
     end
   end
 end

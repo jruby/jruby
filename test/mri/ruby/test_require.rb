@@ -1,7 +1,6 @@
 require 'test/unit'
 
 require 'tempfile'
-require_relative 'envutil'
 require 'tmpdir'
 
 class TestRequire < Test::Unit::TestCase
@@ -293,7 +292,8 @@ class TestRequire < Test::Unit::TestCase
     }
   end
 
-  def test_load2  # [ruby-core:25039]
+  def test_load_scope
+    bug1982 = '[ruby-core:25039] [Bug #1982]'
     Tempfile.create(["test_ruby_test_require", ".rb"]) {|t|
       t.puts "Hello = 'hello'"
       t.puts "class Foo"
@@ -301,10 +301,32 @@ class TestRequire < Test::Unit::TestCase
       t.puts "end"
       t.close
 
-      assert_in_out_err([], <<-INPUT, %w("hello"), [])
+      assert_in_out_err([], <<-INPUT, %w("hello"), [], bug1982)
         load(#{ t.path.dump }, true)
       INPUT
     }
+  end
+
+  def test_load_ospath
+    bug = '[ruby-list:49994] path in ospath'
+    base = "test_load\u{3042 3044 3046 3048 304a}".encode(Encoding::Windows_31J)
+    path = nil
+    Tempfile.create([base, ".rb"]) do |t|
+      path = t.path
+
+      assert_raise_with_message(LoadError, /#{base}/) {
+        load(File.join(File.dirname(path), base))
+      }
+
+      t.puts "warn 'ok'"
+      t.close
+      assert_include(path, base)
+      assert_warn("ok\n", bug) {
+        assert_nothing_raised(LoadError, bug) {
+          load(path)
+        }
+      }
+    end
   end
 
   def test_tainted_loadpath

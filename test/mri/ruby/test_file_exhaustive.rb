@@ -1,7 +1,6 @@
 require "test/unit"
 require "fileutils"
 require "tmpdir"
-require_relative "envutil"
 
 class TestFileExhaustive < Test::Unit::TestCase
   DRIVE = Dir.pwd[%r'\A(?:[a-z]:|//[^/]+/[^/]+)'i]
@@ -441,13 +440,25 @@ class TestFileExhaustive < Test::Unit::TestCase
 
   def test_expand_path
     assert_equal(@file, File.expand_path(File.basename(@file), File.dirname(@file)))
-    if /cygwin|mingw|mswin|bccwin/ =~ RUBY_PLATFORM
+    case RUBY_PLATFORM
+    when /cygwin|mingw|mswin|bccwin/
       assert_equal(@file, File.expand_path(@file + " "))
       assert_equal(@file, File.expand_path(@file + "."))
       assert_equal(@file, File.expand_path(@file + "::$DATA"))
       assert_match(/\Ac:\//i, File.expand_path('c:'), '[ruby-core:31591]')
       assert_match(/\Ac:\//i, File.expand_path('c:foo', 'd:/bar'))
       assert_match(%r'\Ac:/bar/foo\z'i, File.expand_path('c:foo', 'c:/bar'))
+    when /darwin/
+      ["\u{feff}", *"\u{2000}"..."\u{2100}"].each do |c|
+        file = @file + c
+        begin
+          open(file) {}
+        rescue
+          assert_equal(file, File.expand_path(file), c.dump)
+        else
+          assert_equal(@file, File.expand_path(file), c.dump)
+        end
+      end
     end
     if DRIVE
       assert_match(%r"\Az:/foo\z"i, File.expand_path('/foo', "z:/bar"))
@@ -462,9 +473,9 @@ class TestFileExhaustive < Test::Unit::TestCase
     bug9934 = '[ruby-core:63114] [Bug #9934]'
     require "objspace"
     path = File.expand_path("/foo")
-    assert_operator(ObjectSpace.memsize_of(path), :<=, path.bytesize, bug9934)
+    assert_operator(ObjectSpace.memsize_of(path), :<=, path.bytesize + GC::INTERNAL_CONSTANTS[:RVALUE_SIZE], bug9934)
     path = File.expand_path("/a"*25)
-    assert_equal(path.bytesize+1, ObjectSpace.memsize_of(path), bug9934)
+    assert_equal(path.bytesize+1 + GC::INTERNAL_CONSTANTS[:RVALUE_SIZE], ObjectSpace.memsize_of(path), bug9934)
   end
 
   def test_expand_path_encoding

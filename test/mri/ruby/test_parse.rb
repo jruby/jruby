@@ -650,10 +650,12 @@ x = __ENCODING__
 
   def test_invalid_instance_variable
     assert_raise(SyntaxError) { eval('@#') }
+    assert_raise(SyntaxError) { eval('@') }
   end
 
   def test_invalid_class_variable
     assert_raise(SyntaxError) { eval('@@1') }
+    assert_raise(SyntaxError) { eval('@@') }
   end
 
   def test_invalid_char
@@ -870,5 +872,9 @@ x = __ENCODING__
     assert_warning(/named capture conflict/) {eval("a = 1; /(?<a>)/ =~ ''")}
     a = "\u{3042}"
     assert_warning(/#{a}/) {eval("#{a} = 1; /(?<#{a}>)/ =~ ''")}
+  end
+
+  def test_past_scope_variable
+    assert_warning(/past scope/) {catch {|tag| eval("BEGIN{throw tag}; tap {a = 1}; a")}}
   end
 end

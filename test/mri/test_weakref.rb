@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'weakref'
-require_relative './ruby/envutil'
 
 class TestWeakRef < Test::Unit::TestCase
   def make_weakref(level = 10)
@@ -60,5 +59,13 @@ class TestWeakRef < Test::Unit::TestCase
         ObjectSpace.garbage_collect
       end
     }, bug7304
+  end
+
+  def test_repeated_object_leak
+    bug10537 = '[ruby-core:66428]'
+    assert_no_memory_leak(%w(-rweakref), '', <<-'end;', bug10537, timeout: 60)
+      a = Object.new
+      150_000.times { WeakRef.new(a) }
+    end;
   end
 end

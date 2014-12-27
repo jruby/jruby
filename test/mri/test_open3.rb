@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'open3'
-require_relative 'ruby/envutil'
 
 class TestOpen3 < Test::Unit::TestCase
   RUBY = EnvUtil.rubybin
@@ -72,6 +71,13 @@ class TestOpen3 < Test::Unit::TestCase
       assert_equal(pid, t[:pid])
       assert_equal(pid, t.pid)
     }
+  end
+
+  def test_env
+    result = Open3.popen3({'A' => 'B', 'C' => 'D'}, RUBY, '-e' 'p ENV["A"]') do |i, out, err, thr|
+      output = out.read
+      assert_equal("\"B\"\n", output)
+    end
   end
 
   def with_pipe

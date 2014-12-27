@@ -31,6 +31,9 @@ class LeakChecker
   def check_fd_leak(test_name)
     leaked = false
     live1 = @fd_info
+    if IO.respond_to?(:console)
+      IO.console(:close)
+    end
     live2 = find_fds
     fd_closed = live1 - live2
     if !fd_closed.empty?
@@ -66,6 +69,7 @@ class LeakChecker
         end
         puts "Leaked file descriptor: #{test_name}: #{fd}#{str}"
       }
+      #system("lsof -p #$$") if !fd_leaked.empty?
       h.each {|fd, list|
         next if list.length <= 1
         if 1 < list.count {|io, autoclose, inspect| autoclose }

@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'tempfile'
-require_relative 'envutil'
 
 class TestException < Test::Unit::TestCase
   def test_exception_rescued
@@ -129,18 +128,47 @@ class TestException < Test::Unit::TestCase
     assert(!bad)
   end
 
+  def test_catch_no_throw
+    assert_equal(:foo, catch {:foo})
+  end
+
   def test_catch_throw
-    assert(catch(:foo) {
-             loop do
-               loop do
-                 throw :foo, true
-                 break
-               end
-               break
-               assert(false)			# should no reach here
-             end
-             false
-           })
+    result = catch(:foo) {
+      loop do
+        loop do
+          throw :foo, true
+          break
+        end
+        assert(false, "should not reach here")
+      end
+      false
+    }
+    assert(result)
+  end
+
+  def test_catch_throw_noarg
+    assert_nothing_raised(UncaughtThrowError) {
+      result = catch {|obj|
+        throw obj, :ok
+        assert(false, "should not reach here")
+      }
+      assert_equal(:ok, result)
+    }
+  end
+
+  def test_uncaught_throw
+    tag = nil
+    e = assert_raise_with_message(UncaughtThrowError, /uncaught throw/) {
+      catch("foo") {|obj|
+        tag = obj.dup
+        throw tag, :ok
+        assert(false, "should not reach here")
+      }
+      assert(false, "should not reach here")
+    }
+    assert_not_nil(tag)
+    assert_same(tag, e.tag)
+    assert_equal(:ok, e.value)
   end
 
   def test_catch_throw_in_require
@@ -148,7 +176,7 @@ class TestException < Test::Unit::TestCase
     Tempfile.create(["dep", ".rb"]) {|t|
       t.puts("throw :extdep, 42")
       t.close
-      assert_equal(42, catch(:extdep) {require t.path}, bug7185)
+      assert_equal(42, assert_throw(:extdep, bug7185) {require t.path}, bug7185)
     }
   end
 
@@ -627,5 +655,35 @@ end.join
 
   def test_anonymous_message
     assert_in_out_err([], "raise Class.new(RuntimeError), 'foo'", [], /foo\n/)
+  end
+
+  def test_name_error_info
+    obj = BasicObject.new
+    e = assert_raise(NameError) {
+      obj.instance_eval("Object")
+    }
+    assert_equal(:Object, e.name)
+    e = assert_raise(NameError) {
+      obj.instance_eval {foo}
+    }
+    assert_equal(:foo, e.name)
+    e = assert_raise(NoMethodError) {
+      obj.foo(1, 2)
+    }
+    assert_equal(:foo, e.name)
+    assert_equal([1, 2], e.args)
+  end
+
+  def test_output_string_encoding
+    # "\x82\xa0" in cp932 is "\u3042" (Japanese hiragana 'a')
+    # change $stderr to force calling rb_io_write() instead of fwrite()
+    assert_in_out_err(["-Eutf-8:cp932"], '# coding: cp932
+$stderr = $stdout; raise "\x82\xa0"') do |outs, errs, status|
+      assert_equal 1, outs.size
+      assert_equal 0, errs.size
+      err = outs.first.force_encoding('utf-8')
+      assert err.valid_encoding?, 'must be valid encoding'
+      assert_match /\u3042/, err
+    end
   end
 end

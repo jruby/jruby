@@ -7,7 +7,6 @@ if defined? GDBM
   require 'test/unit'
   require 'tmpdir'
   require 'fileutils'
-  require_relative '../ruby/envutil'
 
   class TestGDBM_RDONLY < Test::Unit::TestCase
     def TestGDBM_RDONLY.uname_s
@@ -391,6 +390,10 @@ if defined? GDBM
       assert_equal(@gdbm, ret)
     end
 
+    def test_each_key_without_block
+      assert_kind_of Enumerator, @gdbm.each_key
+    end
+
     def test_keys
       assert_equal([], @gdbm.keys)
 
@@ -498,7 +501,7 @@ if defined? GDBM
           n+=1
           true
         }
-      rescue
+      rescue RuntimeError
       end
       assert_equal(51, n)
       check_size(49, @gdbm)

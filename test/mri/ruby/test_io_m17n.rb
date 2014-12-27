@@ -2,7 +2,6 @@
 require 'test/unit'
 require 'tmpdir'
 require 'timeout'
-require_relative 'envutil'
 
 class TestIO_M17N < Test::Unit::TestCase
   ENCS = [
@@ -2548,4 +2547,20 @@ EOT
       end
     }
   end if /mswin|mingw/ =~ RUBY_PLATFORM
+
+  def test_read_with_buf_broken_ascii_only
+    a, b = IO.pipe
+    a.binmode
+    b.binmode
+    b.write("\xE2\x9C\x93")
+    b.close
+
+    buf = "".force_encoding("binary")
+    assert buf.ascii_only?, "should have been ascii_only?"
+    a.read(1, buf)
+    assert !buf.ascii_only?, "should not have been ascii_only?"
+  ensure
+    a.close rescue nil
+    b.close rescue nil
+  end
 end

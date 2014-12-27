@@ -1,11 +1,10 @@
 require 'test/unit'
-require_relative 'envutil'
 
 class TestSyntax < Test::Unit::TestCase
   def assert_syntax_files(test)
     srcdir = File.expand_path("../../..", __FILE__)
     srcdir = File.join(srcdir, test)
-    assert_separately(%W[--disable-gem -r#{__dir__}/envutil - #{srcdir}],
+    assert_separately(%W[--disable-gem - #{srcdir}],
                       __FILE__, __LINE__, <<-'eom', timeout: Float::INFINITY)
       dir = ARGV.shift
       for script in Dir["#{dir}/**/*.rb"].sort
@@ -140,25 +139,93 @@ class TestSyntax < Test::Unit::TestCase
   def test_keyword_self_reference
     bug9593 = '[ruby-core:61299] [Bug #9593]'
     o = Object.new
-    def o.foo(var: defined?(var)) var end
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var: defined?(var)) var end")
+    end
     assert_equal(42, o.foo(var: 42))
     assert_equal("local-variable", o.foo, bug9593)
 
     o = Object.new
-    def o.foo(var: var) var end
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var: var) var end")
+    end
     assert_nil(o.foo, bug9593)
+
+    o = Object.new
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var: bar(var)) var end")
+    end
+
+    o = Object.new
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var: bar {var}) var end")
+    end
+
+    o = Object.new
+    assert_warn("") do
+      o.instance_eval("def foo(var: bar {|var| var}) var end")
+    end
+
+    o = Object.new
+    assert_warn("") do
+      o.instance_eval("def foo(var: def bar(var) var; end) var end")
+    end
+
+    o = Object.new
+    assert_warn("") do
+      o.instance_eval("proc {|var: 1| var}")
+    end
   end
 
   def test_optional_self_reference
     bug9593 = '[ruby-core:61299] [Bug #9593]'
     o = Object.new
-    def o.foo(var = defined?(var)) var end
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var = defined?(var)) var end")
+    end
     assert_equal(42, o.foo(42))
     assert_equal("local-variable", o.foo, bug9593)
 
     o = Object.new
-    def o.foo(var = var) var end
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var = var) var end")
+    end
     assert_nil(o.foo, bug9593)
+
+    o = Object.new
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var = bar(var)) var end")
+    end
+
+    o = Object.new
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var = bar {var}) var end")
+    end
+
+    o = Object.new
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var = (def bar;end; var)) var end")
+    end
+
+    o = Object.new
+    assert_warn(/circular argument reference - var/) do
+      o.instance_eval("def foo(var = (def self.bar;end; var)) var end")
+    end
+
+    o = Object.new
+    assert_warn("") do
+      o.instance_eval("def foo(var = bar {|var| var}) var end")
+    end
+
+    o = Object.new
+    assert_warn("") do
+      o.instance_eval("def foo(var = def bar(var) var; end) var end")
+    end
+
+    o = Object.new
+    assert_warn("") do
+      o.instance_eval("proc {|var = 1| var}")
+    end
   end
 
   def test_warn_grouped_expression
@@ -305,6 +372,10 @@ WARN
         end
       }
     }
+  end
+
+  def test_invalid_next
+    assert_syntax_error("def m; next; end", /Invalid next/)
   end
 
   def test_lambda_with_space
@@ -471,6 +542,12 @@ eom
     bug10114 = '[ruby-core:64228] [Bug #10114]'
     code = "# -*- coding: utf-8 -*-\n" "def n \"\u{2208}\"; end"
     assert_syntax_error(code, /def n "\u{2208}"; end/, bug10114)
+  end
+
+  def test_bad_kwarg
+    bug10545 = '[ruby-dev:48742] [Bug #10545]'
+    src = 'def foo(A: a) end'
+    assert_syntax_error(src, /formal argument/, bug10545)
   end
 
   private

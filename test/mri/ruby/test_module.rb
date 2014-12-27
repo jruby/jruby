@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'pp'
-require_relative 'envutil'
 
 $m0 = Module.nesting
 
@@ -678,14 +677,18 @@ class TestModule < Test::Unit::TestCase
 
   def test_const_set_invalid_name
     c1 = Class.new
-    assert_raise(NameError) { c1.const_set(:foo, :foo) }
-    assert_raise(NameError) { c1.const_set("bar", :foo) }
-    assert_raise(TypeError) { c1.const_set(1, :foo) }
+    assert_raise_with_message(NameError, /foo/) { c1.const_set(:foo, :foo) }
+    assert_raise_with_message(NameError, /bar/) { c1.const_set("bar", :foo) }
+    assert_raise_with_message(TypeError, /1/) { c1.const_set(1, :foo) }
     assert_nothing_raised(NameError) { c1.const_set("X\u{3042}", :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-16be"), :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-16le"), :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-32be"), :foo) }
     assert_raise(NameError) { c1.const_set("X\u{3042}".encode("utf-32le"), :foo) }
+    cx = EnvUtil.labeled_class("X\u{3042}")
+    EnvUtil.with_default_internal(Encoding::UTF_8) {
+      assert_raise_with_message(TypeError, /X\u{3042}/) { c1.const_set(cx, :foo) }
+    }
   end
 
   def test_const_get_invalid_name

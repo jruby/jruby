@@ -25,27 +25,34 @@ class TestWEBrickServer < Test::Unit::TestCase
 
   def test_start_exception
     stopped = 0
-    config = {
-      :StopCallback => Proc.new{ stopped += 1 },
-    }
+
+    log = []
+    logger = WEBrick::Log.new(log, WEBrick::BasicLog::WARN)
 
     assert_raises(SignalException) do
-      TestWEBrick.start_server(Echo, config) { |server, addr, port, log|
-        listener = server.listeners.first
+      listener = Object.new
+      def listener.to_io # IO.select invokes #to_io.
+        raise SignalException, 'SIGTERM' # simulate signal in main thread
+      end
+      def listener.shutdown
+      end
+      def listener.close
+      end
 
-        def listener.accept
-          raise SignalException, 'SIGTERM' # simulate signal in main thread
-        end
+      server = WEBrick::HTTPServer.new({
+        :BindAddress => "127.0.0.1", :Port => 0,
+        :StopCallback => Proc.new{ stopped += 1 },
+        :Logger => logger,
+      })
+      server.listeners[0].close
+      server.listeners[0] = listener
 
-        Thread.pass while server.status != :Running
-
-        TCPSocket.open(addr, port) { |sock| sock << "foo\n" }
-
-        Thread.pass until server.status == :Stop
-      }
+      server.start
     end
 
-    assert_equal(stopped, 1)
+    assert_equal(1, stopped)
+    assert_equal(1, log.length)
+    assert_match(/FATAL SignalException: SIGTERM/, log[0])
   end
 
   def test_callbacks
@@ -57,16 +64,16 @@ class TestWEBrickServer < Test::Unit::TestCase
     }
     TestWEBrick.start_server(Echo, config){|server, addr, port, log|
       true while server.status != :Running
-      assert_equal(started, 1, log.call)
-      assert_equal(stopped, 0, log.call)
-      assert_equal(accepted, 0, log.call)
+      assert_equal(1, started, log.call)
+      assert_equal(0, stopped, log.call)
+      assert_equal(0, accepted, log.call)
       TCPSocket.open(addr, port){|sock| (sock << "foo\n").gets }
       TCPSocket.open(addr, port){|sock| (sock << "foo\n").gets }
       TCPSocket.open(addr, port){|sock| (sock << "foo\n").gets }
-      assert_equal(accepted, 3, log.call)
+      assert_equal(3, accepted, log.call)
     }
-    assert_equal(started, 1)
-    assert_equal(stopped, 1)
+    assert_equal(1, started)
+    assert_equal(1, stopped)
   end
 
   def test_daemon
@@ -88,5 +95,37 @@ class TestWEBrickServer < Test::Unit::TestCase
       r.close
       w.close
     end
+  end
+
+  def test_restart
+    address = '127.0.0.1'
+    port = 0
+    log = []
+    config = {
+      :BindAddress => address,
+      :Port => port,
+      :Logger => WEBrick::Log.new(log, WEBrick::BasicLog::WARN),
+    }
+    server = Echo.new(config)
+    client_proc = lambda {|str|
+      begin
+        ret = server.listeners.first.connect_address.connect {|s|
+          s.write(str)
+          s.close_write
+          s.read
+        }
+        assert_equal(str, ret)
+      ensure
+        server.shutdown
+      end
+    }
+    server_thread = Thread.new { server.start }
+    client_thread = Thread.new { client_proc.call("a") }
+    assert_join_threads([client_thread, server_thread])
+    server.listen(address, port)
+    server_thread = Thread.new { server.start }
+    client_thread = Thread.new { client_proc.call("b") }
+    assert_join_threads([client_thread, server_thread])
+    assert_equal([], log)
   end
 end

@@ -3,7 +3,6 @@ require 'test/unit'
 require 'net/http'
 require 'stringio'
 require_relative 'utils'
-require_relative '../../ruby/envutil'
 
 class TestNetHTTP < Test::Unit::TestCase
 
@@ -277,6 +276,7 @@ module TestNetHTTP_version_1_1_methods
       end
     }
     assert_equal 1, i
+    @log_tester = nil # server may encount ECONNRESET
   end
 
   def test_get__implicit_start

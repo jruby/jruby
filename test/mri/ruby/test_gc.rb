@@ -1,7 +1,5 @@
 require 'test/unit'
 
-require_relative "envutil"
-
 class TestGc < Test::Unit::TestCase
   class S
     def initialize(a)
@@ -125,10 +123,12 @@ class TestGc < Test::Unit::TestCase
   end
 
   def test_latest_gc_info
+    assert_separately %w[--disable-gem], __FILE__, __LINE__, <<-'eom'
     GC.start
     count = GC.stat(:heap_free_slots) + GC.stat(:heap_allocatable_pages) * GC::INTERNAL_CONSTANTS[:HEAP_OBJ_LIMIT]
     count.times{ "a" + "b" }
     assert_equal :newobj, GC.latest_gc_info[:gc_by]
+    eom
 
     GC.start
     assert_equal :force, GC.latest_gc_info[:major_by] if use_rgengc?
@@ -329,6 +329,30 @@ class TestGc < Test::Unit::TestCase
         Thread.handle_interrupt(RuntimeError => :never) {break}
       end
     end;
+  end
+
+  def test_interrupt_in_finalizer
+    bug10595 = '[ruby-core:66825] [Bug #10595]'
+    src = <<-'end;'
+      pid = $$
+      Thread.start do
+        10.times {
+          sleep 0.1
+          Process.kill("INT", pid) rescue break
+        }
+        sleep 5
+        Process.kill("SEGV", pid) rescue nil
+        Process.kill("KILL", pid) rescue nil
+      end
+      f = proc {1000.times {}}
+      loop do
+        ObjectSpace.define_finalizer(Object.new, f)
+      end
+    end;
+    status = assert_in_out_err(["-e", src], "", [], /Interrupt/, bug10595)
+    unless /mswin|mingw/ =~ RUBY_PLATFORM
+      assert_equal("INT", Signal.signame(status.termsig))
+    end
   end
 
   def test_verify_internal_consistency

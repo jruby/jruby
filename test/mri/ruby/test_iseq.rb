@@ -1,5 +1,4 @@
 require 'test/unit'
-require_relative 'envutil'
 
 class TestISeq < Test::Unit::TestCase
   ISeq = RubyVM::InstructionSequence
@@ -53,13 +52,14 @@ class TestISeq < Test::Unit::TestCase
   end if defined?(RubyVM::InstructionSequence.load)
 
   def test_disasm_encoding
-    src = "\u{3042} = 1; \u{3042}"
-    enc, Encoding.default_internal = Encoding.default_internal, src.encoding
-    assert_equal(src.encoding, RubyVM::InstructionSequence.compile(src).disasm.encoding)
+    src = "\u{3042} = 1; \u{3042}; \u{3043}"
+    asm = RubyVM::InstructionSequence.compile(src).disasm
+    assert_equal(src.encoding, asm.encoding)
+    assert_predicate(asm, :valid_encoding?)
     src.encode!(Encoding::Shift_JIS)
-    assert_equal(true, RubyVM::InstructionSequence.compile(src).disasm.ascii_only?)
-  ensure
-    Encoding.default_internal = enc
+    asm = RubyVM::InstructionSequence.compile(src).disasm
+    assert_equal(src.encoding, asm.encoding)
+    assert_predicate(asm, :valid_encoding?)
   end
 
   LINE_BEFORE_METHOD = __LINE__
@@ -123,5 +123,15 @@ class TestISeq < Test::Unit::TestCase
     a, b = eval("# encoding: us-ascii\n'foobar'.freeze"),
            ISeq.of(c.instance_method(:foobar)).label
     assert_same a, b
+  end
+
+  def test_disable_opt
+    src = "a['foo'] = a['bar']; 'a'.freeze"
+    _,_,_,_,_,_,_,_,_,_,_,_,_,body= RubyVM::InstructionSequence.compile(src, __FILE__, __FILE__, __LINE__, false).to_a
+    body.each{|insn|
+      next if Integer === insn
+      op = insn.first
+      assert(!op.to_s.match(/^opt_/), "#{op}")
+    }
   end
 end
