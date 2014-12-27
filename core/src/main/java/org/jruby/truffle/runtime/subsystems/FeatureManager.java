@@ -41,11 +41,6 @@ public class FeatureManager {
         try {
             // Some features are handled specially
 
-            if (feature.equals("stringio")) {
-                context.getCoreLibrary().loadRubyCore("jruby/truffle/standard/stringio.rb");
-                return true;
-            }
-
             if (feature.equals("zlib")) {
                 context.getWarnings().warn("zlib not yet implemented");
                 return true;

@@ -264,6 +264,7 @@ public class CoreLibrary {
         trueClass = new RubyClass(context, objectClass, objectClass, "TrueClass");
         truffleModule = new RubyModule(context, objectClass, "Truffle");
         truffleDebugModule = new RubyModule(context, truffleModule, "Debug");
+        new RubyModule(context, truffleModule, "Primitive");
         typeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "TypeError");
         typeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         zeroDivisionErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ZeroDivisionError");

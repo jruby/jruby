@@ -53,8 +53,23 @@ public abstract class BindingNodes {
         public Object localVariableSetNode(RubyBinding binding, RubySymbol symbol, Object value) {
             notDesignedForCompilation();
 
-            final MaterializedFrame frame = binding.getFrame();
-            frame.setObject(frame.getFrameDescriptor().findFrameSlot(symbol.toString()), value);
+            MaterializedFrame frame = binding.getFrame();
+
+            while (true) {
+                final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
+
+                if (frameSlot != null) {
+                    frame.setObject(frameSlot, value);
+                    break;
+                }
+
+                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+
+                if (frame == null) {
+                    throw new UnsupportedOperationException();
+                }
+            }
+
             return value;
         }
     }
