@@ -338,6 +338,8 @@ public class RubyDir extends RubyObject {
             try {
                 result = block.yield(context, path);
             } finally {
+            	// basically check if the oldCWD still exists
+            	getDir(runtime, oldCwd, true);
                 runtime.setCurrentDirectory(oldCwd);
             }
         } else {
