@@ -70,7 +70,7 @@ module Gem
   # Allow specifying jar and classpath type gem path entries
   def self.path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
-    /(?<!jar:file|jar|file|classpath):/
+    /(?<!jar:file|jar|file|classpath|uri:classloader|uri):/
   end
 end
 
