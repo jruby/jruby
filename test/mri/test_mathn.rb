@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'ruby/envutil'
 
 # mathn redefines too much. It must be isolated to child processes.
 class TestMathn < Test::Unit::TestCase

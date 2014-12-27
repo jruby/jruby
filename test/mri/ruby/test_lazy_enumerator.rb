@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestLazyEnumerator < Test::Unit::TestCase
   class Step

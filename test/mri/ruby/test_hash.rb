@@ -1,6 +1,7 @@
 # -*- coding: us-ascii -*-
 require 'test/unit'
-EnvUtil.suppress_warning {require 'continuation'}
+require 'continuation'
+require_relative 'envutil'
 
 class TestHash < Test::Unit::TestCase
 
@@ -1274,9 +1275,9 @@ class TestHash < Test::Unit::TestCase
     feature4935 = '[ruby-core:37553] [Feature #4935]'
     x = 'world'
     hash = assert_nothing_raised(SyntaxError) do
-      break eval(%q({foo: 1, "foo-bar": 2, "hello-#{x}": 3, 'hello-#{x}': 4, 'bar': {}}))
+      break eval(%q({foo: 1, "foo-bar": 2, "hello-#{x}": 3, 'hello-#{x}': 4}))
     end
-    assert_equal({:foo => 1, :'foo-bar' => 2, :'hello-world' => 3, :'hello-#{x}' => 4, :bar => {}}, hash)
+    assert_equal({:foo => 1, :'foo-bar' => 2, :'hello-world' => 3, :'hello-#{x}' => 4}, hash)
   end
 
   class TestSubHash < TestHash

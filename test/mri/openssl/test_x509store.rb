@@ -1,6 +1,7 @@
+require_relative "../ruby/envutil"
 require_relative "utils"
 
-if defined?(OpenSSL::TestUtils)
+if defined?(OpenSSL)
 
 class OpenSSL::TestX509Store < Test::Unit::TestCase
   def setup

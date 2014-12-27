@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestDefined < Test::Unit::TestCase
   class Foo

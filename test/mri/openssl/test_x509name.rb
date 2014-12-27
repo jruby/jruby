@@ -1,7 +1,7 @@
 # coding: US-ASCII
 require_relative 'utils'
 
-if defined?(OpenSSL::TestUtils)
+if defined?(OpenSSL)
 
 class OpenSSL::TestX509Name < Test::Unit::TestCase
   OpenSSL::ASN1::ObjectId.register(

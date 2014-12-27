@@ -3,17 +3,12 @@
 # Copyright Ayumu Nojima (野島 歩) and Martin J. Dürst (duerst@it.aoyama.ac.jp)
 
 require 'test/unit'
-require 'unicode_normalize/normalize'
 
-class TestUnicodeNormalize < Test::Unit::TestCase
+NormTest = Struct.new :source, :NFC, :NFD, :NFKC, :NFKD, :line
 
-  UNICODE_VERSION = UnicodeNormalize::UNICODE_VERSION
-
-  NormTest = Struct.new :source, :NFC, :NFD, :NFKC, :NFKD, :line
-
+class TestNormalize < Test::Unit::TestCase
   def read_tests
-    IO.readlines(File.expand_path("../enc/unicode/data/#{UNICODE_VERSION}/NormalizationTest.txt", __dir__), encoding: 'utf-8')
-    .tap { |lines| assert_include(lines[0], "NormalizationTest-#{UNICODE_VERSION}.txt")}
+    IO.readlines(File.expand_path('../enc/unicode/data/NormalizationTest.txt', __dir__), encoding: 'utf-8')
     .collect.with_index { |linedata, linenumber| [linedata, linenumber]}
     .reject { |line| line[0] =~ /^[\#@]/ }
     .collect do |line|
@@ -29,9 +24,6 @@ class TestUnicodeNormalize < Test::Unit::TestCase
 
   def setup
     @@tests ||= read_tests
-  rescue Errno::ENOENT => e
-    @@tests ||= []
-    skip e.message
   end
 
   def self.generate_test_normalize(target, normalization, source, prechecked)

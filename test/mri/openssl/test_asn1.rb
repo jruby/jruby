@@ -186,8 +186,13 @@ class  OpenSSL::TestASN1 < Test::Unit::TestCase
     assert_equal(OpenSSL::ASN1::Null, pkey.value[0].value[1].class)
 
     assert_equal(OpenSSL::ASN1::BitString, sig_val.class)
-    cululated_sig = key.sign(OpenSSL::Digest::SHA1.new, tbs_cert.to_der)
-    assert_equal(cululated_sig, sig_val.value)
+
+    # since the direct compare of signatures does not work
+    # we verify the signature via the certificate itself
+    assert OpenSSL::X509::Certificate.new( cert.to_der ).verify key
+
+    #cululated_sig = key.sign(OpenSSL::Digest::SHA1.new, tbs_cert.to_der)
+    #assert_equal(cululated_sig, sig_val.value)
   end
 
   def test_encode_boolean
@@ -605,5 +610,5 @@ rEzBQ0F9dUyqQ9gyRg8KHhDfv9HzT1d/rnUZMkoombwYBRIUChGCYV0GnJcan2Zm
     assert_equal(:UNIVERSAL, asn1.tag_class)
   end
 
-end if defined?(OpenSSL::TestUtils)
+end if defined?(OpenSSL)
 

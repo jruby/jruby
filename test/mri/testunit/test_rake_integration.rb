@@ -1,5 +1,6 @@
 require 'minitest/autorun'
 require 'tmpdir'
+require_relative '../ruby/envutil'
 
 class RakeIntegration < MiniTest::Unit::TestCase
   include Test::Unit::Assertions

@@ -1,6 +1,7 @@
 # -*- coding: us-ascii -*-
 require 'test/unit'
 require 'thread'
+require_relative 'envutil'
 
 class TestThread < Test::Unit::TestCase
   class Thread < ::Thread
@@ -123,6 +124,7 @@ class TestThread < Test::Unit::TestCase
     dir = File.dirname(__FILE__)
     lbtest = File.join(dir, "lbtest.rb")
     $:.unshift File.join(File.dirname(dir), 'ruby')
+    require 'envutil'
     $:.shift
     3.times {
       `#{EnvUtil.rubybin} #{lbtest}`

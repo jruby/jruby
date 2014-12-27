@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestAlias < Test::Unit::TestCase
   class Alias0

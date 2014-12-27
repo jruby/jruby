@@ -1,6 +1,6 @@
 require_relative 'utils'
 
-if defined?(OpenSSL::TestUtils)
+if defined?(OpenSSL)
 
 require 'socket'
 require_relative '../ruby/ut_eof'

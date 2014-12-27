@@ -108,7 +108,6 @@ gems:
   end
 
   def teardown
-    @fetcher.close_all
     self.class.stop_servers
     super
     Gem.configuration[:http_proxy] = nil
@@ -135,7 +134,6 @@ gems:
 
   def test_fetch_size_bad_uri
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     e = assert_raises ArgumentError do
       fetcher.fetch_size 'gems.example.com/yaml'
@@ -146,7 +144,6 @@ gems:
 
   def test_fetch_size_socket_error
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
     def fetcher.request(uri, request_class, last_modified = nil)
       raise SocketError, "tarded"
     end
@@ -175,7 +172,6 @@ gems:
     dns.expect :getresource, target, [String, Object]
 
     fetch = Gem::RemoteFetcher.new nil, dns
-    @fetcher = fetcher
     assert_equal URI.parse("http://blah.com/foo"), fetch.api_endpoint(uri)
 
     target.verify
@@ -439,7 +435,6 @@ gems:
 
   def test_fetch_path_gzip
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       Gem.gzip 'foo'
@@ -450,7 +445,6 @@ gems:
 
   def test_fetch_path_gzip_unmodified
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       nil
@@ -461,7 +455,6 @@ gems:
 
   def test_fetch_path_io_error
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     def fetcher.fetch_http(*)
       raise EOFError
@@ -479,7 +472,6 @@ gems:
 
   def test_fetch_path_socket_error
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       raise SocketError
@@ -497,7 +489,6 @@ gems:
 
   def test_fetch_path_system_call_error
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime = nil, head = nil)
       raise Errno::ECONNREFUSED, 'connect(2)'
@@ -516,7 +507,6 @@ gems:
 
   def test_fetch_path_unmodified
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     def fetcher.fetch_http(uri, mtime, head = nil)
       nil
@@ -529,7 +519,6 @@ gems:
     use_ui @ui do
       ENV['http_proxy'] = 'http://fakeurl:12345'
       fetcher = Gem::RemoteFetcher.new :no_proxy
-      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
@@ -538,7 +527,6 @@ gems:
     use_ui @ui do
       ENV['http_proxy'] = @proxy_uri
       fetcher = Gem::RemoteFetcher.new nil
-      @fetcher = fetcher
       assert_data_from_proxy fetcher.fetch_path(@server_uri)
     end
   end
@@ -547,7 +535,6 @@ gems:
     use_ui @ui do
       ENV['HTTP_PROXY'] = @proxy_uri
       fetcher = Gem::RemoteFetcher.new nil
-      @fetcher = fetcher
       assert_data_from_proxy fetcher.fetch_path(@server_uri)
     end
   end
@@ -555,14 +542,12 @@ gems:
   def test_implicit_proxy_no_env
     use_ui @ui do
       fetcher = Gem::RemoteFetcher.new nil
-      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
 
   def test_fetch_http
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
     url = 'http://gems.example.com/redirect'
 
     def fetcher.request(uri, request_class, last_modified = nil)
@@ -586,7 +571,6 @@ gems:
 
   def test_fetch_http_redirects
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
     url = 'http://gems.example.com/redirect'
 
     def fetcher.request(uri, request_class, last_modified = nil)
@@ -605,7 +589,6 @@ gems:
 
   def test_fetch_s3
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
     url = 's3://testuser:testpass@my-bucket/gems/specs.4.8.gz'
     $fetched_uri = nil
 
@@ -630,7 +613,6 @@ gems:
 
   def test_fetch_s3_no_creds
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
     url = 's3://my-bucket/gems/specs.4.8.gz'
     e = assert_raises Gem::RemoteFetcher::FetchError do
       fetcher.fetch_s3 URI.parse(url)
@@ -644,7 +626,6 @@ gems:
       ENV["http_proxy"] = @proxy_uri
       ENV["no_proxy"] = URI::parse(@server_uri).host
       fetcher = Gem::RemoteFetcher.new nil
-      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
@@ -654,14 +635,12 @@ gems:
       ENV["http_proxy"] = @proxy_uri
       ENV["no_proxy"] = "fakeurl.com, #{URI::parse(@server_uri).host}"
       fetcher = Gem::RemoteFetcher.new nil
-      @fetcher = fetcher
       assert_data_from_server fetcher.fetch_path(@server_uri)
     end
   end
 
   def test_request_block
     fetcher = Gem::RemoteFetcher.new nil
-    @fetcher = fetcher
 
     assert_throws :block_called do
       fetcher.request URI('http://example'), Net::HTTP::Get do |req|
@@ -675,7 +654,6 @@ gems:
     use_ui @ui do
       self.class.enable_yaml = false
       fetcher = Gem::RemoteFetcher.new nil
-      @fetcher = fetcher
       assert_error { fetcher.size }
     end
   end
@@ -758,10 +736,8 @@ gems:
       end
       Gem.configuration = Gem::ConfigFile.new %W[--config-file #{temp_conf}]
     end
-    fetcher = Gem::RemoteFetcher.new
-    yield fetcher
+    yield Gem::RemoteFetcher.new
   ensure
-    fetcher.close_all
     Gem.configuration = nil
   end
 

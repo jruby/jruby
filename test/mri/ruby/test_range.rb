@@ -2,6 +2,7 @@ require 'test/unit'
 require 'delegate'
 require 'timeout'
 require 'bigdecimal'
+require_relative 'envutil'
 
 class TestRange < Test::Unit::TestCase
   def test_range_string

@@ -1,7 +1,8 @@
 require 'test/unit'
 require 'fiber'
-EnvUtil.suppress_warning {require 'continuation'}
+require 'continuation'
 require 'tmpdir'
+require_relative './envutil'
 
 class TestFiber < Test::Unit::TestCase
   def test_normal
@@ -117,7 +118,7 @@ class TestFiber < Test::Unit::TestCase
   end
 
   def test_throw
-    assert_raise(UncaughtThrowError){
+    assert_raise(ArgumentError){
       Fiber.new do
         throw :a
       end.resume

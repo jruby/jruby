@@ -2,6 +2,7 @@ require 'minitest/autorun'
 require 'fiddle'
 
 # FIXME: this is stolen from DL and needs to be refactored.
+require_relative '../ruby/envutil'
 
 libc_so = libm_so = nil
 

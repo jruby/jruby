@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative '../ruby/envutil'
 
 class Test_BUG_3571 < Test::Unit::TestCase
   def test_block_call_id

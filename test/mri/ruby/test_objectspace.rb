@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestObjectSpace < Test::Unit::TestCase
   def self.deftest_id2ref(obj)
@@ -101,12 +102,5 @@ End
       end
     }
     End
-  end
-
-  def test_each_object_recursive_key
-    assert_normal_exit(<<-'end;', '[ruby-core:66742] [Bug #10579]')
-      h = {["foo"]=>nil}
-      p Thread.current[:__recursive_key__]
-    end;
   end
 end

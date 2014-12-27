@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'tmpdir'
 require 'rbconfig'
+require_relative '../../ruby/envutil'
 
 module Bug
   module Win32

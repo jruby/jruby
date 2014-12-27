@@ -1,6 +1,6 @@
 require_relative 'utils'
 
-if defined?(OpenSSL::TestUtils)
+if defined?(OpenSSL)
 
 class OpenSSL::TestBN < Test::Unit::TestCase
   def test_new_str

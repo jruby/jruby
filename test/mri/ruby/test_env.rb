@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestEnv < Test::Unit::TestCase
   IGNORE_CASE = /bccwin|mswin|mingw/ =~ RUBY_PLATFORM

@@ -30,10 +30,4 @@ class TestTmpdir < Test::Unit::TestCase
     ENV["HOME"] = home
     Dir.rmdir(dir) if dir
   end
-
-  def test_mktmpdir_nil
-    Dir.mktmpdir(nil) {|d|
-      assert_kind_of(String, d)
-    }
-  end
 end

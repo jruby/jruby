@@ -1,3 +1,4 @@
+require_relative '../ruby/envutil'
 require "webrick"
 begin
   require "webrick/https"
@@ -25,46 +26,38 @@ module TestWEBrick
   RubyBin << " \"-I#{File.dirname(EnvUtil.rubybin)}/.ext/common\""
   RubyBin << " \"-I#{File.dirname(EnvUtil.rubybin)}/.ext/#{RUBY_PLATFORM}\""
 
-  include Test::Unit::Assertions
-  extend Test::Unit::Assertions
-
   module_function
 
-  DefaultLogTester = lambda {|log, access_log| assert_equal([], log) }
-
-  def start_server(klass, config={}, log_tester=DefaultLogTester, &block)
-    log_ary = []
-    access_log_ary = []
-    log = proc { "webrick log start:\n" + (log_ary+access_log_ary).join.gsub(/^/, "  ").chomp + "\nwebrick log end" }
+  def start_server(klass, config={}, &block)
+    log_string = ""
+    logger = Object.new
+    logger.instance_eval do
+      define_singleton_method(:<<) {|msg| log_string << msg }
+    end
+    log = proc { "webrick log start:\n" + log_string.gsub(/^/, "  ").chomp + "\nwebrick log end" }
     server = klass.new({
       :BindAddress => "127.0.0.1", :Port => 0,
       :ServerType => Thread,
-      :Logger => WEBrick::Log.new(log_ary, WEBrick::BasicLog::WARN),
-      :AccessLog => [[access_log_ary, ""]]
+      :Logger => WEBrick::Log.new(logger),
+      :AccessLog => [[logger, ""]]
     }.update(config))
-    server_thread = server.start
-    server_thread2 = Thread.new {
+    begin
+      server_thread = server.start
+      addr = server.listeners[0].addr
+      block.yield([server, addr[3], addr[1], log])
+    ensure
+      server.shutdown
+
       server_thread.join
-      if log_tester
-        log_tester.call(log_ary, access_log_ary)
-      end
-    }
-    addr = server.listeners[0].addr
-    client_thread = Thread.new {
-      begin
-        block.yield([server, addr[3], addr[1], log])
-      ensure
-        server.shutdown
-      end
-    }
-    assert_join_threads([client_thread, server_thread2])
+    end
+    log_string
   end
 
-  def start_httpserver(config={}, log_tester=DefaultLogTester, &block)
-    start_server(WEBrick::HTTPServer, config, log_tester, &block)
+  def start_httpserver(config={}, &block)
+    start_server(WEBrick::HTTPServer, config, &block)
   end
 
-  def start_httpproxy(config={}, log_tester=DefaultLogTester, &block)
-    start_server(WEBrick::HTTPProxyServer, config, log_tester, &block)
+  def start_httpproxy(config={}, &block)
+    start_server(WEBrick::HTTPProxyServer, config, &block)
   end
 end

@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestEnumerator < Test::Unit::TestCase
   def setup

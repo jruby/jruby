@@ -7,11 +7,7 @@ require_relative "utils"
 
 class TestWEBrickHTTPAuth < Test::Unit::TestCase
   def test_basic_auth
-    log_tester = lambda {|log, access_log|
-      assert_equal(1, log.length)
-      assert_match(/ERROR WEBrick::HTTPStatus::Unauthorized/, log[0])
-    }
-    TestWEBrick.start_httpserver({}, log_tester) {|server, addr, port, log|
+    TestWEBrick.start_httpserver{|server, addr, port, log|
       realm = "WEBrick's realm"
       path = "/basic_auth"
 
@@ -31,19 +27,7 @@ class TestWEBrickHTTPAuth < Test::Unit::TestCase
   end
 
   def test_basic_auth2
-    log_tester = lambda {|log, access_log|
-      log.reject! {|line| /\A\s*\z/ =~ line }
-      pats = [
-        /ERROR Basic WEBrick's realm: webrick: password unmatch\./,
-        /ERROR WEBrick::HTTPStatus::Unauthorized/
-      ]
-      pats.each {|pat|
-        assert(!log.grep(pat).empty?, "webrick log doesn't have expected error: #{pat.inspect}")
-        log.reject! {|line| pat =~ line }
-      }
-      assert_equal([], log)
-    }
-    TestWEBrick.start_httpserver({}, log_tester) {|server, addr, port, log|
+    TestWEBrick.start_httpserver{|server, addr, port, log|
       realm = "WEBrick's realm"
       path = "/basic_auth2"
 
@@ -108,20 +92,7 @@ class TestWEBrickHTTPAuth < Test::Unit::TestCase
       )/x
 
   def test_digest_auth
-    log_tester = lambda {|log, access_log|
-      log.reject! {|line| /\A\s*\z/ =~ line }
-      pats = [
-        /ERROR Digest WEBrick's realm: no credentials in the request\./,
-        /ERROR WEBrick::HTTPStatus::Unauthorized/,
-        /ERROR Digest WEBrick's realm: webrick: digest unmatch\./
-      ]
-      pats.each {|pat|
-        assert(!log.grep(pat).empty?, "webrick log doesn't have expected error: #{pat.inspect}")
-        log.reject! {|line| pat =~ line }
-      }
-      assert_equal([], log)
-    }
-    TestWEBrick.start_httpserver({}, log_tester) {|server, addr, port, log|
+    TestWEBrick.start_httpserver{|server, addr, port, log|
       realm = "WEBrick's realm"
       path = "/digest_auth"
 

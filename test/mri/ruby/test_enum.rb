@@ -1,5 +1,5 @@
 require 'test/unit'
-EnvUtil.suppress_warning {require 'continuation'}
+require 'continuation'
 require 'stringio'
 
 class TestEnumerable < Test::Unit::TestCase

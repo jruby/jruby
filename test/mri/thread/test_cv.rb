@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'thread'
 require 'tmpdir'
+require_relative '../ruby/envutil'
 
 class TestConditionVariable < Test::Unit::TestCase
   def test_initialized

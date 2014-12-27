@@ -1,5 +1,6 @@
 require 'shell'
 require 'tmpdir'
+require_relative '../ruby/envutil'
 
 class TestShell < Test::Unit::TestCase
 end

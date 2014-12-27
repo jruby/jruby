@@ -1,5 +1,6 @@
 require File.expand_path('../helper', __FILE__)
 require 'rake/thread_pool'
+require 'test/unit/assertions'
 
 class TestRakeTestThreadPool < Rake::TestCase
   include Rake

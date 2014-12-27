@@ -3,6 +3,7 @@ require 'timeout'
 require 'tmpdir'
 require 'tempfile'
 require 'fileutils'
+require_relative 'envutil'
 
 class TestArgf < Test::Unit::TestCase
   def setup

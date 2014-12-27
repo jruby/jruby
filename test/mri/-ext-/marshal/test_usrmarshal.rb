@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative '../../ruby/envutil'
 require '-test-/marshal/usr'
 
 module Bug end

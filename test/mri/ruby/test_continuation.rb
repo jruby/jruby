@@ -1,6 +1,7 @@
 require 'test/unit'
-EnvUtil.suppress_warning {require 'continuation'}
+require 'continuation'
 require 'fiber'
+require_relative 'envutil'
 
 class TestContinuation < Test::Unit::TestCase
   def test_create

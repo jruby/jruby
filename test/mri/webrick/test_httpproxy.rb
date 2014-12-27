@@ -123,7 +123,7 @@ class TestWEBrickHTTPProxy < Test::Unit::TestCase
       nil, nil, OpenSSL::Digest::SHA1.new
     )
     return cert
-  end if defined?(OpenSSL::TestUtils)
+  end
 
   def test_connect
     # Testing CONNECT to proxy server
@@ -172,7 +172,7 @@ class TestWEBrickHTTPProxy < Test::Unit::TestCase
         }
       }
     }
-  end if defined?(OpenSSL::TestUtils)
+  end if defined?(OpenSSL)
 
   def test_upstream_proxy
     # Testing GET or POST through the upstream proxy server
@@ -240,7 +240,7 @@ class TestWEBrickHTTPProxy < Test::Unit::TestCase
         assert_equal(3, proxy_handler_called, up_log.call + log.call)
         assert_equal(3, request_handler_called, up_log.call + log.call)
 
-        if defined?(OpenSSL::TestUtils)
+        if defined?(OpenSSL)
           # Testing CONNECT to the upstream proxy server
           #
           #  client -------> proxy -------> proxy -------> https

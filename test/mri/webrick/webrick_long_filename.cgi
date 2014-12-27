@@ -1,4 +1,4 @@
-#!ruby
+#!ruby -d
 require "webrick/cgi"
 
 class TestApp < WEBrick::CGI

@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestSuper < Test::Unit::TestCase
   class Base

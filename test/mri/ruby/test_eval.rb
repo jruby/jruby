@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestEval < Test::Unit::TestCase
 
@@ -188,15 +189,6 @@ class TestEval < Test::Unit::TestCase
         assert_equal 15,  o.instance_eval { Const }
       }
     end
-  end
-
-  def test_instance_eval_block_self
-    # instance_eval(&block)'s self must not be sticky (jruby/jruby#2060)
-    pr = proc { self }
-    assert_equal self, pr.call
-    o = Object.new
-    assert_equal o, o.instance_eval(&pr)
-    assert_equal self, pr.call
   end
 
   def test_instance_eval_cvar

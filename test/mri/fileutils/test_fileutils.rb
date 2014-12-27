@@ -16,12 +16,11 @@ class TestFileUtils < Test::Unit::TestCase
     IO.pipe {|read, write|
       fu.instance_variable_set(:@fileutils_output, write)
       th = Thread.new { read.read }
-      th2 = Thread.new {
-        yield
-        write.close
-      }
-      th_value, _ = assert_join_threads([th, th2])
-      lines = th_value.lines.map {|l| l.chomp }
+
+      yield
+
+      write.close
+      lines = th.value.lines.map {|l| l.chomp }
       assert_equal(expected, lines)
     }
   ensure

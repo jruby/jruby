@@ -223,12 +223,12 @@ module Test
         ret = catch(tag) do
           begin
             yield(tag)
-          rescue UncaughtThrowError => e
-            thrown = e.tag
+          rescue ArgumentError => e
+            raise unless thrown = e.message[/\Auncaught throw (.+)\z/m, 1]
           end
           msg = message(msg) {
             "Expected #{mu_pp(tag)} to have been thrown"\
-            "#{%Q[, not #{thrown}] if thrown}"
+            "#{", not #{thrown}" if thrown}"
           }
           assert(false, msg)
         end

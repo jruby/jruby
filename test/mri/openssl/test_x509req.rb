@@ -1,6 +1,6 @@
 require_relative "utils"
 
-if defined?(OpenSSL::TestUtils)
+if defined?(OpenSSL)
 
 class OpenSSL::TestX509Request < Test::Unit::TestCase
   def setup

@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil.rb'
 
 class TestCase < Test::Unit::TestCase
   def test_case

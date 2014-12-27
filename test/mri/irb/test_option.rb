@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative '../ruby/envutil'
 
 module TestIRB
   class TestOption < Test::Unit::TestCase

@@ -2,6 +2,7 @@ $extmk = true
 
 require 'test/unit'
 require 'mkmf'
+require_relative '../ruby/envutil'
 
 class TestMkmf < Test::Unit::TestCase
   class TestConfig < Test::Unit::TestCase

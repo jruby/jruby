@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 # to supress warnings for future calls of Module#refine
 EnvUtil.suppress_warning do

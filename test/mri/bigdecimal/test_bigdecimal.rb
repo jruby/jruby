@@ -1,4 +1,5 @@
 require_relative "testbase"
+require_relative "../ruby/envutil"
 require 'bigdecimal/math'
 
 require 'thread'
@@ -691,12 +692,6 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_mult_with_rational
     assert_kind_of(BigDecimal, BigDecimal.new("3") * 1.quo(3))
-  end
-
-  def test_mult_with_nil
-    assert_raise(TypeError) {
-      BigDecimal('1.1') * nil
-    }
   end
 
   def test_div

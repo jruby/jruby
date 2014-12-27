@@ -13,33 +13,23 @@ class TestOpenURI < Test::Unit::TestCase
   def NullLog.<<(arg)
   end
 
-  def with_http(log_tester=lambda {|log| assert_equal([], log) })
-    log = []
-    logger = WEBrick::Log.new(log, WEBrick::BasicLog::WARN)
+  def with_http
     Dir.mktmpdir {|dr|
       srv = WEBrick::HTTPServer.new({
         :DocumentRoot => dr,
         :ServerType => Thread,
-        :Logger => logger,
+        :Logger => WEBrick::Log.new(NullLog),
         :AccessLog => [[NullLog, ""]],
         :BindAddress => '127.0.0.1',
         :Port => 0})
       _, port, _, host = srv.listeners[0].addr
-      server_thread = srv.start
-      server_thread2 = Thread.new {
-        server_thread.join
-        if log_tester
-          log_tester.call(log)
-        end
-      }
-      client_thread = Thread.new {
-        begin
-          yield srv, dr, "http://#{host}:#{port}", server_thread, log
-        ensure
-          srv.shutdown
-        end
-      }
-      assert_join_threads([client_thread, server_thread2])
+      begin
+        th = srv.start
+        yield srv, dr, "http://#{host}:#{port}"
+      ensure
+        srv.shutdown
+        th.join
+      end
     }
   end
 
@@ -86,11 +76,7 @@ class TestOpenURI < Test::Unit::TestCase
   end
 
   def test_404
-    log_tester = lambda {|server_log|
-      assert_equal(1, server_log.length)
-      assert_match(%r{ERROR `/not-exist' not found}, server_log[0])
-    }
-    with_http(log_tester) {|srv, dr, url, server_thread, server_log|
+    with_http {|srv, dr, url|
       exc = assert_raise(OpenURI::HTTPError) { open("#{url}/not-exist") {} }
       assert_equal("404", exc.io.status[0])
     }
@@ -242,15 +228,13 @@ class TestOpenURI < Test::Unit::TestCase
 
   def test_proxy
     with_http {|srv, dr, url|
-      proxy_log = StringIO.new('')
-      proxy_logger = WEBrick::Log.new(proxy_log, WEBrick::BasicLog::WARN)
-      proxy_auth_log = ''
+      log = ''
       proxy = WEBrick::HTTPProxyServer.new({
         :ServerType => Thread,
-        :Logger => proxy_logger,
+        :Logger => WEBrick::Log.new(NullLog),
         :AccessLog => [[NullLog, ""]],
         :ProxyAuthProc => lambda {|req, res|
-          proxy_auth_log << req.request_line
+          log << req.request_line
         },
         :BindAddress => '127.0.0.1',
         :Port => 0})
@@ -263,21 +247,21 @@ class TestOpenURI < Test::Unit::TestCase
           assert_equal("200", f.status[0])
           assert_equal("proxy", f.read)
         }
-        assert_match(/#{Regexp.quote url}/, proxy_auth_log); proxy_auth_log.clear
+        assert_match(/#{Regexp.quote url}/, log); log.clear
         open("#{url}/proxy", :proxy=>URI(proxy_url)) {|f|
           assert_equal("200", f.status[0])
           assert_equal("proxy", f.read)
         }
-        assert_match(/#{Regexp.quote url}/, proxy_auth_log); proxy_auth_log.clear
+        assert_match(/#{Regexp.quote url}/, log); log.clear
         open("#{url}/proxy", :proxy=>nil) {|f|
           assert_equal("200", f.status[0])
           assert_equal("proxy", f.read)
         }
-        assert_equal("", proxy_auth_log); proxy_auth_log.clear
+        assert_equal("", log); log.clear
         assert_raise(ArgumentError) {
           open("#{url}/proxy", :proxy=>:invalid) {}
         }
-        assert_equal("", proxy_auth_log); proxy_auth_log.clear
+        assert_equal("", log); log.clear
         with_env("http_proxy"=>proxy_url) {
           # should not use proxy for 127.0.0.0/8.
           open("#{url}/proxy") {|f|
@@ -285,26 +269,23 @@ class TestOpenURI < Test::Unit::TestCase
             assert_equal("proxy", f.read)
           }
         }
-        assert_equal("", proxy_auth_log); proxy_auth_log.clear
+        assert_equal("", log); log.clear
       ensure
         proxy.shutdown
         proxy_thread.join
       end
-      assert_equal("", proxy_log.string)
     }
   end
 
-  def test_proxy_http_basic_authentication_failure
+  def test_proxy_http_basic_authentication
     with_http {|srv, dr, url|
-      proxy_log = StringIO.new('')
-      proxy_logger = WEBrick::Log.new(proxy_log, WEBrick::BasicLog::WARN)
-      proxy_auth_log = ''
+      log = ''
       proxy = WEBrick::HTTPProxyServer.new({
         :ServerType => Thread,
-        :Logger => proxy_logger,
+        :Logger => WEBrick::Log.new(NullLog),
         :AccessLog => [[NullLog, ""]],
         :ProxyAuthProc => lambda {|req, res|
-          proxy_auth_log << req.request_line
+          log << req.request_line
           if req["Proxy-Authorization"] != "Basic #{['user:pass'].pack('m').chomp}"
             raise WEBrick::HTTPStatus::ProxyAuthenticationRequired
           end
@@ -318,53 +299,22 @@ class TestOpenURI < Test::Unit::TestCase
         srv.mount_proc("/proxy", lambda { |req, res| res.body = "proxy" } )
         exc = assert_raise(OpenURI::HTTPError) { open("#{url}/proxy", :proxy=>proxy_url) {} }
         assert_equal("407", exc.io.status[0])
-        assert_match(/#{Regexp.quote url}/, proxy_auth_log); proxy_auth_log.clear
-      ensure
-        proxy.shutdown
-        th.join
-      end
-      assert_match(/ERROR WEBrick::HTTPStatus::ProxyAuthenticationRequired/, proxy_log.string)
-    }
-  end
-
-  def test_proxy_http_basic_authentication_success
-    with_http {|srv, dr, url|
-      proxy_log = StringIO.new('')
-      proxy_logger = WEBrick::Log.new(proxy_log, WEBrick::BasicLog::WARN)
-      proxy_auth_log = ''
-      proxy = WEBrick::HTTPProxyServer.new({
-        :ServerType => Thread,
-        :Logger => proxy_logger,
-        :AccessLog => [[NullLog, ""]],
-        :ProxyAuthProc => lambda {|req, res|
-          proxy_auth_log << req.request_line
-          if req["Proxy-Authorization"] != "Basic #{['user:pass'].pack('m').chomp}"
-            raise WEBrick::HTTPStatus::ProxyAuthenticationRequired
-          end
-        },
-        :BindAddress => '127.0.0.1',
-        :Port => 0})
-      _, proxy_port, _, proxy_host = proxy.listeners[0].addr
-      proxy_url = "http://#{proxy_host}:#{proxy_port}/"
-      begin
-        th = proxy.start
-        srv.mount_proc("/proxy", lambda { |req, res| res.body = "proxy" } )
+        assert_match(/#{Regexp.quote url}/, log); log.clear
         open("#{url}/proxy",
             :proxy_http_basic_authentication=>[proxy_url, "user", "pass"]) {|f|
           assert_equal("200", f.status[0])
           assert_equal("proxy", f.read)
         }
-        assert_match(/#{Regexp.quote url}/, proxy_auth_log); proxy_auth_log.clear
+        assert_match(/#{Regexp.quote url}/, log); log.clear
         assert_raise(ArgumentError) {
           open("#{url}/proxy",
               :proxy_http_basic_authentication=>[true, "user", "pass"]) {}
         }
-        assert_equal("", proxy_auth_log); proxy_auth_log.clear
+        assert_equal("", log); log.clear
       ensure
         proxy.shutdown
         th.join
       end
-      assert_equal("", proxy_log.string)
     }
   end
 
@@ -449,47 +399,20 @@ class TestOpenURI < Test::Unit::TestCase
     }
   end
 
-  def setup_redirect_auth(srv, url)
-    srv.mount_proc("/r1/") {|req, res|
-      res.status = 301
-      res["location"] = "#{url}/r2"
-    }
-    srv.mount_proc("/r2/") {|req, res|
-      if req["Authorization"] != "Basic #{['user:pass'].pack('m').chomp}"
-        raise WEBrick::HTTPStatus::Unauthorized
-      end
-      res.body = "r2"
-    }
-  end
-
-  def test_redirect_auth_success
+  def test_redirect_auth
     with_http {|srv, dr, url|
-      setup_redirect_auth(srv, url)
+      srv.mount_proc("/r1/") {|req, res| res.status = 301; res["location"] = "#{url}/r2" }
+      srv.mount_proc("/r2/") {|req, res|
+        if req["Authorization"] != "Basic #{['user:pass'].pack('m').chomp}"
+          raise WEBrick::HTTPStatus::Unauthorized
+        end
+        res.body = "r2"
+      }
+      exc = assert_raise(OpenURI::HTTPError) { open("#{url}/r2/") {} }
+      assert_equal("401", exc.io.status[0])
       open("#{url}/r2/", :http_basic_authentication=>['user', 'pass']) {|f|
         assert_equal("r2", f.read)
       }
-    }
-  end
-
-  def test_redirect_auth_failure_r2
-    log_tester = lambda {|server_log|
-      assert_equal(1, server_log.length)
-      assert_match(/ERROR WEBrick::HTTPStatus::Unauthorized/, server_log[0])
-    }
-    with_http(log_tester) {|srv, dr, url, server_thread, server_log|
-      setup_redirect_auth(srv, url)
-      exc = assert_raise(OpenURI::HTTPError) { open("#{url}/r2/") {} }
-      assert_equal("401", exc.io.status[0])
-    }
-  end
-
-  def test_redirect_auth_failure_r1
-    log_tester = lambda {|server_log|
-      assert_equal(1, server_log.length)
-      assert_match(/ERROR WEBrick::HTTPStatus::Unauthorized/, server_log[0])
-    }
-    with_http(log_tester) {|srv, dr, url, server_thread, server_log|
-      setup_redirect_auth(srv, url)
       exc = assert_raise(OpenURI::HTTPError) { open("#{url}/r1/", :http_basic_authentication=>['user', 'pass']) {} }
       assert_equal("401", exc.io.status[0])
     }

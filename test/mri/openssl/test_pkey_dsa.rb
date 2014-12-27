@@ -1,7 +1,7 @@
 require_relative 'utils'
 require 'base64'
 
-if defined?(OpenSSL::TestUtils)
+if defined?(OpenSSL)
 
 class OpenSSL::TestPKeyDSA < Test::Unit::TestCase
   def test_private

@@ -2,6 +2,7 @@ require 'test/unit'
 require 'delegate'
 require 'timeout'
 require 'delegate'
+require_relative 'envutil'
 
 class TestTime < Test::Unit::TestCase
   def setup
@@ -171,7 +172,6 @@ class TestTime < Test::Unit::TestCase
     assert_equal(100000, Time.at(0.0001).nsec)
     assert_equal(10000, Time.at(0.00001).nsec)
     assert_equal(3000, Time.at(0.000003).nsec)
-    assert_equal(200, Time.at(0.0000002r).nsec)
     assert_equal(199, Time.at(0.0000002).nsec)
     assert_equal(10, Time.at(0.00000001).nsec)
     assert_equal(1, Time.at(0.000000001).nsec)
@@ -1032,15 +1032,4 @@ class TestTime < Test::Unit::TestCase
     }
   end
 
-  def test_getlocal_nil
-    now = Time.now
-    now2 = nil
-    now3 = nil
-    assert_nothing_raised {
-      now2 = now.getlocal
-      now3 = now.getlocal(nil)
-    }
-    assert_equal now2, now3
-    assert_equal now2.zone, now3.zone
-  end
 end

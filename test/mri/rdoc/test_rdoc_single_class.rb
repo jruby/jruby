@@ -1,19 +1,11 @@
-require 'rdoc/test_case'
+require File.expand_path '../xref_test_case', __FILE__
 
-class TestRDocSingleClass < RDoc::TestCase
-
-  def setup
-    super
-
-    @c = RDoc::SingleClass.new 'C'
-  end
-
-  def test_aref_prefix
-    assert_equal 'sclass', @c.aref_prefix
-  end
+class TestRDocSingleClass < XrefTestCase
 
   def test_definition
-    assert_equal 'class << C', @c.definition
+    c = RDoc::SingleClass.new 'C'
+
+    assert_equal 'class << C', c.definition
   end
 
 end

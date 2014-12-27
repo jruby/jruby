@@ -1,7 +1,7 @@
 require_relative 'utils'
 require 'base64'
 
-if defined?(OpenSSL::TestUtils)
+if defined?(OpenSSL)
 
 class OpenSSL::TestPKeyRSA < Test::Unit::TestCase
   def test_padding

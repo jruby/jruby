@@ -224,30 +224,26 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
     name = File.join 'a', 'b' * 100
     assert_equal ['b' * 100, 'a'], @tar_writer.split_name(name)
 
-    name = File.join 'a', 'b' * 101
-    exception = assert_raises Gem::Package::TooLongFileName do
+    assert_raises Gem::Package::TooLongFileName do
+      name = File.join 'a', 'b' * 101
       @tar_writer.split_name name
     end
-    assert_includes exception.message, name
   end
 
   def test_split_name_too_long_prefix
     name = File.join 'a' * 155, 'b'
     assert_equal ['b', 'a' * 155], @tar_writer.split_name(name)
 
-    name = File.join 'a' * 156, 'b'
-    exception = assert_raises Gem::Package::TooLongFileName do
+    assert_raises Gem::Package::TooLongFileName do
+      name = File.join 'a' * 156, 'b'
       @tar_writer.split_name name
     end
-    assert_includes exception.message, name
   end
 
   def test_split_name_too_long_total
-    name = 'a' * 257
-    exception = assert_raises Gem::Package::TooLongFileName do
-      @tar_writer.split_name name
+    assert_raises Gem::Package::TooLongFileName do
+      @tar_writer.split_name 'a' * 257
     end
-    assert_includes exception.message, name
   end
 
 end

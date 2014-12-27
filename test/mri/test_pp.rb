@@ -184,12 +184,4 @@ class PPDelegateTest < Test::Unit::TestCase
   end
 end
 
-class PPFileStatTest < Test::Unit::TestCase
-  def test_nothing_raised
-    assert_nothing_raised do
-      File.stat(__FILE__).pretty_inspect
-    end
-  end
-end
-
 end

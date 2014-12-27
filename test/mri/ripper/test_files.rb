@@ -1,10 +1,11 @@
 require 'test/unit'
+require_relative '../ruby/envutil'
 
 module TestRipper; end
 class TestRipper::Generic < Test::Unit::TestCase
   def test_parse_files
     srcdir = File.expand_path("../../..", __FILE__)
-    assert_separately(%W[--disable-gem -rripper - #{srcdir}],
+    assert_separately(%W[--disable-gem -rripper -r#{__dir__}/../ruby/envutil - #{srcdir}],
                       __FILE__, __LINE__, <<-'eom', timeout: Float::INFINITY)
       TEST_RATIO = 0.05 # testing all files needs too long time...
       class Parser < Ripper
@@ -15,7 +16,7 @@ class TestRipper::Generic < Test::Unit::TestCase
       for script in Dir["#{dir}/{lib,sample,ext,test}/**/*.rb"].sort
         next if TEST_RATIO < rand
         assert_nothing_raised("ripper failed to parse: #{script.inspect}") {
-          Parser.new(File.read(script), script).parse
+          Parser.new(File.read(script)).parse
         }
       end
     eom

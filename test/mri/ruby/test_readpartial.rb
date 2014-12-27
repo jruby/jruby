@@ -10,8 +10,8 @@ class TestReadPartial < Test::Unit::TestCase
     begin
       yield r, w
     ensure
-      r.close unless r.closed?
-      w.close unless w.closed?
+      r.close rescue nil unless r.closed?
+      w.close rescue nil unless w.closed?
     end
   end
 

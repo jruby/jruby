@@ -2,6 +2,7 @@ require 'test/unit'
 require 'thread'
 require 'tmpdir'
 require 'timeout'
+require_relative '../ruby/envutil'
 
 class TestQueue < Test::Unit::TestCase
   def test_queue_initialized

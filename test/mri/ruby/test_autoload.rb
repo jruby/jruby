@@ -1,13 +1,14 @@
 require 'test/unit'
 require 'tempfile'
 require 'thread'
+require_relative 'envutil'
 
 class TestAutoload < Test::Unit::TestCase
   def test_autoload_so
-    # Date is always available, unless excluded intentionally.
+    # Continuation is always available, unless excluded intentionally.
     assert_in_out_err([], <<-INPUT, [], [])
-    autoload :Date, "date"
-    begin Date; rescue LoadError; end
+    autoload :Continuation, "continuation"
+    begin Continuation; rescue LoadError; end
     INPUT
   end
 

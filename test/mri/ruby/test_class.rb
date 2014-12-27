@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestClass < Test::Unit::TestCase
   # ------------------

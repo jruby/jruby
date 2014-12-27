@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 # use of $= is deprecated after 1.7.1
 def pre_1_7_1
@@ -504,14 +505,6 @@ class TestString < Test::Unit::TestCase
   def test_crypt
     assert_equal(S('aaGUC/JkO9/Sc'), S("mypassword").crypt(S("aa")))
     assert_not_equal(S('aaGUC/JkO9/Sc'), S("mypassword").crypt(S("ab")))
-    assert_raise(ArgumentError) {S("mypassword").crypt(S(""))}
-    assert_raise(ArgumentError) {S("mypassword").crypt(S("\0a"))}
-    assert_raise(ArgumentError) {S("mypassword").crypt(S("a\0"))}
-    [Encoding::UTF_16BE, Encoding::UTF_16LE,
-     Encoding::UTF_32BE, Encoding::UTF_32LE].each do |enc|
-      assert_raise(ArgumentError) {S("mypassword").crypt(S("aa".encode(enc)))}
-      assert_raise(ArgumentError) {S("mypassword".encode(enc)).crypt(S("aa"))}
-    end
   end
 
   def test_delete
@@ -2064,11 +2057,6 @@ class TestString < Test::Unit::TestCase
 
   def test_setter
     assert_raise(TypeError) { $/ = 1 }
-    name = "\u{5206 884c}"
-    assert_separately([], <<-"end;") #    do
-      alias $#{name} $/
-      assert_raise_with_message(TypeError, /\\$#{name}/) { $#{name} = 1 }
-    end;
   end
 
   def test_to_id

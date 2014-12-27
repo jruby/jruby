@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'thread'
+require_relative 'envutil'
 
 class TestThreadGroup < Test::Unit::TestCase
   def test_thread_init

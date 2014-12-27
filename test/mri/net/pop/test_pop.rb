@@ -67,7 +67,7 @@ class TestPOP < Test::Unit::TestCase
     host = 'localhost'
     server = TCPServer.new(host, 0)
     port = server.addr[1]
-    server_thread = Thread.start do
+    thread = Thread.start do
       sock = server.accept
       begin
         pop_server_loop(sock, apop)
@@ -75,24 +75,20 @@ class TestPOP < Test::Unit::TestCase
         sock.close
       end
     end
-    client_thread = Thread.start do
+    begin
+      pop = Net::POP3::APOP(apop).new(host, port)
+      #pop.set_debug_output $stderr
+      yield pop
+    ensure
       begin
-        begin
-          pop = Net::POP3::APOP(apop).new(host, port)
-          #pop.set_debug_output $stderr
-          yield pop
-        ensure
-          begin
-            pop.finish
-          rescue IOError
-            raise unless $!.message == "POP session not yet started"
-          end
-        end
-      ensure
-        server.close
+        pop.finish
+      rescue IOError
+        raise unless $!.message == "POP session not yet started"
       end
     end
-    assert_join_threads([client_thread, server_thread])
+  ensure
+    server.close
+    thread.value
   end
 
   def pop_server_loop(sock, apop)

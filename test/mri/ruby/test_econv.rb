@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestEncodingConverter < Test::Unit::TestCase
   def check_ec(edst, esrc, eres, dst, src, ec, off, len, opts=nil)

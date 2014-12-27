@@ -1,5 +1,6 @@
 begin
   require_relative 'helper'
+  require_relative '../ruby/envutil'
 rescue LoadError
 end
 
