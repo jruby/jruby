@@ -194,12 +194,8 @@ public class SystemPropertyCatcher {
             return jrubyhome;
         } else if ((jrubyhome = SafePropertyAccessor.getProperty("jruby.home")) != null) {
             return jrubyhome;
-        } else if (Thread.currentThread().getContextClassLoader() == null ||
-                Thread.currentThread().getContextClassLoader().equals(SystemPropertyCatcher.class.getClassLoader())) {
+        } else {
             return "uri:classloader://META-INF/jruby.home";
-        }
-        else {
-            return "classpath:/META-INF/jruby.home";
         }
     }
 
