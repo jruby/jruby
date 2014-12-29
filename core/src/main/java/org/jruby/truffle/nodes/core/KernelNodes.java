@@ -391,11 +391,6 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass getClass(RubyBignum value) {
-            return getContext().getCoreLibrary().getBignumClass();
-        }
-
-        @Specialization
         public RubyClass getClass(double value) {
             return getContext().getCoreLibrary().getFloatClass();
         }
@@ -1068,6 +1063,11 @@ public abstract class KernelNodes {
 
         @Specialization
         public int integer(int value) {
+            return value;
+        }
+
+        @Specialization
+        public long integer(long value) {
             return value;
         }
 
@@ -1791,12 +1791,6 @@ public abstract class KernelNodes {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
         }
 
-        @Specialization
-        public RubyClass singletonClass(RubyBignum self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
         @Specialization(guards = "!isRubyBignum")
         public RubyClass singletonClass(RubyBasicObject self) {
             notDesignedForCompilation();
@@ -1866,11 +1860,6 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyString string(RubyBignum value) {
-            return getContext().makeString(value.toString());
-        }
-
-        @Specialization
         public RubyString string(double value) {
             return getContext().makeString(Double.toString(value));
         }
@@ -1880,7 +1869,7 @@ public abstract class KernelNodes {
             return value;
         }
 
-        @Specialization
+        @Specialization(guards = "!isRubyString")
         public Object string(VirtualFrame frame, Object value) {
             return toS.call(frame, value, "to_s", null);
         }
