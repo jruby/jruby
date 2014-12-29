@@ -3458,7 +3458,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNull")
-        public RubyArray sortNull(RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortNull(RubyArray array, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -3466,7 +3466,7 @@ public abstract class ArrayNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"isIntegerFixnum", "isSmall"})
-        public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             final int[] store = (int[]) array.getStore();
 
             final int size = array.getSize();
@@ -3491,7 +3491,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Object[] boxed = ArrayUtils.box((int[]) array.getStore());
@@ -3502,7 +3502,7 @@ public abstract class ArrayNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"isLongFixnum", "isSmall"})
-        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             final long[] store = (long[]) array.getStore();
 
             final int size = array.getSize();
@@ -3527,7 +3527,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isLongFixnum")
-        public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Object[] boxed = ArrayUtils.box((long[]) array.getStore());
@@ -3537,7 +3537,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isFloat")
-        public RubyArray sortDouble(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortDouble(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Object[] boxed = ArrayUtils.box((double[]) array.getStore());
@@ -3547,7 +3547,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"isObject", "isSmall"})
-        public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             final Object[] store = (Object[]) array.getStore();
 
             // Insertion sort
@@ -3569,7 +3569,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject")
-        public RubyArray sortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
+        public RubyArray sortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
@@ -3578,11 +3578,11 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject")
-        public RubyArray sortWithCompareBlock(VirtualFrame frame, RubyArray array, RubyProc compare) {
+        public RubyArray sortWithCompareBlock(VirtualFrame frame, RubyArray array, RubyProc block) {
             notDesignedForCompilation();
 
             final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
-            sort(frame, store, compare);
+            sort(frame, store, block);
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, array.getSize());
         }
 
