@@ -599,8 +599,7 @@ public class IRBuilder {
                 break;
             }
             default: {
-                argsList.add(build(args, s));
-                break;
+                throw new NotCompilableException("Use buildRoot(); Root node at: " + args.getPosition());
             }
         }
 
