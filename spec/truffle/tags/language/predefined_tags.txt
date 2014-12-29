@@ -1,2 +1,1 @@
-fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
 fails:Predefined global $_ is Thread-local
