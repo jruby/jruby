@@ -103,13 +103,14 @@ public abstract class SplatCastNode extends RubyNode {
             method = "to_a";
         }
 
-        // TODO(CS): why are we directly calling #respond_to? instead of using a respondsTo on a dispatch head node?
-        if (respondToCast.executeBoolean(frame, respondToToA.call(frame, object, "respond_to?", null, getContext().makeString(method), true))) {
+        // MRI tries to call dynamic respond_to? here.
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, getContext().makeString(method), true);
+        if (respondToResult != Dispatch.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
-            } else if (array instanceof RubyNilClass) {
+            } else if (array instanceof RubyNilClass || array == Dispatch.MISSING) {
                 return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
