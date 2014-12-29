@@ -1855,16 +1855,6 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyString string(int value) {
-            return getContext().makeString(Integer.toString(value));
-        }
-
-        @Specialization
-        public RubyString string(double value) {
-            return getContext().makeString(Double.toString(value));
-        }
-
-        @Specialization
         public RubyString string(RubyString value) {
             return value;
         }
