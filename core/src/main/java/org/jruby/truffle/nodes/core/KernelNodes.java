@@ -478,7 +478,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 1)
+    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
     public abstract static class EvalNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toStr;
@@ -503,28 +503,44 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object eval(VirtualFrame frame, RubyString source, UndefinedPlaceholder binding) {
+        public Object eval(VirtualFrame frame, RubyString source, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return eval(source, getCallerBinding(frame));
+            return eval(source, getCallerBinding(frame), filename, lineNumber);
         }
 
         @Specialization
-        public Object eval(RubyString source, RubyBinding binding) {
+        public Object eval(RubyString source, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
             return getContext().eval(source.getBytes(), binding, this);
         }
 
-        @Specialization(guards = "!isRubyString(arguments[0])")
-        public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding) {
+        @Specialization
+        public Object eval(RubyString source, RubyBinding binding, RubyString filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return eval(frame, object, getCallerBinding(frame));
+            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
+            return getContext().eval(source.getBytes(), binding, this);
+        }
+
+        @Specialization
+        public Object eval(RubyString source, RubyBinding binding, RubyString filename, int lineNumber) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename and lineNumber.
+            return getContext().eval(source.getBytes(), binding, this);
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
-        public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding) {
+        public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
+            notDesignedForCompilation();
+
+            return eval(frame, object, getCallerBinding(frame), filename, lineNumber);
+        }
+
+        @Specialization(guards = "!isRubyString(arguments[0])")
+        public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
             Object coerced;
@@ -556,7 +572,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "!isRubyBinding(arguments[1])")
-        public Object eval(RubyBasicObject source, RubyBasicObject badBinding) {
+        public Object eval(RubyBasicObject source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             throw new RaiseException(
                     getContext().getCoreLibrary().typeError(
                             String.format("wrong argument type %s (expected binding)",
