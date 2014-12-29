@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyFile;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.cli.Options;
 
@@ -140,17 +141,17 @@ public class FeatureManager {
             return false;
         }
 
-        final String canonicalFileName = file.getCanonicalPath();
+        final String expandedPath = RubyFile.expandPath(fileName);
 
         for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
-            if (loaded.toString().equals(canonicalFileName)) {
+            if (loaded.toString().equals(expandedPath)) {
                 return true;
             }
         }
 
         context.loadFile(fileName, currentNode);
 
-        context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(canonicalFileName));
+        context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(expandedPath));
 
         return true;
     }
