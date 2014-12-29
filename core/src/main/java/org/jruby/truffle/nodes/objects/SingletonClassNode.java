@@ -63,12 +63,6 @@ public abstract class SingletonClassNode extends RubyNode {
     }
 
     @Specialization
-    protected Object singletonClass(RubyBignum value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-    }
-
-    @Specialization
     protected RubyClass singletonClass(RubyBasicObject object) {
         return object.getSingletonClass(this);
     }

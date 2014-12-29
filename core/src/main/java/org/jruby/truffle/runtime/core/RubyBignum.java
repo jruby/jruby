@@ -25,6 +25,11 @@ public class RubyBignum extends RubyBasicObject {
         this.value = value;
     }
 
+    @Override
+    public boolean hasNoSingleton() {
+        return true;
+    }
+
     @CompilerDirectives.TruffleBoundary
     public RubyBignum negate() {
         return create(value.negate());

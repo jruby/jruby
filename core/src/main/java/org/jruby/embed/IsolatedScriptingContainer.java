@@ -2,6 +2,8 @@ package org.jruby.embed;
 
 import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.osgi.framework.Bundle;
 
@@ -64,21 +66,22 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     {
         super(scope, behavior, lazy);
 
-        // get the right classloader
-        ClassLoader cl = this.getClass().getClassLoader();
-        if (cl == null) cl = Thread.currentThread().getContextClassLoader();
-        setClassLoader( cl );
-
         setLoadPaths( Arrays.asList( "uri:classloader:" ) );
 
-        // set the right jruby home
-        setHomeDirectory( "uri:classloader:" + JRUBY_HOME );
-
         // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
-        runScriptlet("require 'rubygems/defaults/jruby';"
-                + "Gem::Specification.reset;"
-                + "Gem::Specification.add_dir 'uri:classloader:" + JRUBY_HOME + "/lib/ruby/gems/shared';"
-                + "Gem::Specification.add_dir 'uri:classloader:';");
+        setEnvironment(null);
+    }
+
+    @Override
+    public void setEnvironment(Map environment) {
+        if (environment == null || !environment.containsKey("GEM_PATH")) {
+            Map env = environment == null ? new HashMap() : new HashMap(environment);
+            env.put("GEM_PATH", "");
+            super.setEnvironment(env);
+        }
+        else {
+            super.setEnvironment(environment);
+        }
     }
 
     public void addLoadPath( ClassLoader cl ) {
@@ -140,6 +143,6 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     }
 
     private void addGemPath(String uri) {
-        runScriptlet( "Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
+        runScriptlet( "require 'rubygems/defaults/jruby';Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
     }
 }

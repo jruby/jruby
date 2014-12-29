@@ -82,7 +82,7 @@ class Gem::Specification
       @@dirs ||= Gem.path.collect {|dir|
         if File.file?(dir) && dir =~ /\.jar$/
           "file:#{dir}!/specifications"
-        elsif File.directory?(dir) || dir =~ /^file:/
+        elsif File.directory?(File.join(dir, "specifications")) || dir =~ /^file:/
           File.join(dir, "specifications")
         end
       }.compact + spec_directories_from_classpath
@@ -106,6 +106,14 @@ class Gem::Specification
 
     def spec_directories_from_classpath
       stuff = JRuby::Util.classloader_resources("specifications")
+      # some classloader return directory info. use only the "protocols"
+      # which jruby understands
+      stuff.select! { |s| File.directory?( s ) }
+      if File.directory?( 'uri:classloader://specifications' )
+        [ 'uri:classloader://specifications' ] + stuff
+      else
+        stuff
+      end
     end
   end
 end
