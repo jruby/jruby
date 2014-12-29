@@ -26,23 +26,20 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
-    @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    @CoreMethod(names = "arity")
+    public abstract static class ArityNode extends CoreMethodNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+        public ArityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
+        public ArityNode(ArityNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
-            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getDeclarationFrame(), block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
-
-            return getContext().getCoreLibrary().getNilObject();
+        public int arity(RubyProc proc) {
+            return 1;
         }
 
     }
@@ -97,6 +94,27 @@ public abstract class ProcNodes {
         @Specialization
         public Object call(VirtualFrame frame, RubyProc proc, Object[] args, RubyProc block) {
             return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
+        }
+
+    }
+
+    @CoreMethod(names = "initialize", needsBlock = true)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
+            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
+                    block.getDeclarationFrame(), block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

@@ -34,12 +34,23 @@ module STDOUT
     Kernel.send(:print, *values)
   end
 
+  def self.printf(*values)
+    Kernel.send(:printf, *values)
+  end
+
   def self.write(value)
     print value
   end
 
   def self.flush
     Truffle::Debug.flush_stdout
+  end
+
+  def self.sync
+    false
+  end
+
+  def self.sync=(value)
   end
 
   def self.external_encoding

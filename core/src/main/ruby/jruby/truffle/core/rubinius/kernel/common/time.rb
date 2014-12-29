@@ -173,25 +173,27 @@ class Time
     (seconds + subsec).to_r
   end
 
-  def to_f
-    to_r.to_f
-  end
+  # TODO(CS)
+  #def to_f
+  #  to_r.to_f
+  #end
 
-  def +(other)
-    raise TypeError, 'time + time?' if other.kind_of?(Time)
-
-    case other = Rubinius::Type.coerce_to_exact_num(other)
-    when Integer
-      other_sec = other
-      other_nsec = 0
-    else
-      other_sec, nsec_frac = other.divmod(1)
-      other_nsec = (nsec_frac * 1_000_000_000).to_i
-    end
-
-    # Don't use self.class, MRI doesn't honor subclasses here
-    Time.specific(seconds + other_sec, nsec + other_nsec, @is_gmt, @offset)
-  end
+  # TODO(CS)
+  #def +(other)
+  #  raise TypeError, 'time + time?' if other.kind_of?(Time)
+  #
+  #  case other = Rubinius::Type.coerce_to_exact_num(other)
+  #  when Integer
+  #    other_sec = other
+  #    other_nsec = 0
+  #  else
+  #    other_sec, nsec_frac = other.divmod(1)
+  #    other_nsec = (nsec_frac * 1_000_000_000).to_i
+  #  end
+  #
+  #  # Don't use self.class, MRI doesn't honor subclasses here
+  #  Time.specific(seconds + other_sec, nsec + other_nsec, @is_gmt, @offset)
+  #end
 
   # TODO(CS)
   #def -(other)

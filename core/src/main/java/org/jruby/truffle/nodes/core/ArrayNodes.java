@@ -32,6 +32,7 @@ import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -3438,23 +3439,26 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "sort")
+    @CoreMethod(names = "sort", needsBlock = true)
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode compareDispatchNode;
+        @Child protected YieldDispatchHeadNode yieldNode;
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareDispatchNode = new DispatchHeadNode(context);
+            yieldNode = new YieldDispatchHeadNode(context);
         }
 
         public SortNode(SortNode prev) {
             super(prev);
             compareDispatchNode = prev.compareDispatchNode;
+            yieldNode = prev.yieldNode;
         }
 
         @Specialization(guards = "isNull")
-        public RubyArray sortNull(RubyArray array) {
+        public RubyArray sortNull(RubyArray array, UndefinedPlaceholder compare) {
             notDesignedForCompilation();
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -3462,7 +3466,7 @@ public abstract class ArrayNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"isIntegerFixnum", "isSmall"})
-        public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array) {
+        public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
             final int[] store = (int[]) array.getStore();
 
             final int size = array.getSize();
@@ -3487,7 +3491,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array) {
+        public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
             notDesignedForCompilation();
 
             final Object[] boxed = ArrayUtils.box((int[]) array.getStore());
@@ -3498,7 +3502,7 @@ public abstract class ArrayNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"isLongFixnum", "isSmall"})
-        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array) {
+        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
             final long[] store = (long[]) array.getStore();
 
             final int size = array.getSize();
@@ -3523,7 +3527,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isLongFixnum")
-        public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array) {
+        public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
             notDesignedForCompilation();
 
             final Object[] boxed = ArrayUtils.box((long[]) array.getStore());
@@ -3533,7 +3537,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isFloat")
-        public RubyArray sortDouble(VirtualFrame frame, RubyArray array) {
+        public RubyArray sortDouble(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
             notDesignedForCompilation();
 
             final Object[] boxed = ArrayUtils.box((double[]) array.getStore());
@@ -3543,7 +3547,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"isObject", "isSmall"})
-        public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array) {
+        public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
             final Object[] store = (Object[]) array.getStore();
 
             // Insertion sort
@@ -3565,11 +3569,20 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject")
-        public RubyArray sortObject(VirtualFrame frame, RubyArray array) {
+        public RubyArray sortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder compare) {
             notDesignedForCompilation();
 
             final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
             sort(frame, store);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, array.getSize());
+        }
+
+        @Specialization(guards = "isObject")
+        public RubyArray sortWithCompareBlock(VirtualFrame frame, RubyArray array, RubyProc compare) {
+            notDesignedForCompilation();
+
+            final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
+            sort(frame, store, compare);
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, array.getSize());
         }
 
@@ -3582,6 +3595,21 @@ public abstract class ArrayNodes {
                 public int compare(Object a, Object b) {
                     // TODO(CS): node for this cast
                     return (int) compareDispatchNode.call(finalFrame, a, "<=>", null, b);
+                }
+
+            });
+        }
+
+        private <T> void sort(VirtualFrame frame, T[] objects, RubyProc compare) {
+            final VirtualFrame finalFrame = frame;
+            final RubyProc finalCompare = compare;
+
+            Arrays.sort(objects, new Comparator<Object>() {
+
+                @Override
+                public int compare(Object a, Object b) {
+                    // TODO(CS): node for this cast
+                    return (int) yieldNode.dispatch(finalFrame, finalCompare, a, b);
                 }
 
             });
