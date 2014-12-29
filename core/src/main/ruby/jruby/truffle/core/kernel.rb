@@ -38,7 +38,7 @@ module Kernel
   end
 
   def printf(*args)
-    puts sprintf(*args)
+    print sprintf(*args)
   end
 
   alias_method :trust, :untaint
