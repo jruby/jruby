@@ -10,21 +10,22 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class FixnumOrBignumNode extends Node {
+public class FixnumOrBignumNode extends RubyNode {
 
-    public FixnumOrBignumNode(RubyContext context) {
-        this.context = context;
+    public FixnumOrBignumNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
     }
-
-    private final RubyContext context;
 
     private final BranchProfile lowerProfile = BranchProfile.create();
     private final BranchProfile integerFromBignumProfile = BranchProfile.create();
@@ -69,12 +70,16 @@ public class FixnumOrBignumNode extends Node {
 
         bignumProfile.enter();
 
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), doubleToBigInteger(value));
+        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), doubleToBigInteger(value));
     }
 
     @CompilerDirectives.TruffleBoundary
     private static BigInteger doubleToBigInteger(double value) {
         return new BigDecimal(value).toBigInteger();
+    }
+
+    public Object execute(VirtualFrame frame) {
+        throw new UnsupportedOperationException();
     }
 
 }

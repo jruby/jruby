@@ -28,7 +28,7 @@ public abstract class BignumNodes {
 
         public BignumCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
         public BignumCoreMethodNode(BignumCoreMethodNode prev) {
@@ -255,12 +255,12 @@ public abstract class BignumNodes {
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context);
+            divModNode = new GeneralDivModNode(context, sourceSection);
         }
 
         public DivModNode(DivModNode prev) {
             super(prev);
-            divModNode = new GeneralDivModNode(getContext());
+            divModNode = prev.divModNode;
         }
 
         @Specialization
