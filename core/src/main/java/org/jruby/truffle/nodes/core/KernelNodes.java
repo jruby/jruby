@@ -1791,7 +1791,7 @@ public abstract class KernelNodes {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
         }
 
-        @Specialization(guards = "!isRubyBignum")
+        @Specialization
         public RubyClass singletonClass(RubyBasicObject self) {
             notDesignedForCompilation();
 
