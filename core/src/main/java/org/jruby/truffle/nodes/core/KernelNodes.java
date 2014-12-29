@@ -30,6 +30,8 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.*;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.yield.*;
@@ -39,8 +41,6 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.RubyMethod;
@@ -1772,47 +1772,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "singleton_class")
     public abstract static class SingletonClassMethodNode extends CoreMethodNode {
 
+        @Child protected SingletonClassNode singletonClassNode;
+
         public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, null);
         }
 
         public SingletonClassMethodNode(SingletonClassMethodNode prev) {
             super(prev);
-        }
-
-        @Specialization(guards = "isTrue")
-        public RubyClass singletonClassTrue(boolean self) {
-            return getContext().getCoreLibrary().getTrueClass();
-        }
-
-        @Specialization(guards = "!isTrue")
-        public RubyClass singletonClassFalse(boolean self) {
-            return getContext().getCoreLibrary().getFalseClass();
+            singletonClassNode = prev.singletonClassNode;
         }
 
         @Specialization
-        public RubyClass singletonClass(int self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
-        @Specialization
-        public RubyClass singletonClass(long self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
-        @Specialization
-        public RubyClass singletonClass(double self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
-        @Specialization
-        public RubyClass singletonClass(RubyBasicObject self) {
-            notDesignedForCompilation();
-
-            return self.getSingletonClass(this);
+        public RubyClass singletonClass(Object self) {
+            return singletonClassNode.executeSingletonClass(self);
         }
 
     }
