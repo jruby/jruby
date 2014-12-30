@@ -1242,14 +1242,14 @@ opt_block_arg   : ',' block_arg {
                 | none_block_pass
 
 // [!null]
-args            : arg_value {
+args            : arg_value { // ArrayNode
                     ISourcePosition pos = $1 == null ? lexer.getPosition() : $1.getPosition();
                     $$ = support.newArrayNode(pos, $1);
                 }
-                | tSTAR arg_value {
+                | tSTAR arg_value { // SplatNode
                     $$ = support.newSplatNode(support.getPosition($2), $2);
                 }
-                | args ',' arg_value {
+                | args ',' arg_value { // ArgsCatNode, SplatNode, ArrayNode
                     Node node = support.splat_array($1);
 
                     if (node != null) {
@@ -1258,7 +1258,7 @@ args            : arg_value {
                         $$ = support.arg_append($1, $3);
                     }
                 }
-                | args ',' tSTAR arg_value {
+                | args ',' tSTAR arg_value { // ArgsCatNode, SplatNode, ArrayNode
                     Node node = null;
 
                     // FIXME: lose syntactical elements here (and others like this)
