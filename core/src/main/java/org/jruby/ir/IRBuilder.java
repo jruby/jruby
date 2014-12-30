@@ -556,6 +556,37 @@ public class IRBuilder {
         return copyAndReturnValue(s, val);
     }
 
+    // Return the last argument in the list as this represents rhs of the overall attrassign expression
+    // e.g. 'a[1] = 2 #=> 2' or 'a[1] = 1,2,3 #=> [1,2,3]'
+    protected Operand buildAttrAssignCallArgs(List<Operand> argsList, Node args, IRScope s) {
+        switch (args.getNodeType()) {
+            case ARRAYNODE: {     // a[1] = 2; a[1,2,3] = 4,5,6
+                Operand last = manager.getNil();
+                for (Node n: args.childNodes()) {
+                    last = build(n, s);
+                    argsList.add(last);
+                }
+                return last;
+            }
+            case ARGSPUSHNODE:  { // a[1, *b] = 2
+                ArgsPushNode argsPushNode = (ArgsPushNode)args;
+                Operand lhs = build(argsPushNode.getFirstNode(), s);
+                Operand rhs = build(argsPushNode.getSecondNode(), s);
+                Variable res = s.createTemporaryVariable();
+                addInstr(s, new BuildCompoundArrayInstr(res, lhs, rhs, true));
+                argsList.add(new Splat(res, true));
+                return rhs;
+            }
+            case SPLATNODE: {     // a[1] = *b
+                Splat rhs = new Splat(build(((SplatNode)args).getValue(), s), true);
+                argsList.add(rhs);
+                return rhs;
+            }
+        }
+
+        throw new NotCompilableException("Invalid node for attrassign call args: " + args.getClass().getSimpleName() + ":" + args.getPosition());
+    }
+
     // Return the last argument in the list -- AttrAssign needs it
     protected Operand buildCallArgs(List<Operand> argsList, Node args, IRScope s) {
         switch (args.getNodeType()) {
@@ -810,18 +841,17 @@ public class IRBuilder {
     }
 
     public Operand buildArgsPush(final ArgsPushNode node, IRScope s) {
-        Operand v1 = build(node.getFirstNode(), s);
-        Operand v2 = build(node.getSecondNode(), s);
-        Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, true));
-        return res;
+        Operand lhs = build(node.getFirstNode(), s);
+        Operand rhs = build(node.getSecondNode(), s);
+
+        return addResultInstr(s, new BuildCompoundArrayInstr(s.createTemporaryVariable(), lhs, rhs, true));
     }
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
-        Operand lastArg = (argsNode == null) ? manager.getNil() : buildCallArgs(args, argsNode, s);
+        Operand lastArg = (argsNode == null) ? manager.getNil() : buildAttrAssignCallArgs(args, argsNode, s);
         addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
         return lastArg;
     }
