@@ -62,6 +62,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -641,7 +642,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         
         private final ReentrantLock tableLock = new ReentrantLock();
         private volatile SymbolEntry[] symbolTable;
-        private final ConcurrentHashMap<ByteList, RubySymbol> bytelistTable = new ConcurrentHashMap<ByteList, RubySymbol>(100, 0.75f, Runtime.getRuntime().availableProcessors());
+        private final ConcurrentHashMap<ByteList, WeakReference<RubySymbol>> bytelistTable = new ConcurrentHashMap<ByteList, WeakReference<RubySymbol>>(100, 0.75f, Runtime.getRuntime().availableProcessors());
         private int size;
         private int threshold;
         private final float loadFactor;
@@ -660,13 +661,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         static class SymbolEntry {
             final int hash;
             final String name;
-            final RubySymbol symbol;
+            final WeakReference<RubySymbol> symbol;
             final SymbolEntry next;
             
             SymbolEntry(int hash, String name, RubySymbol symbol, SymbolEntry next) {
                 this.hash = hash;
                 this.name = name;
-                this.symbol = symbol;
+                this.symbol = new WeakReference(symbol);
                 this.next = next;
             }
         }
@@ -674,16 +675,30 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         public RubySymbol getSymbol(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
+            RubySymbol symbol = null;
             
             for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
-                if (isSymbolMatch(name, hash, e)) return e.symbol;
+                if (isSymbolMatch(name, hash, e)) {
+                    symbol = e.symbol.get();
+                    if (symbol == null) {
+                        // FIXME: remove weak entry?
+                    }
+                    break;
+                }
             }
             
-            return createSymbol(name, symbolBytesFromString(runtime, name), hash, table);
+            if (symbol == null) symbol = createSymbol(name, symbolBytesFromString(runtime, name), hash, table);
+
+            return symbol;
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
-            RubySymbol symbol = bytelistTable.get(bytes);
+            RubySymbol symbol = null;
+            WeakReference<RubySymbol> symbolRef = bytelistTable.get(bytes);
+            if (symbolRef != null) {
+                symbol = symbolRef.get();
+            }
+
             if (symbol != null) return symbol;
 
             String name = bytes.toString();
@@ -692,7 +707,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             
             for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) {
-                    symbol = e.symbol;
+                    symbol = e.symbol.get();
+                    if (symbol == null) {
+                        // FIXME: remove weak entry?
+                    }
                     break;
                 }
             }
@@ -701,19 +719,30 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
                 symbol = createSymbol(name, bytes, hash, table);
             }
             
-            bytelistTable.put(bytes, symbol);
+            bytelistTable.put(bytes, new WeakReference<RubySymbol>(symbol));
 
             return symbol;
         }
 
         public RubySymbol fastGetSymbol(String internedName) {
             SymbolEntry[] table = symbolTable;
+            RubySymbol symbol = null;
             
             for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
-                if (isSymbolMatch(internedName, e)) return e.symbol;
+                if (isSymbolMatch(internedName, e)) {
+                    symbol = e.symbol.get();
+                    if (symbol == null) {
+                        // FIXME: remove weak entry?
+                    }
+                    break;
+                }
             }
             
-            return fastCreateSymbol(internedName, table);
+            if (symbol == null) {
+                symbol = fastCreateSymbol(internedName, table);
+            }
+
+            return symbol;
         }
 
         private static SymbolEntry getEntryFromTable(SymbolEntry[] table, int hash) {
@@ -734,19 +763,28 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             try {
                 int index;                
                 int potentialNewSize = size + 1;
-                
+                RubySymbol symbol = null;
+
                 table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
                 for (SymbolEntry e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                    if (hash == e.hash && name.equals(e.name)) return e.symbol;
+                    if (hash == e.hash && name.equals(e.name)) {
+                        symbol = e.symbol.get();
+                        if (symbol == null) {
+                            // FIXME: remove weak entry?
+                        }
+                        break;
+                    }
                 }
-                String internedName = name.intern();
-                RubySymbol symbol = new RubySymbol(runtime, internedName, value);
-                table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
-                size = potentialNewSize;
-                // write-volatile
-                symbolTable = table;
+                if (symbol == null) {
+                    String internedName = name.intern();
+                    symbol = new RubySymbol(runtime, internedName, value);
+                    table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
+                    size = potentialNewSize;
+                    // write-volatile
+                    symbolTable = table;
+                }
                 return symbol;
             } finally {
                 lock.unlock();
@@ -760,18 +798,27 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
                 int index;
                 int hash;
                 int potentialNewSize = size + 1;
-                
-                table = potentialNewSize > threshold ? rehash() : symbolTable;
+                RubySymbol symbol = null;
+
+                        table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
                 for (SymbolEntry e = table[index = (hash = internedName.hashCode()) & (table.length - 1)]; e != null; e = e.next) {
-                    if (internedName == e.name) return e.symbol;
+                    if (internedName == e.name) {
+                        symbol = e.symbol.get();
+                        if (symbol == null) {
+                            // FIXME: remove weak entry?
+                        }
+                        break;
+                    }
                 }
-                RubySymbol symbol = new RubySymbol(runtime, internedName);
-                table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
-                size = potentialNewSize;
-                // write-volatile
-                symbolTable = table;
+                if (symbol == null) {
+                    symbol = new RubySymbol(runtime, internedName);
+                    table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
+                    size = potentialNewSize;
+                    // write-volatile
+                    symbolTable = table;
+                }
                 return symbol;
             } finally {
                 lock.unlock();
@@ -782,20 +829,29 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         public RubySymbol lookup(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table;
+            RubySymbol symbol = null;
             
             for (SymbolEntry e = (table = symbolTable)[hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) return e.symbol;
+                if (hash == e.hash && name.equals(e.name)) {
+                    symbol = e.symbol.get();
+                    if (symbol == null) {
+                        // FIXME: remove weak entry?
+                    }
+                    break;
+                }
             }
 
-            return null;
+            return symbol;
         }
         
         public RubySymbol lookup(long id) {
             SymbolEntry[] table = symbolTable;
+            RubySymbol symbol = null;
             
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
-                    if (id == e.symbol.id) return e.symbol;
+                    symbol = e.symbol.get();
+                    if (symbol != null && id == symbol.id) return symbol;
                 }
             }
 
@@ -805,10 +861,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         public RubyArray all_symbols() {
             SymbolEntry[] table = this.symbolTable;
             RubyArray array = runtime.newArray(this.size);
-            
+            RubySymbol symbol;
+
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
-                    array.append(e.symbol);
+                    symbol = e.symbol.get();
+                    if (symbol != null) array.append(symbol);
                 }
             }
             return array;
@@ -861,9 +919,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
                         // Clone all remaining nodes
                         for (SymbolEntry p = e; p != lastRun; p = p.next) {
-                            int k = p.hash & sizeMask;
-                            SymbolEntry n = newTable[k];
-                            newTable[k] = new SymbolEntry(p.hash, p.name, p.symbol, n);
+                            RubySymbol symbol = p.symbol.get();
+                            if (symbol != null) {
+                                int k = p.hash & sizeMask;
+                                SymbolEntry n = newTable[k];
+                                newTable[k] = new SymbolEntry(p.hash, p.name, symbol, n);
+                            }
                         }
                     }
                 }
