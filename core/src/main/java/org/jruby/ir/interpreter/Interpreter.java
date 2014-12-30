@@ -590,10 +590,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static void extractToMethodToAvoidC2Crash(ThreadContext context, Instr instr, Throwable t) {
         if (!(t instanceof Unrescuable)) {
             if (!instr.canRaiseException()) {
-                System.err.println("ERROR: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
+                System.err.println("BUG: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
             }
             if ((t instanceof RaiseException) && context.runtime.getGlobalVariables().get("$!") != IRRuntimeHelpers.unwrapRubyException(t)) {
-                System.err.println("ERROR: $! and exception are not matching up.");
+                System.err.println("BUG: $! and exception are not matching up.");
                 System.err.println("$!: " + context.runtime.getGlobalVariables().get("$!"));
                 System.err.println("t : " + t);
             }
