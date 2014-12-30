@@ -50,9 +50,6 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         super(position);
         this.argsNode = argsNode;
         this.iterNode = iterNode;
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
-        }
     }
 
     public NodeType getNodeType() {

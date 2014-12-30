@@ -66,12 +66,4 @@ public class ArrayNode extends ListNode implements ILiteralNode {
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitArrayNode(this);
     }
-    
-    public void setLightweight(boolean lightweight) {
-        this.lightweight = lightweight;
-    }
-    
-    public boolean isLightweight() {
-        return lightweight;
-    }
 }
