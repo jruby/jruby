@@ -18,17 +18,20 @@ import java.util.Random;
 import java.util.concurrent.atomic.*;
 
 import com.oracle.truffle.api.object.Shape;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.*;
+
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
+
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.SetFrameVisibilityNode;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -139,10 +142,6 @@ public class RubyContext extends ExecutionContext {
         return name;
     }
 
-    public void load(Source source, RubyNode currentNode) {
-        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
-    }
-
     public void loadFile(String fileName, RubyNode currentNode) {
         if (new File(fileName).isAbsolute()) {
             loadFileAbsolute(fileName, currentNode);
@@ -161,9 +160,17 @@ public class RubyContext extends ExecutionContext {
         }
 
         // Assume UTF-8 for the moment
-
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
-        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
+
+        load(source, currentNode, SetFrameVisibilityNode.PRIVATE_VISIBILITY_WRAPPER);
+    }
+
+    public void load(Source source, RubyNode currentNode) {
+        load(source, currentNode, NodeWrapper.IDENTITY);
+    }
+
+    public void load(Source source, RubyNode currentNode, NodeWrapper nodeWrapper) {
+        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, nodeWrapper);
     }
 
     public RubySymbol.SymbolTable getSymbolTable() {

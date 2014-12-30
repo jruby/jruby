@@ -55,7 +55,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
 
         this.name = name;
         this.receiverNode = receiverNode;
-        setArgsNode(argsNode);
+        this.argsNode = argsNode;
         this.iterNode = iterNode;
     }
 
@@ -96,11 +96,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
      */
     public Node setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
-        // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
-        }
-        
+
         return argsNode;
     }
 

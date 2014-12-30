@@ -558,8 +558,6 @@ public class IRBuilder {
 
     // Return the last argument in the list -- AttrAssign needs it
     protected Operand buildCallArgs(List<Operand> argsList, Node args, IRScope s) {
-        // unwrap newline nodes to get their actual type
-        args = skipOverNewlines(s, args);
         switch (args.getNodeType()) {
             case ARGSCATNODE: {
                 ArgsCatNode argsCatNode = (ArgsCatNode)args;
@@ -581,15 +579,10 @@ public class IRBuilder {
             }
             case ARRAYNODE: {
                 ArrayNode arrayNode = (ArrayNode)args;
-                if (arrayNode.isLightweight()) {
-                    List<Node> children = arrayNode.childNodes();
+                List<Node> children = arrayNode.childNodes();
                     // explode array, it's an internal "args" array
-                    for (Node n: children) {
-                        argsList.add(build(n, s));
-                    }
-                } else {
-                    // use array as-is, it's a literal array
-                    argsList.add(build(arrayNode, s));
+                for (Node n: children) {
+                    argsList.add(build(n, s));
                 }
                 break;
             }
@@ -599,7 +592,7 @@ public class IRBuilder {
                 break;
             }
             default: {
-                throw new NotCompilableException("Use buildRoot(); Root node at: " + args.getPosition());
+                throw new NotCompilableException("Invalid node for callArgs: " + args.getClass().getSimpleName() + ":" + args.getPosition());
             }
         }
 
