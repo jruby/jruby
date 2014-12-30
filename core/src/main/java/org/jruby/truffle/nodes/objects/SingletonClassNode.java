@@ -34,6 +34,8 @@ public abstract class SingletonClassNode extends RubyNode {
         super(prev);
     }
 
+    public abstract RubyClass executeSingletonClass(Object value);
+
     @Specialization(guards = "isTrue")
     protected RubyClass singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();

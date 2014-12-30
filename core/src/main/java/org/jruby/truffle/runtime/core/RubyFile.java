@@ -49,15 +49,7 @@ public class RubyFile extends RubyBasicObject {
     }
 
     public static String expandPath(String fileName) {
-        RubyNode.notDesignedForCompilation();
-
-        // TODO(cs): see the other expandPath
-
-        try {
-            return new File(fileName).getCanonicalPath();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return expandPath(fileName, null);
     }
 
     public static String expandPath(String fileName, String dir) {
