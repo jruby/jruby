@@ -73,7 +73,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         final Object superClassObj = superClass.execute(frame);
 
         if (superClassObj instanceof RubyClass){
-            if (((RubyClass) superClassObj).isSingleton()){
+            if (((RubyClass) superClassObj).isSingleton()) {
                 throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
@@ -82,13 +82,13 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         throw new RaiseException(context.getCoreLibrary().typeError("superclass must be a Class", this));
     }
 
-    private boolean isBlankOrRootClass(RubyClass rubyClass){
-        return rubyClass.getName() == "BasicObject" || rubyClass.getName() == "Object";
+    private boolean isBlankOrRootClass(RubyClass rubyClass) {
+        return rubyClass == getContext().getCoreLibrary().getBasicObjectClass() || rubyClass == getContext().getCoreLibrary().getObjectClass();
     }
 
-    private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass){
-        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperClass().getObjectID() != superClassObject.getObjectID()){
-            throw new RaiseException(context.getCoreLibrary().typeError(("superclass mismatch for class " + definingClass.getName()), this));
+    private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass) {
+        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperClass() != superClassObject) {
+            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + definingClass.getName(), this));
         }
     }
 }

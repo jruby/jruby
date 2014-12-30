@@ -47,11 +47,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     protected Node iterNode;
     private String name;
 
-    @Deprecated
-    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
-        this(position, receiverNode, name, argsNode, null);
-    }
-    
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
             Node iterNode) {
         super(position);

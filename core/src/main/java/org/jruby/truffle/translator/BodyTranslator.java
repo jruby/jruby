@@ -1137,6 +1137,8 @@ public class BodyTranslator extends Translator {
             rhs = new CheckRecordSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$,")) {
             rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$_")) {
+            rhs = WrapInThreadLocalNodeFactory.create(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1196,7 +1198,11 @@ public class BodyTranslator extends Translator {
 
             environment.declareVarWhereAllowed(name);
 
-            final RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
+            RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
+
+            if (name.equals("$_")) {
+                readNode = GetFromThreadLocalNodeFactory.create(context, sourceSection, readNode);
+            }
 
             return readNode;
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {

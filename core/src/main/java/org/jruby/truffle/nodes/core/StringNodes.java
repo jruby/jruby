@@ -138,7 +138,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "<<", required = 1)
+    @CoreMethod(names = { "<<", "concat" }, required = 1)
     public abstract static class ConcatNode extends CoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {

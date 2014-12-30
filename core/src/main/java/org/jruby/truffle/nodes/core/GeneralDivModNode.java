@@ -10,17 +10,18 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
 
-public class GeneralDivModNode extends Node {
-
-    private final RubyContext context;
+public class GeneralDivModNode extends RubyNode {
 
     @Child protected FixnumOrBignumNode fixnumOrBignumQuotient;
     @Child protected FixnumOrBignumNode fixnumOrBignumRemainder;
@@ -31,11 +32,10 @@ public class GeneralDivModNode extends Node {
     private final BranchProfile useFixnumPairProfile = BranchProfile.create();
     private final BranchProfile useObjectPairProfile = BranchProfile.create();
 
-    public GeneralDivModNode(RubyContext context) {
-        assert context != null;
-        this.context = context;
-        fixnumOrBignumQuotient = new FixnumOrBignumNode(context);
-        fixnumOrBignumRemainder = new FixnumOrBignumNode(context);
+    public GeneralDivModNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
+        fixnumOrBignumQuotient = new FixnumOrBignumNode(context, sourceSection);
+        fixnumOrBignumRemainder = new FixnumOrBignumNode(context, sourceSection);
     }
 
     public RubyArray execute(int a, int b) {
@@ -109,13 +109,13 @@ public class GeneralDivModNode extends Node {
 
         if (integerDiv instanceof Long && ((long) integerDiv) >= Integer.MIN_VALUE && ((long) integerDiv) <= Integer.MAX_VALUE && mod >= Integer.MIN_VALUE && mod <= Integer.MAX_VALUE) {
             useFixnumPairProfile.enter();
-            return new RubyArray(context.getCoreLibrary().getArrayClass(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
         } else if (integerDiv instanceof Long) {
             useObjectPairProfile.enter();
-            return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{integerDiv, mod}, 2);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{integerDiv, mod}, 2);
         } else {
             useObjectPairProfile.enter();
-            return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
                     fixnumOrBignumQuotient.fixnumOrBignum(create((BigInteger) integerDiv)),
                     mod}, 2);
         }
@@ -136,13 +136,18 @@ public class GeneralDivModNode extends Node {
             bigIntegerResults[1] = b.add(bigIntegerResults[1]);
         }
 
-        return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
                 fixnumOrBignumQuotient.fixnumOrBignum(create(bigIntegerResults[0])),
                 fixnumOrBignumRemainder.fixnumOrBignum(create(bigIntegerResults[1]))}, 2);
     }
 
     public RubyBignum create(BigInteger value) {
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), value);
+        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        throw new UnsupportedOperationException();
     }
 
 }

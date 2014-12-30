@@ -56,6 +56,7 @@ import org.jruby.truffle.runtime.LexicalScope;
                 RubyTime.class, //
                 RubyEncodingConverter.class, //
                 RubyBasicObject.class, //
+                ThreadLocal.class, //
                 Object[].class})
 
 public class RubyTypes {

@@ -563,7 +563,7 @@ public abstract class FloatNodes {
 
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
         public RoundNode(RoundNode prev) {
@@ -617,7 +617,7 @@ public abstract class FloatNodes {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
         public ToINode(ToINode prev) {

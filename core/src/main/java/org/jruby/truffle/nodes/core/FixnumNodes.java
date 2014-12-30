@@ -552,12 +552,12 @@ public abstract class FixnumNodes {
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context);
+            divModNode = new GeneralDivModNode(context, sourceSection);
         }
 
         public DivModNode(DivModNode prev) {
             super(prev);
-            divModNode = new GeneralDivModNode(getContext());
+            divModNode = prev.divModNode;
         }
 
         @Specialization

@@ -686,6 +686,10 @@ public class CoreLibrary {
         return arrayClass;
     }
 
+    public RubyClass getBasicObjectClass() {
+        return basicObjectClass;
+    }
+
     public RubyClass getBignumClass() {
         return bignumClass;
     }

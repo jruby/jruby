@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.globals.GetFromThreadLocalNode;
+import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -34,7 +36,15 @@ public abstract class BindingNodes {
             notDesignedForCompilation();
 
             final MaterializedFrame frame = binding.getFrame();
-            return frame.getValue(frame.getFrameDescriptor().findFrameSlot(symbol.toString()));
+
+            Object value = frame.getValue(frame.getFrameDescriptor().findFrameSlot(symbol.toString()));
+
+            // TODO(CS): temporary hack for $_
+            if (symbol.equals("$_")) {
+                value = GetFromThreadLocalNode.get(getContext(), value);
+            }
+
+            return value;
         }
     }
 
@@ -52,6 +62,11 @@ public abstract class BindingNodes {
         @Specialization
         public Object localVariableSetNode(RubyBinding binding, RubySymbol symbol, Object value) {
             notDesignedForCompilation();
+
+            // TODO(CS): temporary hack for $_
+            if (symbol.toString().equals("$_")) {
+                value = WrapInThreadLocalNode.wrap(getContext(), value);
+            }
 
             MaterializedFrame frame = binding.getFrame();
 

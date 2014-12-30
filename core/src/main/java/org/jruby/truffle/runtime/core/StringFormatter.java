@@ -111,6 +111,10 @@ public class StringFormatter {
                 }
 
                 switch (type) {
+                    case '%': {
+                        stream.print("%");
+                        break;
+                    }
                     case 's': {
                         formatBuilder.append("s");
                         assert formatBuilder.toString().equals("%s");
@@ -143,7 +147,7 @@ public class StringFormatter {
                     }
 
                     default:
-                        throw new RuntimeException("Kernel#sprintf error");
+                        throw new RuntimeException("Kernel#sprintf error " + type);
                 }
 
                 v++;

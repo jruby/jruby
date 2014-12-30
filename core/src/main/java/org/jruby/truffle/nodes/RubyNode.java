@@ -384,6 +384,11 @@ public abstract class RubyNode extends Node {
     }
 
     @SuppressWarnings("static-method")
+    public boolean isThreadLocal(Object value) {
+        return value instanceof ThreadLocal;
+    }
+
+    @SuppressWarnings("static-method")
     public boolean isObjectArray(Object value) {
         return value instanceof Object[];
     }

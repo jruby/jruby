@@ -15,7 +15,9 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
+import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 
@@ -28,6 +30,7 @@ public class TryNode extends RubyNode {
     @Child protected ExceptionTranslatingNode tryPart;
     @Children final RescueNode[] rescueParts;
     @Child protected RubyNode elsePart;
+    @Child protected WriteInstanceVariableNode clearExceptionVariableNode;
 
     private final BranchProfile elseProfile = BranchProfile.create();
     private final BranchProfile controlFlowProfile = BranchProfile.create();
@@ -38,6 +41,10 @@ public class TryNode extends RubyNode {
         this.tryPart = tryPart;
         this.rescueParts = rescueParts;
         this.elsePart = elsePart;
+        clearExceptionVariableNode = new WriteInstanceVariableNode(context, sourceSection, "$!",
+                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject()),
+                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                true);
     }
 
     @Override
@@ -60,6 +67,8 @@ public class TryNode extends RubyNode {
                 } catch (RetryException e) {
                     continue;
                 }
+            } finally {
+                clearExceptionVariableNode.execute(frame);
             }
 
             elseProfile.enter();

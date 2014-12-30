@@ -20,6 +20,29 @@ import java.text.SimpleDateFormat;
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
+    @CoreMethod(names = "+", required = 1)
+    public abstract static class AddNode extends CoreMethodNode {
+
+        public AddNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AddNode(AddNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double add(RubyTime a, int b) {
+            return a.getRealSeconds() + b;
+        }
+
+        @Specialization
+        public double add(RubyTime a, RubyTime b) {
+            return a.getRealSeconds() + b.getRealSeconds();
+        }
+
+    }
+
     @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends CoreMethodNode {
 
@@ -32,8 +55,31 @@ public abstract class TimeNodes {
         }
 
         @Specialization
+        public double sub(RubyTime a, double b) {
+            return a.getRealSeconds() - b;
+        }
+
+        @Specialization
         public double sub(RubyTime a, RubyTime b) {
             return a.getRealSeconds() - b.getRealSeconds();
+        }
+
+    }
+
+    @CoreMethod(names = "<", required = 1)
+    public abstract static class LessNode extends CoreMethodNode {
+
+        public LessNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LessNode(LessNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean less(RubyTime a, double b) {
+            return a.getRealSeconds() < b;
         }
 
     }
@@ -79,7 +125,25 @@ public abstract class TimeNodes {
                                   int nanoOfSecond,
                                   boolean isdst,
                                   RubyString zone) {
-            return RubyTime.fromArray(getContext().getCoreLibrary().getTimeClass(),second, minute, hour, dayOfMonth, month, year, nanoOfSecond, isdst, zone);
+            return RubyTime.fromArray(getContext().getCoreLibrary().getTimeClass(), second, minute, hour, dayOfMonth, month, year, nanoOfSecond, isdst, zone);
+        }
+
+    }
+
+    @CoreMethod(names = "to_f")
+    public abstract static class ToFNode extends CoreMethodNode {
+
+        public ToFNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToFNode(ToFNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double toF(RubyTime time) {
+            return time.getRealSeconds();
         }
 
     }

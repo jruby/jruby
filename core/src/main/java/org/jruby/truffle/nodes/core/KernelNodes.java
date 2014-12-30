@@ -28,7 +28,10 @@ import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.*;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.yield.*;
@@ -38,8 +41,6 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.RubyMethod;
@@ -391,11 +392,6 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass getClass(RubyBignum value) {
-            return getContext().getCoreLibrary().getBignumClass();
-        }
-
-        @Specialization
         public RubyClass getClass(double value) {
             return getContext().getCoreLibrary().getFloatClass();
         }
@@ -482,7 +478,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 1)
+    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
     public abstract static class EvalNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode toStr;
@@ -507,28 +503,44 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object eval(VirtualFrame frame, RubyString source, UndefinedPlaceholder binding) {
+        public Object eval(VirtualFrame frame, RubyString source, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return eval(source, getCallerBinding(frame));
+            return eval(source, getCallerBinding(frame), filename, lineNumber);
         }
 
         @Specialization
-        public Object eval(RubyString source, RubyBinding binding) {
+        public Object eval(RubyString source, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
             return getContext().eval(source.getBytes(), binding, this);
         }
 
-        @Specialization(guards = "!isRubyString(arguments[0])")
-        public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding) {
+        @Specialization
+        public Object eval(RubyString source, RubyBinding binding, RubyString filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return eval(frame, object, getCallerBinding(frame));
+            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
+            return getContext().eval(source.getBytes(), binding, this);
+        }
+
+        @Specialization
+        public Object eval(RubyString source, RubyBinding binding, RubyString filename, int lineNumber) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename and lineNumber.
+            return getContext().eval(source.getBytes(), binding, this);
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
-        public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding) {
+        public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
+            notDesignedForCompilation();
+
+            return eval(frame, object, getCallerBinding(frame), filename, lineNumber);
+        }
+
+        @Specialization(guards = "!isRubyString(arguments[0])")
+        public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
             Object coerced;
@@ -560,7 +572,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "!isRubyBinding(arguments[1])")
-        public Object eval(RubyBasicObject source, RubyBasicObject badBinding) {
+        public Object eval(RubyBasicObject source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             throw new RaiseException(
                     getContext().getCoreLibrary().typeError(
                             String.format("wrong argument type %s (expected binding)",
@@ -804,7 +816,7 @@ public abstract class KernelNodes {
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
             if (slot != null) {
-                caller.setObject(slot, rubyLine);
+                caller.setObject(slot, WrapInThreadLocalNode.wrap(getContext(), rubyLine));
             }
 
             return rubyLine;
@@ -1068,6 +1080,11 @@ public abstract class KernelNodes {
 
         @Specialization
         public int integer(int value) {
+            return value;
+        }
+
+        @Specialization
+        public long integer(long value) {
             return value;
         }
 
@@ -1755,53 +1772,21 @@ public abstract class KernelNodes {
     @CoreMethod(names = "singleton_class")
     public abstract static class SingletonClassMethodNode extends CoreMethodNode {
 
+        @Child protected SingletonClassNode singletonClassNode;
+
         public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, null);
         }
 
         public SingletonClassMethodNode(SingletonClassMethodNode prev) {
             super(prev);
-        }
-
-        @Specialization(guards = "isTrue")
-        public RubyClass singletonClassTrue(boolean self) {
-            return getContext().getCoreLibrary().getTrueClass();
-        }
-
-        @Specialization(guards = "!isTrue")
-        public RubyClass singletonClassFalse(boolean self) {
-            return getContext().getCoreLibrary().getFalseClass();
+            singletonClassNode = prev.singletonClassNode;
         }
 
         @Specialization
-        public RubyClass singletonClass(int self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
-        @Specialization
-        public RubyClass singletonClass(long self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
-        @Specialization
-        public RubyClass singletonClass(double self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
-        @Specialization
-        public RubyClass singletonClass(RubyBignum self) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
-        }
-
-        @Specialization(guards = "!isRubyBignum")
-        public RubyClass singletonClass(RubyBasicObject self) {
-            notDesignedForCompilation();
-
-            return self.getSingletonClass(this);
+        public RubyClass singletonClass(Object self) {
+            return singletonClassNode.executeSingletonClass(self);
         }
 
     }
@@ -1861,26 +1846,11 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyString string(int value) {
-            return getContext().makeString(Integer.toString(value));
-        }
-
-        @Specialization
-        public RubyString string(RubyBignum value) {
-            return getContext().makeString(value.toString());
-        }
-
-        @Specialization
-        public RubyString string(double value) {
-            return getContext().makeString(Double.toString(value));
-        }
-
-        @Specialization
         public RubyString string(RubyString value) {
             return value;
         }
 
-        @Specialization
+        @Specialization(guards = "!isRubyString")
         public Object string(VirtualFrame frame, Object value) {
             return toS.call(frame, value, "to_s", null);
         }
