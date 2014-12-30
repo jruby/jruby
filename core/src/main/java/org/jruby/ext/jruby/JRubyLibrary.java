@@ -73,6 +73,7 @@ import org.jruby.runtime.load.Library;
 public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
+
         runtime.getLoadService().require("java");
 
         // load Ruby parts of the 'jruby' library
@@ -89,8 +90,17 @@ public class JRubyLibrary implements Library {
 
         RubyClass fiberLocalClass = jrubyModule.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR);
         fiberLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
-        
-        new JRubyConfigLibrary().load(runtime, wrap);
+
+        RubyModule config = jrubyModule.defineModuleUnder("CONFIG");
+        config.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
+    }
+
+    public static class JRubyConfig {
+        @JRubyMethod(name = "rubygems_disabled?")
+        public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
+            return context.runtime.newBoolean(
+                    context.runtime.getInstanceConfig().isDisableGems());
+        }
     }
 
     /**

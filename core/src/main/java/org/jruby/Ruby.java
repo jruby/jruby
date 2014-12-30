@@ -41,6 +41,7 @@ package org.jruby;
 
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -73,7 +74,6 @@ import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ext.ffi.FFI;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.ext.fiber.ThreadFiberLibrary;
-import org.jruby.ext.jruby.JRubyConfigLibrary;
 import org.jruby.ext.tracepoint.TracePoint;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
@@ -1538,9 +1538,6 @@ public final class Ruby implements Constantizable {
         new ThreadFiberLibrary().load(this, false);
 
         TracePoint.createTracePointClass(this);
-
-        // Load the JRuby::Config module for accessing configuration settings from Ruby
-        new JRubyConfigLibrary().load(this, false);
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
@@ -1722,21 +1719,13 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
 
         // TODO: implement something for these?
-        Library dummy = new Library() {
-            public void load(Ruby runtime, boolean wrap) throws IOException {
-                // dummy library that does nothing right now
-            }
-        };
-        addBuiltinIfAllowed("continuation.rb", dummy);
-        addBuiltinIfAllowed("io/nonblock.rb", dummy);
+        addBuiltinIfAllowed("continuation.rb", Library.DUMMY);
+        addBuiltinIfAllowed("io/nonblock.rb", Library.DUMMY);
 
-        // rb_provide logic, in a roundabout way
-        addLazyBuiltin("enumerator.jar", "enumerator", "org.jruby.ext.enumerator.EnumeratorLibrary");
-        loadService.require("enumerator.jar");
-        addBuiltinIfAllowed("rational.jar", dummy);
-        loadService.require("rational.jar");
-        addBuiltinIfAllowed("complex.jar", dummy);
-        loadService.require("complex.jar");
+        // for backward compatibility
+        loadService.provide("enumerator.jar"); // can't be in RubyEnumerator because LoadService isn't ready then
+        loadService.provide("rational.jar");
+        loadService.provide("complex.jar");
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");

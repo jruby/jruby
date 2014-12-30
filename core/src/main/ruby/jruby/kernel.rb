@@ -20,8 +20,6 @@ unless JRuby.runtime.posix.native?
   end
 end
 
-require 'thread.jar'
-
 # These are loads so they don't pollute LOADED_FEATURES
 load 'jruby/kernel/kernel.rb'
 load 'jruby/kernel/proc.rb'

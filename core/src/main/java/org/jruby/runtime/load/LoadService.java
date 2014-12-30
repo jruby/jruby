@@ -270,6 +270,12 @@ public class LoadService {
             addPath(dir);
         }
     }
+
+    // MRI: rb_provide, roughly
+    public void provide(String library) {
+        addBuiltinLibrary(library, Library.DUMMY);
+        addLoadedFeature(library, library);
+    }
     
     protected boolean isFeatureInIndex(String shortName) {
         return loadedFeaturesIndex.containsKey(shortName);

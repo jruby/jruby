@@ -33,5 +33,10 @@ import java.io.IOException;
 import org.jruby.Ruby;
 
 public interface Library {
+    public static final Library DUMMY = new Library() {
+        public void load(Ruby runtime, boolean wrap) throws IOException {
+            // dummy library that does nothing right now
+        }
+    };
     void load(Ruby runtime, boolean wrap) throws IOException;
 }
