@@ -741,6 +741,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject exclusive(ThreadContext context, IRubyObject recv, Block block) {
+        Ruby runtime = context.runtime;
+        ThreadService ts = runtime.getThreadService();
+        boolean critical = ts.getCritical();
+
+        ts.setCritical(true);
+
+        try {
+            return block.yieldSpecific(context);
+        } finally {
+            ts.setCritical(critical);
+        }
+    }
+
+    @JRubyMethod(meta = true)
     public static RubyArray list(IRubyObject recv) {
         RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
         
