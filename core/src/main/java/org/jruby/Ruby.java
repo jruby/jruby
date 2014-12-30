@@ -1694,7 +1694,6 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("stringio.jar", "stringio", "org.jruby.ext.stringio.StringIOLibrary");
         addLazyBuiltin("strscan.jar", "strscan", "org.jruby.ext.strscan.StringScannerLibrary");
         addLazyBuiltin("zlib.jar", "zlib", "org.jruby.ext.zlib.ZlibLibrary");
-        addLazyBuiltin("enumerator.jar", "enumerator", "org.jruby.ext.enumerator.EnumeratorLibrary");
         addLazyBuiltin("thread.jar", "thread", "org.jruby.ext.thread.ThreadLibrary");
         addLazyBuiltin("thread.rb", "thread", "org.jruby.ext.thread.ThreadLibrary");
         addLazyBuiltin("digest.jar", "digest.so", "org.jruby.ext.digest.DigestLibrary");
@@ -1730,6 +1729,14 @@ public final class Ruby implements Constantizable {
         };
         addBuiltinIfAllowed("continuation.rb", dummy);
         addBuiltinIfAllowed("io/nonblock.rb", dummy);
+
+        // rb_provide logic, in a roundabout way
+        addLazyBuiltin("enumerator.jar", "enumerator", "org.jruby.ext.enumerator.EnumeratorLibrary");
+        loadService.require("enumerator.jar");
+        addBuiltinIfAllowed("rational.jar", dummy);
+        loadService.require("rational.jar");
+        addBuiltinIfAllowed("complex.jar", dummy);
+        loadService.require("complex.jar");
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
