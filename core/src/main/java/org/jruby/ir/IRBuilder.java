@@ -579,15 +579,10 @@ public class IRBuilder {
             }
             case ARRAYNODE: {
                 ArrayNode arrayNode = (ArrayNode)args;
-                if (arrayNode.isLightweight()) {
-                    List<Node> children = arrayNode.childNodes();
+                List<Node> children = arrayNode.childNodes();
                     // explode array, it's an internal "args" array
-                    for (Node n: children) {
-                        argsList.add(build(n, s));
-                    }
-                } else {
-                    // use array as-is, it's a literal array
-                    argsList.add(build(arrayNode, s));
+                for (Node n: children) {
+                    argsList.add(build(n, s));
                 }
                 break;
             }
