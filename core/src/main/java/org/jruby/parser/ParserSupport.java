@@ -556,8 +556,8 @@ public class ParserSupport {
     private Node cond0(Node node) {
         checkAssignmentInCondition(node);
         
-        Node leftNode = null;
-        Node rightNode = null;
+        Node leftNode;
+        Node rightNode;
 
         // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
         switch(node.getNodeType()) {
@@ -771,20 +771,7 @@ public class ParserSupport {
     }
     
     public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args) {
-        if (!(args instanceof ArrayNode)) return new AttrAssignNode(position, receiver, name, args);
-        
-        ArrayNode argsNode = (ArrayNode) args;
-        
-        switch (argsNode.size()) {
-            case 1:
-                return new AttrAssignOneArgNode(position, receiver, name, argsNode);
-            case 2:
-                return new AttrAssignTwoArgNode(position, receiver, name, argsNode);
-            case 3:
-                return new AttrAssignThreeArgNode(position, receiver, name, argsNode);
-            default:
-                return new AttrAssignNode(position, receiver, name, argsNode);
-        }
+        return new AttrAssignNode(position, receiver, name, args);
     }
     
     private boolean isNumericOperator(String name) {
@@ -1065,26 +1052,8 @@ public class ParserSupport {
     }
 
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
-            ListNode post, BlockArgNode block) {
-        // Zero-Argument declaration
-        if (optional == null && rest == null && post == null && block == null) {
-            if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
-            if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
-            if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
-        }
-        return new ArgsNode(position, pre, optional, rest, post, block);
-    }
-    
-    public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, ArgsTailHolder tail) {
-        if (tail == null) return new_args(position, pre, optional, rest, post, (BlockArgNode) null);
-        
-        // Zero-Argument declaration
-        if (optional == null && rest == null && post == null && !tail.hasKeywordArgs() && tail.getBlockArg() == null) {
-            if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
-            if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
-            if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
-        }
+        if (tail == null) return new ArgsNode(position, pre, optional, rest, post, (BlockArgNode) null);
 
         return new ArgsNode(position, pre, optional, rest, post, 
                 tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
@@ -1102,14 +1071,6 @@ public class ParserSupport {
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
         
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
-    }    
-
-    private boolean hasAssignableArgs(ListNode list) {
-        for (int i = 0; i < list.size(); i++) {
-            Node node = list.get(i);
-            if (node instanceof AssignableNode) return true;
-        }
-        return false;
     }
 
     public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {
