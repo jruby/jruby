@@ -558,8 +558,6 @@ public class IRBuilder {
 
     // Return the last argument in the list -- AttrAssign needs it
     protected Operand buildCallArgs(List<Operand> argsList, Node args, IRScope s) {
-        // unwrap newline nodes to get their actual type
-        args = skipOverNewlines(s, args);
         switch (args.getNodeType()) {
             case ARGSCATNODE: {
                 ArgsCatNode argsCatNode = (ArgsCatNode)args;
