@@ -14,13 +14,16 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.TruffleBridge;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.methods.SetFrameVisibilityNode;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -170,16 +173,18 @@ public class TruffleBridgeImpl implements TruffleBridge {
             source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
         }
 
-        return truffleContext.execute(truffleContext, source, UTF8Encoding.INSTANCE, parserContext, self, parentFrame, null, new NodeWrapper() {
+        truffleContext.load(source, null, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 RubyContext context = node.getContext();
                 SourceSection sourceSection = node.getSourceSection();
                 return SequenceNode.sequence(context, sourceSection,
                         new SetTopLevelBindingNode(context, sourceSection),
-                        new TopLevelRaiseHandler(context, sourceSection, node));
+                        new TopLevelRaiseHandler(context, sourceSection,
+                                SetFrameVisibilityNode.PRIVATE_VISIBILITY_WRAPPER.wrap(node)));
             }
         });
+        return truffleContext.getCoreLibrary().getNilObject();
     }
 
     @Override

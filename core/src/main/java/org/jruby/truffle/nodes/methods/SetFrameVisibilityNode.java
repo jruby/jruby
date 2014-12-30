@@ -12,12 +12,21 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.translator.NodeWrapper;
 
 public class SetFrameVisibilityNode extends RubyNode {
+
+    public static final NodeWrapper PRIVATE_VISIBILITY_WRAPPER = new NodeWrapper() {
+        @Override
+        public RubyNode wrap(RubyNode node) {
+            return new SetFrameVisibilityNode(node.getContext(), node.getSourceSection(), node, Visibility.PRIVATE);
+        }
+    };
 
     @Child protected RubyNode body;
 
