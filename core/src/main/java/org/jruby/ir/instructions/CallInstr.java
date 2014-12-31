@@ -19,6 +19,20 @@ public class CallInstr extends CallBase implements ResultInstr {
     protected Variable result;
 
     public static CallInstr create(Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        if (!containsArgSplat(args)) {
+            boolean hasClosure = closure != null;
+
+            if (args.length == 0 && !hasClosure) {
+                return new ZeroOperandArgNoBlockCallInstr(result, name, receiver, args);
+            } else if (args.length == 1) {
+                if (hasClosure) return new OneOperandArgBlockCallInstr(result, name, receiver, args, closure);
+                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(result, name, receiver, args);
+                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(result, name, receiver, args);
+
+                return new OneOperandArgNoBlockCallInstr(result, name, receiver, args);
+            }
+        }
+
         return new CallInstr(CallType.NORMAL, result, name, receiver, args, closure);
     }
 
@@ -51,23 +65,6 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     public void updateResult(Variable v) {
         this.result = v;
-    }
-
-    @Override
-    public CallBase specializeForInterpretation() {
-        Operand[] callArgs = getCallArgs();
-        if (containsArgSplat(callArgs)) return this;
-
-        switch (callArgs.length) {
-            case 0:
-                return hasClosure() ? this : new ZeroOperandArgNoBlockCallInstr(this);
-            case 1:
-                if (isAllFixnums() && !hasClosure()) return new OneFixnumArgNoBlockCallInstr(this);
-                if (isAllFloats() && !hasClosure()) return new OneFloatArgNoBlockCallInstr(this);
-
-                return hasClosure() ? new OneOperandArgBlockCallInstr(this) : new OneOperandArgNoBlockCallInstr(this);
-        }
-        return this;
     }
 
     public Instr discardResult() {

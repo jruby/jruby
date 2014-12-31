@@ -479,11 +479,14 @@ public abstract class IRScope implements ParseResult {
 
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
+            // FIXME: Can be replaced with System.arrayCopy or clone() once we stop cloning individual instrs
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
                 if (!(instr instanceof ReceiveSelfInstr)) {
+                    // FIXME: Can be removed once ipc and rpc are stored in table(s) in IC
                     Instr newInstr = instr.clone(cloneInfo);
 
+                    // FIXME: Can be removed once noresult and attrassign properly specialize at IRBuild time.
                     if (newInstr instanceof Specializeable) {
                         newInstr = ((Specializeable) newInstr).specializeForInterpretation();
                     }
