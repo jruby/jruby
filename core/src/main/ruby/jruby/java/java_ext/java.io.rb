@@ -1,5 +1,3 @@
-require 'jruby' unless defined? JRuby
-
 class java::io::InputStream
   def to_io(opts = nil)
     ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
