@@ -123,8 +123,10 @@ public class FeatureManager {
     }
 
     private boolean requireFile(String fileName, RubyNode currentNode) throws IOException {
-        // Loading from core:/ always just goes ahead without a proper check
+        // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'.
+        fileName = fileName.replace('\\', '/');
 
+        // Loading from core:/ always just goes ahead without a proper check
         if (fileName.startsWith("core:/")) {
             try {
                 context.getCoreLibrary().loadRubyCore(fileName.substring("core:/".length()));
