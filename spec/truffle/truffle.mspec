@@ -1,6 +1,10 @@
 class MSpecScript
 
-  set :target, File.dirname(__FILE__) + '/spec-wrapper'
+  def self.windows?
+    ENV.key?('WINDIR') || ENV.key?('windir')
+  end
+
+  set :target, File.join(File.dirname(__FILE__), "spec-wrapper#{windows? ? '.bat' : ''}")
 
   set :language, [
     "spec/ruby/language"
