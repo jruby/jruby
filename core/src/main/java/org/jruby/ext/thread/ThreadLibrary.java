@@ -42,7 +42,7 @@ import org.jruby.runtime.load.Library;
  * The 'thread' library.
  */
 public class ThreadLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) {
         Mutex.setup(runtime);
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);

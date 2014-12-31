@@ -1537,11 +1537,7 @@ public final class Ruby implements Constantizable {
         }
 
         // Fiber depends on thread library, so we load it here
-        try {
-            new ThreadLibrary().load(this, false);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        new ThreadLibrary().load(this, false);
 
         new ThreadFiberLibrary().load(this, false);
 
