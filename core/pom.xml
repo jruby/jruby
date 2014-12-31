@@ -86,7 +86,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.5</version>
+      <version>0.8.6</version>
       <type>jar</type>
     </dependency>
     <dependency>
