@@ -278,7 +278,7 @@ public class RubySocket extends RubyBasicSocket {
                 }
             }
         } catch (Exception ex) {
-            throw SocketUtils.sockerr(context.runtime, "getifaddrs: " + ex.toString());
+            throw SocketUtils.sockerr_with_trace(context.runtime, "getifaddrs: " + ex.toString(), ex.getStackTrace());
         }
         return list;
     }

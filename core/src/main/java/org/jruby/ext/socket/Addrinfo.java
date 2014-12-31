@@ -453,30 +453,47 @@ public class Addrinfo extends RubyObject {
 
     private byte[] hwaddr() {
       try {
-        byte[] hw = {0,0,0,0,0,0};    
+        byte[] hw = {0,0,0,0,0,0};                            // loopback   
         if (!networkInterface.isLoopback()) {
           hw = networkInterface.getHardwareAddress();
+          if (hw == null) {
+            hw = new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // UNSPEC link encap
+          }
         }
         if (isBroadcast) {
-          hw = new byte[]{-1,-1,-1,-1,-1,-1}; // == 0xFF
+          hw = new byte[]{-1,-1,-1,-1,-1,-1};  // == 0xFF
         }
         return hw;
       } catch (IOException e) {
-        byte[] hw = {};
-        return hw; 
+        byte[] ehw = new byte[0];  // if bad things happened return empty address rather than null or raising exception
+        return ehw;   
       }
     }
 
     public String packet_inspect() {
       StringBuffer hwaddr_sb = new StringBuffer();
       String sep = "";
-      for(byte b: hwaddr()) {
+      for (byte b: hwaddr()) {
         hwaddr_sb.append(sep);
         sep = ":";
         hwaddr_sb.append(String.format("%02x", b));
       }
       return "PACKET[protocol=0 " + interfaceName + " hatype=" + hatype() + " HOST hwaddr=" + hwaddr_sb + "]";
     }
+
+    // public String packet_inspect() {
+    //   StringBuffer hwaddr_sb = new StringBuffer();
+    //   String sep = "";
+    //   byte[] hwaddr_ba = hwaddr();
+    //   if (hwaddr_ba != null && hwaddr_ba.length > 0) {
+    //     for (byte b: hwaddr_ba) {
+    //       hwaddr_sb.append(sep);
+    //       sep = ":";
+    //       hwaddr_sb.append(String.format("%02x", b));
+    //     }
+    //   }
+    //   return "PACKET[protocol=0 " + interfaceName + " hatype=" + hatype() + " HOST hwaddr=" + hwaddr_sb + "]";
+    // }
 
     private int swapIntEndian(int i) {
       return ((i&0xff)<<24)+((i&0xff00)<<8)+((i&0xff0000)>>8)+((i>>24)&0xff);

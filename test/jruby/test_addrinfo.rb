@@ -97,7 +97,7 @@ class AddrinfoTest < Test::Unit::TestCase
         nil
       end
     end
-    assert_equal(1, loopbacks.count)  # only one ipv4 loopback
+    assert(loopbacks.count > 0)  # at least one ipv4 loopback
   end
 
   def test_ipv6?
