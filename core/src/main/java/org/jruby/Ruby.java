@@ -42,6 +42,7 @@ package org.jruby;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.jruby.JRubyLibrary;
+import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -1535,6 +1536,9 @@ public final class Ruby implements Constantizable {
             RubyEnumerator.defineEnumerator(this);
         }
 
+        // Fiber depends on thread library, so we load it here
+        new ThreadLibrary().load(this, false);
+
         new ThreadFiberLibrary().load(this, false);
 
         TracePoint.createTracePointClass(this);
@@ -1726,6 +1730,9 @@ public final class Ruby implements Constantizable {
         loadService.provide("enumerator.jar"); // can't be in RubyEnumerator because LoadService isn't ready then
         loadService.provide("rational.jar");
         loadService.provide("complex.jar");
+
+        // we define the classes at boot because we need them
+        addBuiltinIfAllowed("thread.rb", Library.DUMMY);
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
