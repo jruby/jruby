@@ -20,6 +20,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Region;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.runtime.Visibility;
@@ -807,6 +808,69 @@ public abstract class StringNodes {
             return self;
         }
 
+    }
+
+    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0)
+    public abstract static class InsertNode extends CoreMethodNode {
+
+        @Child protected ConcatNode concatNode;
+        @Child protected GetIndexNode getIndexNode;
+
+        public InsertNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            concatNode = StringNodesFactory.ConcatNodeFactory.create(context, sourceSection, new RubyNode[]{});
+            getIndexNode = StringNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        }
+
+        public InsertNode(InsertNode prev) {
+            super(prev);
+            concatNode = prev.concatNode;
+            getIndexNode = prev.getIndexNode;
+        }
+
+        @Specialization
+        public RubyString insert(RubyString string, int index, RubyString otherString) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            if (index == -1) {
+                concatNode.concat(string, otherString);
+
+                return string;
+
+            } else if (index < 0) {
+                // Incrementing first seems weird, but MRI does it and it's significant because it uses the modified
+                // index value in its error messages.  This seems wrong, but we should be compatible.
+                index++;
+
+                if (-index > string.length()) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
+                }
+
+                index = index + string.length();
+
+            } else if (index > string.length()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
+            }
+
+            RubyString firstPart = getIndexNode.getIndex(string, 0, index);
+            RubyString secondPart = getIndexNode.getIndex(string, index, string.length());
+
+            RubyString concatenated = concatNode.concat(concatNode.concat(firstPart, otherString), secondPart);
+
+            string.set(concatenated.getBytes());
+
+            return string;
+        }
     }
 
     @CoreMethod(names = "ljust", required = 1, optional = 1, lowerFixnumParameters = 0)
