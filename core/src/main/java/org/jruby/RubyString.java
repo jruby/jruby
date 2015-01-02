@@ -2842,11 +2842,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 pos = subLength(pos);
             }
         } else if (sub instanceof RubyString) {
-            pos = StringSupport.strRindex19(value, (RubyString) sub, pos, this.checkEncoding((RubyString) sub), this.strLength(this.checkEncoding((RubyString) sub)), ((RubyString) sub).strLength(this.checkEncoding((RubyString) sub)), ((RubyString) sub).value);
+            pos = StringSupport.rindex(value, (RubyString) sub, pos, this.checkEncoding((RubyString) sub), this.strLength(this.checkEncoding((RubyString) sub)), ((RubyString) sub).strLength(this.checkEncoding((RubyString) sub)), ((RubyString) sub).value);
         } else {
             IRubyObject tmp = sub.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            pos = StringSupport.strRindex19(value, (RubyString) tmp, pos, this.checkEncoding((RubyString) tmp), this.strLength(this.checkEncoding((RubyString) tmp)), ((RubyString) tmp).strLength(this.checkEncoding((RubyString) tmp)), ((RubyString) tmp).value);
+            pos = StringSupport.rindex(value, (RubyString) tmp, pos, this.checkEncoding((RubyString) tmp), this.strLength(this.checkEncoding((RubyString) tmp)), ((RubyString) tmp).strLength(this.checkEncoding((RubyString) tmp)), ((RubyString) tmp).value);
         }
         if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         return runtime.getNil();
@@ -4366,7 +4366,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
             sep = (RubyString)tmp;
-            pos = StringSupport.strRindex19(value, sep, subLength(value.getRealSize()), this.checkEncoding(sep), this.strLength(this.checkEncoding(sep)), sep.strLength(this.checkEncoding(sep)), sep.value);
+            pos = StringSupport.rindex(value, sep, subLength(value.getRealSize()), this.checkEncoding(sep), this.strLength(this.checkEncoding(sep)), sep.strLength(this.checkEncoding(sep)), sep.value);
             if (pos < 0) return rpartitionMismatch(runtime);
         }
 

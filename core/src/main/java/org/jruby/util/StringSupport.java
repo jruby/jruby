@@ -834,7 +834,10 @@ public final class StringSupport {
         return i;
     }
 
-    public static int strRindex19(ByteList value, CodeRangeable sub, int pos, Encoding enc, int sourceLen, int subLen, ByteList subValue) {
+    /**
+     * rb_str_rindex_m
+     */
+    public static int rindex(ByteList value, CodeRangeable sub, int pos, Encoding enc, int sourceLen, int subLen, ByteList subValue) {
         if (sub.scanForCodeRange() == CR_BROKEN) return -1;
 
         if (sourceLen < subLen) return -1;
