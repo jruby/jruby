@@ -195,6 +195,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return runtime.getEncodingService().findEncoding(this);
     }
 
+    @Override
     public final int getCodeRange() {
         return flags & CR_MASK;
     }
@@ -259,6 +260,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // rb_enc_str_coderange
+    @Override
     public final int scanForCodeRange() {
         int cr = getCodeRange();
         if (cr == CR_UNKNOWN) {
