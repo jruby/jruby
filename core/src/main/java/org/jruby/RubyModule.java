@@ -2205,7 +2205,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_include
      *
      */
-    @JRubyMethod(name = "include", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "include", rest = true, visibility = PUBLIC)
     public RubyModule include(IRubyObject[] modules) {
         ThreadContext context = getRuntime().getCurrentContext();
         // MRI checks all types first:
