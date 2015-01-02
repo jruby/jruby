@@ -9,16 +9,14 @@
  */
 package org.jruby.truffle.nodes.control;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.*;
+
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
 
 /**
  * Represents a Ruby {@code or} or {@code ||} expression.
@@ -28,6 +26,8 @@ public class OrNode extends RubyNode {
     @Child protected RubyNode left;
     @Child protected BooleanCastNode leftCast;
     @Child protected RubyNode right;
+    private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
+
 
     public OrNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
         super(context, sourceSection);
@@ -39,12 +39,10 @@ public class OrNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object leftValue = left.execute(frame);
-
-        if (leftCast.executeBoolean(frame, leftValue)) {
+        if (conditionProfile.profile(leftCast.executeBoolean(frame, leftValue))) {
             return leftValue;
+        } else {
+            return right.execute(frame);
         }
-
-        return right.execute(frame);
     }
-
 }
