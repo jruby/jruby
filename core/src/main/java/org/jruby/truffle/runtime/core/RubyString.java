@@ -17,12 +17,13 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
 /**
  * Represents the Ruby {@code String} class.
  */
-public class RubyString extends RubyBasicObject {
+public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     private ByteList bytes;
 
@@ -160,6 +161,18 @@ public class RubyString extends RubyBasicObject {
 
     public int clampExclusiveIndex(int index) {
         return RubyArray.clampExclusiveIndex(bytes.length(), index);
+    }
+
+    @Override
+    public int getCodeRange() {
+        // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
+        return StringSupport.CR_VALID;
+    }
+
+    @Override
+    public int scanForCodeRange() {
+        // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
+        return getCodeRange();
     }
 
     public static class StringAllocator implements Allocator {

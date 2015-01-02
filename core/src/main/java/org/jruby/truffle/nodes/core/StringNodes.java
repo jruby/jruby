@@ -879,6 +879,36 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "rindex", required = 1, optional = 1)
+    public abstract static class RindexNode extends CoreMethodNode {
+
+        public RindexNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RindexNode(RindexNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object rindex(RubyString string, RubyString subString, UndefinedPlaceholder position) {
+            int result = StringSupport.strRindex19(string.getBytes(),
+                    subString,
+                    string.length(),
+                    string.getBytes().getEncoding(),
+                    string.length(),
+                    subString.length(),
+                    subString.getBytes());
+
+            if (result >= 0) {
+                return result;
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+    }
+
     @CoreMethod(names = "rjust", required = 1, optional = 1, lowerFixnumParameters = 0)
     public abstract static class RjustNode extends CoreMethodNode {
 

@@ -3,9 +3,6 @@ fails:String#rindex with object doesn't try to convert obj to an integer via to_
 fails:String#rindex with object tries to convert obj to a string via to_str
 fails:String#rindex with String behaves the same as String#rindex(char) for one-character strings
 fails:String#rindex with String behaves the same as String#rindex(?char) for one-character strings
-fails:String#rindex with String returns the index of the last occurrence of the given substring
-fails:String#rindex with String doesn't set $~
-fails:String#rindex with String ignores string subclasses
 fails:String#rindex with String starts the search at the given offset
 fails:String#rindex with String starts the search at offset + self.length if offset is negative
 fails:String#rindex with String returns nil if the substring isn't found
