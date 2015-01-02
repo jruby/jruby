@@ -9,7 +9,6 @@ fails:Time.utc accepts 2 arguments (year, month)
 fails:Time.utc accepts 3 arguments (year, month, day)
 fails:Time.utc accepts 4 arguments (year, month, day, hour)
 fails:Time.utc accepts 5 arguments (year, month, day, hour, minute)
-fails:Time.utc raises a TypeError if the year is nil
 fails:Time.utc accepts nil month, day, hour, minute, and second
 fails:Time.utc handles a String year
 fails:Time.utc coerces the year with #to_int

@@ -14,4 +14,5 @@ module Rubinius
 
 end
 
-PrimitiveFailures = StandardError
+class PrimitiveFailure < StandardError
+end

@@ -18,7 +18,6 @@ import org.joni.Regex;
 import org.joni.Syntax;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
@@ -43,9 +42,13 @@ import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.UndefNode;
+import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
+import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -346,7 +349,39 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitCallNode(CallNode node) {
+        if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
+                && ((ConstNode) node.getReceiverNode()).getName() == "Rubinius"
+                && node.getName().equals("primitive"))
+            return translateRubiniusPrimitive(translate(node.getPosition()), node);
+
         return visitCallNodeExtraArgument(node, null, false, false);
+    }
+
+    private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallNode node) {
+        if (node.getArgsNode().childNodes().size() != 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
+            throw new UnsupportedOperationException("Rubinius.primitive must have a single literal symbol argument");
+        }
+
+        final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
+
+        final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
+
+        final List<RubyNode> arguments = new ArrayList<>();
+
+        int argumentsCount = primitive.getFactory().getExecutionSignature().size();
+
+        if (primitive.getAnnotation().needsSelf()) {
+            arguments.add(new SelfNode(context, sourceSection));
+            argumentsCount--;
+        }
+
+        for (int n = 0; n < argumentsCount; n++) {
+            arguments.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
+        }
+
+        return new CallRubiniusPrimitiveNode(context, sourceSection,
+                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
+                environment.getReturnID());
     }
 
     /**

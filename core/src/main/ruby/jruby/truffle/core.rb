@@ -34,5 +34,6 @@ require_relative 'core/rubinius/kernel/common/struct'
 require_relative 'core/rubinius/kernel/common/enumerable'
 require_relative 'core/rubinius/kernel/common/undefined'
 require_relative 'core/rubinius/kernel/common/time'
+require_relative 'core/rubinius/kernel/common/type'
 
 require_relative 'core/shims'

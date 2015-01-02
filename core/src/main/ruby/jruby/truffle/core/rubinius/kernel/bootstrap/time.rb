@@ -25,11 +25,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Time
-  # TODO(CS)
-  #def self.now
-  #  Rubinius.primitive :time_s_now
-  #  raise PrimitiveFailure, "Time.now primitive failed"
-  #end
+  def self.now
+    Rubinius.primitive :time_s_now
+    raise PrimitiveFailure, "Time.now primitive failed"
+  end
 
   def self.duplicate(other)
     Rubinius.primitive :time_s_dup

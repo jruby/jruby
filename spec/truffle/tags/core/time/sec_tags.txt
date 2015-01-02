@@ -1,1 +1,0 @@
-fails:Time#sec returns the second of the minute(0..60) for time

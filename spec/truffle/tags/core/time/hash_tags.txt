@@ -1,2 +1,0 @@
-fails:Time#hash returns a Fixnum
-fails:Time#hash is stable
