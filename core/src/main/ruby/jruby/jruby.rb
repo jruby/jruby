@@ -1,5 +1,3 @@
-require 'java'
-
 module JRuby
   def self.init_asm
     begin

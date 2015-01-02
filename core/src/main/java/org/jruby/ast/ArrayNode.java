@@ -40,10 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents an array. This could be an array literal, quoted words or some args stuff.
  */
 public class ArrayNode extends ListNode implements ILiteralNode {
-    // This field is used during argument processing to avoid putting RubyArray
-    // instances that are purely for utility purposes into ObjectSpace.
-    private boolean lightweight = false;
-    
     public ArrayNode(ISourcePosition position, Node firstNode) {
         super(position, firstNode);
         

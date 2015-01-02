@@ -123,7 +123,8 @@ public abstract class DirNodes {
 
             final String prefix = absoluteGlob.substring(0, prefixLength - 1);
 
-            final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + absoluteGlob.substring(prefixLength));
+            // Glob patterns must always use '/', even on Windows.
+            final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + absoluteGlob.substring(prefixLength).replace('\\', '/'));
 
             final RubyArray array = new RubyArray(context.getCoreLibrary().getArrayClass());
 

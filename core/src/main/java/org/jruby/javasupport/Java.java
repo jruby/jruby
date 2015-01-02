@@ -109,13 +109,14 @@ public class Java implements Library {
     public static final boolean NEW_STYLE_EXTENSION = Options.JI_NEWSTYLEEXTENSION.load();
     public static final boolean OBJECT_PROXY_CACHE = Options.JI_OBJECTPROXYCACHE.load();
 
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    public void load(Ruby runtime, boolean wrap) {
         createJavaModule(runtime);
 
         RubyModule jpmt = runtime.defineModule("JavaPackageModuleTemplate");
         jpmt.getSingletonClass().setSuperClass(new BlankSlateWrapper(runtime, jpmt.getMetaClass().getSuperClass(), runtime.getKernel()));
 
-        runtime.getLoadService().require("jruby/java");
+        // load Ruby parts of the 'java' library
+        runtime.getLoadService().load("jruby/java.rb", false);
         
         // rewite ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         RubyClass ajp = runtime.getClass("ArrayJavaProxy");

@@ -556,53 +556,68 @@ public class IRBuilder {
         return copyAndReturnValue(s, val);
     }
 
-    // Return the last argument in the list -- AttrAssign needs it
-    protected Operand buildCallArgs(List<Operand> argsList, Node args, IRScope s) {
+    // Return the last argument in the list as this represents rhs of the overall attrassign expression
+    // e.g. 'a[1] = 2 #=> 2' or 'a[1] = 1,2,3 #=> [1,2,3]'
+    protected Operand buildAttrAssignCallArgs(List<Operand> argsList, Node args, IRScope s) {
         switch (args.getNodeType()) {
-            case ARGSCATNODE: {
-                ArgsCatNode argsCatNode = (ArgsCatNode)args;
-                Operand v1 = build(argsCatNode.getFirstNode(), s);
-                Operand v2 = build(argsCatNode.getSecondNode(), s);
-                Variable res = s.createTemporaryVariable();
-                addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, false));
-                argsList.add(new Splat(res, true));
-                return v2;
-            }
-            case ARGSPUSHNODE:  {
-                ArgsPushNode argsPushNode = (ArgsPushNode)args;
-                Operand v1 = build(argsPushNode.getFirstNode(), s);
-                Operand v2 = build(argsPushNode.getSecondNode(), s);
-                Variable res = s.createTemporaryVariable();
-                addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, true));
-                argsList.add(new Splat(res, true));
-                return v2;
-            }
-            case ARRAYNODE: {
-                ArrayNode arrayNode = (ArrayNode)args;
-                List<Node> children = arrayNode.childNodes();
-                    // explode array, it's an internal "args" array
-                for (Node n: children) {
-                    argsList.add(build(n, s));
+            case ARRAYNODE: {     // a[1] = 2; a[1,2,3] = 4,5,6
+                Operand last = manager.getNil();
+                for (Node n: args.childNodes()) {
+                    last = build(n, s);
+                    argsList.add(last);
                 }
-                break;
+                return last;
             }
-            case SPLATNODE: {
-                Splat splat = new Splat(build(((SplatNode)args).getValue(), s), true);
-                argsList.add(splat);
-                break;
+            case ARGSPUSHNODE:  { // a[1, *b] = 2
+                ArgsPushNode argsPushNode = (ArgsPushNode)args;
+                Operand lhs = build(argsPushNode.getFirstNode(), s);
+                Operand rhs = build(argsPushNode.getSecondNode(), s);
+                Variable res = s.createTemporaryVariable();
+                addInstr(s, new BuildCompoundArrayInstr(res, lhs, rhs, true));
+                argsList.add(new Splat(res, true));
+                return rhs;
             }
-            default: {
-                throw new NotCompilableException("Invalid node for callArgs: " + args.getClass().getSimpleName() + ":" + args.getPosition());
+            case SPLATNODE: {     // a[1] = *b
+                Splat rhs = new Splat(build(((SplatNode)args).getValue(), s), true);
+                argsList.add(rhs);
+                return rhs;
             }
         }
 
-        return argsList.isEmpty() ? manager.getNil() : argsList.get(argsList.size() - 1);
+        throw new NotCompilableException("Invalid node for attrassign call args: " + args.getClass().getSimpleName() + ":" + args.getPosition());
     }
 
-    public List<Operand> setupCallArgs(Node args, IRScope s) {
-        List<Operand> argsList = new ArrayList<>();
-        if (args != null) buildCallArgs(argsList, args, s);
-        return argsList;
+    protected Operand[] buildCallArgs(Node args, IRScope s) {
+        switch (args.getNodeType()) {
+            case ARGSCATNODE:
+            case ARGSPUSHNODE:
+                return new Operand[] { new Splat(build(args, s), true) };
+            case ARRAYNODE: {
+                List<Node> children = args.childNodes();
+                int numberOfArgs = children.size();
+                Operand[] builtArgs = new Operand[numberOfArgs];
+
+                for (int i = 0; i < numberOfArgs; i++) {
+                    builtArgs[i] = build(children.get(i), s);
+                }
+                return builtArgs;
+            }
+            case SPLATNODE:
+                return new Operand[] { new Splat(build(((SplatNode) args).getValue(), s), true) };
+        }
+
+        throw new NotCompilableException("Invalid node for call args: " + args.getClass().getSimpleName() + ":" + args.getPosition());
+    }
+
+    public Operand[] setupCallArgs(Node args, IRScope s) {
+        return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args, s);
+    }
+
+    public static Operand[] addArg(Operand[] args, Operand extraArg) {
+        Operand[] newArgs = new Operand[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        newArgs[args.length] = extraArg;
+        return newArgs;
     }
 
     // Non-arg masgn (actually a nested masgn)
@@ -810,18 +825,17 @@ public class IRBuilder {
     }
 
     public Operand buildArgsPush(final ArgsPushNode node, IRScope s) {
-        Operand v1 = build(node.getFirstNode(), s);
-        Operand v2 = build(node.getSecondNode(), s);
-        Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, true));
-        return res;
+        Operand lhs = build(node.getFirstNode(), s);
+        Operand rhs = build(node.getSecondNode(), s);
+
+        return addResultInstr(s, new BuildCompoundArrayInstr(s.createTemporaryVariable(), lhs, rhs, true));
     }
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
-        Operand lastArg = (argsNode == null) ? manager.getNil() : buildCallArgs(args, argsNode, s);
+        Operand lastArg = (argsNode == null) ? manager.getNil() : buildAttrAssignCallArgs(args, argsNode, s);
         addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
         return lastArg;
     }
@@ -829,9 +843,9 @@ public class IRBuilder {
     public Operand buildAttrAssignAssignment(Node node, IRScope s, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
-        args.add(value);
-        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
+        Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), s);
+        args = addArg(args, value);
+        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args));
         return value;
     }
 
@@ -976,10 +990,10 @@ public class IRBuilder {
         // that is incorrect IR because the receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
         Operand       receiver     = build(receiverNode, s);
-        List<Operand> args         = setupCallArgs(callArgsNode, s);
+        Operand[] args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = (CallInstr)CallInstr.create(callResult, callNode.getName(), receiver, args.toArray(new Operand[args.size()]), block).specializeForInterpretation();
+        CallInstr     callInstr    = (CallInstr)CallInstr.create(callResult, callNode.getName(), receiver, args, block).specializeForInterpretation();
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (
@@ -2193,10 +2207,10 @@ public class IRBuilder {
 
     public Operand buildFCall(FCallNode fcallNode, IRScope s) {
         Node          callArgsNode = fcallNode.getArgsNode();
-        List<Operand> args         = setupCallArgs(callArgsNode, s);
+        Operand[] args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = (CallInstr)CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args.toArray(new Operand[args.size()]), block).specializeForInterpretation();
+        CallInstr     callInstr    = (CallInstr)CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args, block).specializeForInterpretation();
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -2814,12 +2828,12 @@ public class IRBuilder {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         Label    l     = s.getNewLabel();
         Variable elt   = s.createTemporaryVariable();
-        List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        addInstr(s, CallInstr.create(elt, "[]", array, argList.toArray(new Operand[argList.size()]), null));
+        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        addInstr(s, CallInstr.create(elt, "[]", array, argList, null));
         addInstr(s, BEQInstr.create(elt, manager.getTrue(), l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        argList.add(value);
-        addInstr(s, CallInstr.create(elt, "[]=", array, argList.toArray(new Operand[argList.size()]), null));
+        argList = addArg(argList, value);
+        addInstr(s, CallInstr.create(elt, "[]=", array, argList, null));
         addInstr(s, new CopyInstr(elt, value));
         addInstr(s, new LabelInstr(l));
         return elt;
@@ -2830,12 +2844,13 @@ public class IRBuilder {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         Label    l     = s.getNewLabel();
         Variable elt   = s.createTemporaryVariable();
-        List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        addInstr(s, CallInstr.create(elt, "[]", array, argList.toArray(new Operand[argList.size()]), null));
+        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        addInstr(s, CallInstr.create(elt, "[]", array, argList, null));
         addInstr(s, BEQInstr.create(elt, manager.getFalse(), l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        argList.add(value);
-        addInstr(s, CallInstr.create(elt, "[]=", array, argList.toArray(new Operand[argList.size()]), null));
+
+        argList = addArg(argList, value);
+        addInstr(s, CallInstr.create(elt, "[]=", array, argList, null));
         addInstr(s, new CopyInstr(elt, value));
         addInstr(s, new LabelInstr(l));
         return elt;
@@ -2850,17 +2865,17 @@ public class IRBuilder {
     //    val = buildCall([]=, arr, arg, val)
     public Operand buildOpElementAsgnWithMethod(OpElementAsgnNode opElementAsgnNode, IRScope s) {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
-        List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         Variable elt = s.createTemporaryVariable();
-        addInstr(s, CallInstr.create(elt, "[]", array, argList.toArray(new Operand[argList.size()]), null)); // elt = a[args]
+        addInstr(s, CallInstr.create(elt, "[]", array, argList, null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode(), s);                                       // Load 'value'
         String  operation = opElementAsgnNode.getOperatorName();
         addInstr(s, CallInstr.create(elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = s.createTemporaryVariable();
-        argList.add(elt);
-        addInstr(s, CallInstr.create(tmp, "[]=", array, argList.toArray(new Operand[argList.size()]), null));   // a[args] = elt
+        argList = addArg(argList, elt);
+        addInstr(s, CallInstr.create(tmp, "[]=", array, argList, null));   // a[args] = elt
         return elt;
     }
 
@@ -3277,10 +3292,10 @@ public class IRBuilder {
     public Operand buildSuper(SuperNode superNode, IRScope s) {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
 
-        List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
+        Operand[] args = setupCallArgs(superNode.getArgsNode(), s);
         Operand block = setupCallClosure(superNode.getIterNode(), s);
         if (block == null) block = getImplicitBlockArg(s);
-        return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
+        return buildSuperInstr(s, block, args);
     }
 
     private Operand buildSuperInScriptBody(IRScope s) {

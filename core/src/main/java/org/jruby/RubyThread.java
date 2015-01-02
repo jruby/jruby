@@ -730,12 +730,29 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         boolean critical = ts.getCritical();
         
         ts.setCritical(false);
-        
-        Thread.yield();
-        
-        ts.setCritical(critical);
+
+        try {
+            Thread.yield();
+        } finally {
+            ts.setCritical(critical);
+        }
         
         return recv.getRuntime().getNil();
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject exclusive(ThreadContext context, IRubyObject recv, Block block) {
+        Ruby runtime = context.runtime;
+        ThreadService ts = runtime.getThreadService();
+        boolean critical = ts.getCritical();
+
+        ts.setCritical(true);
+
+        try {
+            return block.yieldSpecific(context);
+        } finally {
+            ts.setCritical(critical);
+        }
     }
 
     @JRubyMethod(meta = true)

@@ -19,6 +19,7 @@ end
 namespace :test do
   desc "Compile test code"
   task :compile do
+    mkdir_p "test/target/test-classes"
     sh "javac -cp lib/jruby.jar:test/target/junit.jar -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
   end
 
