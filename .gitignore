@@ -98,3 +98,4 @@ core/.classpath
 core/.gitignore
 core/.project
 core/.settings
+core/.apt_generated
