@@ -136,6 +136,12 @@ public class DispatchHeadNode extends Node {
                 this));
     }
 
+    /**
+     * Check if a specific method is defined on the receiver object.
+     * This check is "static" and should only be used in a few VM operations.
+     * In many cases, a dynamic call to Ruby's respond_to? should be used instead.
+     * Similar to MRI rb_check_funcall().
+     */
     public boolean doesRespondTo(
             VirtualFrame frame,
             Object methodName,
