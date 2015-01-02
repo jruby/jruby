@@ -1,4 +1,2 @@
 fails:String#succ returns subclass instances when called on a subclass
 fails:String#succ taints the result if self is tainted
-fails:String#succ! is equivalent to succ, but modifies self in place (still returns self)
-fails:String#succ! raises a RuntimeError if self is frozen

@@ -1185,6 +1185,35 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "succ!")
+    public abstract static class SuccBangNode extends CoreMethodNode {
+
+        public SuccBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SuccBangNode(SuccBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString succBang(RubyString string) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            if (string.length() > 0) {
+                string.set(StringSupport.succCommon(string.getBytes()));
+            }
+
+            return string;
+        }
+    }
+
     @CoreMethod(names = "sum")
     public abstract static class SumNode extends CoreMethodNode {
 
