@@ -892,11 +892,15 @@ public abstract class StringNodes {
 
         @Specialization
         public Object rindex(RubyString string, RubyString subString, @SuppressWarnings("unused") UndefinedPlaceholder endPosition) {
+            notDesignedForCompilation();
+
             return rindex(string, subString, string.length());
         }
 
         @Specialization
         public Object rindex(RubyString string, RubyString subString, int endPosition) {
+            notDesignedForCompilation();
+
             int normalizedEndPosition = endPosition;
 
             if (endPosition < 0) {
