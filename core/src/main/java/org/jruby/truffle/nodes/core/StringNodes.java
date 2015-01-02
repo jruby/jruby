@@ -879,7 +879,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "rindex", required = 1, optional = 1)
+    @CoreMethod(names = "rindex", required = 1, optional = 1, lowerFixnumParameters = 1)
     public abstract static class RindexNode extends CoreMethodNode {
 
         public RindexNode(RubyContext context, SourceSection sourceSection) {
@@ -891,10 +891,27 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object rindex(RubyString string, RubyString subString, UndefinedPlaceholder position) {
+        public Object rindex(RubyString string, RubyString subString, @SuppressWarnings("unused") UndefinedPlaceholder endPosition) {
+            return rindex(string, subString, string.length());
+        }
+
+        @Specialization
+        public Object rindex(RubyString string, RubyString subString, int endPosition) {
+            int normalizedEndPosition = endPosition;
+
+            if (endPosition < 0) {
+                normalizedEndPosition = endPosition + string.length();
+
+                if (normalizedEndPosition < 0) {
+                    return getContext().getCoreLibrary().getNilObject();
+                }
+            } else if (endPosition > string.length()) {
+                normalizedEndPosition = string.length();
+            }
+
             int result = StringSupport.strRindex19(string.getBytes(),
                     subString,
-                    string.length(),
+                    normalizedEndPosition,
                     string.getBytes().getEncoding(),
                     string.length(),
                     subString.length(),
@@ -906,7 +923,6 @@ public abstract class StringNodes {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
-
     }
 
     @CoreMethod(names = "rjust", required = 1, optional = 1, lowerFixnumParameters = 0)
