@@ -834,6 +834,32 @@ public final class StringSupport {
         return i;
     }
 
+    public static int strRindex19(ByteList value, CodeRangeable sub, int pos, Encoding enc, int sourceLen, int subLen, ByteList subValue) {
+        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
+
+        if (sourceLen < subLen) return -1;
+        if (sourceLen - pos < subLen) pos = sourceLen - subLen;
+        if (sourceLen == 0) return pos;
+
+        byte[]bytes = value.getUnsafeBytes();
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+
+        byte[]sbytes = subValue.bytes();
+        subLen = subValue.getRealSize();
+
+        int s = nth(enc, bytes, p, end, pos);
+        while (s >= 0) {
+            if (ByteList.memcmp(bytes, s, sbytes, 0, subLen) == 0) return pos;
+
+            if (pos == 0) break;
+            pos--;
+
+            s = enc.prevCharHead(bytes, p, s, end);
+        }
+        return -1;
+    }
+
     /**
      * rb_str_tr / rb_str_tr_bang
      */
