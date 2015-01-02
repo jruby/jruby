@@ -1158,6 +1158,29 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "succ")
+    public abstract static class SuccNode extends CoreMethodNode {
+
+        public SuccNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SuccNode(SuccNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString succ(RubyString string) {
+            notDesignedForCompilation();
+
+            if (string.length() > 0) {
+                return getContext().makeString(StringSupport.succCommon(string.getBytes()));
+            } else {
+                return getContext().makeString("");
+            }
+        }
+    }
+
     @CoreMethod(names = "sum")
     public abstract static class SumNode extends CoreMethodNode {
 
