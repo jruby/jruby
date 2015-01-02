@@ -837,26 +837,26 @@ public final class StringSupport {
     /**
      * rb_str_rindex_m
      */
-    public static int rindex(ByteList value, CodeRangeable sub, int pos, Encoding enc, int sourceLen, int subLen, ByteList subValue) {
-        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
+    public static int rindex(ByteList source, int sourceLen, ByteList subString, int subLen, int endPosition, CodeRangeable subStringCodeRangeable, Encoding enc) {
+        if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
         if (sourceLen < subLen) return -1;
-        if (sourceLen - pos < subLen) pos = sourceLen - subLen;
-        if (sourceLen == 0) return pos;
+        if (sourceLen - endPosition < subLen) endPosition = sourceLen - subLen;
+        if (sourceLen == 0) return endPosition;
 
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+        byte[]bytes = source.getUnsafeBytes();
+        int p = source.getBegin();
+        int end = p + source.getRealSize();
 
-        byte[]sbytes = subValue.bytes();
-        subLen = subValue.getRealSize();
+        byte[]sbytes = subString.bytes();
+        subLen = subString.getRealSize();
 
-        int s = nth(enc, bytes, p, end, pos);
+        int s = nth(enc, bytes, p, end, endPosition);
         while (s >= 0) {
-            if (ByteList.memcmp(bytes, s, sbytes, 0, subLen) == 0) return pos;
+            if (ByteList.memcmp(bytes, s, sbytes, 0, subLen) == 0) return endPosition;
 
-            if (pos == 0) break;
-            pos--;
+            if (endPosition == 0) break;
+            endPosition--;
 
             s = enc.prevCharHead(bytes, p, s, end);
         }

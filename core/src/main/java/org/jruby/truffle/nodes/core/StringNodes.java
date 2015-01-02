@@ -909,13 +909,9 @@ public abstract class StringNodes {
                 normalizedEndPosition = string.length();
             }
 
-            int result = StringSupport.rindex(string.getBytes(),
-                    subString,
-                    normalizedEndPosition,
-                    string.getBytes().getEncoding(),
-                    string.length(),
-                    subString.length(),
-                    subString.getBytes());
+            int result = StringSupport.rindex(string.getBytes(), string.length(), subString.getBytes(), subString.length(),
+                    normalizedEndPosition, subString, string.getBytes().getEncoding()
+            );
 
             if (result >= 0) {
                 return result;
