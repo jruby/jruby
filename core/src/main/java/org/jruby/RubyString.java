@@ -69,16 +69,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.ByteList;
-import org.jruby.util.ConvertBytes;
-import org.jruby.util.Numeric;
-import org.jruby.util.Pack;
-import org.jruby.util.PerlHash;
-import org.jruby.util.RegexpOptions;
-import org.jruby.util.SipHashInline;
-import org.jruby.util.Sprintf;
-import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
+import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
 import java.nio.charset.Charset;
@@ -119,7 +110,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements EncodingCapable, MarshalEncoding {
+public class RubyString extends RubyObject implements EncodingCapable, MarshalEncoding, CodeRangeable {
 
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
@@ -2849,36 +2840,33 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 pos = subLength(pos);
             }
         } else if (sub instanceof RubyString) {
-            pos = strRindex19((RubyString) sub, pos);
+            pos = strRindex19(value, (RubyString) sub, pos, this.checkEncoding((RubyString) sub), this.strLength(this.checkEncoding((RubyString) sub)), ((RubyString) sub).strLength(this.checkEncoding((RubyString) sub)), ((RubyString) sub).value);
         } else {
             IRubyObject tmp = sub.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            pos = strRindex19((RubyString) tmp, pos);
+            pos = strRindex19(value, (RubyString) tmp, pos, this.checkEncoding((RubyString) tmp), this.strLength(this.checkEncoding((RubyString) tmp)), ((RubyString) tmp).strLength(this.checkEncoding((RubyString) tmp)), ((RubyString) tmp).value);
         }
         if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         return runtime.getNil();
     }
 
-    private int strRindex19(RubyString sub, int pos) {
-        Encoding enc = checkEncoding(sub);
+    private static int strRindex19(ByteList value, CodeRangeable sub, int pos, Encoding enc, int sourceLen, int subLen, ByteList subValue) {
         if (sub.scanForCodeRange() == CR_BROKEN) return -1;
-        int len = strLength(enc);
-        int slen = sub.strLength(enc);
 
-        if (len < slen) return -1;
-        if (len - pos < slen) pos = len - slen;
-        if (len == 0) return pos;
+        if (sourceLen < subLen) return -1;
+        if (sourceLen - pos < subLen) pos = sourceLen - subLen;
+        if (sourceLen == 0) return pos;
 
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int end = p + value.getRealSize();
 
-        byte[]sbytes = sub.value.bytes();
-        slen = sub.value.getRealSize();
+        byte[]sbytes = subValue.bytes();
+        subLen = subValue.getRealSize();
 
         int s = StringSupport.nth(enc, bytes, p, end, pos);
         while (s >= 0) {
-            if (ByteList.memcmp(bytes, s, sbytes, 0, slen) == 0) return pos;
+            if (ByteList.memcmp(bytes, s, sbytes, 0, subLen) == 0) return pos;
 
             if (pos == 0) break;
             pos--;
@@ -4402,7 +4390,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
             sep = (RubyString)tmp;
-            pos = strRindex19(sep, subLength(value.getRealSize()));
+            pos = strRindex19(value, sep, subLength(value.getRealSize()), this.checkEncoding(sep), this.strLength(this.checkEncoding(sep)), sep.strLength(this.checkEncoding(sep)), sep.value);
             if (pos < 0) return rpartitionMismatch(runtime);
         }
 
