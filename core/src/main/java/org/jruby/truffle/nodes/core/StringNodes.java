@@ -1032,7 +1032,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(RubyString string) {
-            return string.getBytes().getRealSize();
+            return string.length();
         }
     }
 

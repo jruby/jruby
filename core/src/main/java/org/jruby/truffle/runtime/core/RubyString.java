@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -148,6 +148,10 @@ public class RubyString extends RubyBasicObject {
         RubyNode.notDesignedForCompilation();
 
         return bytes.hashCode();
+    }
+
+    public int length() {
+        return getBytes().getRealSize();
     }
 
     public int normaliseIndex(int index) {
