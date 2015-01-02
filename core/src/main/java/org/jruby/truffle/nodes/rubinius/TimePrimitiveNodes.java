@@ -11,10 +11,14 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 
 public abstract class TimePrimitiveNodes {
@@ -32,13 +36,21 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public RubyTime timeSNow(RubyClass timeClass) {
-            return new RubyTime(timeClass, System.currentTimeMillis());
+            return new RubyTime(timeClass,
+                            TimeOperations.millisecondsToSeconds(System.currentTimeMillis()),
+                            TimeOperations.millisecondsToNanoseconds(TimeOperations.millisecondsInCurrentSecond(System.currentTimeMillis())));
         }
 
     }
 
     @RubiniusPrimitive(name = "time_s_dup", needsSelf = false)
     public static abstract class TimeSDupPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child protected ReadHeadObjectFieldNode readIsGMTNode = new ReadHeadObjectFieldNode("@is_gmt");
+        @Child protected ReadHeadObjectFieldNode readOffsetNode = new ReadHeadObjectFieldNode("@offset");
+
+        @Child protected WriteHeadObjectFieldNode writeIsGMTNode = new WriteHeadObjectFieldNode("@is_gmt");
+        @Child protected WriteHeadObjectFieldNode writeOffsetNode = new WriteHeadObjectFieldNode("@offset");
 
         public TimeSDupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -50,13 +62,19 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public RubyTime timeSDup(RubyTime other) {
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getSeconds(), other.getNanoseconds());
+            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getSeconds(), other.getNanoseconds());
+            writeIsGMTNode.execute(time, readIsGMTNode.execute(other));
+            writeOffsetNode.execute(time, readOffsetNode.execute(other));
+            return time;
         }
 
     }
 
     @RubiniusPrimitive(name = "time_s_specific", needsSelf = false)
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child protected WriteHeadObjectFieldNode writeIsGMTNode = new WriteHeadObjectFieldNode("@is_gmt");
+        @Child protected WriteHeadObjectFieldNode writeOffsetNode = new WriteHeadObjectFieldNode("@offset");
 
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -67,23 +85,27 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSSpecific(int seconds, int nanoseconds, Object fromGMT, Object offset) {
-            return timeSSpecific((long) seconds, (long) nanoseconds, fromGMT, offset);
+        public RubyTime timeSSpecific(int seconds, int nanoseconds, Object isGMT, Object offset) {
+            return timeSSpecific((long) seconds, (long) nanoseconds, isGMT, offset);
         }
 
         @Specialization
-        public RubyTime timeSSpecific(long seconds, int nanoseconds, Object fromGMT, Object offset) {
-            return timeSSpecific((long) seconds, (long) nanoseconds, fromGMT, offset);
+        public RubyTime timeSSpecific(long seconds, int nanoseconds, Object isGMT, Object offset) {
+            return timeSSpecific(seconds, (long) nanoseconds, isGMT, offset);
         }
 
         @Specialization
-        public RubyTime timeSSpecific(int seconds, long nanoseconds, Object fromGMT, Object offset) {
-            return timeSSpecific((long) seconds, (long) nanoseconds, fromGMT, offset);
+        public RubyTime timeSSpecific(int seconds, long nanoseconds, Object isGMT, Object offset) {
+            return timeSSpecific((long) seconds, nanoseconds, isGMT, offset);
         }
 
         @Specialization
-        public RubyTime timeSSpecific(long seconds, long nanoseconds, Object fromGMT, Object offset) {
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), seconds, nanoseconds, fromGMT, offset);
+        public RubyTime timeSSpecific(long seconds, long nanoseconds, Object isGMT, Object offset) {
+            // TODO(CS): overflow checks here in Rbx
+            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), seconds, nanoseconds);
+            writeIsGMTNode.execute(time, isGMT);
+            writeOffsetNode.execute(time, offset);
+            return time;
         }
 
     }
@@ -127,18 +149,27 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child protected RubyTimeToDateTimeNode toDateTimeNode;
+
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toDateTimeNode = new RubyTimeToDateTimeNode(context, sourceSection);
         }
 
         public TimeDecomposePrimitiveNode(TimeDecomposePrimitiveNode prev) {
             super(prev);
+            toDateTimeNode = prev.toDateTimeNode;
         }
 
         @Specialization
-        public RubyArray timeDecompose(RubyTime time) {
-            final DateTime dateTime = TimeOperations.secondsAndNanosecondsToDateTime(time.getSeconds(), time.getNanoseconds());
+        public RubyArray timeDecompose(VirtualFrame frame, RubyTime time) {
+            final DateTime dateTime = toDateTimeNode.toDateTime(frame, time);
+            final Object[] decomposed = decompose(dateTime);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), decomposed, decomposed.length);
+        }
 
+        @CompilerDirectives.TruffleBoundary
+        public Object[] decompose(DateTime dateTime) {
             final int sec = dateTime.getSecondOfMinute();
             final int min = dateTime.getMinuteOfDay();
             final int hour = dateTime.getHourOfDay();
@@ -149,10 +180,7 @@ public abstract class TimePrimitiveNodes {
             final int yday = dateTime.getDayOfYear();
             final Object isdst = getContext().getCoreLibrary().getNilObject();
             final Object zone = getContext().getCoreLibrary().getNilObject();
-
-            final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), decomposed, decomposed.length);
+            return new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
         }
 
     }
@@ -160,21 +188,29 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_strftime")
     public static abstract class TimeStrftimePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child protected RubyTimeToDateTimeNode toDateTimeNode;
+
         public TimeStrftimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toDateTimeNode = new RubyTimeToDateTimeNode(context, sourceSection);
         }
 
         public TimeStrftimePrimitiveNode(TimeStrftimePrimitiveNode prev) {
             super(prev);
+            toDateTimeNode = prev.toDateTimeNode;
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyString timeStrftime(RubyTime time, RubyString format) {
-            // TODO: converts everything to JRuby objects and back - should find a more direct way
-            final DateTime dateTime = TimeOperations.secondsAndNanosecondsToDateTime(time.getSeconds(), time.getNanoseconds());
+        public RubyString timeStrftime(VirtualFrame frame, RubyTime time, RubyString format) {
+            return getContext().makeString(format(toDateTimeNode.toDateTime(frame, time), time.getNanoseconds(), format.getBytes()));
+        }
+
+
+        @CompilerDirectives.TruffleBoundary
+        public ByteList format(DateTime time, long nanoseconds, ByteList format) {
+            // TODO: converts everything to JRuby objects and back - should find a more direct way using ByteList
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
-            return getContext().makeString(rdf.compileAndFormat(getContext().toJRuby(format), false, dateTime, time.getNanoseconds(), null).getByteList());
+            return rdf.compileAndFormat(org.jruby.RubyString.newString(getContext().getRuntime(), format), false, time, nanoseconds, null).getByteList();
         }
 
     }

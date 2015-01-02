@@ -9,12 +9,10 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import org.joda.time.DateTime;
-
 public abstract class TimeOperations {
 
-    public static DateTime secondsAndNanosecondsToDateTime(long seconds, long nanoseconds) {
-        return new DateTime(secondsToMiliseconds(seconds) + nanosecondsToMilliseconds(nanoseconds));
+    public static long secondsAndNanosecondsToMiliseconds(long seconds, long nanoseconds) {
+        return secondsToMiliseconds(seconds) + nanosecondsToMilliseconds(nanoseconds);
     }
 
     public static long secondsToMiliseconds(long seconds) {

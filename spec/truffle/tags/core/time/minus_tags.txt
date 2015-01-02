@@ -1,8 +1,6 @@
 fails:Time#- understands negative subtractions
 fails:Time#- accepts arguments that can be coerced into Rational
-fails:Time#- raises a TypeError if given argument is a coercible String
 fails:Time#- raises TypeError on argument that can't be coerced
-fails:Time#- raises TypeError on nil argument
 fails:Time#- tracks microseconds
 fails:Time#- tracks nanoseconds
 fails:Time#- maintains microseconds precision

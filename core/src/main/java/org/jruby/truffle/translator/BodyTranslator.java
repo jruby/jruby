@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -351,8 +351,15 @@ public class BodyTranslator extends Translator {
     public RubyNode visitCallNode(CallNode node) {
         if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
                 && ((ConstNode) node.getReceiverNode()).getName() == "Rubinius"
-                && node.getName().equals("primitive"))
-            return translateRubiniusPrimitive(translate(node.getPosition()), node);
+                && (node.getName().equals("primitive") || node.getName().equals("invoke_primitive"))) {
+            if (node.getName().equals("primitive")) {
+                return translateRubiniusPrimitive(translate(node.getPosition()), node);
+            } else if (node.getName().equals("invoke_primitive")) {
+                return translateRubiniusInvokePrimitive(translate(node.getPosition()), node);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        }
 
         return visitCallNodeExtraArgument(node, null, false, false);
     }
@@ -377,6 +384,26 @@ public class BodyTranslator extends Translator {
 
         for (int n = 0; n < argumentsCount; n++) {
             arguments.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
+        }
+
+        return new CallRubiniusPrimitiveNode(context, sourceSection,
+                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
+                environment.getReturnID());
+    }
+
+    private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallNode node) {
+        if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
+            throw new UnsupportedOperationException("Rubinius.invoke_primitive must have at least an initial literal symbol argument");
+        }
+
+        final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
+
+        final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
+
+        final List<RubyNode> arguments = new ArrayList<>();
+
+        for (org.jruby.ast.Node arg : node.getArgsNode().childNodes().subList(1, node.getArgsNode().childNodes().size())) {
+            arguments.add(arg.accept(this));
         }
 
         return new CallRubiniusPrimitiveNode(context, sourceSection,

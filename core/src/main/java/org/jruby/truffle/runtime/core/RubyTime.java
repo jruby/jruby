@@ -17,29 +17,11 @@ public class RubyTime extends RubyBasicObject {
 
     private long seconds;
     private long nanoseconds;
-    private Object fromGMT;
-    private Object offset;
 
-    public RubyTime(RubyClass timeClass, long seconds, long nanoseconds, Object fromGMT, Object offset) {
+    public RubyTime(RubyClass timeClass, long seconds, long nanoseconds) {
         super(timeClass);
         this.seconds = seconds;
         this.nanoseconds = nanoseconds;
-        this.fromGMT = fromGMT;
-        this.offset = offset;
-    }
-
-    public RubyTime(RubyClass timeClass, long seconds, long nanoseconds) {
-        this(timeClass,
-                seconds,
-                nanoseconds,
-                timeClass.getContext().getCoreLibrary().getNilObject(),
-                timeClass.getContext().getCoreLibrary().getNilObject());
-    }
-
-    public RubyTime(RubyClass timeClass, long milliseconds) {
-        this(timeClass,
-                TimeOperations.millisecondsToSeconds(milliseconds),
-                TimeOperations.millisecondsToNanoseconds(TimeOperations.millisecondsInCurrentSecond(milliseconds)));
     }
 
     public static class TimeAllocator implements Allocator {
