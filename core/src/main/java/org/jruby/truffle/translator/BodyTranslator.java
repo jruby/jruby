@@ -448,7 +448,7 @@ public class BodyTranslator extends Translator {
          *
          * foo
          *
-         * While we translate foo we'll make all call sites as ignoring visbility.
+         * While we translate foo we'll mark all call sites as ignoring visbility.
          */
 
         if (!(node.getIterNode() instanceof org.jruby.ast.IterNode)) {
