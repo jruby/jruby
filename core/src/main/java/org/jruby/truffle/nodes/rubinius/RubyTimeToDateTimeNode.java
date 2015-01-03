@@ -41,7 +41,7 @@ class RubyTimeToDateTimeNode extends Node {
     public DateTime toDateTime(VirtualFrame frame, RubyTime time) {
         final Object isGMTObject = readIsGMTNode.execute(time);
 
-        // The @is_gmt instance varibale is only for internal use so we don't need a full cast here
+        // The @is_gmt instance variable is only for internal use so we don't need a full cast here
 
         final boolean isGMT;
 
