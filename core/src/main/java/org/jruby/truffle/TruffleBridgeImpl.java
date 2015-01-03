@@ -185,11 +185,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
     }
 
     @Override
-    public IRubyObject toJRuby(Object object) {
-        return truffleContext.toJRuby(object);
-    }
-
-    @Override
     public Object toTruffle(IRubyObject object) {
         return truffleContext.toTruffle(object);
     }
