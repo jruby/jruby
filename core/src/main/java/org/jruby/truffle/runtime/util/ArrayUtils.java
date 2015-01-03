@@ -10,12 +10,10 @@
 package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 
 import java.util.Arrays;
-import java.util.List;
 
 public abstract class ArrayUtils {
 

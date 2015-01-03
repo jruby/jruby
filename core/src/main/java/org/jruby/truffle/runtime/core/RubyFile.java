@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.io.*;
-
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.RubyContext;
+
+import java.io.*;
 
 /**
  * Represents the Ruby {@code File} class.

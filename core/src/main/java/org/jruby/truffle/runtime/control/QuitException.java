@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.control;
 
-import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.nodes.ControlFlowException;
 
 /**
  * Controls breaking out of all executions and ending Ruby execution.

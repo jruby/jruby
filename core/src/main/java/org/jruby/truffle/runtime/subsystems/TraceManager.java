@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.utilities.AssumedValue;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.runtime.core.RubyProc;
 

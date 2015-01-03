@@ -11,8 +11,6 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class Activation {
 

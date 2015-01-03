@@ -9,9 +9,7 @@
  */
 package org.jruby.truffle;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-
+import com.oracle.truffle.api.CallTarget;
 import org.jruby.RubyModule;
 import org.jruby.TruffleBridge;
 import org.jruby.internal.runtime.methods.DynamicMethod;

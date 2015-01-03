@@ -9,26 +9,32 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.RootCallTarget;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.ast.*;
-import org.jruby.truffle.nodes.*;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.ast.ArgsNode;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
-import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
+import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
-import org.jruby.truffle.nodes.methods.locals.*;
+import org.jruby.truffle.nodes.methods.locals.FlipFlopStateNode;
+import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 class MethodTranslator extends BodyTranslator {
 

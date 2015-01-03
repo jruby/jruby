@@ -9,17 +9,19 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.io.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.runtime.hash.KeyValue;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.hash.KeyValue;
-import org.jruby.truffle.runtime.hash.HashOperations;
 
 /**
  * Represents an expression that is evaluated by running it as a system command via forking and
