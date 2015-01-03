@@ -1164,8 +1164,8 @@ public final class StringSupport {
         return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
     }
 
-    public static int index(CodeRangeable rubyString, CodeRangeable sub, int offset, ByteList source, ByteList other, Encoding enc, int sourceLen, int otherLen) {
-        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
+    public static int index(CodeRangeable sourceString, ByteList source, int sourceLen, CodeRangeable subString, ByteList other, int otherLen, int offset, Encoding enc) {
+        if (subString.scanForCodeRange() == CR_BROKEN) return -1;
         if (offset < 0) {
             offset += sourceLen;
             if (offset < 0) return -1;
@@ -1176,7 +1176,7 @@ public final class StringSupport {
         int p = source.getBegin();
         int end = p + source.getRealSize();
         if (offset != 0) {
-            offset = isSingleByteOptimizable(rubyString, enc) ? offset : offset(enc, bytes, p, end, offset);
+            offset = isSingleByteOptimizable(sourceString, enc) ? offset : offset(enc, bytes, p, end, offset);
             p += offset;
         }
         if (otherLen == 0) return offset;
