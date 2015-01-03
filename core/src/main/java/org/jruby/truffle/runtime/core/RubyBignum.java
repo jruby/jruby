@@ -124,6 +124,11 @@ public class RubyBignum extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
+    public RubyBignum mod(RubyBignum other) {
+        return create(value.mod(other.bigIntegerValue()));
+    }
+
+    @CompilerDirectives.TruffleBoundary
     public int compareTo(int other) {
         return value.compareTo(BigInteger.valueOf(other));
     }

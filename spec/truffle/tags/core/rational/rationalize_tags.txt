@@ -1,2 +1,1 @@
 fails:Rational#rationalize simplifies self to the degree specified by a Rational argument
-fails:Rational#rationalize simplifies self to the degree specified by a Float argument

@@ -192,7 +192,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "/", required = 1)
+    @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends BignumCoreMethodNode {
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
@@ -243,6 +243,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mod(RubyBignum a, long b) {
+            return fixnumOrBignum(a.mod(b));
+        }
+
+        @Specialization
+        public Object mod(RubyBignum a, RubyBignum b) {
             return fixnumOrBignum(a.mod(b));
         }
 
@@ -585,6 +590,25 @@ public abstract class BignumNodes {
         @Specialization
         public RubyBignum abs(RubyBignum value) {
             return value.abs();
+        }
+
+    }
+
+    @CoreMethod(names = "even?")
+    public abstract static class EvenNode extends BignumCoreMethodNode {
+
+        public EvenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EvenNode(EvenNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean even(RubyBignum value) {
+            return value.bigIntegerValue().getLowestSetBit() != 0;
         }
 
     }

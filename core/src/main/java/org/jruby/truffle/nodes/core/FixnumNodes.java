@@ -317,7 +317,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "/", required = 1)
+    @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
@@ -1246,6 +1246,29 @@ public abstract class FixnumNodes {
         @Specialization
         public long abs(long n) {
             return Math.abs(n);
+        }
+
+    }
+
+    @CoreMethod(names = "floor")
+    public abstract static class FloorNode extends CoreMethodNode {
+
+        public FloorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FloorNode(FloorNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int floor(int n) {
+            return n;
+        }
+
+        @Specialization
+        public long floor(long n) {
+            return n;
         }
 
     }

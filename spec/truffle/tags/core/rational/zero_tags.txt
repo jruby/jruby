@@ -1,1 +1,0 @@
-fails:Rational#zero? returns false if the numerator isn't 0

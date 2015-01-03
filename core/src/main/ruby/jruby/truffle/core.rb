@@ -39,5 +39,6 @@ require_relative 'core/rubinius/kernel/common/time'
 require_relative 'core/rubinius/kernel/common/type'
 require_relative 'core/rubinius/kernel/common/integer'
 require_relative 'core/rubinius/kernel/common/float'
+require_relative 'core/rubinius/kernel/common/numeric'
 
 require_relative 'core/shims'
