@@ -41,9 +41,10 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public RubyTime timeSNow(RubyClass timeClass) {
+            final long milliseconds = System.currentTimeMillis();
             return new RubyTime(timeClass,
-                            TimeOperations.millisecondsToSeconds(System.currentTimeMillis()),
-                            TimeOperations.millisecondsToNanoseconds(TimeOperations.millisecondsInCurrentSecond(System.currentTimeMillis())));
+                            TimeOperations.millisecondsToSeconds(milliseconds),
+                            TimeOperations.millisecondsToNanoseconds(TimeOperations.millisecondsInCurrentSecond(milliseconds)));
         }
 
     }
