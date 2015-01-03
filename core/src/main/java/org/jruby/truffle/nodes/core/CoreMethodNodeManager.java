@@ -21,8 +21,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -67,7 +66,13 @@ public abstract class CoreMethodNodeManager {
             module = rubyObjectClass;
 
             for (String moduleName : methodDetails.getClassAnnotation().name().split("::")) {
-                module = (RubyModule) ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName).getValue();
+                final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
+
+                if (constant == null) {
+                    throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
+                }
+
+                module = (RubyModule) constant.getValue();
             }
         }
 
