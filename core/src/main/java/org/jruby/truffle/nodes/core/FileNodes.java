@@ -66,7 +66,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "delete", onSingleton = true, required = 1)
+    @CoreMethod(names = { "delete", "unlink" }, onSingleton = true, required = 1)
     public abstract static class DeleteNode extends CoreMethodNode {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
