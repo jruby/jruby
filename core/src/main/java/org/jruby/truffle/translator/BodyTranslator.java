@@ -371,11 +371,11 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         * Rubinius.primitive :foo
+         *   Rubinius.primitive :foo
          *
          * into
          *
-         * CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
          * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
          * arguments so we're not worrying too much about what happens when they're more complicated (rest,
@@ -412,11 +412,11 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         * Rubinius.invoke_primitive :foo, arg1, arg2, argN
+         *   Rubinius.invoke_primitive :foo, arg1, arg2, argN
          *
          * into
          *
-         * CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          */
 
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
@@ -442,11 +442,11 @@ public class BodyTranslator extends Translator {
         /*
          * Translates something that looks like
          *
-         * Rubinius.privately { foo }
+         *   Rubinius.privately { foo }
          *
-         * into
+         * into just
          *
-         * foo
+         *   foo
          *
          * While we translate foo we'll mark all call sites as ignoring visbility.
          */
@@ -459,13 +459,28 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException("Rubinius.privately should not have any arguments");
         }
 
+        /*
+         * Normally when you visit an 'iter' (block) node it will set the method name for you, so that we can name the
+         * block something like 'times-block'. Here we bypass the iter node and translate its child. So we set the
+         * name here.
+         */
+
         currentCallMethodName = "privately";
+
+        /*
+         * While we translate the body of the iter we want to create all call nodes with the ignore-visbility flag.
+         * This flag is checked in visitCallNodeExtraArgument.
+         */
+
+        final boolean previousPrivately = privately;
         privately = true;
 
         try {
             return (((org.jruby.ast.IterNode) node.getIterNode()).getBodyNode()).accept(this);
         } finally {
-            privately = false;
+            // Restore the previous value of the privately flag - allowing for nesting
+
+            privately = previousPrivately;
         }
     }
 
