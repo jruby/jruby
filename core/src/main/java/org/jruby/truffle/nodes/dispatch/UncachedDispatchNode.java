@@ -57,7 +57,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     @Specialization(guards = "actionIsReadConstant")
     public Object dispatchReadConstant(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             RubyModule receiverObject,
             Object constantName,
@@ -98,7 +97,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     @Specialization(guards = "actionIsCallOrRespondToMethod")
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,

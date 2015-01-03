@@ -46,7 +46,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            RubyNilClass methodReceiverObject,
             LexicalScope lexicalScope,
             RubyBasicObject receiverObject,
             Object methodName,
@@ -60,7 +59,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         if (receiverObject.getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -76,7 +74,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -98,7 +95,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     @Fallback
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -107,7 +103,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,
