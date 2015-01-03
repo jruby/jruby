@@ -291,4 +291,8 @@ public final class RubyArray extends RubyBasicObject {
 
     }
 
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        throw new UnsupportedOperationException();
+    }
 }

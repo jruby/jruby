@@ -148,7 +148,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
             modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, methodName);
 
-            System.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+            RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
             return callNode.call(
                     frame,

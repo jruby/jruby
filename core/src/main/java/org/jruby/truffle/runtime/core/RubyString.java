@@ -174,6 +174,11 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int getCodeRange() {
         // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
         return StringSupport.CR_VALID;

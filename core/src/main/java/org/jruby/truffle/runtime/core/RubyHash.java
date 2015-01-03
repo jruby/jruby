@@ -8,6 +8,7 @@
  * GNU Lesser General Public License version 2.1
  */
 package org.jruby.truffle.runtime.core;
+
 import java.util.*;
 
 import com.oracle.truffle.api.CallTarget;
@@ -85,6 +86,11 @@ public class RubyHash extends RubyBasicObject {
 
     public Entry getFirstInSequence() {
         return firstInSequence;
+    }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        throw new UnsupportedOperationException();
     }
 
     public void setFirstInSequence(Entry firstInSequence) {

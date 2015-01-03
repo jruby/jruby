@@ -68,7 +68,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
-        if (receiverObject instanceof RubyBasicObject) {
+        if (isRubyObject(receiverObject)) {
             return doRubyBasicObject(
                     frame,
                     first,
@@ -89,6 +89,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     argumentsObjects,
                     dispatchAction);
         }
+    }
+
+    private static boolean isForeignObject(Object object) {
+        return (object instanceof TruffleObject) && !(isRubyObject(object));
+    }
+
+    private static boolean isRubyObject(Object object) {
+        return object instanceof RubyBasicObject;
     }
 
     private Object doUnboxedObject(

@@ -144,6 +144,25 @@ public class RubyBasicObject implements TruffleObject {
         return objectID;
     }
 
+    @CompilerDirectives.TruffleBoundary
+    public void setInstanceVariables(Map<Object, Object> instanceVariables) {
+        RubyNode.notDesignedForCompilation();
+
+        assert instanceVariables != null;
+
+        getOperations().setInstanceVariables(this, instanceVariables);
+    }
+
+
+    public Map<Object, Object>  getInstanceVariables() {
+        RubyNode.notDesignedForCompilation();
+
+        return getOperations().getInstanceVariables(this);
+    }
+
+    public Object[] getFieldNames() {
+        return getOperations().getFieldNames(this);
+    }
 
     public void extend(RubyModule module, RubyNode currentNode) {
         RubyNode.notDesignedForCompilation();
@@ -175,6 +194,10 @@ public class RubyBasicObject implements TruffleObject {
 
     public boolean isFieldDefined(String name) {
         return getOperations().isFieldDefined(this, name);
+    }
+
+    public boolean isTrue() {
+        return true;
     }
 
     @Override
