@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 
@@ -21,6 +22,8 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
     public static abstract class StringCheckNullSafePrimitiveNode extends RubiniusPrimitiveNode {
+
+        private final ConditionProfile nullByteProfile = ConditionProfile.createBinaryProfile();
 
         public StringCheckNullSafePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -33,7 +36,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public boolean stringCheckNullSafe(RubyString string) {
             for (byte b : string.getBytes().unsafeBytes()) {
-                if (b == 0) {
+                if (nullByteProfile.profile(b == 0)) {
                     return false;
                 }
             }
