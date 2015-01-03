@@ -9,10 +9,8 @@
  */
 package org.jruby.truffle.nodes.methods.arguments;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;

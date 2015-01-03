@@ -10,9 +10,11 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -63,7 +65,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
-        if (receiverObject instanceof RubyBasicObject) {
+        if (isRubyObject(receiverObject)) {
             return doRubyBasicObject(
                     frame,
                     first,
@@ -86,6 +88,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
     }
 
+    private static boolean isRubyObject(Object object) {
+        return object instanceof RubyBasicObject;
+    }
+    
     private Object doUnboxedObject(
             VirtualFrame frame,
             DispatchNode first,

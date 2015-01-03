@@ -125,7 +125,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
             modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
-            System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+            RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
             if (isIndirect()) {
                 return indirectCallNode.call(

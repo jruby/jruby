@@ -1900,6 +1900,14 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
+        public RubyArray initialize(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            if (size > Integer.MAX_VALUE) {
+                throw new IllegalStateException();
+            }
+            return initialize(array, (int) size, getContext().getCoreLibrary().getNilObject(), block);
+        }
+
+        @Specialization
         public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);

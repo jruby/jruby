@@ -9,12 +9,32 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Layout;
+import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyTypes;
+import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
+import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.*;
+import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
+import org.jruby.truffle.runtime.RubyArguments;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.RubyNode;
@@ -123,6 +143,25 @@ public class RubyBasicObject {
         return objectID;
     }
 
+    @CompilerDirectives.TruffleBoundary
+    public void setInstanceVariables(Map<Object, Object> instanceVariables) {
+        RubyNode.notDesignedForCompilation();
+
+        assert instanceVariables != null;
+
+        getOperations().setInstanceVariables(this, instanceVariables);
+    }
+
+
+    public Map<Object, Object>  getInstanceVariables() {
+        RubyNode.notDesignedForCompilation();
+
+        return getOperations().getInstanceVariables(this);
+    }
+
+    public Object[] getFieldNames() {
+        return getOperations().getFieldNames(this);
+    }
 
     public void extend(RubyModule module, RubyNode currentNode) {
         RubyNode.notDesignedForCompilation();
@@ -154,6 +193,10 @@ public class RubyBasicObject {
 
     public boolean isFieldDefined(String name) {
         return getOperations().isFieldDefined(this, name);
+    }
+
+    public boolean isTrue() {
+        return true;
     }
 
     public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
