@@ -65,7 +65,6 @@ project 'JRuby Core' do
   jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'com.oracle:truffle:0.7-SNAPSHOT'
-  jar 'com.oracle:truffle-interop:0.7-SNAPSHOT'
   jar 'com.oracle:truffle-dsl-processor:0.7-SNAPSHOT', :scope => 'provided'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'

@@ -200,11 +200,6 @@
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
-      <artifactId>truffle-interop</artifactId>
-      <version>0.7-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>com.oracle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
       <version>0.7-SNAPSHOT</version>
       <scope>provided</scope>

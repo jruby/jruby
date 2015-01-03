@@ -9,20 +9,9 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.interop.ForeignAccessArguments;
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
-import com.oracle.truffle.api.interop.InteropPredicate;
-import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.source.NullSourceSection;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
@@ -289,10 +278,5 @@ public final class RubyArray extends RubyBasicObject {
             return new RubyArray(rubyClass);
         }
 
-    }
-
-    @Override
-    public ForeignAccessFactory getForeignAccessFactory() {
-        throw new UnsupportedOperationException();
     }
 }
