@@ -2112,8 +2112,19 @@ public class BodyTranslator extends Translator {
     public RubyNode visitRationalNode(RationalNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        // TODO: implement Rational
-        return new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator());
+        // Translate as Rubinius.privately { Rubinius.convert(a, b) }
+
+        // TODO(CS): use IntFixnumLiteralNode where possible
+
+        final LexicalScope lexicalScope = environment.getLexicalScope();
+        final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
+        return new RubyCallNode(
+                context, sourceSection, "convert",
+                new ReadConstantNode(context, sourceSection, "Rational", moduleNode, lexicalScope),
+                null, false, true, false,
+                new RubyNode[]{
+                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
+                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getDenominator())});
     }
 
     @Override
