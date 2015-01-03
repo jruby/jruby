@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.interop.*;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -31,7 +32,7 @@ import java.util.Map;
 /**
  * Represents the Ruby {@code BasicObject} class - the root of the Ruby class hierarchy.
  */
-public class RubyBasicObject {
+public class RubyBasicObject implements TruffleObject {
 
     public static final InternalName OBJECT_ID_IDENTIFIER = new InternalName("object_id");
     public static final InternalName TAINTED_IDENTIFIER = new InternalName("tainted?");
@@ -154,6 +155,11 @@ public class RubyBasicObject {
 
     public boolean isFieldDefined(String name) {
         return getOperations().isFieldDefined(this, name);
+    }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        throw new UnsupportedOperationException();
     }
 
     public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {

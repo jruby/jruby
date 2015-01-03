@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
@@ -177,6 +178,10 @@ public abstract class RubyNode extends Node {
 
     public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectUndefinedPlaceholder(execute(frame));
+    }
+
+    public TruffleObject executeTruffleObject(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectTruffleObject(execute(frame));
     }
 
     public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
