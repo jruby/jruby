@@ -20,6 +20,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Region;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.runtime.Visibility;
@@ -738,6 +739,29 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "include?", required = 1)
+    public abstract static class IncludeQueryNode extends CoreMethodNode {
+
+        public IncludeQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IncludeQueryNode(IncludeQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean includeQuery(RubyString string, RubyString otherString) {
+            notDesignedForCompilation();
+
+            int foundIndex = StringSupport.index(string, string.getBytes(), string.length(),
+                                                 otherString, otherString.getBytes(), otherString.length(),
+                                                 0, string.getBytes().getEncoding());
+
+            return foundIndex != -1;
+        }
+    }
+
     @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 
@@ -809,6 +833,69 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0)
+    public abstract static class InsertNode extends CoreMethodNode {
+
+        @Child protected ConcatNode concatNode;
+        @Child protected GetIndexNode getIndexNode;
+
+        public InsertNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            concatNode = StringNodesFactory.ConcatNodeFactory.create(context, sourceSection, new RubyNode[]{});
+            getIndexNode = StringNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        }
+
+        public InsertNode(InsertNode prev) {
+            super(prev);
+            concatNode = prev.concatNode;
+            getIndexNode = prev.getIndexNode;
+        }
+
+        @Specialization
+        public RubyString insert(RubyString string, int index, RubyString otherString) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            if (index == -1) {
+                concatNode.concat(string, otherString);
+
+                return string;
+
+            } else if (index < 0) {
+                // Incrementing first seems weird, but MRI does it and it's significant because it uses the modified
+                // index value in its error messages.  This seems wrong, but we should be compatible.
+                index++;
+
+                if (-index > string.length()) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
+                }
+
+                index = index + string.length();
+
+            } else if (index > string.length()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
+            }
+
+            RubyString firstPart = getIndexNode.getIndex(string, 0, index);
+            RubyString secondPart = getIndexNode.getIndex(string, index, string.length());
+
+            RubyString concatenated = concatNode.concat(concatNode.concat(firstPart, otherString), secondPart);
+
+            string.set(concatenated.getBytes());
+
+            return string;
+        }
+    }
+
     @CoreMethod(names = "ljust", required = 1, optional = 1, lowerFixnumParameters = 0)
     public abstract static class LjustNode extends CoreMethodNode {
 
@@ -876,6 +963,52 @@ public abstract class StringNodes {
         public int ord(RubyString string) {
             notDesignedForCompilation();
             return ((org.jruby.RubyFixnum) getContext().toJRuby(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
+        }
+    }
+
+    @CoreMethod(names = "rindex", required = 1, optional = 1, lowerFixnumParameters = 1)
+    public abstract static class RindexNode extends CoreMethodNode {
+
+        public RindexNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RindexNode(RindexNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object rindex(RubyString string, RubyString subString, @SuppressWarnings("unused") UndefinedPlaceholder endPosition) {
+            notDesignedForCompilation();
+
+            return rindex(string, subString, string.length());
+        }
+
+        @Specialization
+        public Object rindex(RubyString string, RubyString subString, int endPosition) {
+            notDesignedForCompilation();
+
+            int normalizedEndPosition = endPosition;
+
+            if (endPosition < 0) {
+                normalizedEndPosition = endPosition + string.length();
+
+                if (normalizedEndPosition < 0) {
+                    return getContext().getCoreLibrary().getNilObject();
+                }
+            } else if (endPosition > string.length()) {
+                normalizedEndPosition = string.length();
+            }
+
+            int result = StringSupport.rindex(string.getBytes(), string.length(), subString.getBytes(), subString.length(),
+                    normalizedEndPosition, subString, string.getBytes().getEncoding()
+            );
+
+            if (result >= 0) {
+                return result;
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
         }
     }
 
@@ -1032,7 +1165,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(RubyString string) {
-            return string.getBytes().getRealSize();
+            return string.length();
         }
     }
 
@@ -1113,6 +1246,58 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             return regexp.sub(string.toString(), replacement.toString());
+        }
+    }
+
+    @CoreMethod(names = "succ")
+    public abstract static class SuccNode extends CoreMethodNode {
+
+        public SuccNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SuccNode(SuccNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString succ(RubyString string) {
+            notDesignedForCompilation();
+
+            if (string.length() > 0) {
+                return getContext().makeString(StringSupport.succCommon(string.getBytes()));
+            } else {
+                return getContext().makeString("");
+            }
+        }
+    }
+
+    @CoreMethod(names = "succ!")
+    public abstract static class SuccBangNode extends CoreMethodNode {
+
+        public SuccBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SuccBangNode(SuccBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString succBang(RubyString string) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            if (string.length() > 0) {
+                string.set(StringSupport.succCommon(string.getBytes()));
+            }
+
+            return string;
         }
     }
 
