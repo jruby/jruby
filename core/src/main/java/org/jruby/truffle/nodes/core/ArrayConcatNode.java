@@ -36,7 +36,6 @@ public final class ArrayConcatNode extends RubyNode {
         arrayBuilderNode = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
     }
 
-
     @Override
     public RubyArray execute(VirtualFrame frame) {
         Object store = arrayBuilderNode.start();

@@ -11,8 +11,8 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
