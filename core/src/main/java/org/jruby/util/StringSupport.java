@@ -1159,4 +1159,37 @@ public final class StringSupport {
             }
         }
     }
+
+    public static boolean isSingleByteOptimizable(CodeRangeable string, Encoding encoding) {
+        return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
+    }
+
+    public static int index(CodeRangeable rubyString, CodeRangeable sub, int offset, ByteList source, ByteList other, Encoding enc, int sourceLen, int otherLen) {
+        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
+        if (offset < 0) {
+            offset += sourceLen;
+            if (offset < 0) return -1;
+        }
+
+        if (sourceLen - offset < otherLen) return -1;
+        byte[]bytes = source.getUnsafeBytes();
+        int p = source.getBegin();
+        int end = p + source.getRealSize();
+        if (offset != 0) {
+            offset = isSingleByteOptimizable(rubyString, enc) ? offset : offset(enc, bytes, p, end, offset);
+            p += offset;
+        }
+        if (otherLen == 0) return offset;
+
+        while (true) {
+            int pos = source.indexOf(other, p - source.getBegin());
+            if (pos < 0) return pos;
+            pos -= (p - source.getBegin());
+            int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
+            if (t == p + pos) return pos + offset;
+            if ((sourceLen -= t - p) <= 0) return -1;
+            offset += t - p;
+            p = t;
+        }
+    }
 }
