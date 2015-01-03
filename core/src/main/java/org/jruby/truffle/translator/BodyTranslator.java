@@ -74,6 +74,8 @@ public class BodyTranslator extends Translator {
     private boolean translatingNextExpression = false;
     private String currentCallMethodName = null;
 
+    private boolean privately = false;
+
     private static final Set<String> debugIgnoredCalls = new HashSet<>();
 
     static {
@@ -349,15 +351,16 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitCallNode(CallNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
         if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
-                && ((ConstNode) node.getReceiverNode()).getName() == "Rubinius"
-                && (node.getName().equals("primitive") || node.getName().equals("invoke_primitive"))) {
+                && ((ConstNode) node.getReceiverNode()).getName() == "Rubinius") {
             if (node.getName().equals("primitive")) {
-                return translateRubiniusPrimitive(translate(node.getPosition()), node);
+                return translateRubiniusPrimitive(sourceSection, node);
             } else if (node.getName().equals("invoke_primitive")) {
-                return translateRubiniusInvokePrimitive(translate(node.getPosition()), node);
-            } else {
-                throw new UnsupportedOperationException();
+                return translateRubiniusInvokePrimitive(sourceSection, node);
+            } else if (node.getName().equals("privately")) {
+                return translateRubiniusPrivately(sourceSection, node);
             }
         }
 
@@ -411,6 +414,25 @@ public class BodyTranslator extends Translator {
                 environment.getReturnID());
     }
 
+    private RubyNode translateRubiniusPrivately(SourceSection sourceSection, CallNode node) {
+        if (!(node.getIterNode() instanceof org.jruby.ast.IterNode)) {
+            throw new UnsupportedOperationException("Rubinius.privately needs a literal block");
+        }
+
+        if (node.getArgsNode() != null && node.getArgsNode().childNodes().size() > 0) {
+            throw new UnsupportedOperationException("Rubinius.privately should not have any arguments");
+        }
+
+        currentCallMethodName = "privately";
+        privately = true;
+
+        try {
+            return (((org.jruby.ast.IterNode) node.getIterNode()).getBodyNode()).accept(this);
+        } finally {
+            privately = false;
+        }
+    }
+
     /**
      * See translateDummyAssignment to understand what this is for.
      */
@@ -430,15 +452,7 @@ public class BodyTranslator extends Translator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());
 
-        RubyNode translated;
-        if (node.getName().equals("primitive") && receiverTranslated instanceof ReadConstantNode && ((ReadConstantNode) receiverTranslated).getName().equals("Rubinius")) {
-            RubyNode callNode = new RubyCallNode(context, sourceSection, "send", receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), false, true, argumentsAndBlock.getArguments());
-            translated = new TryNode(context, sourceSection, new ExceptionTranslatingNode(context, sourceSection, new ReturnNode(context, sourceSection, environment.getReturnID(), callNode)),
-                    new RescueNode[] {new RescueAnyNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()))},
-                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
-        } else {
-            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), isVCall, ignoreVisibility, false, argumentsAndBlock.getArguments());
-        }
+        RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), isVCall, privately || ignoreVisibility, false, argumentsAndBlock.getArguments());
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
         return translated;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -538,6 +538,27 @@ public abstract class FixnumNodes {
             if (mod < 0 && b > 0 || mod > 0 && b < 0) {
                 adjustProfile.enter();
                 mod += b;
+            }
+
+            return mod;
+        }
+
+        @Specialization
+        public Object mod(int a, RubyBignum b) {
+            return mod((long) a, b);
+        }
+
+        @Specialization
+        public Object mod(long a, RubyBignum b) {
+            notDesignedForCompilation();
+
+            // TODO(CS): why are we getting this case?
+
+            long mod = BigInteger.valueOf(a).mod(b.bigIntegerValue()).longValue();
+
+            if (mod < 0 && b.bigIntegerValue().compareTo(BigInteger.ZERO) > 0 || mod > 0 && b.bigIntegerValue().compareTo(BigInteger.ZERO) < 0) {
+                adjustProfile.enter();
+                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(mod).add(b.bigIntegerValue()));
             }
 
             return mod;

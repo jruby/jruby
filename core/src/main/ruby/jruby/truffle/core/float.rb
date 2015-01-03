@@ -8,8 +8,18 @@
 
 class Float
 
-  NAN = 0.0 / 0.0
-  INFINITY = 1.0 / 0.0
-  EPSILON = 2.2204460492503131e-16
+  NAN        = 0.0 / 0.0
+  INFINITY   = 1.0 / 0.0
+  EPSILON    = 2.2204460492503131e-16
+  RADIX      = 2
+  ROUNDS     = 1
+  MIN        = 2.2250738585072014e-308
+  MAX        = 1.7976931348623157e+308
+  MIN_EXP    = -1021
+  MAX_EXP    = 1024
+  MIN_10_EXP = -307
+  MAX_10_EXP = 308
+  DIG        = 15
+  MANT_DIG   = 53
 
 end

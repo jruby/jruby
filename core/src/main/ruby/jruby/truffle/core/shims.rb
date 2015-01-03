@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 # 
@@ -9,11 +9,18 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-module Kernel
+class Numeric
 
-  def Rational(numerator, denominator)
-    numerator
+  def eql?(other)
+    self == other
   end
+
+end
+
+class Complex
+end
+
+module Kernel
 
   def Complex(real, imaginary)
     imaginary

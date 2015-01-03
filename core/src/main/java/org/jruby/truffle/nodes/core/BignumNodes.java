@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -244,38 +244,6 @@ public abstract class BignumNodes {
         @Specialization
         public Object mod(RubyBignum a, long b) {
             return fixnumOrBignum(a.mod(b));
-        }
-
-    }
-
-    @CoreMethod(names = "divmod", required = 1)
-    public abstract static class DivModNode extends CoreMethodNode {
-
-        @Child protected GeneralDivModNode divModNode;
-
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context, sourceSection);
-        }
-
-        public DivModNode(DivModNode prev) {
-            super(prev);
-            divModNode = prev.divModNode;
-        }
-
-        @Specialization
-        public RubyArray divMod(RubyBignum a, int b) {
-            return divModNode.execute(a, b);
-        }
-
-        @Specialization
-        public RubyArray divMod(RubyBignum a, long b) {
-            return divModNode.execute(a, b);
-        }
-
-        @Specialization
-        public RubyArray divMod(RubyBignum a, RubyBignum b) {
-            return divModNode.execute(a, b);
         }
 
     }
@@ -599,6 +567,56 @@ public abstract class BignumNodes {
                 bLessThanZero.enter();
                 return fixnumOrBignum(a.shiftLeft(-b));
             }
+        }
+
+    }
+
+    @CoreMethod(names = "abs")
+    public abstract static class AbsNode extends BignumCoreMethodNode {
+
+        public AbsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AbsNode(AbsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyBignum abs(RubyBignum value) {
+            return value.abs();
+        }
+
+    }
+
+    @CoreMethod(names = "divmod", required = 1)
+    public abstract static class DivModNode extends CoreMethodNode {
+
+        @Child protected GeneralDivModNode divModNode;
+
+        public DivModNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            divModNode = new GeneralDivModNode(context, sourceSection);
+        }
+
+        public DivModNode(DivModNode prev) {
+            super(prev);
+            divModNode = prev.divModNode;
+        }
+
+        @Specialization
+        public RubyArray divMod(RubyBignum a, int b) {
+            return divModNode.execute(a, b);
+        }
+
+        @Specialization
+        public RubyArray divMod(RubyBignum a, long b) {
+            return divModNode.execute(a, b);
+        }
+
+        @Specialization
+        public RubyArray divMod(RubyBignum a, RubyBignum b) {
+            return divModNode.execute(a, b);
         }
 
     }

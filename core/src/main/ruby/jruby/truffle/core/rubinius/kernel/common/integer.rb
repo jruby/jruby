@@ -26,30 +26,22 @@
 
 # Only part of Rubinius' kernel.rb
 
-module Kernel
-  
-  def Rational(a, b = 1)
-    Rubinius.privately do
-      Rational.convert a, b
+class Integer < Numeric
+
+  def gcd(other)
+    raise TypeError, "Expected Integer but got #{other.class}" unless other.kind_of?(Integer)
+    min = self.abs
+    max = other.abs
+    while min > 0
+      tmp = min
+      min = max % min
+      max = tmp
     end
+    max
   end
-  module_function :Rational
 
-  ##
-  # MRI uses a macro named StringValue which has essentially the same
-  # semantics as obj.coerce_to(String, :to_str), but rather than using that
-  # long construction everywhere, we define a private method similar to
-  # String().
-  #
-  # Another possibility would be to change String() as follows:
-  #
-  #   String(obj, sym=:to_s)
-  #
-  # and use String(obj, :to_str) instead of StringValue(obj)
-
-  def StringValue(obj)
-    Rubinius::Type.coerce_to obj, String, :to_str
+  def to_r
+    Rational(self, 1)
   end
-  module_function :StringValue
 
 end

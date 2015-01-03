@@ -26,30 +26,14 @@
 
 # Only part of Rubinius' kernel.rb
 
-module Kernel
-  
-  def Rational(a, b = 1)
-    Rubinius.privately do
-      Rational.convert a, b
-    end
-  end
-  module_function :Rational
+class Float < Numeric
 
-  ##
-  # MRI uses a macro named StringValue which has essentially the same
-  # semantics as obj.coerce_to(String, :to_str), but rather than using that
-  # long construction everywhere, we define a private method similar to
-  # String().
-  #
-  # Another possibility would be to change String() as follows:
-  #
-  #   String(obj, sym=:to_s)
-  #
-  # and use String(obj, :to_str) instead of StringValue(obj)
+  def to_r
+    f, e = Math.frexp self
+    f = Math.ldexp(f, MANT_DIG).to_i
+    e -= MANT_DIG
 
-  def StringValue(obj)
-    Rubinius::Type.coerce_to obj, String, :to_str
+    (f * (RADIX ** e)).to_r
   end
-  module_function :StringValue
 
 end

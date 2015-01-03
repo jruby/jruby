@@ -11,3 +11,4 @@ fails:Time#+ tracks nanoseconds
 fails:Time#+ maintains microseconds precision
 fails:Time#+ maintains nanoseconds precision
 fails:Time#+ maintains subseconds precision
+fails:Time#+ maintains precision
