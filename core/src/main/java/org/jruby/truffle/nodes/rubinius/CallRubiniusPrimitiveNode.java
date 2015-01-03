@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.ReturnException;
@@ -25,7 +25,7 @@ public class CallRubiniusPrimitiveNode extends RubyNode {
     @Child protected RubyNode primitive;
     private final long returnID;
 
-    private final BranchProfile branchProfile = BranchProfile.create();
+    private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
 
     public CallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, long returnID) {
         super(context, sourceSection);
@@ -37,17 +37,13 @@ public class CallRubiniusPrimitiveNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         final Object value = primitive.execute(frame);
 
-        // Primitives may return null to indicate that they have failed
-
-        if (value != null) {
-            // If they didn't fail it's a return in the calling method
+        if (primitiveSucceededCondition.profile(value != null)) {
+            // If the primitive didn't fail its value is returned in the calling method
 
             throw new ReturnException(returnID, value);
         }
 
-        // The code after a primitive call is a fallback, so it makes sense to cut it off
-
-        branchProfile.enter();
+        // Primitives may return null to indicate that they have failed, in which case we continue with the fallback
     }
 
     @Override
