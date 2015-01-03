@@ -6,4 +6,3 @@ fails:File.symlink raises an ArgumentError if not called with two arguments
 fails:File.symlink raises a TypeError if not called with String types
 fails:File.symlink? returns true if the file is a link
 fails:File.symlink? accepts an object that has a #to_path method
-fails:File.symlink? returns false if the file does not exist
