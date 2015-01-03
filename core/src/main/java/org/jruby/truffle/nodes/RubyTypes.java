@@ -28,8 +28,12 @@ import org.jruby.truffle.runtime.LexicalScope;
                 LexicalScope.class, //
                 UndefinedPlaceholder.class, //
                 boolean.class, //
+                byte.class, //
                 int.class, //
+                char.class, //
+                short.class, //
                 long.class, //
+                float.class, //
                 double.class, //
                 String.class, // for SymbolCastNode
                 RubyBignum.class, //
