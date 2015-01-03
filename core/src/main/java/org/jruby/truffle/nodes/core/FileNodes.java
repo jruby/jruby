@@ -88,7 +88,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "directory?", onSingleton = true, optional = 1)
+    @CoreMethod(names = "directory?", onSingleton = true, required = 1)
     public abstract static class DirectoryNode extends CoreMethodNode {
 
         public DirectoryNode(RubyContext context, SourceSection sourceSection) {
