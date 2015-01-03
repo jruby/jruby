@@ -9,12 +9,13 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.io.*;
-import java.util.*;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.List;
 
 public class StringFormatter {
 

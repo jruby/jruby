@@ -9,13 +9,13 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyModule;
 
 public class ReadClassVariableNode extends RubyNode {
 

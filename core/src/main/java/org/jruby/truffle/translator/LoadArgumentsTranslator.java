@@ -9,10 +9,9 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.frame.FrameSlot;
-import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.types.INameNode;
@@ -31,7 +30,6 @@ import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.omg.Dynamic.Parameter;
 
 import java.util.*;
 

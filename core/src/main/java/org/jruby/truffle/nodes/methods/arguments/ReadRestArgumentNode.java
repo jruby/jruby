@@ -9,15 +9,17 @@
  */
 package org.jruby.truffle.nodes.methods.arguments;
 
-import java.util.*;
-
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyHash;
+
+import java.util.Arrays;
 
 /**
  * Read the rest of arguments after a certain point into an array.

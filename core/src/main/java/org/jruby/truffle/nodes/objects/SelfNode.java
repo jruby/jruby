@@ -9,11 +9,12 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ValueProfile;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
 
 public class SelfNode extends RubyNode {
 

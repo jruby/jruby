@@ -9,13 +9,19 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.Collection;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.ObjectIDOperations;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyProc;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import java.util.Collection;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {

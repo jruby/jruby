@@ -10,11 +10,13 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 public class DispatchHeadNode extends Node {
 

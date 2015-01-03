@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -16,10 +19,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
-
-import com.oracle.truffle.api.dsl.CreateCast;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "NilClass")
 public abstract class NilClassNodes {

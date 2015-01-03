@@ -9,13 +9,12 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
-import org.jruby.truffle.runtime.control.NextException;
 
 /**
  * Catch a {@code break} jump in a block at the top level and handle it as a return.

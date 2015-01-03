@@ -9,11 +9,6 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.concurrent.*;
-
-import org.jcodings.util.Hash;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -21,7 +16,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
-import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.runtime.subsystems.ThreadManager;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Represents the Ruby {@code Thread} class. Implemented using Java threads, but note that there is

@@ -9,10 +9,6 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import java.lang.ref.*;
-import java.util.*;
-import java.util.concurrent.*;
-
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -20,9 +16,16 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
+
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Supports the Ruby {@code ObjectSpace} module. Object IDs are lazily allocated {@code long}

@@ -9,32 +9,12 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.dsl.TypeSystemReference;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Layout;
-import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyTypes;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
-import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
-import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
-import org.jruby.truffle.runtime.RubyArguments;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.RubyNode;

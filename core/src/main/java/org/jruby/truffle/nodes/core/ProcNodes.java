@@ -10,18 +10,20 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.visitor.AbstractNodeVisitor;
-import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {

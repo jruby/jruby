@@ -9,23 +9,31 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
-import org.jruby.truffle.nodes.literal.*;
-import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
-
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.methods.CatchNextNode;
+import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
+import org.jruby.truffle.nodes.methods.CatchReturnAsErrorNode;
+import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyFile;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

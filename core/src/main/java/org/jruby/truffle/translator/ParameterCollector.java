@@ -12,7 +12,6 @@ package org.jruby.truffle.translator;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
-import org.jruby.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;

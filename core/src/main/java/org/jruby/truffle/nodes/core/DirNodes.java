@@ -9,17 +9,19 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.io.*;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
-
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 
 @CoreClass(name = "Dir")
 public abstract class DirNodes {

@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyFiber;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {

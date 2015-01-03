@@ -9,14 +9,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
-
-import com.oracle.truffle.api.dsl.CreateCast;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "FalseClass")
 public abstract class FalseClassNodes {

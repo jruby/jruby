@@ -9,15 +9,15 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.RootNode;
-import org.jruby.ast.CallNode;
-import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.Memo;
