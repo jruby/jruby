@@ -58,7 +58,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
     }
 
     protected final boolean guardName(
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,

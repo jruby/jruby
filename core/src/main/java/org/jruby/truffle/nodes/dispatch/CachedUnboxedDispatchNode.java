@@ -69,7 +69,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     @Specialization(guards = {"isPrimitive", "guardName"})
     public Object dispatch(
             VirtualFrame frame,
-            RubyNilClass methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -83,7 +82,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         if (receiverObject.getClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -99,7 +97,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -138,9 +135,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     }
 
     @Fallback
-    public Object dispatch(
+    public Object dispatchFallback(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -149,7 +145,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,
@@ -159,7 +154,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     }
 
     protected static final boolean isPrimitive(
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,

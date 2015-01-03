@@ -621,7 +621,6 @@ public abstract class ModuleNodes {
 
             return dispatch.dispatch(
                     frame,
-                    getContext().getCoreLibrary().getNilObject(),
                     null,
                     module,
                     name,
@@ -636,7 +635,6 @@ public abstract class ModuleNodes {
 
             return dispatch.dispatch(
                     frame,
-                    getContext().getCoreLibrary().getNilObject(),
                     null,
                     module,
                     name,

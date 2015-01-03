@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.LexicalScope;
 
 @NodeChildren({
-        @NodeChild(value="methodReceiverObject", type=Node.class),
         @NodeChild(value="lexicalScope", type=Node.class),
         @NodeChild(value="receiver", type=Node.class),
         @NodeChild(value="methodName", type=Node.class),
@@ -45,7 +44,6 @@ public abstract class DispatchNode extends RubyNode {
 
     public abstract Object executeDispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -112,7 +110,6 @@ public abstract class DispatchNode extends RubyNode {
 
     protected Object resetAndDispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -124,7 +121,6 @@ public abstract class DispatchNode extends RubyNode {
         head.reset(reason);
         return head.dispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,
@@ -143,7 +139,6 @@ public abstract class DispatchNode extends RubyNode {
 
     protected boolean actionIsReadConstant(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -155,7 +150,6 @@ public abstract class DispatchNode extends RubyNode {
 
     protected boolean actionIsCallOrRespondToMethod(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,

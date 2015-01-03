@@ -45,7 +45,6 @@ public class ReadConstantNode extends RubyNode {
 
         return dispatch.dispatch(
                 frame,
-                getContext().getCoreLibrary().getNilObject(),
                 lexicalScope,
                 receiverObject,
                 name,

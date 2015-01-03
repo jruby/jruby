@@ -103,7 +103,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            RubyNilClass methodReceiverObject,
             LexicalScope lexicalScope,
             boolean receiverObject,
             Object methodName,
@@ -120,7 +119,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             } catch (InvalidAssumptionException e) {
                 return resetAndDispatch(
                         frame,
-                        methodReceiverObject,
                         lexicalScope,
                         receiverObject,
                         methodName,
@@ -166,7 +164,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             } catch (InvalidAssumptionException e) {
                 return resetAndDispatch(
                         frame,
-                        methodReceiverObject,
                         lexicalScope,
                         receiverObject,
                         methodName,
@@ -210,7 +207,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     @Fallback
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -219,7 +215,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,
