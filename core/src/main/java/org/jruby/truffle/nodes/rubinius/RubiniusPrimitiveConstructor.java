@@ -12,6 +12,9 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import org.jruby.truffle.nodes.RubyNode;
 
+/**
+ * Packages up the original {@link RubiniusPrimitive annotation} with the {@link NodeFactory}.
+ */
 public class RubiniusPrimitiveConstructor {
 
     private final RubiniusPrimitive annotation;

@@ -23,6 +23,10 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyTime;
 import org.jruby.truffle.runtime.core.TimeOperations;
 
+/**
+ * Supports {@link TimePrimitiveNodes} by converting a {@link RubyTime} to a {@link DateTime}. We use a node because
+ * doing this requires accessing instance variables, which we want to use an inline cache for.
+ */
 class RubyTimeToDateTimeNode extends Node {
 
     private final RubyContext context;
@@ -36,6 +40,8 @@ class RubyTimeToDateTimeNode extends Node {
 
     public DateTime toDateTime(VirtualFrame frame, RubyTime time) {
         final Object isGMTObject = readIsGMTNode.execute(time);
+
+        // The @is_gmt instance varibale is only for internal use so we don't need a full cast here
 
         final boolean isGMT;
 

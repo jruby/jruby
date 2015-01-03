@@ -368,6 +368,20 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallNode node) {
+        /*
+         * Translates something that looks like
+         *
+         * Rubinius.primitive :foo
+         *
+         * into
+         *
+         * CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *
+         * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
+         * arguments so we're not worrying too much about what happens when they're more complicated (rest,
+         * keywords etc).
+         */
+
         if (node.getArgsNode().childNodes().size() != 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
             throw new UnsupportedOperationException("Rubinius.primitive must have a single literal symbol argument");
         }
@@ -395,6 +409,16 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallNode node) {
+        /*
+         * Translates something that looks like
+         *
+         * Rubinius.invoke_primitive :foo, arg1, arg2, argN
+         *
+         * into
+         *
+         * CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         */
+
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
             throw new UnsupportedOperationException("Rubinius.invoke_primitive must have at least an initial literal symbol argument");
         }
@@ -415,6 +439,18 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRubiniusPrivately(SourceSection sourceSection, CallNode node) {
+        /*
+         * Translates something that looks like
+         *
+         * Rubinius.privately { foo }
+         *
+         * into
+         *
+         * foo
+         *
+         * While we translate foo we'll make all call sites as ignoring visbility.
+         */
+
         if (!(node.getIterNode() instanceof org.jruby.ast.IterNode)) {
             throw new UnsupportedOperationException("Rubinius.privately needs a literal block");
         }

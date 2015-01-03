@@ -14,6 +14,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 
+/**
+ * Rubinius primitives associated with the Ruby {@code String} class.
+ */
 public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)

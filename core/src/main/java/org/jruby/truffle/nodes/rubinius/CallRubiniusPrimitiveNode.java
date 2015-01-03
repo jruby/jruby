@@ -16,6 +16,10 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.ReturnException;
 
+/**
+ * Node which wraps a {@link RubiniusPrimitiveNode}, providing the implicit control flow that you get with calls to
+ * Rubinius primitives.
+ */
 public class CallRubiniusPrimitiveNode extends RubyNode {
 
     @Child protected RubyNode primitive;
@@ -33,9 +37,15 @@ public class CallRubiniusPrimitiveNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         final Object value = primitive.execute(frame);
 
+        // Primitives may return null to indicate that they have failed
+
         if (value != null) {
+            // If they didn't fail it's a return in the calling method
+
             throw new ReturnException(returnID, value);
         }
+
+        // The code after a primitive call is a fallback, so it makes sense to cut it off
 
         branchProfile.enter();
     }

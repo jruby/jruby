@@ -21,6 +21,11 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 
+/**
+ * Rubinius primitives associated with the Ruby {@code Time} class.
+ * <p>
+ * Also see {@link RubyTime}.
+ */
 public abstract class TimePrimitiveNodes {
 
     @RubiniusPrimitive(name = "time_s_now")

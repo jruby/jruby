@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Manages the available Rubinius primitive calls.
+ */
 public class RubiniusPrimitiveManager {
 
     private final Map<String, RubiniusPrimitiveConstructor> primitives;

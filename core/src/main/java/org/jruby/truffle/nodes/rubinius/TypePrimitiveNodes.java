@@ -18,6 +18,9 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 
+/**
+ * Rubinius primitives associated with types and objects.
+ */
 public abstract class TypePrimitiveNodes {
 
     @RubiniusPrimitive(name = "vm_object_kind_of", needsSelf = false)
