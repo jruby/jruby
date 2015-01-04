@@ -64,6 +64,7 @@ public class OutputStrings {
                 .append("  --client          use the non-optimizing \"client\" JVM\n")
                 .append("                      (improves startup; default)\n")
                 .append("  --server          use the optimizing \"server\" JVM (improves perf)\n")
+                .append("  --dev             prioritize startup time over long term performance\n")
                 .append("  --manage          enable remote JMX management and monitoring of the VM\n")
                 .append("                      and JRuby\n")
                 .append("  --headless        do not launch a GUI window, no matter what\n")
