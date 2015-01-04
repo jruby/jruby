@@ -9,13 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.globals.GetFromThreadLocalNode;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubySymbol;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {

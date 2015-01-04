@@ -9,13 +9,11 @@
  */
 package org.jruby.truffle.nodes.control;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Represents a Ruby {@code not} or {@code !} expression.

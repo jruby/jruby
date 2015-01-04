@@ -10,11 +10,7 @@
 package org.jruby;
 
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.Node;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.TruffleMethod;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 public interface TruffleBridge {
@@ -28,8 +24,6 @@ public interface TruffleBridge {
     void init();
 
     Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode);
-
-    IRubyObject toJRuby(Object object);
 
     Object toTruffle(IRubyObject object);
 

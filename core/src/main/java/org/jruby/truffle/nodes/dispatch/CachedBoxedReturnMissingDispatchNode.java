@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -46,7 +45,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            RubyNilClass methodReceiverObject,
             LexicalScope lexicalScope,
             RubyBasicObject receiverObject,
             Object methodName,
@@ -60,7 +58,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         if (receiverObject.getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -76,7 +73,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -98,7 +94,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     @Fallback
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -107,7 +102,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,

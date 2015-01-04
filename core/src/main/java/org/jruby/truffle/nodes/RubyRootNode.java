@@ -9,14 +9,15 @@
  */
 package org.jruby.truffle.nodes;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.DebugOperations;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.ExecutionContext;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.util.cli.Options;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,

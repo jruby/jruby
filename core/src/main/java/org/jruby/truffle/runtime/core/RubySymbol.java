@@ -9,16 +9,18 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.concurrent.ConcurrentHashMap;
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents the Ruby {@code Symbol} class.

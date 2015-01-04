@@ -9,8 +9,7 @@
  */
 package org.jruby.truffle.runtime.control;
 
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.nodes.ControlFlowException;
 
 public final class ThreadExitException extends ControlFlowException {
 

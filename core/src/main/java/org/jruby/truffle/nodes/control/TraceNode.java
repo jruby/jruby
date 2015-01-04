@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,19 +13,21 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.KillException;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.core.*;
 
-public class TraceNode extends WrapperNode {
+public class TraceNode extends RubyNode {
 
     private final RubyContext context;
+    @Child protected RubyNode child;
 
     @CompilerDirectives.CompilationFinal private Assumption traceAssumption;
     @CompilerDirectives.CompilationFinal private RubyProc traceFunc;
@@ -36,7 +38,8 @@ public class TraceNode extends WrapperNode {
     private final int line;
 
     public TraceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
-        super(context, sourceSection, child);
+        super(context, sourceSection);
+        this.child = child;
         this.context = context;
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
@@ -47,7 +50,19 @@ public class TraceNode extends WrapperNode {
     }
 
     @Override
-    public void enter(VirtualFrame frame) {
+    public Object execute(VirtualFrame frame) {
+        trace(frame);
+        return child.execute(frame);
+    }
+
+
+    @Override
+    public void executeVoid(VirtualFrame frame) {
+        trace(frame);
+        child.executeVoid(frame);
+    }
+
+    public void trace(VirtualFrame frame) {
         try {
             traceAssumption.check();
         } catch (InvalidAssumptionException e) {
@@ -84,30 +99,7 @@ public class TraceNode extends WrapperNode {
     }
 
     @Override
-    void leave(VirtualFrame frame) {
-    }
-
-    @Override
-    void leave(VirtualFrame frame, boolean result) {
-    }
-
-    @Override
-    void leave(VirtualFrame frame, int result) {
-    }
-
-    @Override
-    void leave(VirtualFrame frame, long result) {
-    }
-
-    @Override
-    void leave(VirtualFrame frame, double result) {
-    }
-
-    @Override
-    void leave(VirtualFrame frame, Object result) {
-    }
-
-    @Override
-    void leaveExceptional(VirtualFrame frame, Exception e) {
+    public Object isDefined(VirtualFrame frame) {
+        return child.isDefined(frame);
     }
 }

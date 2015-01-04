@@ -9,10 +9,11 @@
  */
 package org.jruby.truffle.nodes.methods.arguments;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Read a post-optional argument.

@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
-
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -21,17 +20,14 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.util.ArrayUtils;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +63,13 @@ public abstract class CoreMethodNodeManager {
             module = rubyObjectClass;
 
             for (String moduleName : methodDetails.getClassAnnotation().name().split("::")) {
-                module = (RubyModule) ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName).getValue();
+                final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
+
+                if (constant == null) {
+                    throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
+                }
+
+                module = (RubyModule) constant.getValue();
             }
         }
 

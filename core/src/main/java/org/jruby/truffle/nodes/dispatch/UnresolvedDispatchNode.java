@@ -12,17 +12,17 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.util.cli.Options;
-
-import java.io.PrintStream;
 
 public final class UnresolvedDispatchNode extends DispatchNode {
 
@@ -43,7 +43,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     @Override
     public Object executeDispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -55,8 +54,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
             return getHeadNode().getFirstDispatchNode()
                     .replace(UncachedDispatchNodeFactory.create(getContext(), ignoreVisibility,
-                            null, null, null, null, null, null, null))
-                    .executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
+                            null, null, null, null, null, null))
+                    .executeDispatch(frame, lexicalScope, receiverObject,
                             methodName, blockObject, argumentsObjects, dispatchAction);
         }
 
@@ -64,7 +63,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
-        if (receiverObject instanceof RubyBasicObject) {
+        if (isRubyObject(receiverObject)) {
             return doRubyBasicObject(
                     frame,
                     first,
@@ -73,8 +72,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     methodName,
                     blockObject,
                     argumentsObjects,
-                    dispatchAction,
-                    methodReceiverObject);
+                    dispatchAction);
         } else {
             return doUnboxedObject(
                     frame,
@@ -84,11 +82,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     methodName,
                     blockObject,
                     argumentsObjects,
-                    dispatchAction,
-                    methodReceiverObject);
+                    dispatchAction);
         }
     }
 
+    private static boolean isRubyObject(Object object) {
+        return object instanceof RubyBasicObject;
+    }
+    
     private Object doUnboxedObject(
             VirtualFrame frame,
             DispatchNode first,
@@ -97,8 +98,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction,
-            Object methodReceiverObject) {
+            Dispatch.DispatchAction dispatchAction) {
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
@@ -107,7 +107,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             if (method == null) {
                 final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject, dispatchAction);
-                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
+                return newDispatch.executeDispatch(frame, lexicalScope, receiverObject,
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
@@ -134,21 +134,21 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         methodName, first,
                         falseUnmodifiedAssumption, null, falseMethod,
                         trueUnmodifiedAssumption, null, trueMethod, indirect,
-                        null, null, null, null, null, null, null);
+                        null, null, null, null, null, null);
 
                 first.replace(newDispatch);
 
-                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
+                return newDispatch.executeDispatch(frame, lexicalScope, receiverObject,
                         methodName, blockObject, argumentsObjects, dispatchAction);
             } else {
                 final CachedUnboxedDispatchNode newDispatch = CachedUnboxedDispatchNodeFactory.create(getContext(),
                         methodName, first, receiverObject.getClass(),
                         getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, null, null, null, null,
-                        null, null, null);
+                        null, null);
 
                 first.replace(newDispatch);
 
-                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject, methodName,
+                return newDispatch.executeDispatch(frame, lexicalScope, receiverObject, methodName,
                         blockObject, argumentsObjects, dispatchAction);
             }
         } else {
@@ -164,8 +164,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction,
-            Object methodReceiverObject) {
+            Dispatch.DispatchAction dispatchAction) {
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
@@ -174,7 +173,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             if (method == null) {
                 final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject, dispatchAction);
-                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
+                return newDispatch.executeDispatch(frame, lexicalScope, receiverObject,
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
@@ -182,14 +181,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             if (receiverObject instanceof RubySymbol) {
                 newDispatch = CachedBoxedSymbolDispatchNodeFactory.create(getContext(), methodName, first, null, method, indirect, null,
-                        null, null, null, null, null, null);
+                        null, null, null, null, null);
             } else {
                 newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, null, null, null, null, null, null, null);
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, null, null, null, null, null, null);
             }
 
             first.replace(newDispatch);
-            return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
+            return newDispatch.executeDispatch(frame, lexicalScope, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
 
         } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
@@ -199,7 +198,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             if (constant == null) {
                 final DispatchNode newDispatch = createConstantMissingNode(methodName, callerClass, module, dispatchAction);
-                return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, module,
+                return newDispatch.executeDispatch(frame, lexicalScope, module,
                         methodName, blockObject, argumentsObjects, dispatchAction);
             }
 
@@ -207,10 +206,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             // But we want to check the module assumption, not its singleton class assumption.
             final DispatchNode newDispatch = CachedBoxedDispatchNodeFactory.create(getContext(), methodName, first,
                     module.getSingletonClass(null), module.getUnmodifiedAssumption(), constant.getValue(),
-                    null, indirect, null, null, null, null, null, null, null);
+                    null, indirect, null, null, null, null, null, null);
 
             first.replace(newDispatch);
-            return newDispatch.executeDispatch(frame, methodReceiverObject, lexicalScope, receiverObject,
+            return newDispatch.executeDispatch(frame, lexicalScope, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
         } else {
             throw new UnsupportedOperationException();
@@ -227,7 +226,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(CachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), indirect, null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), indirect, null, null, null, null, null, null));
             }
 
             case CALL_CONST_MISSING: {
@@ -240,11 +239,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
                 if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                     return first.replace(UncachedDispatchNodeFactory.create(getContext(), ignoreVisibility,
-                            null, null, null, null, null, null, null));
+                            null, null, null, null, null, null));
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), null, null, null, null, null, null, null));
+                        receiverObject.getMetaClass(), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), null, null, null, null, null, null));
             }
 
             default: {
@@ -262,7 +261,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(CachedBoxedReturnMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, null, null, null, null, null, null, null));
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, null, null, null, null, null, null));
             }
 
             case CALL_METHOD_MISSING: {
@@ -275,32 +274,15 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
                 if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                     return first.replace(UncachedDispatchNodeFactory.create(getContext(), ignoreVisibility,
-                                    null, null, null, null, null, null, null));
+                                    null, null, null, null, null, null));
                 }
 
                 return first.replace(CachedBoxedMethodMissingDispatchNodeFactory.create(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), null, null, null, null, null, null, null));
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), null, null, null, null, null, null));
             }
 
             default: {
                 throw new UnsupportedOperationException(missingBehavior.toString());
-            }
-        }
-    }
-
-    private void dumpChain(PrintStream out) {
-        out.println(getEncapsulatingSourceSection().getShortDescription());
-
-        DispatchNode node = getHeadNode().getFirstDispatchNode();
-
-        while (!(node instanceof UnresolvedDispatchNode)) {
-            out.print("  ");
-            out.println(node);
-
-            if (node instanceof CachedDispatchNode) {
-                node = ((CachedDispatchNode) node).next;
-            } else {
-                break;
             }
         }
     }
