@@ -804,7 +804,7 @@ public abstract class IRScope implements ParseResult {
         // -> searching a constant in the lexical scope hierarchy
         if (currentScopeVariable == null) {
             temporaryVariableIndex++;
-            currentScopeVariable = new TemporaryCurrentScopeVariable(temporaryVariableIndex);
+            currentScopeVariable = TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
         }
         return currentScopeVariable;
     }

@@ -119,7 +119,7 @@ class OperandDecoderMap {
             case CURRENT_MODULE:
                 return TemporaryCurrentModuleVariable.ModuleVariableFor(d.decodeInt());
             case CURRENT_SCOPE:
-                return new TemporaryCurrentScopeVariable(d.decodeInt());
+                return TemporaryCurrentScopeVariable.ScopeVariableFor(d.decodeInt());
             case FLOAT:
                 return new TemporaryFloatVariable(d.decodeInt());
             case FIXNUM:
