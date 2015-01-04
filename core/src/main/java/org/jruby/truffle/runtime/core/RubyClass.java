@@ -75,7 +75,6 @@ public class RubyClass extends RubyModule {
     public void initCopy(RubyModule other) {
         super.initCopy(other);
         assert other instanceof RubyClass;
-        final RubyClass otherClass = (RubyClass) other;
     }
 
     private RubyClass ensureSingletonConsistency() {

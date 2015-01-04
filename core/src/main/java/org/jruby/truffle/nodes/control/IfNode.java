@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.nodes.control;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -26,12 +26,7 @@ public class IfNode extends RubyNode {
     @Child protected BooleanCastNode condition;
     @Child protected RubyNode thenBody;
     @Child protected RubyNode elseBody;
-
-    private final BranchProfile thenProfile = BranchProfile.create();
-    private final BranchProfile elseProfile = BranchProfile.create();
-
-    @CompilerDirectives.CompilationFinal private int thenCount;
-    @CompilerDirectives.CompilationFinal private int elseCount;
+    private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
     public IfNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
@@ -47,29 +42,10 @@ public class IfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (CompilerDirectives.injectBranchProbability(getBranchProbability(), condition.executeBoolean(frame))) {
-            if (CompilerDirectives.inInterpreter()) {
-                thenCount++;
-            }
-            thenProfile.enter();
+        if (conditionProfile.profile(condition.executeBoolean(frame))) {
             return thenBody.execute(frame);
         } else {
-            if (CompilerDirectives.inInterpreter()) {
-                elseCount++;
-            }
-            elseProfile.enter();
             return elseBody.execute(frame);
         }
     }
-
-    private double getBranchProbability() {
-        final int totalCount = thenCount + elseCount;
-
-        if (totalCount == 0) {
-            return 0;
-        } else {
-            return (double) thenCount / (double) (thenCount + elseCount);
-        }
-    }
-
 }

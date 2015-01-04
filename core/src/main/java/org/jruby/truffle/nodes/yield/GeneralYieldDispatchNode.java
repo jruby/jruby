@@ -39,7 +39,7 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object[] argumentsObjects) {
+    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
         return callNode.call(frame, block.getCallTarget(), RubyArguments.pack(block, block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
     }
 

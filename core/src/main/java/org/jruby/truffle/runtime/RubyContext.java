@@ -88,7 +88,7 @@ public class RubyContext extends ExecutionContext {
         safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
-        translator = new TranslatorDriver(this);
+        translator = new TranslatorDriver();
 
         warnings = new Warnings(this);
 

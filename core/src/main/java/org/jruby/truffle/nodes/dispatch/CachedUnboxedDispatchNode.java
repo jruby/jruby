@@ -28,7 +28,7 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
-    private final Class expectedClass;
+    private final Class<?> expectedClass;
     private final Assumption unmodifiedAssumption;
 
     private final Object value;
@@ -38,7 +38,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     @Child protected IndirectCallNode indirectCallNode;
 
     public CachedUnboxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                     Class expectedClass, Assumption unmodifiedAssumption, Object value,
+                                     Class<?> expectedClass, Assumption unmodifiedAssumption, Object value,
                                      RubyMethod method, boolean indirect) {
         super(context, cachedName, next, indirect);
         this.expectedClass = expectedClass;
