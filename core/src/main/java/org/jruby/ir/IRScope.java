@@ -794,7 +794,7 @@ public abstract class IRScope implements ParseResult {
         // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
         if (currentModuleVariable == null) {
             temporaryVariableIndex++;
-            currentModuleVariable = new TemporaryCurrentModuleVariable(temporaryVariableIndex);
+            currentModuleVariable = TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
         }
         return currentModuleVariable;
     }
