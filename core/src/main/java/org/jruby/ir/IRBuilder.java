@@ -459,7 +459,7 @@ public class IRBuilder {
         return manager.getIRScopeListener() != null;
     }
 
-    public IRBuilder newIRBuilder(IRManager manager) {
+    public static IRBuilder newIRBuilder(IRManager manager) {
         return new IRBuilder(manager);
     }
 
@@ -1674,7 +1674,7 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    private IRMethod defineMethodInner(MethodDefNode defNode, IRMethod method, IRScope parent) {
+    protected IRMethod defineMethodInner(MethodDefNode defNode, IRMethod method, IRScope parent) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(method, new TraceInstr(RubyEvent.CALL, method.getName(), method.getFileName(), method.getLineNumber()));
         }
@@ -1712,9 +1712,9 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope parent, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(manager, parent, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
+        return new IRMethod(manager, parent, defNode, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
-        return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
+        //return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
     }
 
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method

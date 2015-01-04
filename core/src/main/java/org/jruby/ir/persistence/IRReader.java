@@ -119,9 +119,9 @@ public class IRReader {
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, name, true, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, name, false, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope);
         case MODULE_BODY:
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:
