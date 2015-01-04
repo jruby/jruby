@@ -149,12 +149,17 @@ public abstract class Transcoder {
         
         Transcoder ec = EncodingUtils.econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
         if (ec == null) return value;
-        
-        ByteList ret = ec.convert(context, value, false);
-        
-        ret.setEncoding(toEncoding);
-        
-        return ret;
+
+        ByteList newStr = new ByteList();
+        RubyCoderResult ret = ec.econvConvert(context, value, newStr);
+
+        if (ret == null || ret.stringResult.equals("finished")) {
+            newStr.setEncoding(toEncoding);
+            return newStr;
+        } else {
+            // error result, failover to original
+            return value;
+        }
     }
     
     // rb_str_conv_enc
@@ -187,6 +192,8 @@ public abstract class Transcoder {
     
     // rb_econv_convert
     public abstract RubyCoderResult transcode(ThreadContext context, ByteList value, ByteList dest);
+
+    public abstract RubyCoderResult econvConvert(ThreadContext context, ByteList value, ByteList dest);
     
     public abstract ByteList transcode(ThreadContext context, ByteList value);
     

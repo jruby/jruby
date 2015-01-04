@@ -235,7 +235,21 @@ public class CharsetTranscoder extends Transcoder {
         
         return transcode(context, value, dest, fromEncoding, false, true);
     }
-    
+
+    public RubyCoderResult econvConvert(ThreadContext context, ByteList inBuffer, ByteList outBuffer) {
+        Encoding fromEncoding = this.inEncoding != null ? this.inEncoding : inBuffer.getEncoding();
+
+        primitiveConvert(context, inBuffer.shallowDup(), outBuffer, 0, -1, fromEncoding, false, actions.ecflags);
+
+        if (lastResult != null) {
+            createLastError();
+        } else {
+            outBuffer.append(finish(inBuffer.getEncoding()));
+        }
+
+        return lastResult;
+    }
+
     public ByteList transcode(ThreadContext context, ByteList value) {
         ByteList dest = new ByteList();
         
