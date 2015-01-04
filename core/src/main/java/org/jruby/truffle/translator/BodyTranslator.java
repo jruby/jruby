@@ -1098,23 +1098,23 @@ public class BodyTranslator extends Translator {
     private final Map<String, String> globalVariableAliases = new HashMap<String, String>();
     
     private void initReadOnlyGlobalVariables() {
-    	Set<String> s = readOnlyGlobalVariables;
-    	s.add("$:");
-    	s.add("$LOAD_PATH");
-    	s.add("$-I");
-    	s.add("$\"");
-    	s.add("$LOADED_FEATURES");
-    	s.add("$<");
-    	s.add("$FILENAME");
-    	s.add("$?");
-    	s.add("$-a");
-    	s.add("$-l");
-    	s.add("$-p");
+        Set<String> s = readOnlyGlobalVariables;
+        s.add("$:");
+        s.add("$LOAD_PATH");
+        s.add("$-I");
+        s.add("$\"");
+        s.add("$LOADED_FEATURES");
+        s.add("$<");
+        s.add("$FILENAME");
+        s.add("$?");
+        s.add("$-a");
+        s.add("$-l");
+        s.add("$-p");
     }
     
     private void initGlobalVariableAliases() {
-    	Map<String, String> m = globalVariableAliases;
-    	m.put("$-I", "$LOAD_PATH");
+        Map<String, String> m = globalVariableAliases;
+        m.put("$-I", "$LOAD_PATH");
         m.put("$:", "$LOAD_PATH");
         m.put("$-d", "$DEBUG");
         m.put("$-v", "$VERBOSE");

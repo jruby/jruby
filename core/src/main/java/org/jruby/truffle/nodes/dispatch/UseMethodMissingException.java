@@ -13,6 +13,6 @@ import com.oracle.truffle.api.nodes.SlowPathException;
 
 public class UseMethodMissingException extends SlowPathException {
 
-	private static final long serialVersionUID = -4534089746905620428L;
+    private static final long serialVersionUID = -4534089746905620428L;
 
 }
