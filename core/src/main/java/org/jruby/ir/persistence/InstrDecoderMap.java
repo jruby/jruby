@@ -219,7 +219,7 @@ class InstrDecoderMap implements IRPersistenceValues {
 **/
 
     private Instr decodeLineNumber() {
-        return new LineNumberInstr(d.decodeScope(), d.decodeInt());
+        return new LineNumberInstr(d.decodeInt());
     }
 
     private Instr decodeReceiveRestArgInstr() {

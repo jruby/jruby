@@ -471,7 +471,7 @@ public class IRBuilder {
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(s, new TraceInstr(RubyEvent.LINE, methodNameFor(s), s.getFileName(), currLineNum));
                 }
-               addInstr(s, new LineNumberInstr(s, currLineNum));
+               addInstr(s, new LineNumberInstr(currLineNum));
                _lastProcessedLineNum = currLineNum;
             }
         }
@@ -3233,7 +3233,7 @@ public class IRBuilder {
         staticScope.setIRScope(script);
 
         // Debug info: record line number
-        addInstr(script, new LineNumberInstr(script, lineNumber));
+        addInstr(script, new LineNumberInstr(lineNumber));
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
