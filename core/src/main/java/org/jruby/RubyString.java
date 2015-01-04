@@ -3380,7 +3380,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "include?")
     public RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
-        return StringSupport.index(this, this.value, this.strLength(this.checkEncoding(obj.convertToString())), obj.convertToString(), obj.convertToString().value, obj.convertToString().strLength(this.checkEncoding(obj.convertToString())), 0, this.checkEncoding(obj.convertToString())) == -1 ? runtime.getFalse() : runtime.getTrue();
+        RubyString coerced = obj.convertToString();
+        return StringSupport.index(this, this.value, this.strLength(this.checkEncoding(coerced)), coerced, coerced.value, coerced.strLength(this.checkEncoding(coerced)), 0, this.checkEncoding(coerced)) == -1 ? runtime.getFalse() : runtime.getTrue();
     }
 
     @JRubyMethod
