@@ -75,9 +75,8 @@ public abstract class IONodes {
 
             final List<Object> lines = new ArrayList<>();
 
-            try {
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString())));
-
+            try(final BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString())))) {
+                
                 while (true) {
                     final String line = reader.readLine();
 

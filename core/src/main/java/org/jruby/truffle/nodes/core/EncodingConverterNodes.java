@@ -140,7 +140,6 @@ public abstract class EncodingConverterNodes {
             EncodingUtils.econvArgs(context, new IRubyObject[]{getContext().toJRuby(source), getContext().toJRuby(destination)}, encNames, encs, ecflags_p, ecopts_p);
 
             TranscoderDB.searchPath(encNames[0], encNames[1], new TranscoderDB.SearchPathCallback() {
-                EncodingService es = runtime.getEncodingService();
 
                 public void call(byte[] source, byte[] destination, int depth) {
                     Object v;

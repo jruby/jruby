@@ -64,7 +64,7 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object[] argumentsObjects) {
+    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         depth++;
