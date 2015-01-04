@@ -31,6 +31,8 @@ import java.util.*;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
+import static org.jruby.ir.operands.CurrentScope.*;
+
 // This class converts an AST into a bunch of IR instructions
 
 // IR Building Notes
@@ -511,7 +513,7 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
 
         // args
@@ -1219,7 +1221,7 @@ public class IRBuilder {
 
     private Operand startingSearchScope(IRScope s) {
         int nearestModuleBodyDepth = s.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? s.getCurrentScopeVariable() : new CurrentScope(nearestModuleBodyDepth);
+        return nearestModuleBodyDepth == -1 ? s.getCurrentScopeVariable() : CurrentScope.ScopeFor(nearestModuleBodyDepth);
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, IRScope s, Operand val) {
@@ -1684,7 +1686,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), CurrentScope.ScopeFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
         addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
@@ -2357,7 +2359,7 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
+        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
 
         // Thread poll on entry of closure
@@ -2507,7 +2509,7 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
 
         // Thread poll on entry of closure
@@ -2927,7 +2929,7 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Set up %current_scope and %current_module
-        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
@@ -2949,7 +2951,7 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Set up %current_scope and %current_module
-        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(preExeNode.getBodyNode(), beginClosure);
 
@@ -3234,7 +3236,7 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(0)));
+        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(0)));
         // Build IR for the tree and return the result of the expression tree
         Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
@@ -3252,7 +3254,7 @@ public class IRBuilder {
         addInstr(script, new ReceiveSelfInstr(script.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(0)));
+        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(0)));
 
         // Build IR for the tree and return the result of the expression tree
@@ -3528,7 +3530,7 @@ public class IRBuilder {
         }
 
         bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                               // %self
-        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
+        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %scope
         bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
         // Create a new nested builder to ensure this gets its own IR builder state
         Operand bodyReturnValue = bodyBuilder.build(bodyNode, body);
