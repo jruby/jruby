@@ -29,14 +29,7 @@
 class String
 
   def include?(needle)
-    if needle.kind_of? Fixnum
-      needle = needle % 256
-      str_needle = needle.chr
-    else
-      str_needle = StringValue(needle)
-    end
-
-    !!find_string(str_needle, 0)
+    !!find_string(StringValue(needle), 0)
   end
 
 end
