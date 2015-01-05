@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.StringSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code String} class.
@@ -60,6 +61,32 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public RubyString stringToF(RubyString string) {
             throw new UnsupportedOperationException("string_to_f");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_index")
+    public static abstract class StringIndexPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringIndexPrimitiveNode(StringIndexPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringIndex(RubyString string, RubyString pattern, int start) {
+            final int index = StringSupport.index(string, string.getBytes(), string.length(),
+                    pattern, pattern.getBytes(), pattern.length(),
+                    start, string.getBytes().getEncoding());
+
+            if (index == -1) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            return index;
         }
 
     }

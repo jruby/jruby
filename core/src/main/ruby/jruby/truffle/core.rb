@@ -27,6 +27,7 @@ require_relative 'core/rubinius/api/shims/undefined'
 
 require_relative 'core/rubinius/kernel/bootstrap/time'
 require_relative 'core/rubinius/kernel/bootstrap/type'
+require_relative 'core/rubinius/kernel/bootstrap/string'
 
 require_relative 'core/rubinius/kernel/common/kernel'
 require_relative 'core/rubinius/kernel/common/array'
@@ -39,5 +40,6 @@ require_relative 'core/rubinius/kernel/common/type'
 require_relative 'core/rubinius/kernel/common/integer'
 require_relative 'core/rubinius/kernel/common/float'
 require_relative 'core/rubinius/kernel/common/numeric'
+require_relative 'core/rubinius/kernel/common/string'
 
 require_relative 'core/shims'

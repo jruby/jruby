@@ -737,7 +737,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "include?", required = 1)
+    @CoreMethod(names = "__include?", required = 1)
     public abstract static class IncludeQueryNode extends CoreMethodNode {
 
         public IncludeQueryNode(RubyContext context, SourceSection sourceSection) {
