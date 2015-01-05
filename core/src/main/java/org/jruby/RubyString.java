@@ -2732,12 +2732,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             context.setBackRef(holder[0]);
             pos = subLength(pos);
         } else if (sub instanceof RubyString) {
-            pos = StringSupport.index(this, StringSupport.strLengthFromRubyString(this, this.checkEncoding((RubyString) sub)), (RubyString) sub, StringSupport.strLengthFromRubyString(((RubyString) sub), this.checkEncoding((RubyString) sub)), pos, this.checkEncoding((RubyString) sub));
+            pos = StringSupport.index(this, (RubyString) sub, pos, this.checkEncoding((RubyString) sub));
             pos = subLength(pos);
         } else {
             IRubyObject tmp = sub.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            pos = StringSupport.index(this, StringSupport.strLengthFromRubyString(this, this.checkEncoding((RubyString) tmp)), (RubyString) tmp, StringSupport.strLengthFromRubyString(((RubyString) tmp), this.checkEncoding((RubyString) tmp)), pos, this.checkEncoding((RubyString) tmp));
+            pos = StringSupport.index(this, (RubyString) tmp, pos, this.checkEncoding((RubyString) tmp));
             pos = subLength(pos);
         }
 
@@ -3007,7 +3007,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return subpat19(runtime, context, (RubyRegexp)arg);
         } else if (arg instanceof RubyString) {
             RubyString str = (RubyString)arg;
-            return StringSupport.index(this, StringSupport.strLengthFromRubyString(this, this.checkEncoding(str)), str, StringSupport.strLengthFromRubyString(str, this.checkEncoding(str)), 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime) : runtime.getNil();
+            return StringSupport.index(this, str, 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime) : runtime.getNil();
         } else if (arg instanceof RubyRange) {
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
@@ -3129,7 +3129,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return arg1;
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
-            int beg = StringSupport.index(this, StringSupport.strLengthFromRubyString(this, this.checkEncoding(orig)), orig, StringSupport.strLengthFromRubyString(orig, this.checkEncoding(orig)), 0, this.checkEncoding(orig));
+            int beg = StringSupport.index(this, orig, 0, this.checkEncoding(orig));
             if (beg < 0) throw context.runtime.newIndexError("string not matched");
             beg = subLength(beg);
             replaceInternal19(beg, orig.strLength(), arg1.convertToString());
@@ -3363,7 +3363,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
         RubyString coerced = obj.convertToString();
-        return StringSupport.index(this, StringSupport.strLengthFromRubyString(this, this.checkEncoding(coerced)), coerced, StringSupport.strLengthFromRubyString(coerced, this.checkEncoding(coerced)), 0, this.checkEncoding(coerced)) == -1 ? runtime.getFalse() : runtime.getTrue();
+        return StringSupport.index(this, coerced, 0, this.checkEncoding(coerced)) == -1 ? runtime.getFalse() : runtime.getTrue();
     }
 
     @JRubyMethod
@@ -4120,7 +4120,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
             sep = (RubyString)tmp;
-            pos = StringSupport.index(this, StringSupport.strLengthFromRubyString(this, this.checkEncoding(sep)), sep, StringSupport.strLengthFromRubyString(sep, this.checkEncoding(sep)), 0, this.checkEncoding(sep));
+            pos = StringSupport.index(this, sep, 0, this.checkEncoding(sep));
             if (pos < 0) return partitionMismatch(runtime);
         }
 

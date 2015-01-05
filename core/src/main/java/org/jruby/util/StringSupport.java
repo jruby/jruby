@@ -1186,8 +1186,12 @@ public final class StringSupport {
         return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
     }
 
-    public static int index(CodeRangeable sourceString, int sourceLen, CodeRangeable otherString, int otherLen, int offset, Encoding enc) {
+    public static int index(CodeRangeable sourceString, CodeRangeable otherString, int offset, Encoding enc) {
         if (otherString.scanForCodeRange() == CR_BROKEN) return -1;
+
+        int sourceLen = strLengthFromRubyString(sourceString);
+        int otherLen = strLengthFromRubyString(otherString);
+
         if (offset < 0) {
             offset += sourceLen;
             if (offset < 0) return -1;

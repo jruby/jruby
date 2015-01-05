@@ -78,8 +78,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringIndex(RubyString string, RubyString pattern, int start) {
-            final int index = StringSupport.index(string, string.length(),
-                    pattern, pattern.length(),
+            final int index = StringSupport.index(string,
+                    pattern,
                     start, string.getBytes().getEncoding());
 
             if (index == -1) {
