@@ -175,6 +175,11 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return getCodeRange();
     }
 
+    @Override
+    public ByteList getByteList() {
+        return bytes;
+    }
+
     public static class StringAllocator implements Allocator {
 
         @Override

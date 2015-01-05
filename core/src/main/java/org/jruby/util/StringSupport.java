@@ -838,7 +838,7 @@ public final class StringSupport {
     /**
      * rb_str_rindex_m
      */
-    public static int rindex(ByteList source, int sourceLen, ByteList subString, int subLen, int endPosition, CodeRangeable subStringCodeRangeable, Encoding enc) {
+    public static int rindex(ByteList source, int sourceLen, int subLen, int endPosition, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
         if (sourceLen < subLen) return -1;
@@ -849,6 +849,7 @@ public final class StringSupport {
         int p = source.getBegin();
         int end = p + source.getRealSize();
 
+        final ByteList subString = subStringCodeRangeable.getByteList();
         byte[]sbytes = subString.bytes();
         subLen = subString.getRealSize();
 
@@ -1182,12 +1183,15 @@ public final class StringSupport {
         return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
     }
 
-    public static int index(CodeRangeable sourceString, ByteList source, int sourceLen, CodeRangeable subString, ByteList other, int otherLen, int offset, Encoding enc) {
-        if (subString.scanForCodeRange() == CR_BROKEN) return -1;
+    public static int index(CodeRangeable sourceString, int sourceLen, CodeRangeable otherString, int otherLen, int offset, Encoding enc) {
+        if (otherString.scanForCodeRange() == CR_BROKEN) return -1;
         if (offset < 0) {
             offset += sourceLen;
             if (offset < 0) return -1;
         }
+
+        final ByteList source = sourceString.getByteList();
+        final ByteList other = otherString.getByteList();
 
         if (sourceLen - offset < otherLen) return -1;
         byte[]bytes = source.getUnsafeBytes();

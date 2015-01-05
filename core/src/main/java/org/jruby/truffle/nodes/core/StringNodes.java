@@ -975,7 +975,7 @@ public abstract class StringNodes {
                 normalizedEndPosition = string.length();
             }
 
-            int result = StringSupport.rindex(string.getBytes(), string.length(), subString.getBytes(), subString.length(),
+            int result = StringSupport.rindex(string.getBytes(), string.length(), subString.length(),
                     normalizedEndPosition, subString, string.getBytes().getEncoding()
             );
 

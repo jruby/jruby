@@ -13,4 +13,5 @@ package org.jruby.util;
 public interface CodeRangeable {
     public int getCodeRange();
     public int scanForCodeRange();
+    public ByteList getByteList();
 }
