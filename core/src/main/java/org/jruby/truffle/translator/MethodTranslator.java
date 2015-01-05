@@ -45,7 +45,7 @@ class MethodTranslator extends BodyTranslator {
         this.isTopLevel = isTopLevel;
     }
 
-    public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity, SharedMethodInfo sharedMethodInfo) {
         if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
             System.err.println(methodName);
             System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
@@ -182,25 +182,25 @@ class MethodTranslator extends BodyTranslator {
         }
 
         if (isBlock) {
-            final CallTarget callTarget = withBlockDestructureSemantics(rootNode);
-            final CallTarget callTargetForMethods = withoutBlockDestructureSemantics(rootNode);
-            return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods, rootNode);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(withBlockDestructureSemantics(rootNode));
+            final CallTarget callTargetForMethods = Truffle.getRuntime().createCallTarget(withoutBlockDestructureSemantics(rootNode));
+            return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods);
         } else {
-            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, ignoreLocalVisiblity);
+            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode), ignoreLocalVisiblity);
         }
     }
 
-    private CallTarget withBlockDestructureSemantics(RubyRootNode rootNode) {
+    private RubyRootNode withBlockDestructureSemantics(RubyRootNode rootNode) {
         final RubyRootNode newRootNode = rootNode.cloneRubyRootNode();
 
         for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
             behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlockNode());
         }
 
-        return Truffle.getRuntime().createCallTarget(newRootNode);
+        return newRootNode;
     }
 
-    private CallTarget withoutBlockDestructureSemantics(RubyRootNode rootNode) {
+    private RubyRootNode withoutBlockDestructureSemantics(RubyRootNode rootNode) {
         final RubyRootNode newRootNode = rootNode.cloneRubyRootNode();
 
         for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
@@ -213,7 +213,7 @@ class MethodTranslator extends BodyTranslator {
                 newRootNode.getFrameDescriptor(), newRootNode.getSharedMethodInfo(),
                 new CatchReturnNode(context, newRootNode.getSourceSection(), newRootNode.getBody(), getEnvironment().getReturnID()));
 
-        return Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
+        return newRootNodeWithCatchReturn;
     }
 
     private static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
