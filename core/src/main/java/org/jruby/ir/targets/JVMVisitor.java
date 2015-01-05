@@ -2121,7 +2121,6 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Splat(Splat splat) {
-        jvmMethod().loadContext();
         visit(splat.getArray());
         // Splat is now only used in call arg lists where it is guaranteed that
         // the splat-arg is an array.
