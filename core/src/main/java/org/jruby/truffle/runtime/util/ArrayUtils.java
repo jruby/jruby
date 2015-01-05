@@ -36,10 +36,10 @@ public abstract class ArrayUtils {
     private static boolean checkExtractRangeArgs(Object[] source, int start, int end) {
         assert source != null;
         assert start >= 0;
-        assert start < source.length;
+        assert start <= source.length;
         assert end >= start;
         assert end <= source.length;
-        return false;
+        return true;
     }
 
     public static boolean contains(int[] array, int value) {
