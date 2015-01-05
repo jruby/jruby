@@ -163,29 +163,15 @@ public class RubyRegexp extends RubyBasicObject {
 
                 // Copied from jruby/RubyRegexp - see copyright notice there
 
-                if (region == null) {
-                    if (nth >= 1 || (nth < 0 && ++nth <= 0)) {
-                        value = getContext().getCoreLibrary().getNilObject();
-                    } else {
-                        final int start = matcher.getBegin();
-                        final int end = matcher.getEnd();
-                        if (start != -1) {
-                            value = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
-                        } else {
-                            value = getContext().getCoreLibrary().getNilObject();
-                        }
-                    }
+                if (nth >= region.numRegs || (nth < 0 && (nth+=region.numRegs) <= 0)) {
+                    value = getContext().getCoreLibrary().getNilObject();
                 } else {
-                    if (nth >= region.numRegs || (nth < 0 && (nth+=region.numRegs) <= 0)) {
-                        value = getContext().getCoreLibrary().getNilObject();
+                    final int start = region.beg[nth];
+                    final int end = region.end[nth];
+                    if (start != -1) {
+                        value = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
                     } else {
-                        final int start = region.beg[nth];
-                        final int end = region.end[nth];
-                        if (start != -1) {
-                            value = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
-                        } else {
-                            value = getContext().getCoreLibrary().getNilObject();
-                        }
+                        value = getContext().getCoreLibrary().getNilObject();
                     }
                 }
 

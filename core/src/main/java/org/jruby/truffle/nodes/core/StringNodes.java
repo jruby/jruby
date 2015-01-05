@@ -1357,13 +1357,7 @@ public abstract class StringNodes {
             }
 
             try {
-                final int value = Integer.parseInt(string.toString());
-
-                if (value >= Long.MIN_VALUE && value <= Long.MAX_VALUE) {
-                    return value;
-                } else {
-                    return bignum(value);
-                }
+                return Integer.parseInt(string.toString());
             } catch (NumberFormatException e) {
                 return bignum(new BigInteger(string.toString()));
             }

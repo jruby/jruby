@@ -43,17 +43,19 @@ public class InlineCloneInfo extends CloneInfo {
     private Operand yieldArg;     // Closure inlining only
     private Variable yieldResult; // Closure inlining only
     private List yieldSites = new ArrayList(); // Closure inlining only
+    private IRScope scopeBeingInlined; // host scope is where we are going and this was original scope
 
 
     // Closure Inline
-    public InlineCloneInfo(CFG cfg, IRScope scope) {
+    public InlineCloneInfo(CFG cfg, IRScope scope, IRScope scopeBeingInlined) {
         super(scope);
 
         this.isClosure = true;
         this.hostCFG = cfg;
+        this.scopeBeingInlined = scopeBeingInlined;
     }
 
-    public InlineCloneInfo(CallBase call, CFG c, Variable callReceiver) {
+    public InlineCloneInfo(CallBase call, CFG c, Variable callReceiver, IRScope scopeBeingInlined) {
         super( c.getScope());
 
         this.isClosure = false;
@@ -63,6 +65,7 @@ public class InlineCloneInfo extends CloneInfo {
         this.callReceiver = callReceiver;
         this.canMapArgsStatically = !containsSplat(callArgs);
         this.argsArray = this.canMapArgsStatically ?  null : getHostScope().createTemporaryVariable();
+        this.scopeBeingInlined = scopeBeingInlined;
         synchronized(globalInlineCount) {
             this.inlineVarPrefix = "%in" + globalInlineCount + "_";
             globalInlineCount++;
@@ -73,8 +76,8 @@ public class InlineCloneInfo extends CloneInfo {
         return isClosure;
     }
 
-    public InlineCloneInfo cloneForInliningClosure() {
-        InlineCloneInfo clone = new InlineCloneInfo(hostCFG, hostCFG.getScope());
+    public InlineCloneInfo cloneForInliningClosure(IRScope scopeBeingInlined) {
+        InlineCloneInfo clone = new InlineCloneInfo(hostCFG, hostCFG.getScope(), scopeBeingInlined);
 
         clone.call = this.call;
         clone.callArgs = this.callArgs;
@@ -160,6 +163,10 @@ public class InlineCloneInfo extends CloneInfo {
 
         // METHOD_INLINE
         return getHostScope().getNewInlineVariable(inlineVarPrefix, v);
+    }
+
+    public IRScope getScopeBeingInlined() {
+        return scopeBeingInlined;
     }
 
     public Variable getYieldResult() {

@@ -46,7 +46,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
         outer: for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
             for (String excludedKeyword : excludedKeywords) {
-                if (excludedKeyword.toString().equals(keyValue.getKey().toString())) {
+                if (excludedKeyword.equals(keyValue.getKey().toString())) {
                     continue outer;
                 }
             }

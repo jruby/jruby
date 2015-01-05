@@ -111,7 +111,7 @@ public class CFGInliner {
             callReceiverVar = hostScope.createTemporaryVariable();
         }
 
-        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar);
+        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scope);
 
         // Inlinee method data init
         CFG methodCFG = scope.getCFG();
@@ -266,7 +266,7 @@ public class CFGInliner {
         cfg.removeAllOutgoingEdgesForBB(yieldBB);
 
         // Allocate new inliner object to reset variable and label rename maps
-        ii = ii.cloneForInliningClosure();
+        ii = ii.cloneForInliningClosure(cl);
         ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
 
         // 2. Merge closure cfg into the current cfg

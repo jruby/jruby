@@ -14,6 +14,15 @@ import java.util.List;
  * Wrap a scope for the purpose of finding live module which happens to be associated with it.
  */
 public class ScopeModule extends Operand {
+    // First four scopes are so common and this operand is immutable so we share them.
+    public static final ScopeModule[] SCOPE_MODULE = {
+            new ScopeModule(0), new ScopeModule(1), new ScopeModule(2), new ScopeModule(3), new ScopeModule(4)
+    };
+
+    public static ScopeModule ModuleFor(int depth) {
+        return depth < SCOPE_MODULE.length ? SCOPE_MODULE[depth] : new ScopeModule(depth);
+    }
+    
     private final int scopeModuleDepth;
 
     public ScopeModule(int scopeModuleDepth) {

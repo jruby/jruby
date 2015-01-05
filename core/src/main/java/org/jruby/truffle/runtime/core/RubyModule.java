@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -456,7 +457,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
 
         @Override
-        public RubyModule next() {
+        public RubyModule next() throws NoSuchElementException {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
             ModuleChain mod = module;
             module = module.getParentModule();
             return mod.getActualModule();

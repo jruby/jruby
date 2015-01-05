@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -25,16 +26,25 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
  * Define a block. That is, store the definition of a block and when executed produce the executable
  * object that results.
  */
-public class BlockDefinitionNode extends MethodDefinitionNode {
+public class BlockDefinitionNode extends RubyNode {
+
+    private final SharedMethodInfo sharedMethodInfo;
 
     private final CallTarget callTarget;
     private final CallTarget callTargetForMethods;
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo methodInfo,
-                    boolean requiresDeclarationFrame, CallTarget callTarget, CallTarget callTargetForMethods, RubyRootNode rootNode) {
-        super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, rootNode, false);
+    private final boolean requiresDeclarationFrame;
+
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, SharedMethodInfo sharedMethodInfo,
+                               boolean requiresDeclarationFrame, CallTarget callTarget, CallTarget callTargetForMethods) {
+        super(context, sourceSection);
+        this.sharedMethodInfo = sharedMethodInfo;
+
         this.callTarget = callTarget;
         this.callTargetForMethods = callTargetForMethods;
+
+        this.requiresDeclarationFrame = requiresDeclarationFrame;
+
     }
 
     @Override

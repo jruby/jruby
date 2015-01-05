@@ -36,16 +36,16 @@ import java.math.BigInteger;
  */
 public abstract class ObjectIDOperations {
 
-    public static int FALSE = 0;
-    public static int TRUE = 2;
-    public static int NIL = 4;
-    public static int FIRST_OBJECT_ID = 6;
+    public static final int FALSE = 0;
+    public static final int TRUE = 2;
+    public static final int NIL = 4;
+    public static final int FIRST_OBJECT_ID = 6;
 
-    private static BigInteger LARGE_FIXNUM_FLAG = BigInteger.ONE.shiftLeft(64);
-    private static BigInteger FLOAT_FLAG = BigInteger.ONE.shiftLeft(65);
+    private static final BigInteger LARGE_FIXNUM_FLAG = BigInteger.ONE.shiftLeft(64);
+    private static final BigInteger FLOAT_FLAG = BigInteger.ONE.shiftLeft(65);
 
-    private static long SMALL_FIXNUM_MIN = -(1L << 62);
-    private static long SMALL_FIXNUM_MAX = (1L << 62) - 1;
+    private static final long SMALL_FIXNUM_MIN = -(1L << 62);
+    private static final long SMALL_FIXNUM_MAX = (1L << 62) - 1;
 
     // primitive => ID
 

@@ -32,7 +32,7 @@ public class RubyFiber extends RubyBasicObject {
     private interface FiberMessage {
     }
 
-    private class FiberResumeMessage implements FiberMessage {
+    private static class FiberResumeMessage implements FiberMessage {
 
         private final RubyThread thread;
         private final RubyFiber sendingFiber;
@@ -58,10 +58,10 @@ public class RubyFiber extends RubyBasicObject {
 
     }
 
-    private class FiberExitMessage implements FiberMessage {
+    private static class FiberExitMessage implements FiberMessage {
     }
 
-    public class FiberExitException extends ControlFlowException {
+    public static class FiberExitException extends ControlFlowException {
 
         private static final long serialVersionUID = 1522270454305076317L;
 

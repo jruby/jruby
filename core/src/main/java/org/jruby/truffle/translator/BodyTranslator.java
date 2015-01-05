@@ -515,7 +515,7 @@ public class BodyTranslator extends Translator {
         return translated;
     }
 
-    protected class ArgumentsAndBlockTranslation {
+    protected static class ArgumentsAndBlockTranslation {
 
         private final RubyNode block;
         private final RubyNode[] arguments;
@@ -1001,7 +1001,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
+        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
 
         /*
          * In the top-level, methods are defined in the class of the main object. This is
@@ -2011,7 +2011,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnNode(org.jruby.ast.OpAsgnNode node) {
-        if (node.getOperatorName() == "||") {
+        if (node.getOperatorName().equals("||")) {
             // Why does this ||= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
 
             final String temp = environment.allocateLocalTemp("opassign");
@@ -2222,7 +2222,7 @@ public class BodyTranslator extends Translator {
 
     public static boolean all7Bit(byte[] bytes) {
         for (int n = 0; n < bytes.length; n++) {
-            if (bytes[n] < 0 || bytes[n] > Byte.MAX_VALUE) {
+            if (bytes[n] < 0) {
                 return false;
             }
 
@@ -2561,7 +2561,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
+        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }
