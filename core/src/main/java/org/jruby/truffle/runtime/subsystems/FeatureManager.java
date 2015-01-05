@@ -130,8 +130,7 @@ public class FeatureManager {
                 context.getCoreLibrary().loadRubyCore(fileName.substring("core:/".length()));
                 return true;
             } catch (Exception e) {
-                // TODO(CS): obviously not the best way to do this
-                return false;
+                throw new RuntimeException(e);
             }
         }
 
