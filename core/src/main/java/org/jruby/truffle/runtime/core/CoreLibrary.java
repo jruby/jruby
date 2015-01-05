@@ -124,7 +124,7 @@ public class CoreLibrary {
 
         assert value != null;
 
-        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
+        if (value instanceof RubyNilClass) {
             return 0;
         }
 

@@ -36,7 +36,7 @@ public class RubyBasicObject {
     public static final InternalName OBJECT_ID_IDENTIFIER = new InternalName("object_id");
     public static final InternalName TAINTED_IDENTIFIER = new InternalName("tainted?");
 
-    public static Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
+    public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
 
     private final DynamicObject dynamicObject;
 

@@ -121,25 +121,21 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
         final RubyContext context = getContext();
 
-        try {
-            final Object receiverObject = receiver.execute(frame);
+        final Object receiverObject = receiver.execute(frame);
 
-            if (receiverObject instanceof RubyBasicObject) {
-                final RubyBasicObject receiverRubyObject = (RubyBasicObject) receiverObject;
+        if (receiverObject instanceof RubyBasicObject) {
+            final RubyBasicObject receiverRubyObject = (RubyBasicObject) receiverObject;
 
-                final Shape layout = receiverRubyObject.getDynamicObject().getShape();
-                final Property storageLocation = layout.getProperty(readNode.getName());
+            final Shape layout = receiverRubyObject.getDynamicObject().getShape();
+            final Property storageLocation = layout.getProperty(readNode.getName());
 
-                if (storageLocation != null) {
-                    return context.makeString("instance-variable");
-                } else {
-                    return getContext().getCoreLibrary().getNilObject();
-                }
+            if (storageLocation != null) {
+                return context.makeString("instance-variable");
             } else {
-                return false;
+                return getContext().getCoreLibrary().getNilObject();
             }
-        } catch (Exception e) {
-            return getContext().getCoreLibrary().getNilObject();
+        } else {
+            return false;
         }
     }
 

@@ -1115,13 +1115,7 @@ public abstract class KernelNodes {
             }
 
             try {
-                final int value1 = Integer.parseInt(value.toString());
-
-                if (value1 >= Long.MIN_VALUE && value1 <= Long.MAX_VALUE) {
-                    return value1;
-                } else {
-                    return bignum(value1);
-                }
+                return Integer.parseInt(value.toString());
             } catch (NumberFormatException e) {
                 return bignum(new BigInteger(value.toString()));
             }

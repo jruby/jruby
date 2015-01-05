@@ -105,7 +105,7 @@ public abstract class DirNodes {
             String absoluteGlob;
 
             if (!glob.startsWith("/")) {
-                absoluteGlob = new File(".", glob).getAbsolutePath().toString();
+                absoluteGlob = new File(".", glob).getAbsolutePath();
             } else {
                 absoluteGlob = glob;
             }

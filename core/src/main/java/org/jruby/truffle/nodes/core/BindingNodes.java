@@ -43,7 +43,7 @@ public abstract class BindingNodes {
             Object value = frame.getValue(frame.getFrameDescriptor().findFrameSlot(symbol.toString()));
 
             // TODO(CS): temporary hack for $_
-            if (symbol.equals("$_")) {
+            if (symbol.toString().equals("$_")) {
                 value = GetFromThreadLocalNode.get(getContext(), value);
             }
 
