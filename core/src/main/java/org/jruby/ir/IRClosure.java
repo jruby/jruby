@@ -195,7 +195,7 @@ public class IRClosure extends IRScope {
             // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
             keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
         } else if (i instanceof ReceiveRestArgInstr) {
-            blockArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
+            blockArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
         } else if (i instanceof ReceiveArgBase) {
             blockArgs.add(((ReceiveArgBase) i).getResult());
         }

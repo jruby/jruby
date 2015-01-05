@@ -97,7 +97,7 @@ public class IRMethod extends IRScope {
             // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
             keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
         } else if (i instanceof ReceiveRestArgInstr) {
-            callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
+            callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
         } else if (i instanceof ReceiveArgBase) {
             callArgs.add(((ReceiveArgBase) i).getResult());
         }

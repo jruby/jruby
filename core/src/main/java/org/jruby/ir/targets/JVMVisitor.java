@@ -783,6 +783,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void BuildSplatInstr(BuildSplatInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getArray());
+        jvmMethod().invokeIRHelper("irSplat", sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
     public void CallInstr(CallInstr callInstr) {
         IRBytecodeAdapter m = jvmMethod();
         String name = callInstr.getName();
@@ -2115,7 +2123,20 @@ public class JVMVisitor extends IRVisitor {
     public void Splat(Splat splat) {
         jvmMethod().loadContext();
         visit(splat.getArray());
-        jvmMethod().invokeIRHelper("irSplat", sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
+        // Splat is now only used in call arg lists where it is guaranteed that
+        // the splat-arg is an array.
+        //
+        // It is:
+        // - either a result of a args-cat/args-push (which generate an array),
+        // - or a result of a BuildSplatInstr (which also generates an array),
+        // - or a rest-arg that has been received (which also generates an array)
+        //   and is being passed via zsuper.
+        //
+        // In addition, since this only shows up in call args, the array itself is
+        // never modified. The array elements are extracted out and inserted into
+        // a java array. So, a dup is not required either.
+        //
+        // So, besides retrieving the array, nothing more to be done here!
     }
 
     @Override

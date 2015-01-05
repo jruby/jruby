@@ -577,11 +577,11 @@ public class IRBuilder {
                 Operand rhs = build(argsPushNode.getSecondNode(), s);
                 Variable res = s.createTemporaryVariable();
                 addInstr(s, new BuildCompoundArrayInstr(res, lhs, rhs, true));
-                argsList.add(new Splat(res, true));
+                argsList.add(new Splat(res));
                 return rhs;
             }
             case SPLATNODE: {     // a[1] = *b
-                Splat rhs = new Splat(build(((SplatNode)args).getValue(), s), true);
+                Splat rhs = new Splat(buildSplat((SplatNode)args, s));
                 argsList.add(rhs);
                 return rhs;
             }
@@ -594,7 +594,7 @@ public class IRBuilder {
         switch (args.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
-                return new Operand[] { new Splat(build(args, s), true) };
+                return new Operand[] { new Splat(build(args, s)) };
             case ARRAYNODE: {
                 List<Node> children = args.childNodes();
                 int numberOfArgs = children.size();
@@ -606,7 +606,7 @@ public class IRBuilder {
                 return builtArgs;
             }
             case SPLATNODE:
-                return new Operand[] { new Splat(build(((SplatNode) args).getValue(), s), true) };
+                return new Operand[] { new Splat(buildSplat((SplatNode)args, s)) };
         }
 
         throw new NotCompilableException("Invalid node for call args: " + args.getClass().getSimpleName() + ":" + args.getPosition());
@@ -3269,9 +3269,9 @@ public class IRBuilder {
     }
 
     public Operand buildSplat(SplatNode splatNode, IRScope s) {
-        // SSS: Since splats can only occur in call argument lists, no need to copyAndReturnValue(...)
-        // Verify with Tom / Charlie
-        return new Splat(build(splatNode.getValue(), s));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildSplatInstr(res, build(splatNode.getValue(), s)));
+        return res;
     }
 
     public Operand buildStr(StrNode strNode, IRScope s) {

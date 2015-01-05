@@ -402,7 +402,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     public static boolean containsArgSplat(Operand[] arguments) {
         for (Operand argument : arguments) {
-            if (argument instanceof Splat && ((Splat)argument).unsplatArgs) return true;
+            if (argument instanceof Splat) return true;
         }
 
         return false;
