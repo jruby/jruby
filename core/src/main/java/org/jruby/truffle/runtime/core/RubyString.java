@@ -152,7 +152,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public int length() {
-        return getBytes().getRealSize();
+        return StringSupport.strLengthFromRubyString(this);
     }
 
     public int normaliseIndex(int index) {
@@ -173,6 +173,17 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     public int scanForCodeRange() {
         // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
         return getCodeRange();
+    }
+
+    @Override
+    public boolean isCodeRangeValid() {
+        // TODO (nirvdrum Jan. 5, 2015): Make this work with the String's real code range, not just a stubbed value.
+        return true;
+    }
+
+    @Override
+    public final void setCodeRange(int codeRange) {
+        // TODO (nirvdrum Jan. 5, 2015): Make this work with the String's real code range, not just a stubbed value.
     }
 
     @Override
