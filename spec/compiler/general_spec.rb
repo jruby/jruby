@@ -962,5 +962,30 @@ modes.each do |mode|
                         ]
       end
     end
+
+    it "handles dynamic case/when elements" do
+      # These use a global so IR does not inline it from a local var
+      run('$case_str = "z"; case "xyz"; when /#{$case_str}/; true; else; false; end') do |x|
+        expect(x).to eq(true)
+      end
+      run('$case_str = "xyz"; case "xyz"; when "#{$case_str}"; true; else; false; end') do |x|
+        expect(x).to eq(true)
+      end
+      run('$case_str = "xyz"; case :xyz; when :"#{$case_str}"; true; else; false; end') do |x|
+        expect(x).to eq(true)
+      end
+    end
+
+    it "handles lists of conditions in case/when" do
+      run('$case_str = "z"; case "xyz"; when /#{$$}/, /#{$case_str}/; true; else; false; end') do |x|
+        expect(x).to eq(true)
+      end
+    end
+
+    it "handles literal arrays in case/when" do
+      run('$case_ary = [1,2,3]; case $case_ary; when [1,2,3]; true; else; false; end') do |x|
+        expect(x).to eq(true)
+      end
+    end
   end
 end
