@@ -1606,7 +1606,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             try {
-                getContext().getFeatureManager().require(feature.toString(), this);
+                getContext().getFeatureManager().require(null, feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1627,14 +1627,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean require(VirtualFrame frame, RubyString feature) {
+        public boolean require(RubyString feature) {
             notDesignedForCompilation();
 
             final String sourcePath = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getPath();
             final String directoryPath = new File(sourcePath).getParent();
 
             try {
-                getContext().getFeatureManager().requireInPath(directoryPath, feature.toString(), this);
+                getContext().getFeatureManager().require(directoryPath, feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
