@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
@@ -24,12 +22,12 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 public class AddMethodNode extends RubyNode {
 
     @Child protected RubyNode receiver;
-    @Child protected MethodDefinitionNode method;
+    @Child protected MethodDefinitionNode methodNode;
 
     public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method, boolean topLevel) {
         super(context, section);
         this.receiver = receiver;
-        this.method = method;
+        this.methodNode = method;
     }
 
     @Override
@@ -38,7 +36,7 @@ public class AddMethodNode extends RubyNode {
 
         final Object receiverObject = receiver.execute(frame);
 
-        final RubyMethod methodObject = (RubyMethod) method.execute(frame);
+        final RubyMethod methodObject = (RubyMethod) methodNode.execute(frame);
 
         RubyModule module;
 
@@ -48,33 +46,15 @@ public class AddMethodNode extends RubyNode {
             module = ((RubyBasicObject) receiverObject).getSingletonClass(this);
         }
 
-        final RubyMethod methodWithDeclaringModule = methodObject.withDeclaringModule(module);
+        final RubyMethod method = methodObject.withDeclaringModule(module);
 
-        if (moduleFunctionFlag(frame)) {
-            module.addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PRIVATE));
-            module.getSingletonClass(this).addMethod(this, methodWithDeclaringModule.withVisibility(Visibility.PUBLIC));
+        if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
+            module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
+            module.getSingletonClass(this).addMethod(this, method.withVisibility(Visibility.PUBLIC));
         } else {
-            module.addMethod(this, methodWithDeclaringModule);
+            module.addMethod(this, method);
         }
 
         return getContext().newSymbol(method.getName());
-    }
-
-    private boolean moduleFunctionFlag(VirtualFrame frame) {
-        final FrameSlot moduleFunctionFlagSlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
-
-        if (moduleFunctionFlagSlot == null) {
-            return false;
-        } else {
-            Object moduleFunctionObject;
-
-            try {
-                moduleFunctionObject = frame.getObject(moduleFunctionFlagSlot);
-            } catch (FrameSlotTypeException e) {
-                throw new RuntimeException(e);
-            }
-
-            return (moduleFunctionObject instanceof Boolean) && (boolean) moduleFunctionObject;
-        }
     }
 }
