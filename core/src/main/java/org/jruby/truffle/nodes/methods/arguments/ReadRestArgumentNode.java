@@ -12,12 +12,14 @@ package org.jruby.truffle.nodes.methods.arguments;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.Arrays;
 
@@ -69,7 +71,7 @@ public class ReadRestArgumentNode extends RubyNode {
                 subsetOfArgumentsProfile.enter();
                 final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
                 // TODO(CS): risk here of widening types too much - always going to be Object[] - does seem to be something that does happen
-                return new RubyArray(arrayClass, Arrays.copyOfRange(arguments, startIndex, endIndex), length);
+                return new RubyArray(arrayClass, ArrayUtils.extractRange(arguments, startIndex, endIndex), length);
             }
         }
     }

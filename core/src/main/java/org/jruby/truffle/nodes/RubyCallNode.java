@@ -141,7 +141,7 @@ public class RubyCallNode extends RubyNode {
         } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
             return ArrayUtils.boxUntil((long[]) store, size);
         } else if (seenObjectInUnsplat && store instanceof Object[]) {
-            return Arrays.copyOfRange((Object[]) store, 0, size);
+            return ArrayUtils.extractRange((Object[]) store, 0, size);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -157,7 +157,7 @@ public class RubyCallNode extends RubyNode {
             return ArrayUtils.boxUntil((long[]) store, size);
         } else if (store instanceof Object[]) {
             seenObjectInUnsplat = true;
-            return Arrays.copyOfRange((Object[]) store, 0, size);
+            return ArrayUtils.extractRange((Object[]) store, 0, size);
         }
 
         throw new UnsupportedOperationException();
