@@ -737,29 +737,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "__include?", required = 1)
-    public abstract static class IncludeQueryNode extends CoreMethodNode {
-
-        public IncludeQueryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public IncludeQueryNode(IncludeQueryNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean includeQuery(RubyString string, RubyString otherString) {
-            notDesignedForCompilation();
-
-            int foundIndex = StringSupport.index(string, string.getBytes(), string.length(),
-                                                 otherString, otherString.getBytes(), otherString.length(),
-                                                 0, string.getBytes().getEncoding());
-
-            return foundIndex != -1;
-        }
-    }
-
     @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 
