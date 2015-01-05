@@ -27,14 +27,14 @@ public abstract class WrapInThreadLocalNode extends RubyNode {
     }
 
     @Specialization
-    public ThreadLocal wrap(Object value) {
+    public ThreadLocal<?> wrap(Object value) {
         return wrap(getContext(), value);
     }
 
-    public static ThreadLocal wrap(RubyContext context, Object value) {
+    public static ThreadLocal<Object> wrap(RubyContext context, Object value) {
         final RubyContext finalContext = context;
 
-        final ThreadLocal threadLocal = new ThreadLocal() {
+        final ThreadLocal<Object> threadLocal = new ThreadLocal<Object>() {
 
             @Override
             protected Object initialValue() {

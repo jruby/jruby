@@ -37,8 +37,7 @@ public class AndNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object leftValue = left.execute(frame);
-        boolean leftBoolean = leftCast.executeBoolean(frame, leftValue);
-        if (conditionProfile.profile(leftBoolean)) {
+        if (conditionProfile.profile(leftCast.executeBoolean(frame, leftValue))) {
             // Right expression evaluated and returned if left expression returns true.
             return right.execute(frame);
         } else {

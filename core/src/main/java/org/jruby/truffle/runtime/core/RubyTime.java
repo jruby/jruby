@@ -24,7 +24,6 @@ public class RubyTime extends RubyBasicObject {
 
     private long seconds;
     private long nanoseconds;
-    private boolean isdst;
 
     public RubyTime(RubyClass timeClass, long seconds, long nanoseconds) {
         super(timeClass);

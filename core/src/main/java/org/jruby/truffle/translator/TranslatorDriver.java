@@ -44,12 +44,7 @@ public class TranslatorDriver {
         TOP_LEVEL, SHELL, MODULE
     }
 
-    private final RubyContext context;
     private long nextReturnID = 0;
-
-    public TranslatorDriver(RubyContext context) {
-        this.context = context;
-    }
 
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, RubyNode currentNode) {
         final SourceSection sourceSection = null;
