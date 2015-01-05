@@ -360,7 +360,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private int strLength(ByteList bytes, Encoding enc) {
-        if (isCodeRangeValid() && enc instanceof UTF8Encoding) return StringSupport.utf8Length(value);
+        if (isCodeRangeValid() && enc instanceof UTF8Encoding) return StringSupport.utf8Length(bytes);
 
         long lencr = strLengthWithCodeRange(bytes, enc);
         int cr = unpackArg(lencr);
