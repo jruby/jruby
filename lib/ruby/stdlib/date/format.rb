@@ -135,7 +135,9 @@ class Date
   end
 
   def strftime(fmt='%F')
-    JRuby.runtime.current_context.getRubyDateFormatter.compileAndFormat(fmt, true, @dt, 0, @sub_millis.nonzero?)
+    out = JRuby.runtime.current_context.getRubyDateFormatter.compileAndFormat(fmt, true, @dt, 0, @sub_millis.nonzero?)
+    out.taint if fmt.tainted?
+    out
   end
 
 # alias_method :format, :strftime
