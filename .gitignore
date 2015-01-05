@@ -99,3 +99,8 @@ core/.gitignore
 core/.project
 core/.settings
 core/.apt_generated
+
+# Truffle findbugs
+truffle-findbugs-report.html
+findbugs-noUpdateChecks-3.0.0.tar.gz
+findbugs-3.0.0
