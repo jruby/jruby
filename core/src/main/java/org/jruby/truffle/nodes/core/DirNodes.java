@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -55,6 +56,32 @@ public abstract class DirNodes {
             } else {
                 return 0;
             }
+        }
+
+    }
+
+    @CoreMethod(names = { "delete", "rmdir", "unlink" }, onSingleton = true, optional = 1)
+    public abstract static class DeleteNode extends CoreMethodNode {
+
+        public DeleteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DeleteNode(DeleteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int delete(RubyString path) {
+            notDesignedForCompilation();
+
+            File dir = new File(path.toString());
+            if (!dir.isDirectory()) {
+                throw new UnsupportedOperationException(path.toString());
+            }
+            dir.delete();
+
+            return 0;
         }
 
     }
