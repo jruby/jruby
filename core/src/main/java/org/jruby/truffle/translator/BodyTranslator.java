@@ -430,8 +430,13 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> arguments = new ArrayList<>();
 
-        for (org.jruby.ast.Node arg : node.getArgsNode().childNodes().subList(1, node.getArgsNode().childNodes().size())) {
-            arguments.add(arg.accept(this));
+        final Iterator<Node> childIterator = node.getArgsNode().childNodes().iterator();
+
+        // The first argument was the symbol, so skip it when gathering arguments to pass to the primitive
+        childIterator.next();
+
+        while (childIterator.hasNext()) {
+            arguments.add(childIterator.next().accept(this));
         }
 
         return new CallRubiniusPrimitiveNode(context, sourceSection,
