@@ -68,7 +68,7 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     public Instr discardResult() {
-        return new NoResultCallInstr(Operation.NORESULT_CALL, getCallType(), getName(), getReceiver(), getCallArgs(), closure);
+        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), closure);
     }
 
     @Override

@@ -18,7 +18,7 @@ import java.util.Map;
 
 import static org.jruby.ir.IRFlags.*;
 
-public abstract class CallBase extends Instr implements Specializeable, ClosureAcceptingInstr {
+public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
     public final long callSiteId;
@@ -210,15 +210,6 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         }
 
         return modifiedScope;
-    }
-    /**
-     * Interpreter can ask the instruction if it knows how to make a more
-     * efficient instruction for direct interpretation.
-     *
-     * @return itself or more efficient but semantically equivalent instr
-     */
-    public CallBase specializeForInterpretation() {
-        return this;
     }
 
     @Override

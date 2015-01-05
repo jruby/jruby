@@ -839,7 +839,7 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = (argsNode == null) ? manager.getNil() : buildAttrAssignCallArgs(args, argsNode, s);
-        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
+        addInstr(s, AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
         return lastArg;
     }
 
@@ -848,7 +848,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         args = addArg(args, value);
-        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args));
+        addInstr(s, AttrAssignInstr.create(obj, attrAssignNode.getName(), args));
         return value;
     }
 

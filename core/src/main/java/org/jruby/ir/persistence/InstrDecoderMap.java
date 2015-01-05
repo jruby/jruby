@@ -139,7 +139,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             args[i] = d.decodeOperand();
         }
 
-        return new AttrAssignInstr(op, methAddr, args);
+        return AttrAssignInstr.create(op, methAddr, args);
     }
 
     private Instr decodeCall() {
@@ -200,7 +200,7 @@ class InstrDecoderMap implements IRPersistenceValues {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return new NoResultCallInstr(Operation.NORESULT_CALL, CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure);
+        return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure);
     }
 
     private Instr decodeCopy() {

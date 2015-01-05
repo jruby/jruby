@@ -486,11 +486,6 @@ public abstract class IRScope implements ParseResult {
                     // FIXME: Can be removed once ipc and rpc are stored in table(s) in IC
                     Instr newInstr = instr.clone(cloneInfo);
 
-                    // FIXME: Can be removed once noresult and attrassign properly specialize at IRBuild time.
-                    if (newInstr instanceof Specializeable) {
-                        newInstr = ((Specializeable) newInstr).specializeForInterpretation();
-                    }
-
                     newInstr.setIPC(ipc);
                     newInstrs.add(newInstr);
                     ipc++;

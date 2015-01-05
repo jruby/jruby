@@ -15,12 +15,16 @@ import static org.jruby.ir.IRFlags.*;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[](i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
-    public AttrAssignInstr(Operand obj, String attr, Operand[] args) {
-        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null);
+    public static AttrAssignInstr create(Operand obj, String attr, Operand[] args) {
+        if (!containsArgSplat(args) && args.length == 1) {
+            return new OneArgOperandAttrAssignInstr(obj, attr, args);
+        }
+
+        return new AttrAssignInstr(obj, attr, args);
     }
 
-    public AttrAssignInstr(AttrAssignInstr instr) {
-        this(instr.getReceiver(), instr.getName(), instr.getCallArgs());
+    public AttrAssignInstr(Operand obj, String attr, Operand[] args) {
+        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null);
     }
 
     @Override
@@ -37,18 +41,6 @@ public class AttrAssignInstr extends NoResultCallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new AttrAssignInstr(receiver.cloneForInlining(ii), getName(), cloneCallArgs(ii));
-    }
-
-    @Override
-    public CallBase specializeForInterpretation() {
-        Operand[] callArgs = getCallArgs();
-        if (containsArgSplat(callArgs)) return this;
-
-        switch (callArgs.length) {
-            case 1:
-                return new OneArgOperandAttrAssignInstr(this);
-        }
-        return this;
     }
 
     @Override
