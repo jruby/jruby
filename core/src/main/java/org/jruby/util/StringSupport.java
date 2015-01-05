@@ -864,6 +864,24 @@ public final class StringSupport {
         return -1;
     }
 
+    public static int strLengthFromRubyString(RubyString rubyString, ByteList value, Encoding enc) {
+        if (isSingleByteOptimizable(rubyString, enc)) return value.getRealSize();
+        return strLengthFromRubyStringFull(rubyString, value, enc);
+    }
+
+    public static int strLengthFromRubyString(RubyString rubyString, ByteList bytes) {
+        return strLengthFromRubyStringFull(rubyString, bytes, bytes.getEncoding());
+    }
+
+    private static int strLengthFromRubyStringFull(RubyString rubyString, ByteList bytes, Encoding enc) {
+        if (rubyString.isCodeRangeValid() && enc instanceof UTF8Encoding) return utf8Length(bytes);
+
+        long lencr = strLengthWithCodeRange(bytes, enc);
+        int cr = unpackArg(lencr);
+        if (cr != 0) rubyString.setCodeRange(cr);
+        return unpackResult(lencr);
+    }
+
     /**
      * rb_str_tr / rb_str_tr_bang
      */
