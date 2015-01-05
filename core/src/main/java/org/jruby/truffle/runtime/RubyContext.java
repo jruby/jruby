@@ -23,6 +23,7 @@ import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SetFrameVisibilityNode;
+import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.subsystems.*;
@@ -60,6 +61,7 @@ public class RubyContext extends ExecutionContext {
     private final Random random = new Random();
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
+    private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -111,6 +113,8 @@ public class RubyContext extends ExecutionContext {
         fiberManager = new FiberManager(this);
 
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+
+        rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
     }
 
     public Shape getEmptyShape() {
@@ -402,6 +406,10 @@ public class RubyContext extends ExecutionContext {
 
     public CompilerOptions getCompilerOptions() {
         return compilerOptions;
+    }
+
+    public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
+        return rubiniusPrimitiveManager;
     }
 
 }

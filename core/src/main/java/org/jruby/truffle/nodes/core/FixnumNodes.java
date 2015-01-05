@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,6 +20,8 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
+
+import java.math.BigInteger;
 
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
@@ -319,7 +321,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "/", required = 1)
+    @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
@@ -540,6 +542,27 @@ public abstract class FixnumNodes {
             if (mod < 0 && b > 0 || mod > 0 && b < 0) {
                 adjustProfile.enter();
                 mod += b;
+            }
+
+            return mod;
+        }
+
+        @Specialization
+        public Object mod(int a, RubyBignum b) {
+            return mod((long) a, b);
+        }
+
+        @Specialization
+        public Object mod(long a, RubyBignum b) {
+            notDesignedForCompilation();
+
+            // TODO(CS): why are we getting this case?
+
+            long mod = BigInteger.valueOf(a).mod(b.bigIntegerValue()).longValue();
+
+            if (mod < 0 && b.bigIntegerValue().compareTo(BigInteger.ZERO) > 0 || mod > 0 && b.bigIntegerValue().compareTo(BigInteger.ZERO) < 0) {
+                adjustProfile.enter();
+                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(mod).add(b.bigIntegerValue()));
             }
 
             return mod;
@@ -1227,6 +1250,29 @@ public abstract class FixnumNodes {
         @Specialization
         public long abs(long n) {
             return Math.abs(n);
+        }
+
+    }
+
+    @CoreMethod(names = "floor")
+    public abstract static class FloorNode extends CoreMethodNode {
+
+        public FloorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FloorNode(FloorNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int floor(int n) {
+            return n;
+        }
+
+        @Specialization
+        public long floor(long n) {
+            return n;
         }
 
     }

@@ -8,7 +8,6 @@ fails:Time.gm accepts 2 arguments (year, month)
 fails:Time.gm accepts 3 arguments (year, month, day)
 fails:Time.gm accepts 4 arguments (year, month, day, hour)
 fails:Time.gm accepts 5 arguments (year, month, day, hour, minute)
-fails:Time.gm raises a TypeError if the year is nil
 fails:Time.gm accepts nil month, day, hour, minute, and second
 fails:Time.gm handles a String year
 fails:Time.gm coerces the year with #to_int
@@ -34,8 +33,6 @@ fails:Time.gm raises an ArgumentError for out of range day
 fails:Time.gm raises an ArgumentError for out of range hour
 fails:Time.gm raises an ArgumentError for out of range minute
 fails:Time.gm raises an ArgumentError for out of range second
-fails:Time.gm raises ArgumentError when given 9 arguments
-fails:Time.gm raises ArgumentError when given 11 arguments
 fails:Time.gm returns subclass instances
 fails:Time.gm handles string arguments
 fails:Time.gm handles float arguments

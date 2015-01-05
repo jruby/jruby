@@ -151,7 +151,7 @@ public class RubyTime extends RubyObject {
         }
     }
 
-    private static DateTimeZone getTimeZoneFromTZString(Ruby runtime, String zone) {
+    public static DateTimeZone getTimeZoneFromTZString(Ruby runtime, String zone) {
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
         if (cachedZone != null) {
             return cachedZone;

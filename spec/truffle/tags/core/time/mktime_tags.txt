@@ -8,7 +8,6 @@ fails:Time.mktime accepts 2 arguments (year, month)
 fails:Time.mktime accepts 3 arguments (year, month, day)
 fails:Time.mktime accepts 4 arguments (year, month, day, hour)
 fails:Time.mktime accepts 5 arguments (year, month, day, hour, minute)
-fails:Time.mktime raises a TypeError if the year is nil
 fails:Time.mktime accepts nil month, day, hour, minute, and second
 fails:Time.mktime handles a String year
 fails:Time.mktime coerces the year with #to_int

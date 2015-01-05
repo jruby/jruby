@@ -56,13 +56,13 @@ describe "A number literal" do
   end
 
   it "can be an octal literal with trailing 'r' to represent a Rational"  do
-    042.should == Rational(34, 1)
-    -042.should == Rational(-34, 1)
+    042r.should == Rational(34, 1)
+    -042r.should == Rational(-34, 1)
   end
 
   it "can be a binary literal with trailing 'r' to represent a Rational" do
-    0b1111.should == Rational(15, 1)
-    -0b1111.should == Rational(-15, 1)
+    0b1111r.should == Rational(15, 1)
+    -0b1111r.should == Rational(-15, 1)
   end
 
   it "can be an integer literal with trailing 'i' to represent a Complex" do

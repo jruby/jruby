@@ -314,7 +314,7 @@ public abstract class BasicObjectNodes {
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatchNode = new DispatchHeadNode(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatchNode = new DispatchHeadNode(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), Dispatch.MissingBehavior.CALL_METHOD_MISSING);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatchNode.forceUncached();

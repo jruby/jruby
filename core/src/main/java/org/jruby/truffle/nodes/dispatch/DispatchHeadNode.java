@@ -23,7 +23,6 @@ public class DispatchHeadNode extends Node {
     private final RubyContext context;
     private final boolean ignoreVisibility;
     private final boolean indirect;
-    private final boolean rubiniusPrimitive;
     private final Dispatch.MissingBehavior missingBehavior;
 
     @Child protected DispatchNode first;
@@ -33,7 +32,7 @@ public class DispatchHeadNode extends Node {
     }
 
     public DispatchHeadNode(RubyContext context) {
-        this(context, false, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        this(context, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility) {
@@ -41,19 +40,18 @@ public class DispatchHeadNode extends Node {
     }
 
     public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
-        this(context, false, false, false, missingBehavior);
+        this(context, false, false, missingBehavior);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, false, false, missingBehavior);
+        this(context, ignoreVisibility, false, missingBehavior);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, boolean rubiniusPrimitive, Dispatch.MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, Dispatch.MissingBehavior missingBehavior) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
-        this.rubiniusPrimitive = rubiniusPrimitive;
         first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior);
     }
 
@@ -147,6 +145,7 @@ public class DispatchHeadNode extends Node {
             VirtualFrame frame,
             Object methodName,
             Object receiverObject) {
+        // It's ok to cast here as we control what RESPOND_TO_METHOD returns
         return (boolean) dispatch(
                 frame,
                 null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
@@ -165,25 +164,14 @@ public class DispatchHeadNode extends Node {
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        if (rubiniusPrimitive) {
-            return first.executeDispatch(
-                    frame,
-                    lexicalScope,
-                    RubyArguments.getSelf(frame.getArguments()),
-                    methodName,
-                    blockObject,
-                    RubyArguments.concatUserArguments(argumentsObjects, frame.getArguments()),
-                    dispatchAction);
-        } else {
-            return first.executeDispatch(
-                    frame,
-                    lexicalScope,
-                    receiverObject,
-                    methodName,
-                    blockObject,
-                    argumentsObjects,
-                    dispatchAction);
-        }
+        return first.executeDispatch(
+                frame,
+                lexicalScope,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                dispatchAction);
     }
 
     public void reset(String reason) {

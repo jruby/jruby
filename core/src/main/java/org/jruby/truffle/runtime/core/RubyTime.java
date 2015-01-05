@@ -13,13 +13,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
-import java.util.Date;
-
-/**
- * Represents the Ruby {@code Time} class. This is a very rough implementation and is only really
- * enough to run benchmark harnesses.
- */
-
 public class RubyTime extends RubyBasicObject {
 
     private long seconds;
@@ -31,64 +24,29 @@ public class RubyTime extends RubyBasicObject {
         this.nanoseconds = nanoseconds;
     }
 
-    public long getWholeSeconds() {
-        return seconds;
-    }
-
-    public double getRealSeconds() {
-        return seconds + nanosecondsToSecond(nanoseconds);
-    }
-
-    public static RubyTime fromDate(RubyClass timeClass, long timeMiliseconds) {
-        return new RubyTime(timeClass, milisecondsToSeconds(timeMiliseconds), milisecondsToNanoseconds(timeMiliseconds));
-    }
-
-    public static RubyTime fromArray(RubyClass timeClass,
-                                     int second,
-                                     int minute,
-                                     int hour,
-                                     int dayOfMonth,
-                                     int month,
-                                     int year,
-                                     int nanoOfSecond,
-                                     boolean isdst,
-                                     RubyString zone) {
-        throw new UnsupportedOperationException();
-        //ZonedDateTime zdt = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, nanoOfSecond, ZoneId.of(zone.toString()));
-        //return new RubyTime(timeClass, zdt.toEpochSecond(), nanoOfSecond);
-    }
-
-    public Date toDate() {
-        return new Date(secondsToMiliseconds(seconds) + nanosecondsToMiliseconds(nanoseconds));
-    }
-
-    private static long milisecondsToSeconds(long miliseconds) {
-        return miliseconds / 1000;
-    }
-
-    private static long milisecondsToNanoseconds(long miliseconds) {
-        return (miliseconds % 1000) * 1000000;
-    }
-
-    private static long nanosecondsToMiliseconds(long nanoseconds) {
-        return nanoseconds / 1000000;
-    }
-
-    public static double nanosecondsToSecond(long nanoseconds) {
-        return nanoseconds / 1e9;
-    }
-
-    public static long secondsToMiliseconds(long seconds) {
-        return seconds * 1000;
-    }
-
     public static class TimeAllocator implements Allocator {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyTime(rubyClass, milisecondsToSeconds(System.currentTimeMillis()), milisecondsToNanoseconds(System.currentTimeMillis()));
+            return new RubyTime(rubyClass, 0, 0);
         }
 
+    }
+
+    public long getSeconds() {
+        return seconds;
+    }
+
+    public void setSeconds(long seconds) {
+        this.seconds = seconds;
+    }
+
+    public long getNanoseconds() {
+        return nanoseconds;
+    }
+
+    public void setNanoseconds(long nanoseconds) {
+        this.nanoseconds = nanoseconds;
     }
 
 }

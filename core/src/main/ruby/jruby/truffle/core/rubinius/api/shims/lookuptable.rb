@@ -8,4 +8,5 @@
 
 # TODO(CS): isn't this vulnerable to naming conflicts?
 
-LookupTable = Hash
+class LookupTable < Hash
+end
