@@ -62,6 +62,7 @@ public class WhileNode extends RubyNode {
             }
 
             while (true) { // for redo
+                context.getSafepointManager().poll();
                 try {
                     body.execute(frame);
                     return true;
@@ -69,7 +70,6 @@ public class WhileNode extends RubyNode {
                     return true;
                 } catch (RedoException e) {
                     // Just continue in the while(true) loop.
-                    context.getSafepointManager().poll();
                 }
             }
         }

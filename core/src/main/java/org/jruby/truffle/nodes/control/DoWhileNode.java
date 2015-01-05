@@ -58,6 +58,7 @@ public class DoWhileNode extends RubyNode {
         @Override
         public boolean executeRepeating(VirtualFrame frame) {
             while (true) { // for redo
+                context.getSafepointManager().poll();
                 try {
                     body.execute(frame);
                     break;
@@ -65,7 +66,6 @@ public class DoWhileNode extends RubyNode {
                     break;
                 } catch (RedoException e) {
                     // Just continue in the while(true) loop.
-                    context.getSafepointManager().poll();
                 }
             }
 
