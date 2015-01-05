@@ -15,6 +15,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Splat;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.util.KeyValuePair;
 import org.jruby.parser.StaticScope;
 
@@ -72,6 +73,12 @@ public class IRMethod extends IRScope {
         }
 
         return super.prepareForInterpretation();
+    }
+
+    public synchronized List<BasicBlock> prepareForCompilation() {
+        if (defn != null) prepareForInterpretation();
+
+        return super.prepareForCompilation();
     }
 
     @Override
