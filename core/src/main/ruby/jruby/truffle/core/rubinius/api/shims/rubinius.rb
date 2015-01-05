@@ -12,6 +12,11 @@ module Rubinius
     raise "not implemented"
   end
 
+  def self.mathn_loaded?
+    false
+  end
+
 end
 
-PrimitiveFailures = StandardError
+class PrimitiveFailure < StandardError
+end

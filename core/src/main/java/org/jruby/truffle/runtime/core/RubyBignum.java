@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -22,6 +22,8 @@ public class RubyBignum extends RubyBasicObject {
 
     public RubyBignum(RubyClass rubyClass, BigInteger value) {
         super(rubyClass);
+        // TODO(CS): we fail this but we shouldn't
+        //assert value.bitLength() < 64;
         this.value = value;
     }
 
@@ -33,6 +35,11 @@ public class RubyBignum extends RubyBasicObject {
     @CompilerDirectives.TruffleBoundary
     public RubyBignum negate() {
         return create(value.negate());
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public RubyBignum abs() {
+        return create(value.abs());
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -114,6 +121,11 @@ public class RubyBignum extends RubyBasicObject {
     @CompilerDirectives.TruffleBoundary
     public RubyBignum mod(long other) {
         return create(value.mod(BigInteger.valueOf(other)));
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public RubyBignum mod(RubyBignum other) {
+        return create(value.mod(other.bigIntegerValue()));
     }
 
     @CompilerDirectives.TruffleBoundary

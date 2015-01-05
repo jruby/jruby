@@ -19,6 +19,8 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -400,7 +402,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = Source.fromText(code.getBytes(), "(eval)");
-            return getContext().execute(getContext(), source, code.getBytes().getEncoding(), TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
+            return classEvalSource(frame, module, source, code.getBytes().getEncoding());
         }
 
         @Specialization
@@ -408,7 +410,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.getBytes(), file.toString());
-            return getContext().execute(getContext(), source, code.getBytes().getEncoding(), TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
+            return classEvalSource(frame, module, source, code.getBytes().getEncoding());
         }
 
         @Specialization
@@ -416,7 +418,11 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.getBytes(), file.toString());
-            return getContext().execute(getContext(), source, code.getBytes().getEncoding(), TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
+            return classEvalSource(frame, module, source, code.getBytes().getEncoding());
+        }
+
+        private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {
+            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
         @Specialization

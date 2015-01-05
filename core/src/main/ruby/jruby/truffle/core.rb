@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 # 
@@ -27,12 +27,18 @@ require_relative 'core/rubinius/api/shims/enumerator'
 require_relative 'core/rubinius/api/shims/undefined'
 
 require_relative 'core/rubinius/kernel/bootstrap/time'
+require_relative 'core/rubinius/kernel/bootstrap/type'
 
 require_relative 'core/rubinius/kernel/common/kernel'
 require_relative 'core/rubinius/kernel/common/array'
+require_relative 'core/rubinius/kernel/common/rational'
 require_relative 'core/rubinius/kernel/common/struct'
 require_relative 'core/rubinius/kernel/common/enumerable'
 require_relative 'core/rubinius/kernel/common/undefined'
 require_relative 'core/rubinius/kernel/common/time'
+require_relative 'core/rubinius/kernel/common/type'
+require_relative 'core/rubinius/kernel/common/integer'
+require_relative 'core/rubinius/kernel/common/float'
+require_relative 'core/rubinius/kernel/common/numeric'
 
 require_relative 'core/shims'

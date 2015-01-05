@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -376,7 +376,7 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
+        public abstract RubyClass executeGetClass(Object value);
 
         @Specialization
         public RubyClass getClass(boolean value) {
@@ -1673,6 +1673,8 @@ public abstract class KernelNodes {
             dispatchIgnoreVisibility = prev.dispatchIgnoreVisibility;
         }
 
+        public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includePrivate);
+
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, UndefinedPlaceholder checkVisibility) {
             return dispatch.doesRespondTo(frame, name, object);
@@ -1700,7 +1702,6 @@ public abstract class KernelNodes {
                 return dispatch.doesRespondTo(frame, name, object);
             }
         }
-
     }
 
     @CoreMethod(names = "respond_to_missing?", required = 1, optional = 1, visibility = Visibility.PRIVATE)
@@ -2154,7 +2155,7 @@ public abstract class KernelNodes {
         public RubyString toS(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            String className = classNode.executeGetClass(frame, self).getName();
+            String className = classNode.executeGetClass(self).getName();
 
             if (className == null) {
                 className = "Class";

@@ -1,1 +1,0 @@
-fails:Time#tv_sec returns the value of time as an integer number of seconds since epoch

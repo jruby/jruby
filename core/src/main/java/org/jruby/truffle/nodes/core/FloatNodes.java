@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -171,7 +171,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "/", required = 1)
+    @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
@@ -503,6 +503,46 @@ public abstract class FloatNodes {
         @Specialization
         public double abs(double n) {
             return Math.abs(n);
+        }
+
+    }
+
+    @CoreMethod(names = "ceil")
+    public abstract static class CeilNode extends CoreMethodNode {
+
+        public CeilNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CeilNode(CeilNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double ceil(double n) {
+            return Math.ceil(n);
+        }
+
+    }
+
+    @CoreMethod(names = "floor")
+    public abstract static class FloorNode extends CoreMethodNode {
+
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
+        public FloorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+        }
+
+        public FloorNode(FloorNode prev) {
+            super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
+        }
+
+        @Specialization
+        public Object floor(double n) {
+            return fixnumOrBignum.fixnumOrBignum(Math.floor(n));
         }
 
     }

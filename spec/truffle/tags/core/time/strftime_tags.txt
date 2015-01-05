@@ -1,7 +1,4 @@
-fails:Time#strftime formats time according to the directives in the given format string
 fails:Time#strftime supports week of year format with %U and %W
-fails:Time#strftime supports mm/dd/yy formatting with %D
-fails:Time#strftime supports HH:MM:SS formatting with %T
 fails:Time#strftime supports 12-hr formatting with %l
 fails:Time#strftime supports AM/PM formatting with %p
 fails:Time#strftime returns the abbreviated weekday with %a

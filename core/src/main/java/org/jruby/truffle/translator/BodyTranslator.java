@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -41,9 +41,13 @@ import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.UndefNode;
+import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
+import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
@@ -68,6 +72,8 @@ public class BodyTranslator extends Translator {
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
     private String currentCallMethodName = null;
+
+    private boolean privately = false;
 
     private static final Set<String> debugIgnoredCalls = new HashSet<>();
 
@@ -346,7 +352,142 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitCallNode(CallNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
+                && ((ConstNode) node.getReceiverNode()).getName() == "Rubinius") {
+            if (node.getName().equals("primitive")) {
+                return translateRubiniusPrimitive(sourceSection, node);
+            } else if (node.getName().equals("invoke_primitive")) {
+                return translateRubiniusInvokePrimitive(sourceSection, node);
+            } else if (node.getName().equals("privately")) {
+                return translateRubiniusPrivately(sourceSection, node);
+            }
+        }
+
         return visitCallNodeExtraArgument(node, null, false, false);
+    }
+
+    private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallNode node) {
+        /*
+         * Translates something that looks like
+         *
+         *   Rubinius.primitive :foo
+         *
+         * into
+         *
+         *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *
+         * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
+         * arguments so we're not worrying too much about what happens when they're more complicated (rest,
+         * keywords etc).
+         */
+
+        if (node.getArgsNode().childNodes().size() != 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
+            throw new UnsupportedOperationException("Rubinius.primitive must have a single literal symbol argument");
+        }
+
+        final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
+
+        final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
+
+        final List<RubyNode> arguments = new ArrayList<>();
+
+        int argumentsCount = primitive.getFactory().getExecutionSignature().size();
+
+        if (primitive.getAnnotation().needsSelf()) {
+            arguments.add(new SelfNode(context, sourceSection));
+            argumentsCount--;
+        }
+
+        for (int n = 0; n < argumentsCount; n++) {
+            arguments.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
+        }
+
+        return new CallRubiniusPrimitiveNode(context, sourceSection,
+                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
+                environment.getReturnID());
+    }
+
+    private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallNode node) {
+        /*
+         * Translates something that looks like
+         *
+         *   Rubinius.invoke_primitive :foo, arg1, arg2, argN
+         *
+         * into
+         *
+         *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         */
+
+        if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
+            throw new UnsupportedOperationException("Rubinius.invoke_primitive must have at least an initial literal symbol argument");
+        }
+
+        final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
+
+        final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
+
+        final List<RubyNode> arguments = new ArrayList<>();
+
+        final Iterator<Node> childIterator = node.getArgsNode().childNodes().iterator();
+
+        // The first argument was the symbol, so skip it when gathering arguments to pass to the primitive
+        childIterator.next();
+
+        while (childIterator.hasNext()) {
+            arguments.add(childIterator.next().accept(this));
+        }
+
+        return new CallRubiniusPrimitiveNode(context, sourceSection,
+                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
+                environment.getReturnID());
+    }
+
+    private RubyNode translateRubiniusPrivately(SourceSection sourceSection, CallNode node) {
+        /*
+         * Translates something that looks like
+         *
+         *   Rubinius.privately { foo }
+         *
+         * into just
+         *
+         *   foo
+         *
+         * While we translate foo we'll mark all call sites as ignoring visbility.
+         */
+
+        if (!(node.getIterNode() instanceof org.jruby.ast.IterNode)) {
+            throw new UnsupportedOperationException("Rubinius.privately needs a literal block");
+        }
+
+        if (node.getArgsNode() != null && node.getArgsNode().childNodes().size() > 0) {
+            throw new UnsupportedOperationException("Rubinius.privately should not have any arguments");
+        }
+
+        /*
+         * Normally when you visit an 'iter' (block) node it will set the method name for you, so that we can name the
+         * block something like 'times-block'. Here we bypass the iter node and translate its child. So we set the
+         * name here.
+         */
+
+        currentCallMethodName = "privately";
+
+        /*
+         * While we translate the body of the iter we want to create all call nodes with the ignore-visbility flag.
+         * This flag is checked in visitCallNodeExtraArgument.
+         */
+
+        final boolean previousPrivately = privately;
+        privately = true;
+
+        try {
+            return (((org.jruby.ast.IterNode) node.getIterNode()).getBodyNode()).accept(this);
+        } finally {
+            // Restore the previous value of the privately flag - allowing for nesting
+
+            privately = previousPrivately;
+        }
     }
 
     /**
@@ -368,15 +509,7 @@ public class BodyTranslator extends Translator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());
 
-        RubyNode translated;
-        if (node.getName().equals("primitive") && receiverTranslated instanceof ReadConstantNode && ((ReadConstantNode) receiverTranslated).getName().equals("Rubinius")) {
-            RubyNode callNode = new RubyCallNode(context, sourceSection, "send", receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), false, true, argumentsAndBlock.getArguments());
-            translated = new TryNode(context, sourceSection, new ExceptionTranslatingNode(context, sourceSection, new ReturnNode(context, sourceSection, environment.getReturnID(), callNode)),
-                    new RescueNode[] {new RescueAnyNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()))},
-                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()));
-        } else {
-            translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), isVCall, ignoreVisibility, false, argumentsAndBlock.getArguments());
-        }
+        RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), isVCall, privately || ignoreVisibility, false, argumentsAndBlock.getArguments());
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
         return translated;
@@ -2036,8 +2169,19 @@ public class BodyTranslator extends Translator {
     public RubyNode visitRationalNode(RationalNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        // TODO: implement Rational
-        return new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator());
+        // Translate as Rubinius.privately { Rubinius.convert(a, b) }
+
+        // TODO(CS): use IntFixnumLiteralNode where possible
+
+        final LexicalScope lexicalScope = environment.getLexicalScope();
+        final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
+        return new RubyCallNode(
+                context, sourceSection, "convert",
+                new ReadConstantNode(context, sourceSection, "Rational", moduleNode, lexicalScope),
+                null, false, true, false,
+                new RubyNode[]{
+                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
+                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getDenominator())});
     }
 
     @Override

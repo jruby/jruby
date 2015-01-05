@@ -24,8 +24,17 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Only part of Rubinius' kernel.rb
+
 module Kernel
   
+  def Rational(a, b = 1)
+    Rubinius.privately do
+      Rational.convert a, b
+    end
+  end
+  module_function :Rational
+
   ##
   # MRI uses a macro named StringValue which has essentially the same
   # semantics as obj.coerce_to(String, :to_str), but rather than using that
