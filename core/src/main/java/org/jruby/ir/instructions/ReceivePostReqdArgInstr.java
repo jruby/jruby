@@ -37,7 +37,7 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + preReqdArgsCount + ", " + postReqdArgsCount + ")";
+        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + preReqdArgsCount + ", " + postReqdArgsCount + ")";
     }
 
     @Override

@@ -26,7 +26,7 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + required + ", " + argIndex + ")";
+        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation() + "(" + required + ", " + argIndex + ")";
     }
 
     @Override

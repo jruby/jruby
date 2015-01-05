@@ -27,7 +27,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + required + ", " + argName + ")";
+        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation() + "(" + required + ", " + argName + ")";
     }
 
     @Override

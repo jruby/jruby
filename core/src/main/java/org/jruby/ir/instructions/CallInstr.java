@@ -79,7 +79,7 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     @Override
     public String toString() {
-        return (hasUnusedResult() ? "[DEAD-RESULT]" : "") + result + " = " + super.toString();
+        return "" + result + " = " + super.toString();
     }
 
     @Override

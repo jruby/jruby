@@ -27,7 +27,7 @@ public abstract class ReceiveExceptionBase extends Instr implements ResultInstr,
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation();
+        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation();
     }
 
     @Override
