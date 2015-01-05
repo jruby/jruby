@@ -83,6 +83,8 @@ public abstract class StringNodes {
                 outputBytes.append(inputBytes);
             }
 
+            outputBytes.setEncoding(inputBytes.getEncoding());
+
             return new RubyString(getContext().getCoreLibrary().getStringClass(), outputBytes);
         }
     }
