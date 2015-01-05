@@ -1037,14 +1037,11 @@ public class IRBuilder {
             Variable eqqResult = s.createTemporaryVariable();
             labels.add(bodyLabel);
             Operand v1, v2;
-            if (whenNode.getExpressionNodes() instanceof DNode) {
-                // DNode produces a proper result, so we don't want the special ListNode handling below
-                // FIXME: This is obviously gross, and we need a better way to filter out non-expression ListNode here
-                // See GH #2423
-                s.addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes(), s), value));
-                v1 = eqqResult;
-                v2 = manager.getTrue();
-            } else if (whenNode.getExpressionNodes() instanceof ListNode) {
+            if (whenNode.getExpressionNodes() instanceof ListNode
+                    // DNode produces a proper result, so we don't want the special ListNode handling below
+                    // FIXME: This is obviously gross, and we need a better way to filter out non-expression ListNode here
+                    // See GH #2423
+                    && !(whenNode.getExpressionNodes() instanceof DNode)) {
                 // Note about refactoring:
                 // - BEQInstr has a quick implementation when the second operand is a boolean literal
                 //   If it can be fixed to do this even on the first operand, we can switch around
