@@ -865,21 +865,24 @@ public final class StringSupport {
         return -1;
     }
 
-    public static int strLengthFromRubyString(RubyString rubyString, ByteList value, Encoding enc) {
-        if (isSingleByteOptimizable(rubyString, enc)) return value.getRealSize();
-        return strLengthFromRubyStringFull(rubyString, value, enc);
+    public static int strLengthFromRubyString(CodeRangeable string, Encoding enc) {
+        final ByteList bytes = string.getByteList();
+
+        if (isSingleByteOptimizable(string, enc)) return bytes.getRealSize();
+        return strLengthFromRubyStringFull(string, bytes, enc);
     }
 
-    public static int strLengthFromRubyString(RubyString rubyString, ByteList bytes) {
-        return strLengthFromRubyStringFull(rubyString, bytes, bytes.getEncoding());
+    public static int strLengthFromRubyString(CodeRangeable string) {
+        final ByteList bytes = string.getByteList();
+        return strLengthFromRubyStringFull(string, bytes, bytes.getEncoding());
     }
 
-    private static int strLengthFromRubyStringFull(RubyString rubyString, ByteList bytes, Encoding enc) {
-        if (rubyString.isCodeRangeValid() && enc instanceof UTF8Encoding) return utf8Length(bytes);
+    private static int strLengthFromRubyStringFull(CodeRangeable string, ByteList bytes, Encoding enc) {
+        if (string.isCodeRangeValid() && enc instanceof UTF8Encoding) return utf8Length(bytes);
 
         long lencr = strLengthWithCodeRange(bytes, enc);
         int cr = unpackArg(lencr);
-        if (cr != 0) rubyString.setCodeRange(cr);
+        if (cr != 0) string.setCodeRange(cr);
         return unpackResult(lencr);
     }
 
