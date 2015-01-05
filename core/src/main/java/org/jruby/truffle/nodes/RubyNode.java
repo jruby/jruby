@@ -10,20 +10,21 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.Probe;
+import com.oracle.truffle.api.instrument.ProbeNode;
+import com.oracle.truffle.api.instrument.TruffleEventReceiver;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyRange;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.hash.HashSearchResult;
 
 import java.math.BigInteger;
 
@@ -33,7 +34,7 @@ import java.math.BigInteger;
  * @see YieldDispatchNode
  */
 @TypeSystemReference(RubyTypes.class)
-public abstract class RubyNode extends Node {
+public abstract class RubyNode extends Node implements ProbeNode.Instrumentable {
 
     private final RubyContext context;
 
@@ -219,6 +220,50 @@ public abstract class RubyNode extends Node {
 
     public RubyBignum bignum(BigInteger value) {
         return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+    }
+
+    public RubyNode getNonWrapperNode() {
+        return this;
+    }
+
+    public Probe probe() {
+        final Node parent = getParent();
+
+        if (parent == null) {
+            throw new IllegalStateException("Cannot call probe() on a node without a parent.");
+        }
+
+        if (parent instanceof RubyWrapperNode) {
+            return ((RubyWrapperNode) parent).getProbe();
+        }
+
+        // Create a new wrapper/probe with this node as its child.
+        final RubyWrapperNode wrapper = new RubyWrapperNode(this);
+
+        // Connect it to a Probe
+        final Probe probe = ProbeNode.insertProbe(wrapper);
+
+        // Replace this node in the AST with the wrapper
+        this.replace(wrapper);
+
+        return probe;
+    }
+
+    public void probeLite(TruffleEventReceiver eventReceiver) {
+        final Node parent = getParent();
+
+        if (parent == null) {
+            throw new IllegalStateException("Cannot call probeLite() on a node without a parent");
+        }
+
+        if (parent instanceof RubyWrapperNode) {
+            throw new IllegalStateException("Cannot call probeLite() on a node that already has a wrapper.");
+        }
+
+        final RubyWrapperNode wrapper = new RubyWrapperNode(this);
+        ProbeNode.insertProbeLite(wrapper, eventReceiver);
+
+        this.replace(wrapper);
     }
 
     // Copied from RubyTypesGen

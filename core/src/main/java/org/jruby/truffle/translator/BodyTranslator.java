@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -24,9 +24,9 @@ import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ForNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
-import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.BreakNode;
+import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.EnsureNode;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.NextNode;
@@ -39,7 +39,6 @@ import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
-import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
@@ -50,10 +49,10 @@ import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.yield.YieldNode;
-import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
@@ -93,6 +92,8 @@ public class BodyTranslator extends Translator {
         this.parent = parent;
         this.environment = environment;
         this.topLevel = topLevel;
+        initGlobalVariableAliases();
+        initReadOnlyGlobalVariables();
     }
 
     @Override
@@ -926,7 +927,7 @@ public class BodyTranslator extends Translator {
 
             TranslatorEnvironment e = environment;
 
-            for (int n = 0; n < node.getDepth(); n++) {
+            for (int n = 0; n < depth; n++) {
                 e = e.getParent();
             }
 
@@ -1221,28 +1222,33 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    private final Set<String> readOnlyGlobalVariables = new HashSet<String>() {{
-        add("$:");
-        add("$LOAD_PATH");
-        add("$-I");
-        add("$\"");
-        add("$LOADED_FEATURES");
-        add("$<");
-        add("$FILENAME");
-        add("$?");
-        add("$-a");
-        add("$-l");
-        add("$-p");
-    }};
-
-    private final Map<String, String> globalVariableAliases = new HashMap<String, String>() {{
-        put("$-I", "$LOAD_PATH");
-        put("$:", "$LOAD_PATH");
-        put("$-d", "$DEBUG");
-        put("$-v", "$VERBOSE");
-        put("$-w", "$VERBOSE");
-        put("$-0", "$/");
-    }};
+    private final Set<String> readOnlyGlobalVariables = new HashSet<String>();
+    private final Map<String, String> globalVariableAliases = new HashMap<String, String>();
+    
+    private void initReadOnlyGlobalVariables() {
+        Set<String> s = readOnlyGlobalVariables;
+        s.add("$:");
+        s.add("$LOAD_PATH");
+        s.add("$-I");
+        s.add("$\"");
+        s.add("$LOADED_FEATURES");
+        s.add("$<");
+        s.add("$FILENAME");
+        s.add("$?");
+        s.add("$-a");
+        s.add("$-l");
+        s.add("$-p");
+    }
+    
+    private void initGlobalVariableAliases() {
+        Map<String, String> m = globalVariableAliases;
+        m.put("$-I", "$LOAD_PATH");
+        m.put("$:", "$LOAD_PATH");
+        m.put("$-d", "$DEBUG");
+        m.put("$-v", "$VERBOSE");
+        m.put("$-w", "$VERBOSE");
+        m.put("$-0", "$/");
+    }
 
     @Override
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
@@ -1526,12 +1532,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        RubyNode translated = ((ReadNode) lhs).makeWriteNode(rhs);
-
-        final SharedMethodInfo methodIdentifier = environment.findMethodForLocalVar(node.getName());
-
-        // return instrumenter.instrumentAsLocalAssignment(translated, methodIdentifier, node.getName());
-        return translated;
+        return ((ReadNode) lhs).makeWriteNode(rhs);
     }
 
     @Override

@@ -10,11 +10,13 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 public class DispatchHeadNode extends Node {
 
@@ -34,12 +36,12 @@ public class DispatchHeadNode extends Node {
         this(context, false, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
     }
 
-    public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
-        this(context, false, false, false, missingBehavior);
-    }
-
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility) {
         this(context, ignoreVisibility, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+    }
+
+    public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
+        this(context, false, false, false, missingBehavior);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
@@ -63,7 +65,6 @@ public class DispatchHeadNode extends Node {
             Object... argumentsObjects) {
         return dispatch(
                 frame,
-                context.getCoreLibrary().getNilObject(),
                 null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,
@@ -148,7 +149,6 @@ public class DispatchHeadNode extends Node {
             Object receiverObject) {
         return (boolean) dispatch(
                 frame,
-                context.getCoreLibrary().getNilObject(),
                 null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,
@@ -159,7 +159,6 @@ public class DispatchHeadNode extends Node {
 
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -169,7 +168,6 @@ public class DispatchHeadNode extends Node {
         if (rubiniusPrimitive) {
             return first.executeDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     RubyArguments.getSelf(frame.getArguments()),
                     methodName,
@@ -179,7 +177,6 @@ public class DispatchHeadNode extends Node {
         } else {
             return first.executeDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -199,7 +196,7 @@ public class DispatchHeadNode extends Node {
 
     public void forceUncached() {
         adoptChildren();
-        first.replace(UncachedDispatchNodeFactory.create(context, ignoreVisibility, null, null, null, null, null, null, null));
+        first.replace(UncachedDispatchNodeFactory.create(context, ignoreVisibility, null, null, null, null, null, null));
     }
 
 }

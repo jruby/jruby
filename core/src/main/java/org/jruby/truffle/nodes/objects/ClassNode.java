@@ -11,9 +11,9 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 

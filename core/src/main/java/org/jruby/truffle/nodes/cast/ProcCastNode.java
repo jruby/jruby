@@ -9,13 +9,16 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.*;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 /**
  * Casts an object to a Ruby Proc object.

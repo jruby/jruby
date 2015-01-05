@@ -12,13 +12,9 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
-import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
-import org.jcodings.util.CaseInsensitiveBytesHash;
-import org.jcodings.util.Hash;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -144,7 +140,6 @@ public abstract class EncodingConverterNodes {
             EncodingUtils.econvArgs(context, new IRubyObject[]{getContext().toJRuby(source), getContext().toJRuby(destination)}, encNames, encs, ecflags_p, ecopts_p);
 
             TranscoderDB.searchPath(encNames[0], encNames[1], new TranscoderDB.SearchPathCallback() {
-                EncodingService es = runtime.getEncodingService();
 
                 public void call(byte[] source, byte[] destination, int depth) {
                     Object v;

@@ -9,16 +9,17 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.runtime.Visibility;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.methods.MethodLike;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
  * Define a block. That is, store the definition of a block and when executed produce the executable

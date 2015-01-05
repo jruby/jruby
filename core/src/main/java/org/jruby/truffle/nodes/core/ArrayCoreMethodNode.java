@@ -10,8 +10,8 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.ImportGuards;
-import com.oracle.truffle.api.source.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.RubyContext;
 
 @ImportGuards(ArrayGuards.class)
 public abstract class ArrayCoreMethodNode extends CoreMethodNode {

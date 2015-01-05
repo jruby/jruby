@@ -9,9 +9,11 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import java.util.*;
+import org.jruby.truffle.runtime.core.RubyProc;
 
-import org.jruby.truffle.runtime.core.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Manages at_exit callbacks.

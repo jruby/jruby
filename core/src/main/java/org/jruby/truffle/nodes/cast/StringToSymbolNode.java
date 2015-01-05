@@ -9,13 +9,14 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 
 /**
  * Creates a symbol from a string.

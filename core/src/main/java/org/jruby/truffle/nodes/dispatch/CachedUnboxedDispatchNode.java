@@ -20,7 +20,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -29,7 +28,7 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
-    private final Class expectedClass;
+    private final Class<?> expectedClass;
     private final Assumption unmodifiedAssumption;
 
     private final Object value;
@@ -39,7 +38,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     @Child protected IndirectCallNode indirectCallNode;
 
     public CachedUnboxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                     Class expectedClass, Assumption unmodifiedAssumption, Object value,
+                                     Class<?> expectedClass, Assumption unmodifiedAssumption, Object value,
                                      RubyMethod method, boolean indirect) {
         super(context, cachedName, next, indirect);
         this.expectedClass = expectedClass;
@@ -69,7 +68,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     @Specialization(guards = {"isPrimitive", "guardName"})
     public Object dispatch(
             VirtualFrame frame,
-            RubyNilClass methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -83,7 +81,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         if (receiverObject.getClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -99,7 +96,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -138,9 +134,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     }
 
     @Fallback
-    public Object dispatch(
+    public Object dispatchFallback(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -149,7 +144,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,
@@ -159,7 +153,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     }
 
     protected static final boolean isPrimitive(
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,

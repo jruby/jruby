@@ -37,7 +37,7 @@ public class RubyTime extends RubyBasicObject {
         return seconds;
     }
 
-    public void setSeconds(long nanoseconds) {
+    public void setSeconds(long seconds) {
         this.seconds = seconds;
     }
 

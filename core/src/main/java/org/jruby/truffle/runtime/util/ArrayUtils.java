@@ -10,11 +10,10 @@
 package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
 
 import java.util.Arrays;
-import java.util.List;
 
 public abstract class ArrayUtils {
 
@@ -221,7 +220,7 @@ public abstract class ArrayUtils {
                 destination[destinationStart + n] = unboxedSource[n];
             }
         } else if (source instanceof Object[]) {
-            System.arraycopy(source, 0, destination, destinationStart, length);
+            RubyArguments.arraycopy((Object[]) source, 0, destination, destinationStart, length);
         } else {
             throw new UnsupportedOperationException();
         }

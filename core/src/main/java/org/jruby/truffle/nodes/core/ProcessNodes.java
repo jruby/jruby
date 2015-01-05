@@ -9,9 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.RubyContext;
 
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {

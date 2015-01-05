@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 /**

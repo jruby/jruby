@@ -9,14 +9,17 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.source.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.control.*;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
-import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.methods.AliasNodeFactory;
+import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
+import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Translates module and class nodes.

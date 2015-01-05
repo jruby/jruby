@@ -9,23 +9,25 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
 import org.jruby.truffle.nodes.conversion.ToSymbolNodeFactory;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.LexicalScope;
 
 public abstract class UncachedDispatchNode extends DispatchNode {
 
@@ -57,7 +59,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     @Specialization(guards = "actionIsReadConstant")
     public Object dispatchReadConstant(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             RubyModule receiverObject,
             Object constantName,
@@ -98,7 +99,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     @Specialization(guards = "actionIsCallOrRespondToMethod")
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -150,7 +150,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
             modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, methodName);
 
-            System.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+            RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
             return callNode.call(
                     frame,

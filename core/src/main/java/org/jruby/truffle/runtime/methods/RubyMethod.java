@@ -9,12 +9,12 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,

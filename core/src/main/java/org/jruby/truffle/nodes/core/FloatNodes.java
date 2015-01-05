@@ -9,16 +9,14 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.math.*;
-
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {

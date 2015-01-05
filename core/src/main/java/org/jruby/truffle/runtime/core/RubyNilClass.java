@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.*;
-
 /**
  * Represents the Ruby {@code NilClass} class.
  */

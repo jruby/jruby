@@ -62,7 +62,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
             final int size = array.getSize() - index;
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), 0, array.getSize() - index), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), 0, size), size);
         }
     }
 
@@ -74,7 +74,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
             final int size = array.getSize() - index;
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), 0, array.getSize() - index), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), 0, size), size);
         }
     }
 
@@ -86,7 +86,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
             final int size = array.getSize() - index;
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), 0, array.getSize() - index), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), 0, size), size);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,12 +17,13 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
 /**
  * Represents the Ruby {@code String} class.
  */
-public class RubyString extends RubyBasicObject {
+public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     private ByteList bytes;
 
@@ -150,12 +151,28 @@ public class RubyString extends RubyBasicObject {
         return bytes.hashCode();
     }
 
+    public int length() {
+        return getBytes().getRealSize();
+    }
+
     public int normaliseIndex(int index) {
         return RubyArray.normaliseIndex(bytes.length(), index);
     }
 
     public int clampExclusiveIndex(int index) {
         return RubyArray.clampExclusiveIndex(bytes.length(), index);
+    }
+
+    @Override
+    public int getCodeRange() {
+        // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
+        return StringSupport.CR_VALID;
+    }
+
+    @Override
+    public int scanForCodeRange() {
+        // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
+        return getCodeRange();
     }
 
     public static class StringAllocator implements Allocator {

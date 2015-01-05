@@ -9,14 +9,13 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.util.cli.Options;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
@@ -65,7 +64,7 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object[] argumentsObjects) {
+    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         depth++;

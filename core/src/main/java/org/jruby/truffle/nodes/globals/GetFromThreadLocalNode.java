@@ -27,7 +27,7 @@ public abstract class GetFromThreadLocalNode extends RubyNode {
     }
 
     @Specialization
-    public Object get(ThreadLocal threadLocal) {
+    public Object get(ThreadLocal<?> threadLocal) {
         return threadLocal.get();
     }
 
@@ -38,7 +38,7 @@ public abstract class GetFromThreadLocalNode extends RubyNode {
 
     public static Object get(RubyContext context, Object value) {
         if (value instanceof ThreadLocal) {
-            return ((ThreadLocal) value).get();
+            return ((ThreadLocal<?>) value).get();
         } else {
             return value;
         }

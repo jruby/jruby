@@ -9,13 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "Truffle::Debug")
 public abstract class TruffleDebugNodes {

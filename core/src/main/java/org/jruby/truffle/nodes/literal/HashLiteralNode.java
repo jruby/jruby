@@ -9,19 +9,20 @@
  */
 package org.jruby.truffle.nodes.literal;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.runtime.hash.KeyValue;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class HashLiteralNode extends RubyNode {
 

@@ -9,13 +9,17 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotTypeException;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class AddMethodNode extends RubyNode {
 

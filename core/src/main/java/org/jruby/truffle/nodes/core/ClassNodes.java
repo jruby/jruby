@@ -10,17 +10,19 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -83,24 +85,6 @@ public abstract class ClassNodes {
             final RubyBasicObject instance = allocateNode.executeAllocate(frame, rubyClass);
             initialize.call(frame, instance, "initialize", block, args);
             return instance;
-        }
-
-        private RubyClass cachedClass(RubyClass rubyClass) {
-            if (isCached) {
-                if (cachedClass == null) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    cachedClass = rubyClass;
-                }
-
-                if (rubyClass == cachedClass) {
-                    return cachedClass;
-                } else {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    isCached = false;
-                    cachedClass = null;
-                }
-            }
-            return rubyClass;
         }
     }
 

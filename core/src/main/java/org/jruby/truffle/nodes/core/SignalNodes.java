@@ -9,11 +9,12 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;

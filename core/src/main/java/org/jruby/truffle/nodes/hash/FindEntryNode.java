@@ -17,8 +17,8 @@ import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashSearchResult;
 import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.runtime.hash.HashSearchResult;
 
 public class FindEntryNode extends RubyNode {
 

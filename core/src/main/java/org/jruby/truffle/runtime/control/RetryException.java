@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.control;
 
-import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.nodes.ControlFlowException;
 
 /**
  * Controls re-trying an iteration in a control structure or method.

@@ -9,18 +9,19 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+import jnr.posix.FileStat;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.ByteList;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.util.ByteList;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
@@ -65,7 +66,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "delete", onSingleton = true, required = 1)
+    @CoreMethod(names = { "delete", "unlink" }, onSingleton = true, required = 1)
     public abstract static class DeleteNode extends CoreMethodNode {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
@@ -87,7 +88,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "directory?", onSingleton = true, optional = 1)
+    @CoreMethod(names = "directory?", onSingleton = true, required = 1)
     public abstract static class DirectoryNode extends CoreMethodNode {
 
         public DirectoryNode(RubyContext context, SourceSection sourceSection) {
@@ -440,6 +441,40 @@ public abstract class FileNodes {
             return size;
         }
 
+    }
+
+    @CoreMethod(names = "symlink?", onSingleton = true, required = 1)
+    public abstract static class SymlinkQueryNode extends CoreMethodNode {
+
+        public SymlinkQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SymlinkQueryNode(SymlinkQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean symlinkQuery(RubyString fileName) {
+            notDesignedForCompilation();
+
+            try {
+                // Note: We can't use file.exists() to check whether the symlink
+                // exists or not, because that method returns false for existing
+                // but broken symlink. So, we try without the existence check,
+                // but in the try-catch block.
+                // MRI behavior: symlink? on broken symlink should return true.
+                FileStat stat = getContext().getRuntime().getPosix().allocateStat();
+
+                if (getContext().getRuntime().getPosix().lstat(fileName.toString(), stat) < 0) {
+                    stat = null;
+                }
+
+                return (stat != null && stat.isSymlink());
+            } catch (SecurityException re) {
+                return false;
+            }
+        }
     }
 
     @CoreMethod(names = "write", required = 1)

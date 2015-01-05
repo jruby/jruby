@@ -20,7 +20,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -82,7 +81,6 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            RubyNilClass methodReceiverObject,
             LexicalScope lexicalScope,
             RubyBasicObject receiverObject,
             Object methodName,
@@ -96,7 +94,6 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         if (receiverObject.getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -112,7 +109,6 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -128,7 +124,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
             modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
-            System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+            RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
             if (isIndirect()) {
                 return indirectCallNode.call(
@@ -182,7 +178,6 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
     @Fallback
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -191,7 +186,6 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,

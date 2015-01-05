@@ -20,7 +20,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -70,7 +69,6 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            RubyNilClass methodReceiverObject,
             LexicalScope lexicalScope,
             RubySymbol receiverObject,
             Object methodName,
@@ -86,7 +84,6 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    methodReceiverObject,
                     lexicalScope,
                     receiverObject,
                     methodName,
@@ -129,7 +126,6 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     @Fallback
     public Object dispatch(
             VirtualFrame frame,
-            Object methodReceiverObject,
             LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
@@ -138,7 +134,6 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             Dispatch.DispatchAction dispatchAction) {
         return next.executeDispatch(
                 frame,
-                methodReceiverObject,
                 lexicalScope,
                 receiverObject,
                 methodName,

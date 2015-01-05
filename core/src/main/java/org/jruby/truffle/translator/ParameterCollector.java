@@ -12,7 +12,6 @@ package org.jruby.truffle.translator;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
-import org.jruby.ast.visitor.NodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.List;
 /**
  * Collects paramter names from a JRuby AST.
  */
-public class ParameterCollector extends AbstractNodeVisitor {
+public class ParameterCollector extends AbstractNodeVisitor<Object> {
 
     private final List<String> parameters = new ArrayList<>();
     private final List<String> keywords = new ArrayList<>();

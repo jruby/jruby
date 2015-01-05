@@ -9,15 +9,16 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 /**
  * Yield to the current block.

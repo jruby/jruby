@@ -10,7 +10,10 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.ObjectType;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.LinkedHashMap;
