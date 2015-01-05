@@ -23,12 +23,12 @@ public abstract class TimeOperations {
         return nanoseconds * 1_000_000;
     }
 
-    public static long millisecondsToSeconds(long miliseconds) {
-        return miliseconds / 1_000;
+    public static long millisecondsToSeconds(long milliseconds) {
+        return milliseconds / 1_000;
     }
 
-    public static long millisecondsInCurrentSecond(long miliseconds) {
-        return miliseconds % 1_000;
+    public static long millisecondsInCurrentSecond(long milliseconds) {
+        return milliseconds % 1_000;
     }
 
     public static long millisecondsToNanoseconds(long milliseconds) {
