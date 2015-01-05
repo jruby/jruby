@@ -52,7 +52,6 @@ public class TryNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         while (true) {
-            getContext().getSafepointManager().poll();
 
             Object result;
 
@@ -67,6 +66,7 @@ public class TryNode extends RubyNode {
                 try {
                     return handleException(frame, exception);
                 } catch (RetryException e) {
+                    getContext().getSafepointManager().poll();
                     continue;
                 }
             } finally {
