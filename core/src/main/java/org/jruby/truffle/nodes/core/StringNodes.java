@@ -549,6 +549,17 @@ public abstract class StringNodes {
 
             return getContext().toTruffle(jrubyTranscoded);
         }
+
+        @Specialization
+        public RubyString encode(RubyString string, RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
+            final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(getContext().makeString(encoding.getName()));
+            final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
+
+            return getContext().toTruffle(jrubyTranscoded);
+        }
     }
 
     @CoreMethod(names = "encoding")
