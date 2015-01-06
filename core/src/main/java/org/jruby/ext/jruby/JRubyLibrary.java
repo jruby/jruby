@@ -31,6 +31,8 @@
 package org.jruby.ext.jruby;
 
 import java.util.ArrayList;
+
+import org.jruby.AbstractRubyMethod;
 import org.jruby.CompatVersion;
 import org.jruby.ast.RestArgNode;
 import org.jruby.anno.JRubyMethod;
@@ -165,7 +167,7 @@ public class JRubyLibrary implements Library {
         @JRubyMethod(name = "args")
         public static IRubyObject methodArgs(IRubyObject recv) {
             Ruby runtime = recv.getRuntime();
-            RubyMethod rubyMethod = (RubyMethod)recv;
+            AbstractRubyMethod rubyMethod = (AbstractRubyMethod)recv;
             RubyArray argsArray = RubyArray.newArray(runtime);
             DynamicMethod method = rubyMethod.getMethod().getRealMethod();
             RubySymbol req = runtime.newSymbol("req");
