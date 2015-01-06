@@ -1302,22 +1302,8 @@ public class Helpers {
         return context.getCurrentStaticScope().setConstant(name, value);
     }
 
-    public static IRubyObject retryJump() {
-        throw JumpException.RETRY_JUMP;
-    }
-
-    public static IRubyObject redoJump() {
-        throw JumpException.REDO_JUMP;
-    }
-
     public static IRubyObject redoLocalJumpError(Ruby runtime) {
         throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, runtime.getNil(), "unexpected redo");
-    }
-
-    public static IRubyObject nextJump(IRubyObject value) {
-        if (value.isNil()) throw JumpException.NEXT_JUMP;
-
-        throw new JumpException.NextJump(value);
     }
     
     public static IRubyObject nextLocalJumpError(Ruby runtime, IRubyObject value) {
