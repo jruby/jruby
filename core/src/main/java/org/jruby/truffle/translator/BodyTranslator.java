@@ -356,7 +356,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
-                && ((ConstNode) node.getReceiverNode()).getName() == "Rubinius") {
+                && ((ConstNode) node.getReceiverNode()).getName().equals("Rubinius")) {
             if (node.getName().equals("primitive")) {
                 return translateRubiniusPrimitive(sourceSection, node);
             } else if (node.getName().equals("invoke_primitive")) {
