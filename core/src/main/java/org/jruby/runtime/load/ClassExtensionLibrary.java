@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import jnr.posix.JavaSecuredFile;
 import org.jruby.Ruby;
 
 import java.net.URL;
@@ -43,6 +44,24 @@ public class ClassExtensionLibrary implements Library {
     private final Class theClass;
     private final String name;
 
+    /**
+     * Try to locate an extension service in the current classloader resources. This happens
+     * after the jar has been added to JRuby's URLClassLoader (JRubyClassLoader) and is how
+     * extensions can magically load.
+     *
+     * The basic logic is to use the require name (@param searchName) to build the name of
+     * a class ending in "Service", and then invoke that class to boot the extension.
+     *
+     * The looping logic here was in response to a RubyGems change that started absolutizing
+     * the path to the extension jar under some circumstances, leading to an incorrect
+     * package/class name for the service contained therein. The new logic will try
+     * successively more trailing elements until one of them is not a valid package
+     * name or all elements have been exhausted.
+     *
+     * @param runtime the current JRuby runtime
+     * @param searchName the name passed to `require`
+     * @return a ClassExtensionLibrary that will boot the ext, or null if none was found
+     */
     static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
         // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
         String[] all = searchName.split("/");

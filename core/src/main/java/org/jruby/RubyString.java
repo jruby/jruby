@@ -38,6 +38,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.ascii.AsciiTables;
@@ -2330,8 +2331,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             throw context.runtime.newArgumentError("salt too short(need >=2 bytes)");
         }
 
-        RubyString result = RubyString.newString(context.runtime,
-                context.runtime.getPosix().crypt(asJavaString(), salt).toString());
+        POSIX posix = context.runtime.getPosix();
+        CharSequence cryptedString = posix.crypt(asJavaString(), salt);
+        // We differ from MRI in that we do not process salt to make it work and we will
+        // return any errors via errno.
+        if (cryptedString == null) throw context.runtime.newErrnoFromInt(posix.errno());
+
+        RubyString result = RubyString.newString(context.runtime, cryptedString.toString());
         result.associateEncoding(ascii8bit);
         result.infectBy(this);
         result.infectBy(otherStr);
@@ -3897,11 +3903,30 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean start_with_pCommon(IRubyObject arg) {
-        IRubyObject tmp = arg.checkStringType();
-        if (tmp.isNil()) return false;
-        RubyString otherString = (RubyString)tmp;
+        Ruby runtime = getRuntime();
+        RubyString otherString;
+
+        if (!runtime.is2_0()) {
+            // 1.8 and 1.9 ignores uncoercible argument
+            IRubyObject tmp = arg.checkStringType();
+            if (tmp.isNil()) return false;
+            otherString = (RubyString) tmp;
+        } else {
+            // 2.0+ requires coersion to succeed
+            otherString = arg.convertToString();
+        }
+
         checkEncoding(otherString);
+
+        int otherLength = otherString.value.getRealSize();
+
+        if (otherLength == 0) {
+            // other is '', so return true
+            return true;
+        }
+
         if (value.getRealSize() < otherString.value.getRealSize()) return false;
+
         return value.startsWith(otherString.value);
     }
 
@@ -5708,13 +5733,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod
     public IRubyObject encode(ThreadContext context, IRubyObject toEncoding,
             IRubyObject forcedEncoding, IRubyObject opts) {
+
         return EncodingUtils.strEncode(context, this, toEncoding, forcedEncoding, opts);
     }
 
     @JRubyMethod
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
+        return force_encoding(context, context.runtime.getEncodingService().getEncodingFromObject(enc));
+    }
+
+    private IRubyObject force_encoding(ThreadContext context, Encoding encoding) {
         modify19();
-        Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
         associateEncoding(encoding);
         clearCodeRange();
         return this;
