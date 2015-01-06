@@ -1961,7 +1961,7 @@ public abstract class KernelNodes {
         public boolean system(RubyString command) {
             notDesignedForCompilation();
 
-            // TOOD(CS 5-JAN-15): very simplistic implementation
+            // TODO(CS 5-JAN-15): very simplistic implementation
 
             final RubyHash env = getContext().getCoreLibrary().getENV();
 
