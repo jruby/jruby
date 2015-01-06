@@ -314,18 +314,5 @@ public class RubyMethod extends AbstractRubyMethod {
         RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), implementationModule).getSuperClass();
         return super_method(context, receiver, superClass);
     }
-
-    protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
-        if (superClass == null) return context.runtime.getNil();
-
-        DynamicMethod newMethod = superClass.searchMethod(methodName);
-        if (newMethod == UndefinedMethod.INSTANCE) return context.runtime.getNil();
-
-        if (receiver == null) {
-            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, newMethod);
-        } else {
-            return newMethod(superClass, methodName, superClass, originName, newMethod, receiver);
-        }
-    }
 }
 

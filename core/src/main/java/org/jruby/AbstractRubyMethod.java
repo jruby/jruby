@@ -36,11 +36,13 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.CompiledBlockLight19;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
@@ -141,6 +143,19 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)
     public IRubyObject parameters(ThreadContext context) {
         return JRubyLibrary.MethodExtensions.methodArgs(this);
+    }
+
+    protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
+        if (superClass == null) return context.runtime.getNil();
+
+        DynamicMethod newMethod = superClass.searchMethod(methodName);
+        if (newMethod == UndefinedMethod.INSTANCE) return context.runtime.getNil();
+
+        if (receiver == null) {
+            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, newMethod);
+        } else {
+            return RubyMethod.newMethod(superClass, methodName, superClass, originName, newMethod, receiver);
+        }
     }
 }
 
