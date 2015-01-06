@@ -818,12 +818,13 @@ public class Helpers {
         return getBlockFromProc(currentBlock, proc);
     }
 
-    private static IRubyObject coerceProc(IRubyObject proc, Ruby runtime) throws RaiseException {
-        proc = TypeConverter.convertToType(proc, runtime.getProc(), "to_proc", false);
+    private static IRubyObject coerceProc(IRubyObject maybeProc, Ruby runtime) throws RaiseException {
+        IRubyObject proc = TypeConverter.convertToType(maybeProc, runtime.getProc(), "to_proc", false);
 
         if (!(proc instanceof RubyProc)) {
-            throw runtime.newTypeError("wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
+            throw runtime.newTypeError("wrong argument type " + maybeProc.getMetaClass().getName() + " (expected Proc)");
         }
+
         return proc;
     }
 

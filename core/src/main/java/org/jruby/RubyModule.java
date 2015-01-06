@@ -1486,7 +1486,7 @@ public class RubyModule extends RubyObject {
             originModule = ((MetaClass)originModule).getRealClass();
         }
 
-        RubyMethod newMethod;
+        AbstractRubyMethod newMethod;
         if (bound) {
             newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, method, receiver);
         } else {
@@ -1547,13 +1547,13 @@ public class RubyModule extends RubyObject {
             body = proc;
 
             newMethod = createProcMethod(name, visibility, proc);
-        } else if (runtime.getMethod().isInstance(arg1)) {
-            RubyMethod method = (RubyMethod)arg1;
+        } else if (arg1 instanceof AbstractRubyMethod) {
+            AbstractRubyMethod method = (AbstractRubyMethod)arg1;
             body = method;
             
             checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
             
-            newMethod = method.unbind().getMethod().dup();
+            newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");

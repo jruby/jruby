@@ -64,12 +64,7 @@ import org.jruby.runtime.marshal.DataType;
  * @since 0.2.3
  */
 @JRubyClass(name="Method")
-public class RubyMethod extends RubyObject implements DataType {
-    protected RubyModule implementationModule;
-    protected String methodName;
-    protected RubyModule originModule;
-    protected String originName;
-    protected DynamicMethod method;
+public class RubyMethod extends AbstractRubyMethod {
     protected IRubyObject receiver;
 
     protected RubyMethod(Ruby runtime, RubyClass rubyClass) {
@@ -86,7 +81,8 @@ public class RubyMethod extends RubyObject implements DataType {
 
         methodClass.index = ClassIndex.METHOD;
         methodClass.setReifiedClass(RubyMethod.class);
-        
+
+        methodClass.defineAnnotatedMethods(AbstractRubyMethod.class);
         methodClass.defineAnnotatedMethods(RubyMethod.class);
         
         return methodClass;
@@ -110,10 +106,6 @@ public class RubyMethod extends RubyObject implements DataType {
         newMethod.receiver = receiver;
 
         return newMethod;
-    }
-
-    public DynamicMethod getMethod() {
-        return method;
     }
 
     /** Call the method.
