@@ -3254,11 +3254,6 @@ public final class Ruby implements Constantizable {
             getJRubyClassLoader().tearDown(isDebug());
         }
 
-        // Unregister stdio ChannelDescriptors so they don't leak
-        ChannelDescriptor.unregisterDescriptor(getFilenoExtMap(0));
-        ChannelDescriptor.unregisterDescriptor(getFilenoExtMap(1));
-        ChannelDescriptor.unregisterDescriptor(getFilenoExtMap(2));
-
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
             ProfileCollection profileCollection = threadService.getMainThread().getContext().getProfileCollection();

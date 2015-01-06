@@ -3906,15 +3906,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = getRuntime();
         RubyString otherString;
 
-        if (!runtime.is2_0()) {
-            // 1.8 and 1.9 ignores uncoercible argument
-            IRubyObject tmp = arg.checkStringType();
-            if (tmp.isNil()) return false;
-            otherString = (RubyString) tmp;
-        } else {
-            // 2.0+ requires coersion to succeed
-            otherString = arg.convertToString();
-        }
+        otherString = arg.convertToString();
 
         checkEncoding(otherString);
 
