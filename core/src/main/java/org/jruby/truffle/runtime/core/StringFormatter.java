@@ -15,6 +15,8 @@ import org.jruby.truffle.runtime.RubyContext;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class StringFormatter {
@@ -22,11 +24,22 @@ public class StringFormatter {
     @CompilerDirectives.TruffleBoundary
     public static String format(RubyContext context, String format, List<Object> values) {
         final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
-        final PrintStream printStream = new PrintStream(byteArray);
+
+        final PrintStream printStream;
+
+        try {
+            printStream = new PrintStream(byteArray, false, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
 
         format(context, printStream, format, values);
 
-        return byteArray.toString();
+        try {
+            return byteArray.toString(StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @CompilerDirectives.TruffleBoundary

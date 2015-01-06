@@ -100,7 +100,7 @@ public class RubyRegexp extends RubyBasicObject {
             if (setNamedCaptures && regex.numberOfNames() > 0) {
                 for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext();) {
                     final NameEntry e = i.next();
-                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
                     setFrame(frame, name, getContext().getCoreLibrary().getNilObject());
                 }
             }
@@ -156,7 +156,7 @@ public class RubyRegexp extends RubyBasicObject {
         if (setNamedCaptures && regex.numberOfNames() > 0) {
             for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
-                final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+                final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
                 int nth = regex.nameToBackrefNumber(e.name, e.nameP, e.nameEnd, region);
 
                 final Object value;
@@ -413,7 +413,7 @@ public class RubyRegexp extends RubyBasicObject {
 
     public RubyEncoding getEncoding() {
         if (encoding == null) {
-            encoding = RubyEncoding.getEncoding(getContext(), regex.getEncoding());
+            encoding = RubyEncoding.getEncoding(regex.getEncoding());
         }
 
         return encoding;

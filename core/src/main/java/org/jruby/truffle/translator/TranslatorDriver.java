@@ -37,6 +37,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 public class TranslatorDriver {
 
@@ -108,7 +109,7 @@ public class TranslatorDriver {
         org.jruby.ast.RootNode node;
 
         try {
-            node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(), new ManyVarsDynamicScope(staticScope), parserConfiguration);
+            node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), new ManyVarsDynamicScope(staticScope), parserConfiguration);
         } catch (Exception e) {
             String message = e.getMessage();
 
@@ -203,7 +204,7 @@ public class TranslatorDriver {
         }
 
         final org.jruby.RubyFile jrubyFile = (org.jruby.RubyFile) jrubyData;
-        final RubyFile truffleFile = new RubyFile(context.getCoreLibrary().getFileClass(), new InputStreamReader(jrubyFile.getInStream()), null);
+        final RubyFile truffleFile = new RubyFile(context.getCoreLibrary().getFileClass(), new InputStreamReader(jrubyFile.getInStream(), StandardCharsets.UTF_8), null);
 
         return truffleFile;
     }

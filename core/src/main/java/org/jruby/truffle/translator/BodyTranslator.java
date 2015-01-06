@@ -56,6 +56,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -1027,7 +1028,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
-        return new ObjectLiteralNode(context, sourceSection, RubyEncoding.getEncoding(context, node.getEncoding()));
+        return new ObjectLiteralNode(context, sourceSection, RubyEncoding.getEncoding(node.getEncoding()));
     }
 
     @Override
@@ -1583,7 +1584,7 @@ public class BodyTranslator extends Translator {
             if (regex.numberOfNames() > 0) {
                 for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext(); ) {
                     final NameEntry e = i.next();
-                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
 
                     if (environment.hasOwnScopeForAssignments()) {
                         environment.declareVar(name);
@@ -2208,7 +2209,7 @@ public class BodyTranslator extends Translator {
         } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
             regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue());
         } else {
-            regexp.forceEncoding(RubyEncoding.getEncoding(context, node.getEncoding()));
+            regexp.forceEncoding(RubyEncoding.getEncoding(node.getEncoding()));
         }
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
@@ -2227,7 +2228,7 @@ public class BodyTranslator extends Translator {
             }
 
             if (bytes[n] == '\\' && n + 1 < bytes.length && bytes[n + 1] == 'x') {
-                int b = Integer.parseInt(new String(Arrays.copyOfRange(bytes, n + 2, n + 4)), 16);
+                int b = Integer.parseInt(new String(Arrays.copyOfRange(bytes, n + 2, n + 4), StandardCharsets.UTF_8), 16);
 
                 if (b > 0x7F) {
                     return false;

@@ -79,7 +79,7 @@ def findbugs
 end
 
 def findbugs_report
-  sh 'tool/truffle-findbugs.sh --report'
+  sh 'tool/truffle-findbugs.sh --report' rescue nil
   sh 'open truffle-findbugs-report.html' rescue nil
 end
 

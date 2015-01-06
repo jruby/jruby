@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,11 +32,11 @@ public class RubyEncoding extends RubyBasicObject {
     private final ByteList name;
     private final boolean dummy;
 
-    public static synchronized RubyEncoding getEncoding(RubyContext context, Encoding encoding) {
-        return lookup.get(new String(encoding.getName()).toLowerCase());
+    public static synchronized RubyEncoding getEncoding(Encoding encoding) {
+        return lookup.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase());
     }
 
-    public static RubyEncoding getEncoding(RubyContext context, String name) {
+    public static RubyEncoding getEncoding(String name) {
         return lookup.get(name.toLowerCase());
     }
 

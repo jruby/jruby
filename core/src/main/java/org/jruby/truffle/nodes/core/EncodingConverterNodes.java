@@ -18,7 +18,6 @@ import org.jcodings.transcode.TranscoderDB;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -62,8 +61,8 @@ public abstract class EncodingConverterNodes {
 
                     v = new RubyArray(getContext().getCoreLibrary().getArrayClass(),
                             new Object[]{
-                                RubyEncoding.getEncoding(getContext(), source),
-                                RubyEncoding.getEncoding(getContext(), destination)
+                                RubyEncoding.getEncoding(source),
+                                RubyEncoding.getEncoding(destination)
                             }, 2);
                 }
                 result[r++] = v;
@@ -156,8 +155,8 @@ public abstract class EncodingConverterNodes {
 
                         v = new RubyArray(getContext().getCoreLibrary().getArrayClass(),
                                 new Object[]{
-                                        RubyEncoding.getEncoding(getContext(), destinationEncoding),
-                                        RubyEncoding.getEncoding(getContext(), sourceEncoding)
+                                        RubyEncoding.getEncoding(destinationEncoding),
+                                        RubyEncoding.getEncoding(sourceEncoding)
                                 }, 2);
                     }
 

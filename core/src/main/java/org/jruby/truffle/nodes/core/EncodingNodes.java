@@ -49,7 +49,7 @@ public abstract class EncodingNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            return RubyEncoding.getEncoding(getContext(), encoding);
+            return RubyEncoding.getEncoding(encoding);
         }
 
     }
@@ -75,7 +75,7 @@ public abstract class EncodingNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            return RubyEncoding.getEncoding(getContext(), encoding);
+            return RubyEncoding.getEncoding(encoding);
         }
 
     }
@@ -139,7 +139,7 @@ public abstract class EncodingNodes {
         public RubyEncoding find(RubyString name) {
             notDesignedForCompilation();
 
-            return RubyEncoding.getEncoding(getContext(), name.toString());
+            return RubyEncoding.getEncoding(name.toString());
         }
 
     }

@@ -3,4 +3,8 @@
   <Match>
     <Class name="~.*NodeFactory.*" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.GCNodes$GarbageCollectNode" />
+    <Bug pattern="DM_GC" />
+  </Match>
 </FindBugsFilter>

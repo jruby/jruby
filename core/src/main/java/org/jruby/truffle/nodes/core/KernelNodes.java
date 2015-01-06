@@ -47,6 +47,7 @@ import org.jruby.util.cli.Options;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @CoreClass(name = "Kernel")
@@ -90,7 +91,7 @@ public abstract class KernelNodes {
             }
 
             final InputStream stdout = process.getInputStream();
-            final InputStreamReader reader = new InputStreamReader(stdout);
+            final InputStreamReader reader = new InputStreamReader(stdout, StandardCharsets.UTF_8);
 
             final StringBuilder resultBuilder = new StringBuilder();
 
@@ -1983,7 +1984,14 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            final PrintStream printStream = new PrintStream(outputStream);
+
+            final PrintStream printStream;
+
+            try {
+                printStream = new PrintStream(outputStream, true, StandardCharsets.UTF_8.name());
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
 
             if (args.length > 0) {
                 final String format = args[0].toString();

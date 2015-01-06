@@ -35,6 +35,7 @@ import org.jruby.util.cli.OutputStrings;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -381,7 +382,7 @@ public class CoreLibrary {
                 throw new RuntimeException("couldn't load Truffle core library " + fileName);
             }
 
-            source = Source.fromReader(new InputStreamReader(resource.getInputStream()), "core:/" + fileName);
+            source = Source.fromReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8), "core:/" + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -861,7 +862,7 @@ public class CoreLibrary {
         return envHash;
     }
 
-    public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding(context, "US-ASCII"); }
+    public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding("US-ASCII"); }
 
     private RubyHash getSystemEnv() {
         final List<KeyValue> entries = new ArrayList<>();
