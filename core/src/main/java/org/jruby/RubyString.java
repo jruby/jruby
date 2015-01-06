@@ -3917,7 +3917,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return true;
         }
 
-        if (value.getRealSize() < otherString.value.getRealSize()) return false;
+        if (value.getRealSize() < otherLength) return false;
 
         return value.startsWith(otherString.value);
     }
@@ -3941,20 +3941,36 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean end_with_pCommon(IRubyObject arg) {
-        IRubyObject tmp = arg.checkStringType();
-        if (tmp.isNil()) return false;
-        RubyString otherString = (RubyString)tmp;
-        int otherLength = otherString.value.getRealSize();
+        Ruby runtime = getRuntime();
+        RubyString otherString;
+
+        if (!runtime.is2_0()) {
+            // 1.8 and 1.9 ignores uncoercible argument
+            IRubyObject tmp = arg.checkStringType();
+            if (tmp.isNil()) return false;
+            otherString = (RubyString) tmp;
+        } else {
+            // 2.0+ requires coersion to succeed
+            otherString = arg.convertToString();
+        }
+
         Encoding enc = checkEncoding(otherString);
-        if (value.getRealSize() < otherLength) return false;
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+
+        int otherLength = otherString.value.getRealSize();
+
         if (otherLength == 0) {
             // other is '', so return true
             return true;
         }
+
+        if (value.getRealSize() < otherLength) return false;
+
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
         int s = end - otherLength;
+
         if (enc.leftAdjustCharHead(value.getUnsafeBytes(), p, s, end) != s) return false;
+
         return value.endsWith(otherString.value);
     }
 
