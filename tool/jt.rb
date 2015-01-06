@@ -35,6 +35,9 @@ def help
   puts 'jt untag spec/ruby/language                  untag passing specs in this directory'
   puts 'jt untag spec/ruby/language/while_spec.rb    untag passing specs in this file'
   puts 'jt findbugs                                  run findbugs'
+  puts 'jt findbugs report                           run findbugs and generate an HTML report'
+  puts
+  puts 'you can also put build or redbuild in front of any command'
 end
 
 def build
@@ -75,6 +78,11 @@ def findbugs
   sh 'tool/truffle-findbugs.sh'
 end
 
+def findbugs_report
+  sh 'tool/truffle-findbugs.sh --report'
+  sh 'open truffle-findbugs-report.html' rescue nil
+end
+
 COMMANDS = [
   ['help'],
   ['build'],
@@ -84,7 +92,8 @@ COMMANDS = [
   ['test', :path],
   ['tag', :path],
   ['untag', :path],
-  ['findbugs']
+  ['findbugs'],
+  ['findbugs', 'report']
 ]
 
 if [[], ['-h'], ['-help'], ['--help']].include? ARGV
@@ -95,18 +104,32 @@ end
 def match(args, command)
   return false if ARGV.size != command.size
 
+  command_name = []
   impl_args = []
 
   command.zip(ARGV).each do |expected, actual|
     if expected.is_a? String
       return false if expected != actual
+      command_name.push expected
     elsif expected.is_a? Symbol
       impl_args.push actual
     end
   end
 
-  send command[0], *impl_args
+  send command_name.join('_'), *impl_args
 
+  exit
+end
+
+if ARGV[0] == 'build'
+  build
+  ARGV.shift
+elsif ARGV[0] == 'rebuild'
+  rebuild
+  ARGV.shift
+end
+
+if ARGV.empty?
   exit
 end
 
