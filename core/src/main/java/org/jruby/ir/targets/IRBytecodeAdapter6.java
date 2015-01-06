@@ -25,11 +25,13 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -191,6 +193,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void invokeOther(String name, int arity, boolean hasClosure) {
+        invoke(name, arity, hasClosure, CallType.NORMAL);
+    }
+
+    public void invoke(String name, int arity, boolean hasClosure, CallType callType) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
         SkinnyMethodAdapter adapter2;
@@ -255,7 +261,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.ifnonnull(doCall);
         adapter2.pop();
         adapter2.ldc(name);
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newFunctionalCachingCallSite", sig(FunctionalCachingCallSite.class, String.class));
+        Class siteClass = callType == CallType.NORMAL ? NormalCachingCallSite.class : FunctionalCachingCallSite.class;
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), sig(siteClass, String.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
 
@@ -345,7 +352,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.ifnonnull(doCall);
         adapter2.pop();
         adapter2.ldc(name);
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newFunctionalCachingCallSite", sig(FunctionalCachingCallSite.class, String.class));
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newNormalCachingCallSite", sig(NormalCachingCallSite.class, String.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
 
@@ -389,7 +396,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.ifnonnull(doCall);
         adapter2.pop();
         adapter2.ldc(name);
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newFunctionalCachingCallSite", sig(FunctionalCachingCallSite.class, String.class));
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newNormalCachingCallSite", sig(NormalCachingCallSite.class, String.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
 
@@ -411,7 +418,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     public void invokeSelf(String name, int arity, boolean hasClosure) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invokeOther(name, arity, hasClosure);
+        invoke(name, arity, hasClosure, CallType.FUNCTIONAL);
     }
 
     public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {

@@ -987,5 +987,16 @@ modes.each do |mode|
         expect(x).to eq(true)
       end
     end
+
+    it "enforces visibility" do
+      run('obj = Class.new do
+             def a; true; end
+             private def b; true; end
+             protected; def c; true; end
+           end.new
+           [obj.a, (obj.b rescue false), (obj.c rescue false)]') do |x|
+        x.should == [true, false, false]
+      end
+    end
   end
 end
