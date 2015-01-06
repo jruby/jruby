@@ -945,11 +945,11 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDXStrNode(org.jruby.ast.DXStrNode node) {
-        SourceSection sourceSection = translate(node.getPosition());
-
-        final RubyNode string = translateInterpolatedString(sourceSection, node.childNodes());
-
-        return new SystemNode(context, sourceSection, string);
+        final org.jruby.ast.DStrNode string = new org.jruby.ast.DStrNode(node.getPosition(), node.getEncoding());
+        string.childNodes().addAll(node.childNodes());
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), string);
+        final org.jruby.ast.Node callNode = new FCallNode(node.getPosition(), "`", argsNode, null);
+        return callNode.accept(this);
     }
 
     @Override
@@ -2467,11 +2467,9 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitXStrNode(org.jruby.ast.XStrNode node) {
-        SourceSection sourceSection = translate(node.getPosition());
-
-        final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, node.getValue());
-
-        return new SystemNode(context, sourceSection, literal);
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), new org.jruby.ast.StrNode(node.getPosition(), node.getValue()));
+        final org.jruby.ast.Node callNode = new FCallNode(node.getPosition(), "`", argsNode, null);
+        return callNode.accept(this);
     }
 
     @Override

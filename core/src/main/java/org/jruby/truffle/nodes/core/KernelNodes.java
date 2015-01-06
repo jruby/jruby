@@ -45,15 +45,71 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
+
+    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class BacktickNode extends CoreMethodNode {
+
+        public BacktickNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BacktickNode(BacktickNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString backtick(RubyString command) {
+            // Command is lexically a string interoplation, so variables will already have been expanded
+
+            notDesignedForCompilation();
+
+            final RubyContext context = getContext();
+
+            final RubyHash env = context.getCoreLibrary().getENV();
+
+            final List<String> envp = new ArrayList<>();
+
+            // TODO(CS): cast
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
+            }
+
+            final Process process;
+
+            try {
+                // We need to run via bash to get the variable and other expansion we expect
+                process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            final InputStream stdout = process.getInputStream();
+            final InputStreamReader reader = new InputStreamReader(stdout);
+
+            final StringBuilder resultBuilder = new StringBuilder();
+
+            // TODO(cs): this isn't great for binary output
+
+            try {
+                int c;
+
+                while ((c = reader.read()) != -1) {
+                    resultBuilder.append((char) c);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return context.makeString(resultBuilder.toString());
+        }
+
+    }
 
     /**
      * Check if operands are the same object or call #==.
