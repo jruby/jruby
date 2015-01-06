@@ -50,10 +50,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -1949,7 +1946,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "system", isModuleFunction = true, argumentsAsArray = true)
+    @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class SystemNode extends CoreMethodNode {
 
         public SystemNode(RubyContext context, SourceSection sourceSection) {
@@ -1961,10 +1958,28 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object fork(Object[] args) {
+        public boolean system(RubyString command) {
             notDesignedForCompilation();
-            getContext().getWarnings().warn("Kernel#system not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return getContext().getCoreLibrary().getNilObject();
+
+            // TOOD(CS 5-JAN-15): very simplistic implementation
+
+            final RubyHash env = getContext().getCoreLibrary().getENV();
+
+            final List<String> envp = new ArrayList<>();
+
+            // TODO(CS): cast
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
+            }
+
+            // We need to run via bash to get the variable and other expansion we expect
+            try {
+                Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return true;
         }
 
     }

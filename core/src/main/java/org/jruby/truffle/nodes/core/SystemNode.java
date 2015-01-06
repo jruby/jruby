@@ -81,4 +81,5 @@ public class SystemNode extends RubyNode {
 
         return context.makeString(resultBuilder.toString());
     }
+
 }
