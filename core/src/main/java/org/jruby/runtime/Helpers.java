@@ -1301,14 +1301,6 @@ public class Helpers {
     public static IRubyObject setConstantInCurrent(IRubyObject value, ThreadContext context, String name) {
         return context.getCurrentStaticScope().setConstant(name, value);
     }
-
-    public static IRubyObject redoLocalJumpError(Ruby runtime) {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, runtime.getNil(), "unexpected redo");
-    }
-    
-    public static IRubyObject nextLocalJumpError(Ruby runtime, IRubyObject value) {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.NEXT, value, "unexpected next");
-    }
     
     public static final int MAX_SPECIFIC_ARITY_OBJECT_ARRAY = 10;
     

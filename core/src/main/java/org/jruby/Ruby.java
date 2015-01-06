@@ -467,12 +467,6 @@ public final class Ruby implements Constantizable {
 
         try {
             return Interpreter.getInstance().execute(this, rootNode, context.getFrameSelf());
-        } catch (JumpException.ReturnJump rj) {
-            throw newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
-        } catch (JumpException.BreakJump bj) {
-            throw newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
-        } catch (JumpException.RedoJump rj) {
-            throw newLocalJumpError(RubyLocalJumpError.Reason.REDO, (IRubyObject)rj.getValue(), "unexpected redo");
         } finally {
             context.postEvalScriptlet();
         }
