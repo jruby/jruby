@@ -52,6 +52,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.jruby.platform.Platform.IS_WINDOWS;
+
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
     // Ruby's designation for some platforms, minus version numbers in some cases
@@ -243,7 +245,9 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "bindir", binDir);
 
         setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
+        setConfig(configHash, "RUBYW_INSTALL_NAME", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
         setConfig(configHash, "ruby_install_name", jrubyScript());
+        setConfig(configHash, "rubyw_install_name", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
         setConfig(configHash, "SHELL", jrubyShell());
         setConfig(configHash, "prefix", normalizedHome);
         setConfig(configHash, "exec_prefix", normalizedHome);
