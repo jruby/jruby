@@ -37,6 +37,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.io.OpenFile;
 
+import java.nio.channels.SelectionKey;
+
 /**
  * @author Nick Sieger
  */
@@ -63,7 +65,8 @@ public class IOWaitLibrary implements Library {
 //        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return INT2FIX(0);
 //        if (ioctl(fptr->fd, FIONREAD, &n)) return INT2FIX(0);
 //        if (n > 0) return ioctl_arg2num(n);
-        return RubyNumeric.int2fix(runtime, 0);
+        // Because we can't get an actual system-level buffer available count, we fake it by returning 1 if ready
+        return RubyNumeric.int2fix(runtime, fptr.readyNow(context) ? 1 : 0);
     }
 
     /**
@@ -71,8 +74,8 @@ public class IOWaitLibrary implements Library {
      */
     @JRubyMethod(name = "ready?")
     public static IRubyObject ready(ThreadContext context, IRubyObject _io) {
-        Ruby runtime = context.runtime;
         RubyIO io = (RubyIO)_io;
+        Ruby runtime = context.runtime;
         OpenFile fptr;
 //        ioctl_arg n;
 
@@ -83,10 +86,10 @@ public class IOWaitLibrary implements Library {
 //        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qnil;
 //        if (ioctl(fptr->fd, FIONREAD, &n)) return Qnil;
 //        if (n > 0) return Qtrue;
-        return runtime.getFalse();
+        return runtime.newBoolean(fptr.readyNow(context));
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(name = {"wait", "wait_readable"}, optional = 1)
     public static IRubyObject wait_readable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
         RubyIO io = (RubyIO)_io;
         Ruby runtime = context.runtime;
@@ -95,8 +98,6 @@ public class IOWaitLibrary implements Library {
 //        ioctl_arg n;
         IRubyObject timeout;
         long tv;
-//        struct timeval timerec;
-//        struct timeval *tv;
 
         fptr = io.getOpenFileChecked();
         fptr.checkReadable(context);
@@ -110,21 +111,21 @@ public class IOWaitLibrary implements Library {
         }
 
         if (timeout.isNil()) {
-            tv = 0;
+            tv = -1;
         }
         else {
             tv = timeout.convertToInteger().getLongValue() * 1000;
+            if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
         }
 
         if (fptr.readPending() != 0) return runtime.getTrue();
         // TODO: better effort to get available bytes from our channel
 //        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qfalse;
-        // TODO: actually use timeout
-        i = fptr.waitReadable(context, tv);
+        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_READ, tv);
         fptr.checkClosed();
 //        if (ioctl(fptr->fd, FIONREAD, &n)) rb_sys_fail(0);
 //        if (n > 0) return io;
-        if (i) return io;
+        if (ready) return io;
         return context.nil;
     }
 
@@ -134,8 +135,8 @@ public class IOWaitLibrary implements Library {
     @JRubyMethod(optional = 1)
     public static IRubyObject wait_writable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
         RubyIO io = (RubyIO)_io;
+        Ruby runtime = context.runtime;
         OpenFile fptr;
-        boolean i;
         IRubyObject timeout;
         long tv;
 
@@ -150,15 +151,16 @@ public class IOWaitLibrary implements Library {
                 timeout = context.nil;
         }
         if (timeout.isNil()) {
-            tv = 0;
+            tv = -1;
         }
         else {
             tv = timeout.convertToInteger().getLongValue() * 1000;
+            if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
         }
 
-        i = fptr.waitWritable(context, tv);
+        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_WRITE, tv);
         fptr.checkClosed();
-        if (i)
+        if (ready)
             return io;
         return context.nil;
     }

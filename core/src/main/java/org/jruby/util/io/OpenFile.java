@@ -497,7 +497,9 @@ public class OpenFile implements Finalizable {
     }
 
     /**
-     * Wait until the primary
+     * Wait until the channel is available for the given operations or the timeout expires.
+     *
+     * @see org.jruby.RubyThread#select(java.nio.channels.Channel, OpenFile, int, long)
      *
      * @param runtime
      * @param ops
@@ -509,20 +511,30 @@ public class OpenFile implements Finalizable {
         try {
             if (fd.chSelect != null) {
                 return thread.select(fd.chSelect, this, ops, timeout);
-            } else {
-                if (fd.chSeek != null) {
-                    return fd.chSeek.position() != -1
-                            && fd.chSeek.size() != -1
-                            && fd.chSeek.position() < fd.chSeek.size();
-                }
-                return false;
+
+            } else if (fd.chSeek != null) {
+                return fd.chSeek.position() != -1
+                        && fd.chSeek.size() != -1
+                        && fd.chSeek.position() < fd.chSeek.size();
             }
+
+            return false;
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         } finally {
             if (locked) unlock();
         }
+    }
 
+    /**
+     * Like {@link OpenFile#ready(org.jruby.Ruby, org.jruby.RubyThread, int, long)} but returns a result
+     * immediately.
+     *
+     * @param context
+     * @return
+     */
+    public boolean readyNow(ThreadContext context) {
+        return ready(context.runtime, context.getThread(), SelectionKey.OP_READ, 0);
     }
 
     // io_flush_buffer
