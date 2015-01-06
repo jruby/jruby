@@ -39,11 +39,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.NewlineNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -634,6 +644,10 @@ public final class Ruby implements Constantizable {
     public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
 
+        // We do not want special scope types in IR so we ammend the AST tree to contain the elements representing
+        // a while gets; ...your code...; end
+        scriptNode = addGetsLoop((RootNode) scriptNode, printing, processLineEnds, split);
+
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile) {
@@ -656,50 +670,48 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        if (processLineEnds) {
-            getGlobalVariables().set("$\\", getGlobalVariables().get("$/"));
-        }
-
         // we do pre and post load outside the "body" versions to pre-prepare
         // and pre-push the dynamic scope we need for lastline
         Helpers.preLoad(context, ((RootNode) scriptNode).getStaticScope().getVariables());
 
         try {
-            while (RubyKernel.gets(context, getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
-                loop: while (true) { // Used for the 'redo' command
-                    try {
-                        if (processLineEnds) {
-                            getGlobalVariables().get("$_").callMethod(context, "chop!");
-                        }
-
-                        if (split) {
-                            getGlobalVariables().set("$F", getGlobalVariables().get("$_").callMethod(context, "split"));
-                        }
-
-                        if (script != null) {
-                            runScriptBody(script);
-                        } else {
-                            runInterpreterBody(scriptNode);
-                        }
-
-                        if (printing) RubyKernel.print(context, getKernel(), new IRubyObject[] {getGlobalVariables().get("$_")});
-                        break loop;
-                    } catch (JumpException.RedoJump rj) {
-                        // do nothing, this iteration restarts
-                    } catch (JumpException.NextJump nj) {
-                        // recheck condition
-                        break loop;
-                    } catch (JumpException.BreakJump bj) {
-                        // end loop
-                        return (IRubyObject) bj.getValue();
-                    }
-                }
+            if (script != null) {
+                runScriptBody(script);
+            } else {
+                runInterpreterBody(scriptNode);
             }
+
         } finally {
             Helpers.postLoad(context);
         }
 
         return getNil();
+    }
+
+    // Modifies incoming source for -n, -p, and -F
+    private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
+        ISourcePosition pos = oldRoot.getPosition();
+        BlockNode newBody = new BlockNode(pos);
+
+        if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, "$\\", new GlobalVarNode(pos, "$/")));
+
+        BlockNode whileBody;
+        if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
+            whileBody = (BlockNode) oldRoot.getBodyNode();
+        } else {                                            // single expr script
+            whileBody = new BlockNode(pos);
+            whileBody.add(oldRoot.getBodyNode());
+        }
+
+        GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, "$_");
+
+        newBody.add(new WhileNode(pos, new VCallNode(pos, "gets"), whileBody));
+
+        if (printing) whileBody.prepend(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
+        if (split) whileBody.prepend(new GlobalAsgnNode(pos, "$F", new CallNode(pos, dollarUnderscore, "split", null, null)));
+        if (processLineEndings) whileBody.prepend(new CallNode(pos, dollarUnderscore, "chop!", null, null));
+
+        return new RootNode(pos, oldRoot.getScope(), newBody);
     }
 
     /**
