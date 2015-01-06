@@ -84,20 +84,15 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return getRuntime().newFixnum(method.getArity().getValue());
     }
 
-    @JRubyMethod(name = "eql?", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
     }
 
     public abstract AbstractRubyMethod rbClone();
 
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newString(methodName);
-    }
-
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
-    public IRubyObject name19(ThreadContext context) {
         return context.runtime.newSymbol(methodName);
     }
 
@@ -110,7 +105,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return implementationModule;
     }
 
-    @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "source_location")
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
 
@@ -140,7 +135,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return -1;
     }
 
-    @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "parameters")
     public IRubyObject parameters(ThreadContext context) {
         return JRubyLibrary.MethodExtensions.methodArgs(this);
     }

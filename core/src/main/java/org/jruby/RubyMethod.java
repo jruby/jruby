@@ -246,19 +246,6 @@ public class RubyMethod extends AbstractRubyMethod {
         return str;
     }
 
-    public IRubyObject name(ThreadContext context) {
-        return name19(context);
-    }
-
-    @JRubyMethod(name = "name")
-    public IRubyObject name19(ThreadContext context) {
-        return context.runtime.newSymbol(methodName);
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
         return receiver;

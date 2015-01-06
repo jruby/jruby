@@ -138,23 +138,6 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return str;
     }
 
-    @Override
-    public IRubyObject name(ThreadContext context) {
-        return name19(context);
-    }
-
-    @JRubyMethod(name = "name")
-    @Override
-    public IRubyObject name19(ThreadContext context) {
-        return context.runtime.newSymbol(methodName);
-    }
-
-    @JRubyMethod
-    @Override
-    public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
-    }
-
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context ) {
         return super_method(context, null, implementationModule.getSuperClass());
