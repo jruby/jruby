@@ -1,8 +1,6 @@
 fails:Array#* tries to convert the passed argument to a String using #to_str
 fails:Array#* tires to convert the passed argument to an Integer using #to_int
-fails:Array#* raises a TypeError if the argument can neither be converted to a string nor an integer
 fails:Array#* converts the passed argument to a String rather than an Integer
-fails:Array#* raises a TypeError is the passed argument is nil
 fails:Array#* with an integer properly handles recursive arrays
 fails:Array#* with an integer raises an ArgumentError when passed a negative integer
 fails:Array#* with an integer copies the taint status of the original array even if the passed count is 0

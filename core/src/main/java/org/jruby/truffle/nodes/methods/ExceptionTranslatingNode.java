@@ -116,7 +116,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             }
         }
 
-        return getContext().getCoreLibrary().internalError(builder.toString(), this);
+        return getContext().getCoreLibrary().typeError(builder.toString(), this);
     }
 
     public RubyException translate(Throwable throwable) {

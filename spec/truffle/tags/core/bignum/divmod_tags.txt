@@ -1,4 +1,2 @@
 fails:Bignum#divmod returns an Array containing quotient and modulus obtained from dividing self by the given argument
 fails:Bignum#divmod raises a FloatDomainError if other is NaN
-fails:Bignum#divmod raises a TypeError when the given argument is not an Integer
-fails:Bignum#divmod raises a ZeroDivisionError when the given argument is 0 and a Float

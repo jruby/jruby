@@ -1,5 +1,3 @@
-fails:Array#pack with format 'w' raises a TypeError when passed nil
-fails:Array#pack with format 'w' raises a TypeError when passed an Integer
 fails:Array#pack with format 'w' ignores whitespace in the format string
 fails:Array#pack with format 'w' calls #to_str to coerce the directives string
 fails:Array#pack with format 'w' taints the output string if the format string is tainted

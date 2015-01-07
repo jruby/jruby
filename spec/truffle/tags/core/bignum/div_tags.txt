@@ -1,3 +1,2 @@
 fails:Bignum#div returns self divided by other
-fails:Bignum#div raises a TypeError when given a non-Integer
 fails:Bignum#div returns a result of integer division of self by a float argument

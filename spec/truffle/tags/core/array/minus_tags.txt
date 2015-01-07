@@ -1,5 +1,4 @@
 fails:Array#- tries to convert the passed arguments to Arrays using #to_ary
-fails:Array#- raises a TypeError if the argument cannot be coerced to an Array by calling #to_ary
 fails:Array#- does not return subclass instance for Array subclasses
 fails:Array#- does not call to_ary on array subclasses
 fails:Array#- removes an item identified as equivalent via #hash and #eql?

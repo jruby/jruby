@@ -16,8 +16,6 @@ fails:Array#join fails for arrays with incompatibly-encoded strings
 fails:Array#join does not separate elements when the passed separator is nil
 fails:Array#join calls #to_str to convert the separator to a String
 fails:Array#join does not call #to_str on the separator if the array is empty
-fails:Array#join raises a TypeError if the separator cannot be coerced to a String by calling #to_str
-fails:Array#join raises a TypeError if passed false as the separator
 fails:Array#join with a tainted separator does not taint the result if the array is empty
 fails:Array#join with a tainted separator does not taint the result if the array has only one element
 fails:Array#join with a tainted separator taints the result if the array has two or more elements

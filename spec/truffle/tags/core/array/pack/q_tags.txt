@@ -1,5 +1,3 @@
-fails:Array#pack with format 'Q' raises a TypeError when passed nil
-fails:Array#pack with format 'Q' raises a TypeError when passed an Integer
 fails:Array#pack with format 'Q' ignores whitespace in the format string
 fails:Array#pack with format 'Q' calls #to_str to coerce the directives string
 fails:Array#pack with format 'Q' taints the output string if the format string is tainted
@@ -8,8 +6,6 @@ fails:Array#pack with format 'Q' raises a TypeError when passed true
 fails:Array#pack with format 'Q' raises a TypeError when passed false
 fails:Array#pack with format 'Q' raises a TypeError when the object does not respond to #to_int
 fails:Array#pack with format 'Q' raises a TypeError when passed a String
-fails:Array#pack with format 'q' raises a TypeError when passed nil
-fails:Array#pack with format 'q' raises a TypeError when passed an Integer
 fails:Array#pack with format 'q' ignores whitespace in the format string
 fails:Array#pack with format 'q' calls #to_str to coerce the directives string
 fails:Array#pack with format 'q' taints the output string if the format string is tainted

@@ -17,5 +17,3 @@ fails:Array#sort! does not call #<=> on elements when invoked with a block even 
 fails:Array#sort! raises a RuntimeError on a frozen array
 fails:Array#sort! returns the specified value when it would break in the given block
 fails:Array#sort! makes some modification even if finished sorting when it would break in the given block
-fails:Array#sort sorts an array that has a value shifted off without a block
-fails:Array#sort sorts an array that has a value shifted off with a block

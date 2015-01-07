@@ -1,12 +1,8 @@
-fails:Array#pack with format 'x' raises a TypeError when passed nil
-fails:Array#pack with format 'x' raises a TypeError when passed an Integer
 fails:Array#pack with format 'x' ignores whitespace in the format string
 fails:Array#pack with format 'x' calls #to_str to coerce the directives string
 fails:Array#pack with format 'x' taints the output string if the format string is tainted
 fails:Array#pack with format 'x' raises ArgumentError when the format modifier is '_'
 fails:Array#pack with format 'x' raises ArgumentError when the format modifier is '!'
-fails:Array#pack with format 'X' raises a TypeError when passed nil
-fails:Array#pack with format 'X' raises a TypeError when passed an Integer
 fails:Array#pack with format 'X' ignores whitespace in the format string
 fails:Array#pack with format 'X' calls #to_str to coerce the directives string
 fails:Array#pack with format 'X' taints the output string if the format string is tainted
