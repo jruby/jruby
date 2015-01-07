@@ -53,10 +53,10 @@ public class StringFormatter {
          * that and they don't.
          */
 
-        // I'm not using a for loop, because Checkstyle won't let me modify the control variable
-
         int n = 0;
         int v = 0;
+
+        int lengthModifier;
 
         while (n < format.length()) {
             final char c = format.charAt(n);
@@ -109,6 +109,19 @@ public class StringFormatter {
                     precision = 5;
                 }
 
+                if (format.charAt(n) == ' ') {
+                    n++;
+                    final int lengthStart = n;
+
+                    while (Character.isDigit(format.charAt(n))) {
+                        n++;
+                    }
+
+                    lengthModifier = Integer.parseInt(format.substring(lengthStart, n));
+                } else {
+                    lengthModifier = 0;
+                }
+
                 final char type = format.charAt(n);
                 n++;
 
@@ -137,6 +150,11 @@ public class StringFormatter {
                     }
 
                     case 'd': {
+                        if (lengthModifier != 0) {
+                            formatBuilder.append(" ");
+                            formatBuilder.append(lengthModifier);
+                        }
+
                         formatBuilder.append("d");
                         final Object value = values.get(v);
                         final long longValue;

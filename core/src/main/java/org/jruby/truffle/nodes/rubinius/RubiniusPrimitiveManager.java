@@ -45,6 +45,7 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(TimePrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(TypePrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(StringPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(VMPrimitiveNodesFactory.getFactories());
 
         final Map<String, RubiniusPrimitiveConstructor> primitives = new HashMap<>();
 

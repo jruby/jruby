@@ -4,7 +4,7 @@
     <Class name="~.*NodeFactory.*" />
   </Match>
   <Match>
-    <Class name="org.jruby.truffle.nodes.core.GCNodes$GarbageCollectNode" />
+    <Class name="org.jruby.truffle.nodes.rubinius.VMPrimitiveNodes$VMGCStartPrimitiveNode" />
     <Bug pattern="DM_GC" />
   </Match>
 </FindBugsFilter>
