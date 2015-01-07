@@ -28,12 +28,14 @@ public class OpenModuleNode extends RubyNode {
 
     @Child protected RubyNode definingModule;
     @Child protected MethodDefinitionNode definitionMethod;
+    final protected LexicalScope lexicalScope;
     @Child protected IndirectCallNode callModuleDefinitionNode;
 
-    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod) {
+    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.definingModule = definingModule;
         this.definitionMethod = definitionMethod;
+        this.lexicalScope = lexicalScope;
         callModuleDefinitionNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
@@ -44,7 +46,6 @@ public class OpenModuleNode extends RubyNode {
         // TODO(CS): cast
         final RubyModule module = (RubyModule) definingModule.execute(frame);
 
-        LexicalScope lexicalScope = definitionMethod.getSharedMethodInfo().getLexicalScope();
         lexicalScope.setLiveModule(module);
         lexicalScope.getParent().getLiveModule().addLexicalDependent(module);
 

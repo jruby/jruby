@@ -763,7 +763,7 @@ public class BodyTranslator extends Translator {
 
             final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(sourceSection, name, bodyNode);
 
-            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod);
+            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod, newLexicalScope);
         } finally {
             environment.popLexicalScope();
         }
