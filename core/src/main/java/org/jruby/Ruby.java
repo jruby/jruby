@@ -1729,7 +1729,6 @@ public final class Ruby implements Constantizable {
 
         // TODO: implement something for these?
         addBuiltinIfAllowed("continuation.rb", Library.DUMMY);
-        addBuiltinIfAllowed("io/nonblock.rb", Library.DUMMY);
 
         // for backward compatibility
         loadService.provide("enumerator.jar"); // can't be in RubyEnumerator because LoadService isn't ready then

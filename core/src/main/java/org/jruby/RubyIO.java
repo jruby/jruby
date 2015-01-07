@@ -2303,10 +2303,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public boolean getBlocking() {
-        if (openFile.selectChannel() != null) {
-            return openFile.selectChannel().isBlocking();
-        }
-        return true;
+        return openFile.isBlocking();
+    }
+
+    public void setBlocking(boolean blocking) {
+        openFile.setBlocking(getRuntime(), blocking);
     }
 
     @JRubyMethod(name = "fcntl")
