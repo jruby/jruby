@@ -619,7 +619,7 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, MissingBehavior.CALL_CONST_MISSING);
+            dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, null, DispatchAction.READ_CONSTANT);
         }
 
         public ConstGetNode(ConstGetNode prev) {
@@ -636,8 +636,7 @@ public abstract class ModuleNodes {
                     module,
                     name,
                     null,
-                    new Object[]{},
-                    DispatchAction.READ_CONSTANT);
+                    new Object[]{});
         }
 
         @Specialization
@@ -649,8 +648,7 @@ public abstract class ModuleNodes {
                     module,
                     name,
                     null,
-                    new Object[]{},
-                    DispatchAction.READ_CONSTANT);
+                    new Object[]{});
         }
     }
 

@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.respondto;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,7 +28,7 @@ public class RespondToNode extends RubyNode {
         super(context, sourceSection);
         this.methodName = methodName;
         this.child = child;
-        dispatch = new DispatchHeadNode(context, false, MissingBehavior.RETURN_MISSING);
+        dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {

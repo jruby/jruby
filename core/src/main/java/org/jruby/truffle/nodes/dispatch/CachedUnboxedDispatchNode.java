@@ -38,8 +38,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
     public CachedUnboxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                      Class<?> expectedClass, Assumption unmodifiedAssumption, Object value,
-                                     RubyMethod method, boolean indirect) {
-        super(context, cachedName, next, indirect);
+                                     RubyMethod method, boolean indirect, DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.value = value;
@@ -70,10 +70,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
-
+            Object argumentsObjects) {
         // Check the class is what we expect
 
         if (receiverObject.getClass() != expectedClass) {
@@ -82,8 +79,7 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
                     receiverObject,
                     methodName,
                     blockObject,
-                    argumentsObjects,
-                    dispatchAction);
+                    argumentsObjects);
         }
 
         // Check the class has not been modified
@@ -97,9 +93,10 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                     argumentsObjects,
-                    dispatchAction,
                     "class modified");
         }
+
+        final DispatchAction dispatchAction = getDispatchAction();
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
             if (isIndirect()) {
@@ -129,29 +126,27 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         }
     }
 
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
-        return next.executeDispatch(
-                frame,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects,
-                (DispatchAction) dispatchAction);
-    }
-
     protected static final boolean isPrimitive(
             Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
         return !(receiverObject instanceof RubyBasicObject);
+    }
+
+    @Fallback
+    public Object fallback(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects) {
+        return next.executeDispatch(
+                frame,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects);
     }
 
 }

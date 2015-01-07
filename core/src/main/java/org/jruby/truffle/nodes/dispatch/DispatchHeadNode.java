@@ -24,6 +24,7 @@ public class DispatchHeadNode extends Node {
     private final boolean indirect;
     private final MissingBehavior missingBehavior;
     private final LexicalScope lexicalScope;
+    private final DispatchAction dispatchAction;
 
     @Child protected DispatchNode first;
 
@@ -32,37 +33,33 @@ public class DispatchHeadNode extends Node {
     }
 
     public DispatchHeadNode(RubyContext context) {
-        this(context, false, false, MissingBehavior.CALL_METHOD_MISSING);
+        this(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility) {
-        this(context, ignoreVisibility, MissingBehavior.CALL_METHOD_MISSING);
+        this(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
     }
 
     public DispatchHeadNode(RubyContext context, MissingBehavior missingBehavior) {
-        this(context, false, false, missingBehavior);
-    }
-
-    public DispatchHeadNode(RubyContext context, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
-        this(context, false, false, missingBehavior, lexicalScope);
+        this(context, false, false, missingBehavior, null, DispatchAction.CALL_METHOD);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, false, missingBehavior);
+        this(context, ignoreVisibility, false, missingBehavior, null, DispatchAction.CALL_METHOD);
     }
-
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, indirect, missingBehavior, null);
+        this(context, ignoreVisibility, indirect, missingBehavior, null, DispatchAction.CALL_METHOD);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope, DispatchAction dispatchAction) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
         this.lexicalScope = lexicalScope;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior);
+        this.dispatchAction = dispatchAction;
+        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction);
     }
 
     public Object call(
@@ -71,13 +68,14 @@ public class DispatchHeadNode extends Node {
             Object methodName,
             RubyProc blockObject,
             Object... argumentsObjects) {
+        assert dispatchAction == DispatchAction.CALL_METHOD;
+
         return dispatch(
                 frame,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                DispatchAction.CALL_METHOD);
+                argumentsObjects);
     }
 
     public double callFloat(
@@ -154,14 +152,15 @@ public class DispatchHeadNode extends Node {
             VirtualFrame frame,
             Object methodName,
             Object receiverObject) {
+        assert dispatchAction == DispatchAction.RESPOND_TO_METHOD;
+
         // It's ok to cast here as we control what RESPOND_TO_METHOD returns
         return (boolean) dispatch(
                 frame,
                 receiverObject,
                 methodName,
                 null,
-                null,
-                DispatchAction.RESPOND_TO_METHOD);
+                null);
     }
 
     public Object dispatch(
@@ -169,19 +168,17 @@ public class DispatchHeadNode extends Node {
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
+            Object argumentsObjects) {
         return first.executeDispatch(
                 frame,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                dispatchAction);
+                argumentsObjects);
     }
 
     public void reset(String reason) {
-        first.replace(new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior), reason);
+        first.replace(new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {
@@ -195,5 +192,9 @@ public class DispatchHeadNode extends Node {
 
     public LexicalScope getLexicalScope() {
         return lexicalScope;
+    }
+
+    public DispatchAction getDispatchAction() {
+        return dispatchAction;
     }
 }

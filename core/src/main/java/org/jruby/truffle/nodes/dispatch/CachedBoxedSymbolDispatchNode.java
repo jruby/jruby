@@ -36,8 +36,8 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     @Child protected IndirectCallNode indirectCallNode;
 
     public CachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, DispatchNode next, Object value, RubyMethod method,
-                                         boolean indirect) {
-        super(context, cachedName, next, indirect);
+                                         boolean indirect, DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
         this.value = value;
         this.method = method;
@@ -71,10 +71,7 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             RubySymbol receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
-
+            Object argumentsObjects) {
         // Check the class has not been modified
 
         try {
@@ -86,9 +83,10 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                     argumentsObjects,
-                    dispatchAction,
                     "class modified");
         }
+
+        final DispatchAction dispatchAction = getDispatchAction();
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
             if (isIndirect()) {
@@ -126,15 +124,13 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
+            Object argumentsObjects) {
         return next.executeDispatch(
                 frame,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                (DispatchAction) dispatchAction);
+                argumentsObjects);
     }
 
 }

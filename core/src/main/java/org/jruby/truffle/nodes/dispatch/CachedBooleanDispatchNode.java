@@ -47,8 +47,8 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             RubyContext context, Object cachedName, DispatchNode next,
             Assumption falseUnmodifiedAssumption, Object falseValue, RubyMethod falseMethod,
             Assumption trueUnmodifiedAssumption, Object trueValue, RubyMethod trueMethod,
-            boolean indirect) {
-        super(context, cachedName, next, indirect);
+            boolean indirect, DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
@@ -104,9 +104,8 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             boolean receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
+            Object argumentsObjects) {
+        final DispatchAction dispatchAction = getDispatchAction();
 
         if (receiverObject) {
             trueProfile.enter();
@@ -120,7 +119,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                         methodName,
                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                         argumentsObjects,
-                        dispatchAction,
                         "class modified");
             }
 
@@ -164,7 +162,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                         methodName,
                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                         argumentsObjects,
-                        dispatchAction,
                         "class modified");
             }
 
@@ -205,15 +202,13 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
+            Object argumentsObjects) {
         return next.executeDispatch(
                 frame,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                (DispatchAction) dispatchAction);
+                argumentsObjects);
     }
 
 }

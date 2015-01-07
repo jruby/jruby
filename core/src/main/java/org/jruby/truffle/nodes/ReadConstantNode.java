@@ -32,7 +32,7 @@ public class ReadConstantNode extends RubyNode {
         super(context, sourceSection);
         this.name = name;
         this.receiver = receiver;
-        dispatch = new DispatchHeadNode(context, MissingBehavior.CALL_CONST_MISSING, lexicalScope);
+        dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, lexicalScope, DispatchAction.READ_CONSTANT);
 
     }
 
@@ -50,8 +50,7 @@ public class ReadConstantNode extends RubyNode {
                 receiverObject,
                 name,
                 null,
-                new Object[]{},
-                DispatchAction.READ_CONSTANT);
+                new Object[]{});
     }
 
     @Override

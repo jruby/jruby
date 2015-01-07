@@ -40,8 +40,8 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                    RubyClass expectedClass, Object value, RubyMethod method,
-                                   boolean indirect) {
-        this(context, cachedName, next, expectedClass, expectedClass.getUnmodifiedAssumption(), value, method, indirect);
+                                   boolean indirect, DispatchAction dispatchAction) {
+        this(context, cachedName, next, expectedClass, expectedClass.getUnmodifiedAssumption(), value, method, indirect, dispatchAction);
     }
 
     /**
@@ -49,8 +49,8 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
      */
     public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                    RubyClass expectedClass, Assumption unmodifiedAssumption,
-                                   Object value, RubyMethod method, boolean indirect) {
-        super(context, cachedName, next, indirect);
+                                   Object value, RubyMethod method, boolean indirect, DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
@@ -88,10 +88,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
-
+            Object argumentsObjects) {
         // Check the lookup node is what we expect
 
         if (receiverObject.getMetaClass() != expectedClass) {
@@ -100,8 +97,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                    argumentsObjects,
-                    dispatchAction);
+                    argumentsObjects);
         }
 
         // Check the class has not been modified
@@ -115,9 +111,10 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                     argumentsObjects,
-                    dispatchAction,
                     "class modified");
         }
+
+        final DispatchAction dispatchAction = getDispatchAction();
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
             if (isIndirect()) {
@@ -155,15 +152,13 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
+            Object argumentsObjects) {
         return next.executeDispatch(
                 frame,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                (DispatchAction) dispatchAction);
+                argumentsObjects);
     }
 
     @Override

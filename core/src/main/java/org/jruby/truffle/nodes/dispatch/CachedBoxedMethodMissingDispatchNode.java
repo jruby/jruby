@@ -38,8 +38,8 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
 
     public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                                 RubyClass expectedClass, RubyMethod method,
-                                                boolean indirect) {
-        super(context, cachedName, next, indirect);
+                                                boolean indirect, DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
         unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
@@ -83,10 +83,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
-
+            Object argumentsObjects) {
         // Check the lookup node is what we expect
 
         if (receiverObject.getMetaClass() != expectedClass) {
@@ -95,8 +92,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                    argumentsObjects,
-                    dispatchAction);
+                    argumentsObjects);
         }
 
         // Check the class has not been modified
@@ -110,9 +106,10 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                     argumentsObjects,
-                    dispatchAction,
                     "class modified");
         }
+
+        final DispatchAction dispatchAction = getDispatchAction();
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
             // When calling #method_missing we need to prepend the symbol
@@ -176,15 +173,13 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
+            Object argumentsObjects) {
         return next.executeDispatch(
                 frame,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                (DispatchAction) dispatchAction);
+                argumentsObjects);
     }
 
 }

@@ -27,8 +27,8 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                RubyClass expectedClass, boolean indirect) {
-        super(context, cachedName, next, indirect);
+                                                RubyClass expectedClass, boolean indirect, DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
         assert expectedClass != null;
         this.expectedClass = expectedClass;
         unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
@@ -47,10 +47,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
-
+            Object argumentsObjects) {
         // Check the lookup node is what we expect
 
         if (receiverObject.getMetaClass() != expectedClass) {
@@ -59,8 +56,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                    argumentsObjects,
-                    dispatchAction);
+                    argumentsObjects);
         }
 
         // Check the class has not been modified
@@ -74,9 +70,10 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                     argumentsObjects,
-                    dispatchAction,
                     "class modified");
         }
+
+        final DispatchAction dispatchAction = getDispatchAction();
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
             return MISSING;
@@ -93,15 +90,13 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
+            Object argumentsObjects) {
         return next.executeDispatch(
                 frame,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                (DispatchAction) dispatchAction);
+                argumentsObjects);
     }
 
 }

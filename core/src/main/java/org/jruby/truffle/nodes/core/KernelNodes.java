@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
@@ -1128,15 +1129,18 @@ public abstract class KernelNodes {
     @CoreMethod(names = "Integer", isModuleFunction = true, required = 1)
     public abstract static class IntegerNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode toIntRespondTo;
         @Child protected DispatchHeadNode toInt;
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context);
+            toIntRespondTo = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
+            toInt = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
         }
 
         public IntegerNode(IntegerNode prev) {
             super(prev);
+            toIntRespondTo = prev.toIntRespondTo;
             toInt = prev.toInt;
         }
 
@@ -1177,7 +1181,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object integer(VirtualFrame frame, Object value) {
-            if (toInt.doesRespondTo(frame, "to_int", value)) {
+            if (toIntRespondTo.doesRespondTo(frame, "to_int", value)) {
                 return toInt.call(frame, value, "to_int", null);
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1679,8 +1683,8 @@ public abstract class KernelNodes {
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DispatchHeadNode(context, false, MissingBehavior.RETURN_MISSING);
-            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING);
+            dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
+            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatch.forceUncached();

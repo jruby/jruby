@@ -30,18 +30,22 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
         @NodeChild(value="receiver", type=Node.class),
         @NodeChild(value="methodName", type=Node.class),
         @NodeChild(value="blockObject", type=Node.class),
-        @NodeChild(value="arguments", type=Node.class),
-        @NodeChild(value="action", type=Node.class)})
+        @NodeChild(value="arguments", type=Node.class)})
 public abstract class DispatchNode extends RubyNode {
+
+    private final DispatchAction dispatchAction;
 
     public static final Object MISSING = new Object();
 
-    public DispatchNode(RubyContext context) {
+    public DispatchNode(RubyContext context, DispatchAction dispatchAction) {
         super(context, null);
+        this.dispatchAction = dispatchAction;
+        assert dispatchAction != null;
     }
 
     public DispatchNode(DispatchNode prev) {
-        this(prev.getContext());
+        super(prev);
+        dispatchAction = prev.dispatchAction;
     }
 
     public abstract Object executeDispatch(
@@ -49,15 +53,13 @@ public abstract class DispatchNode extends RubyNode {
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction);
+            Object argumentsObjects);
 
     @CompilerDirectives.TruffleBoundary
     protected RubyConstant lookupConstant(
             RubyModule module,
             String name,
-            boolean ignoreVisibility,
-            DispatchAction dispatchAction) {
+            boolean ignoreVisibility) {
         final LexicalScope lexicalScope = getHeadNode().getLexicalScope();
 
         RubyConstant constant = ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
@@ -79,8 +81,7 @@ public abstract class DispatchNode extends RubyNode {
             RubyClass callerClass,
             Object receiver,
             String name,
-            boolean ignoreVisibility,
-            DispatchAction dispatchAction) {
+            boolean ignoreVisibility) {
         RubyMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
@@ -98,6 +99,8 @@ public abstract class DispatchNode extends RubyNode {
         // Check visibility
 
         if (!ignoreVisibility && !method.isVisibleTo(this, callerClass)) {
+            final DispatchAction dispatchAction = getHeadNode().getDispatchAction();
+
             if (dispatchAction == DispatchAction.CALL_METHOD) {
                 throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, receiver.toString(), this));
             } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
@@ -116,7 +119,6 @@ public abstract class DispatchNode extends RubyNode {
             Object methodName,
             RubyProc blockObject,
             Object argumentsObjects,
-            DispatchAction dispatchAction,
             String reason) {
         final DispatchHeadNode head = getHeadNode();
         head.reset(reason);
@@ -125,8 +127,7 @@ public abstract class DispatchNode extends RubyNode {
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                dispatchAction);
+                argumentsObjects);
     }
 
     protected DispatchHeadNode getHeadNode() {
@@ -137,24 +138,8 @@ public abstract class DispatchNode extends RubyNode {
         throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
-    protected boolean actionIsReadConstant(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        return dispatchAction == DispatchAction.READ_CONSTANT;
-    }
-
-    protected boolean actionIsCallOrRespondToMethod(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        return dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD;
+    public DispatchAction getDispatchAction() {
+        return dispatchAction;
     }
 
 }

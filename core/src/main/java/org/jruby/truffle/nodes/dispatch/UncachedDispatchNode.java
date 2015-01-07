@@ -39,8 +39,8 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();
 
-    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility) {
-        super(context);
+    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction) {
+        super(context, dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
@@ -55,99 +55,35 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         toJavaStringNode = prev.toJavaStringNode;
     }
 
-    @Specialization(guards = "actionIsReadConstant")
-    public Object dispatchReadConstant(
-            VirtualFrame frame,
-            RubyModule receiverObject,
-            Object constantName,
-            Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        final RubyConstant constant = lookupConstant(receiverObject,
-                toJavaStringNode.executeJavaString(frame, constantName), ignoreVisibility, dispatchAction);
-
-        if (constant != null) {
-            return constant.getValue();
-        }
-
-        constantMissingProfile.enter();
-
-        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
-
-        final RubyMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility,
-                dispatchAction);
-
-        if (missingMethod == null) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().runtimeError(
-                    receiverObject.toString() + " didn't have a #const_missing", this));
-        }
-
-        return callNode.call(
-                frame,
-                missingMethod.getCallTarget(),
-                RubyArguments.pack(
-                        missingMethod,
-                        missingMethod.getDeclarationFrame(),
-                        receiverObject,
-                        null,
-                        new Object[]{toSymbolNode.executeRubySymbol(frame, constantName)}));
-    }
-
-    @Specialization(guards = "actionIsCallOrRespondToMethod")
+    @Specialization
     public Object dispatch(
             VirtualFrame frame,
             Object receiverObject,
-            Object methodName,
+            Object name,
             Object blockObject,
-            Object argumentsObjects,
-            DispatchAction dispatchAction) {
-        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            Object argumentsObjects
+    ) {
+        final DispatchAction dispatchAction = getDispatchAction();
 
-        final RubyMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, methodName),
-                ignoreVisibility, dispatchAction);
+        if (dispatchAction == DispatchAction.READ_CONSTANT) {
+            final RubyConstant constant = lookupConstant((RubyModule) receiverObject,
+                    toJavaStringNode.executeJavaString(frame, name), ignoreVisibility);
 
-        if (method != null) {
-            if (dispatchAction == DispatchAction.CALL_METHOD) {
-                return callNode.call(
-                        frame,
-                        method.getCallTarget(),
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                (RubyProc) blockObject,
-                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-                return true;
-            } else {
-                throw new UnsupportedOperationException();
+            if (constant != null) {
+                return constant.getValue();
             }
-        }
 
-        methodMissingProfile.enter();
+            constantMissingProfile.enter();
 
-        final RubyMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true,
-                dispatchAction);
+            final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-        if (missingMethod == null) {
-            if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-                return false;
-            } else {
+            final RubyMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
+
+            if (missingMethod == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().runtimeError(
-                        receiverObject.toString() + " didn't have a #method_missing", this));
+                        receiverObject.toString() + " didn't have a #const_missing", this));
             }
-        }
-
-        if (dispatchAction == DispatchAction.CALL_METHOD) {
-            final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
-
-            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
-
-            modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, methodName);
-
-            RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
             return callNode.call(
                     frame,
@@ -156,12 +92,69 @@ public abstract class UncachedDispatchNode extends DispatchNode {
                             missingMethod,
                             missingMethod.getDeclarationFrame(),
                             receiverObject,
-                            (RubyProc) blockObject,
-                            modifiedArgumentsObjects));
-        } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            return false;
+                            null,
+                            new Object[]{toSymbolNode.executeRubySymbol(frame, name)}));
         } else {
-            throw new UnsupportedOperationException();
+            final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+
+            final RubyMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
+                    ignoreVisibility);
+
+            if (method != null) {
+                if (dispatchAction == DispatchAction.CALL_METHOD) {
+                    return callNode.call(
+                            frame,
+                            method.getCallTarget(),
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    (RubyProc) blockObject,
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
+                    return true;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            }
+
+            methodMissingProfile.enter();
+
+            final RubyMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true);
+
+            if (missingMethod == null) {
+                if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
+                    return false;
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().runtimeError(
+                            receiverObject.toString() + " didn't have a #method_missing", this));
+                }
+            }
+
+            if (dispatchAction == DispatchAction.CALL_METHOD) {
+                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+
+                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
+
+                modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, name);
+
+                RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+
+                return callNode.call(
+                        frame,
+                        missingMethod.getCallTarget(),
+                        RubyArguments.pack(
+                                missingMethod,
+                                missingMethod.getDeclarationFrame(),
+                                receiverObject,
+                                (RubyProc) blockObject,
+                                modifiedArgumentsObjects));
+            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
+                return false;
+            } else {
+                throw new UnsupportedOperationException();
+            }
         }
     }
 
