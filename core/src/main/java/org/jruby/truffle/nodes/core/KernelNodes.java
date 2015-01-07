@@ -936,6 +936,11 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public int hash(boolean value) {
+            return Boolean.valueOf(value).hashCode();
+        }
+
+        @Specialization
         public int hash(RubyBasicObject self) {
             return self.hashCode();
         }
