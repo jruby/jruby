@@ -45,7 +45,7 @@ class MethodTranslator extends BodyTranslator {
         this.isTopLevel = isTopLevel;
     }
 
-    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
             System.err.println(methodName);
             System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
@@ -186,7 +186,7 @@ class MethodTranslator extends BodyTranslator {
             final CallTarget callTargetForMethods = Truffle.getRuntime().createCallTarget(withoutBlockDestructureSemantics(rootNode));
             return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods);
         } else {
-            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode), ignoreLocalVisiblity);
+            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode));
         }
     }
 

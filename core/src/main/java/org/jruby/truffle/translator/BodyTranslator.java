@@ -972,13 +972,21 @@ public class BodyTranslator extends Translator {
         final RubyNode classNode;
 
         if (topLevel) {
+            /*
+             * In the top-level, methods are defined in the class of the main object. This is
+             * counter-intuitive - I would have expected them to be defined in the singleton class.
+             * Apparently this is a design decision to make top-level methods sort of global.
+             *
+             * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
+             */
+
             // TODO: different for Kernel#load(..., true)
             classNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         } else {
             classNode = new SelfNode(context, sourceSection);
         }
 
-        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
+        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
     }
 
     @Override
@@ -989,10 +997,11 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, objectNode);
 
-        return translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), true);
+        return new SetMethodDeclarationContext(context, sourceSection,
+                translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode()), "defs");
     }
 
-    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
+    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), methodName, false, parseTree, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
@@ -1002,17 +1011,9 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
 
-        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
+        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, sharedMethodInfo);
 
-        /*
-         * In the top-level, methods are defined in the class of the main object. This is
-         * counter-intuitive - I would have expected them to be defined in the singleton class.
-         * Apparently this is a design decision to make top-level methods sort of global.
-         *
-         * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
-         */
-
-        return new AddMethodNode(context, sourceSection, classNode, functionExprNode, topLevel);
+        return new AddMethodNode(context, sourceSection, classNode, functionExprNode);
     }
 
     @Override
@@ -1486,7 +1487,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);
     }
 
     @Override
@@ -2562,7 +2563,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
+        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }

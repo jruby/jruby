@@ -9,8 +9,15 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -24,7 +31,7 @@ public class AddMethodNode extends RubyNode {
     @Child protected RubyNode receiver;
     @Child protected MethodDefinitionNode methodNode;
 
-    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method, boolean topLevel) {
+    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method) {
         super(context, section);
         this.receiver = receiver;
         this.methodNode = method;
@@ -46,7 +53,8 @@ public class AddMethodNode extends RubyNode {
             module = ((RubyBasicObject) receiverObject).getSingletonClass(this);
         }
 
-        final RubyMethod method = methodObject.withDeclaringModule(module);
+        final Visibility visibility = getVisibility(frame, methodObject.getName());
+        final RubyMethod method = methodObject.withDeclaringModule(module).withVisibility(visibility);
 
         if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
             module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
@@ -56,5 +64,41 @@ public class AddMethodNode extends RubyNode {
         }
 
         return getContext().newSymbol(method.getName());
+    }
+
+    private Visibility getVisibility(VirtualFrame frame, String name) {
+        notDesignedForCompilation();
+
+        if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
+            return Visibility.PRIVATE;
+        } else {
+            // Ignore scopes who do not have a visibility slot.
+            Visibility currentFrameVisibility = findVisibility(frame);
+            if (currentFrameVisibility != null) {
+                return currentFrameVisibility;
+            }
+
+            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Visibility>() {
+                @Override
+                public Visibility visitFrame(FrameInstance frameInstance) {
+                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
+                    return findVisibility(frame);
+                }
+            });
+        }
+    }
+
+    private static Visibility findVisibility(Frame frame) {
+        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+        if (slot == null) {
+            return null;
+        } else {
+            Object visibilityObject = frame.getValue(slot);
+            if (visibilityObject instanceof Visibility) {
+                return (Visibility) visibilityObject;
+            } else {
+                return Visibility.PUBLIC;
+            }
+        }
     }
 }

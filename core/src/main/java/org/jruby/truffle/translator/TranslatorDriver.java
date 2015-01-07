@@ -70,7 +70,7 @@ public class TranslatorDriver {
             throw new RuntimeException(e);
         }
 
-        return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false, sharedMethod);
+        return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, sharedMethod);
     }
 
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {

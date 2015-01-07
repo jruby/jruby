@@ -69,15 +69,14 @@ class ModuleTranslator extends BodyTranslator {
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
                 environment.needsDeclarationFrame(),
-                Truffle.getRuntime().createCallTarget(rootNode),
-                false);
+                Truffle.getRuntime().createCallTarget(rootNode));
     }
 
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final SelfNode classNode = new SelfNode(context, sourceSection);
-        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
+        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
     }
 
     @Override

@@ -44,16 +44,13 @@ public class MethodDefinitionNode extends RubyNode {
 
     private final boolean requiresDeclarationFrame;
 
-    private final boolean ignoreLocalVisibility;
-
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            boolean requiresDeclarationFrame, CallTarget callTarget, boolean ignoreLocalVisibility) {
+            boolean requiresDeclarationFrame, CallTarget callTarget) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.requiresDeclarationFrame = requiresDeclarationFrame;
         this.callTarget = callTarget;
-        this.ignoreLocalVisibility = ignoreLocalVisibility;
     }
 
     public RubyMethod executeMethod(VirtualFrame frame) {
@@ -72,46 +69,8 @@ public class MethodDefinitionNode extends RubyNode {
 
     public RubyMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
         notDesignedForCompilation();
-        Visibility visibility = getVisibility(frame);
-        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
-    }
 
-    private Visibility getVisibility(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        if (ignoreLocalVisibility) {
-            return Visibility.PUBLIC;
-        } else if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
-            return Visibility.PRIVATE;
-        } else {
-            // Ignore scopes who do not have a visibility slot.
-            Visibility currentFrameVisibility = findVisibility(frame);
-            if (currentFrameVisibility != null) {
-                return currentFrameVisibility;
-            }
-
-            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Visibility>() {
-                @Override
-                public Visibility visitFrame(FrameInstance frameInstance) {
-                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
-                    return findVisibility(frame);
-                }
-            });
-        }
-    }
-
-    private static Visibility findVisibility(Frame frame) {
-        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
-        if (slot == null) {
-            return null;
-        } else {
-            Object visibilityObject = frame.getValue(slot);
-            if (visibilityObject instanceof Visibility) {
-                return (Visibility) visibilityObject;
-            } else {
-                return Visibility.PUBLIC;
-            }
-        }
+        return new RubyMethod(sharedMethodInfo, name, null, null, false, callTarget, declarationFrame);
     }
 
     @Override
