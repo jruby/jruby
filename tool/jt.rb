@@ -109,9 +109,9 @@ class JT
 
     return if args.empty?
 
-    commands = Commands.public_instance_methods.map(&:to_s)
+    commands = Commands.public_instance_methods(false).map(&:to_s)
 
-    abort "no command matched" unless commands.include?(args.first)
+    abort "no command matched #{args.first.inspect}" unless commands.include?(args.first)
 
     begin
       send(*args)
