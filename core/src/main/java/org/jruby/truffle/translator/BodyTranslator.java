@@ -56,6 +56,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -355,7 +356,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
-                && ((ConstNode) node.getReceiverNode()).getName() == "Rubinius") {
+                && ((ConstNode) node.getReceiverNode()).getName().equals("Rubinius")) {
             if (node.getName().equals("primitive")) {
                 return translateRubiniusPrimitive(sourceSection, node);
             } else if (node.getName().equals("invoke_primitive")) {
@@ -515,7 +516,7 @@ public class BodyTranslator extends Translator {
         return translated;
     }
 
-    protected class ArgumentsAndBlockTranslation {
+    protected static class ArgumentsAndBlockTranslation {
 
         private final RubyNode block;
         private final RubyNode[] arguments;
@@ -945,11 +946,11 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDXStrNode(org.jruby.ast.DXStrNode node) {
-        SourceSection sourceSection = translate(node.getPosition());
-
-        final RubyNode string = translateInterpolatedString(sourceSection, node.childNodes());
-
-        return new SystemNode(context, sourceSection, string);
+        final org.jruby.ast.DStrNode string = new org.jruby.ast.DStrNode(node.getPosition(), node.getEncoding());
+        string.childNodes().addAll(node.childNodes());
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), string);
+        final org.jruby.ast.Node callNode = new FCallNode(node.getPosition(), "`", argsNode, null);
+        return callNode.accept(this);
     }
 
     @Override
@@ -1001,7 +1002,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
+        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
 
         /*
          * In the top-level, methods are defined in the class of the main object. This is
@@ -1027,7 +1028,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
-        return new ObjectLiteralNode(context, sourceSection, RubyEncoding.getEncoding(context, node.getEncoding()));
+        return new ObjectLiteralNode(context, sourceSection, RubyEncoding.getEncoding(node.getEncoding()));
     }
 
     @Override
@@ -1583,7 +1584,7 @@ public class BodyTranslator extends Translator {
             if (regex.numberOfNames() > 0) {
                 for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext(); ) {
                     final NameEntry e = i.next();
-                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+                    final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
 
                     if (environment.hasOwnScopeForAssignments()) {
                         environment.declareVar(name);
@@ -2011,7 +2012,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnNode(org.jruby.ast.OpAsgnNode node) {
-        if (node.getOperatorName() == "||") {
+        if (node.getOperatorName().equals("||")) {
             // Why does this ||= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
 
             final String temp = environment.allocateLocalTemp("opassign");
@@ -2208,7 +2209,7 @@ public class BodyTranslator extends Translator {
         } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
             regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue());
         } else {
-            regexp.forceEncoding(RubyEncoding.getEncoding(context, node.getEncoding()));
+            regexp.forceEncoding(RubyEncoding.getEncoding(node.getEncoding()));
         }
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
@@ -2222,12 +2223,12 @@ public class BodyTranslator extends Translator {
 
     public static boolean all7Bit(byte[] bytes) {
         for (int n = 0; n < bytes.length; n++) {
-            if (bytes[n] < 0 || bytes[n] > Byte.MAX_VALUE) {
+            if (bytes[n] < 0) {
                 return false;
             }
 
             if (bytes[n] == '\\' && n + 1 < bytes.length && bytes[n + 1] == 'x') {
-                int b = Integer.parseInt(new String(Arrays.copyOfRange(bytes, n + 2, n + 4)), 16);
+                int b = Integer.parseInt(new String(Arrays.copyOfRange(bytes, n + 2, n + 4), StandardCharsets.UTF_8), 16);
 
                 if (b > 0x7F) {
                     return false;
@@ -2467,11 +2468,9 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitXStrNode(org.jruby.ast.XStrNode node) {
-        SourceSection sourceSection = translate(node.getPosition());
-
-        final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, node.getValue());
-
-        return new SystemNode(context, sourceSection, literal);
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), new org.jruby.ast.StrNode(node.getPosition(), node.getValue()));
+        final org.jruby.ast.Node callNode = new FCallNode(node.getPosition(), "`", argsNode, null);
+        return callNode.accept(this);
     }
 
     @Override
@@ -2561,7 +2560,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
+        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }

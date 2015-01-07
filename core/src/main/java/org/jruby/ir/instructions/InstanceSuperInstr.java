@@ -36,11 +36,6 @@ public class InstanceSuperInstr extends CallInstr {
     }
 
     @Override
-    public CallBase specializeForInterpretation() {
-        return this;
-    }
-
-    @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);

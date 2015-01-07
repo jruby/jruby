@@ -1,2 +1,0 @@
-fails:String#codepoints returns an Array when no block is given
-fails:String#codepoints raises an ArgumentError when no block is given if self has an invalid encoding

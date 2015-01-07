@@ -33,7 +33,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + requiredArgs + "," + preArgs + "," + argIndex + ")";
+        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation() + "(" + requiredArgs + "," + preArgs + "," + argIndex + ")";
     }
 
     public int getPreArgs() {

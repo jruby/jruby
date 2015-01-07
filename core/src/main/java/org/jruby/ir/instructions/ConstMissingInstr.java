@@ -45,12 +45,6 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedAr
         this.result = v;
     }
 
-    // we don't want to convert const_missing to an actual call
-    @Override
-    public CallBase specializeForInterpretation() {
-        return this;
-    }
-
     @Override
     public Instr clone(CloneInfo ii) {
         return new ConstMissingInstr(ii.getRenamedVariable(result), receiver.cloneForInlining(ii), missingConst);

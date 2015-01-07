@@ -101,8 +101,11 @@ public class OptimizeTempVarsPass extends CompilerPass {
                             instrs.remove();
                         } else if (i instanceof CallInstr) {
                             instrs.set(((CallInstr)i).discardResult());
-                        } else {
-                            i.markUnusedResult();
+                        //} else {
+                        //  FIXME: This was not being used and is not for calls specifically so we were unsure how much it would help
+                        //  but it is left here. For some instrs which assign the result to a tempvar but we notice it is not used
+                        //  we can eliminate setting the result.  In pratice this seems to mostly happen in module bodies.
+                        //  i.markUnusedResult();
                         }
                     }
                     // Deal with this code pattern:

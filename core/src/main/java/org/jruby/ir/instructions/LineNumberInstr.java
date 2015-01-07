@@ -6,14 +6,14 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class LineNumberInstr extends Instr implements FixedArityInstr {
     public final int lineNumber;
-    public final IRScope scope; // We need to keep scope info here so that line number is meaningful across inlinings.
 
-    public LineNumberInstr(IRScope scope, int lineNumber) {
+    public LineNumberInstr(int lineNumber) {
         super(Operation.LINE_NUM);
-        this.scope = scope;
         this.lineNumber = lineNumber;
     }
 
@@ -29,8 +29,15 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        // Use original scope even if inlined -- so debugging / stack-traces are meaningful
-        return new LineNumberInstr(scope, lineNumber);
+        // We record cloned scope so that debugging can remember where the linenumber original came from.
+        // FIXME: Consider just saving filename and not entire scope
+        if (ii instanceof InlineCloneInfo) {
+            new InlinedLineNumberInstr(((InlineCloneInfo) ii).getScopeBeingInlined(), lineNumber);
+        }
+
+        // If a simple clone then we can share this instance since it cannot cause flow
+        // control to change (ipc and rpc should never be accessed).
+        return this;
     }
 
     @Override

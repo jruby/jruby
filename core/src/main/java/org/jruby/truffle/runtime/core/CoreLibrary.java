@@ -18,10 +18,14 @@ import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -31,6 +35,7 @@ import org.jruby.util.cli.OutputStrings;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +129,7 @@ public class CoreLibrary {
 
         assert value != null;
 
-        if (value instanceof RubyNilClass || value instanceof RubyNilClass) {
+        if (value instanceof RubyNilClass) {
             return 0;
         }
 
@@ -348,7 +353,17 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
-            loadRubyCore("jruby/truffle/core.rb");
+            try {
+                loadRubyCore("jruby/truffle/core.rb");
+            } catch (RaiseException e) {
+                final RubyException rubyException = e.getRubyException();
+
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, rubyException.getBacktrace())) {
+                    System.err.println(line);
+                }
+
+                throw new TruffleFatalException("couldn't load the core library", e);
+            }
         }
 
         // ENV is supposed to be an object that actually updates the environment, and sees any updates
@@ -361,7 +376,13 @@ public class CoreLibrary {
         final Source source;
 
         try {
-            source = Source.fromReader(new InputStreamReader(context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName).getInputStream()), "core:/" + fileName);
+            final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName);
+
+            if (resource == null) {
+                throw new RuntimeException("couldn't load Truffle core library " + fileName);
+            }
+
+            source = Source.fromReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8), "core:/" + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -841,7 +862,7 @@ public class CoreLibrary {
         return envHash;
     }
 
-    public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding(context, "US-ASCII"); }
+    public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding("US-ASCII"); }
 
     private RubyHash getSystemEnv() {
         final List<KeyValue> entries = new ArrayList<>();

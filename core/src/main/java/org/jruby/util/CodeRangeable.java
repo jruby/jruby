@@ -13,4 +13,8 @@ package org.jruby.util;
 public interface CodeRangeable {
     public int getCodeRange();
     public int scanForCodeRange();
+    public boolean isCodeRangeValid();
+    public void setCodeRange(int codeRange);
+
+    public ByteList getByteList();
 }

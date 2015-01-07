@@ -61,12 +61,7 @@ import org.jruby.runtime.marshal.DataType;
  * @since 0.2.3
  */
 @JRubyClass(name="Method")
-public class RubyMethod extends RubyObject implements DataType {
-    protected RubyModule implementationModule;
-    protected String methodName;
-    protected RubyModule originModule;
-    protected String originName;
-    protected DynamicMethod method;
+public class RubyMethod extends AbstractRubyMethod {
     protected IRubyObject receiver;
 
     protected RubyMethod(Ruby runtime, RubyClass rubyClass) {
@@ -83,7 +78,8 @@ public class RubyMethod extends RubyObject implements DataType {
 
         methodClass.setClassIndex(ClassIndex.METHOD);
         methodClass.setReifiedClass(RubyMethod.class);
-        
+
+        methodClass.defineAnnotatedMethods(AbstractRubyMethod.class);
         methodClass.defineAnnotatedMethods(RubyMethod.class);
         
         return methodClass;
@@ -107,10 +103,6 @@ public class RubyMethod extends RubyObject implements DataType {
         newMethod.receiver = receiver;
 
         return newMethod;
-    }
-
-    public DynamicMethod getMethod() {
-        return method;
     }
 
     /** Call the method.
@@ -254,19 +246,6 @@ public class RubyMethod extends RubyObject implements DataType {
         return str;
     }
 
-    public IRubyObject name(ThreadContext context) {
-        return name19(context);
-    }
-
-    @JRubyMethod(name = "name")
-    public IRubyObject name19(ThreadContext context) {
-        return context.runtime.newSymbol(methodName);
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
         return receiver;
@@ -321,19 +300,6 @@ public class RubyMethod extends RubyObject implements DataType {
     public IRubyObject super_method(ThreadContext context) {
         RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), implementationModule).getSuperClass();
         return super_method(context, receiver, superClass);
-    }
-
-    protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
-        if (superClass == null) return context.runtime.getNil();
-
-        DynamicMethod newMethod = superClass.searchMethod(methodName);
-        if (newMethod == UndefinedMethod.INSTANCE) return context.runtime.getNil();
-
-        if (receiver == null) {
-            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, newMethod);
-        } else {
-            return newMethod(superClass, methodName, superClass, originName, newMethod, receiver);
-        }
     }
 }
 

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.RubyGC;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBinding;
@@ -63,6 +64,42 @@ public abstract class TrufflePrimitiveNodes {
                     getContext().getCoreLibrary().getBindingClass(),
                     RubyArguments.getSelf(frame.getArguments()),
                     frame);
+        }
+
+    }
+
+    @CoreMethod(names = "gc_count", onSingleton = true)
+    public abstract static class GCCountNode extends CoreMethodNode {
+
+        public GCCountNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GCCountNode(GCCountNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int gcCount() {
+            return RubyGC.getCollectionCount();
+        }
+
+    }
+
+    @CoreMethod(names = "gc_time", onSingleton = true)
+    public abstract static class GCTimeNode extends CoreMethodNode {
+
+        public GCTimeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GCTimeNode(GCTimeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public long gcTime() {
+            return RubyGC.getCollectionTime();
         }
 
     }

@@ -838,7 +838,7 @@ public final class StringSupport {
     /**
      * rb_str_rindex_m
      */
-    public static int rindex(ByteList source, int sourceLen, ByteList subString, int subLen, int endPosition, CodeRangeable subStringCodeRangeable, Encoding enc) {
+    public static int rindex(ByteList source, int sourceLen, int subLen, int endPosition, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
         if (sourceLen < subLen) return -1;
@@ -849,6 +849,7 @@ public final class StringSupport {
         int p = source.getBegin();
         int end = p + source.getRealSize();
 
+        final ByteList subString = subStringCodeRangeable.getByteList();
         byte[]sbytes = subString.bytes();
         subLen = subString.getRealSize();
 
@@ -862,6 +863,27 @@ public final class StringSupport {
             s = enc.prevCharHead(bytes, p, s, end);
         }
         return -1;
+    }
+
+    public static int strLengthFromRubyString(CodeRangeable string, Encoding enc) {
+        final ByteList bytes = string.getByteList();
+
+        if (isSingleByteOptimizable(string, enc)) return bytes.getRealSize();
+        return strLengthFromRubyStringFull(string, bytes, enc);
+    }
+
+    public static int strLengthFromRubyString(CodeRangeable string) {
+        final ByteList bytes = string.getByteList();
+        return strLengthFromRubyStringFull(string, bytes, bytes.getEncoding());
+    }
+
+    private static int strLengthFromRubyStringFull(CodeRangeable string, ByteList bytes, Encoding enc) {
+        if (string.isCodeRangeValid() && enc instanceof UTF8Encoding) return utf8Length(bytes);
+
+        long lencr = strLengthWithCodeRange(bytes, enc);
+        int cr = unpackArg(lencr);
+        if (cr != 0) string.setCodeRange(cr);
+        return unpackResult(lencr);
     }
 
     /**
@@ -1164,12 +1186,19 @@ public final class StringSupport {
         return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
     }
 
-    public static int index(CodeRangeable sourceString, ByteList source, int sourceLen, CodeRangeable subString, ByteList other, int otherLen, int offset, Encoding enc) {
-        if (subString.scanForCodeRange() == CR_BROKEN) return -1;
+    public static int index(CodeRangeable sourceString, CodeRangeable otherString, int offset, Encoding enc) {
+        if (otherString.scanForCodeRange() == CR_BROKEN) return -1;
+
+        int sourceLen = strLengthFromRubyString(sourceString);
+        int otherLen = strLengthFromRubyString(otherString);
+
         if (offset < 0) {
             offset += sourceLen;
             if (offset < 0) return -1;
         }
+
+        final ByteList source = sourceString.getByteList();
+        final ByteList other = otherString.getByteList();
 
         if (sourceLen - offset < otherLen) return -1;
         byte[]bytes = source.getUnsafeBytes();

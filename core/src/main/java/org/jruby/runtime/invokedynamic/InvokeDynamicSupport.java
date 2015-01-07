@@ -989,10 +989,6 @@ public class InvokeDynamicSupport {
         RubyClass selfType = ((RubyBasicObject)self).getMetaClass();
         return selfType;
     }
-
-    public static IRubyObject retryJumpError(ThreadContext context) {
-        throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.runtime.getNil(), "retry outside of rescue not supported");
-    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Utility methods for lookup

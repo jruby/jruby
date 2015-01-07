@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -62,7 +63,14 @@ class ModuleTranslator extends BodyTranslator {
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
-        return new MethodDefinitionNode(context, sourceSection, environment.getSharedMethodInfo().getName(), environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, false);
+        return new MethodDefinitionNode(
+                context,
+                sourceSection,
+                environment.getSharedMethodInfo().getName(),
+                environment.getSharedMethodInfo(),
+                environment.needsDeclarationFrame(),
+                Truffle.getRuntime().createCallTarget(rootNode),
+                false);
     }
 
     @Override

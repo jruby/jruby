@@ -1,13 +1,8 @@
 package org.jruby.runtime.callsite;
 
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyLocalJumpError;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.JumpException.BreakJump;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -420,10 +415,6 @@ public abstract class CachingCallSite extends CallSite {
 
     private static RubyClass getClass(IRubyObject self) {
         // the cast in the following line is necessary due to lacking optimizations in Hotspot
-        return ((RubyBasicObject)self).getMetaClass();
-    }
-
-    private static RaiseException retryJumpError(ThreadContext context) {
-        return context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.runtime.getNil(), "retry outside of rescue not supported");
+        return self.getMetaClass();
     }
 }

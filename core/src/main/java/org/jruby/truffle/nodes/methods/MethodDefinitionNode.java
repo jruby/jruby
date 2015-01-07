@@ -31,22 +31,22 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
  */
 public class MethodDefinitionNode extends RubyNode {
 
-    protected final String name;
-    protected final SharedMethodInfo sharedMethodInfo;
+    private final String name;
+    private final SharedMethodInfo sharedMethodInfo;
 
-    protected final RubyRootNode rootNode;
+    private final CallTarget callTarget;
 
-    protected final boolean requiresDeclarationFrame;
+    private final boolean requiresDeclarationFrame;
 
-    protected final boolean ignoreLocalVisibility;
+    private final boolean ignoreLocalVisibility;
 
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            boolean requiresDeclarationFrame, RubyRootNode rootNode, boolean ignoreLocalVisibility) {
+            boolean requiresDeclarationFrame, CallTarget callTarget, boolean ignoreLocalVisibility) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.requiresDeclarationFrame = requiresDeclarationFrame;
-        this.rootNode = rootNode;
+        this.callTarget = callTarget;
         this.ignoreLocalVisibility = ignoreLocalVisibility;
     }
 
@@ -66,12 +66,7 @@ public class MethodDefinitionNode extends RubyNode {
 
     public RubyMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
         notDesignedForCompilation();
-
         Visibility visibility = getVisibility(frame);
-
-        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
-
         return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
     }
 
@@ -110,10 +105,6 @@ public class MethodDefinitionNode extends RubyNode {
 
     public String getName() {
         return name;
-    }
-
-    public RubyRootNode getMethodRootNode() {
-        return rootNode;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {

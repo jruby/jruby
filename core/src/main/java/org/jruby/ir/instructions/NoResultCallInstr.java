@@ -8,34 +8,23 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
 
 public class NoResultCallInstr extends CallBase {
-    public NoResultCallInstr(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
-        super(op, callType, name, receiver, args, closure);
+    // FIXME: Removed results undoes specialized callinstrs.  Audit how often and what and make equalivalent versions here.
+    public static NoResultCallInstr create(CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
+        if (closure == null && !containsArgSplat(args) && args.length == 1) {
+            return new OneOperandArgNoBlockNoResultCallInstr(callType, name, receiver, args, closure);
+        }
+
+        return new NoResultCallInstr(Operation.NORESULT_CALL, callType, name, receiver, args, closure);
     }
 
-    public NoResultCallInstr(Operation op, NoResultCallInstr instr) {
-        this(op, instr.getCallType(), instr.getName(), instr.receiver, instr.arguments, instr.closure);
+    public NoResultCallInstr(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
+        super(op, callType, name, receiver, args, closure);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new NoResultCallInstr(getOperation(), getCallType(), getName(), receiver.cloneForInlining(ii),
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
-    }
-
-    @Override
-    public CallBase specializeForInterpretation() {
-        Operand[] callArgs = getCallArgs();
-        if (hasClosure() || containsArgSplat(callArgs)) return this;
-
-        switch (callArgs.length) {
-//            case 0:
-//                return new ZeroOperandArgNoBlockNoResultCallInstr(this);
-            case 1:
-//                if (isAllFixnums()) return new OneFixnumArgNoBlockNoResultCallInstr(this);
-
-                return new OneOperandArgNoBlockNoResultCallInstr(this);
-        }
-        return this;
     }
 
     @Override

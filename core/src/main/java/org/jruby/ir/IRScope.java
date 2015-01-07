@@ -479,14 +479,12 @@ public abstract class IRScope implements ParseResult {
 
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
+            // FIXME: Can be replaced with System.arrayCopy or clone() once we stop cloning individual instrs
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
                 if (!(instr instanceof ReceiveSelfInstr)) {
+                    // FIXME: Can be removed once ipc and rpc are stored in table(s) in IC
                     Instr newInstr = instr.clone(cloneInfo);
-
-                    if (newInstr instanceof Specializeable) {
-                        newInstr = ((Specializeable) newInstr).specializeForInterpretation();
-                    }
 
                     newInstr.setIPC(ipc);
                     newInstrs.add(newInstr);
@@ -791,7 +789,7 @@ public abstract class IRScope implements ParseResult {
         // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
         if (currentModuleVariable == null) {
             temporaryVariableIndex++;
-            currentModuleVariable = new TemporaryCurrentModuleVariable(temporaryVariableIndex);
+            currentModuleVariable = TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
         }
         return currentModuleVariable;
     }
@@ -801,7 +799,7 @@ public abstract class IRScope implements ParseResult {
         // -> searching a constant in the lexical scope hierarchy
         if (currentScopeVariable == null) {
             temporaryVariableIndex++;
-            currentScopeVariable = new TemporaryCurrentScopeVariable(temporaryVariableIndex);
+            currentScopeVariable = TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
         }
         return currentScopeVariable;
     }

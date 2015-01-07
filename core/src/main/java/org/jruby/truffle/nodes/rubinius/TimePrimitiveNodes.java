@@ -213,10 +213,9 @@ public abstract class TimePrimitiveNodes {
 
 
         @CompilerDirectives.TruffleBoundary
-        public ByteList format(DateTime time, long nanoseconds, ByteList format) {
-            // TODO: converts everything to JRuby objects and back - should find a more direct way using ByteList
+        public ByteList format(DateTime time, long nanoseconds, ByteList pattern) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
-            return rdf.compileAndFormat(org.jruby.RubyString.newString(getContext().getRuntime(), format), false, time, nanoseconds, null).getByteList();
+            return rdf.formatToByteList(rdf.compilePattern(pattern, false), time, nanoseconds, null);
         }
 
     }

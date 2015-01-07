@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -115,7 +116,7 @@ public class RubyMethod implements MethodLike {
                 return false;
 
             default:
-                return false;
+                throw new UnsupportedOperationException(visibility.name());
         }
     }
 

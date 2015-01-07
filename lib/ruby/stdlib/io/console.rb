@@ -146,6 +146,39 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       def ioflush
         raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCIOFLUSH) == 0
       end
+
+      # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
+      def self.console(sym = nil)
+        raise TypeError, "expected Symbol, got #{sym.class}" unless sym.nil? || sym.kind_of?(Symbol)
+        klass = self == IO ? File : self
+
+        if defined?(@console) # using ivar instead of hidden const as in MRI
+          con = @console
+        end
+
+        if !con.kind_of?(File) || !con.open? || !con.readable? # MRI checks IO internals here
+          remove_instance_variable :@console if defined?(@console)
+          con = nil
+        end
+
+        if sym
+          if sym == :close
+            if con
+              con.close
+              remove_instance_variable :@console if defined?(@console)
+              con = nil
+            end
+            return nil
+          end
+        end
+
+        if con.nil?
+          con = File.open('/dev/tty', 'r+')
+          @console = con
+        end
+
+        return con
+      end
     end
     true
   rescue Exception => ex

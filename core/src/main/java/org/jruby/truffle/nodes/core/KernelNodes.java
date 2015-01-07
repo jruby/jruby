@@ -45,18 +45,72 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
+
+    @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class BacktickNode extends CoreMethodNode {
+
+        public BacktickNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BacktickNode(BacktickNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString backtick(RubyString command) {
+            // Command is lexically a string interoplation, so variables will already have been expanded
+
+            notDesignedForCompilation();
+
+            final RubyContext context = getContext();
+
+            final RubyHash env = context.getCoreLibrary().getENV();
+
+            final List<String> envp = new ArrayList<>();
+
+            // TODO(CS): cast
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
+            }
+
+            final Process process;
+
+            try {
+                // We need to run via bash to get the variable and other expansion we expect
+                process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            final InputStream stdout = process.getInputStream();
+            final InputStreamReader reader = new InputStreamReader(stdout, StandardCharsets.UTF_8);
+
+            final StringBuilder resultBuilder = new StringBuilder();
+
+            // TODO(cs): this isn't great for binary output
+
+            try {
+                int c;
+
+                while ((c = reader.read()) != -1) {
+                    resultBuilder.append((char) c);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return context.makeString(resultBuilder.toString());
+        }
+
+    }
 
     /**
      * Check if operands are the same object or call #==.
@@ -1115,13 +1169,7 @@ public abstract class KernelNodes {
             }
 
             try {
-                final int value1 = Integer.parseInt(value.toString());
-
-                if (value1 >= Long.MIN_VALUE && value1 <= Long.MAX_VALUE) {
-                    return value1;
-                } else {
-                    return bignum(value1);
-                }
+                return Integer.parseInt(value.toString());
             } catch (NumberFormatException e) {
                 return bignum(new BigInteger(value.toString()));
             }
@@ -1329,33 +1377,6 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-    }
-
-    /*
-     * Kernel#pretty_inspect is normally part of stdlib, in pp.rb, but we aren't able to execute
-     * that file yet. Instead we implement a very simple version here, which is the solution
-     * suggested by RubySpec.
-     */
-
-    @CoreMethod(names = "pretty_inspect")
-    public abstract static class PrettyInspectNode extends CoreMethodNode {
-
-        @Child protected DispatchHeadNode inspectNode;
-
-        public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            inspectNode = DispatchHeadNode.onSelf(context);
-        }
-
-        public PrettyInspectNode(PrettyInspectNode prev) {
-            super(prev);
-            inspectNode = prev.inspectNode;
-        }
-
-        @Specialization
-        public Object prettyInspect(VirtualFrame frame, Object self) {
-            return inspectNode.call(frame, self, "inspect", null);
-        }
     }
 
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
@@ -1612,7 +1633,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             try {
-                getContext().getFeatureManager().require(feature.toString(), this);
+                getContext().getFeatureManager().require(null, feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1633,14 +1654,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean require(VirtualFrame frame, RubyString feature) {
+        public boolean require(RubyString feature) {
             notDesignedForCompilation();
 
             final String sourcePath = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getPath();
             final String directoryPath = new File(sourcePath).getParent();
 
             try {
-                getContext().getFeatureManager().requireInPath(directoryPath, feature.toString(), this);
+                getContext().getFeatureManager().require(directoryPath, feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1936,7 +1957,14 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            final PrintStream printStream = new PrintStream(outputStream);
+
+            final PrintStream printStream;
+
+            try {
+                printStream = new PrintStream(outputStream, true, StandardCharsets.UTF_8.name());
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
 
             if (args.length > 0) {
                 final String format = args[0].toString();
@@ -1955,7 +1983,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "system", isModuleFunction = true, argumentsAsArray = true)
+    @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class SystemNode extends CoreMethodNode {
 
         public SystemNode(RubyContext context, SourceSection sourceSection) {
@@ -1967,10 +1995,28 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object fork(Object[] args) {
+        public boolean system(RubyString command) {
             notDesignedForCompilation();
-            getContext().getWarnings().warn("Kernel#system not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return getContext().getCoreLibrary().getNilObject();
+
+            // TODO(CS 5-JAN-15): very simplistic implementation
+
+            final RubyHash env = getContext().getCoreLibrary().getENV();
+
+            final List<String> envp = new ArrayList<>();
+
+            // TODO(CS): cast
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
+            }
+
+            // We need to run via bash to get the variable and other expansion we expect
+            try {
+                Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return true;
         }
 
     }

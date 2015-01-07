@@ -83,8 +83,8 @@ public class PosixShim {
         try {
             if (nonblock) {
                 // TODO: figure out what nonblocking writes against atypical streams (files?) actually do
-                // Ff we can't set the channel nonblocking, I'm not sure what we can do to
-                // pretend the channel is blocking.
+                // If we can't set the channel nonblocking, I'm not sure what we can do to
+                // pretend the channel is nonblocking.
             }
 
             int written = fd.chWrite.write(tmp);

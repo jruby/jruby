@@ -1556,7 +1556,7 @@ public class RubyModule extends RubyObject {
             originModule = ((MetaClass)originModule).getRealClass();
         }
 
-        RubyMethod newMethod;
+        AbstractRubyMethod newMethod;
         if (bound) {
             newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, method, receiver);
         } else {
@@ -1617,13 +1617,13 @@ public class RubyModule extends RubyObject {
             body = proc;
 
             newMethod = createProcMethod(name, visibility, proc);
-        } else if (runtime.getMethod().isInstance(arg1)) {
-            RubyMethod method = (RubyMethod)arg1;
+        } else if (arg1 instanceof AbstractRubyMethod) {
+            AbstractRubyMethod method = (AbstractRubyMethod)arg1;
             body = method;
             
             checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
             
-            newMethod = method.unbind().getMethod().dup();
+            newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
@@ -2205,7 +2205,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_include
      *
      */
-    @JRubyMethod(name = "include", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "include", rest = true)
     public RubyModule include(IRubyObject[] modules) {
         ThreadContext context = getRuntime().getCurrentContext();
         // MRI checks all types first:
@@ -2995,7 +2995,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "prepend", rest = true, visibility = PUBLIC)
+    @JRubyMethod(name = "prepend", rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {

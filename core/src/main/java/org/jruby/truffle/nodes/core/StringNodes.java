@@ -83,6 +83,8 @@ public abstract class StringNodes {
                 outputBytes.append(inputBytes);
             }
 
+            outputBytes.setEncoding(inputBytes.getEncoding());
+
             return new RubyString(getContext().getCoreLibrary().getStringClass(), outputBytes);
         }
     }
@@ -549,6 +551,17 @@ public abstract class StringNodes {
 
             return getContext().toTruffle(jrubyTranscoded);
         }
+
+        @Specialization
+        public RubyString encode(RubyString string, RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
+            final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(getContext().makeString(encoding.getName()));
+            final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
+
+            return getContext().toTruffle(jrubyTranscoded);
+        }
     }
 
     @CoreMethod(names = "encoding")
@@ -566,7 +579,7 @@ public abstract class StringNodes {
         public RubyEncoding encoding(RubyString string) {
             notDesignedForCompilation();
 
-            return RubyEncoding.getEncoding(getContext(), string.getBytes().getEncoding());
+            return RubyEncoding.getEncoding(string.getBytes().getEncoding());
         }
     }
 
@@ -603,7 +616,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString forceEncoding(RubyString string, RubyString encodingName) {
             notDesignedForCompilation();
-            final RubyEncoding encoding = RubyEncoding.getEncoding(getContext(), encodingName.toString());
+            final RubyEncoding encoding = RubyEncoding.getEncoding(encodingName.toString());
             return forceEncoding(string, encoding);
         }
 
@@ -734,29 +747,6 @@ public abstract class StringNodes {
         @Specialization
         public int getByte(RubyString string, int index) {
             return string.getBytes().get(index);
-        }
-    }
-
-    @CoreMethod(names = "include?", required = 1)
-    public abstract static class IncludeQueryNode extends CoreMethodNode {
-
-        public IncludeQueryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public IncludeQueryNode(IncludeQueryNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean includeQuery(RubyString string, RubyString otherString) {
-            notDesignedForCompilation();
-
-            int foundIndex = StringSupport.index(string, string.getBytes(), string.length(),
-                                                 otherString, otherString.getBytes(), otherString.length(),
-                                                 0, string.getBytes().getEncoding());
-
-            return foundIndex != -1;
         }
     }
 
@@ -998,7 +988,7 @@ public abstract class StringNodes {
                 normalizedEndPosition = string.length();
             }
 
-            int result = StringSupport.rindex(string.getBytes(), string.length(), subString.getBytes(), subString.length(),
+            int result = StringSupport.rindex(string.getBytes(), string.length(), subString.length(),
                     normalizedEndPosition, subString, string.getBytes().getEncoding()
             );
 
@@ -1357,13 +1347,7 @@ public abstract class StringNodes {
             }
 
             try {
-                final int value = Integer.parseInt(string.toString());
-
-                if (value >= Long.MIN_VALUE && value <= Long.MAX_VALUE) {
-                    return value;
-                } else {
-                    return bignum(value);
-                }
+                return Integer.parseInt(string.toString());
             } catch (NumberFormatException e) {
                 return bignum(new BigInteger(string.toString()));
             }

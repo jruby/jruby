@@ -1,0 +1,95 @@
+#-*- mode: ruby -*-
+
+properties( 'tesla.dump.pom' => 'pom.xml',
+            'tesla.dump.readOnly' => true,
+            'jruby.version' => '@project.version@' )
+gemfile
+
+gem 'bundler', '1.7.7'
+
+pom 'org.jruby:jruby', '${jruby.version}'
+
+files = [ 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
+          'lib/**', 'app/**', 'config/**', 'vendor/**', 'spec/**' ]
+
+resource :directory => '${basedir}' do
+  includes( files )
+end
+
+execute 'create jrubydir info', :phase => 'process-resources' do |ctx|
+  target = ctx.project.build.output_directory.to_pathname
+  entries = files.collect { |f| Dir[ f.sub( /\/.*$/, '') ] }.flatten.uniq
+  File.write( File.join( target, '.jrubydir' ),
+              (['.'] + entries + [ '' ]).join( "\n" ) )
+  require (ctx.basedir.to_pathname + '/../../../../../core/src/main/ruby/jruby/commands.rb')
+  files.select do |f| 
+    f =~ /\// 
+  end.collect do |f|
+    f.sub( /\/.*$/, '')
+  end.each do |f|
+    JRuby::Commands.generate_dir_info( File.join( target, f ), false )
+  end
+end
+
+resource :directory => '${project.build.directory}/rubygems/bin' do
+  includes '*'
+  target_path 'META-INF/jruby.home/bin'
+end
+
+build do
+  directory 'pkg'
+end
+
+jruby_plugin!( :gem, :includeRubygemsInResources => true )
+
+if File.file?('Jarfile.lock')
+  phase :package do
+    plugin :dependency do
+      items = []
+      File.read( 'Jarfile.lock' ).each_line do |l|
+        data = l.sub(/-\ /, '').strip.split(':')
+        if data.size > 3
+          data = Hash[ [:groupId, :artifactId, :type, :version, :classifier].zip( data ) ]
+          data[ :outputDirectory ] = File.join( '${project.build.outputDirectory}',
+                                                data[:groupId].gsub(/[.]/, '/'),
+                                                data[:artifactId],
+                                                data[:version] )
+          items << data
+        end
+      end
+      execute_goal( :copy,
+                    :id => 'copy jar dependencies',
+                    :artifactItems => items )
+    end
+  end
+end
+
+plugin :shade do
+  execute_goals( 'shade',
+                 :id => 'pack',
+                 :artifactSet => { :excludes => ['rubygems:*'] },
+                 :transformers => [ { :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                      :mainClass => 'Main' } ] )
+end
+
+# test bits
+
+phase :package do
+  plugin( 'org.codehaus.mojo:exec-maven-plugin:1.2',
+          :executable => 'java',
+          :environmentVariables => {
+            'PATH' => '${basedir}',
+            'HOME' => '${basedir}',
+            'GEM_PATH' => '${basedir}',
+            'GEM_HOME' => '${basedir}'
+          } ) do
+    
+    execute_goal( :exec, :id => 'rake -T',
+                  :arguments => [ '-jar', 'runnable.jar', '-S', 'rake', '-T' ] )
+    
+    execute_goal( :exec, :id => 'rspec',
+                  :arguments => [ '-jar', 'runnable.jar', '-S', 'rspec' ] )
+    
+  end
+end
+ 

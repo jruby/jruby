@@ -27,7 +27,7 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + required + ")";
+        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation() + "(" + required + ")";
     }
 
     @Override

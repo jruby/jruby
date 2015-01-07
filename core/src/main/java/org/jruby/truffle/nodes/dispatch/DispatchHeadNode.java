@@ -118,7 +118,7 @@ public class DispatchHeadNode extends Node {
         }
 
         if (value instanceof Long) {
-            return (int) value;
+            return (long) value;
         }
 
         CompilerDirectives.transferToInterpreter();

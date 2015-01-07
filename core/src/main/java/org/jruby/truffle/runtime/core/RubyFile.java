@@ -13,6 +13,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Represents the Ruby {@code File} class.
@@ -76,7 +77,7 @@ public class RubyFile extends RubyBasicObject {
 
         if (mode.equals("rb")) {
             try {
-                reader = new InputStreamReader(new FileInputStream(fileName));
+                reader = new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -86,7 +87,7 @@ public class RubyFile extends RubyBasicObject {
             reader = null;
 
             try {
-                writer = new OutputStreamWriter(new FileOutputStream(fileName));
+                writer = new OutputStreamWriter(new FileOutputStream(fileName), StandardCharsets.UTF_8);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -94,7 +95,7 @@ public class RubyFile extends RubyBasicObject {
             reader = null;
 
             try {
-                writer = new OutputStreamWriter(new FileOutputStream(fileName, true));
+                writer = new OutputStreamWriter(new FileOutputStream(fileName, true), StandardCharsets.UTF_8);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }

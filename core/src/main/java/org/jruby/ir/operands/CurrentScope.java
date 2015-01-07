@@ -10,6 +10,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class CurrentScope extends Operand {
+    // First four scopes are so common and this operand is immutable so we share them.
+    public static final CurrentScope[] CURRENT_SCOPE = {
+            new CurrentScope(0), new CurrentScope(1), new CurrentScope(2), new CurrentScope(3), new CurrentScope(4)
+    };
+
+    public static CurrentScope ScopeFor(int depth) {
+        return depth < CURRENT_SCOPE.length ? CURRENT_SCOPE[depth] : new CurrentScope(depth);
+    }
+
     private final int scopeNestingDepth;
 
     public CurrentScope(int scopeNestingDepth) {

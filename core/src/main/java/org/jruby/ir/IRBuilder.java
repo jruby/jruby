@@ -31,6 +31,9 @@ import java.util.*;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
+import static org.jruby.ir.operands.CurrentScope.*;
+import static org.jruby.ir.operands.ScopeModule.*;
+
 // This class converts an AST into a bunch of IR instructions
 
 // IR Building Notes
@@ -456,7 +459,7 @@ public class IRBuilder {
         return manager.getIRScopeListener() != null;
     }
 
-    public IRBuilder newIRBuilder(IRManager manager) {
+    public static IRBuilder newIRBuilder(IRManager manager) {
         return new IRBuilder(manager);
     }
 
@@ -468,7 +471,7 @@ public class IRBuilder {
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(s, new TraceInstr(RubyEvent.LINE, methodNameFor(s), s.getFileName(), currLineNum));
                 }
-               addInstr(s, new LineNumberInstr(s, currLineNum));
+               addInstr(s, new LineNumberInstr(currLineNum));
                _lastProcessedLineNum = currLineNum;
             }
         }
@@ -511,8 +514,8 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
 
         // args
         closureBuilder.receiveBlockArgs(node, closure);
@@ -574,11 +577,11 @@ public class IRBuilder {
                 Operand rhs = build(argsPushNode.getSecondNode(), s);
                 Variable res = s.createTemporaryVariable();
                 addInstr(s, new BuildCompoundArrayInstr(res, lhs, rhs, true));
-                argsList.add(new Splat(res, true));
+                argsList.add(new Splat(res));
                 return rhs;
             }
             case SPLATNODE: {     // a[1] = *b
-                Splat rhs = new Splat(build(((SplatNode)args).getValue(), s), true);
+                Splat rhs = new Splat(buildSplat((SplatNode)args, s));
                 argsList.add(rhs);
                 return rhs;
             }
@@ -591,7 +594,7 @@ public class IRBuilder {
         switch (args.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
-                return new Operand[] { new Splat(build(args, s), true) };
+                return new Operand[] { new Splat(build(args, s)) };
             case ARRAYNODE: {
                 List<Node> children = args.childNodes();
                 int numberOfArgs = children.size();
@@ -603,7 +606,7 @@ public class IRBuilder {
                 return builtArgs;
             }
             case SPLATNODE:
-                return new Operand[] { new Splat(build(((SplatNode) args).getValue(), s), true) };
+                return new Operand[] { new Splat(buildSplat((SplatNode)args, s)) };
         }
 
         throw new NotCompilableException("Invalid node for call args: " + args.getClass().getSimpleName() + ":" + args.getPosition());
@@ -836,7 +839,7 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = (argsNode == null) ? manager.getNil() : buildAttrAssignCallArgs(args, argsNode, s);
-        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
+        addInstr(s, AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
         return lastArg;
     }
 
@@ -845,7 +848,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         args = addArg(args, value);
-        addInstr(s, new AttrAssignInstr(obj, attrAssignNode.getName(), args));
+        addInstr(s, AttrAssignInstr.create(obj, attrAssignNode.getName(), args));
         return value;
     }
 
@@ -993,7 +996,7 @@ public class IRBuilder {
         Operand[] args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = (CallInstr)CallInstr.create(callResult, callNode.getName(), receiver, args, block).specializeForInterpretation();
+        CallInstr     callInstr    = CallInstr.create(callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (
@@ -1034,14 +1037,11 @@ public class IRBuilder {
             Variable eqqResult = s.createTemporaryVariable();
             labels.add(bodyLabel);
             Operand v1, v2;
-            if (whenNode.getExpressionNodes() instanceof DNode) {
-                // DNode produces a proper result, so we don't want the special ListNode handling below
-                // FIXME: This is obviously gross, and we need a better way to filter out non-expression ListNode here
-                // See GH #2423
-                s.addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes(), s), value));
-                v1 = eqqResult;
-                v2 = manager.getTrue();
-            } else if (whenNode.getExpressionNodes() instanceof ListNode) {
+            if (whenNode.getExpressionNodes() instanceof ListNode
+                    // DNode produces a proper result, so we don't want the special ListNode handling below
+                    // FIXME: This is obviously gross, and we need a better way to filter out non-expression ListNode here
+                    // See GH #2423
+                    && !(whenNode.getExpressionNodes() instanceof DNode)) {
                 // Note about refactoring:
                 // - BEQInstr has a quick implementation when the second operand is a boolean literal
                 //   If it can be fixed to do this even on the first operand, we can switch around
@@ -1201,7 +1201,7 @@ public class IRBuilder {
         }
 
         if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
-            return new ScopeModule(n);
+            return ScopeModule.ModuleFor(n);
         } else {
             return addResultInstr(s, new GetClassVarContainerModuleInstr(s.createTemporaryVariable(),
                     s.getCurrentScopeVariable(), declContext ? null : s.getSelf()));
@@ -1214,12 +1214,12 @@ public class IRBuilder {
 
     private Operand findContainerModule(IRScope s) {
         int nearestModuleBodyDepth = s.getNearestModuleReferencingScopeDepth();
-        return (nearestModuleBodyDepth == -1) ? s.getCurrentModuleVariable() : new ScopeModule(nearestModuleBodyDepth);
+        return (nearestModuleBodyDepth == -1) ? s.getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
     }
 
     private Operand startingSearchScope(IRScope s) {
         int nearestModuleBodyDepth = s.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? s.getCurrentScopeVariable() : new CurrentScope(nearestModuleBodyDepth);
+        return nearestModuleBodyDepth == -1 ? s.getCurrentScopeVariable() : CurrentScope.ScopeFor(nearestModuleBodyDepth);
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, IRScope s, Operand val) {
@@ -1671,7 +1671,7 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    private IRMethod defineMethodInner(MethodDefNode defNode, IRMethod method, IRScope parent) {
+    protected IRMethod defineMethodInner(MethodDefNode defNode, IRMethod method, IRScope parent) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(method, new TraceInstr(RubyEvent.CALL, method.getName(), method.getFileName(), method.getLineNumber()));
         }
@@ -1684,8 +1684,8 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
-        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), CurrentScope.ScopeFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
@@ -1709,9 +1709,9 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope parent, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(manager, parent, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
+        return new IRMethod(manager, parent, defNode, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
-        return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
+        //return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
     }
 
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
@@ -2217,7 +2217,7 @@ public class IRBuilder {
         Operand[] args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = (CallInstr)CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args, block).specializeForInterpretation();
+        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args, block);
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -2357,8 +2357,8 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
-        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
+        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
 
         // Thread poll on entry of closure
         forBuilder.addInstr(closure, new ThreadPollInstr());
@@ -2507,8 +2507,8 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
 
         // Thread poll on entry of closure
         closureBuilder.addInstr(closure, new ThreadPollInstr());
@@ -2927,8 +2927,8 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Set up %current_scope and %current_module
-        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(0)));
-        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(0)));
+        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
         // END does not have either explicit or implicit return, so we add one
@@ -2949,8 +2949,8 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Set up %current_scope and %current_module
-        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(0)));
-        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(0)));
+        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
         closureBuilder.build(preExeNode.getBodyNode(), beginClosure);
 
         // BEGIN does not have either explicit or implicit return, so we add one
@@ -3230,12 +3230,12 @@ public class IRBuilder {
         staticScope.setIRScope(script);
 
         // Debug info: record line number
-        addInstr(script, new LineNumberInstr(script, lineNumber));
+        addInstr(script, new LineNumberInstr(lineNumber));
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(0)));
-        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(0)));
+        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), SCOPE_MODULE[0]));
         // Build IR for the tree and return the result of the expression tree
         Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
         addInstr(script, new ReturnInstr(rval));
@@ -3252,8 +3252,8 @@ public class IRBuilder {
         addInstr(script, new ReceiveSelfInstr(script.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(0)));
-        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(0)));
+        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), SCOPE_MODULE[0]));
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(script, new ReturnInstr(build(rootNode.getBodyNode(), script)));
@@ -3266,9 +3266,9 @@ public class IRBuilder {
     }
 
     public Operand buildSplat(SplatNode splatNode, IRScope s) {
-        // SSS: Since splats can only occur in call argument lists, no need to copyAndReturnValue(...)
-        // Verify with Tom / Charlie
-        return new Splat(build(splatNode.getValue(), s));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildSplatInstr(res, build(splatNode.getValue(), s)));
+        return res;
     }
 
     public Operand buildStr(StrNode strNode, IRScope s) {
@@ -3394,10 +3394,8 @@ public class IRBuilder {
     }
 
     public Operand buildVCall(VCallNode node, IRScope s) {
-        Variable callResult = s.createTemporaryVariable();
-        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, node.getName(), s.getSelf(), NO_ARGS, null).specializeForInterpretation();
-        addInstr(s, callInstr);
-        return callResult;
+        return addResultInstr(s, CallInstr.create(CallType.VARIABLE, s.createTemporaryVariable(),
+                node.getName(), s.getSelf(), NO_ARGS, null));
     }
 
     public Operand buildWhile(final WhileNode whileNode, IRScope s) {
@@ -3529,9 +3527,9 @@ public class IRBuilder {
             bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
         }
 
-        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                               // %self
-        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
-        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
+        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                            // %self
+        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %scope
+        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %module
         // Create a new nested builder to ensure this gets its own IR builder state
         Operand bodyReturnValue = bodyBuilder.build(bodyNode, body);
 

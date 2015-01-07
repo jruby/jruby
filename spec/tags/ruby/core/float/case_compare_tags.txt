@@ -1,0 +1,1 @@
+fails:Float#=== calls 'other == self' if coercion fails

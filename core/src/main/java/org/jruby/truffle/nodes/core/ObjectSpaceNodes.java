@@ -147,17 +147,6 @@ public abstract class ObjectSpaceNodes {
         }
     }
 
-    @CoreMethod(names = "garbage_collect", isModuleFunction = true)
-    public abstract static class GarbageCollectNode extends GCNodes.GarbageCollectNode {
-        public GarbageCollectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public GarbageCollectNode(GarbageCollectNode prev) {
-            super(prev);
-        }
-    }
-
     @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, required = 1)
     public abstract static class UndefineFinalizerNode extends CoreMethodNode {
 

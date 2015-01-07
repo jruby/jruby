@@ -50,7 +50,7 @@ class OperandDecoderMap {
             case REGEXP: return decodeRegexp();
             case SCOPE_MODULE: return new ScopeModule(d.decodeInt());
             case SELF: return Self.SELF;
-            case SPLAT: return new Splat(d.decodeOperand(), d.decodeBoolean());
+            case SPLAT: return new Splat(d.decodeOperand());
             case STANDARD_ERROR: return new StandardError();
             case STRING_LITERAL: return new StringLiteral(d.decodeString());
             case SVALUE: return new SValue(d.decodeOperand());
@@ -117,9 +117,9 @@ class OperandDecoderMap {
             case CLOSURE:
                 return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());
             case CURRENT_MODULE:
-                return new TemporaryCurrentModuleVariable(d.decodeInt());
+                return TemporaryCurrentModuleVariable.ModuleVariableFor(d.decodeInt());
             case CURRENT_SCOPE:
-                return new TemporaryCurrentScopeVariable(d.decodeInt());
+                return TemporaryCurrentScopeVariable.ScopeVariableFor(d.decodeInt());
             case FLOAT:
                 return new TemporaryFloatVariable(d.decodeInt());
             case FIXNUM:

@@ -10,6 +10,7 @@ import java.util.*;
 
 /* SSS: Currently unused code. Will be useful for some SSA building algos. */
 public class DominatorTreeBuilder extends CompilerPass {
+    private static int NULL = -1;
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
 
@@ -42,7 +43,7 @@ public class DominatorTreeBuilder extends CompilerPass {
     }
 
     public void buildDominatorTree(CFG cfg, LinkedList<BasicBlock> postOrderList, int maxNodeId) {
-        Integer[] bbToPoNumbers = new Integer[maxNodeId + 1]; // Set up a map of bbid -> post order numbering
+        int[] bbToPoNumbers = new int[maxNodeId + 1]; // Set up a map of bbid -> post order numbering
         BasicBlock[] poNumbersToBB = new BasicBlock[maxNodeId + 1];
         int n = 0;
         ListIterator<BasicBlock> it = postOrderList.listIterator();
@@ -61,10 +62,10 @@ public class DominatorTreeBuilder extends CompilerPass {
         //
         // This maps a bb's post-order number to the bb's idom post-order number.
         // We convert this po-number -> po-number map to a bb -> bb map later on!
-        Integer[] idoms = new Integer[maxNodeId + 1];
+        int[] idoms = new int[maxNodeId + 1];
 
         BasicBlock root = cfg.getEntryBB();
-        Integer rootPoNumber = bbToPoNumbers[root.getID()];
+        int rootPoNumber = bbToPoNumbers[root.getID()];
         idoms[rootPoNumber] = rootPoNumber;
 
         boolean changed = true;
@@ -76,15 +77,15 @@ public class DominatorTreeBuilder extends CompilerPass {
                 if (b == root) continue;
 
                 // Non-root -- process it
-                Integer bPoNumber = bbToPoNumbers[b.getID()];
-                Integer oldBIdom = idoms[bPoNumber];
-                Integer newBIdom = null;
+                int bPoNumber = bbToPoNumbers[b.getID()];
+                int oldBIdom = idoms[bPoNumber];
+                int newBIdom = NULL;
 
                 // newBIdom is initialized to be some (first-encountered, for ex.) processed predecessor of 'b'.
                 for (BasicBlock src : cfg.getIncomingSources(b)) {
-                    Integer srcPoNumber = bbToPoNumbers[src.getID()];
+                    int srcPoNumber = bbToPoNumbers[src.getID()];
 
-                    if (idoms[srcPoNumber] != null) {
+                    if (idoms[srcPoNumber] != NULL) {
 //                        System.out.println("Initialized idom(" + bPoNumber + ")=" + srcPoNumber);
                         newBIdom = srcPoNumber;
                         break;
@@ -92,16 +93,16 @@ public class DominatorTreeBuilder extends CompilerPass {
                 }
 
                 // newBIdom should not be null
-                assert newBIdom != null;
+                assert newBIdom != NULL;
 
                 // Now, intersect dom sets of all of b's predecessors
-                Integer processedPred = newBIdom;
+                int processedPred = newBIdom;
                 for (BasicBlock src: cfg.getIncomingSources(b)) {
                     // Process b's predecessors except the initialized bidom value
-                    Integer srcPoNumber = bbToPoNumbers[src.getID()];
-                    Integer srcIdom = idoms[srcPoNumber];
-                    if ((srcIdom != null) && (srcPoNumber != processedPred)) {
-//                        Integer old = newBIdom;
+                    int srcPoNumber = bbToPoNumbers[src.getID()];
+                    int srcIdom = idoms[srcPoNumber];
+                    if ((srcIdom != NULL) && (srcPoNumber != processedPred)) {
+//                        int old = newBIdom;
                         newBIdom = intersectDomSets(idoms, srcPoNumber, newBIdom);
 //                        System.out.println("Intersect " + srcIdom + " & " + old + " = " + newBIdom);
                     }
@@ -118,13 +119,13 @@ public class DominatorTreeBuilder extends CompilerPass {
 
         // Convert the idom map based on post order numbers to one based on basic blocks
         Map<BasicBlock, BasicBlock> idomMap = new HashMap<BasicBlock, BasicBlock>();
-        for (Integer i = 0; i < maxNodeId; i++) {
+        for (int i = 0; i < maxNodeId; i++) {
             idomMap.put(poNumbersToBB[i], poNumbersToBB[idoms[i]]);
 //            System.out.println("IDOM(" + poNumbersToBB[i].getID() + ") = " + poNumbersToBB[idoms[i]].getID());
         }
     }
 
-    private Integer intersectDomSets(Integer[] idomMap, Integer nb1, Integer nb2) {
+    private int intersectDomSets(int[] idomMap, int nb1, int nb2) {
         while (nb1 != nb2) {
             while (nb1 < nb2) {
                 nb1 = idomMap[nb1];

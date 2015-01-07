@@ -18,7 +18,7 @@ import java.util.Map;
 
 import static org.jruby.ir.IRFlags.*;
 
-public abstract class CallBase extends Instr implements Specializeable, ClosureAcceptingInstr {
+public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
     public final long callSiteId;
@@ -142,20 +142,28 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return true;
     }
 
-    public boolean isAllFixnums() {
-        for (Operand argument : arguments) {
+    public static boolean isAllFixnums(Operand[] args) {
+        for (Operand argument : args) {
             if (!(argument instanceof Fixnum)) return false;
         }
 
         return true;
     }
 
-    public boolean isAllFloats() {
-        for (Operand argument : arguments) {
+    public boolean isAllFixnums() {
+        return isAllFixnums(arguments);
+    }
+
+    public static boolean isAllFloats(Operand[] args) {
+        for (Operand argument : args) {
             if (!(argument instanceof Float)) return false;
         }
 
         return true;
+    }
+
+    public boolean isAllFloats() {
+        return isAllFloats(arguments);
     }
 
     @Override
@@ -202,15 +210,6 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         }
 
         return modifiedScope;
-    }
-    /**
-     * Interpreter can ask the instruction if it knows how to make a more
-     * efficient instruction for direct interpretation.
-     *
-     * @return itself or more efficient but semantically equivalent instr
-     */
-    public CallBase specializeForInterpretation() {
-        return this;
     }
 
     @Override
@@ -403,7 +402,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
 
     public static boolean containsArgSplat(Operand[] arguments) {
         for (Operand argument : arguments) {
-            if (argument instanceof Splat && ((Splat)argument).unsplatArgs) return true;
+            if (argument instanceof Splat) return true;
         }
 
         return false;

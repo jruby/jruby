@@ -201,7 +201,6 @@ public class TranslatorEnvironment {
 
     public void addMethodDeclarationSlots() {
         frameDescriptor.addFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
-        frameDescriptor.addFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
     }
 
     public SharedMethodInfo getSharedMethodInfo() {

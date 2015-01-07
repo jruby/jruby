@@ -72,7 +72,8 @@ public class RubyOperations extends ObjectType {
 
     @CompilerDirectives.TruffleBoundary
     public Object[] getFieldNames(RubyBasicObject receiver) {
-        return receiver.getDynamicObject().getShape().getKeyList().toArray(new Object[0]);
+        List<Object> keys = receiver.getDynamicObject().getShape().getKeyList();
+        return keys.toArray(new Object[keys.size()]);
     }
 
     @CompilerDirectives.TruffleBoundary

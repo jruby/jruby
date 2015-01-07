@@ -1,17 +1,21 @@
 package org.jruby.ir;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.ast.MethodDefNode;
+import org.jruby.ast.Node;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Splat;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.util.KeyValuePair;
 import org.jruby.parser.StaticScope;
 
@@ -41,10 +45,13 @@ public class IRMethod extends IRScope {
     // Method name in the jitted version of this method
     private String jittedName;
 
-    public IRMethod(IRManager manager, IRScope lexicalParent, String name,
+    private MethodDefNode defn;
+
+    public IRMethod(IRManager manager, IRScope lexicalParent, MethodDefNode defn, String name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
         super(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
 
+        this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;
         this.callArgs = new ArrayList<>();
         this.keywordArgs = new ArrayList<>();
@@ -55,6 +62,23 @@ public class IRMethod extends IRScope {
             staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
         }
+    }
+
+    /** Run any necessary passes to get the IR ready for interpretation */
+    public synchronized InterpreterContext prepareForInterpretation() {
+        if (defn != null) {
+            IRBuilder.newIRBuilder(getManager()).defineMethodInner(defn, this, getLexicalParent());
+
+            defn = null;
+        }
+
+        return super.prepareForInterpretation();
+    }
+
+    public synchronized List<BasicBlock> prepareForCompilation() {
+        if (defn != null) prepareForInterpretation();
+
+        return super.prepareForCompilation();
     }
 
     @Override
@@ -73,7 +97,7 @@ public class IRMethod extends IRScope {
             // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
             keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
         } else if (i instanceof ReceiveRestArgInstr) {
-            callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
+            callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
         } else if (i instanceof ReceiveArgBase) {
             callArgs.add(((ReceiveArgBase) i).getResult());
         }

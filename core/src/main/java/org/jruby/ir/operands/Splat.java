@@ -17,21 +17,15 @@ import java.util.Map;
 // Further down the line, it could get converted to calls that implement splat semantics
 public class Splat extends Operand implements DepthCloneable {
     final private Operand array;
-    final public boolean unsplatArgs;
-
-    public Splat(Operand array, boolean unsplatArgs) {
-        super(OperandType.SPLAT);
-        this.array = array;
-        this.unsplatArgs = unsplatArgs;
-    }
 
     public Splat(Operand array) {
-        this(array, false);
+        super(OperandType.SPLAT);
+        this.array = array;
     }
 
     @Override
     public String toString() {
-        return (unsplatArgs ? "*(unsplat)" : "*") + array;
+        return "*(unsplat)" + array;
     }
 
     @Override
@@ -46,7 +40,7 @@ public class Splat extends Operand implements DepthCloneable {
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newArray = array.getSimplifiedOperand(valueMap, force);
-        return (newArray == array) ? this : new Splat(newArray, unsplatArgs);
+        return (newArray == array) ? this : new Splat(newArray);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -57,19 +51,31 @@ public class Splat extends Operand implements DepthCloneable {
 
     /** When fixing up splats in nested closure we need to tweak the operand if it is a LocalVariable */
     public Operand cloneForDepth(int n) {
-        return array instanceof LocalVariable ? new Splat(((LocalVariable) array).cloneForDepth(n), unsplatArgs) : this;
+        return array instanceof LocalVariable ? new Splat(((LocalVariable) array).cloneForDepth(n)) : this;
     }
 
     @Override
     public Operand cloneForInlining(CloneInfo ii) {
-        return hasKnownValue() ? this : new Splat(array.cloneForInlining(ii), unsplatArgs);
+        return hasKnownValue() ? this : new Splat(array.cloneForInlining(ii));
     }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        IRubyObject arrayVal = (IRubyObject) array.retrieve(context, self, currScope, currDynScope, temp);
-        // SSS FIXME: Some way to specialize this code?
-        return IRRuntimeHelpers.irSplat(context, arrayVal);
+        // Splat is now only used in call arg lists where it is guaranteed that
+        // the splat-arg is an array.
+        //
+        // It is:
+        // - either a result of a args-cat/args-push (which generate an array),
+        // - or a result of a BuildSplatInstr (which also generates an array),
+        // - or a rest-arg that has been received (which also generates an array)
+        //   and is being passed via zsuper.
+        //
+        // In addition, since this only shows up in call args, the array itself is
+        // never modified. The array elements are extracted out and inserted into
+        // a java array. So, a dup is not required either.
+        //
+        // So, besides retrieving the array, nothing more to be done here!
+        return (IRubyObject) array.retrieve(context, self, currScope, currDynScope, temp);
     }
 
     @Override

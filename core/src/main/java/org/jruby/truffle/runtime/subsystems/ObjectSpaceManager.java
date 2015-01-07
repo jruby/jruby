@@ -34,7 +34,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ObjectSpaceManager {
 
-    private class FinalizerReference extends WeakReference<RubyBasicObject> {
+    private static class FinalizerReference extends WeakReference<RubyBasicObject> {
 
         public List<RubyProc> finalizers = new LinkedList<>();
 

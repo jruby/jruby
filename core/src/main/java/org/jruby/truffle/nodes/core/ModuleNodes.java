@@ -947,44 +947,11 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyNilClass moduleFunction(RubyModule module, Object... args) {
+        public RubyModule moduleFunction(RubyModule module, Object... args) {
             notDesignedForCompilation();
 
-            if (args.length == 0) {
-                final Frame unpacked = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
-
-                final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
-
-                /*
-                 * setObject, even though it's a boolean, so we can getObject and either get the
-                 * default Nil or the boolean value without triggering deoptimization.
-                 */
-
-                unpacked.setObject(slot, true);
-            } else {
-                for (Object argument : args) {
-                    final String methodName;
-
-                    if (argument instanceof RubySymbol) {
-                        methodName = ((RubySymbol) argument).toString();
-                    } else if (argument instanceof RubyString) {
-                        methodName = ((RubyString) argument).toString();
-                    } else {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    // TODO(cs): make this instance method private
-                    final RubyMethod method = ModuleOperations.lookupMethod(module, methodName);
-
-                    if (method == null) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    module.getSingletonClass(this).addMethod(this, method.withVisibility(Visibility.PUBLIC));
-                }
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
+            module.visibilityMethod(this, args, Visibility.MODULE_FUNCTION);
+            return module;
         }
     }
 

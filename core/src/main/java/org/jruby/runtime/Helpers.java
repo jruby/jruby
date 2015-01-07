@@ -883,12 +883,13 @@ public class Helpers {
         return getBlockFromProc(currentBlock, proc);
     }
 
-    private static IRubyObject coerceProc(IRubyObject proc, Ruby runtime) throws RaiseException {
-        proc = TypeConverter.convertToType(proc, runtime.getProc(), "to_proc", false);
+    private static IRubyObject coerceProc(IRubyObject maybeProc, Ruby runtime) throws RaiseException {
+        IRubyObject proc = TypeConverter.convertToType(maybeProc, runtime.getProc(), "to_proc", false);
 
         if (!(proc instanceof RubyProc)) {
-            throw runtime.newTypeError("wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
+            throw runtime.newTypeError("wrong argument type " + maybeProc.getMetaClass().getName() + " (expected Proc)");
         }
+
         return proc;
     }
 
@@ -1299,28 +1300,6 @@ public class Helpers {
 
     public static IRubyObject setConstantInCurrent(IRubyObject value, ThreadContext context, String name) {
         return context.getCurrentStaticScope().setConstant(name, value);
-    }
-
-    public static IRubyObject retryJump() {
-        throw JumpException.RETRY_JUMP;
-    }
-
-    public static IRubyObject redoJump() {
-        throw JumpException.REDO_JUMP;
-    }
-
-    public static IRubyObject redoLocalJumpError(Ruby runtime) {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, runtime.getNil(), "unexpected redo");
-    }
-
-    public static IRubyObject nextJump(IRubyObject value) {
-        if (value.isNil()) throw JumpException.NEXT_JUMP;
-
-        throw new JumpException.NextJump(value);
-    }
-    
-    public static IRubyObject nextLocalJumpError(Ruby runtime, IRubyObject value) {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.NEXT, value, "unexpected next");
     }
     
     public static final int MAX_SPECIFIC_ARITY_OBJECT_ARRAY = 10;

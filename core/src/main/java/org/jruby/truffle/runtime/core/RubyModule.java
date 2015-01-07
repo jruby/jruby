@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -79,12 +80,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      * the current visibility for new methods.
      */
     public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
-
-    /**
-     * The slot within a module definition method frame where we store the implicit state that is
-     * the flag for whether or not new methods will be module methods (functions is the term).
-     */
-    public static final Object MODULE_FUNCTION_FLAG_FRAME_SLOT_ID = new Object();
 
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
@@ -387,6 +382,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
                 if (arg instanceof RubySymbol) {
                     methodName = ((RubySymbol) arg).toString();
+                } else if (arg instanceof RubyString) {
+                    methodName = ((RubyString) arg).toString();
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -398,12 +395,17 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
                 }
 
                 /*
-                 * If the method was already defined in this class, that's fine {@link addMethod}
-                 * will overwrite it, otherwise we do actually want to add a copy of the method with
-                 * a different visibility to this module.
+                 * If the method was already defined in this class, that's fine
+                 * {@link addMethod} will overwrite it, otherwise we do actually
+                 * want to add a copy of the method with a different visibility
+                 * to this module.
                  */
-
-                addMethod(currentNode, method.withVisibility(visibility));
+                if (visibility == Visibility.MODULE_FUNCTION) {
+                    addMethod(currentNode, method.withVisibility(Visibility.PRIVATE));
+                    getSingletonClass(currentNode).addMethod(currentNode, method.withVisibility(Visibility.PUBLIC));
+                } else {
+                    addMethod(currentNode, method.withVisibility(visibility));
+                }
             }
         }
     }
@@ -456,7 +458,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
 
         @Override
-        public RubyModule next() {
+        public RubyModule next() throws NoSuchElementException {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
             ModuleChain mod = module;
             module = module.getParentModule();
             return mod.getActualModule();
