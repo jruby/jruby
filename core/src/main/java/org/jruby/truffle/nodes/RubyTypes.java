@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.dsl.TypeSystem;
+import com.oracle.truffle.api.dsl.internal.DSLOptions;
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -20,6 +21,7 @@ import org.jruby.truffle.runtime.core.*;
  * The list of types and type conversions that the AST interpreter knows about and can specialise
  * using. Used by the DSL.
  */
+@DSLOptions(useNewLayout=true)
 @TypeSystem({ //
                 Dispatch.DispatchAction.class, //
                 LexicalScope.class, //
