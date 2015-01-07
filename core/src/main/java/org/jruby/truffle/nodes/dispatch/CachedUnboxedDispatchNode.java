@@ -133,25 +133,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         }
     }
 
-    @Fallback
-    public Object dispatchFallback(
-            VirtualFrame frame,
-            LexicalScope lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return next.executeDispatch(
-                frame,
-                lexicalScope,
-                receiverObject,
-                methodName,
-                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                argumentsObjects,
-                dispatchAction);
-    }
-
     protected static final boolean isPrimitive(
             LexicalScope lexicalScope,
             Object receiverObject,

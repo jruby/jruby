@@ -203,23 +203,4 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
         }
     }
 
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            LexicalScope lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return next.executeDispatch(
-                frame,
-                lexicalScope,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects,
-                dispatchAction);
-    }
-
 }

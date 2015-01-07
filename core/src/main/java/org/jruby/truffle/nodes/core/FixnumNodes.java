@@ -285,7 +285,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "canShiftIntoInt")
-        public int pow2(int a, int b) {
+        public int powTwo(int a, int b) {
             return 1 << b;
         }
 
