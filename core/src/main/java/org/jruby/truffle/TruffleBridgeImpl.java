@@ -14,13 +14,14 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.TruffleBridge;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.methods.SetFrameVisibilityNode;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -175,7 +176,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 return SequenceNode.sequence(context, sourceSection,
                         new SetTopLevelBindingNode(context, sourceSection),
                         new TopLevelRaiseHandler(context, sourceSection,
-                                SetFrameVisibilityNode.PRIVATE_VISIBILITY_WRAPPER.wrap(node)));
+                                new SetMethodDeclarationContext(context, sourceSection, "main", node)));
             }
         });
         return truffleContext.getCoreLibrary().getNilObject();

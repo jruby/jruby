@@ -366,7 +366,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         assert callerFrame.getFrameDescriptor() != null;
 
         final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID);
-        assert visibilitySlot != null;
+        assert visibilitySlot != null : "no visibility slot";
 
         callerFrame.setObject(visibilitySlot, visibility);
     }

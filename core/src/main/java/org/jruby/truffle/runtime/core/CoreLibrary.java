@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
@@ -21,6 +22,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -28,6 +30,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -389,7 +392,12 @@ public class CoreLibrary {
             throw new RuntimeException(e);
         }
 
-        context.execute(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null);
+        context.execute(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null, new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "load core", node);
+            }
+        });
     }
 
     public void initializeEncodingConstants() {

@@ -56,10 +56,6 @@ public class TranslatorDriver {
         final TranslatorEnvironment environment = new TranslatorEnvironment(
                 context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
 
-        // All parsing contexts have a visibility slot at their top level
-
-        environment.addMethodDeclarationSlots();
-
         // Translate to Ruby Truffle nodes
 
         final MethodTranslator translator;
@@ -136,10 +132,6 @@ public class TranslatorDriver {
         if (data != null) {
             context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", data);
         }
-
-        // All parsing contexts have a visibility slot at their top level
-
-        environment.addMethodDeclarationSlots();
 
         // Translate to Ruby Truffle nodes
 

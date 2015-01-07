@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -22,7 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.methods.SetFrameVisibilityNode;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -161,7 +162,12 @@ public class RubyContext extends ExecutionContext {
         // Assume UTF-8 for the moment
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
 
-        load(source, currentNode, SetFrameVisibilityNode.PRIVATE_VISIBILITY_WRAPPER);
+        load(source, currentNode, new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "load", node);
+            }
+        });
     }
 
     public void load(Source source, RubyNode currentNode) {

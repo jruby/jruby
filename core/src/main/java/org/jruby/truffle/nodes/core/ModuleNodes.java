@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -41,6 +42,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.IdUtil;
 
@@ -420,7 +422,12 @@ public abstract class ModuleNodes {
         }
 
         private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {
-            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
+            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this, new NodeWrapper() {
+                @Override
+                public RubyNode wrap(RubyNode node) {
+                    return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "class_eval", node);
+                }
+            });
         }
 
         @Specialization

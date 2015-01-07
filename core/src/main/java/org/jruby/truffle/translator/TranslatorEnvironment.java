@@ -201,10 +201,6 @@ public class TranslatorEnvironment {
         return neverAssignInParentScope;
     }
 
-    public void addMethodDeclarationSlots() {
-        frameDescriptor.addFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "lexical visibility for def", FrameSlotKind.Object);
-    }
-
     public SharedMethodInfo getSharedMethodInfo() {
         return sharedMethodInfo;
     }

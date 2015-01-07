@@ -25,7 +25,7 @@ public class SetMethodDeclarationContext extends RubyNode {
 
     final String what;
 
-    public SetMethodDeclarationContext(RubyContext context, SourceSection sourceSection, RubyNode child, String what) {
+    public SetMethodDeclarationContext(RubyContext context, SourceSection sourceSection, String what, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
         this.what = what;

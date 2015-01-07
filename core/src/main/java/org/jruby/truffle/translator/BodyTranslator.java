@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -997,8 +998,8 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, objectNode);
 
-        return new SetMethodDeclarationContext(context, sourceSection,
-                translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode()), "defs");
+        return new SetMethodDeclarationContext(context, sourceSection, "defs",
+                translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode()));
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
