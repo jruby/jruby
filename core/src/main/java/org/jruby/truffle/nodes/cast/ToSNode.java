@@ -49,7 +49,7 @@ public abstract class ToSNode extends RubyNode {
     }
 
     @Override
-    public abstract RubyString executeString(VirtualFrame frame);
+    public abstract RubyString executeRubyString(VirtualFrame frame);
 
     @Specialization
     public RubyString toS(RubyString string) {
@@ -71,4 +71,10 @@ public abstract class ToSNode extends RubyNode {
             return kernelToS(frame, object);
         }
     }
+
+    @Override
+    public final Object execute(VirtualFrame frame) {
+        return executeRubyString(frame);
+    }
+
 }

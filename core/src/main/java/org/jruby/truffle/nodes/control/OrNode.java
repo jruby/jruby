@@ -27,7 +27,6 @@ public class OrNode extends RubyNode {
     @Child protected RubyNode right;
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-
     public OrNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
         super(context, sourceSection);
         this.left = left;

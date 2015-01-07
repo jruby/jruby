@@ -62,7 +62,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return getContext().makeString("expression");
     }
 
-    public String executeJavaString(VirtualFrame frame) throws UnexpectedResultException {
+    public String executeString(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectString(execute(frame));
     }
 
@@ -170,7 +170,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return RubyTypesGen.RUBYTYPES.expectRubyTime(execute(frame));
     }
 
-    public RubyString executeString(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyString(execute(frame));
     }
     public RubyEncoding executeRubyEncoding(VirtualFrame frame) throws UnexpectedResultException {
@@ -189,11 +189,11 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
     }
 
-    public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) {
+    public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) throws UnexpectedResultException {
         throw new UnsupportedOperationException();
     }
 
-    public LexicalScope executeLexicalScope(VirtualFrame frame) {
+    public LexicalScope executeLexicalScope(VirtualFrame frame) throws UnexpectedResultException {
         throw new UnsupportedOperationException();
     }
 

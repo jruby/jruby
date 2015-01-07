@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -33,7 +34,7 @@ public abstract class SingletonClassNode extends RubyNode {
         super(prev);
     }
 
-    public abstract RubyClass executeSingletonClass(Object value);
+    public abstract RubyClass executeSingletonClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "isTrue")
     protected RubyClass singletonClassTrue(boolean value) {
@@ -46,19 +47,19 @@ public abstract class SingletonClassNode extends RubyNode {
     }
 
     @Specialization
-    protected Object singletonClass(int value) {
+    protected RubyClass singletonClass(int value) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }
 
     @Specialization
-    protected Object singletonClass(long value) {
+    protected RubyClass singletonClass(long value) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }
 
     @Specialization
-    protected Object singletonClass(double value) {
+    protected RubyClass singletonClass(double value) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }

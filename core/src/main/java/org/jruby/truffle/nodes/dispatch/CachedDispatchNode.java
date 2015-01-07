@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
@@ -75,6 +77,25 @@ public abstract class CachedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    @Fallback
+    public Object dispatch(
+            VirtualFrame frame,
+            Object lexicalScope,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Object dispatchAction) {
+        return next.executeDispatch(
+                frame,
+                (LexicalScope) lexicalScope,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                (Dispatch.DispatchAction) dispatchAction);
     }
 
     protected RubySymbol getCachedNameAsSymbol() {

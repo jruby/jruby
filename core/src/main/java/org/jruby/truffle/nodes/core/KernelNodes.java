@@ -312,7 +312,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyBinding executeBinding(VirtualFrame frame);
+        public abstract RubyBinding executeRubyBinding(VirtualFrame frame);
 
         @Specialization
         public RubyBinding binding() {
@@ -430,7 +430,7 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        public abstract RubyClass executeGetClass(Object value);
+        public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
 
         @Specialization
         public RubyClass getClass(boolean value) {
@@ -561,7 +561,7 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
             }
-            return bindingNode.executeBinding(frame);
+            return bindingNode.executeRubyBinding(frame);
         }
 
         @Specialization
@@ -1198,7 +1198,7 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        public abstract boolean executeBoolean(Object self, RubyClass rubyClass);
+        public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyClass rubyClass);
 
         @Specialization
         public boolean isA(RubyBasicObject self, RubyNilClass nil) {
@@ -1816,7 +1816,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyClass singletonClass(Object self) {
-            return singletonClassNode.executeSingletonClass(self);
+            return singletonClassNode.singletonClass(self);
         }
 
     }
@@ -2162,7 +2162,7 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        public abstract String executeToHexString(Object value);
+        public abstract String executeToHexString(VirtualFrame frame, Object value);
 
         @Specialization
         public String toHexString(int value) {

@@ -123,23 +123,4 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         }
     }
 
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            LexicalScope lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return next.executeDispatch(
-                frame,
-                lexicalScope,
-                receiverObject,
-                methodName,
-                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                argumentsObjects,
-                dispatchAction);
-    }
-
 }

@@ -47,7 +47,7 @@ public final class InterpolatedStringNode extends RubyNode {
         boolean tainted = false;
 
         for (int n = 0; n < children.length; n++) {
-            final RubyString toInterpolate = children[n].executeString(frame);
+            final RubyString toInterpolate = children[n].executeRubyString(frame);
             strings[n] = toInterpolate;
             tainted |= taintedNode.tainted(toInterpolate);
         }
