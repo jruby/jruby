@@ -13,9 +13,6 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -635,7 +632,6 @@ public abstract class ModuleNodes {
 
             return dispatch.dispatch(
                     frame,
-                    null,
                     module,
                     name,
                     null,
@@ -649,7 +645,6 @@ public abstract class ModuleNodes {
 
             return dispatch.dispatch(
                     frame,
-                    null,
                     module,
                     name,
                     null,

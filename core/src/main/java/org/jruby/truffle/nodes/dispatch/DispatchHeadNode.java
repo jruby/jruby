@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -24,6 +23,7 @@ public class DispatchHeadNode extends Node {
     private final boolean ignoreVisibility;
     private final boolean indirect;
     private final Dispatch.MissingBehavior missingBehavior;
+    private final LexicalScope lexicalScope;
 
     @Child protected DispatchNode first;
 
@@ -43,15 +43,25 @@ public class DispatchHeadNode extends Node {
         this(context, false, false, missingBehavior);
     }
 
+    public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior, LexicalScope lexicalScope) {
+        this(context, false, false, missingBehavior, lexicalScope);
+    }
+
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
         this(context, ignoreVisibility, false, missingBehavior);
     }
 
+
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, Dispatch.MissingBehavior missingBehavior) {
+        this(context, ignoreVisibility, indirect, missingBehavior, null);
+    }
+
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, Dispatch.MissingBehavior missingBehavior, LexicalScope lexicalScope) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
+        this.lexicalScope = lexicalScope;
         first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior);
     }
 
@@ -63,7 +73,6 @@ public class DispatchHeadNode extends Node {
             Object... argumentsObjects) {
         return dispatch(
                 frame,
-                null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,
                 blockObject,
@@ -148,7 +157,6 @@ public class DispatchHeadNode extends Node {
         // It's ok to cast here as we control what RESPOND_TO_METHOD returns
         return (boolean) dispatch(
                 frame,
-                null, // TODO(eregon): was RubyArguments.getSelf(frame.getArguments()),
                 receiverObject,
                 methodName,
                 null,
@@ -158,7 +166,6 @@ public class DispatchHeadNode extends Node {
 
     public Object dispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -166,7 +173,6 @@ public class DispatchHeadNode extends Node {
             Dispatch.DispatchAction dispatchAction) {
         return first.executeDispatch(
                 frame,
-                lexicalScope,
                 receiverObject,
                 methodName,
                 blockObject,
@@ -184,7 +190,10 @@ public class DispatchHeadNode extends Node {
 
     public void forceUncached() {
         adoptChildren();
-        first.replace(UncachedDispatchNodeFactory.create(context, ignoreVisibility, null, null, null, null, null, null));
+        first.replace(UncachedDispatchNodeFactory.create(context, ignoreVisibility, null, null, null, null, null));
     }
 
+    public LexicalScope getLexicalScope() {
+        return lexicalScope;
+    }
 }

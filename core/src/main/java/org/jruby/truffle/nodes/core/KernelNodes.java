@@ -1815,8 +1815,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass singletonClass(Object self) {
-            return singletonClassNode.singletonClass(self);
+        public RubyClass singletonClass(VirtualFrame frame, Object self) {
+            return singletonClassNode.executeSingletonClass(frame, self);
         }
 
     }
@@ -2201,14 +2201,14 @@ public abstract class KernelNodes {
         public RubyString toS(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            String className = classNode.executeGetClass(self).getName();
+            String className = classNode.executeGetClass(frame, self).getName();
 
             if (className == null) {
                 className = "Class";
             }
 
             Object id = idNode.executeObjectID(frame, self);
-            String hexID = toHexStringNode.executeToHexString(id);
+            String hexID = toHexStringNode.executeToHexString(frame, id);
 
             return getContext().makeString("#<" + className + ":0x" + hexID + ">");
         }

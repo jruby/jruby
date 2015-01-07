@@ -39,8 +39,8 @@ public abstract class TypePrimitiveNodes {
         }
 
         @Specialization
-        public boolean vmObjectKindOf(Object object, RubyClass rubyClass) {
-            return isANode.executeBoolean(object, rubyClass);
+        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyClass rubyClass) {
+            return isANode.executeIsA(frame, object, rubyClass);
         }
 
     }
@@ -61,8 +61,8 @@ public abstract class TypePrimitiveNodes {
         }
 
         @Specialization
-        public RubyClass vmObjectClass(Object object) {
-            return classNode.executeGetClass(object);
+        public RubyClass vmObjectClass(VirtualFrame frame, Object object) {
+            return classNode.executeGetClass(frame, object);
         }
 
     }
@@ -83,8 +83,8 @@ public abstract class TypePrimitiveNodes {
         }
 
         @Specialization
-        public Object vmObjectClass(Object object) {
-            return singletonClassNode.singletonClass(object);
+        public Object vmObjectClass(VirtualFrame frame, Object object) {
+            return singletonClassNode.singletonClass(frame, object);
         }
 
     }

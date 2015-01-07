@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,7 +19,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -68,7 +67,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     @Specialization(guards = {"isPrimitive", "guardName"})
     public Object dispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -81,7 +79,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         if (receiverObject.getClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    lexicalScope,
                     receiverObject,
                     methodName,
                     blockObject,
@@ -96,7 +93,6 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    lexicalScope,
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
@@ -133,8 +129,24 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         }
     }
 
+    @Fallback
+    public Object dispatch(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Object dispatchAction) {
+        return next.executeDispatch(
+                frame,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                (Dispatch.DispatchAction) dispatchAction);
+    }
+
     protected static final boolean isPrimitive(
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,

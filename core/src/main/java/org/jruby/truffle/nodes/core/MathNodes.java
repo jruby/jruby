@@ -421,7 +421,7 @@ public abstract class MathNodes {
 
         @Fallback
         public RubyArray frexp(VirtualFrame frame, Object a) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return frexp(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
@@ -605,7 +605,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return function(
                             floatANode.callFloat(frame, a, "to_f", null),
@@ -679,7 +679,7 @@ public abstract class MathNodes {
 
         @Fallback
         public RubyArray lgamma(VirtualFrame frame, Object a) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return lgamma(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
@@ -733,7 +733,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(VirtualFrame frame, Object a, UndefinedPlaceholder b) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(
                             floatANode.callFloat(frame, a, "to_f", null));
@@ -957,7 +957,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
@@ -1086,7 +1086,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeBoolean(b, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeIsA(frame, b, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(
                             floatANode.callFloat(frame, a, "to_f", null),

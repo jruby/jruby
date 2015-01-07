@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,10 +9,7 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import com.oracle.truffle.api.dsl.Fallback;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -57,7 +54,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
     }
 
     protected final boolean guardName(
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -77,25 +73,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            Object lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
-        return next.executeDispatch(
-                frame,
-                (LexicalScope) lexicalScope,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects,
-                (Dispatch.DispatchAction) dispatchAction);
     }
 
     protected RubySymbol getCachedNameAsSymbol() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -45,7 +44,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
@@ -58,7 +56,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         if (receiverObject.getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    lexicalScope,
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
@@ -73,7 +70,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    lexicalScope,
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
@@ -89,6 +85,23 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    @Fallback
+    public Object dispatch(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects,
+            Object dispatchAction) {
+        return next.executeDispatch(
+                frame,
+                receiverObject,
+                methodName,
+                blockObject,
+                argumentsObjects,
+                (Dispatch.DispatchAction) dispatchAction);
     }
 
 }

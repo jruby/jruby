@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @NodeChildren({
-        @NodeChild(value="lexicalScope", type=Node.class),
         @NodeChild(value="receiver", type=Node.class),
         @NodeChild(value="methodName", type=Node.class),
         @NodeChild(value="blockObject", type=Node.class),
@@ -45,7 +44,6 @@ public abstract class DispatchNode extends RubyNode {
 
     public abstract Object executeDispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -54,11 +52,12 @@ public abstract class DispatchNode extends RubyNode {
 
     @CompilerDirectives.TruffleBoundary
     protected RubyConstant lookupConstant(
-            LexicalScope lexicalScope,
             RubyModule module,
             String name,
             boolean ignoreVisibility,
             Dispatch.DispatchAction dispatchAction) {
+        final LexicalScope lexicalScope = getHeadNode().getLexicalScope();
+
         RubyConstant constant = ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
 
         // If no constant was found, use #const_missing
@@ -111,7 +110,6 @@ public abstract class DispatchNode extends RubyNode {
 
     protected Object resetAndDispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             RubyProc blockObject,
@@ -122,7 +120,6 @@ public abstract class DispatchNode extends RubyNode {
         head.reset(reason);
         return head.dispatch(
                 frame,
-                lexicalScope,
                 receiverObject,
                 methodName,
                 blockObject,
@@ -140,7 +137,6 @@ public abstract class DispatchNode extends RubyNode {
 
     protected boolean actionIsReadConstant(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -151,7 +147,6 @@ public abstract class DispatchNode extends RubyNode {
 
     protected boolean actionIsCallOrRespondToMethod(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,

@@ -870,7 +870,6 @@ public class BodyTranslator extends Translator {
 
         final LexicalScope lexicalScope = environment.getLexicalScope();
         final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
-
         return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, lexicalScope);
     }
 

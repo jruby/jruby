@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,7 +19,6 @@ import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
 import org.jruby.truffle.nodes.conversion.ToSymbolNodeFactory;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -59,13 +58,12 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     @Specialization(guards = "actionIsReadConstant")
     public Object dispatchReadConstant(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             RubyModule receiverObject,
             Object constantName,
             Object blockObject,
             Object argumentsObjects,
             Dispatch.DispatchAction dispatchAction) {
-        final RubyConstant constant = lookupConstant(lexicalScope, receiverObject,
+        final RubyConstant constant = lookupConstant(receiverObject,
                 toJavaStringNode.executeJavaString(frame, constantName), ignoreVisibility, dispatchAction);
 
         if (constant != null) {
@@ -99,7 +97,6 @@ public abstract class UncachedDispatchNode extends DispatchNode {
     @Specialization(guards = "actionIsCallOrRespondToMethod")
     public Object dispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
@@ -167,6 +164,5 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             throw new UnsupportedOperationException();
         }
     }
-
 
 }

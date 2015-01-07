@@ -24,16 +24,15 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public class ReadConstantNode extends RubyNode {
 
     private final String name;
-    private final LexicalScope lexicalScope;
     @Child protected RubyNode receiver;
     @Child protected DispatchHeadNode dispatch;
 
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.name = name;
-        this.lexicalScope = lexicalScope;
         this.receiver = receiver;
-        dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
+        dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING, lexicalScope);
+
     }
 
     @Override
@@ -47,7 +46,6 @@ public class ReadConstantNode extends RubyNode {
 
         return dispatch.dispatch(
                 frame,
-                lexicalScope,
                 receiverObject,
                 name,
                 null,
@@ -90,9 +88,9 @@ public class ReadConstantNode extends RubyNode {
         }
 
         RubyModule module = (RubyModule) receiverObject; // TODO(cs): cast
-        RubyConstant constant = ModuleOperations.lookupConstant(context, lexicalScope, module, name);
+        RubyConstant constant = ModuleOperations.lookupConstant(context, dispatch.getLexicalScope(), module, name);
 
-        if (constant == null || !constant.isVisibleTo(context, lexicalScope, module)) {
+        if (constant == null || !constant.isVisibleTo(context, dispatch.getLexicalScope(), module)) {
             return getContext().getCoreLibrary().getNilObject();
         } else {
             return context.makeString("constant");
