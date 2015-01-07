@@ -140,3 +140,5 @@ fails:Array#pack with format 'l' with modifier '_' encodes the least significant
 fails:Array#pack with format 'l' with modifier '_' encodes the least significant 32 bits of a negative number
 fails:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a positive number
 fails:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'L' raises a TypeError when passed nil
+fails:Array#pack with format 'l' raises a TypeError when passed nil

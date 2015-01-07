@@ -32,3 +32,5 @@ fails:Array#pack with format 'S' with modifier '!' calls #to_int to convert the 
 fails:Array#pack with format 's' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 's' with modifier '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 's' with modifier '!' calls #to_int to convert the pack argument to an Integer
+fails:Array#pack with format 'S' raises a TypeError when passed nil
+fails:Array#pack with format 's' raises a TypeError when passed nil

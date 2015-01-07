@@ -20,3 +20,5 @@ fails:Array#pack with format 'c' raises a TypeError when the object does not res
 fails:Array#pack with format 'c' raises a TypeError when passed a String
 fails:Array#pack with format 'c' raises ArgumentError when the format modifier is '_'
 fails:Array#pack with format 'c' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'C' raises a TypeError when passed nil
+fails:Array#pack with format 'c' raises a TypeError when passed nil

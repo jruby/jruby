@@ -20,3 +20,5 @@ fails:Array#pack with format 'f' raises a TypeError if a String does not represe
 fails:Array#pack with format 'f' raises a TypeError when the object does not respond to #to_f
 fails:Array#pack with format 'f' raises a TypeError if passed a String representation of a floating point number
 fails:Array#pack with format 'f' encodes NaN
+fails:Array#pack with format 'F' raises a TypeError when passed nil
+fails:Array#pack with format 'f' raises a TypeError when passed nil

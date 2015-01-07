@@ -28,3 +28,5 @@ fails:Array#pack with format 'i' with modifier '>' and '_' calls #to_int to conv
 fails:Array#pack with format 'i' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'i' calls #to_int to convert the pack argument to an Integer
+fails:Array#pack with format 'I' raises a TypeError when passed nil
+fails:Array#pack with format 'i' raises a TypeError when passed nil
