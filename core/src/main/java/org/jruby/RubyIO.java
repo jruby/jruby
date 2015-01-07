@@ -2740,7 +2740,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return context.nil;
     }
 
-    @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
+    @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         return doReadNonblock(context, args, true);
     }
