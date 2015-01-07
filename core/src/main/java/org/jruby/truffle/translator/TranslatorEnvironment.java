@@ -11,7 +11,9 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
@@ -200,7 +202,7 @@ public class TranslatorEnvironment {
     }
 
     public void addMethodDeclarationSlots() {
-        frameDescriptor.addFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+        frameDescriptor.addFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "lexical visibility for def", FrameSlotKind.Object);
     }
 
     public SharedMethodInfo getSharedMethodInfo() {

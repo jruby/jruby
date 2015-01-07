@@ -11,15 +11,21 @@ package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
@@ -71,29 +77,39 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     private Visibility getVisibility(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (ignoreLocalVisibility) {
             return Visibility.PUBLIC;
         } else if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
             return Visibility.PRIVATE;
         } else {
-            final FrameSlot visibilitySlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+            // Ignore scopes who do not have a visibility slot.
+            Visibility currentFrameVisibility = findVisibility(frame);
+            if (currentFrameVisibility != null) {
+                return currentFrameVisibility;
+            }
 
-            if (visibilitySlot == null) {
-                return Visibility.PUBLIC;
+            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Visibility>() {
+                @Override
+                public Visibility visitFrame(FrameInstance frameInstance) {
+                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
+                    return findVisibility(frame);
+                }
+            });
+        }
+    }
+
+    private static Visibility findVisibility(Frame frame) {
+        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+        if (slot == null) {
+            return null;
+        } else {
+            Object visibilityObject = frame.getValue(slot);
+            if (visibilityObject instanceof Visibility) {
+                return (Visibility) visibilityObject;
             } else {
-                Object visibilityObject;
-
-                try {
-                    visibilityObject = frame.getObject(visibilitySlot);
-                } catch (FrameSlotTypeException e) {
-                    throw new RuntimeException(e);
-                }
-
-                if (visibilityObject instanceof Visibility) {
-                    return  (Visibility) visibilityObject;
-                } else {
-                    return Visibility.PUBLIC;
-                }
+                return Visibility.PUBLIC;
             }
         }
     }

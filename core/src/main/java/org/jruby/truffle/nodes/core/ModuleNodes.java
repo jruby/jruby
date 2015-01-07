@@ -459,7 +459,7 @@ public abstract class ModuleNodes {
         public abstract Object executeClassEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
+        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
             notDesignedForCompilation();
 
             // TODO: deal with args
