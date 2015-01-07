@@ -59,22 +59,4 @@ public abstract class FalseClassNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, needsSelf = false)
-    public abstract static class ToSNode extends CoreMethodNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString toS() {
-            return getContext().makeString("false");
-        }
-
-    }
-
 }
