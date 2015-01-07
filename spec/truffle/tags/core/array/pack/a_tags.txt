@@ -17,7 +17,6 @@ fails:Array#pack with format 'A' returns a untrusted string when the format is u
 fails:Array#pack with format 'A' returns a untrusted string when the empty format is untrusted
 fails:Array#pack with format 'A' returns a untrusted string when a pack argument is untrusted
 fails:Array#pack with format 'A' returns a trusted string when the array is untrusted
-fails:Array#pack with format 'A' returns a string in encoding of common to the concatenated results
 fails:Array#pack with format 'a' raises a TypeError when passed nil
 fails:Array#pack with format 'a' raises a TypeError when passed an Integer
 fails:Array#pack with format 'a' ignores whitespace in the format string
@@ -37,4 +36,3 @@ fails:Array#pack with format 'a' returns a untrusted string when the format is u
 fails:Array#pack with format 'a' returns a untrusted string when the empty format is untrusted
 fails:Array#pack with format 'a' returns a untrusted string when a pack argument is untrusted
 fails:Array#pack with format 'a' returns a trusted string when the array is untrusted
-fails:Array#pack with format 'a' returns a string in encoding of common to the concatenated results

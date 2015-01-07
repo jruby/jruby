@@ -14,7 +14,6 @@ fails:Array#slice returns the element at index from the end of the array with [-
 fails:Array#slice returns count elements starting from index with [index, count]
 fails:Array#slice returns count elements starting at index from the end of array with [-index, count]
 fails:Array#slice returns the first count elements with [0, count]
-fails:Array#slice returns the subarray which is independent to self with [index,count]
 fails:Array#slice tries to convert the passed argument to an Integer using #to_int
 fails:Array#slice returns the elements specified by Range indexes with [m..n]
 fails:Array#slice returns elements specified by Range indexes except the element at index n with [m...n]

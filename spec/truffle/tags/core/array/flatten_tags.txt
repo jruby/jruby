@@ -8,10 +8,8 @@ fails:Array#flatten does not call flatten on elements
 fails:Array#flatten raises an ArgumentError on recursive arrays
 fails:Array#flatten flattens any element which responds to #to_ary, using the return value of said method
 fails:Array#flatten returns subclass instance for Array subclasses
-fails:Array#flatten is not destructive
 fails:Array#flatten returns a tainted array if self is tainted
 fails:Array#flatten returns an untrusted array if self is untrusted
-fails:Array#flatten with a non-Array object in the Array does not call #to_ary if the method does not exist
 fails:Array#flatten with a non-Array object in the Array ignores the return value of #to_ary if it is nil
 fails:Array#flatten with a non-Array object in the Array raises a TypeError if the return value of #to_ary is not an Array
 fails:Array#flatten! modifies array to produce a one-dimensional flattening recursively

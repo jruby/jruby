@@ -1,8 +1,4 @@
-fails:Array#uniq returns an array with no duplicates
-fails:Array#uniq properly handles recursive arrays
 fails:Array#uniq uses eql? semantics
-fails:Array#uniq compares elements first with hash
-fails:Array#uniq does not compare elements with different hash codes via eql?
 fails:Array#uniq compares elements with matching hash codes with #eql?
 fails:Array#uniq compares elements based on the value returned from the block
 fails:Array#uniq yields items in order

@@ -1,5 +1,4 @@
 fails:Bignum#<=> returns 1 when self is Infinity and other is a Bignum
-fails:Bignum#<=> returns -1 when self is negative and other is Infinty
 fails:Bignum#<=> returns 1 when self is negative and other is -Infinity
 fails:Bignum#<=> returns -1 when self is -Infinity and other is negative
 fails:Bignum#<=> with a Float when other is negative returns -1 when self is negative and other is larger

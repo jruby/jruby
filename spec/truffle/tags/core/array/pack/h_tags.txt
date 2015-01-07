@@ -7,7 +7,6 @@ fails:Array#pack with format 'H' raises an ArgumentError if there are fewer elem
 fails:Array#pack with format 'H' raises a TypeError if the object does not respond to #to_str
 fails:Array#pack with format 'H' raises a TypeError if #to_str does not return a String
 fails:Array#pack with format 'H' calls #to_str to convert an Object to a String
-fails:Array#pack with format 'H' returns an ASCII-8BIT string
 fails:Array#pack with format 'h' raises a TypeError when passed nil
 fails:Array#pack with format 'h' raises a TypeError when passed an Integer
 fails:Array#pack with format 'h' ignores whitespace in the format string
@@ -17,4 +16,3 @@ fails:Array#pack with format 'h' raises an ArgumentError if there are fewer elem
 fails:Array#pack with format 'h' raises a TypeError if the object does not respond to #to_str
 fails:Array#pack with format 'h' raises a TypeError if #to_str does not return a String
 fails:Array#pack with format 'h' calls #to_str to convert an Object to a String
-fails:Array#pack with format 'h' returns an ASCII-8BIT string

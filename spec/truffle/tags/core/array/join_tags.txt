@@ -1,8 +1,6 @@
 fails:Array#join returns a string formed by concatenating each element.to_str separated by separator
 fails:Array#join uses the same separator with nested arrays
-fails:Array#join returns an empty string if the Array is empty
 fails:Array#join returns a US-ASCII string for an empty Array
-fails:Array#join returns a string formed by concatenating each String element separated by $,
 fails:Array#join attempts coercion via #to_str first
 fails:Array#join attempts coercion via #to_ary second
 fails:Array#join attempts coercion via #to_s third
@@ -14,7 +12,6 @@ fails:Array#join untrusts the result if the Array is untrusted and non-empty
 fails:Array#join does not untrust the result if the Array is untrusted but empty
 fails:Array#join untrusts the result if the result of coercing an element is untrusted
 fails:Array#join uses the first encoding when other strings are compatible
-fails:Array#join uses the widest common encoding when other strings are incompatible
 fails:Array#join fails for arrays with incompatibly-encoded strings
 fails:Array#join does not separate elements when the passed separator is nil
 fails:Array#join calls #to_str to convert the separator to a String

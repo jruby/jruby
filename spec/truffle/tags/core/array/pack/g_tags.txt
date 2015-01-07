@@ -7,7 +7,6 @@ fails:Array#pack with format 'G' raises ArgumentError when the format modifier i
 fails:Array#pack with format 'G' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'G' raises a TypeError when passed true
 fails:Array#pack with format 'G' raises a TypeError when passed false
-fails:Array#pack with format 'G' returns an ASCII-8BIT string
 fails:Array#pack with format 'G' raises a TypeError if a String does not represent a floating point number
 fails:Array#pack with format 'G' raises a TypeError when the object does not respond to #to_f
 fails:Array#pack with format 'G' raises a TypeError if passed a String representation of a floating point number
@@ -21,7 +20,6 @@ fails:Array#pack with format 'g' raises ArgumentError when the format modifier i
 fails:Array#pack with format 'g' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'g' raises a TypeError when passed true
 fails:Array#pack with format 'g' raises a TypeError when passed false
-fails:Array#pack with format 'g' returns an ASCII-8BIT string
 fails:Array#pack with format 'g' raises a TypeError if a String does not represent a floating point number
 fails:Array#pack with format 'g' raises a TypeError when the object does not respond to #to_f
 fails:Array#pack with format 'g' raises a TypeError if passed a String representation of a floating point number
