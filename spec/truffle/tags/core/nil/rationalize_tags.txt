@@ -1,3 +1,0 @@
-fails:NilClass#rationalize returns 0/1
-fails:NilClass#rationalize ignores a single argument
-fails:NilClass#rationalize raises ArgumentError when passed more than one argument
