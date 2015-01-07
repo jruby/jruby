@@ -62,11 +62,6 @@ public class FeatureManager {
                     return true;
                 }
 
-                if (feature.equals("pp")) {
-                    // Kernel#pretty_inspect is always there
-                    return true;
-                }
-
                 if (feature.equals("thread")) {
                     return true;
                 }
