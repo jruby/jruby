@@ -59,7 +59,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public boolean equal(VirtualFrame frame, RubyHash a, RubyHash b) {
+        public boolean equal(RubyHash a, RubyHash b) {
             notDesignedForCompilation();
 
             final List<KeyValue> aEntries = HashOperations.verySlowToKeyValues(a);
@@ -95,6 +95,12 @@ public abstract class HashNodes {
 
             return true;
         }
+
+        @Specialization(guards = "!isRubyHash(arguments[1])")
+        public boolean equalNonHash(RubyHash a, Object b) {
+            return false;
+        }
+
     }
 
     @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true)

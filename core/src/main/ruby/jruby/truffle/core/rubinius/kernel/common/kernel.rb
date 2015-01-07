@@ -27,6 +27,13 @@
 # Only part of Rubinius' kernel.rb
 
 module Kernel
+
+  def Complex(*args)
+    Rubinius.privately do
+      Complex.convert(*args)
+    end
+  end
+  module_function :Complex
   
   def Rational(a, b = 1)
     Rubinius.privately do

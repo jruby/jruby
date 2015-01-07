@@ -17,17 +17,6 @@ class Numeric
 
 end
 
-class Complex
-end
-
-module Kernel
-
-  def Complex(real, imaginary)
-    imaginary
-  end
-
-end
-
 class Channel
 end
 

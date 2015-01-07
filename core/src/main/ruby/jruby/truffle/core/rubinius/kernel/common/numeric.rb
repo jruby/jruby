@@ -41,4 +41,8 @@ class Numeric
     self.__slash__(other).floor
   end
 
+  def real?
+    true
+  end
+  
 end

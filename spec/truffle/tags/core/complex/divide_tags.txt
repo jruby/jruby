@@ -6,5 +6,4 @@ fails:Complex#/ with Bignum divides both parts of the Complex number
 fails:Complex#/ with Float divides both parts of the Complex number
 fails:Complex#/ with Float returns Complex(Infinity, Infinity) when given zero
 fails:Complex#/ with Object tries to coerce self into other
-fails:Complex#/ with a Numeric which responds to #real? with true returns Complex(real.quo(other), imag.quo(other))
 fails:Complex#/ with a Numeric which responds to #real? with false coerces the passed argument to Complex and divides the resulting elements

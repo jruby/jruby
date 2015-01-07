@@ -839,8 +839,9 @@ public class BodyTranslator extends Translator {
     public RubyNode visitComplexNode(ComplexNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        // TODO: implement Complex
-        return node.getNumber().accept(this);
+        return translateRationalComplex(sourceSection, "Complex",
+                new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0),
+                node.getNumber().accept(this));
     }
 
     @Override
@@ -1007,7 +1008,7 @@ public class BodyTranslator extends Translator {
          * In the top-level, methods are defined in the class of the main object. This is
          * counter-intuitive - I would have expected them to be defined in the singleton class.
          * Apparently this is a design decision to make top-level methods sort of global.
-         * 
+         *
          * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
          */
 
@@ -1105,26 +1106,26 @@ public class BodyTranslator extends Translator {
     public RubyNode visitForNode(org.jruby.ast.ForNode node) {
         /**
          * A Ruby for-loop, such as:
-         * 
+         *
          * <pre>
          * for x in y
          *     z = x
          *     puts z
          * end
          * </pre>
-         * 
+         *
          * naively desugars to:
-         * 
+         *
          * <pre>
          * y.each do |x|
          *     z = x
          *     puts z
          * end
          * </pre>
-         * 
+         *
          * The main difference is that z is always going to be local to the scope outside the block,
          * so it's a bit more like:
-         * 
+         *
          * <pre>
          * z = nil unless z is already defined
          * y.each do |x|
@@ -1132,12 +1133,12 @@ public class BodyTranslator extends Translator {
          *    puts x
          * end
          * </pre>
-         * 
+         *
          * Which forces z to be defined in the correct scope. The parser already correctly calls z a
          * local, but then that causes us a problem as if we're going to translate to a block we
          * need a formal parameter - not a local variable. My solution to this is to add a
          * temporary:
-         * 
+         *
          * <pre>
          * z = nil unless z is already defined
          * y.each do |temp|
@@ -1146,25 +1147,25 @@ public class BodyTranslator extends Translator {
          *    puts x
          * end
          * </pre>
-         * 
+         *
          * We also need that temp because the expression assigned in the for could be index
          * assignment, multiple assignment, or whatever:
-         * 
+         *
          * <pre>
          * for x[0] in y
          *     z = x[0]
          *     puts z
          * end
          * </pre>
-         * 
+         *
          * http://blog.grayproductions.net/articles/the_evils_of_the_for_loop
          * http://stackoverflow.com/questions/3294509/for-vs-each-in-ruby
-         * 
+         *
          * The other complication is that normal locals should be defined in the enclosing scope,
          * unlike a normal block. We do that by setting a flag on this translator object when we
          * visit the new iter, translatingForStatement, which we recognise when visiting an iter
          * node.
-         * 
+         *
          * Finally, note that JRuby's terminology is strange here. Normally 'iter' is a different
          * term for a block. Here, JRuby calls the object being iterated over the 'iter'.
          */
@@ -1229,7 +1230,7 @@ public class BodyTranslator extends Translator {
 
     private final Set<String> readOnlyGlobalVariables = new HashSet<String>();
     private final Map<String, String> globalVariableAliases = new HashMap<String, String>();
-    
+
     private void initReadOnlyGlobalVariables() {
         Set<String> s = readOnlyGlobalVariables;
         s.add("$:");
@@ -1244,7 +1245,7 @@ public class BodyTranslator extends Translator {
         s.add("$-l");
         s.add("$-p");
     }
-    
+
     private void initGlobalVariableAliases() {
         Map<String, String> m = globalVariableAliases;
         m.put("$-I", "$LOAD_PATH");
@@ -2032,7 +2033,7 @@ public class BodyTranslator extends Translator {
         /*
          * We're going to de-sugar a.foo += c into a.foo = a.foo + c. Note that we can't evaluate a
          * more than once, so we put it into a temporary, and we're doing something more like:
-         * 
+         *
          * temp = a; temp.foo = temp.foo + c
          */
 
@@ -2168,19 +2169,23 @@ public class BodyTranslator extends Translator {
     public RubyNode visitRationalNode(RationalNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        // Translate as Rubinius.privately { Rubinius.convert(a, b) }
-
         // TODO(CS): use IntFixnumLiteralNode where possible
+
+        return translateRationalComplex(sourceSection, "Rational",
+                new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
+                new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getDenominator()));
+    }
+
+    private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
+        // Translate as Rubinius.privately { Rational.convert(a, b) }
 
         final LexicalScope lexicalScope = environment.getLexicalScope();
         final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
         return new RubyCallNode(
                 context, sourceSection, "convert",
-                new ReadConstantNode(context, sourceSection, "Rational", moduleNode, lexicalScope),
+                new ReadConstantNode(context, sourceSection, name, moduleNode, lexicalScope),
                 null, false, true, false,
-                new RubyNode[]{
-                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
-                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getDenominator())});
+                new RubyNode[]{a, b});
     }
 
     @Override
