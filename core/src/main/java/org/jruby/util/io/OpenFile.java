@@ -510,7 +510,7 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if (fd.chSelect != null) {
-                return thread.select(fd.chSelect, this, ops, timeout);
+                return thread.select(fd.chSelect, this, ops & fd.chSelect.validOps(), timeout);
 
             } else if (fd.chSeek != null) {
                 return fd.chSeek.position() != -1
