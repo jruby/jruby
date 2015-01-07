@@ -66,6 +66,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -243,49 +244,32 @@ public class RubyTime extends RubyObject {
         return dtz;
     }
 
-    /* time.c num_exact
-     */
+    // mri: time.c num_exact
     private static IRubyObject numExact(Ruby runtime, IRubyObject v) {
         IRubyObject tmp;
-        switch(v.getMetaClass().getRealClass().getClassIndex()) {
-            case FIXNUM:
-            case BIGNUM:
-                return v;
-            case RATIONAL:
-                break;
-            case STRING:
-            case NIL:
-                exactTypeError(runtime, v);
-            default:
+        if (v instanceof RubyFixnum || v instanceof RubyBignum) return v;
+        if (v.isNil()) exactTypeError(runtime, v);
+        if (!(v instanceof RubyRational)) { // Default unknown
+            if (v.respondsTo("to_r")) {
                 tmp = v.callMethod(runtime.getCurrentContext(), "to_r");
-                if(!tmp.eql(UNDEF)) {
-                    if(v.respondsTo("to_str")) {
-                        exactTypeError(runtime, v);
-                    }
-                    v = tmp;
-                    break;
-                }
-
-                tmp = v.callMethod(runtime.getCurrentContext(), "to_int");
-                if(!tmp.isNil()) {
-                    v = tmp;
-                    break;
-                }
-                exactTypeError(runtime, v);
+                // WTF is this condition for?  It responds to to_r and makes something which thinks it is a String?
+                if (tmp != null && v.respondsTo("to_str")) exactTypeError(runtime, v);
+            } else {
+                tmp = TypeConverter.checkIntegerType(runtime, v, "to_int");
+                if (tmp.isNil()) exactTypeError(runtime, v);
+            }
+            v = tmp;
         }
 
-        switch(v.getMetaClass().getRealClass().getClassIndex()) {
-            case FIXNUM:
-            case BIGNUM:
-                return v;
-            case RATIONAL:
-                RubyRational r = (RubyRational)v;
-                if(r.denominator(runtime.getCurrentContext()) == RubyFixnum.newFixnum(runtime, 1)) {
-                    return r.numerator(runtime.getCurrentContext());
-                }
-                break;
-            default:
-                exactTypeError(runtime, v);
+        if (v instanceof RubyFixnum || v instanceof RubyBignum) {
+            return v;
+        } else if (v instanceof RubyRational) {
+            RubyRational r = (RubyRational) v;
+            if (r.denominator(runtime.getCurrentContext()) == RubyFixnum.newFixnum(runtime, 1)) {
+                return r.numerator(runtime.getCurrentContext());
+            }
+        } else {
+            exactTypeError(runtime, v);
         }
 
         return v;
@@ -731,8 +715,8 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a() {
-        return getRuntime().newArrayNoCopy(new IRubyObject[] { sec(), min(), hour(), mday(), month(), 
-                year(), wday(), yday(), isdst(), zone() });
+        return getRuntime().newArrayNoCopy(new IRubyObject[]{sec(), min(), hour(), mday(), month(),
+                year(), wday(), yday(), isdst(), zone()});
     }
 
     @JRubyMethod
@@ -810,7 +794,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public RubyInteger wday() {
-        return getRuntime().newFixnum((dt.getDayOfWeek()%7));
+        return getRuntime().newFixnum((dt.getDayOfWeek() % 7));
     }
 
     @JRubyMethod
@@ -832,7 +816,8 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
         int offset = dt.getZone().getOffset(dt.getMillis());
-        return getRuntime().newFixnum(offset/1000);
+
+        return getRuntime().newFixnum(offset / 1000);
     }
 
     @JRubyMethod(name = {"isdst", "dst?"})
@@ -998,7 +983,7 @@ public class RubyTime extends RubyObject {
     public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime)));
-        time.callInit(args,block);
+        time.callInit(args, block);
         return time;
     }
 
