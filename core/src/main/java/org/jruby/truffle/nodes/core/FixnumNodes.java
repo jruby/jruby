@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -1207,30 +1208,6 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "[]", required = 1)
-    public abstract static class GetIndexNode extends CoreMethodNode {
-
-        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public GetIndexNode(GetIndexNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int getIndex(int self, int index) {
-            notDesignedForCompilation();
-
-            if ((self & (1 << index)) == 0) {
-                return 0;
-            } else {
-                return 1;
-            }
-        }
-
-    }
-
     @CoreMethod(names = "abs")
     public abstract static class AbsNode extends CoreMethodNode {
 
@@ -1250,6 +1227,40 @@ public abstract class FixnumNodes {
         @Specialization
         public long abs(long n) {
             return Math.abs(n);
+        }
+
+    }
+
+    @CoreMethod(names = "bit_length")
+    public abstract static class BitLengthNode extends CoreMethodNode {
+
+        private static final int INTEGER_BITS = Integer.numberOfLeadingZeros(0);
+        private static final int LONG_BITS = Long.numberOfLeadingZeros(0);
+
+        public BitLengthNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BitLengthNode(BitLengthNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int bitLength(int n) {
+            return bitLength((long) n);
+        }
+
+        @Specialization
+        public int bitLength(long n) {
+            if (n < 0) {
+                n = ~n;
+            }
+
+            if (n == Long.MAX_VALUE) {
+                return LONG_BITS - 1;
+            }
+
+            return LONG_BITS - Long.numberOfLeadingZeros(n);
         }
 
     }
