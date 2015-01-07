@@ -84,7 +84,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         CompilerAsserts.compilationConstant(dispatchAction);
 
         // Check the lookup node is what we expect
@@ -114,7 +114,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                     "class modified");
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
+        if (dispatchAction == DispatchAction.CALL_METHOD) {
             // When calling #method_missing we need to prepend the symbol
 
             final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
@@ -142,9 +142,9 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                                 CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                                 modifiedArgumentsObjects));
             }
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+        } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             return false;
-        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+        } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
             if (isIndirect()) {
                 return indirectCallNode.call(
                         frame,
@@ -184,7 +184,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                 methodName,
                 blockObject,
                 argumentsObjects,
-                (Dispatch.DispatchAction) dispatchAction);
+                (DispatchAction) dispatchAction);
     }
 
 }

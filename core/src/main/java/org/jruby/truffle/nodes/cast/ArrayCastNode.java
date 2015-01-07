@@ -16,8 +16,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -41,7 +42,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection, SplatCastNode.NilBehavior nilBehavior) {
         super(context, sourceSection);
-        toArrayNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+        toArrayNode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
         this.nilBehavior = nilBehavior;
     }
 
@@ -108,7 +109,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
-        if (result == Dispatch.MISSING) {
+        if (result == DispatchNode.MISSING) {
             return getContext().getCoreLibrary().getNilObject();
         }
 

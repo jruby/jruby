@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.dsl.TypeSystem;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.core.*;
  * using. Used by the DSL.
  */
 @TypeSystem({ //
-                Dispatch.DispatchAction.class, //
+                DispatchAction.class, //
                 LexicalScope.class, //
                 UndefinedPlaceholder.class, //
                 boolean.class, //

@@ -19,8 +19,9 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeFactory;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -82,8 +83,8 @@ public class RubyCallNode extends RubyNode {
         this.isSplatted = isSplatted;
         this.isVCall = isVCall;
 
-        dispatchHead = new DispatchHeadNode(context, ignoreVisibility, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
+        dispatchHead = new DispatchHeadNode(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING);
+        respondToMissing = new DispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
 
         this.ignoreVisibility = ignoreVisibility;
@@ -203,7 +204,7 @@ public class RubyCallNode extends RubyNode {
         if (method == null) {
             final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, context.makeString(methodName));
 
-            if (r != Dispatch.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
+            if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return getContext().getCoreLibrary().getNilObject();
             }
         } else if (method.isUndefined()) {

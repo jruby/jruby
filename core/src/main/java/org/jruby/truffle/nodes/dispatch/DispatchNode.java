@@ -34,6 +34,8 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
         @NodeChild(value="action", type=Node.class)})
 public abstract class DispatchNode extends RubyNode {
 
+    public static final Object MISSING = new Object();
+
     public DispatchNode(RubyContext context) {
         super(context, null);
     }
@@ -48,14 +50,14 @@ public abstract class DispatchNode extends RubyNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction);
+            DispatchAction dispatchAction);
 
     @CompilerDirectives.TruffleBoundary
     protected RubyConstant lookupConstant(
             RubyModule module,
             String name,
             boolean ignoreVisibility,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         final LexicalScope lexicalScope = getHeadNode().getLexicalScope();
 
         RubyConstant constant = ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
@@ -78,7 +80,7 @@ public abstract class DispatchNode extends RubyNode {
             Object receiver,
             String name,
             boolean ignoreVisibility,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         RubyMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
@@ -96,9 +98,9 @@ public abstract class DispatchNode extends RubyNode {
         // Check visibility
 
         if (!ignoreVisibility && !method.isVisibleTo(this, callerClass)) {
-            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
+            if (dispatchAction == DispatchAction.CALL_METHOD) {
                 throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, receiver.toString(), this));
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return null;
             } else {
                 throw new UnsupportedOperationException();
@@ -114,7 +116,7 @@ public abstract class DispatchNode extends RubyNode {
             Object methodName,
             RubyProc blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction,
+            DispatchAction dispatchAction,
             String reason) {
         final DispatchHeadNode head = getHeadNode();
         head.reset(reason);
@@ -141,8 +143,8 @@ public abstract class DispatchNode extends RubyNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return dispatchAction == Dispatch.DispatchAction.READ_CONSTANT;
+            DispatchAction dispatchAction) {
+        return dispatchAction == DispatchAction.READ_CONSTANT;
     }
 
     protected boolean actionIsCallOrRespondToMethod(
@@ -151,8 +153,8 @@ public abstract class DispatchNode extends RubyNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD;
+            DispatchAction dispatchAction) {
+        return dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD;
     }
 
 }

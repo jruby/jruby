@@ -15,8 +15,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -33,7 +34,7 @@ public abstract class HashCastNode extends RubyNode {
 
     public HashCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toHashNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+        toHashNode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
     }
 
     public HashCastNode(HashCastNode prev) {
@@ -84,7 +85,7 @@ public abstract class HashCastNode extends RubyNode {
 
         final Object result = toHashNode.call(frame, object, "to_hash", null, new Object[]{});
 
-        if (result == Dispatch.MISSING) {
+        if (result == DispatchNode.MISSING) {
             return getContext().getCoreLibrary().getNilObject();
         }
 

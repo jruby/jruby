@@ -48,7 +48,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         CompilerAsserts.compilationConstant(dispatchAction);
 
         // Check the lookup node is what we expect
@@ -78,9 +78,9 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
                     "class modified");
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-            return Dispatch.MISSING;
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+        if (dispatchAction == DispatchAction.CALL_METHOD) {
+            return MISSING;
+        } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             return false;
         } else {
             throw new UnsupportedOperationException();
@@ -101,7 +101,7 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
                 methodName,
                 blockObject,
                 argumentsObjects,
-                (Dispatch.DispatchAction) dispatchAction);
+                (DispatchAction) dispatchAction);
     }
 
 }

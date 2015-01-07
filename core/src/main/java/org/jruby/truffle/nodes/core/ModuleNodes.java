@@ -24,8 +24,9 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -618,7 +619,7 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
+            dispatch = new DispatchHeadNode(context, MissingBehavior.CALL_CONST_MISSING);
         }
 
         public ConstGetNode(ConstGetNode prev) {
@@ -636,7 +637,7 @@ public abstract class ModuleNodes {
                     name,
                     null,
                     new Object[]{},
-                    Dispatch.DispatchAction.READ_CONSTANT);
+                    DispatchAction.READ_CONSTANT);
         }
 
         @Specialization
@@ -649,7 +650,7 @@ public abstract class ModuleNodes {
                     name,
                     null,
                     new Object[]{},
-                    Dispatch.DispatchAction.READ_CONSTANT);
+                    DispatchAction.READ_CONSTANT);
         }
     }
 

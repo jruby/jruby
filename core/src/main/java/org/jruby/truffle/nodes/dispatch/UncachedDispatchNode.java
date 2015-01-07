@@ -62,7 +62,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             Object constantName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         final RubyConstant constant = lookupConstant(receiverObject,
                 toJavaStringNode.executeJavaString(frame, constantName), ignoreVisibility, dispatchAction);
 
@@ -101,14 +101,14 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         final RubyMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, methodName),
                 ignoreVisibility, dispatchAction);
 
         if (method != null) {
-            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
+            if (dispatchAction == DispatchAction.CALL_METHOD) {
                 return callNode.call(
                         frame,
                         method.getCallTarget(),
@@ -118,7 +118,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
                                 receiverObject,
                                 (RubyProc) blockObject,
                                 CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return true;
             } else {
                 throw new UnsupportedOperationException();
@@ -131,7 +131,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
                 dispatchAction);
 
         if (missingMethod == null) {
-            if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+            if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return false;
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -140,7 +140,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
             }
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
+        if (dispatchAction == DispatchAction.CALL_METHOD) {
             final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
 
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
@@ -158,7 +158,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
                             receiverObject,
                             (RubyProc) blockObject,
                             modifiedArgumentsObjects));
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+        } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             return false;
         } else {
             throw new UnsupportedOperationException();

@@ -12,8 +12,9 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -31,7 +32,7 @@ public class ReadConstantNode extends RubyNode {
         super(context, sourceSection);
         this.name = name;
         this.receiver = receiver;
-        dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING, lexicalScope);
+        dispatch = new DispatchHeadNode(context, MissingBehavior.CALL_CONST_MISSING, lexicalScope);
 
     }
 
@@ -50,7 +51,7 @@ public class ReadConstantNode extends RubyNode {
                 name,
                 null,
                 new Object[]{},
-                Dispatch.DispatchAction.READ_CONSTANT);
+                DispatchAction.READ_CONSTANT);
     }
 
     @Override

@@ -22,41 +22,41 @@ public class DispatchHeadNode extends Node {
     private final RubyContext context;
     private final boolean ignoreVisibility;
     private final boolean indirect;
-    private final Dispatch.MissingBehavior missingBehavior;
+    private final MissingBehavior missingBehavior;
     private final LexicalScope lexicalScope;
 
     @Child protected DispatchNode first;
 
     public static DispatchHeadNode onSelf(RubyContext context) {
-        return new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        return new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public DispatchHeadNode(RubyContext context) {
-        this(context, false, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        this(context, false, false, MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility) {
-        this(context, ignoreVisibility, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+        this(context, ignoreVisibility, MissingBehavior.CALL_METHOD_MISSING);
     }
 
-    public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, MissingBehavior missingBehavior) {
         this(context, false, false, missingBehavior);
     }
 
-    public DispatchHeadNode(RubyContext context, Dispatch.MissingBehavior missingBehavior, LexicalScope lexicalScope) {
+    public DispatchHeadNode(RubyContext context, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
         this(context, false, false, missingBehavior, lexicalScope);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, Dispatch.MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
         this(context, ignoreVisibility, false, missingBehavior);
     }
 
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, Dispatch.MissingBehavior missingBehavior) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
         this(context, ignoreVisibility, indirect, missingBehavior, null);
     }
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, Dispatch.MissingBehavior missingBehavior, LexicalScope lexicalScope) {
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
@@ -77,7 +77,7 @@ public class DispatchHeadNode extends Node {
                 methodName,
                 blockObject,
                 argumentsObjects,
-                Dispatch.DispatchAction.CALL_METHOD);
+                DispatchAction.CALL_METHOD);
     }
 
     public double callFloat(
@@ -88,7 +88,7 @@ public class DispatchHeadNode extends Node {
             Object... argumentsObjects) throws UseMethodMissingException {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
 
-        if (missingBehavior == Dispatch.MissingBehavior.RETURN_MISSING && value == Dispatch.MISSING) {
+        if (missingBehavior == MissingBehavior.RETURN_MISSING && value == DispatchNode.MISSING) {
             throw new UseMethodMissingException();
         }
 
@@ -118,7 +118,7 @@ public class DispatchHeadNode extends Node {
             Object... argumentsObjects) throws UseMethodMissingException {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
 
-        if (missingBehavior == Dispatch.MissingBehavior.RETURN_MISSING && value == Dispatch.MISSING) {
+        if (missingBehavior == MissingBehavior.RETURN_MISSING && value == DispatchNode.MISSING) {
             throw new UseMethodMissingException();
         }
 
@@ -161,7 +161,7 @@ public class DispatchHeadNode extends Node {
                 methodName,
                 null,
                 null,
-                Dispatch.DispatchAction.RESPOND_TO_METHOD);
+                DispatchAction.RESPOND_TO_METHOD);
     }
 
     public Object dispatch(
@@ -170,7 +170,7 @@ public class DispatchHeadNode extends Node {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         return first.executeDispatch(
                 frame,
                 receiverObject,

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.instrument.TruffleEventReceiver;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -182,7 +182,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
     }
 
-    public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) throws UnexpectedResultException {
+    public DispatchAction executeDispatchAction(VirtualFrame frame) throws UnexpectedResultException {
         throw new UnsupportedOperationException();
     }
 
@@ -270,7 +270,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
 
     @SuppressWarnings("static-method")
     public boolean isDispatchAction(Object value) {
-        return value instanceof Dispatch.DispatchAction;
+        return value instanceof DispatchAction;
     }
 
     @SuppressWarnings("static-method")

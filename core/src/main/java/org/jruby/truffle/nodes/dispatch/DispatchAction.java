@@ -9,20 +9,8 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-public class Dispatch {
-
-    public static enum MissingBehavior {
-        RETURN_MISSING,
-        CALL_CONST_MISSING,
-        CALL_METHOD_MISSING
-    }
-
-    public static enum DispatchAction {
-        READ_CONSTANT,
-        CALL_METHOD,
-        RESPOND_TO_METHOD
-    }
-
-    public static final Object MISSING = new Object();
-
+public enum DispatchAction {
+    READ_CONSTANT,
+    CALL_METHOD,
+    RESPOND_TO_METHOD
 }

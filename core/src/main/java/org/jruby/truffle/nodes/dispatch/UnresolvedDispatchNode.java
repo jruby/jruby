@@ -29,10 +29,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
     private final boolean indirect;
-    private final Dispatch.MissingBehavior missingBehavior;
+    private final MissingBehavior missingBehavior;
 
     public UnresolvedDispatchNode(RubyContext context, boolean ignoreVisibility, boolean indirect,
-                                  Dispatch.MissingBehavior missingBehavior) {
+                                  MissingBehavior missingBehavior) {
         super(context);
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
@@ -46,7 +46,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
@@ -93,10 +93,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+        if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -158,10 +158,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+        if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility,
                     dispatchAction);
 
@@ -185,7 +185,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return newDispatch.executeDispatch(frame, receiverObject,
                     methodName, blockObject, argumentsObjects, dispatchAction);
 
-        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
+        } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
             final RubyModule module = (RubyModule) receiverObject;
             final RubyConstant constant = lookupConstant(module, methodName.toString(),
                     ignoreVisibility, dispatchAction);
@@ -214,7 +214,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object methodName,
             RubyClass callerClass,
             RubyBasicObject receiverObject,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
         switch (missingBehavior) {
@@ -249,7 +249,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private DispatchNode createMethodMissingNode(
             Object methodName,
             Object receiverObject,
-            Dispatch.DispatchAction dispatchAction) {
+            DispatchAction dispatchAction) {
         final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
         switch (missingBehavior) {
