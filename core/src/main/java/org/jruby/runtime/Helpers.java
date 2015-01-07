@@ -1859,7 +1859,20 @@ public class Helpers {
                 }
                 return (RubyArray)avalue;
             } else {
-                return runtime.newArray(value);
+                DynamicMethod methodMissing = value.getMetaClass().searchMethod("method_missing");
+                if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
+                    return runtime.newArray(value);
+                } else {
+                    IRubyObject avalue = methodMissing.call(context, value, value.getMetaClass(), "to_a", new IRubyObject[] {runtime.newSymbol("to_a")}, Block.NULL_BLOCK);
+                    if (!(avalue instanceof RubyArray)) {
+                        if (avalue.isNil()) {
+                            return runtime.newArray(value);
+                        } else {
+                            throw runtime.newTypeError("`to_a' did not return Array");
+                        }
+                    }
+                    return (RubyArray)avalue;
+                }
             }
         }
         RubyArray arr = (RubyArray) tmp;
