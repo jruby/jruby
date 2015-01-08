@@ -69,24 +69,13 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         indirectCallNode = prev.indirectCallNode;
     }
 
-    @Specialization(guards = {"!isRubyBasicObject", "guardName"})
+    @Specialization(guards = {"!isRubyBasicObject", "guardClass", "guardName"})
     public Object dispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        // Check the class is what we expect
-
-        if (receiverObject.getClass() != expectedClass) {
-            return next.executeDispatch(
-                    frame,
-                    receiverObject,
-                    methodName,
-                    blockObject,
-                    argumentsObjects);
-        }
-
         // Check the class has not been modified
 
         try {
@@ -132,6 +121,14 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
             default:
                 throw new UnsupportedOperationException();
         }
+    }
+
+    protected final boolean guardClass(
+            Object receiverObject,
+            Object methodName,
+            Object blockObject,
+            Object argumentsObjects) {
+        return receiverObject.getClass() == expectedClass;
     }
 
     @Fallback
