@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -571,6 +572,23 @@ public abstract class ArrayNodes {
             }
         }
 
+        @Specialization(guards = "isIntegerFixnum")
+        public Object getIntegerFixnum(RubyArray array, int index, int length) {
+            notDesignedForCompilation();
+
+            final int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else if (normalisedIndex == array.getSize()) {
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            } else {
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+            }
+        }
+
         @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class)
         public long getLongFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
             int normalisedIndex = array.normaliseIndex(index);
@@ -633,8 +651,10 @@ public abstract class ArrayNodes {
 
             final int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize() || length < 0) {
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 return getContext().getCoreLibrary().getNilObject();
+            } else if (normalisedIndex == array.getSize()) {
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
