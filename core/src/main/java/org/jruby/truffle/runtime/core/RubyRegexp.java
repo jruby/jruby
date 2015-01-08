@@ -332,7 +332,7 @@ public class RubyRegexp extends RubyBasicObject {
 
             return strings.toArray(new RubyString[strings.size()]);
         } else {
-            final List<RubyArray> strings = new ArrayList<>();
+            final List<RubyArray> allMatches = new ArrayList<>();
 
             while (true) {
                 Object matchData = matchCommon(string.getBytes(), false, true, matcher, p + end, stringBytes.length);
@@ -343,23 +343,23 @@ public class RubyRegexp extends RubyBasicObject {
 
                 RubyMatchData md = (RubyMatchData) matchData;
 
-                final List<RubyString> parts = new ArrayList<>();
+                final List<RubyBasicObject> parts = new ArrayList<>();
 
                 Object[] values = md.getValues();
 
                 // The first element is the entire matched string, so skip over it because we're only interested in
                 // the constituent matched parts.
                 for (int i = 1; i < values.length; i++) {
-                    parts.add((RubyString) values[i]);
+                    parts.add((RubyBasicObject) values[i]);
                 }
 
-                RubyString[] matches = parts.toArray(new RubyString[parts.size()]);
-                strings.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matches));
+                RubyBasicObject[] matches = parts.toArray(new RubyBasicObject[parts.size()]);
+                allMatches.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matches));
 
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
-            return strings.toArray(new Object[strings.size()]);
+            return allMatches.toArray(new Object[allMatches.size()]);
         }
     }
 
