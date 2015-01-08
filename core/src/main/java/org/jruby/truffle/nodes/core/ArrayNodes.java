@@ -3191,7 +3191,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject!", needsBlock = true)
+    @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
