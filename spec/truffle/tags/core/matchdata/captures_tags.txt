@@ -1,1 +1,0 @@
-fails:MatchData#captures returns an array of the match captures

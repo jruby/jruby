@@ -15,6 +15,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
@@ -41,6 +42,29 @@ public abstract class MatchDataNodes {
             }
         }
 
+    }
+
+    @CoreMethod(names = "captures")
+    public abstract static class CapturesNode extends CoreMethodNode {
+
+        public CapturesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CapturesNode(CapturesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray toA(RubyMatchData matchData) {
+            notDesignedForCompilation();
+
+            Object[] values = matchData.getValues();
+
+            // There should always be at least one value because the entire matched string will be in the array. Thus,
+            // there is no risk of an ArrayIndexOutOfBoundsException here.
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange(values, 1, values.length));
+        }
     }
 
     @CoreMethod(names = "pre_match")
@@ -79,7 +103,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(names = {"to_a", "captures"})
+    @CoreMethod(names = "to_a")
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
@@ -96,7 +120,6 @@ public abstract class MatchDataNodes {
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
         }
-
     }
 
     @CoreMethod(names = "values_at", argumentsAsArray = true)
