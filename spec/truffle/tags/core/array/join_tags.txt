@@ -24,3 +24,4 @@ fails:Array#join with an untrusted separator does not untrust the result if the 
 fails:Array#join with an untrusted separator untrusts the result if the array has two or more elements
 fails:Array#join with $, separates elements with default separator when the passed separator is nil
 fails:Array#join raises an ArgumentError when the Array is recursive
+fails:Array#join uses the widest common encoding when other strings are incompatible

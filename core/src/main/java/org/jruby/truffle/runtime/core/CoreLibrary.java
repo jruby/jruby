@@ -485,6 +485,11 @@ public class CoreLibrary {
         return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException argumentErrorInvalidRadix(int radix, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError(String.format("invalid radix %d", radix), currentNode);
+    }
+
     public RubyException argumentErrorMissingKeyword(String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return argumentError(String.format("missing keyword: %s", name), currentNode);

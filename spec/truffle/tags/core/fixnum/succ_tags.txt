@@ -1,3 +1,0 @@
-fails:Fixnum#succ returns the next larger positive Fixnum
-fails:Fixnum#succ returns the next larger negative Fixnum
-fails:Fixnum#succ overflows a Fixnum to a Bignum

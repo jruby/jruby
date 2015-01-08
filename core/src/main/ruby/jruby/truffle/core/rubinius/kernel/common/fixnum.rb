@@ -24,29 +24,16 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' numeric.rb
+# Only part of Rubinius' fixnum.rb
 
-class Numeric
+class Fixnum
 
-  def zero?
-    self == 0
+  def fdiv(n)
+    if n.kind_of?(Fixnum)
+      to_f / n
+    else
+      redo_coerced :fdiv, n
+    end
   end
 
-  def nonzero?
-    zero? ? nil : self
-  end
-
-  def div(other)
-    raise ZeroDivisionError, "divided by 0" if other == 0
-    self.__slash__(other).floor
-  end
-
-  def fdiv(other)
-    self.to_f / other
-  end
-
-  def real?
-    true
-  end
-  
 end

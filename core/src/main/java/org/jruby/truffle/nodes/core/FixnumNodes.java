@@ -20,10 +20,12 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
@@ -568,6 +570,27 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
+        public double mod(int a, double b) {
+            return mod((long) a, b);
+        }
+
+        @Specialization
+        public double mod(long a, double b) {
+            if (b == 0) {
+                return 0 / 0;
+            }
+
+            double mod = a % b;
+
+            if (mod < 0 && b > 0 || mod > 0 && b < 0) {
+                adjustProfile.enter();
+                mod += b;
+            }
+
+            return mod;
+        }
+
+        @Specialization
         public long mod(long a, int b) {
             return mod(a, (long) b);
         }
@@ -761,12 +784,16 @@ public abstract class FixnumNodes {
     @CoreMethod(names = {"==", "==="}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode reverseCallNode;
+
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            reverseCallNode = new DispatchHeadNode(context);
         }
 
         public EqualNode(EqualNode prev) {
             super(prev);
+            reverseCallNode = prev.reverseCallNode;
         }
 
         @Specialization
@@ -809,10 +836,15 @@ public abstract class FixnumNodes {
             return bignum(a).equals(b);
         }
 
-        @Fallback
-        public boolean equal(Object a, Object b) {
-            return false;
+        @Specialization(guards = {
+                "!isInteger(arguments[1])",
+                "!isLong(arguments[1])",
+                "!isRubyBignum(arguments[1])"
+        })
+        public Object equal(VirtualFrame frame, Object a, Object b) {
+            return reverseCallNode.call(frame, b, getName(), null, a);
         }
+
     }
 
     @CoreMethod(names = "<=>", required = 1)
@@ -865,6 +897,16 @@ public abstract class FixnumNodes {
         public int compare(long a, RubyBignum b) {
             return bignum(a).compareTo(b);
         }
+
+        @Specialization(guards = {
+                "!isInteger(arguments[1])",
+                "!isLong(arguments[1])",
+                "!isDouble(arguments[1])",
+                "!isRubyBignum(arguments[1])"})
+        public RubyNilClass compare(Object a, Object b) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
     }
 
     @CoreMethod(names = ">=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
@@ -1208,13 +1250,19 @@ public abstract class FixnumNodes {
     @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode toInt;
+
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toInt = new DispatchHeadNode(context);
         }
 
         public RightShiftNode(RightShiftNode prev) {
             super(prev);
+            toInt = prev.toInt;
         }
+
+        protected abstract Object executeRightShift(VirtualFrame frame, Object a, Object b);
 
         @Specialization
         public int rightShift(int a, int b) {
@@ -1239,6 +1287,27 @@ public abstract class FixnumNodes {
                 } else {
                     return a << -b;
                 }
+            }
+        }
+
+        @Specialization
+        public int rightShift(int a, RubyBignum b) {
+            return 0;
+        }
+
+        @Specialization
+        public int rightShift(long a, RubyBignum b) {
+            return 0;
+        }
+
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])", "!isRubyBignum(arguments[1])"})
+        public Object rightShift(VirtualFrame frame, Object a, Object b) {
+            final Object coerced = toInt.call(frame, b, "to_int", null);
+
+            if (coerced instanceof Integer || coerced instanceof Long || coerced instanceof RubyBignum) {
+                return executeRightShift(frame, a, coerced);
+            } else {
+                throw new UnsupportedOperationException();
             }
         }
 
@@ -1324,6 +1393,31 @@ public abstract class FixnumNodes {
 
     }
 
+    @CoreMethod(names = "inspect")
+    public abstract static class InspectNode extends CoreMethodNode {
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InspectNode(InspectNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString inspect(int n) {
+            return getContext().makeString(Integer.toString(n));
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString inspect(long n) {
+            return getContext().makeString(Long.toString(n));
+        }
+
+    }
+
     @CoreMethod(names = "size", needsSelf = false)
     public abstract static class SizeNode extends CoreMethodNode {
 
@@ -1365,7 +1459,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"})
+    @CoreMethod(names = "to_s", optional = 1)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -1378,14 +1472,31 @@ public abstract class FixnumNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyString toS(int n) {
+        public RubyString toS(int n, UndefinedPlaceholder undefined) {
             return getContext().makeString(Integer.toString(n));
         }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyString toS(long n) {
+        public RubyString toS(long n, UndefinedPlaceholder undefined) {
             return getContext().makeString(Long.toString(n));
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString toS(int n, int base) {
+            return toS((long) n, base);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString toS(long n, int base) {
+            if (base < 2 || base > 36) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
+            }
+
+            return getContext().makeString(Long.toString(n, base));
         }
 
     }

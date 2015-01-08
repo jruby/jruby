@@ -17,6 +17,18 @@ class Numeric
 
 end
 
+class Fixnum
+
+  alias_method :magnitude, :abs
+
+end
+
+class Bignum
+  
+  alias_method :magnitude, :abs
+
+end
+
 class Channel
 end
 

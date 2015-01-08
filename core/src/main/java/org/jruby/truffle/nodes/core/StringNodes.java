@@ -101,22 +101,13 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") RubyNilClass b) {
-            return false;
-        }
-
-        @Specialization
         public boolean equal(RubyString a, RubyString b) {
             return a.equals(b.toString());
         }
 
-        @Specialization
+        @Specialization(guards = "!isRubyString(arguments[1])")
         public boolean equal(RubyString a, Object b) {
-            if (b instanceof RubyString) {
-                return equal(a, (RubyString) b);
-            } else {
-                return false;
-            }
+            return false;
         }
     }
 
