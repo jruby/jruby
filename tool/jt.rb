@@ -14,7 +14,7 @@ module ShellUtils
   private
 
   def sh(*args)
-    system args.join(' ')
+    system(*args)
     raise "failed" unless $? == 0
   end
 
@@ -84,8 +84,8 @@ module Commands
   def findbugs(report=nil)
     case report
     when "report"
-      sh 'tool/truffle-findbugs.sh --report' rescue nil
-      sh 'open truffle-findbugs-report.html' rescue nil
+      sh 'tool/truffle-findbugs.sh', '--report' rescue nil
+      sh 'open', 'truffle-findbugs-report.html' rescue nil
     when nil
       sh 'tool/truffle-findbugs.sh'
     else
