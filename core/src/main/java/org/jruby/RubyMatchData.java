@@ -481,27 +481,25 @@ public class RubyMatchData extends RubyObject {
     /** match_end
      *
      */
+    @JRubyMethod
     public IRubyObject end(ThreadContext context, IRubyObject index) {
-        return end19(context, index);
-    }
+        check();
 
-    @JRubyMethod(name = "end")
-    public IRubyObject end19(ThreadContext context, IRubyObject index) {
         int i = backrefNumber(index);
         Ruby runtime = context.runtime;
-        int e = endCommon(runtime, i);
+
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+
+        int e = regs == null ? end : regs.end[i];
+
         if (e < 0) return runtime.getNil();
+
         if (!str.singleByteOptimizable()) {
             updateCharOffset();
             e = charOffsets.end[i];
         }
-        return RubyFixnum.newFixnum(runtime, e);
-    }
 
-    private int endCommon(Ruby runtime, int i) {
-        check();
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
-        return regs == null ? end : regs.end[i];
+        return RubyFixnum.newFixnum(runtime, e);
     }
 
     /** match_offset
