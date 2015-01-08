@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -53,5 +54,7 @@ public @interface CoreMethod {
     boolean lowerFixnumSelf() default false;
 
     int[] lowerFixnumParameters() default {};
+
+    UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 
 }

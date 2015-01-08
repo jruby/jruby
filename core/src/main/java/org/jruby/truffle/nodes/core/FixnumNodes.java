@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -618,7 +619,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<", required = 1)
+    @CoreMethod(names = "<", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class LessNode extends CoreMethodNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
@@ -670,7 +671,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<=", required = 1)
+    @CoreMethod(names = "<=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class LessEqualNode extends CoreMethodNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -831,7 +832,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = ">=", required = 1)
+    @CoreMethod(names = ">=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class GreaterEqualNode extends CoreMethodNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -883,7 +884,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = ">", required = 1)
+    @CoreMethod(names = ">", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class GreaterNode extends CoreMethodNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
