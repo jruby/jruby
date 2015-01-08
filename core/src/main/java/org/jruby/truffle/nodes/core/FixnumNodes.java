@@ -71,12 +71,10 @@ public abstract class FixnumNodes {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            rationalAdd = new DispatchHeadNode(context);
         }
 
         public AddNode(AddNode prev) {
             super(prev);
-            rationalAdd = prev.rationalAdd;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -111,6 +109,12 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRational(arguments[1])")
         public Object add(VirtualFrame frame, int a, RubyBasicObject b) {
+            if (rationalAdd == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                rationalAdd = insert(new DispatchHeadNode(getContext()));
+            }
+
             return rationalAdd.call(frame, b, "+", null, a);
         }
 
@@ -146,6 +150,12 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRational(arguments[1])")
         public Object add(VirtualFrame frame, long a, RubyBasicObject b) {
+            if (rationalAdd == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                rationalAdd = insert(new DispatchHeadNode(getContext()));
+            }
+
             return rationalAdd.call(frame, b, "+", null, a);
         }
 
