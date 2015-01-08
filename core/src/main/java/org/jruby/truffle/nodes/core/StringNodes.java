@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 @CoreClass(name = "String")
@@ -1599,21 +1600,21 @@ public abstract class StringNodes {
 
         public static ByteList capitalize(RubyString string) {
             String javaString = string.toString();
-            String head = javaString.substring(0, 1).toUpperCase();
-            String tail = javaString.substring(1, javaString.length()).toLowerCase();
+            String head = javaString.substring(0, 1).toUpperCase(Locale.ENGLISH);
+            String tail = javaString.substring(1, javaString.length()).toLowerCase(Locale.ENGLISH);
             ByteList byteListString = ByteList.create(head + tail);
             byteListString.setEncoding(string.getBytes().getEncoding());
             return byteListString;
         }
 
         public static ByteList upcase(RubyString string) {
-            ByteList byteListString = ByteList.create(string.toString().toUpperCase());
+            ByteList byteListString = ByteList.create(string.toString().toUpperCase(Locale.ENGLISH));
             byteListString.setEncoding(string.getBytes().getEncoding());
             return byteListString;
         }
 
         public static ByteList downcase(RubyString string) {
-            ByteList newByteList = ByteList.create(string.toString().toLowerCase());
+            ByteList newByteList = ByteList.create(string.toString().toLowerCase(Locale.ENGLISH));
             newByteList.setEncoding(string.getBytes().getEncoding());
 
             return newByteList;
