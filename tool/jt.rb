@@ -76,7 +76,7 @@ module Commands
 
   def untag(path)
     puts
-    puts "WARNING: untag is currently not very reliable - run test #{path} after and manually annotate any new failures"
+    puts "WARNING: untag is currently not very reliable - run `jt test #{path}` after and manually annotate any new failures"
     puts
     mspec 'tag', '--del', 'fails', '--pass', path
   end
