@@ -18,6 +18,7 @@ import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -33,11 +34,11 @@ public class RubyEncoding extends RubyBasicObject {
     private final boolean dummy;
 
     public static synchronized RubyEncoding getEncoding(Encoding encoding) {
-        return lookup.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase());
+        return lookup.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
     }
 
     public static RubyEncoding getEncoding(String name) {
-        return lookup.get(name.toLowerCase());
+        return lookup.get(name.toLowerCase(Locale.ENGLISH));
     }
 
     public static RubyEncoding getEncoding(int index) {
@@ -46,11 +47,11 @@ public class RubyEncoding extends RubyBasicObject {
 
     public static void storeEncoding(int encodingListIndex, RubyEncoding encoding) {
         encodingList[encodingListIndex] = encoding;
-        lookup.put(encoding.getName().toString().toLowerCase(), encoding);
+        lookup.put(encoding.getName().toString().toLowerCase(Locale.ENGLISH), encoding);
     }
 
     public static void storeAlias(String aliasName, RubyEncoding encoding) {
-        lookup.put(aliasName.toLowerCase(), encoding);
+        lookup.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
     }
 
     public static RubyEncoding newEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
