@@ -78,6 +78,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass processClass;
     @CompilerDirectives.CompilationFinal private RubyClass rangeClass;
     @CompilerDirectives.CompilationFinal private RubyClass rangeErrorClass;
+    @CompilerDirectives.CompilationFinal private RubyClass rationalClass;
     @CompilerDirectives.CompilationFinal private RubyClass regexpClass;
     @CompilerDirectives.CompilationFinal private RubyClass regexpErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass rubyTruffleErrorClass;
@@ -243,6 +244,7 @@ public class CoreLibrary {
         rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
         rangeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RangeError");
         rangeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        rationalClass = new RubyClass(context, objectClass, numericClass, "Rational");
         regexpClass = new RubyClass(context, objectClass, objectClass, "Regexp");
         regexpClass.setAllocator(new RubyRegexp.RegexpAllocator());
         regexpErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RegexpError");
@@ -599,6 +601,11 @@ public class CoreLibrary {
                 getLogicalClass(coercedTo).getName()), currentNode);
     }
 
+    public RubyException typeErrorCantCoerce(Object from, String to, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
+    }
+
     public RubyException nameError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
@@ -786,6 +793,10 @@ public class CoreLibrary {
 
     public RubyClass getRangeClass() {
         return rangeClass;
+    }
+
+    public RubyClass getRationalClass() {
+        return rationalClass;
     }
 
     public RubyClass getRegexpClass() {

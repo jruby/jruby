@@ -13,12 +13,16 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -63,12 +67,16 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode {
 
+        @Child protected DispatchHeadNode rationalAdd;
+
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            rationalAdd = new DispatchHeadNode(context);
         }
 
         public AddNode(AddNode prev) {
             super(prev);
+            rationalAdd = prev.rationalAdd;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -101,6 +109,16 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(bignum(a).add(b));
         }
 
+        @Specialization
+        public Object add(VirtualFrame frame, int a, RubyBasicObject b) {
+            if (b.getLogicalClass() == getContext().getCoreLibrary().getRationalClass()) {
+                return rationalAdd.call(frame, b, "+", null, a);
+            } else {
+                // TODO (nirvdrum Jan. 7, 2015) Figure out what the proper exception message format is -- Symbols show the value, not the class name.
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantCoerce(b.getLogicalClass().getName(), "Fixnum", this));
+            }
+        }
+
         @Specialization(rewriteOn = ArithmeticException.class)
         public long add(long a, int b) {
             return ExactMath.addExact(a, b);
@@ -131,6 +149,15 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(bignum(a).add(b));
         }
 
+        @Specialization
+        public Object add(VirtualFrame frame, long a, RubyBasicObject b) {
+            if (b.getLogicalClass() == getContext().getCoreLibrary().getRationalClass()) {
+                return rationalAdd.call(frame, b, "+", null, a);
+            } else {
+                // TODO (nirvdrum Jan. 7, 2015) Figure out what the proper exception message format is -- Symbols show the value, not the class name.
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantCoerce(b.getLogicalClass().getName(), "Fixnum", this));
+            }
+        }
     }
 
     @CoreMethod(names = "-", required = 1)
