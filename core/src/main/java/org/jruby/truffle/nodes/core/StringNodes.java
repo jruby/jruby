@@ -22,6 +22,7 @@ import org.joni.Option;
 import org.joni.Region;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -361,7 +362,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "count", argumentsAsArray = true)
     public abstract static class CountNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode toStr;
+        @Child private CallDispatchHeadNode toStr;
 
         public CountNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -625,7 +626,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "gsub", required = 1, optional = 1, needsBlock = true)
     public abstract static class GsubNode extends RegexpNodes.EscapingYieldingNode {
 
-        @Child private DispatchHeadNode toS;
+        @Child private CallDispatchHeadNode toS;
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

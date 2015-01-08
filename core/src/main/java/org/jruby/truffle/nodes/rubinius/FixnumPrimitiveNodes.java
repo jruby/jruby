@@ -12,10 +12,7 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.dispatch.DispatchAction;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -29,12 +26,12 @@ public abstract class FixnumPrimitiveNodes {
     @RubiniusPrimitive(name = "fixnum_coerce")
     public static abstract class FixnumCoercePrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private DispatchHeadNode toFRespond;
-        @Child private DispatchHeadNode toF;
+        @Child private DoesRespondDispatchHeadNode toFRespond;
+        @Child private CallDispatchHeadNode toF;
 
         public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toFRespond = new DispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
+            toFRespond = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
             toF = DispatchHeadNodeFactory.createMethodCall(context);
         }
 

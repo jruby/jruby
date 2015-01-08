@@ -13,64 +13,58 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNodeFactory {
 
-    public static DispatchHeadNode createMethodCall(RubyContext context) {
-        return new DispatchHeadNode(
+    public static CallDispatchHeadNode createMethodCall(RubyContext context) {
+        return new CallDispatchHeadNode(
                 context,
                 false,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
-                null,
-                DispatchAction.CALL_METHOD);
+                null);
     }
 
-    public static DispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility) {
-        return new DispatchHeadNode(
+    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility) {
+        return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
-                null,
-                DispatchAction.CALL_METHOD);
+                null);
     }
 
-    public static DispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
-        return new DispatchHeadNode(
+    public static CallDispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
+        return new CallDispatchHeadNode(
                 context,
                 false,
                 false,
                 missingBehavior,
-                null,
-                DispatchAction.CALL_METHOD);
+                null);
     }
 
-    public static DispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
-        return new DispatchHeadNode(
+    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
+        return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
                 false,
                 missingBehavior,
-                null,
-                DispatchAction.CALL_METHOD);
+                null);
     }
 
-    public static DispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
-        return new DispatchHeadNode(
+    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
+        return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
                 indirect,
                 missingBehavior,
-                null,
-                DispatchAction.CALL_METHOD);
+                null);
     }
 
-    public static DispatchHeadNode createMethodCallOnSelf(RubyContext context) {
-        return new DispatchHeadNode(
+    public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
+        return new CallDispatchHeadNode(
                 context,
                 true,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
-                null,
-                DispatchAction.CALL_METHOD);
+                null);
     }
 
 }

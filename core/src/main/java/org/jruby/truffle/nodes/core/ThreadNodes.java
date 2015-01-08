@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -200,7 +201,7 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "raise", required = 1, optional = 1)
     public abstract static class RaiseNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode initialize;
+        @Child private CallDispatchHeadNode initialize;
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

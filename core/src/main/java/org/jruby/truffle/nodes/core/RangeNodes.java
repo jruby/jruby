@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
@@ -387,7 +388,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode toS;
+        @Child private CallDispatchHeadNode toS;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

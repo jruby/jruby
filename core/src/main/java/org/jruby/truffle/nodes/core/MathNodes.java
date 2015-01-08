@@ -16,10 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyMath;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -366,7 +363,7 @@ public abstract class MathNodes {
     public abstract static class FrExpNode extends CoreMethodNode {
 
         @Child private KernelNodes.IsANode isANode;
-        @Child private DispatchHeadNode floatNode;
+        @Child private CallDispatchHeadNode floatNode;
 
         public FrExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -522,8 +519,8 @@ public abstract class MathNodes {
     public abstract static class LdexpNode extends CoreMethodNode {
 
         @Child private KernelNodes.IsANode isANode;
-        @Child private DispatchHeadNode floatANode;
-        @Child private DispatchHeadNode integerBNode;
+        @Child private CallDispatchHeadNode floatANode;
+        @Child private CallDispatchHeadNode integerBNode;
 
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -635,7 +632,7 @@ public abstract class MathNodes {
     public abstract static class LGammaNode extends CoreMethodNode {
 
         @Child private KernelNodes.IsANode isANode;
-        @Child private DispatchHeadNode floatNode;
+        @Child private CallDispatchHeadNode floatNode;
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -916,7 +913,7 @@ public abstract class MathNodes {
     protected abstract static class SimpleMonadicMathNode extends CoreMethodNode {
 
         @Child private KernelNodes.IsANode isANode;
-        @Child private DispatchHeadNode floatNode;
+        @Child private CallDispatchHeadNode floatNode;
 
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -982,8 +979,8 @@ public abstract class MathNodes {
     protected abstract static class SimpleDyadicMathNode extends CoreMethodNode {
 
         @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatANode;
-        @Child protected DispatchHeadNode floatBNode;
+        @Child protected CallDispatchHeadNode floatANode;
+        @Child protected CallDispatchHeadNode floatBNode;
 
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

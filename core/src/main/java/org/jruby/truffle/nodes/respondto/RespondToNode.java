@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -22,13 +23,13 @@ public class RespondToNode extends RubyNode {
     private final String methodName;
 
     @Child private RubyNode child;
-    @Child private DispatchHeadNode dispatch;
+    @Child private DoesRespondDispatchHeadNode dispatch;
 
     public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String methodName) {
         super(context, sourceSection);
         this.methodName = methodName;
         this.child = child;
-        dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
+        dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {

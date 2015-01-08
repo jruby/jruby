@@ -26,10 +26,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
@@ -2057,7 +2054,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
-        @Child private DispatchHeadNode dispatch;
+        @Child private CallDispatchHeadNode dispatch;
 
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2183,7 +2180,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"inspect", "to_s"})
     public abstract static class InspectNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode inspect;
+        @Child private CallDispatchHeadNode inspect;
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2490,7 +2487,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "max")
     public abstract static class MaxNode extends ArrayCoreMethodNode {
 
-        @Child private DispatchHeadNode eachNode;
+        @Child private CallDispatchHeadNode eachNode;
         private final MaxBlock maxBlock;
 
         public MaxNode(RubyContext context, SourceSection sourceSection) {
@@ -2531,7 +2528,7 @@ public abstract class ArrayNodes {
 
     public abstract static class MaxBlockNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode compareNode;
+        @Child private CallDispatchHeadNode compareNode;
 
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2609,7 +2606,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "min")
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
-        @Child private DispatchHeadNode eachNode;
+        @Child private CallDispatchHeadNode eachNode;
         private final MinBlock minBlock;
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
@@ -2650,7 +2647,7 @@ public abstract class ArrayNodes {
 
     public abstract static class MinBlockNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode compareNode;
+        @Child private CallDispatchHeadNode compareNode;
 
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3473,7 +3470,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort", needsBlock = true)
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
-        @Child private DispatchHeadNode compareDispatchNode;
+        @Child private CallDispatchHeadNode compareDispatchNode;
         @Child private YieldDispatchHeadNode yieldNode;
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
@@ -3655,7 +3652,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort!")
     public abstract static class SortBangNode extends ArrayCoreMethodNode {
 
-        @Child private DispatchHeadNode compareDispatchNode;
+        @Child private CallDispatchHeadNode compareDispatchNode;
 
         public SortBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

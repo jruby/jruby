@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
@@ -28,8 +29,8 @@ import java.util.List;
 public abstract class HashLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] keyValues;
-    @Child protected DispatchHeadNode dupNode;
-    @Child protected DispatchHeadNode freezeNode;
+    @Child protected CallDispatchHeadNode dupNode;
+    @Child protected CallDispatchHeadNode freezeNode;
 
     protected HashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         super(context, sourceSection);

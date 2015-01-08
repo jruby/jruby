@@ -15,10 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -31,7 +28,7 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 @NodeChild("child")
 public abstract class HashCastNode extends RubyNode {
 
-    @Child private DispatchHeadNode toHashNode;
+    @Child private CallDispatchHeadNode toHashNode;
 
     public HashCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

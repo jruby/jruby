@@ -198,7 +198,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"<=>"}, required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode equalNode;
+        @Child private CallDispatchHeadNode equalNode;
         @Child private BooleanCastNode booleanCast;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -466,7 +466,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode initializeCloneNode;
+        @Child private CallDispatchHeadNode initializeCloneNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -501,7 +501,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "dup")
     public abstract static class DupNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode initializeDupNode;
+        @Child private CallDispatchHeadNode initializeDupNode;
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -541,7 +541,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
     public abstract static class EvalNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode toStr;
+        @Child private CallDispatchHeadNode toStr;
         @Child private BindingNode bindingNode;
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
@@ -974,7 +974,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"initialize_dup", "initialize_clone"}, visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeDupCloneNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode initializeCopyNode;
+        @Child private CallDispatchHeadNode initializeCopyNode;
 
         public InitializeDupCloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1133,13 +1133,13 @@ public abstract class KernelNodes {
     @CoreMethod(names = "Integer", isModuleFunction = true, required = 1)
     public abstract static class IntegerNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode toIntRespondTo;
-        @Child private DispatchHeadNode toInt;
+        @Child private DoesRespondDispatchHeadNode toIntRespondTo;
+        @Child private CallDispatchHeadNode toInt;
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toIntRespondTo = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
-            toInt = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
+            toIntRespondTo = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
+            toInt = new CallDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
         }
 
         public IntegerNode(IntegerNode prev) {
@@ -1390,7 +1390,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode toS;
+        @Child private CallDispatchHeadNode toS;
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1534,7 +1534,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "raise", isModuleFunction = true, optional = 3)
     public abstract static class RaiseNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode initialize;
+        @Child private CallDispatchHeadNode initialize;
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1681,14 +1681,14 @@ public abstract class KernelNodes {
     @CoreMethod(names = "respond_to?", required = 1, optional = 1)
     public abstract static class RespondToNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode dispatch;
-        @Child private DispatchHeadNode dispatchIgnoreVisibility;
+        @Child private DoesRespondDispatchHeadNode dispatch;
+        @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
-            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null, DispatchAction.RESPOND_TO_METHOD);
+            dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatch.forceUncached();
@@ -1871,7 +1871,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "String", isModuleFunction = true, required = 1)
     public abstract static class StringNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode toS;
+        @Child private CallDispatchHeadNode toS;
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

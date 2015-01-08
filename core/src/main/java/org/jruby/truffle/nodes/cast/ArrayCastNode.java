@@ -16,10 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -35,7 +32,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     private final SplatCastNode.NilBehavior nilBehavior;
 
-    @Child private DispatchHeadNode toArrayNode;
+    @Child private CallDispatchHeadNode toArrayNode;
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
         this(context, sourceSection, SplatCastNode.NilBehavior.NIL);

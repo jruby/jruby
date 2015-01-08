@@ -19,10 +19,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeFactory;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -42,7 +39,7 @@ public class RubyCallNode extends RubyNode {
     private final boolean isSplatted;
     private final boolean isVCall;
 
-    @Child private DispatchHeadNode dispatchHead;
+    @Child private CallDispatchHeadNode dispatchHead;
 
     private final BranchProfile splatNotArrayProfile = BranchProfile.create();
 
@@ -51,7 +48,7 @@ public class RubyCallNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
-    @Child private DispatchHeadNode respondToMissing;
+    @Child private CallDispatchHeadNode respondToMissing;
     @Child private BooleanCastNode respondToMissingCast;
 
     private final boolean ignoreVisibility;

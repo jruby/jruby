@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -56,7 +57,7 @@ public abstract class ClassNodes {
     public abstract static class NewNode extends CoreMethodNode {
 
         @Child private AllocateNode allocateNode;
-        @Child private DispatchHeadNode initialize;
+        @Child private CallDispatchHeadNode initialize;
         @CompilerDirectives.CompilationFinal private boolean isCached = true;
         @CompilerDirectives.CompilationFinal private RubyClass cachedClass;
 
