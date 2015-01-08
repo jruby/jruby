@@ -47,22 +47,13 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
     }
 
-    public UncachedDispatchNode(UncachedDispatchNode prev) {
-        super(prev);
-        ignoreVisibility = prev.ignoreVisibility;
-        callNode = prev.callNode;
-        toSymbolNode = prev.toSymbolNode;
-        toJavaStringNode = prev.toJavaStringNode;
-    }
-
     @Specialization
     public Object dispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object name,
             Object blockObject,
-            Object argumentsObjects
-    ) {
+            Object argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
         if (dispatchAction == DispatchAction.READ_CONSTANT) {

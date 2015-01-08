@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -35,9 +34,16 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
 
-    public CachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, DispatchNode next, Object value, RubyMethod method,
-                                         boolean indirect, DispatchAction dispatchAction) {
+    public CachedBoxedSymbolDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            Object value,
+            RubyMethod method,
+            boolean indirect,
+            DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
+
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
         this.value = value;
         this.method = method;
@@ -86,35 +92,38 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                     "class modified");
         }
 
-        final DispatchAction dispatchAction = getDispatchAction();
-
-        if (dispatchAction == DispatchAction.CALL_METHOD) {
-            if (isIndirect()) {
-                return indirectCallNode.call(
-                        frame,
-                        method.getCallTarget(),
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-            } else {
-                return callNode.call(
-                        frame,
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+        switch (getDispatchAction()) {
+            case CALL_METHOD: {
+                if (isIndirect()) {
+                    return indirectCallNode.call(
+                            frame,
+                            method.getCallTarget(),
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                } else {
+                    return callNode.call(
+                            frame,
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                }
             }
-        } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            return true;
-        } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
-            return value;
-        } else {
-            throw new UnsupportedOperationException();
+
+            case RESPOND_TO_METHOD:
+                return true;
+
+            case READ_CONSTANT:
+                return value;
+
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 

@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -36,9 +35,14 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
 
-    public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                RubyClass expectedClass, RubyMethod method,
-                                                boolean indirect, DispatchAction dispatchAction) {
+    public CachedBoxedMethodMissingDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            RubyClass expectedClass,
+            RubyMethod method,
+            boolean indirect,
+            DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
@@ -56,7 +60,9 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
              * to manually clone the call target and to inline it.
              */
 
-            if (callNode.isCallTargetCloningAllowed() && (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load() || method.getSharedMethodInfo().shouldAlwaysSplit())) {
+            if (callNode.isCallTargetCloningAllowed()
+                    && (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load()
+                    || method.getSharedMethodInfo().shouldAlwaysSplit())) {
                 insert(callNode);
                 callNode.cloneCallTarget();
             }
@@ -109,61 +115,65 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
                     "class modified");
         }
 
-        final DispatchAction dispatchAction = getDispatchAction();
+        switch (getDispatchAction()) {
+            case CALL_METHOD: {
+                // When calling #method_missing we need to prepend the symbol
 
-        if (dispatchAction == DispatchAction.CALL_METHOD) {
-            // When calling #method_missing we need to prepend the symbol
+                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
+                modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
+                RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
-            final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
-            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
-            modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
-            RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
-
-            if (isIndirect()) {
-                return indirectCallNode.call(
-                        frame,
-                        method.getCallTarget(),
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                modifiedArgumentsObjects));
-            } else {
-                return callNode.call(
-                        frame,
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                modifiedArgumentsObjects));
+                if (isIndirect()) {
+                    return indirectCallNode.call(
+                            frame,
+                            method.getCallTarget(),
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    modifiedArgumentsObjects));
+                } else {
+                    return callNode.call(
+                            frame,
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    modifiedArgumentsObjects));
+                }
             }
-        } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            return false;
-        } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
-            if (isIndirect()) {
-                return indirectCallNode.call(
-                        frame,
-                        method.getCallTarget(),
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                new Object[]{getCachedNameAsSymbol()}));
-            } else {
-                return callNode.call(
-                        frame,
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                new Object[]{getCachedNameAsSymbol()}));
+
+            case RESPOND_TO_METHOD:
+                return false;
+
+            case READ_CONSTANT: {
+                if (isIndirect()) {
+                    return indirectCallNode.call(
+                            frame,
+                            method.getCallTarget(),
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    new Object[]{getCachedNameAsSymbol()}));
+                } else {
+                    return callNode.call(
+                            frame,
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    new Object[]{getCachedNameAsSymbol()}));
+                }
             }
-        } else {
-            throw new UnsupportedOperationException();
+
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 

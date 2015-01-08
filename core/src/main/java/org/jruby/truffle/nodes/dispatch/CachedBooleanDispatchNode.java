@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -44,10 +43,17 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     @Child private IndirectCallNode indirectCallNode;
 
     public CachedBooleanDispatchNode(
-            RubyContext context, Object cachedName, DispatchNode next,
-            Assumption falseUnmodifiedAssumption, Object falseValue, RubyMethod falseMethod,
-            Assumption trueUnmodifiedAssumption, Object trueValue, RubyMethod trueMethod,
-            boolean indirect, DispatchAction dispatchAction) {
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            Assumption falseUnmodifiedAssumption,
+            Object falseValue,
+            RubyMethod falseMethod,
+            Assumption trueUnmodifiedAssumption,
+            Object trueValue,
+            RubyMethod trueMethod,
+            boolean indirect,
+            DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;

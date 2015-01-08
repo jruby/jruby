@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -26,8 +25,13 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
 
-    public CachedBoxedReturnMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                                RubyClass expectedClass, boolean indirect, DispatchAction dispatchAction) {
+    public CachedBoxedReturnMissingDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            RubyClass expectedClass,
+            boolean indirect,
+            DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
         assert expectedClass != null;
         this.expectedClass = expectedClass;
@@ -73,14 +77,15 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
                     "class modified");
         }
 
-        final DispatchAction dispatchAction = getDispatchAction();
+        switch (getDispatchAction()) {
+            case CALL_METHOD:
+                return MISSING;
 
-        if (dispatchAction == DispatchAction.CALL_METHOD) {
-            return MISSING;
-        } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            return false;
-        } else {
-            throw new UnsupportedOperationException();
+            case RESPOND_TO_METHOD:
+                return false;
+
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 

@@ -35,4 +35,5 @@ public class PredicateDispatchHeadNode extends Node {
         return booleanCastNode.executeBoolean(frame,
                 dispatchNode.call(frame, receiverObject, methodName, blockObject, argumentsObjects));
     }
+
 }

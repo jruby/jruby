@@ -28,7 +28,13 @@ public class DispatchHeadNode extends Node {
 
     @Child private DispatchNode first;
 
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope, DispatchAction dispatchAction) {
+    public DispatchHeadNode(
+            RubyContext context,
+            boolean ignoreVisibility,
+            boolean indirect,
+            MissingBehavior missingBehavior,
+            LexicalScope lexicalScope,
+            DispatchAction dispatchAction) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
@@ -154,7 +160,8 @@ public class DispatchHeadNode extends Node {
     }
 
     public void reset(String reason) {
-        first.replace(new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction), reason);
+        first.replace(new UnresolvedDispatchNode(
+                context, ignoreVisibility, indirect, missingBehavior, dispatchAction), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {

@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import com.oracle.truffle.api.dsl.Fallback;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -26,7 +24,12 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     private final BranchProfile moreThanReferenceCompare = BranchProfile.create();
 
-    public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next, boolean indirect, DispatchAction dispatchAction) {
+    public CachedDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            boolean indirect,
+            DispatchAction dispatchAction) {
         super(context, dispatchAction);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
