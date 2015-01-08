@@ -90,7 +90,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case NORESULT_CALL: return decodeNoResultCall();
             case POP_BINDING: return new PopBindingInstr();
             case POP_FRAME: return new PopFrameInstr();
-            case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand());
+            case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case PUSH_BINDING: return new PushBindingInstr();
             case PUSH_FRAME: return decodeFrame();
             case PUT_CONST: return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
@@ -99,7 +99,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case PUT_GLOBAL_VAR: return new PutGlobalVarInstr(d.decodeString(), d.decodeOperand());
             case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (WrappedIRClosure) d.decodeOperand());
-            case RECV_CLOSURE: return new ReceiveClosureInstr(d.decodeVariable());
+            case REIFY_CLOSURE: return new ReifyClosureInstr(d.decodeVariable(), d.decodeVariable());
             case RECV_RUBY_EXC: return decodeReceiveRubyException();
             case RECV_JRUBY_EXC: return decodeReceiveJRubyException();
             case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());

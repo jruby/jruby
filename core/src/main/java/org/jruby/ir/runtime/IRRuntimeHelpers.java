@@ -1224,10 +1224,10 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
+    public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method, Block block) {
         RubyModule implClass = method.getImplementationClass();
 
-        return method.call(context, implClass, implClass, "");
+        return method.call(context, implClass, implClass, "", block);
     }
 
     @JIT

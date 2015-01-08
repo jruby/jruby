@@ -204,6 +204,10 @@ public class OptimizeTempVarsPass extends CompilerPass {
             }
         }
 
+        // Always make sure the implicit block variable is considered live, so we don't clobber it
+        lastVarUseOrDef.put(s.getImplicitClosureVariable(), iCount);
+        lastVarUseOrDef.put(s.getYieldClosureVariable(), iCount);
+
         // If the scope has loops, extend live range of %current-module and %current-scope
         // to end of scope (see note earlier).
         if (s.hasLoops()) {

@@ -27,7 +27,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
@@ -1244,6 +1243,19 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void LoadImplicitClosure(LoadImplicitClosureInstr loadimplicitclosureinstr) {
+        jvmMethod().loadBlock();
+        jvmStoreLocal(loadimplicitclosureinstr.getResult());
+    }
+
+    @Override
+    public void LoadFrameClosure(LoadFrameClosureInstr loadframeclosureinstr) {
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "getFrameBlock", sig(Block.class));
+        jvmStoreLocal(loadframeclosureinstr.getResult());
+    }
+
+    @Override
     public void Match2Instr(Match2Instr match2instr) {
         visit(match2instr.getReceiver());
         jvmMethod().loadContext();
@@ -1385,7 +1397,8 @@ public class JVMVisitor extends IRVisitor {
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         jvmMethod().loadContext();
         visit(processmodulebodyinstr.getModuleBody());
-        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
+        visit(processmodulebodyinstr.getBlock());
+        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class, Block.class));
         jvmStoreLocal(processmodulebodyinstr.getResult());
     }
 
@@ -1477,11 +1490,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void ReceiveClosureInstr(ReceiveClosureInstr receiveclosureinstr) {
+    public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) {
         jvmMethod().loadRuntime();
         jvmLoadLocal("$block");
         jvmMethod().invokeIRHelper("newProc", sig(IRubyObject.class, Ruby.class, Block.class));
-        jvmStoreLocal(receiveclosureinstr.getResult());
+        jvmStoreLocal(reifyclosureinstr.getResult());
     }
 
     @Override
@@ -2073,6 +2086,11 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmAdapter().pushInt(nthref.matchNumber);
         jvmMethod().invokeIRHelper("nthMatch", sig(IRubyObject.class, ThreadContext.class, int.class));
+    }
+
+    @Override
+    public void NullBlock(NullBlock nullblock) {
+        jvmAdapter().getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
     }
 
     @Override

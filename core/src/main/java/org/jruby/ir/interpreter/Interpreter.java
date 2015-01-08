@@ -117,7 +117,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             temp[((TemporaryLocalVariable)resultVar).offset] = result;
         } else {
             LocalVariable lv = (LocalVariable)resultVar;
-            currDynScope.setValue((IRubyObject)result, lv.getLocation(), lv.getScopeDepth());
+            currDynScope.setValue((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
         }
     }
 
@@ -241,10 +241,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             result = IRRuntimeHelpers.getPreArgSafe(context, args, argIndex);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
-        case RECV_CLOSURE:
-            result = IRRuntimeHelpers.newProc(context.runtime, block);
-            setResult(temp, currDynScope, instr.getResult(), result);
-            return;
         case RECV_POST_REQD_ARG:
             result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, acceptsKeywordArgument);
             // For blocks, missing arg translates to nil
@@ -255,6 +251,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return;
         case RECV_JRUBY_EXC:
             setResult(temp, currDynScope, instr.getResult(), exception);
+            return;
+        case LOAD_IMPLICT_CLOSURE:
+            setResult(temp, currDynScope, instr.getResult(), block);
+            return;
+        case LOAD_FRAME_CLOSURE:
+            setResult(temp, currDynScope, instr.getResult(), context.getFrameBlock());
             return;
         default:
             result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);

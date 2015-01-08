@@ -18,14 +18,16 @@ import java.util.Map;
 public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand  moduleBody;
+    private Operand block;
 
-    public ProcessModuleBodyInstr(Variable result, Operand moduleBody) {
+    public ProcessModuleBodyInstr(Variable result, Operand moduleBody, Operand block) {
         super(Operation.PROCESS_MODULE_BODY);
 
         assert result != null: "ProcessModuleBodyInstr result is null";
 
         this.result = result;
         this.moduleBody = moduleBody;
+        this.block = block;
     }
 
     @Override
@@ -36,6 +38,10 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
     @Override
     public Variable getResult() {
         return result;
+    }
+
+    public Operand getBlock() {
+        return block;
     }
 
     @Override
@@ -50,19 +56,21 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
 
     @Override
     public String toString() {
-        return super.toString() + "(" + moduleBody + ")";
+        return super.toString() + "(" + moduleBody + ", " + block + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ProcessModuleBodyInstr(ii.getRenamedVariable(result), moduleBody.cloneForInlining(ii));
+        return new ProcessModuleBodyInstr(ii.getRenamedVariable(result), moduleBody.cloneForInlining(ii), block.cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         InterpretedIRMethod bodyMethod = (InterpretedIRMethod)moduleBody.retrieve(context, self, currScope, currDynScope, temp);
+        Block b = (Block)block.retrieve(context, self, currScope, currDynScope, temp);
 		RubyModule implClass = bodyMethod.getImplementationClass();
-        return bodyMethod.call(context, implClass, implClass, null, new IRubyObject[]{}, Block.NULL_BLOCK);
+
+        return bodyMethod.call(context, implClass, implClass, null, new IRubyObject[]{}, b);
     }
 
     @Override

@@ -298,7 +298,6 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     // System.out.println("YES!");
                     i.markDead();
                     it.remove();
-                    problem.getScope().getFlags().add(IRFlags.HAS_UNUSED_IMPLICIT_BLOCK_ARG);
                 } else {
                     // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 }
