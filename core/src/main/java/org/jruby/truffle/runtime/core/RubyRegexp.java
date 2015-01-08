@@ -310,6 +310,8 @@ public class RubyRegexp extends RubyBasicObject {
         int end = 0;
         int range = p + string.getBytes().getRealSize();
 
+        Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
+
         if (regex.numberOfCaptures() == 0) {
             final ArrayList<RubyString> strings = new ArrayList<>();
 
@@ -327,9 +329,11 @@ public class RubyRegexp extends RubyBasicObject {
 
                 strings.add((RubyString) values[0]);
 
+                lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
+            setThread("$~", lastGoodMatchData);
             return strings.toArray(new RubyString[strings.size()]);
         } else {
             final List<RubyArray> allMatches = new ArrayList<>();
@@ -344,9 +348,11 @@ public class RubyRegexp extends RubyBasicObject {
                 allMatches.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         ((RubyMatchData) matchData).getCaptures()));
 
+                lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
+            setThread("$~", lastGoodMatchData);
             return allMatches.toArray(new Object[allMatches.size()]);
         }
     }
