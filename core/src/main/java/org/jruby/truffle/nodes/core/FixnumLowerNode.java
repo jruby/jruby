@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,14 +13,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.control.PassthroughNode;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyRange;
 
-public class FixnumLowerNode extends PassthroughNode {
+public class FixnumLowerNode extends RubyNode {
+
+    @Child private RubyNode child;
 
     @CompilerDirectives.CompilationFinal private boolean hasSeenInteger = false;
     @CompilerDirectives.CompilationFinal private boolean hasSeenLong = false;
@@ -32,7 +33,8 @@ public class FixnumLowerNode extends PassthroughNode {
     @CompilerDirectives.CompilationFinal private boolean hasNeededToLowerLongFixnumRange = false;
 
     public FixnumLowerNode(RubyNode child) {
-        super(child);
+        super(child.getContext(), child.getEncapsulatingSourceSection());
+        this.child = child;
     }
 
     @Override

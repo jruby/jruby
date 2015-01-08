@@ -45,7 +45,7 @@ public class FindEntryNode extends RubyNode {
         }
 
         final Entry[] entries = (Entry[]) hash.getStore();
-        final int index = (hashed & HashOperations.SIGN_BIT_MASK) % entries.length;
+        final int index = HashOperations.getIndex(hashed, entries.length);
         Entry entry = entries[index];
 
         Entry previousEntry = null;

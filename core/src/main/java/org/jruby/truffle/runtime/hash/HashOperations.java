@@ -212,4 +212,8 @@ public class HashOperations {
 
         hash.setSize(actualSize);
     }
+
+    public static int getIndex(int hashed, int entriesLength) {
+        return (hashed & HashOperations.SIGN_BIT_MASK) % entriesLength;
+    }
 }
