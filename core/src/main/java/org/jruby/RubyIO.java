@@ -1351,12 +1351,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
             fptr.setNonblock(runtime);
-            try {
-                ByteList strByteList = ((RubyString) str).getByteList();
-                n = fptr.posix.write(fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize(), true);
-            } finally {
-                fptr.setBlock(runtime);
-            }
+
+            ByteList strByteList = ((RubyString) str).getByteList();
+            n = fptr.posix.write(fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize(), true);
 
             if (n == -1) {
                 if (fptr.posix.errno == Errno.EWOULDBLOCK || fptr.posix.errno == Errno.EAGAIN) {
@@ -2832,30 +2829,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     if (nonblock) {
                         fptr.setNonblock(runtime);
                     }
-                    try {
-                        str = EncodingUtils.setStrBuf(runtime, str, len);
-                        strByteList = ((RubyString) str).getByteList();
-                        //                arg.fd = fptr->fd;
-                        //                arg.str_ptr = RSTRING_PTR(str);
-                        //                arg.len = len;
-                        //                rb_str_locktmp_ensure(str, read_internal_call, (VALUE)&arg);
-                        //                n = arg.len;
-                        n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
-                        if (n < 0) {
-                            if (!nonblock && fptr.waitReadable(context))
-                                continue again;
-                            if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
-                                if (noException)
-                                    return runtime.newSymbol("wait_readable");
-                                else
-                                    throw runtime.newErrnoEAGAINReadableError("read would block");
-                            }
-                            throw runtime.newEOFError(fptr.getPath());
+                    str = EncodingUtils.setStrBuf(runtime, str, len);
+                    strByteList = ((RubyString) str).getByteList();
+                    //                arg.fd = fptr->fd;
+                    //                arg.str_ptr = RSTRING_PTR(str);
+                    //                arg.len = len;
+                    //                rb_str_locktmp_ensure(str, read_internal_call, (VALUE)&arg);
+                    //                n = arg.len;
+                    n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
+                    if (n < 0) {
+                        if (!nonblock && fptr.waitReadable(context))
+                            continue again;
+                        if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
+                            if (noException)
+                                return runtime.newSymbol("wait_readable");
+                            else
+                                throw runtime.newErrnoEAGAINReadableError("read would block");
                         }
-                    } finally {
-                        if (nonblock) {
-                            fptr.setBlock(runtime);
-                        }
+                        throw runtime.newEOFError(fptr.getPath());
                     }
                     break;
                 }
