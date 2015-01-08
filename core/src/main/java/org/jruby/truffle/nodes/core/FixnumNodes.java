@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -155,19 +154,24 @@ public abstract class FixnumNodes {
             return (long) a - (long) b;
         }
 
-        @Specialization
-        public double sub(int a, double b) {
-            return a - b;
-        }
-
-        @Specialization
+        @Specialization(rewriteOn = ArithmeticException.class)
         public long sub(int a, long b) {
             return ExactMath.subtractExact(a, b);
         }
 
         @Specialization
+        public Object subWithOverflow(int a, long b) {
+            return fixnumOrBignum(bignum(a).subtract(bignum(b)));
+        }
+
+        @Specialization
         public Object sub(int a, RubyBignum b) {
             return fixnumOrBignum(bignum(a).subtract(b));
+        }
+
+        @Specialization
+        public double sub(int a, double b) {
+            return a - b;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)

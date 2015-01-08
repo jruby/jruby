@@ -1,1 +1,0 @@
-fails:Fixnum#-@ negates self at Fixnum/Bignum boundaries
