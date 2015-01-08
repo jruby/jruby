@@ -7,4 +7,12 @@
     <Class name="org.jruby.truffle.nodes.rubinius.VMPrimitiveNodes$VMGCStartPrimitiveNode" />
     <Bug pattern="DM_GC" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.KernelNodes$ExecNode" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.DebugOperations" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
 </FindBugsFilter>
