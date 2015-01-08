@@ -28,12 +28,9 @@
 
 class Fixnum
 
-  def fdiv(n)
-    if n.kind_of?(Fixnum)
-      to_f / n
-    else
-      redo_coerced :fdiv, n
-    end
+  def coerce(other)
+    Rubinius.primitive :fixnum_coerce
+    super other
   end
 
 end

@@ -1323,9 +1323,11 @@ public abstract class StringNodes {
 
         @Specialization
         public double toF(RubyString string) {
-            notDesignedForCompilation();
-
-            return Double.parseDouble(string.toString());
+            try {
+                return Double.parseDouble(string.toString());
+            } catch (NumberFormatException e) {
+                return 0;
+            }
         }
     }
 

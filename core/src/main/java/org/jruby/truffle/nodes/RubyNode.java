@@ -438,4 +438,8 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return value instanceof Object[];
     }
 
+    public boolean isRubyNilObject(Object value) {
+        return value == getContext().getCoreLibrary().getNilObject();
+    }
+
 }

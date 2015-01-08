@@ -54,5 +54,6 @@ require_relative 'core/rubinius/kernel/common/immediate'
 require_relative 'core/rubinius/kernel/common/true'
 require_relative 'core/rubinius/kernel/common/false'
 require_relative 'core/rubinius/kernel/common/complex'
+require_relative 'core/rubinius/kernel/common/fixnum'
 
 require_relative 'core/shims'
