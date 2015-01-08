@@ -392,7 +392,7 @@ public class CoreLibrary {
             throw new RuntimeException(e);
         }
 
-        context.execute(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null, new NodeWrapper() {
+        context.load(source, null, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "load core", node);
