@@ -11,10 +11,12 @@ package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.Arrays;
 
@@ -37,7 +39,7 @@ public class SymbolProcNode extends RubyNode {
         final Object[] args = frame.getArguments();
         final Object receiver = RubyArguments.getUserArgument(args, 0);
         final Object[] arguments = RubyArguments.extractUserArguments(args);
-        final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
+        final Object[] sendArgs = ArrayUtils.extractRange(arguments, 1, arguments.length);
         return dispatch.call(frame, receiver, symbol, RubyArguments.getBlock(args), sendArgs);
     }
 

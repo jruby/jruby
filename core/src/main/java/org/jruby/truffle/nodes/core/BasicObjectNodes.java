@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.RubyNode;
@@ -28,6 +29,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -272,7 +274,7 @@ public abstract class BasicObjectNodes {
             notDesignedForCompilation();
 
             final RubySymbol name = (RubySymbol) args[0];
-            final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
+            final Object[] sentArgs = ArrayUtils.extractRange(args, 1, args.length);
             return methodMissing(self, name, sentArgs, block);
         }
 
@@ -334,7 +336,7 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
             final Object name = args[0];
-            final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
+            final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
             return dispatchNode.call(frame, self, name, block, sendArgs);
         }
 

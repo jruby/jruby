@@ -2433,9 +2433,9 @@ public class BodyTranslator extends Translator {
         RubyNode body = node.getBodyNode().accept(this);
 
         if (node.evaluateAtStart()) {
-            return new WhileNode(context, sourceSection, conditionCastNotCast, body);
+            return WhileNode.createWhile(context, sourceSection, conditionCastNotCast, body);
         } else {
-            return new DoWhileNode(context, sourceSection, conditionCastNotCast, body);
+            return WhileNode.createDoWhile(context, sourceSection, conditionCastNotCast, body);
         }
     }
 
@@ -2465,9 +2465,9 @@ public class BodyTranslator extends Translator {
         RubyNode body = node.getBodyNode().accept(this);
 
         if (node.evaluateAtStart()) {
-            return new WhileNode(context, sourceSection, conditionCast, body);
+            return WhileNode.createWhile(context, sourceSection, conditionCast, body);
         } else {
-            return new DoWhileNode(context, sourceSection, conditionCast, body);
+            return WhileNode.createDoWhile(context, sourceSection, conditionCast, body);
         }
     }
 

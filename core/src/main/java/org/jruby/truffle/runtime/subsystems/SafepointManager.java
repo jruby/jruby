@@ -66,13 +66,17 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            waitOnBarrier();
+            assumptionInvalidated();
+        }
+    }
 
-            try {
-                action.accept(false);
-            } finally {
-                waitOnBarrier();
-            }
+    private void assumptionInvalidated() {
+        waitOnBarrier();
+
+        try {
+            action.accept(false);
+        } finally {
+            waitOnBarrier();
         }
     }
 
