@@ -504,9 +504,8 @@ public class BodyTranslator extends Translator {
         org.jruby.ast.Node block = node.getIterNode();
 
         if (block == null && args instanceof org.jruby.ast.IterNode) {
-            final org.jruby.ast.Node temp = args;
-            args = block;
-            block = temp;
+            block = args;
+            args = null;
         }
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());

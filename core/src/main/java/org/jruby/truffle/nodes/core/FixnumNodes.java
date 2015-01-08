@@ -577,7 +577,7 @@ public abstract class FixnumNodes {
         @Specialization
         public double mod(long a, double b) {
             if (b == 0) {
-                return 0 / 0;
+                return (double) (0 / 0);
             }
 
             double mod = a % b;
