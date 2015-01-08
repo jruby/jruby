@@ -2208,16 +2208,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().newobj(p(Block.class));
         jvmAdapter().dup();
 
-        { // FIXME: block body should be cached
-            jvmAdapter().newobj(p(CompiledIRBlockBody.class));
-            jvmAdapter().dup();
-
-            jvmAdapter().ldc(closure.getHandle());
-            jvmAdapter().getstatic(jvm.clsData().clsName, closure.getHandle().getName() + "_IRScope", ci(IRScope.class));
-            jvmAdapter().ldc(closure.getArity().getValue());
-
-            jvmAdapter().invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, int.class));
-        }
+        jvmMethod().pushBlockBody(closure.getHandle(), closure.getArity().getValue(), jvm.clsData().clsName);
 
         { // prepare binding
             jvmMethod().loadContext();
