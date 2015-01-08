@@ -658,7 +658,7 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
@@ -674,7 +674,7 @@ public abstract class ArrayNodes {
                 final int end = array.normaliseIndex(range.getEnd());
                 final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
             }
         }
 
