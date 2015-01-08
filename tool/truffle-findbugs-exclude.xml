@@ -15,4 +15,16 @@
     <Class name="org.jruby.truffle.runtime.DebugOperations" />
     <Bug pattern="DM_EXIT" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FixnumNodes$EqualNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.BignumNodes$EqualNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FloatNodes$EqualNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
 </FindBugsFilter>
