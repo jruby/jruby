@@ -19,11 +19,6 @@ public class RubyNilClass extends RubyBasicObject {
     }
 
     @Override
-    public int hashCode() {
-        return 0;
-    }
-
-    @Override
     public boolean hasClassAsSingleton() {
         return true;
     }

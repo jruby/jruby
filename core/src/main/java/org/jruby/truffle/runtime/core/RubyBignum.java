@@ -227,11 +227,6 @@ public class RubyBignum extends RubyBasicObject {
         return value;
     }
 
-    @Override
-    public int hashCode() {
-        return value.hashCode();
-    }
-
     public static class BignumAllocator implements Allocator {
 
         @Override

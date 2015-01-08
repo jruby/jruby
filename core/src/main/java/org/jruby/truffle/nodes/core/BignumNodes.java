@@ -593,25 +593,6 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "even?")
-    public abstract static class EvenNode extends BignumCoreMethodNode {
-
-        public EvenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EvenNode(EvenNode prev) {
-            super(prev);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public boolean even(RubyBignum value) {
-            return value.bigIntegerValue().getLowestSetBit() != 0;
-        }
-
-    }
-
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
@@ -640,6 +621,43 @@ public abstract class BignumNodes {
         @Specialization
         public RubyArray divMod(RubyBignum a, RubyBignum b) {
             return divModNode.execute(a, b);
+        }
+
+    }
+
+    @CoreMethod(names = "even?")
+    public abstract static class EvenNode extends BignumCoreMethodNode {
+
+        public EvenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EvenNode(EvenNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean even(RubyBignum value) {
+            return value.bigIntegerValue().getLowestSetBit() != 0;
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubyBignum self) {
+            return self.bigIntegerValue().hashCode();
         }
 
     }
