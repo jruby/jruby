@@ -631,12 +631,14 @@ public abstract class ArrayNodes {
         public Object getObject(RubyArray array, int index, int length) {
             notDesignedForCompilation();
 
-            int normalisedIndex = array.normaliseIndex(index);
+            final int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.getSize() || length < 0) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, normalisedIndex + length), length);
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 

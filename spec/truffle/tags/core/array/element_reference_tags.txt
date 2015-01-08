@@ -9,7 +9,6 @@ fails:Array#[] returns the subarray which is independent to self with [m..n]
 fails:Array#[] tries to convert Range elements to Integers using #to_int with [m..n] and [m...n]
 fails:Array#[] returns the same elements as [m..n] and [m...n] with Range subclasses
 fails:Array#[] returns [] if index == array.size with [index, length]
-fails:Array#[] returns nil if length is negative with [index, length]
 fails:Array#[] returns an empty array when m == n with [m...n]
 fails:Array#[] returns an empty array with [0...0]
 fails:Array#[] returns an array containing the first element with [0..0]
