@@ -21,7 +21,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public class SetMethodDeclarationContext extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     final String what;
 

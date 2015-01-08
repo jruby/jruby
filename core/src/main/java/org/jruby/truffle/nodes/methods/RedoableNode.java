@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.control.RedoException;
 
 public class RedoableNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     private final BranchProfile redoProfile = BranchProfile.create();
 

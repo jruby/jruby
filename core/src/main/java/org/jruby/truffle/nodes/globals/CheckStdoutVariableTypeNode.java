@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 
 public class CheckStdoutVariableTypeNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     public CheckStdoutVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);

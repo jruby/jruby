@@ -120,8 +120,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
-        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+        @Child private PredicateDispatchHeadNode equalNode;
 
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -179,7 +179,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode matchNode;
+        @Child private PredicateDispatchHeadNode matchNode;
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -201,8 +201,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"<=>"}, required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode equalNode;
-        @Child protected BooleanCastNode booleanCast;
+        @Child private DispatchHeadNode equalNode;
+        @Child private BooleanCastNode booleanCast;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -469,7 +469,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initializeCloneNode;
+        @Child private DispatchHeadNode initializeCloneNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -504,7 +504,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "dup")
     public abstract static class DupNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initializeDupNode;
+        @Child private DispatchHeadNode initializeDupNode;
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -544,8 +544,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
     public abstract static class EvalNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toStr;
-        @Child protected BindingNode bindingNode;
+        @Child private DispatchHeadNode toStr;
+        @Child private BindingNode bindingNode;
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -977,7 +977,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"initialize_dup", "initialize_clone"}, visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeDupCloneNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initializeCopyNode;
+        @Child private DispatchHeadNode initializeCopyNode;
 
         public InitializeDupCloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1136,8 +1136,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "Integer", isModuleFunction = true, required = 1)
     public abstract static class IntegerNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toIntRespondTo;
-        @Child protected DispatchHeadNode toInt;
+        @Child private DispatchHeadNode toIntRespondTo;
+        @Child private DispatchHeadNode toInt;
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1298,7 +1298,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "loop", isModuleFunction = true)
     public abstract static class LoopNode extends CoreMethodNode {
 
-        @Child protected WhileNode whileNode;
+        @Child private WhileNode whileNode;
 
         public LoopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1393,7 +1393,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child private DispatchHeadNode toS;
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1537,7 +1537,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "raise", isModuleFunction = true, optional = 3)
     public abstract static class RaiseNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initialize;
+        @Child private DispatchHeadNode initialize;
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1684,8 +1684,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "respond_to?", required = 1, optional = 1)
     public abstract static class RespondToNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatch;
-        @Child protected DispatchHeadNode dispatchIgnoreVisibility;
+        @Child private DispatchHeadNode dispatch;
+        @Child private DispatchHeadNode dispatchIgnoreVisibility;
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1813,7 +1813,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "singleton_class")
     public abstract static class SingletonClassMethodNode extends CoreMethodNode {
 
-        @Child protected SingletonClassNode singletonClassNode;
+        @Child private SingletonClassNode singletonClassNode;
 
         public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1874,7 +1874,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "String", isModuleFunction = true, required = 1)
     public abstract static class StringNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child private DispatchHeadNode toS;
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2035,7 +2035,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "taint")
     public abstract static class TaintNode extends CoreMethodNode {
 
-        @Child protected WriteHeadObjectFieldNode writeTaintNode;
+        @Child private WriteHeadObjectFieldNode writeTaintNode;
 
         public TaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2084,7 +2084,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "tainted?")
     public abstract static class TaintedNode extends CoreMethodNode {
 
-        @Child protected ReadHeadObjectFieldNode readTaintNode;
+        @Child private ReadHeadObjectFieldNode readTaintNode;
 
         public TaintedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2195,9 +2195,9 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
-        @Child protected ClassNode classNode;
-        @Child protected BasicObjectNodes.IDNode idNode;
-        @Child protected ToHexStringNode toHexStringNode;
+        @Child private ClassNode classNode;
+        @Child private BasicObjectNodes.IDNode idNode;
+        @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2229,7 +2229,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "untaint")
     public abstract static class UntaintNode extends CoreMethodNode {
 
-        @Child protected WriteHeadObjectFieldNode writeTaintNode;
+        @Child private WriteHeadObjectFieldNode writeTaintNode;
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

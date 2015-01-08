@@ -23,7 +23,7 @@ public abstract class BignumNodes {
 
     public static abstract class BignumCoreMethodNode extends CoreMethodNode {
 
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+        @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public BignumCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -596,7 +596,7 @@ public abstract class BignumNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
-        @Child protected GeneralDivModNode divModNode;
+        @Child private GeneralDivModNode divModNode;
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

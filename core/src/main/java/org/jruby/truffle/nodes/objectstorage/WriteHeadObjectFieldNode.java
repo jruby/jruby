@@ -15,7 +15,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public class WriteHeadObjectFieldNode extends Node {
 
     private final Object name;
-    @Child protected WriteObjectFieldNode first;
+    @Child private WriteObjectFieldNode first;
 
     public WriteHeadObjectFieldNode(Object name) {
         this.name = name;

@@ -33,7 +33,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -93,7 +93,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -232,9 +232,9 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"include?", "==="}, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode callLess;
-        @Child protected PredicateDispatchHeadNode callGreater;
-        @Child protected PredicateDispatchHeadNode callGreaterEqual;
+        @Child private PredicateDispatchHeadNode callLess;
+        @Child private PredicateDispatchHeadNode callGreater;
+        @Child private PredicateDispatchHeadNode callGreaterEqual;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -386,7 +386,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child private DispatchHeadNode toS;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyException;
 
 public class TopLevelRaiseHandler extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     public TopLevelRaiseHandler(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);

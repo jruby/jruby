@@ -25,8 +25,8 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public class ReadConstantNode extends RubyNode {
 
     private final String name;
-    @Child protected RubyNode receiver;
-    @Child protected DispatchHeadNode dispatch;
+    @Child private RubyNode receiver;
+    @Child private DispatchHeadNode dispatch;
 
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
         super(context, sourceSection);

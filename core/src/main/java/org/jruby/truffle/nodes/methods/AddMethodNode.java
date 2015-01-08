@@ -28,8 +28,8 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class AddMethodNode extends RubyNode {
 
-    @Child protected RubyNode receiver;
-    @Child protected MethodDefinitionNode methodNode;
+    @Child private RubyNode receiver;
+    @Child private MethodDefinitionNode methodNode;
 
     public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method) {
         super(context, section);

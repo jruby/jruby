@@ -16,4 +16,5 @@ public abstract class ReadObjectFieldChainNode extends ReadObjectFieldNode {
     public ReadObjectFieldChainNode(ReadObjectFieldNode next) {
         this.next = next;
     }
+
 }

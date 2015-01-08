@@ -440,7 +440,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"==", "eql?"}, required = 1)
     public abstract static class EqualNode extends ArrayCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode equals;
+        @Child private PredicateDispatchHeadNode equals;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1260,7 +1260,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
-        @Child protected KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1832,7 +1832,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
-        @Child protected KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1904,7 +1904,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2056,7 +2056,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatch;
+        @Child private DispatchHeadNode dispatch;
 
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2182,7 +2182,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"inspect", "to_s"})
     public abstract static class InspectNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode inspect;
+        @Child private DispatchHeadNode inspect;
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2295,7 +2295,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2417,7 +2417,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2489,7 +2489,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "max")
     public abstract static class MaxNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode eachNode;
+        @Child private DispatchHeadNode eachNode;
         private final MaxBlock maxBlock;
 
         public MaxNode(RubyContext context, SourceSection sourceSection) {
@@ -2530,7 +2530,7 @@ public abstract class ArrayNodes {
 
     public abstract static class MaxBlockNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode compareNode;
+        @Child private DispatchHeadNode compareNode;
 
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2608,7 +2608,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "min")
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode eachNode;
+        @Child private DispatchHeadNode eachNode;
         private final MinBlock minBlock;
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
@@ -2649,7 +2649,7 @@ public abstract class ArrayNodes {
 
     public abstract static class MinBlockNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode compareNode;
+        @Child private DispatchHeadNode compareNode;
 
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3128,7 +3128,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public RejectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3311,7 +3311,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3472,8 +3472,8 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort", needsBlock = true)
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode compareDispatchNode;
-        @Child protected YieldDispatchHeadNode yieldNode;
+        @Child private DispatchHeadNode compareDispatchNode;
+        @Child private YieldDispatchHeadNode yieldNode;
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3654,7 +3654,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort!")
     public abstract static class SortBangNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode compareDispatchNode;
+        @Child private DispatchHeadNode compareDispatchNode;
 
         public SortBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

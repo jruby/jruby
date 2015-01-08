@@ -32,8 +32,8 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
     private final Object value;
 
     private final RubyMethod method;
-    @Child protected DirectCallNode callNode;
-    @Child protected IndirectCallNode indirectCallNode;
+    @Child private DirectCallNode callNode;
+    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBoxedSymbolDispatchNode(RubyContext context, Object cachedName, DispatchNode next, Object value, RubyMethod method,
                                          boolean indirect, DispatchAction dispatchAction) {

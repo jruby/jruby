@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 @NodeChild("child")
 public abstract class ProcCastNode extends RubyNode {
 
-    @Child protected DispatchHeadNode toProc;
+    @Child private DispatchHeadNode toProc;
 
     public ProcCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

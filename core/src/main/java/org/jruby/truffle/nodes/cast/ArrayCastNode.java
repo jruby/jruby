@@ -34,7 +34,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     private final SplatCastNode.NilBehavior nilBehavior;
 
-    @Child protected DispatchHeadNode toArrayNode;
+    @Child private DispatchHeadNode toArrayNode;
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
         this(context, sourceSection, SplatCastNode.NilBehavior.NIL);

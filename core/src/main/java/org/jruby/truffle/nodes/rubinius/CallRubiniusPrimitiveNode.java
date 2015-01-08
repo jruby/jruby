@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.control.ReturnException;
  */
 public class CallRubiniusPrimitiveNode extends RubyNode {
 
-    @Child protected RubyNode primitive;
+    @Child private RubyNode primitive;
     private final long returnID;
 
     private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();

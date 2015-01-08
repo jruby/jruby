@@ -24,8 +24,8 @@ public class WriteConstantNode extends RubyNode {
 
     private final String name;
     private final LexicalScope lexicalScope;
-    @Child protected RubyNode module;
-    @Child protected RubyNode rhs;
+    @Child private RubyNode module;
+    @Child private RubyNode rhs;
 
     public WriteConstantNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope, RubyNode module, RubyNode rhs) {
         super(context, sourceSection);

@@ -41,7 +41,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private PredicateDispatchHeadNode equalNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -227,9 +227,9 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]", required = 1)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
-        @Child protected YieldDispatchHeadNode yield;
-        @Child protected FindEntryNode findEntryNode;
+        @Child private PredicateDispatchHeadNode eqlNode;
+        @Child private YieldDispatchHeadNode yield;
+        @Child private FindEntryNode findEntryNode;
 
         private final BranchProfile notInHashProfile = BranchProfile.create();
         private final BranchProfile useDefaultProfile = BranchProfile.create();
@@ -317,7 +317,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", required = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
+        @Child private PredicateDispatchHeadNode eqlNode;
 
         private final BranchProfile considerExtendProfile = BranchProfile.create();
         private final BranchProfile extendProfile = BranchProfile.create();
@@ -426,8 +426,8 @@ public abstract class HashNodes {
     @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
-        @Child protected FindEntryNode findEntryNode;
+        @Child private PredicateDispatchHeadNode eqlNode;
+        @Child private FindEntryNode findEntryNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -691,7 +691,7 @@ public abstract class HashNodes {
     @CoreMethod(names = {"inspect", "to_s"})
     public abstract static class InspectNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode inspect;
+        @Child private DispatchHeadNode inspect;
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -740,7 +740,7 @@ public abstract class HashNodes {
     @CoreMethod(names = { "has_key?", "key?" }, required = 1)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
+        @Child private PredicateDispatchHeadNode eqlNode;
 
         public KeyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -901,7 +901,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "merge", required = 1)
     public abstract static class MergeNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
+        @Child private PredicateDispatchHeadNode eqlNode;
 
         private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
         private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();

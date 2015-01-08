@@ -18,8 +18,8 @@ import org.jruby.truffle.runtime.core.RubyProc;
 
 public class PredicateDispatchHeadNode extends Node {
 
-    @Child protected DispatchHeadNode dispatchNode;
-    @Child protected BooleanCastNode booleanCastNode;
+    @Child private DispatchHeadNode dispatchNode;
+    @Child private BooleanCastNode booleanCastNode;
 
     public PredicateDispatchHeadNode(RubyContext context) {
         dispatchNode = new DispatchHeadNode(context);

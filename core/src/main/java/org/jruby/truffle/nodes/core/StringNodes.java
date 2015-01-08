@@ -360,7 +360,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "count", argumentsAsArray = true)
     public abstract static class CountNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toStr;
+        @Child private DispatchHeadNode toStr;
 
         public CountNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -624,7 +624,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "gsub", required = 1, optional = 1, needsBlock = true)
     public abstract static class GsubNode extends RegexpNodes.EscapingYieldingNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child private DispatchHeadNode toS;
 
         public GsubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -816,8 +816,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0)
     public abstract static class InsertNode extends CoreMethodNode {
 
-        @Child protected ConcatNode concatNode;
-        @Child protected GetIndexNode getIndexNode;
+        @Child private ConcatNode concatNode;
+        @Child private GetIndexNode getIndexNode;
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

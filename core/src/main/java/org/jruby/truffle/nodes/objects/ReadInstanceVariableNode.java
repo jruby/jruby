@@ -24,8 +24,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
-    @Child protected RubyNode receiver;
-    @Child protected ReadHeadObjectFieldNode readNode;
+    @Child private RubyNode receiver;
+    @Child private ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
     private final BranchProfile nullProfile = BranchProfile.create();

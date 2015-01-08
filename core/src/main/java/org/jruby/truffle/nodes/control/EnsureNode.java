@@ -19,8 +19,8 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class EnsureNode extends RubyNode {
 
-    @Child protected RubyNode tryPart;
-    @Child protected RubyNode ensurePart;
+    @Child private RubyNode tryPart;
+    @Child private RubyNode ensurePart;
 
     public EnsureNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RubyNode ensurePart) {
         super(context, sourceSection);

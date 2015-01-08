@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 
 public class YieldDispatchHeadNode extends Node {
 
-    @Child protected YieldDispatchNode dispatch;
+    @Child private YieldDispatchNode dispatch;
 
     public YieldDispatchHeadNode(RubyContext context) {
         dispatch = new UninitializedYieldDispatchNode(context);

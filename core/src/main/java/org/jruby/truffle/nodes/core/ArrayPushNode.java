@@ -17,8 +17,8 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 public class ArrayPushNode extends RubyNode {
 
-    @Child protected RubyNode array;
-    @Child protected RubyNode pushed;
+    @Child private RubyNode array;
+    @Child private RubyNode pushed;
 
     public ArrayPushNode(RubyContext context, SourceSection sourceSection, RubyNode array, RubyNode pushed) {
         super(context, sourceSection);

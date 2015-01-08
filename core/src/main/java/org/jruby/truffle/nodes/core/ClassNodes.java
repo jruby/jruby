@@ -54,8 +54,8 @@ public abstract class ClassNodes {
     @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
     public abstract static class NewNode extends CoreMethodNode {
 
-        @Child protected AllocateNode allocateNode;
-        @Child protected DispatchHeadNode initialize;
+        @Child private AllocateNode allocateNode;
+        @Child private DispatchHeadNode initialize;
         @CompilerDirectives.CompilationFinal private boolean isCached = true;
         @CompilerDirectives.CompilationFinal private RubyClass cachedClass;
 
@@ -91,7 +91,7 @@ public abstract class ClassNodes {
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
-        @Child protected ModuleNodes.InitializeNode moduleInitializeNode;
+        @Child private ModuleNodes.InitializeNode moduleInitializeNode;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

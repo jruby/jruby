@@ -62,7 +62,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private PredicateDispatchHeadNode equalNode;
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -223,7 +223,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1)
     public abstract static class InstanceEvalNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yield;
+        @Child private YieldDispatchHeadNode yield;
 
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -311,7 +311,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "__send__", needsBlock = true, required = 1, argumentsAsArray = true)
     public abstract static class SendNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatchNode;
+        @Child private DispatchHeadNode dispatchNode;
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

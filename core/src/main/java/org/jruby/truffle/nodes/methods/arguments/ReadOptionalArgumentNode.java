@@ -23,7 +23,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
     private final int index;
     private final int minimum;
-    @Child protected RubyNode defaultValue;
+    @Child private RubyNode defaultValue;
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 

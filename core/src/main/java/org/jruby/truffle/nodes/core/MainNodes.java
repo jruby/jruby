@@ -26,7 +26,7 @@ public abstract class MainNodes {
     @CoreMethod(names = "include", argumentsAsArray = true, needsSelf = false, required = 1, visibility = Visibility.PRIVATE)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected ModuleNodes.IncludeNode includeNode;
+        @Child private ModuleNodes.IncludeNode includeNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -49,7 +49,7 @@ public abstract class MainNodes {
     @CoreMethod(names = "public", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PublicNode extends CoreMethodNode {
 
-        @Child protected ModuleNodes.PublicNode publicNode;
+        @Child private ModuleNodes.PublicNode publicNode;
 
         public PublicNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -72,7 +72,7 @@ public abstract class MainNodes {
     @CoreMethod(names = "private", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PrivateNode extends CoreMethodNode {
 
-        @Child protected ModuleNodes.PrivateNode privateNode;
+        @Child private ModuleNodes.PrivateNode privateNode;
 
         public PrivateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

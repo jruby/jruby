@@ -26,10 +26,10 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
  */
 public class OpenModuleNode extends RubyNode {
 
-    @Child protected RubyNode definingModule;
-    @Child protected MethodDefinitionNode definitionMethod;
+    @Child private RubyNode definingModule;
+    @Child private MethodDefinitionNode definitionMethod;
     final protected LexicalScope lexicalScope;
-    @Child protected IndirectCallNode callModuleDefinitionNode;
+    @Child private IndirectCallNode callModuleDefinitionNode;
 
     public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, LexicalScope lexicalScope) {
         super(context, sourceSection);

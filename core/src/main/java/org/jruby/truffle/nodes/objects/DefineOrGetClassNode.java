@@ -25,8 +25,8 @@ import org.jruby.truffle.runtime.core.RubyModule;
  */
 public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
-    @Child protected RubyNode superClass;
-    @Child protected DispatchHeadNode inheritedNode;
+    @Child private RubyNode superClass;
+    @Child private DispatchHeadNode inheritedNode;
 
     public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection, name, lexicalParent);

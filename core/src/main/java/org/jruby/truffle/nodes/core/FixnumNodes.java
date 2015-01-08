@@ -69,7 +69,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode {
 
-        @Child protected DispatchHeadNode rationalAdd;
+        @Child private DispatchHeadNode rationalAdd;
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -633,7 +633,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
-        @Child protected GeneralDivModNode divModNode;
+        @Child private GeneralDivModNode divModNode;
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -784,7 +784,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = {"==", "==="}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode reverseCallNode;
+        @Child private DispatchHeadNode reverseCallNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1250,7 +1250,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toInt;
+        @Child private DispatchHeadNode toInt;
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

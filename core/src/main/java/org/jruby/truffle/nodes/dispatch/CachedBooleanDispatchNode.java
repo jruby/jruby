@@ -32,16 +32,16 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
     private final BranchProfile falseProfile = BranchProfile.create();
 
     private final Object falseValue;
-    @Child protected DirectCallNode falseCallDirect;
+    @Child private DirectCallNode falseCallDirect;
 
     private final Assumption trueUnmodifiedAssumption;
     private final RubyMethod trueMethod;
     private final BranchProfile trueProfile = BranchProfile.create();
 
     private final Object trueValue;
-    @Child protected DirectCallNode trueCallDirect;
+    @Child private DirectCallNode trueCallDirect;
 
-    @Child protected IndirectCallNode indirectCallNode;
+    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBooleanDispatchNode(
             RubyContext context, Object cachedName, DispatchNode next,

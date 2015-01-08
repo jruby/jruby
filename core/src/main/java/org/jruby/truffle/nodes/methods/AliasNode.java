@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 @NodeChild(value="module", type=RubyNode.class)
 public abstract class AliasNode extends RubyNode {
 
-    @Child protected RubyNode module;
+    @Child private RubyNode module;
     final String newName;
     final String oldName;
 

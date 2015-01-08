@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public class DefineOrGetModuleNode extends RubyNode {
 
     protected final String name;
-    @Child protected RubyNode lexicalParentModule;
+    @Child private RubyNode lexicalParentModule;
 
     public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
         super(context, sourceSection);

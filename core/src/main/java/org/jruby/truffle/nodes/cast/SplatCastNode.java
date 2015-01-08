@@ -40,10 +40,10 @@ public abstract class SplatCastNode extends RubyNode {
     private final NilBehavior nilBehavior;
     private final boolean useToAry;
 
-    @Child protected ArrayDupNode dup;
-    @Child protected DispatchHeadNode respondToToA;
-    @Child protected BooleanCastNode respondToCast;
-    @Child protected DispatchHeadNode toA;
+    @Child private ArrayDupNode dup;
+    @Child private DispatchHeadNode respondToToA;
+    @Child private BooleanCastNode respondToCast;
+    @Child private DispatchHeadNode toA;
 
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior, boolean useToAry) {
         super(context, sourceSection);

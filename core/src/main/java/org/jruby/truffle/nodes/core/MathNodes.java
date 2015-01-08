@@ -364,8 +364,8 @@ public abstract class MathNodes {
     @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
     public abstract static class FrExpNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private DispatchHeadNode floatNode;
 
         public FrExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -520,9 +520,9 @@ public abstract class MathNodes {
     @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
     public abstract static class LdexpNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatANode;
-        @Child protected DispatchHeadNode integerBNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private DispatchHeadNode floatANode;
+        @Child private DispatchHeadNode integerBNode;
 
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -633,8 +633,8 @@ public abstract class MathNodes {
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private DispatchHeadNode floatNode;
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -914,8 +914,8 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleMonadicMathNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private DispatchHeadNode floatNode;
 
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

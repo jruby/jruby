@@ -21,7 +21,7 @@ public class LambdaNode extends RubyNode {
 
     // TODO(CS): this should be a lambda definition node, alongside block definition node
 
-    @Child protected RubyNode definition;
+    @Child private RubyNode definition;
 
     public LambdaNode(RubyContext context, SourceSection sourceSection, RubyNode definition) {
         super(context, sourceSection);

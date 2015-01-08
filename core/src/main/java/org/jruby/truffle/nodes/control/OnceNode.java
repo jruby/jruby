@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class OnceNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     // TODO(CS): need to always copy this with cloned nodes
     private final AssumedValue<Object> valueMemo = new AssumedValue<>(null);

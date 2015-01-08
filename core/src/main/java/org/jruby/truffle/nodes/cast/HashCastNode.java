@@ -30,7 +30,7 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 @NodeChild("child")
 public abstract class HashCastNode extends RubyNode {
 
-    @Child protected DispatchHeadNode toHashNode;
+    @Child private DispatchHeadNode toHashNode;
 
     public HashCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

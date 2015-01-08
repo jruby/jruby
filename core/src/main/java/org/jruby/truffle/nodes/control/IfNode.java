@@ -23,9 +23,9 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class IfNode extends RubyNode {
 
-    @Child protected BooleanCastNode condition;
-    @Child protected RubyNode thenBody;
-    @Child protected RubyNode elseBody;
+    @Child private BooleanCastNode condition;
+    @Child private RubyNode thenBody;
+    @Child private RubyNode elseBody;
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
     public IfNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode thenBody, RubyNode elseBody) {

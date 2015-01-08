@@ -20,8 +20,8 @@ import org.jruby.truffle.runtime.core.RubyProc;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodNode {
 
-    @Child protected YieldDispatchHeadNode dispatchNode;
-    @Child protected BooleanCastNode booleanCastNode;
+    @Child private YieldDispatchHeadNode dispatchNode;
+    @Child private BooleanCastNode booleanCastNode;
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

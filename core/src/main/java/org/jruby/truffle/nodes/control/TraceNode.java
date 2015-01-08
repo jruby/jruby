@@ -27,11 +27,11 @@ import org.jruby.truffle.runtime.core.*;
 public class TraceNode extends RubyNode {
 
     private final RubyContext context;
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     @CompilerDirectives.CompilationFinal private Assumption traceAssumption;
     @CompilerDirectives.CompilationFinal private RubyProc traceFunc;
-    @Child protected DirectCallNode callNode;
+    @Child private DirectCallNode callNode;
 
     private final RubyString event;
     private final RubyString file;

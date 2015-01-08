@@ -22,8 +22,8 @@ import org.jruby.truffle.runtime.core.RubyArray;
  */
 public final class ArrayConcatNode extends RubyNode {
 
-    @Children protected final RubyNode[] children;
-    @Child protected ArrayBuilderNode arrayBuilderNode;
+    @Children private final RubyNode[] children;
+    @Child private ArrayBuilderNode arrayBuilderNode;
 
     private final BranchProfile appendArrayProfile = BranchProfile.create();
     private final BranchProfile appendObjectProfile = BranchProfile.create();

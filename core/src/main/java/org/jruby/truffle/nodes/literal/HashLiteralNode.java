@@ -79,7 +79,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class SmallHashLiteralNode extends HashLiteralNode {
 
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private PredicateDispatchHeadNode equalNode;
 
         public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);

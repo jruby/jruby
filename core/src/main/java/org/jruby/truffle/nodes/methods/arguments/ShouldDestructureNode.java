@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 public class ShouldDestructureNode extends RubyNode {
 
     private final Arity arity;
-    @Child protected RespondToNode respondToCheck;
+    @Child private RespondToNode respondToCheck;
 
     private final BranchProfile checkRespondProfile = BranchProfile.create();
 

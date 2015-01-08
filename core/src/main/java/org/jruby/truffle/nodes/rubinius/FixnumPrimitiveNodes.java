@@ -30,8 +30,8 @@ public abstract class FixnumPrimitiveNodes {
     @RubiniusPrimitive(name = "fixnum_coerce")
     public static abstract class FixnumCoercePrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected DispatchHeadNode toFRespond;
-        @Child protected DispatchHeadNode toF;
+        @Child private DispatchHeadNode toFRespond;
+        @Child private DispatchHeadNode toF;
 
         public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

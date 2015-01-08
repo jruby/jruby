@@ -26,8 +26,8 @@ import org.jruby.truffle.runtime.core.RubyString;
 @NodeChild(type = RubyNode.class)
 public abstract class ToSNode extends RubyNode {
 
-    @Child protected DispatchHeadNode callToSNode;
-    @Child protected KernelNodes.ToSNode kernelToSNode;
+    @Child private DispatchHeadNode callToSNode;
+    @Child private KernelNodes.ToSNode kernelToSNode;
 
     public ToSNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

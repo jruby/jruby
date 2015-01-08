@@ -21,8 +21,8 @@ public class RespondToNode extends RubyNode {
 
     private final String methodName;
 
-    @Child protected RubyNode child;
-    @Child protected DispatchHeadNode dispatch;
+    @Child private RubyNode child;
+    @Child private DispatchHeadNode dispatch;
 
     public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String methodName) {
         super(context, sourceSection);

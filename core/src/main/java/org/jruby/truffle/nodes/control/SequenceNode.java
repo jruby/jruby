@@ -29,7 +29,7 @@ import java.util.List;
 @NodeInfo(cost = NodeCost.NONE)
 public final class SequenceNode extends RubyNode {
 
-    @Children protected final RubyNode[] body;
+    @Children private final RubyNode[] body;
 
     public static RubyNode sequence(RubyContext context, SourceSection sourceSection, RubyNode... sequence) {
         return sequence(context, sourceSection, Arrays.asList(sequence));

@@ -19,8 +19,8 @@ import org.jruby.truffle.runtime.RubyContext;
 @NodeInfo(cost = NodeCost.NONE)
 public class BehaveAsBlockNode extends RubyNode {
 
-    @Child protected RubyNode asBlockNode;
-    @Child protected RubyNode asMethodNode;
+    @Child private RubyNode asBlockNode;
+    @Child private RubyNode asMethodNode;
 
     public BehaveAsBlockNode(RubyContext context, SourceSection sourceSection, RubyNode asBlockNode, RubyNode asMethodNode) {
         super(context, sourceSection);

@@ -32,9 +32,9 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
 
-    @Child protected IndirectCallNode callNode;
-    @Child protected ToSymbolNode toSymbolNode;
-    @Child protected ToJavaStringNode toJavaStringNode;
+    @Child private IndirectCallNode callNode;
+    @Child private ToSymbolNode toSymbolNode;
+    @Child private ToJavaStringNode toJavaStringNode;
 
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();

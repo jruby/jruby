@@ -119,8 +119,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child protected IsSubclassOfNode subclassNode;
-        @Child protected BooleanCastNode booleanCastNode;
+        @Child private IsSubclassOfNode subclassNode;
+        @Child private BooleanCastNode booleanCastNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -385,7 +385,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yield;
+        @Child private YieldDispatchHeadNode yield;
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -449,7 +449,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = {"class_exec","module_exec"}, argumentsAsArray = true, needsBlock = true)
     public abstract static class ClassExecNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yield;
+        @Child private YieldDispatchHeadNode yield;
 
         public ClassExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -622,7 +622,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "const_get", required = 1)
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatch;
+        @Child private DispatchHeadNode dispatch;
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -775,7 +775,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
-        @Child protected ModuleNodes.ClassExecNode classExecNode;
+        @Child private ModuleNodes.ClassExecNode classExecNode;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -832,7 +832,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "include", argumentsAsArray = true, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode appendFeaturesNode;
+        @Child private DispatchHeadNode appendFeaturesNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -869,7 +869,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludePNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode appendFeaturesNode;
+        @Child private DispatchHeadNode appendFeaturesNode;
 
         public IncludePNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

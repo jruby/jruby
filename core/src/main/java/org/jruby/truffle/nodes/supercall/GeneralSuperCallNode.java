@@ -30,8 +30,8 @@ import org.jruby.truffle.runtime.core.RubyProc;
 public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
     private final boolean isSplatted;
-    @Child protected RubyNode block;
-    @Children protected final RubyNode[] arguments;
+    @Child private RubyNode block;
+    @Children private final RubyNode[] arguments;
 
     public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
         super(context, sourceSection);

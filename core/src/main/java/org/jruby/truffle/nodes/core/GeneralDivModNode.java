@@ -22,8 +22,8 @@ import java.math.BigInteger;
 
 public class GeneralDivModNode extends RubyNode {
 
-    @Child protected FixnumOrBignumNode fixnumOrBignumQuotient;
-    @Child protected FixnumOrBignumNode fixnumOrBignumRemainder;
+    @Child private FixnumOrBignumNode fixnumOrBignumQuotient;
+    @Child private FixnumOrBignumNode fixnumOrBignumRemainder;
 
     private final BranchProfile bZeroProfile = BranchProfile.create();
     private final BranchProfile bMinusOneProfile = BranchProfile.create();

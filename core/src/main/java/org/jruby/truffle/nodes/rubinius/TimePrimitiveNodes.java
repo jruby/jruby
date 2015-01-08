@@ -52,11 +52,11 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_dup", needsSelf = false)
     public static abstract class TimeSDupPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected ReadHeadObjectFieldNode readIsGMTNode = new ReadHeadObjectFieldNode("@is_gmt");
-        @Child protected ReadHeadObjectFieldNode readOffsetNode = new ReadHeadObjectFieldNode("@offset");
+        @Child private ReadHeadObjectFieldNode readIsGMTNode = new ReadHeadObjectFieldNode("@is_gmt");
+        @Child private ReadHeadObjectFieldNode readOffsetNode = new ReadHeadObjectFieldNode("@offset");
 
-        @Child protected WriteHeadObjectFieldNode writeIsGMTNode = new WriteHeadObjectFieldNode("@is_gmt");
-        @Child protected WriteHeadObjectFieldNode writeOffsetNode = new WriteHeadObjectFieldNode("@offset");
+        @Child private WriteHeadObjectFieldNode writeIsGMTNode = new WriteHeadObjectFieldNode("@is_gmt");
+        @Child private WriteHeadObjectFieldNode writeOffsetNode = new WriteHeadObjectFieldNode("@offset");
 
         public TimeSDupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -79,8 +79,8 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_specific", needsSelf = false)
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected WriteHeadObjectFieldNode writeIsGMTNode = new WriteHeadObjectFieldNode("@is_gmt");
-        @Child protected WriteHeadObjectFieldNode writeOffsetNode = new WriteHeadObjectFieldNode("@offset");
+        @Child private WriteHeadObjectFieldNode writeIsGMTNode = new WriteHeadObjectFieldNode("@is_gmt");
+        @Child private WriteHeadObjectFieldNode writeOffsetNode = new WriteHeadObjectFieldNode("@offset");
 
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -155,7 +155,7 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected RubyTimeToDateTimeNode toDateTimeNode;
+        @Child private RubyTimeToDateTimeNode toDateTimeNode;
 
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -194,7 +194,7 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_strftime")
     public static abstract class TimeStrftimePrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected RubyTimeToDateTimeNode toDateTimeNode;
+        @Child private RubyTimeToDateTimeNode toDateTimeNode;
 
         public TimeStrftimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

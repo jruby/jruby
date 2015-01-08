@@ -27,7 +27,7 @@ public class RubyRootNode extends RootNode {
 
     private final RubyContext context;
     private final SharedMethodInfo sharedMethodInfo;
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
     private final RubyNode uninitializedBody;
 
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {

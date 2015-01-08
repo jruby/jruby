@@ -19,9 +19,9 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 public class WhenSplatNode extends RubyNode {
 
-    @Child protected RubyNode readCaseExpression;
-    @Child protected RubyNode splat;
-    @Child protected PredicateDispatchHeadNode dispatchCaseEqual;
+    @Child private RubyNode readCaseExpression;
+    @Child private RubyNode splat;
+    @Child private PredicateDispatchHeadNode dispatchCaseEqual;
 
     public WhenSplatNode(RubyContext context, SourceSection sourceSection, RubyNode readCaseExpression, RubyNode splat) {
         super(context, sourceSection);

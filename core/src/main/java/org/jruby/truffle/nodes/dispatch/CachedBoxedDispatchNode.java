@@ -35,8 +35,8 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
     private final Object value;
 
     private final RubyMethod method;
-    @Child protected DirectCallNode callNode;
-    @Child protected IndirectCallNode indirectCallNode;
+    @Child private DirectCallNode callNode;
+    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                    RubyClass expectedClass, Object value, RubyMethod method,

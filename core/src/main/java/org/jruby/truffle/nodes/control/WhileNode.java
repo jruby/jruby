@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.control.RedoException;
 
 public final class WhileNode extends RubyNode {
 
-    @Child protected LoopNode loopNode;
+    @Child private LoopNode loopNode;
     private final BranchProfile breakUsed = BranchProfile.create();
 
     private WhileNode(RubyContext context, SourceSection sourceSection, RepeatingNode repeatingNode) {
@@ -62,6 +62,7 @@ public final class WhileNode extends RubyNode {
 
         @Child protected BooleanCastNode condition;
         @Child protected RubyNode body;
+
         protected final BranchProfile redoUsed = BranchProfile.create();
         protected final BranchProfile nextUsed = BranchProfile.create();
 

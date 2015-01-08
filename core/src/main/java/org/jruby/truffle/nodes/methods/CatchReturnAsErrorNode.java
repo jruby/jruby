@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.control.ReturnException;
  */
 public class CatchReturnAsErrorNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     public CatchReturnAsErrorNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);

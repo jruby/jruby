@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 @NodeInfo(cost = NodeCost.MEGAMORPHIC)
 public class GeneralYieldDispatchNode extends YieldDispatchNode {
 
-    @Child protected IndirectCallNode callNode;
+    @Child private IndirectCallNode callNode;
 
     public GeneralYieldDispatchNode(RubyContext context) {
         super(context);

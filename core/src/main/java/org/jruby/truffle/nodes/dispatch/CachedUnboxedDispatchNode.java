@@ -33,8 +33,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
     private final Object value;
 
     private final RubyMethod method;
-    @Child protected DirectCallNode callNode;
-    @Child protected IndirectCallNode indirectCallNode;
+    @Child private DirectCallNode callNode;
+    @Child private IndirectCallNode indirectCallNode;
 
     public CachedUnboxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                      Class<?> expectedClass, Assumption unmodifiedAssumption, Object value,

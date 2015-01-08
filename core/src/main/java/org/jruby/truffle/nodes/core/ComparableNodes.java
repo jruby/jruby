@@ -21,7 +21,7 @@ public abstract class ComparableNodes {
 
     public abstract static class ComparableCoreMethodNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode compareNode;
+        @Child private DispatchHeadNode compareNode;
 
         public ComparableCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

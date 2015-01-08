@@ -76,7 +76,7 @@ public abstract class ProcNodes {
     @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true, needsBlock = true)
     public abstract static class CallNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yieldNode;
+        @Child private YieldDispatchHeadNode yieldNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

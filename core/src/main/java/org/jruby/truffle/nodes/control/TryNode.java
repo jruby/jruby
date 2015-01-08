@@ -29,10 +29,10 @@ import org.jruby.truffle.runtime.control.RetryException;
  */
 public class TryNode extends RubyNode {
 
-    @Child protected ExceptionTranslatingNode tryPart;
+    @Child private ExceptionTranslatingNode tryPart;
     @Children final RescueNode[] rescueParts;
-    @Child protected RubyNode elsePart;
-    @Child protected WriteInstanceVariableNode clearExceptionVariableNode;
+    @Child private RubyNode elsePart;
+    @Child private WriteInstanceVariableNode clearExceptionVariableNode;
 
     private final BranchProfile elseProfile = BranchProfile.create();
     private final BranchProfile controlFlowProfile = BranchProfile.create();

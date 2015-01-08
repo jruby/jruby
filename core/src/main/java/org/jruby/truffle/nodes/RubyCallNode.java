@@ -36,14 +36,14 @@ public class RubyCallNode extends RubyNode {
 
     private final String methodName;
 
-    @Child protected RubyNode receiver;
-    @Child protected ProcOrNullNode block;
-    @Children protected final RubyNode[] arguments;
+    @Child private RubyNode receiver;
+    @Child private ProcOrNullNode block;
+    @Children private final RubyNode[] arguments;
 
     private final boolean isSplatted;
     private final boolean isVCall;
 
-    @Child protected DispatchHeadNode dispatchHead;
+    @Child private DispatchHeadNode dispatchHead;
 
     private final BranchProfile splatNotArrayProfile = BranchProfile.create();
 
@@ -52,8 +52,8 @@ public class RubyCallNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
-    @Child protected DispatchHeadNode respondToMissing;
-    @Child protected BooleanCastNode respondToMissingCast;
+    @Child private DispatchHeadNode respondToMissing;
+    @Child private BooleanCastNode respondToMissingCast;
 
     private final boolean ignoreVisibility;
 

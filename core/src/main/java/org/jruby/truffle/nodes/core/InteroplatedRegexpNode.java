@@ -22,9 +22,9 @@ import org.jruby.util.RegexpOptions;
 
 public class InteroplatedRegexpNode extends RubyNode {
 
-    @Children protected final RubyNode[] children;
+    @Children private final RubyNode[] children;
     private final RegexpOptions options;
-    @Child protected DispatchHeadNode toS;
+    @Child private DispatchHeadNode toS;
 
     public InteroplatedRegexpNode(RubyContext context, SourceSection sourceSection, RubyNode[] children, RegexpOptions options) {
         super(context, sourceSection);

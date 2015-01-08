@@ -528,7 +528,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "floor")
     public abstract static class FloorNode extends CoreMethodNode {
 
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+        @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public FloorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -594,7 +594,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "round")
     public abstract static class RoundNode extends CoreMethodNode {
 
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+        @Child private FixnumOrBignumNode fixnumOrBignum;
 
         private final BranchProfile greaterZero = BranchProfile.create();
         private final BranchProfile lessZero = BranchProfile.create();
@@ -651,7 +651,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = { "to_i", "to_int", "truncate" })
     public abstract static class ToINode extends CoreMethodNode {
 
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+        @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

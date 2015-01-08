@@ -199,7 +199,7 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "raise", required = 1, optional = 1)
     public abstract static class RaiseNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initialize;
+        @Child private DispatchHeadNode initialize;
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

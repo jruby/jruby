@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class DefinedNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     public DefinedNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);

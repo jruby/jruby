@@ -33,8 +33,8 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
 
-    @Child protected DirectCallNode callNode;
-    @Child protected IndirectCallNode indirectCallNode;
+    @Child private DirectCallNode callNode;
+    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBoxedMethodMissingDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
                                                 RubyClass expectedClass, RubyMethod method,

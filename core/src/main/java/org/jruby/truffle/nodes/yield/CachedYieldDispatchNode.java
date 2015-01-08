@@ -22,8 +22,8 @@ import org.jruby.util.cli.Options;
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedYieldDispatchNode extends YieldDispatchNode {
 
-    @Child protected DirectCallNode callNode;
-    @Child protected YieldDispatchNode next;
+    @Child private DirectCallNode callNode;
+    @Child private YieldDispatchNode next;
 
     public CachedYieldDispatchNode(RubyContext context, RubyProc block, YieldDispatchNode next) {
         super(context);

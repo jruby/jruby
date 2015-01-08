@@ -26,7 +26,7 @@ public class DispatchHeadNode extends Node {
     private final LexicalScope lexicalScope;
     private final DispatchAction dispatchAction;
 
-    @Child protected DispatchNode first;
+    @Child private DispatchNode first;
 
     public static DispatchHeadNode onSelf(RubyContext context) {
         return new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING);

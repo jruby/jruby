@@ -27,7 +27,7 @@ public abstract class RegexpNodes {
 
     public abstract static class EscapingNode extends CoreMethodNode {
 
-        @Child protected EscapeNode escapeNode;
+        @Child private EscapeNode escapeNode;
 
         public EscapingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -47,7 +47,7 @@ public abstract class RegexpNodes {
     }
 
     public abstract static class EscapingYieldingNode extends YieldingCoreMethodNode {
-        @Child protected EscapeNode escapeNode;
+        @Child private EscapeNode escapeNode;
 
         public EscapingYieldingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
