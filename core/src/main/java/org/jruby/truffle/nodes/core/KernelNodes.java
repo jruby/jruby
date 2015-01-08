@@ -118,7 +118,7 @@ public abstract class KernelNodes {
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child private PredicateDispatchHeadNode equalNode;
+        @Child private CallDispatchHeadNode equalNode;
 
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -139,9 +139,9 @@ public abstract class KernelNodes {
         protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(new PredicateDispatchHeadNode(getContext()));
+                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false, false, null));
             }
-            return equalNode.call(frame, left, "==", null, right);
+            return equalNode.callBoolean(frame, left, "==", null, right);
         }
 
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
@@ -176,11 +176,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
-        @Child private PredicateDispatchHeadNode matchNode;
+        @Child private CallDispatchHeadNode matchNode;
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = new PredicateDispatchHeadNode(context);
+            matchNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public NotMatchNode(NotMatchNode prev) {
@@ -190,7 +190,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            return !matchNode.call(frame, self, "=~", null, other);
+            return !matchNode.callBoolean(frame, self, "=~", null, other);
         }
 
     }

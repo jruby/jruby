@@ -11,12 +11,16 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 public class CallDispatchHeadNode extends DispatchHeadNode {
+
+    @Child private BooleanCastNode booleanCastNode;
 
     public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
         super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.CALL_METHOD);
@@ -34,6 +38,21 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
                 methodName,
                 blockObject,
                 argumentsObjects);
+    }
+
+    public boolean callBoolean(
+            VirtualFrame frame,
+            Object receiverObject,
+            Object methodName,
+            RubyProc blockObject,
+            Object... argumentsObjects) {
+        if (booleanCastNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            booleanCastNode = insert(BooleanCastNodeFactory.create(context, getSourceSection(), null));
+        }
+
+        return booleanCastNode.executeBoolean(frame,
+                dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects));
     }
 
     public double callFloat(

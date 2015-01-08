@@ -31,10 +31,7 @@ import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.DebugOperations;
-import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -438,11 +435,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"==", "eql?"}, required = 1)
     public abstract static class EqualNode extends ArrayCoreMethodNode {
 
-        @Child private PredicateDispatchHeadNode equals;
+        @Child private CallDispatchHeadNode equals;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equals = new PredicateDispatchHeadNode(context);
+            equals = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public EqualNode(EqualNode prev) {
@@ -511,7 +508,7 @@ public abstract class ArrayNodes {
             final Object[] bs = b.slowToArray();
 
             for (int n = 0; n < a.getSize(); n++) {
-                if (!equals.call(frame, as[n], "==", null, bs[n])) {
+                if (!equals.callBoolean(frame, as[n], "==", null, bs[n])) {
                     return false;
                 }
             }

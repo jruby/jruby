@@ -13,10 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -81,11 +78,11 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class SmallHashLiteralNode extends HashLiteralNode {
 
-        @Child private PredicateDispatchHeadNode equalNode;
+        @Child private CallDispatchHeadNode equalNode;
 
         public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
-            equalNode = new PredicateDispatchHeadNode(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         @ExplodeLoop
@@ -105,7 +102,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 final Object value = keyValues[n + 1].execute(frame);
 
                 for (int i = 0; i < n; i += 2) {
-                    if (i < end && equalNode.call(frame, key, "eql?", null, storage[i])) {
+                    if (i < end && equalNode.callBoolean(frame, key, "eql?", null, storage[i])) {
                         storage[i + 1] = value;
                         continue initializers;
                     }

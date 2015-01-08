@@ -16,10 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -234,15 +231,15 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"include?", "==="}, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child private PredicateDispatchHeadNode callLess;
-        @Child private PredicateDispatchHeadNode callGreater;
-        @Child private PredicateDispatchHeadNode callGreaterEqual;
+        @Child private CallDispatchHeadNode callLess;
+        @Child private CallDispatchHeadNode callGreater;
+        @Child private CallDispatchHeadNode callGreaterEqual;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callLess = new PredicateDispatchHeadNode(context);
-            callGreater = new PredicateDispatchHeadNode(context);
-            callGreaterEqual = new PredicateDispatchHeadNode(context);
+            callLess = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            callGreater = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            callGreaterEqual = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -261,16 +258,16 @@ public abstract class RangeNodes {
         public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
             notDesignedForCompilation();
 
-            if (callLess.call(frame, value, "<", null, range.getBegin())) {
+            if (callLess.callBoolean(frame, value, "<", null, range.getBegin())) {
                 return false;
             }
 
             if (range.doesExcludeEnd()) {
-                if (callGreaterEqual.call(frame, value, ">=", null, range.getEnd())) {
+                if (callGreaterEqual.callBoolean(frame, value, ">=", null, range.getEnd())) {
                     return false;
                 }
             } else {
-                if (callGreater.call(frame, value, ">", null, range.getEnd())) {
+                if (callGreater.callBoolean(frame, value, ">", null, range.getEnd())) {
                     return false;
                 }
             }

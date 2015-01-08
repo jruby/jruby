@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNodeFactory {

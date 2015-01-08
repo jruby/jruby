@@ -58,11 +58,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
-        @Child private PredicateDispatchHeadNode equalNode;
+        @Child private CallDispatchHeadNode equalNode;
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new PredicateDispatchHeadNode(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public NotEqualNode(NotEqualNode prev) {
@@ -72,7 +72,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean equal(VirtualFrame frame, Object a, Object b) {
-            return !equalNode.call(frame, a, "==", null, b);
+            return !equalNode.callBoolean(frame, a, "==", null, b);
         }
 
     }
