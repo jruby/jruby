@@ -1157,7 +1157,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "split", required = 1)
+    @CoreMethod(names = "split", optional = 1)
     public abstract static class SplitNode extends CoreMethodNode {
 
         public SplitNode(RubyContext context, SourceSection sourceSection) {
@@ -1172,7 +1172,25 @@ public abstract class StringNodes {
         public RubyArray split(RubyString string, RubyString sep) {
             notDesignedForCompilation();
 
-            final String[] components = string.toString().split(Pattern.quote(sep.toString()));
+            return splitHelper(string, sep.toString());
+        }
+
+        @Specialization
+        public RubyArray split(RubyString string, RubyRegexp sep) {
+            notDesignedForCompilation();
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string.toString()));
+        }
+
+        @Specialization
+        public RubyArray split(RubyString string, UndefinedPlaceholder sep) {
+            notDesignedForCompilation();
+
+            return splitHelper(string, " ");
+        }
+
+        private RubyArray splitHelper(RubyString string, String sep) {
+            final String[] components = string.toString().split(Pattern.quote(sep));
 
             final Object[] objects = new Object[components.length];
 
@@ -1181,13 +1199,6 @@ public abstract class StringNodes {
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, RubyRegexp sep) {
-            notDesignedForCompilation();
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string.toString()));
         }
     }
 
