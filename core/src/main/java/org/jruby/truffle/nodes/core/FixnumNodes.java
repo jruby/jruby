@@ -219,8 +219,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long mulWithOverflow(int a, int b) {
-            return (long) a * (long) b;
+        public Object mulWithOverflow(int a, int b) {
+            return fixnumOrBignum(bignum(a).multiply(bignum(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -1302,7 +1302,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int size() {
-            return Integer.SIZE / Byte.SIZE;
+            return Long.SIZE / Byte.SIZE;
         }
 
     }

@@ -1,2 +1,0 @@
-fails:Fixnum#* raises a TypeError when given a non-Integer
-fails:Fixnum#* overflows to Bignum when the result does not fit in Fixnum
