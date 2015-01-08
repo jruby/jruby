@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 /**
  * Represents the Ruby {@code MatchData} class.
@@ -44,6 +45,12 @@ public class RubyMatchData extends RubyBasicObject {
 
     public Object[] getValues() {
         return values;
+    }
+
+    public Object[] getCaptures() {
+        // There should always be at least one value because the entire matched string must be in the values array.
+        // Thus, there is no risk of an ArrayIndexOutOfBoundsException here.
+        return ArrayUtils.extractRange(values, 1, values.length);
     }
 
     @Override

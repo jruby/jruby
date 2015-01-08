@@ -59,11 +59,7 @@ public abstract class MatchDataNodes {
         public RubyArray toA(RubyMatchData matchData) {
             notDesignedForCompilation();
 
-            Object[] values = matchData.getValues();
-
-            // There should always be at least one value because the entire matched string will be in the array. Thus,
-            // there is no risk of an ArrayIndexOutOfBoundsException here.
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange(values, 1, values.length));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getCaptures());
         }
     }
 

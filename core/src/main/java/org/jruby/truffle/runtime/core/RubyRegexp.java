@@ -341,20 +341,8 @@ public class RubyRegexp extends RubyBasicObject {
                     break;
                 }
 
-                RubyMatchData md = (RubyMatchData) matchData;
-
-                final List<RubyBasicObject> parts = new ArrayList<>();
-
-                Object[] values = md.getValues();
-
-                // The first element is the entire matched string, so skip over it because we're only interested in
-                // the constituent matched parts.
-                for (int i = 1; i < values.length; i++) {
-                    parts.add((RubyBasicObject) values[i]);
-                }
-
-                RubyBasicObject[] matches = parts.toArray(new RubyBasicObject[parts.size()]);
-                allMatches.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matches));
+                allMatches.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                        ((RubyMatchData) matchData).getCaptures()));
 
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
