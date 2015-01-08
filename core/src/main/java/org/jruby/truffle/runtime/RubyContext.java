@@ -162,16 +162,25 @@ public class RubyContext extends ExecutionContext {
         // Assume UTF-8 for the moment
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
 
-        load(source, currentNode, new NodeWrapper() {
+        load(source, currentNode, NodeWrapper.IDENTITY);
+    }
+
+    public void load(Source source, RubyNode currentNode, final NodeWrapper nodeWrapper) {
+        final NodeWrapper loadWrapper = new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "load", node);
             }
-        });
-    }
+        };
 
-    public void load(Source source, RubyNode currentNode, NodeWrapper nodeWrapper) {
-        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, nodeWrapper);
+        final NodeWrapper composed = new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                return nodeWrapper.wrap(loadWrapper.wrap(node));
+            }
+        };
+
+        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, composed);
     }
 
     public RubySymbol.SymbolTable getSymbolTable() {

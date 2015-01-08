@@ -175,8 +175,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 SourceSection sourceSection = node.getSourceSection();
                 return SequenceNode.sequence(context, sourceSection,
                         new SetTopLevelBindingNode(context, sourceSection),
-                        new TopLevelRaiseHandler(context, sourceSection,
-                                new SetMethodDeclarationContext(context, sourceSection, "main", node)));
+                        new TopLevelRaiseHandler(context, sourceSection, node));
             }
         });
         return truffleContext.getCoreLibrary().getNilObject();

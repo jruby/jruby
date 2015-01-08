@@ -392,12 +392,7 @@ public class CoreLibrary {
             throw new RuntimeException(e);
         }
 
-        context.load(source, null, new NodeWrapper() {
-            @Override
-            public RubyNode wrap(RubyNode node) {
-                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "load core", node);
-            }
-        });
+        context.load(source, null, NodeWrapper.IDENTITY);
     }
 
     public void initializeEncodingConstants() {
