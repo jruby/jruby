@@ -24,8 +24,9 @@ import java.util.List;
 public class HashOperations {
 
     public static final int SMALL_HASH_SIZE = Options.TRUFFLE_HASHES_SMALL.load();
-    public static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
-    public static final int SIGN_BIT_MASK = ~(1 << 31);
+
+    private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
+    private static final int SIGN_BIT_MASK = ~(1 << 31);
 
     public static int capacityGreaterThan(int size) {
         for (int capacity : CAPACITIES) {
