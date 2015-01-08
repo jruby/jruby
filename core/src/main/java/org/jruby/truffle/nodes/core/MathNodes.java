@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyMath;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
 import org.jruby.truffle.runtime.RubyContext;
@@ -370,7 +371,7 @@ public abstract class MathNodes {
         public FrExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatNode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
+            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         public FrExpNode(FrExpNode prev) {
@@ -527,8 +528,8 @@ public abstract class MathNodes {
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatANode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
-            integerBNode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
+            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            integerBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         protected LdexpNode(LdexpNode prev) {
@@ -639,7 +640,7 @@ public abstract class MathNodes {
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatNode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
+            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         public LGammaNode(LGammaNode prev) {
@@ -920,7 +921,7 @@ public abstract class MathNodes {
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatNode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
+            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         protected SimpleMonadicMathNode(SimpleMonadicMathNode prev) {
@@ -987,8 +988,8 @@ public abstract class MathNodes {
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatANode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
-            floatBNode = new DispatchHeadNode(context, MissingBehavior.RETURN_MISSING);
+            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            floatBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         protected SimpleDyadicMathNode(SimpleDyadicMathNode prev) {

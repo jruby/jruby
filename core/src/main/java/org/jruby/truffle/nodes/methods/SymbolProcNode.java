@@ -14,11 +14,10 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-
-import java.util.Arrays;
 
 public class SymbolProcNode extends RubyNode {
 
@@ -29,7 +28,7 @@ public class SymbolProcNode extends RubyNode {
     public SymbolProcNode(RubyContext context, SourceSection sourceSection, String symbol) {
         super(context, sourceSection);
         this.symbol = symbol;
-        dispatch = new DispatchHeadNode(context);
+        dispatch = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Override

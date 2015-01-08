@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayDupNode;
 import org.jruby.truffle.nodes.core.ArrayDupNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
@@ -50,9 +51,9 @@ public abstract class SplatCastNode extends RubyNode {
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
         dup = ArrayDupNodeFactory.create(context, sourceSection, null);
-        respondToToA = new DispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING);
+        respondToToA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToCast = BooleanCastNodeFactory.create(context, sourceSection, null);
-        toA = new DispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING);
+        toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         this.useToAry = useToAry;
     }
 

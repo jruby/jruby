@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
@@ -2060,7 +2061,7 @@ public abstract class ArrayNodes {
 
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InjectNode(InjectNode prev) {
@@ -2186,7 +2187,7 @@ public abstract class ArrayNodes {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context);
+            inspect = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public InspectNode(InspectNode prev) {
@@ -2494,7 +2495,7 @@ public abstract class ArrayNodes {
 
         public MaxNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context);
+            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
             maxBlock = context.getCoreLibrary().getArrayMaxBlock();
         }
 
@@ -2534,7 +2535,7 @@ public abstract class ArrayNodes {
 
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context);
+            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public MaxBlockNode(MaxBlockNode prev) {
@@ -2613,7 +2614,7 @@ public abstract class ArrayNodes {
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context);
+            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
             minBlock = context.getCoreLibrary().getArrayMinBlock();
         }
 
@@ -2653,7 +2654,7 @@ public abstract class ArrayNodes {
 
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context);
+            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public MinBlockNode(MinBlockNode prev) {
@@ -3477,7 +3478,7 @@ public abstract class ArrayNodes {
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context);
+            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
             yieldNode = new YieldDispatchHeadNode(context);
         }
 
@@ -3658,7 +3659,7 @@ public abstract class ArrayNodes {
 
         public SortBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context);
+            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public SortBangNode(SortBangNode prev) {

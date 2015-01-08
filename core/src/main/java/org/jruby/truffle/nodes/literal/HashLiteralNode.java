@@ -14,6 +14,7 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
@@ -34,8 +35,8 @@ public abstract class HashLiteralNode extends RubyNode {
         super(context, sourceSection);
         assert keyValues.length % 2 == 0;
         this.keyValues = keyValues;
-        dupNode = new DispatchHeadNode(context);
-        freezeNode = new DispatchHeadNode(context);
+        dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+        freezeNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {

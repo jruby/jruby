@@ -19,6 +19,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.hash.FindEntryNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -695,7 +696,7 @@ public abstract class HashNodes {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context);
+            inspect = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public InspectNode(InspectNode prev) {

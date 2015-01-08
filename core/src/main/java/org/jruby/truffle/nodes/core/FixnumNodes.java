@@ -11,13 +11,13 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
-import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -114,7 +114,7 @@ public abstract class FixnumNodes {
             if (rationalAdd == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                rationalAdd = insert(new DispatchHeadNode(getContext()));
+                rationalAdd = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
             return rationalAdd.call(frame, b, "+", null, a);
@@ -155,7 +155,7 @@ public abstract class FixnumNodes {
             if (rationalAdd == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                rationalAdd = insert(new DispatchHeadNode(getContext()));
+                rationalAdd = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
             return rationalAdd.call(frame, b, "+", null, a);
@@ -788,7 +788,7 @@ public abstract class FixnumNodes {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            reverseCallNode = new DispatchHeadNode(context);
+            reverseCallNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public EqualNode(EqualNode prev) {
@@ -1254,7 +1254,7 @@ public abstract class FixnumNodes {
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context);
+            toInt = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public RightShiftNode(RightShiftNode prev) {

@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -31,8 +32,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.cli.Options;
-
-import java.util.Arrays;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -316,7 +315,7 @@ public abstract class BasicObjectNodes {
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatchNode = new DispatchHeadNode(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), MissingBehavior.CALL_METHOD_MISSING);
+            dispatchNode = DispatchHeadNodeFactory.createMethodCall(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), MissingBehavior.CALL_METHOD_MISSING);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatchNode.forceUncached();

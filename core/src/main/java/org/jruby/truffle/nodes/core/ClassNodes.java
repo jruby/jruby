@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -62,7 +63,7 @@ public abstract class ClassNodes {
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateNode = ClassNodesFactory.AllocateNodeFactory.create(context, sourceSection, new RubyNode[]{null});
-            initialize = DispatchHeadNode.onSelf(context);
+            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         public NewNode(NewNode prev) {

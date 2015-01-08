@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
@@ -27,7 +28,7 @@ public class FindEntryNode extends RubyNode {
 
     public FindEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = new DispatchHeadNode(context);
+        hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         eqlNode = new PredicateDispatchHeadNode(context);
     }
 

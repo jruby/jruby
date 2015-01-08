@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyRegexp;
@@ -30,7 +31,7 @@ public class InteroplatedRegexpNode extends RubyNode {
         super(context, sourceSection);
         this.children = children;
         this.options = options;
-        toS = new DispatchHeadNode(context);
+        toS = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Override

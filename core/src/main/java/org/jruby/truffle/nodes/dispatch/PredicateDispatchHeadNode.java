@@ -22,7 +22,7 @@ public class PredicateDispatchHeadNode extends Node {
     @Child private BooleanCastNode booleanCastNode;
 
     public PredicateDispatchHeadNode(RubyContext context) {
-        dispatchNode = new DispatchHeadNode(context);
+        dispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
         booleanCastNode = BooleanCastNodeFactory.create(context, getSourceSection(), null);
     }
 

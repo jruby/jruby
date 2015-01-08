@@ -22,10 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
-import org.jruby.truffle.nodes.dispatch.DispatchAction;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
@@ -206,7 +203,7 @@ public abstract class KernelNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
             booleanCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
@@ -474,7 +471,7 @@ public abstract class KernelNodes {
         public CloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             // Calls private initialize_clone on the new copy.
-            initializeCloneNode = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING);
+            initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public CloneNode(CloneNode prev) {
@@ -509,7 +506,7 @@ public abstract class KernelNodes {
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             // Calls private initialize_dup on the new copy.
-            initializeDupNode = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
@@ -549,7 +546,7 @@ public abstract class KernelNodes {
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStr = new DispatchHeadNode(context);
+            toStr = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public EvalNode(EvalNode prev) {
@@ -981,7 +978,7 @@ public abstract class KernelNodes {
 
         public InitializeDupCloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = DispatchHeadNode.onSelf(context);
+            initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         public InitializeDupCloneNode(InitializeDupCloneNode prev) {
@@ -1397,7 +1394,7 @@ public abstract class KernelNodes {
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context);
+            toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public PrintNode(PrintNode prev) {
@@ -1541,7 +1538,7 @@ public abstract class KernelNodes {
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context);
+            initialize = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public RaiseNode(RaiseNode prev) {
@@ -1878,7 +1875,7 @@ public abstract class KernelNodes {
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context);
+            toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public StringNode(StringNode prev) {

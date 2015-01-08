@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
@@ -836,7 +837,7 @@ public abstract class ModuleNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context);
+            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -873,7 +874,7 @@ public abstract class ModuleNodes {
 
         public IncludePNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context);
+            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public IncludePNode(IncludePNode prev) {

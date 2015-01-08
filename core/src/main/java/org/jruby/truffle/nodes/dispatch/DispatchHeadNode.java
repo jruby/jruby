@@ -28,30 +28,6 @@ public class DispatchHeadNode extends Node {
 
     @Child private DispatchNode first;
 
-    public static DispatchHeadNode onSelf(RubyContext context) {
-        return new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING);
-    }
-
-    public DispatchHeadNode(RubyContext context) {
-        this(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
-    }
-
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility) {
-        this(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
-    }
-
-    public DispatchHeadNode(RubyContext context, MissingBehavior missingBehavior) {
-        this(context, false, false, missingBehavior, null, DispatchAction.CALL_METHOD);
-    }
-
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, false, missingBehavior, null, DispatchAction.CALL_METHOD);
-    }
-
-    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
-        this(context, ignoreVisibility, indirect, missingBehavior, null, DispatchAction.CALL_METHOD);
-    }
-
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope, DispatchAction dispatchAction) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
