@@ -170,10 +170,6 @@ public class RubyContext extends ExecutionContext {
         });
     }
 
-    public void load(Source source, RubyNode currentNode) {
-        load(source, currentNode, NodeWrapper.IDENTITY);
-    }
-
     public void load(Source source, RubyNode currentNode, NodeWrapper nodeWrapper) {
         execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, nodeWrapper);
     }
@@ -194,21 +190,17 @@ public class RubyContext extends ExecutionContext {
 
     public Object eval(ByteList code, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, NodeWrapper.IDENTITY);
     }
 
     public Object eval(ByteList code, Object self, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, NodeWrapper.IDENTITY);
     }
 
     public Object eval(ByteList code, RubyBinding binding, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);
-    }
-
-    public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
-        return execute(context, source, defaultEncoding, parserContext, self, parentFrame, currentNode, NodeWrapper.IDENTITY);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode, NodeWrapper.IDENTITY);
     }
 
     public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
