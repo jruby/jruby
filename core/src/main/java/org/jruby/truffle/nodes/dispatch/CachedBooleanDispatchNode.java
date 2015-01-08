@@ -111,8 +111,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        final DispatchAction dispatchAction = getDispatchAction();
-
         if (receiverObject) {
             trueProfile.enter();
 
@@ -128,33 +126,38 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                         "class modified");
             }
 
-            if (dispatchAction == DispatchAction.CALL_METHOD) {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            trueMethod.getCallTarget(),
-                            RubyArguments.pack(
-                                    trueMethod,
-                                    trueMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-                } else {
-                    return trueCallDirect.call(
-                            frame,
-                            RubyArguments.pack(
-                                    trueMethod,
-                                    trueMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+            switch (getDispatchAction()) {
+                case CALL_METHOD: {
+                    if (isIndirect()) {
+                        return indirectCallNode.call(
+                                frame,
+                                trueMethod.getCallTarget(),
+                                RubyArguments.pack(
+                                        trueMethod,
+                                        trueMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    } else {
+                        return trueCallDirect.call(
+                                frame,
+                                RubyArguments.pack(
+                                        trueMethod,
+                                        trueMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    }
                 }
-            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-                return true;
-            } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
-                return trueValue;
-            } else {
-                throw new UnsupportedOperationException();
+
+                case RESPOND_TO_METHOD:
+                    return true;
+
+                case READ_CONSTANT:
+                    return trueValue;
+
+                default:
+                    throw new UnsupportedOperationException();
             }
         } else {
             falseProfile.enter();
@@ -171,33 +174,39 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
                         "class modified");
             }
 
-            if (dispatchAction == DispatchAction.CALL_METHOD) {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            falseMethod.getCallTarget(),
-                            RubyArguments.pack(
-                                    falseMethod,
-                                    falseMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-                } else {
-                    return falseCallDirect.call(
-                            frame,
-                            RubyArguments.pack(
-                                    falseMethod,
-                                    falseMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+            switch (getDispatchAction()) {
+                case CALL_METHOD: {
+                    if (isIndirect()) {
+                        return indirectCallNode.call(
+                                frame,
+                                falseMethod.getCallTarget(),
+                                RubyArguments.pack(
+                                        falseMethod,
+                                        falseMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    } else {
+                        return falseCallDirect.call(
+                                frame,
+                                RubyArguments.pack(
+                                        falseMethod,
+                                        falseMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    }
                 }
-            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-                return true;
-            } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
-                return falseValue;
-            } else {
-                throw new UnsupportedOperationException();
+
+                case RESPOND_TO_METHOD:
+                    return true;
+
+                case READ_CONSTANT:
+                    return falseValue;
+
+                default:
+                    throw new UnsupportedOperationException();
+
             }
         }
     }
