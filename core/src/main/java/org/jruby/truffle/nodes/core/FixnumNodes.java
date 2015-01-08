@@ -109,14 +109,9 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(bignum(a).add(b));
         }
 
-        @Specialization
+        @Specialization(guards = "isRational(arguments[1])")
         public Object add(VirtualFrame frame, int a, RubyBasicObject b) {
-            if (b.getLogicalClass() == getContext().getCoreLibrary().getRationalClass()) {
-                return rationalAdd.call(frame, b, "+", null, a);
-            } else {
-                // TODO (nirvdrum Jan. 7, 2015) Figure out what the proper exception message format is -- Symbols show the value, not the class name.
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantCoerce(b.getLogicalClass().getName(), "Fixnum", this));
-            }
+            return rationalAdd.call(frame, b, "+", null, a);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -149,14 +144,13 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(bignum(a).add(b));
         }
 
-        @Specialization
+        @Specialization(guards = "isRational(arguments[1])")
         public Object add(VirtualFrame frame, long a, RubyBasicObject b) {
-            if (b.getLogicalClass() == getContext().getCoreLibrary().getRationalClass()) {
-                return rationalAdd.call(frame, b, "+", null, a);
-            } else {
-                // TODO (nirvdrum Jan. 7, 2015) Figure out what the proper exception message format is -- Symbols show the value, not the class name.
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantCoerce(b.getLogicalClass().getName(), "Fixnum", this));
-            }
+            return rationalAdd.call(frame, b, "+", null, a);
+        }
+
+        public boolean isRational(RubyBasicObject o) {
+            return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
         }
     }
 
