@@ -252,7 +252,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case RECV_JRUBY_EXC:
             setResult(temp, currDynScope, instr.getResult(), exception);
             return;
-        case LOAD_IMPLICT_CLOSURE:
+        case LOAD_IMPLICIT_CLOSURE:
             setResult(temp, currDynScope, instr.getResult(), block);
             return;
         case LOAD_FRAME_CLOSURE:

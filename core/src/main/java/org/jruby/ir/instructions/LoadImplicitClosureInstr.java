@@ -17,7 +17,7 @@ public class LoadImplicitClosureInstr extends Instr implements ResultInstr, Fixe
     private Variable result;
 
     public LoadImplicitClosureInstr(Variable result) {
-        super(Operation.LOAD_IMPLICT_CLOSURE);
+        super(Operation.LOAD_IMPLICIT_CLOSURE);
 
         assert result != null : "LoadImplicitClosureInstr result is null";
 
