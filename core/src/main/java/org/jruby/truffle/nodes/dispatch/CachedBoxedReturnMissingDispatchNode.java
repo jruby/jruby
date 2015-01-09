@@ -45,13 +45,24 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
         unmodifiedAssumption = prev.unmodifiedAssumption;
     }
 
-    @Specialization(guards = {"guardClass", "guardName"})
+    @Specialization(guards = "guardName")
     public Object dispatch(
             VirtualFrame frame,
             RubyBasicObject receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
+        // Check the lookup node is what we expect
+
+        if (receiverObject.getMetaClass() != expectedClass) {
+            return next.executeDispatch(
+                    frame,
+                    receiverObject,
+                    methodName,
+                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    argumentsObjects);
+        }
+
         // Check the class has not been modified
 
         try {
@@ -76,14 +87,6 @@ public abstract class CachedBoxedReturnMissingDispatchNode extends CachedDispatc
             default:
                 throw new UnsupportedOperationException();
         }
-    }
-
-    protected final boolean guardClass(
-            RubyBasicObject receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
-        return receiverObject.getMetaClass() == expectedClass;
     }
 
     @Fallback
