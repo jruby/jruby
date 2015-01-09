@@ -159,7 +159,9 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getFrame().duplicate(),
                     oldBinding.getVisibility(),
                     oldBinding.getDynamicScope(),
-                    oldBinding.getBacktrace().clone());
+                    oldBinding.getMethod(),
+                    oldBinding.getFile(),
+                    oldBinding.getLine());
             block = new Block(procBlock.getBody(), newBinding);
 
             // modify the block with a new backref/lastline-grabbing scope

@@ -1004,7 +1004,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding() {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(frame, getCurrentScope(), backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(frame, getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1014,7 +1015,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1026,7 +1028,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, visibility, getCurrentScope(), backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, visibility, getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1038,7 +1041,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, frame.getVisibility(), scope, backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, frame.getVisibility(), scope, elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1053,7 +1057,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, visibility, scope, backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, visibility, scope, elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**

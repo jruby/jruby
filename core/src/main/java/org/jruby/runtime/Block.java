@@ -173,7 +173,13 @@ public final class Block {
     public Block cloneBlockAndFrame() {
         Binding oldBinding = binding;
         Binding binding = new Binding(
-                oldBinding.getSelf(), oldBinding.getFrame().duplicate(), oldBinding.getVisibility(), oldBinding.getDynamicScope(), oldBinding.getBacktrace());
+                oldBinding.getSelf(),
+                oldBinding.getFrame().duplicate(),
+                oldBinding.getVisibility(),
+                oldBinding.getDynamicScope(),
+                oldBinding.getMethod(),
+                oldBinding.getFile(),
+                oldBinding.getLine());
         
         Block newBlock = new Block(body, binding);
         

@@ -47,7 +47,10 @@ public class Binding {
      * frame of method which defined this block
      */
     private final Frame frame;
-    private final BacktraceElement backtrace;
+
+    public String method;
+    public String filename;
+    public int line;
 
     private Visibility visibility;
     /**
@@ -75,36 +78,42 @@ public class Binding {
      * instances.
      */
     private Binding evalScopeBinding = this;
-    
+
     public Binding(IRubyObject self, Frame frame,
-                   Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
+                   Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line) {
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
         this.dynamicScope = dynamicScope;
-        this.backtrace = backtrace;
+        this.method = method;
+        this.filename = filename;
+        this.line = line;
     }
 
     private Binding(IRubyObject self, Frame frame,
-                    Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace, DynamicScope dummyScope) {
+                    Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line, DynamicScope dummyScope) {
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
         this.dynamicScope = dynamicScope;
-        this.backtrace = backtrace;
+        this.method = method;
+        this.filename = filename;
+        this.line = line;
         this.dummyScope = dummyScope;
     }
     
-    public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
+    public Binding(Frame frame, DynamicScope dynamicScope, String method, String filename, int line) {
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
         this.dynamicScope = dynamicScope;
-        this.backtrace = backtrace;
+        this.method = method;
+        this.filename = filename;
+        this.line = line;
     }
     
     private Binding(Binding other) {
-        this(other.self, other.frame, other.visibility, other.dynamicScope, other.backtrace, other.dummyScope);
+        this(other.self, other.frame, other.visibility, other.dynamicScope, other.method, other.filename, other.line, other.dummyScope);
     }
 
     /**
@@ -173,32 +182,28 @@ public class Binding {
         return frame;
     }
 
-    public BacktraceElement getBacktrace() {
-        return backtrace;
-    }
-
     public String getFile() {
-        return backtrace.filename;
+        return filename;
     }
 
-    public void setFile(String file) {
-        backtrace.filename = file;
+    public void setFile(String filename) {
+        this.filename = filename;
     }
 
     public int getLine() {
-        return backtrace.line;
+        return line;
     }
 
     public void setLine(int line) {
-        backtrace.line = line;
+        this.line = line;
     }
 
     public String getMethod() {
-        return backtrace.method;
+        return method;
     }
 
     public void setMethod(String method) {
-        backtrace.method = method;
+        this.method = method;
     }
 
     public boolean equals(Object other) {
@@ -234,5 +239,33 @@ public class Binding {
         }
 
         return evalScopeBinding.evalScope;
+    }
+
+    @Deprecated
+    public Binding(IRubyObject self, Frame frame,
+                   Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
+        this.self = self;
+        this.frame = frame;
+        this.visibility = visibility;
+        this.dynamicScope = dynamicScope;
+        this.method = backtrace.method;
+        this.filename = backtrace.filename;
+        this.line = backtrace.line;
+    }
+
+    @Deprecated
+    public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
+        this.self = frame.getSelf();
+        this.frame = frame;
+        this.visibility = frame.getVisibility();
+        this.dynamicScope = dynamicScope;
+        this.method = backtrace.method;
+        this.filename = backtrace.filename;
+        this.line = backtrace.line;
+    }
+
+    @Deprecated
+    public BacktraceElement getBacktrace() {
+        return new BacktraceElement(method, filename, line);
     }
 }
