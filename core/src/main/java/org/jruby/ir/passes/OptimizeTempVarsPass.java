@@ -71,7 +71,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
                      TemporaryVariable tv = (TemporaryVariable)v;
                      Instr defs = tmpVarDefs.get(tv);
                      if (defs == null) {
-                         tmpVarDefs.put(tv, defs);
+                         tmpVarDefs.put(tv, i);
                      } else if (defs != NopInstr.NOP) {
                          tmpVarDefs.put(tv, NopInstr.NOP);
                      }
@@ -204,8 +204,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
             }
         }
 
-        // Always make sure the implicit block variable is considered live, so we don't clobber it
-        lastVarUseOrDef.put(s.getImplicitClosureVariable(), iCount);
+        // Always make sure the yield closure variable is considered live, so we don't clobber it
         lastVarUseOrDef.put(s.getYieldClosureVariable(), iCount);
 
         // If the scope has loops, extend live range of %current-module and %current-scope

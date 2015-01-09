@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyProc;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -18,12 +17,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Map;
+
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private final Variable source;
+    private Variable source;
     private Variable result;
 
-    public ReifyClosureInstr(Variable source, Variable result) {
+    public ReifyClosureInstr(Variable result, Variable source) {
         super(Operation.REIFY_CLOSURE);
 
         assert result != null: "ReceiveClosureInstr result is null";
@@ -34,7 +35,7 @@ public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityI
 
     @Override
     public String toString() {
-        return "reify_closure(" + source + ")";
+        return super.toString() + "(" + source + ")";
     }
 
     @Override
@@ -52,6 +53,11 @@ public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityI
     }
 
     @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        source = (Variable)source.getSimplifiedOperand(valueMap, force);
+    }
+
+    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
@@ -64,7 +70,7 @@ public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityI
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReifyClosureInstr(info.getRenamedVariable(source), info.getRenamedVariable(result));
+        if (info instanceof SimpleCloneInfo) return new ReifyClosureInstr(info.getRenamedVariable(result), info.getRenamedVariable(source));
 
         // SSS FIXME: This code below is for inlining and is untested.
 

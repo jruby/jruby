@@ -135,8 +135,6 @@ public abstract class IRScope implements ParseResult {
 
     private TemporaryVariable yieldClosureVariable;
 
-    private TemporaryVariable implicitClosureVariable;
-
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
         this.lexicalParent = lexicalParent;
@@ -903,18 +901,6 @@ public abstract class IRScope implements ParseResult {
         }
 
         return yieldClosureVariable;
-    }
-
-    /**
-     * Get the variable for accessing the implicit closure in this scope (the block
-     * passed along the JVM stack).
-     */
-    public TemporaryVariable getImplicitClosureVariable() {
-        if (implicitClosureVariable == null) {
-            return implicitClosureVariable = createTemporaryVariable();
-        }
-
-        return implicitClosureVariable;
     }
 
     public TemporaryLocalVariable getNewUnboxedVariable(Class type) {

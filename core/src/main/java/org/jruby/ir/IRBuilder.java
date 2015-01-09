@@ -1841,9 +1841,11 @@ public class IRBuilder {
         BlockArgNode blockArg = argsNode.getBlock();
         if (blockArg != null) {
             String blockArgName = blockArg.getName();
-            Variable blockVar = s.getNewLocalVariable(blockArgName, 0);
+            Variable blockVar = s.getLocalVariable(blockArgName, 0);
             if (s instanceof IRMethod) ((IRMethod) s).addArgDesc(IRMethodArgs.ArgType.block, blockArgName);
-            addInstr(s, new ReifyClosureInstr(s.getImplicitClosureVariable(), blockVar));
+            Variable tmp = s.createTemporaryVariable();
+            addInstr(s, new LoadImplicitClosureInstr(tmp));
+            addInstr(s, new ReifyClosureInstr(blockVar, tmp));
         }
     }
 
@@ -1856,9 +1858,6 @@ public class IRBuilder {
     private void prepareImplicitState(IRScope s) {
         // Receive self
         addInstr(s, new ReceiveSelfInstr(s.getSelf()));
-
-        // used for constructing block arg; if none, this will go away
-        addInstr(s, new LoadImplicitClosureInstr(s.getImplicitClosureVariable()));
 
         // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
         if (s instanceof IRMethod || s instanceof IRMetaClassBody) {
