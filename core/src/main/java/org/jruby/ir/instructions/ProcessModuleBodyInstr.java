@@ -32,7 +32,7 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{moduleBody};
+        return new Operand[]{moduleBody,block};
     }
 
     @Override
