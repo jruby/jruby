@@ -60,21 +60,16 @@ module Commands
     build
   end
 
-  def test(path=nil, *args)
-    if path == nil
-      mspec 'run', '--excl-tag', 'fails', ':language', ':core', *args
-    elsif path.start_with? 'spec/ruby'
-      mspec 'run', '--excl-tag', 'fails', path, *args
-    else
-      raise ArgumentError, "don't know how to test #{path}"
-    end
+  def test(*args)
+    args = [':language', ':core'] if args.empty?
+    mspec 'run', '--excl-tag', 'fails', *args
   end
 
-  def tag(path)
+  def tag(path, *args)
     mspec 'tag', '--add', 'fails', '--fail', path, *args
   end
 
-  def untag(path)
+  def untag(path, *args)
     puts
     puts "WARNING: untag is currently not very reliable - run `jt test #{path}` after and manually annotate any new failures"
     puts
