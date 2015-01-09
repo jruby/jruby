@@ -1659,8 +1659,6 @@ public class IRBuilder {
             addInstr(method, new TraceInstr(RubyEvent.CALL, method.getName(), method.getFileName(), method.getLineNumber()));
         }
 
-        addInstr(method, new ReceiveSelfInstr(method.getSelf()));
-
         // Prepare all implicit state (self, frame block, etc)
         prepareImplicitState(method);
 
