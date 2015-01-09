@@ -257,10 +257,6 @@ public abstract class IRScope implements ParseResult {
         nestedClosures.remove(closure);
     }
 
-    public Instr getLastInstr() {
-        return instrList.get(instrList.size() - 1);
-    }
-
     public void addInstrAtBeginning(Instr instr) {
         instr.computeScopeFlags(this);
 
@@ -284,8 +280,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void initFlipStateVariable(Variable v, Operand initState) {
-        // Add it to the beginning
-        instrList.add(0, new CopyInstr(v, initState));
+        addInstrAtBeginning(new CopyInstr(v, initState));
     }
 
     public Label getNewLabel(String prefix) {
