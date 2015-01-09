@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Variable extends Operand implements Comparable {
-    public final static String BLOCK          = "%block";
-    public final static String CURRENT_SCOPE  = "%current_scope";
-    public final static String CURRENT_MODULE = "%current_module";
-
     public Variable(OperandType type) {
         super(type);
     }
@@ -27,11 +23,6 @@ public abstract class Variable extends Operand implements Comparable {
         Operand v = valueMap.get(this);
         // You can only value-replace atomic values
         return (v != null) && (force || v.canCopyPropagate()) ? v : this;
-    }
-
-    // FIXME: Consider specialized type for special %block like for %self
-    public boolean isBlock() {
-        return BLOCK.equals(getName());
     }
 
     public boolean isSelf() {

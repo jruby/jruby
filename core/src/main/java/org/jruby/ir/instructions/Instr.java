@@ -94,17 +94,19 @@ public abstract class Instr {
         return false;
     }
 
+    /**
+     * Can this instruction be deleted?  LVA will preserve instructions based on whether operands (variables)
+     * are living but even if there are no living variables then the instruction itself may not be able to be removed
+     * during DCE for other reasons (like if it unconditionally has a side-effect or it happens to be living in a
+     * scope where a binding can escape and one of its operands is a local variable).
+     */
     public boolean canBeDeleted(IRScope s) {
          if (hasSideEffects() || operation.isDebugOp() || canRaiseException() || transfersControl()) return false;
 
          if (this instanceof ResultInstr) {
              Variable r = ((ResultInstr) this).getResult();
 
-             // %block must stay if this scope or nested scope has an eval which might yield. Safe, but conservative.
-             if (r.isBlock()) return !s.usesEval();
-
-             // If scope's binding escaped, then preserve lvars since consumers of the escaped binding may access those
-             // lvars.  Safe, but extremely conservative.
+             // An escaped binding needs to preserve lvars since that consumers of that binding may access lvars.
              if (s.bindingHasEscaped()) return !(r instanceof LocalVariable);
          }
 
@@ -126,7 +128,7 @@ public abstract class Instr {
 
     /* List of all variables used by all operands of this instruction */
     public List<Variable> getUsedVariables() {
-        ArrayList<Variable> vars = new ArrayList<Variable>();
+        ArrayList<Variable> vars = new ArrayList<>();
         for (Operand o : getOperands()) {
             o.addUsedVariables(vars);
         }
@@ -177,8 +179,9 @@ public abstract class Instr {
      * It is not required that it do so -- code correctness is not compromised by failure
      * to simplify.
      *
+     * @param scope where this instr exists
      * @param valueMap Mapping from operands to their simplified values
-     * @returns simplified result / output of this instruction
+     * @return simplified result / output of this instruction
      */
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
