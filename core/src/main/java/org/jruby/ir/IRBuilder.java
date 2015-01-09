@@ -2509,13 +2509,6 @@ public class IRBuilder {
         // Prepare all implicit state (self, frame block, etc)
         closureBuilder.prepareImplicitState(closure);
 
-        // load block into temporary variable
-        if (s instanceof IRMethod) {
-            addInstr(s, new LoadImplicitClosureInstr(s.getYieldClosureVariable()));
-        } else {
-            addInstr(s, new LoadFrameClosureInstr(s.getYieldClosureVariable()));
-        }
-
         // Build args
         if (iterNode.getVarNode().getNodeType() != null) closureBuilder.receiveBlockArgs(iterNode, closure);
 
