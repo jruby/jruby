@@ -8,10 +8,6 @@
 
 module Rubinius
 
-  def self.single_block_arg
-    raise "not implemented"
-  end
-
   def self.mathn_loaded?
     false
   end

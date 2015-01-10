@@ -49,6 +49,7 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
+import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
@@ -373,6 +374,8 @@ public class BodyTranslator extends Translator {
                 return translateRubiniusInvokePrimitive(sourceSection, node);
             } else if (node.getName().equals("privately")) {
                 return translateRubiniusPrivately(sourceSection, node);
+            } else if (node.getName().equals("single_block_arg")) {
+                return translateRubiniusSingleBlockArg(sourceSection, node);
             }
         }
 
@@ -499,6 +502,10 @@ public class BodyTranslator extends Translator {
 
             privately = previousPrivately;
         }
+    }
+
+    public RubyNode translateRubiniusSingleBlockArg(SourceSection sourceSection, CallNode node) {
+        return new RubiniusSingleBlockArgNode(context, sourceSection);
     }
 
     /**
