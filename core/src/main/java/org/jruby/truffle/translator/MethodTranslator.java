@@ -160,10 +160,6 @@ class MethodTranslator extends BodyTranslator {
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
-        if (isBlock && isTopLevel) {
-            body = new CatchBreakAsReturnNode(context, sourceSection, body);
-        }
-
         if (!isBlock) {
             body = new ExceptionTranslatingNode(context, sourceSection, body);
         }

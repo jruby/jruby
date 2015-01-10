@@ -52,6 +52,7 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.KeyValuePair;
@@ -73,6 +74,7 @@ public class BodyTranslator extends Translator {
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
+    private boolean translatingWhile = false;
     private String currentCallMethodName = null;
 
     private boolean privately = false;
@@ -325,6 +327,13 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBreakNode(org.jruby.ast.BreakNode node) {
+        if (!(environment.isBlock() || translatingWhile)) {
+            // TODO(CS 10-Jan-15): must raise a proper exception rather, but not sure if it should be a JRuby exception or a Truffle one
+            System.err.printf("%s:%d: Invalid break\n", node.getPosition().getFile(), node.getPosition().getLine() + 1);
+            System.err.printf("%s: compile error (SyntaxError)\n", node.getPosition().getFile());
+            System.exit(1);
+        }
+
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode resultNode;
@@ -2461,7 +2470,15 @@ public class BodyTranslator extends Translator {
 
         final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
 
-        RubyNode body = node.getBodyNode().accept(this);
+        translatingWhile = true;
+
+        final RubyNode body;
+
+        try {
+            body = node.getBodyNode().accept(this);
+        } finally {
+            translatingWhile = false;
+        }
 
         if (node.evaluateAtStart()) {
             return WhileNode.createWhile(context, sourceSection, conditionCast, body);
