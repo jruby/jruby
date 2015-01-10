@@ -34,15 +34,8 @@ public class TemporaryLocalVariable extends TemporaryVariable {
         return TemporaryVariableType.LOCAL;
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (other == null || !(other instanceof TemporaryLocalVariable)) return false;
-
-        return super.equals(other) && getOffset() == ((TemporaryLocalVariable) other).getOffset();
-    }
-
     public String getPrefix() {
-        return "%v_";
+        return PREFIX;
     }
 
     @Override

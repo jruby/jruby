@@ -16,13 +16,6 @@ public abstract class TemporaryVariable extends Variable {
      */
     public abstract TemporaryVariableType getType();
 
-    @Override
-    public boolean equals(Object other) {
-        if (other == null || !(other instanceof TemporaryVariable)) return false;
-
-        return getType() == ((TemporaryVariable) other).getType();
-    }
-
     public String getName() {
         return name;
     }
@@ -30,6 +23,13 @@ public abstract class TemporaryVariable extends Variable {
     @Override
     public int hashCode() {
         return getName().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof TemporaryVariable)) return false;
+
+        return ((TemporaryVariable)other).getName().equals(getName());
     }
 
     @Override
