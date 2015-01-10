@@ -154,6 +154,7 @@ class MethodTranslator extends BodyTranslator {
             body = new RedoableNode(context, sourceSection, body);
             body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
         } else {
+            body = new CatchBreakAsReturnNode(context, sourceSection, body);
             body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
         }
 
@@ -161,6 +162,7 @@ class MethodTranslator extends BodyTranslator {
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
         if (!isBlock) {
+            // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
             body = new ExceptionTranslatingNode(context, sourceSection, body);
         }
 
