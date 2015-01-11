@@ -662,6 +662,11 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
+        public RubyArray divMod(int a, double b) {
+            return divModNode.execute(a, b);
+        }
+
+        @Specialization
         public RubyArray divMod(long a, int b) {
             return divModNode.execute(a, b);
         }
@@ -673,6 +678,11 @@ public abstract class FixnumNodes {
 
         @Specialization
         public RubyArray divMod(long a, RubyBignum b) {
+            return divModNode.execute(a, b);
+        }
+
+        @Specialization
+        public RubyArray divMod(long a, double b) {
             return divModNode.execute(a, b);
         }
 
