@@ -15,7 +15,7 @@ import org.jruby.util.RegexpOptions;
 
 // Represents a dynamic regexp in Ruby
 // Ex: /#{a}#{b}/
-public class BuildDynRegExpInstr extends Instr implements ResultInstr {
+public class BuildDynRegExpInstr extends ResultBaseInstr {
     final private RegexpOptions options;
 
     // Cached regexp

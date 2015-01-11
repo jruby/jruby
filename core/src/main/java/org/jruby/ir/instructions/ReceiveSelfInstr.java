@@ -6,7 +6,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-public class ReceiveSelfInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class ReceiveSelfInstr extends ResultBaseInstr implements FixedArityInstr {
     // SSS FIXME: destination always has to be a local variable '%self'.  So, is this a redundant arg?
     public ReceiveSelfInstr(Variable result) {
         super(Operation.RECV_SELF, result, EMPTY_OPERANDS);

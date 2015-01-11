@@ -18,7 +18,7 @@ import java.util.Map;
 //   * Array + Splat ([1,2,3], *[5,6,7])
 // This used to be an operand, but since to_a can be called as part of
 // building the args-cat/push value, this is not really side-effect free.
-public class BuildCompoundArrayInstr extends Instr implements ResultInstr {
+public class BuildCompoundArrayInstr extends ResultBaseInstr {
     private boolean isArgsPush;
 
     public BuildCompoundArrayInstr(Variable result, Operand a1, Operand a2, boolean isArgsPush) {

@@ -14,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedArityInstr {
+public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     private final String missingConst;
 
     public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {

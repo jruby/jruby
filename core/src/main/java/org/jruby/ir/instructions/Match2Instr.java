@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.ir.IRFlags.USES_BACKREF_OR_LASTLINE;
 
-public class Match2Instr extends Instr implements ResultInstr, FixedArityInstr {
+public class Match2Instr extends ResultBaseInstr implements FixedArityInstr {
     public Match2Instr(Variable result, Operand receiver, Operand arg) {
         super(Operation.MATCH2, result, new Operand[]{receiver, arg});
 

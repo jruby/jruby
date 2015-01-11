@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, this range operand could get converted to calls
 // that actually build the BuildRangeInstr object
-public class BuildRangeInstr extends Instr implements ResultInstr {
+public class BuildRangeInstr extends ResultBaseInstr {
     private boolean exclusive;
 
     public BuildRangeInstr(Variable result, Operand begin, Operand end, boolean exclusive) {

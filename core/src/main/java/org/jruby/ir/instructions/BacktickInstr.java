@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this string operand could get converted to calls
-public class BacktickInstr extends Instr implements ResultInstr {
+public class BacktickInstr extends ResultBaseInstr {
     public BacktickInstr(Variable result, Operand[] pieces) {
         super(Operation.BACKTICK_STRING, result, pieces);
     }

@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.ir.IRFlags;
 
-public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityInstr, ClosureAcceptingInstr {
+public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr, ClosureAcceptingInstr {
     /** The position for the block */
     private final ISourcePosition position;
 
@@ -66,11 +66,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         Block block = (Block)getLambdaBody().retrieve(context, self, currScope, currDynScope, temp);
         // ENEBO: Now can live nil be passed as block reference?
         // SSS FIXME: Should we do the same %self retrieval as in the case of WrappedIRClosure? Or are lambdas special??
-        return RubyProc.newProc(context.runtime,
-                block,
-                Block.Type.LAMBDA,
-                position.getFile(),
-                position.getLine());
+        return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA, position.getFile(), position.getLine());
     }
 
     @Override

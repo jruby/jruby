@@ -6,7 +6,7 @@ import org.jruby.ir.operands.Operand;
 
 public abstract class BranchInstr extends Instr {
     public BranchInstr(Operation op, Operand[] operands) {
-        super(op, null, operands);
+        super(op, operands);
     }
 
     public Label getJumpTarget() {

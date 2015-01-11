@@ -11,10 +11,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class EQQInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class EQQInstr extends ResultBaseInstr implements FixedArityInstr {
     public EQQInstr(Variable result, Operand v1, Operand v2) {
         super(Operation.EQQ, result, new Operand[] {v1, v2});
 

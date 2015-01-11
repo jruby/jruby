@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // have this requirement unlike case statements.
 //
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class RescueEQQInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class RescueEQQInstr extends ResultBaseInstr implements FixedArityInstr {
     public RescueEQQInstr(Variable result, Operand v1, Operand v2) {
         super(Operation.RESCUE_EQQ, result, new Operand[] { v1, v2 });
 

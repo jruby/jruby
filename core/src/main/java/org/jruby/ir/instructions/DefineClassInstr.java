@@ -13,7 +13,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class DefineClassInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class DefineClassInstr extends ResultBaseInstr implements FixedArityInstr {
     private final IRClassBody newIRClassBody;
 
     public DefineClassInstr(Variable result, IRClassBody newIRClassBody, Operand container, Operand superClass) {

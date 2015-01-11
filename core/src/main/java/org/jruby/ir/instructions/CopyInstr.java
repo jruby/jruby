@@ -12,7 +12,7 @@ import org.jruby.ir.operands.Variable;
 import java.util.Map;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
+public class CopyInstr extends ResultBaseInstr implements FixedArityInstr {
     public CopyInstr(Operation op, Variable result, Operand source) {
         super(op, result, new Operand[] { source });
     }

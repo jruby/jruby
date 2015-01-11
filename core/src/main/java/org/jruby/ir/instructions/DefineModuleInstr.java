@@ -12,9 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
-public class DefineModuleInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class DefineModuleInstr extends ResultBaseInstr implements FixedArityInstr {
     private final IRModuleBody newIRModuleBody;
 
     public DefineModuleInstr(Variable result, IRModuleBody newIRModuleBody, Operand container) {

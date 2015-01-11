@@ -18,7 +18,7 @@ import java.util.Arrays;
 
 import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
 
-public class RuntimeHelperCall extends Instr implements ResultInstr {
+public class RuntimeHelperCall extends ResultBaseInstr {
     public enum Methods {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,

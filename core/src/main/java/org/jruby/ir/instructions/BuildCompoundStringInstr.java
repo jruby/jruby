@@ -15,14 +15,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
 //     - "Hi #{name}"
-public class BuildCompoundStringInstr extends Instr implements ResultInstr {
+public class BuildCompoundStringInstr extends ResultBaseInstr {
     final private Encoding encoding;
 
     public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding) {
@@ -46,15 +42,6 @@ public class BuildCompoundStringInstr extends Instr implements ResultInstr {
 
     public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
         return newStr.bytelist.getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
-    }
-
-    public RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        int length = operands.length;
-        RubyString[] strings = new RubyString[length];
-        for (int i = 0; i < length; i++) {
-            strings[i] = (RubyString) operands[i].retrieve(context, self, currScope, currDynScope, temp);
-        }
-        return strings;
     }
 
     @Override

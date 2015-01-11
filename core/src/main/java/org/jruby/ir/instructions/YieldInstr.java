@@ -13,7 +13,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class YieldInstr extends ResultBaseInstr implements FixedArityInstr {
     public final boolean unwrapArray;
 
     public YieldInstr(Variable result, Operand block, Operand arg, boolean unwrapArray) {

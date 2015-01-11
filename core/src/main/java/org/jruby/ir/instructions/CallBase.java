@@ -37,7 +37,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     private boolean procNew;
 
     protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
-        super(op, null, getOperands(receiver, args, closure));
+        super(op, getOperands(receiver, args, closure));
 
         this.callSiteId = callSiteCounter++;
         argsCount = args.length;

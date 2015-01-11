@@ -33,7 +33,6 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
-    protected Variable result;
     protected Operand[] operands;
     private int ipc; // Interpreter-only: instruction pointer
     private int rpc; // Interpreter-only: rescue pointer
@@ -44,22 +43,17 @@ public abstract class Instr {
     private boolean isDead;
 
     public Instr(Operation operation, Operand[] operands) {
-        this(operation, null, operands);
-    }
-
-    public Instr(Operation operation, Variable result, Operand[] operands) {
         this.ipc = -1;
         this.rpc = -1;
         this.operation = operation;
         this.operands = operands;
-        this.result = result;
     }
 
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(isDead() ? "[DEAD]" : "");
 
-        if (this instanceof ResultInstr) buf.append(getResult()).append(" = ");
+        if (this instanceof ResultInstr) buf.append(((ResultInstr) this).getResult()).append(" = ");
 
         buf.append(operation);
 
@@ -78,14 +72,6 @@ public abstract class Instr {
     @Interp
     public Operation getOperation() {
         return operation;
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     @Interp
@@ -161,8 +147,8 @@ public abstract class Instr {
     /* List of all variables used by all operands of this instruction */
     public List<Variable> getUsedVariables() {
         ArrayList<Variable> vars = new ArrayList<>();
-        for (int i = 0; i < operands.length; i++) {
-            operands[i].addUsedVariables(vars);
+        for (Operand operand : operands) {
+            operand.addUsedVariables(vars);
         }
 
         return vars;

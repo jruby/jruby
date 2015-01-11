@@ -17,10 +17,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
-public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class ReifyClosureInstr extends ResultBaseInstr implements FixedArityInstr {
     public ReifyClosureInstr(Variable result, Variable source) {
         super(Operation.REIFY_CLOSURE, result, new Operand[] { source });
 

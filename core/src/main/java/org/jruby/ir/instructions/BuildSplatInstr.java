@@ -12,7 +12,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a splat value in Ruby code: *array
-public class BuildSplatInstr extends Instr implements ResultInstr {
+public class BuildSplatInstr extends ResultBaseInstr {
     public BuildSplatInstr(Variable result, Operand array) {
         super(Operation.BUILD_SPLAT, result, new Operand[] { array });
     }
@@ -28,8 +28,8 @@ public class BuildSplatInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject arrayVal = (IRubyObject) getArray().retrieve(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.irSplat(context, arrayVal);
+        return IRRuntimeHelpers.irSplat(context,
+                (IRubyObject) getArray().retrieve(context, self, currScope, currDynScope, temp));
     }
 
     @Override

@@ -10,7 +10,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ArgScopeDepthInstr extends Instr implements ResultInstr,FixedArityInstr {
+public class ArgScopeDepthInstr extends ResultBaseInstr implements FixedArityInstr {
     public ArgScopeDepthInstr(Variable result) {
         super(Operation.ARG_SCOPE_DEPTH, result, EMPTY_OPERANDS);
     }

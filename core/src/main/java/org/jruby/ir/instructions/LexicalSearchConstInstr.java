@@ -18,7 +18,7 @@ import org.jruby.runtime.opto.Invalidator;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class LexicalSearchConstInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class LexicalSearchConstInstr extends ResultBaseInstr implements FixedArityInstr {
     String constName;
 
     // Constant caching

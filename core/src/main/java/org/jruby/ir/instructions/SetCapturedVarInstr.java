@@ -12,7 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class SetCapturedVarInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class SetCapturedVarInstr extends ResultBaseInstr implements FixedArityInstr {
     private final String varName;
 
     public SetCapturedVarInstr(Variable result, Operand match2Result, String varName) {

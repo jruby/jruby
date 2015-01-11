@@ -11,11 +11,9 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
     public RestoreErrorInfoInstr(Operand arg) {
-        super(Operation.RESTORE_ERROR_INFO, null, new Operand[] { arg });
+        super(Operation.RESTORE_ERROR_INFO, new Operand[] { arg });
     }
 
     public Operand getArg() {

@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -14,7 +13,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * This is typically used to access the "yieldable" target for blocks and evals. Only used
  * when within a scope that will use an on-heap frame.
  */
-public class LoadFrameClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class LoadFrameClosureInstr extends ResultBaseInstr implements FixedArityInstr {
     public LoadFrameClosureInstr(Variable result) {
         super(Operation.LOAD_FRAME_CLOSURE, result, EMPTY_OPERANDS);
 
