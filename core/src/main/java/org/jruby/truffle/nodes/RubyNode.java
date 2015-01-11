@@ -182,12 +182,12 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
     }
 
-    public DispatchAction executeDispatchAction(VirtualFrame frame) throws UnexpectedResultException {
-        throw new UnsupportedOperationException();
+    public RubyMethod executeRubyMethod(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyMethod(execute(frame));
     }
 
-    public LexicalScope executeLexicalScope(VirtualFrame frame) throws UnexpectedResultException {
-        throw new UnsupportedOperationException();
+    public RubyUnboundMethod executeRubyUnboundMethod(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyUnboundMethod(execute(frame));
     }
 
     public void executeVoid(VirtualFrame frame) {

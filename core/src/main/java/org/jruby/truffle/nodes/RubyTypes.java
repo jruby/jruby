@@ -20,8 +20,6 @@ import org.jruby.truffle.runtime.core.*;
  * using. Used by the DSL.
  */
 @TypeSystem({ //
-                DispatchAction.class, //
-                LexicalScope.class, //
                 UndefinedPlaceholder.class, //
                 boolean.class, //
                 byte.class, //
@@ -55,6 +53,8 @@ import org.jruby.truffle.runtime.core.*;
                 RubyThread.class, //
                 RubyTime.class, //
                 RubyEncodingConverter.class, //
+                RubyMethod.class, //
+                RubyUnboundMethod.class, //
                 RubyBasicObject.class, //
                 ThreadLocal.class, //
                 Object[].class})

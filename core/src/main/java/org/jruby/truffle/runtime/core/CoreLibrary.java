@@ -111,6 +111,8 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass edomClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingConverterClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingCompatibilityErrorClass;
+    @CompilerDirectives.CompilationFinal private RubyClass methodClass;
+    @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -280,6 +282,8 @@ public class CoreLibrary {
         zeroDivisionErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
         encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
+        methodClass = new RubyClass(context, objectClass, objectClass, "Method");
+        unboundMethodClass = new RubyClass(context, objectClass, objectClass, "UnboundMethod");
 
         encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
         encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
@@ -915,5 +919,13 @@ public class CoreLibrary {
 
     public RubyClass getEncodingConverterClass() {
         return encodingConverterClass;
+    }
+
+    public RubyClass getUnboundMethodClass() {
+        return unboundMethodClass;
+    }
+
+    public RubyClass getMethodClass() {
+        return methodClass;
     }
 }

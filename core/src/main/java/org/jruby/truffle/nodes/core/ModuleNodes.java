@@ -1261,6 +1261,34 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "instance_method", required = 1)
+    public abstract static class InstanceMethodNode extends CoreMethodNode {
+
+        public InstanceMethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceMethodNode(InstanceMethodNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyUnboundMethod instanceMethod(RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+
+            // TODO(CS, 11-Jan-15) cache this lookup
+
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
+
+            if (method == null) {
+                throw new UnsupportedOperationException();
+            }
+
+            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), method);
+        }
+
+    }
+
     @CoreMethod(names = "private_constant", argumentsAsArray = true)
     public abstract static class PrivateConstantNode extends CoreMethodNode {
 
