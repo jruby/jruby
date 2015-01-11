@@ -662,6 +662,24 @@ public abstract class BignumNodes {
 
     }
 
+    @CoreMethod(names = "to_f")
+    public abstract static class ToFNode extends CoreMethodNode {
+
+        public ToFNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToFNode(ToFNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double toF(RubyBignum value) {
+            return value.doubleValue();
+        }
+
+    }
+
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
