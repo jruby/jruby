@@ -1316,6 +1316,34 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "method", required = 1)
+    public abstract static class MethodNode extends CoreMethodNode {
+
+        public MethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MethodNode(MethodNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyMethod method(Object object, RubySymbol name) {
+            notDesignedForCompilation();
+
+            // TODO(CS, 11-Jan-15) cache this lookup
+
+            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name.toString());
+
+            if (method == null) {
+                throw new UnsupportedOperationException();
+            }
+
+            return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
+        }
+
+    }
+
     @CoreMethod(names = "methods", optional = 1)
     public abstract static class MethodsNode extends CoreMethodNode {
 
