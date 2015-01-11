@@ -214,7 +214,7 @@ class MethodTranslator extends BodyTranslator {
                 behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
             }
 
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsProcNode.class)) {
+            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsProcNode.class)) {
                 behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
             }
 
@@ -222,7 +222,9 @@ class MethodTranslator extends BodyTranslator {
                     context,
                     newRootNodeForMethods.getSourceSection(),
                     newRootNodeForMethods.getFrameDescriptor(), newRootNodeForMethods.getSharedMethodInfo(),
-                    new CatchReturnNode(context, newRootNodeForMethods.getSourceSection(), newRootNodeForMethods.getBody(), getEnvironment().getReturnID()));
+                    new CatchBreakAsReturnNode(context, sourceSection,
+                        new CatchReturnNode(context, newRootNodeForMethods.getSourceSection(),
+                            newRootNodeForMethods.getBody(), getEnvironment().getReturnID())));
 
             final CallTarget callTargetAsMethod = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
 
