@@ -83,21 +83,19 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         indirectCallNode = prev.indirectCallNode;
     }
 
-    @Specialization(guards = "guardName")
+    @Specialization
     public Object dispatch(
             VirtualFrame frame,
-            RubyBasicObject receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        // Check the lookup node is what we expect
-
-        if (receiverObject.getMetaClass() != expectedClass) {
+        if (!guardName(methodName) || !(receiverObject instanceof RubyBasicObject) || ((RubyBasicObject) receiverObject).getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
                     receiverObject,
                     methodName,
-                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    blockObject,
                     argumentsObjects);
         }
 
@@ -175,21 +173,6 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             default:
                 throw new UnsupportedOperationException();
         }
-    }
-
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
-        return next.executeDispatch(
-                frame,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects);
     }
 
 }

@@ -20,6 +20,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.RubyMethod;
@@ -71,13 +72,22 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         indirectCallNode = prev.indirectCallNode;
     }
 
-    @Specialization(guards = "guardName")
+    @Specialization
     public Object dispatch(
             VirtualFrame frame,
-            RubySymbol receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
+        if (!guardName(methodName) || !(receiverObject instanceof RubySymbol)) {
+            return next.executeDispatch(
+                    frame,
+                    receiverObject,
+                    methodName,
+                    blockObject,
+                    argumentsObjects);
+        }
+
         // Check the class has not been modified
 
         try {
@@ -125,21 +135,6 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             default:
                 throw new UnsupportedOperationException();
         }
-    }
-
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
-        return next.executeDispatch(
-                frame,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects);
     }
 
 }

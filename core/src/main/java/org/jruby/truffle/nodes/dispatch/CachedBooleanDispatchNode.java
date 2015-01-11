@@ -104,14 +104,23 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
         indirectCallNode = prev.indirectCallNode;
     }
 
-    @Specialization(guards = "guardName")
+    @Specialization
     public Object dispatch(
             VirtualFrame frame,
-            boolean receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        if (receiverObject) {
+        if (!guardName(methodName) || !(receiverObject instanceof Boolean)) {
+            return next.executeDispatch(
+                    frame,
+                    receiverObject,
+                    methodName,
+                    blockObject,
+                    argumentsObjects);
+        }
+
+        if ((boolean) receiverObject) {
             trueProfile.enter();
 
             try {
@@ -209,21 +218,6 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
 
             }
         }
-    }
-
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
-        return next.executeDispatch(
-                frame,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects);
     }
 
 }

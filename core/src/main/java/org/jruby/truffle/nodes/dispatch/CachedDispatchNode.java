@@ -58,11 +58,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         indirect = prev.indirect;
     }
 
-    protected final boolean guardName(
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+    protected final boolean guardName(Object methodName) {
         if (cachedName == methodName) {
             return true;
         }
@@ -72,6 +68,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (cachedName instanceof String) {
             return cachedName.equals(methodName);
         } else if (cachedName instanceof RubySymbol) {
+            // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (cachedName instanceof RubyString) {
             return (methodName instanceof RubyString) && ((RubyString) cachedName).getBytes().equals(((RubyString) methodName).getBytes());
