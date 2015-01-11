@@ -52,10 +52,10 @@ public enum Operation {
     RECV_RUBY_EXC(OpFlags.f_is_arg_receive),
     RECV_JRUBY_EXC(OpFlags.f_is_arg_receive),
     LOAD_IMPLICIT_CLOSURE(OpFlags.f_is_arg_receive),
-    LOAD_FRAME_CLOSURE(OpFlags.f_is_arg_receive),
 
     /** Instruction to reify an passed-in block to a Proc for def foo(&b) */
     REIFY_CLOSURE(0),
+    LOAD_FRAME_CLOSURE(0),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is,

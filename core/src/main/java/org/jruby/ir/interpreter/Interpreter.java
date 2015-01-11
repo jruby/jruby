@@ -255,9 +255,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case LOAD_IMPLICIT_CLOSURE:
             setResult(temp, currDynScope, instr.getResult(), block);
             return;
-        case LOAD_FRAME_CLOSURE:
-            setResult(temp, currDynScope, instr.getResult(), context.getFrameBlock());
-            return;
         default:
             result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
             setResult(temp, currDynScope, instr.getResult(), result);
@@ -484,6 +481,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             }
             break;
         }
+
+        case LOAD_FRAME_CLOSURE:
+            setResult(temp, currDynScope, instr, context.getFrameBlock());
+            return;
 
         // ---------- All the rest ---------
         default:
