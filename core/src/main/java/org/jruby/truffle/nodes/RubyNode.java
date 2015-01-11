@@ -266,6 +266,11 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         this.replace(wrapper);
     }
 
+    public boolean isRational(RubyBasicObject o) {
+        // TODO(CS, 10-Jan-15) should this be a full is_a? test? We'd need a node for that.
+        return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
+    }
+
     // Copied from RubyTypesGen
 
     @SuppressWarnings("static-method")

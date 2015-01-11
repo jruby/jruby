@@ -54,6 +54,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass bindingClass;
     @CompilerDirectives.CompilationFinal private RubyClass classClass;
     @CompilerDirectives.CompilationFinal private RubyClass continuationClass;
+    @CompilerDirectives.CompilationFinal private RubyClass complexClass;
     @CompilerDirectives.CompilationFinal private RubyClass dirClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingClass;
     @CompilerDirectives.CompilationFinal private RubyClass exceptionClass;
@@ -209,6 +210,7 @@ public class CoreLibrary {
         bignumClass.setAllocator(new RubyBignum.BignumAllocator());
         bindingClass = new RubyClass(context, objectClass, objectClass, "Binding");
         comparableModule = new RubyModule(context, objectClass, "Comparable");
+        complexClass = new RubyClass(context, objectClass, numericClass, "Complex");
         configModule = new RubyModule(context, objectClass, "Config");
         continuationClass = new RubyClass(context, objectClass, objectClass, "Continuation");
         dirClass = new RubyClass(context, objectClass, objectClass, "Dir");
@@ -927,5 +929,9 @@ public class CoreLibrary {
 
     public RubyClass getMethodClass() {
         return methodClass;
+    }
+
+    public RubyClass getComplexClass() {
+        return complexClass;
     }
 }
