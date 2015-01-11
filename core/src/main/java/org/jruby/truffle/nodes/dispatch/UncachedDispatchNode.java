@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class UncachedDispatchNode extends DispatchNode {
 
@@ -68,7 +68,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
             final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-            final RubyMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
+            final InternalMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
 
             if (missingMethod == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -88,7 +88,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         } else {
             final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-            final RubyMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
+            final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
                     ignoreVisibility);
 
             if (method != null) {
@@ -111,7 +111,7 @@ public abstract class UncachedDispatchNode extends DispatchNode {
 
             methodMissingProfile.enter();
 
-            final RubyMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true);
+            final InternalMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true);
 
             if (missingMethod == null) {
                 if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {

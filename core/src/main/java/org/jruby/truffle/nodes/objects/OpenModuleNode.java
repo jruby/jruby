@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
  * Open a module and execute a method in it - probably to define new methods.
@@ -49,7 +49,7 @@ public class OpenModuleNode extends RubyNode {
         lexicalScope.setLiveModule(module);
         lexicalScope.getParent().getLiveModule().addLexicalDependent(module);
 
-        final RubyMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
+        final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[]{}));
     }
 

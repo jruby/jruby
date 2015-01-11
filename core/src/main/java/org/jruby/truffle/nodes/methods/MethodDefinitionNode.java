@@ -10,25 +10,13 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
@@ -53,7 +41,7 @@ public class MethodDefinitionNode extends RubyNode {
         this.callTarget = callTarget;
     }
 
-    public RubyMethod executeMethod(VirtualFrame frame) {
+    public InternalMethod executeMethod(VirtualFrame frame) {
         notDesignedForCompilation();
 
         final MaterializedFrame declarationFrame;
@@ -67,10 +55,10 @@ public class MethodDefinitionNode extends RubyNode {
         return executeMethod(frame, declarationFrame);
     }
 
-    public RubyMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
+    public InternalMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
         notDesignedForCompilation();
 
-        return new RubyMethod(sharedMethodInfo, name, null, null, false, callTarget, declarationFrame);
+        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, declarationFrame);
     }
 
     @Override

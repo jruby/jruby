@@ -18,8 +18,8 @@ import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
 
@@ -34,24 +34,24 @@ public abstract class RubyCallStack {
         return method.getDeclaringModule();
     }
 
-    public static RubyMethod getCurrentMethod() {
+    public static InternalMethod getCurrentMethod() {
         CompilerAsserts.neverPartOfCompilation();
 
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
         final MethodLike method = getMethod(currentFrame);
 
-        if (method instanceof RubyMethod) {
-            return (RubyMethod) method;
+        if (method instanceof InternalMethod) {
+            return (InternalMethod) method;
         }
 
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
 
             @Override
-            public RubyMethod visitFrame(FrameInstance frameInstance) {
+            public InternalMethod visitFrame(FrameInstance frameInstance) {
                 final MethodLike maybeMethod = getMethod(frameInstance);
 
-                if (maybeMethod instanceof RubyMethod) {
-                    return (RubyMethod) maybeMethod;
+                if (maybeMethod instanceof InternalMethod) {
+                    return (InternalMethod) maybeMethod;
                 } else {
                     return null;
                 }
@@ -60,7 +60,7 @@ public abstract class RubyCallStack {
         });
     }
 
-    public static RubyMethod getCallingMethod() {
+    public static InternalMethod getCallingMethod() {
         CompilerAsserts.neverPartOfCompilation();
 
         final Memo<Boolean> seenCurrent = new Memo<Boolean>();
@@ -71,19 +71,19 @@ public abstract class RubyCallStack {
 
         method = getMethod(currentFrame);
 
-        if (method instanceof RubyMethod) {
+        if (method instanceof InternalMethod) {
             seenCurrent.set(true);
         }
 
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
 
             @Override
-            public RubyMethod visitFrame(FrameInstance frameInstance) {
+            public InternalMethod visitFrame(FrameInstance frameInstance) {
                 final MethodLike maybeMethod = getMethod(frameInstance);
 
-                if (maybeMethod instanceof RubyMethod) {
+                if (maybeMethod instanceof InternalMethod) {
                     if (seenCurrent.get()) {
-                        return (RubyMethod) maybeMethod;
+                        return (InternalMethod) maybeMethod;
                     } else {
                         seenCurrent.set(true);
                         return null;
@@ -122,10 +122,10 @@ public abstract class RubyCallStack {
                 activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
             }
 
-            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
+            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
 
                 @Override
-                public RubyMethod visitFrame(FrameInstance frameInstance) {
+                public InternalMethod visitFrame(FrameInstance frameInstance) {
                     // Multiple top level methods (require) introduce null call nodes - ignore them
                     
                     if (frameInstance.getCallNode() != null) {

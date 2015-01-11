@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
 public class RubyCallNode extends RubyNode {
@@ -193,7 +193,7 @@ public class RubyCallNode extends RubyNode {
 
         // TODO(CS): this lookup should be cached
 
-        final RubyMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiverObject), methodName);
+        final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiverObject), methodName);
 
         final Object self = RubyArguments.getSelf(frame.getArguments());
 

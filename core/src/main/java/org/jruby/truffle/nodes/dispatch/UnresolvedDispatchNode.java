@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
 public final class UnresolvedDispatchNode extends DispatchNode {
@@ -101,7 +101,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
 
         if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+            final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
             if (method == null) {
                 final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject);
@@ -113,14 +113,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 final Assumption falseUnmodifiedAssumption =
                         getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
 
-                final RubyMethod falseMethod =
+                final InternalMethod falseMethod =
                         lookup(callerClass, false, methodName.toString(),
                                 ignoreVisibility);
 
                 final Assumption trueUnmodifiedAssumption =
                         getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
 
-                final RubyMethod trueMethod =
+                final InternalMethod trueMethod =
                         lookup(callerClass, true, methodName.toString(),
                                 ignoreVisibility);
 
@@ -166,7 +166,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            final RubyMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+            final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
             if (method == null) {
                 final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject);
@@ -226,7 +226,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             }
 
             case CALL_CONST_MISSING: {
-                final RubyMethod method = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
+                final InternalMethod method = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
 
                 if (method == null) {
                     throw new RaiseException(getContext().getCoreLibrary().runtimeError(
@@ -260,7 +260,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             }
 
             case CALL_METHOD_MISSING: {
-                final RubyMethod method = lookup(null, receiverObject, "method_missing", true);
+                final InternalMethod method = lookup(null, receiverObject, "method_missing", true);
 
                 if (method == null) {
                     throw new RaiseException(getContext().getCoreLibrary().runtimeError(

@@ -37,8 +37,8 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -282,7 +282,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -335,7 +335,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -764,7 +764,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name.toString(), module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
         }
 
@@ -1070,7 +1070,7 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
+                final InternalMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -1131,7 +1131,7 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
+                final InternalMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -1165,14 +1165,14 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
+            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
 
             if (includeAncestors) {
                 for (RubyModule parent : module.parentAncestors()) {
                     methods.addAll(parent.getMethods().values());
                 }
             }
-            for (RubyMethod method : methods) {
+            for (InternalMethod method : methods) {
                 if (method.getVisibility() == Visibility.PRIVATE){
                     RubySymbol m = getContext().newSymbol(method.getName());
                     array.slowPush(m);
@@ -1203,13 +1203,13 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
+            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
             if (includeAncestors) {
                 for (RubyModule parent : module.parentAncestors()) {
                     methods.addAll(parent.getMethods().values());
                 }
             }
-            for (RubyMethod method : methods) {
+            for (InternalMethod method : methods) {
                 if (method.getVisibility() == Visibility.PUBLIC){
                     RubySymbol m = getContext().newSymbol(method.getName());
                     array.slowPush(m);
@@ -1241,7 +1241,7 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             notDesignedForCompilation();
 
-            Map<String, RubyMethod> methods;
+            Map<String, InternalMethod> methods;
 
             if (includeAncestors) {
                 methods = ModuleOperations.getAllMethods(module);
@@ -1250,7 +1250,7 @@ public abstract class ModuleNodes {
             }
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() != Visibility.PRIVATE && !method.isUndefined()) {
                     // TODO(CS): shoudln't be using this
                     array.slowPush(getContext().newSymbol(method.getName()));
@@ -1402,7 +1402,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyClass rubyClass, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
             }
@@ -1414,7 +1414,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyClass rubyClass, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
             }
@@ -1426,7 +1426,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(module, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }
@@ -1438,7 +1438,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(module, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }

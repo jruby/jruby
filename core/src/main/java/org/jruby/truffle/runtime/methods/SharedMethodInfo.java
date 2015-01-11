@@ -13,7 +13,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.LexicalScope;
 
 /**
- * {@link RubyMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores
+ * {@link InternalMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores
  * the state that does not change, such as where the method was defined.
  */
 public class SharedMethodInfo {

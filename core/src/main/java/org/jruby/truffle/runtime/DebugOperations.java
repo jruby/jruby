@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public abstract class DebugOperations {
     public static Object send(RubyContext context, Object object, String methodName, RubyProc block, Object... arguments) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(object), methodName);
+        final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(object), methodName);
 
         if (method == null) {
             return null;

@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @NodeChildren({
         @NodeChild(value="receiver", type=Node.class),
@@ -77,12 +77,12 @@ public abstract class DispatchNode extends RubyNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    protected RubyMethod lookup(
+    protected InternalMethod lookup(
             RubyClass callerClass,
             Object receiver,
             String name,
             boolean ignoreVisibility) {
-        RubyMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
+        InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
 

@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
  * lambdas and native methods written in Java.
  */
-public class RubyMethod implements MethodLike {
+public class InternalMethod implements MethodLike {
 
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;
@@ -33,9 +33,9 @@ public class RubyMethod implements MethodLike {
     private final CallTarget callTarget;
     private final MaterializedFrame declarationFrame;
 
-    public RubyMethod(SharedMethodInfo sharedMethodInfo, String name,
-                      RubyModule declaringModule, Visibility visibility, boolean undefined,
-                      CallTarget callTarget, MaterializedFrame declarationFrame) {
+    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
+                          RubyModule declaringModule, Visibility visibility, boolean undefined,
+                          CallTarget callTarget, MaterializedFrame declarationFrame) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
@@ -72,28 +72,28 @@ public class RubyMethod implements MethodLike {
         return callTarget;
     }
 
-    public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
+    public InternalMethod withDeclaringModule(RubyModule newDeclaringModule) {
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
-            return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
         }
     }
 
-    public RubyMethod withNewName(String newName) {
-        return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+    public InternalMethod withNewName(String newName) {
+        return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
-    public RubyMethod withVisibility(Visibility newVisibility) {
+    public InternalMethod withVisibility(Visibility newVisibility) {
         if (newVisibility == visibility) {
             return this;
         } else {
-            return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
         }
     }
 
-    public RubyMethod undefined() {
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
+    public InternalMethod undefined() {
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
     public boolean isVisibleTo(Node currentNode, RubyClass callerClass) {

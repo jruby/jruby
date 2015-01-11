@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class AddMethodNode extends RubyNode {
 
@@ -43,7 +43,7 @@ public class AddMethodNode extends RubyNode {
 
         final Object receiverObject = receiver.execute(frame);
 
-        final RubyMethod methodObject = (RubyMethod) methodNode.execute(frame);
+        final InternalMethod methodObject = (InternalMethod) methodNode.execute(frame);
 
         RubyModule module;
 
@@ -54,7 +54,7 @@ public class AddMethodNode extends RubyNode {
         }
 
         final Visibility visibility = getVisibility(frame, methodObject.getName());
-        final RubyMethod method = methodObject.withDeclaringModule(module).withVisibility(visibility);
+        final InternalMethod method = methodObject.withDeclaringModule(module).withVisibility(visibility);
 
         if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
             module.addMethod(this, method.withVisibility(Visibility.PRIVATE));

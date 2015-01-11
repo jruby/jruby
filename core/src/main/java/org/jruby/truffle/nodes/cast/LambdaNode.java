@@ -15,7 +15,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class LambdaNode extends RubyNode {
 
@@ -32,7 +32,7 @@ public class LambdaNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyMethod method = (RubyMethod) definition.execute(frame);
+        final InternalMethod method = (InternalMethod) definition.execute(frame);
 
         // TODO(CS): not sure we're closing over the correct state here
 

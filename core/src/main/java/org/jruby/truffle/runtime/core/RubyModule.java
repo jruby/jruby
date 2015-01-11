@@ -24,7 +24,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.*;
@@ -88,7 +88,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     private LexicalScope lexicalScope;
     private String name;
 
-    private final Map<String, RubyMethod> methods = new HashMap<>();
+    private final Map<String, InternalMethod> methods = new HashMap<>();
     private final Map<String, RubyConstant> constants = new HashMap<>();
     private final Map<String, Object> classVariables = new HashMap<>();
 
@@ -210,7 +210,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         classVariables.remove(variableName);
     }
 
-    public void addMethod(RubyNode currentNode, RubyMethod method) {
+    public void addMethod(RubyNode currentNode, InternalMethod method) {
         RubyNode.notDesignedForCompilation();
 
         assert method != null;
@@ -232,7 +232,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     public void undefMethod(RubyNode currentNode, String methodName) {
         RubyNode.notDesignedForCompilation();
-        final RubyMethod method = ModuleOperations.lookupMethod(this, methodName);
+        final InternalMethod method = ModuleOperations.lookupMethod(this, methodName);
         if (method == null) {
             throw new UnsupportedOperationException();
         } else {
@@ -240,7 +240,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
-    public void undefMethod(RubyNode currentNode, RubyMethod method) {
+    public void undefMethod(RubyNode currentNode, InternalMethod method) {
         RubyNode.notDesignedForCompilation();
         addMethod(currentNode, method.undefined());
     }
@@ -249,8 +249,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      * Also searches on Object for modules.
      * Used for alias_method, visibility changes, etc.
      */
-    private RubyMethod deepMethodSearch(String name) {
-        RubyMethod method = ModuleOperations.lookupMethod(this, name);
+    private InternalMethod deepMethodSearch(String name) {
+        InternalMethod method = ModuleOperations.lookupMethod(this, name);
 
         // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
         if (method == null && isOnlyAModule()) { // TODO: handle undefined methods
@@ -263,7 +263,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public void alias(RubyNode currentNode, String newName, String oldName) {
         RubyNode.notDesignedForCompilation();
 
-        RubyMethod method = deepMethodSearch(oldName);
+        InternalMethod method = deepMethodSearch(oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
@@ -388,7 +388,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = deepMethodSearch(methodName);
+                final InternalMethod method = deepMethodSearch(methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -414,7 +414,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return constants;
     }
 
-    public Map<String, RubyMethod> getMethods() {
+    public Map<String, InternalMethod> getMethods() {
         return methods;
     }
 
@@ -430,7 +430,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             }
         }
 
-        for (RubyMethod method : methods.values()) {
+        for (InternalMethod method : methods.values()) {
             if (method.getDeclarationFrame() != null) {
                 getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
             }

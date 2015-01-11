@@ -27,14 +27,14 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     @Child protected DirectCallNode callNode;
 
     @CompilerDirectives.CompilationFinal protected Assumption unmodifiedAssumption;
-    @CompilerDirectives.CompilationFinal protected RubyMethod method;
+    @CompilerDirectives.CompilationFinal protected InternalMethod method;
 
     public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -51,11 +51,11 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
         MethodLike methodLike = RubyCallStack.getMethod(currentFrame);
 
-        while (!(methodLike instanceof RubyMethod)) {
+        while (!(methodLike instanceof InternalMethod)) {
             methodLike = ((RubyProc) methodLike).getMethod();
         }
 
-        final String name = ((RubyMethod) methodLike).getName();
+        final String name = ((InternalMethod) methodLike).getName();
 
         // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
         final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();

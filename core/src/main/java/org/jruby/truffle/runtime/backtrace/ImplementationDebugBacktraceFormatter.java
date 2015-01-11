@@ -15,8 +15,8 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,13 +54,13 @@ public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter
         final MethodLike method = RubyArguments.getMethod(arguments);
         lines.add(String.format("      method = %s", method));
 
-        if (method instanceof RubyMethod) {
-            final RubyMethod rubyMethod = (RubyMethod) method;
+        if (method instanceof InternalMethod) {
+            final InternalMethod internalMethod = (InternalMethod) method;
 
-            if (rubyMethod.getDeclaringModule() == null) {
+            if (internalMethod.getDeclaringModule() == null) {
                 lines.add(String.format("        declaring module = null"));
             } else {
-                lines.add(String.format("        declaring module = %s", rubyMethod.getDeclaringModule().getName()));
+                lines.add(String.format("        declaring module = %s", internalMethod.getDeclaringModule().getName()));
             }
         }
 

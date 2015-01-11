@@ -39,7 +39,7 @@ import org.jruby.truffle.runtime.control.ThrowException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
@@ -1338,7 +1338,7 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            Map<String, RubyMethod> methods;
+            Map<String, InternalMethod> methods;
 
             if (includeInherited) {
                 methods = ModuleOperations.getAllMethods(self.getMetaClass());
@@ -1346,7 +1346,7 @@ public abstract class KernelNodes {
                 methods = self.getMetaClass().getMethods();
             }
 
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
                     array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
@@ -1450,7 +1450,7 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            Map<String, RubyMethod> methods;
+            Map<String, InternalMethod> methods;
 
             if (includeInherited) {
                 methods = ModuleOperations.getAllMethods(self.getMetaClass());
@@ -1458,7 +1458,7 @@ public abstract class KernelNodes {
                 methods = self.getMetaClass().getMethods();
             }
 
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PRIVATE) {
                     array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
@@ -1518,9 +1518,9 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            final Map<String, RubyMethod> methods = self.getMetaClass().getMethods();
+            final Map<String, InternalMethod> methods = self.getMetaClass().getMethods();
 
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC) {
                     array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
@@ -1846,7 +1846,7 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            final Collection<RubyMethod> methods;
+            final Collection<InternalMethod> methods;
 
             if (includeInherited) {
                 methods = ModuleOperations.getAllMethods(self.getSingletonClass(this)).values();
@@ -1854,7 +1854,7 @@ public abstract class KernelNodes {
                 methods = self.getSingletonClass(this).getMethods().values();
             }
 
-            for (RubyMethod method : methods) {
+            for (InternalMethod method : methods) {
                 array.slowPush(RubySymbol.newSymbol(self.getContext(), method.getName()));
             }
 

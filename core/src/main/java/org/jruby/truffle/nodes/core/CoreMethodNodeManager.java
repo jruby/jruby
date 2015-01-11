@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
@@ -118,7 +118,7 @@ public abstract class CoreMethodNodeManager {
                 coreMethodNode.setName(name);
             }
 
-            final RubyMethod method = new RubyMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
+            final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
             module.addMethod(null, method.withVisibility(visibility).withNewName(name));

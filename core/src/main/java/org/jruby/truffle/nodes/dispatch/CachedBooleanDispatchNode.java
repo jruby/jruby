@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
@@ -22,19 +21,19 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
 
     private final Assumption falseUnmodifiedAssumption;
-    private final RubyMethod falseMethod;
+    private final InternalMethod falseMethod;
     private final BranchProfile falseProfile = BranchProfile.create();
 
     private final Object falseValue;
     @Child private DirectCallNode falseCallDirect;
 
     private final Assumption trueUnmodifiedAssumption;
-    private final RubyMethod trueMethod;
+    private final InternalMethod trueMethod;
     private final BranchProfile trueProfile = BranchProfile.create();
 
     private final Object trueValue;
@@ -48,10 +47,10 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             DispatchNode next,
             Assumption falseUnmodifiedAssumption,
             Object falseValue,
-            RubyMethod falseMethod,
+            InternalMethod falseMethod,
             Assumption trueUnmodifiedAssumption,
             Object trueValue,
-            RubyMethod trueMethod,
+            InternalMethod trueMethod,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);

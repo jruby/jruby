@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
@@ -23,14 +22,14 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
 public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
-    private final RubyMethod method;
+    private final InternalMethod method;
 
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
@@ -40,7 +39,7 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
             Object cachedName,
             DispatchNode next,
             RubyClass expectedClass,
-            RubyMethod method,
+            InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);

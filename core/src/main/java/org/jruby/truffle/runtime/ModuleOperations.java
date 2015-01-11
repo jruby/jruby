@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -126,17 +126,17 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    public static Map<String, RubyMethod> getAllMethods(RubyModule module) {
+    public static Map<String, InternalMethod> getAllMethods(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final Map<String, RubyMethod> methods = new HashMap<>();
+        final Map<String, InternalMethod> methods = new HashMap<>();
 
         // Look in the current module
         methods.putAll(module.getMethods());
 
         // Look in ancestors
         for (RubyModule ancestor : module.parentAncestors()) {
-            for (Map.Entry<String, RubyMethod> method : ancestor.getMethods().entrySet()) {
+            for (Map.Entry<String, InternalMethod> method : ancestor.getMethods().entrySet()) {
                 if (!methods.containsKey(method.getKey())) {
                     methods.put(method.getKey(), method.getValue());
                 }
@@ -146,10 +146,10 @@ public abstract class ModuleOperations {
         return methods;
     }
 
-    public static RubyMethod lookupMethod(RubyModule module, String name) {
+    public static InternalMethod lookupMethod(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
-        RubyMethod method;
+        InternalMethod method;
 
         // Look in the current module
         method = module.getMethods().get(name);
@@ -172,7 +172,7 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    public static RubyMethod lookupSuperMethod(RubyModule declaringModule, String name, RubyClass objectMetaClass) {
+    public static InternalMethod lookupSuperMethod(RubyModule declaringModule, String name, RubyClass objectMetaClass) {
         CompilerAsserts.neverPartOfCompilation();
 
         boolean foundDeclaringModule = false;
@@ -180,7 +180,7 @@ public abstract class ModuleOperations {
             if (module == declaringModule) {
                 foundDeclaringModule = true;
             } else if (foundDeclaringModule) {
-                RubyMethod method = module.getMethods().get(name);
+                InternalMethod method = module.getMethods().get(name);
 
                 if (method != null) {
                     return method;
