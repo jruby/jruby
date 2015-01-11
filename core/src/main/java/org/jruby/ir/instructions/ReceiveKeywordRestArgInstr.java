@@ -4,8 +4,6 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -18,11 +16,6 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     public ReceiveKeywordRestArgInstr(Variable result, int required) {
         super(Operation.RECV_KW_REST_ARG, result, -1);
         this.required = required;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(required) };
     }
 
     @Override

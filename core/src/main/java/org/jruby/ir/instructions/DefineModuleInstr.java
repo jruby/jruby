@@ -16,52 +16,37 @@ import java.util.Map;
 
 public class DefineModuleInstr extends Instr implements ResultInstr, FixedArityInstr {
     private final IRModuleBody newIRModuleBody;
-    private Operand container;
-    private Variable result;
 
     public DefineModuleInstr(Variable result, IRModuleBody newIRModuleBody, Operand container) {
-        super(Operation.DEF_MODULE);
+        super(Operation.DEF_MODULE, result, new Operand[] { container });
 
         assert result != null : "DefineModuleInstr result is null";
 
         this.newIRModuleBody = newIRModuleBody;
-        this.container = container;
-        this.result = result;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{container};
+
+    public IRModuleBody getNewIRModuleBody() {
+        return newIRModuleBody;
     }
 
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        container = container.getSimplifiedOperand(valueMap, force);
+    public Operand getContainer() {
+        return operands[0];
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + newIRModuleBody.getName() + ", " + container + ", " + newIRModuleBody.getFileName() + ")";
+        return super.toString() + "(" + newIRModuleBody.getName() + ", " + getContainer() + ", " + newIRModuleBody.getFileName() + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineModuleInstr(ii.getRenamedVariable(result), this.newIRModuleBody, container.cloneForInlining(ii));
+        return new DefineModuleInstr(ii.getRenamedVariable(result), this.newIRModuleBody, getContainer().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object rubyContainer = container.retrieve(context, self, currScope, currDynScope, temp);
+        Object rubyContainer = getContainer().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.newInterpretedModuleBody(context, newIRModuleBody, rubyContainer);
     }
@@ -69,13 +54,5 @@ public class DefineModuleInstr extends Instr implements ResultInstr, FixedArityI
     @Override
     public void visit(IRVisitor visitor) {
         visitor.DefineModuleInstr(this);
-    }
-
-    public IRModuleBody getNewIRModuleBody() {
-        return newIRModuleBody;
-    }
-
-    public Operand getContainer() {
-        return container;
     }
 }

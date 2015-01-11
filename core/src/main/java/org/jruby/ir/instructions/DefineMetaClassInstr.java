@@ -15,32 +15,21 @@ import java.util.Map;
 
 public class DefineMetaClassInstr extends Instr implements ResultInstr, FixedArityInstr {
     private final IRModuleBody metaClassBody;
-    private Operand object;
-    private Variable result;
 
     public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody metaClassBody) {
-        super(Operation.DEF_META_CLASS);
+        super(Operation.DEF_META_CLASS, result, new Operand[] {object });
 
         assert result != null: "DefineMetaClassInstr result is null";
 
         this.metaClassBody = metaClassBody;
-        this.object = object;
-        this.result = result;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{object};
+    public IRModuleBody getMetaClassBody() {
+        return metaClassBody;
     }
 
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
+    public Operand getObject() {
+        return operands[0];
     }
 
     @Override
@@ -55,25 +44,20 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr, FixedAri
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        object = object.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
     public String toString() {
-        return super.toString() + "(" + metaClassBody.getName() + ", " + object + ", " + metaClassBody.getFileName() + ")";
+        return super.toString() + "(" + metaClassBody.getName() + ", " + getObject() + ", " + metaClassBody.getFileName() + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), metaClassBody);
+        return new DefineMetaClassInstr(ii.getRenamedVariable(result), getObject().cloneForInlining(ii), metaClassBody);
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby runtime = context.runtime;
 
-        IRubyObject obj = (IRubyObject)object.retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject obj = (IRubyObject) getObject().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.newInterpretedMetaClass(runtime, metaClassBody, obj);
     }
@@ -81,13 +65,5 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr, FixedAri
     @Override
     public void visit(IRVisitor visitor) {
         visitor.DefineMetaClassInstr(this);
-    }
-
-    public IRModuleBody getMetaClassBody() {
-        return metaClassBody;
-    }
-
-    public Operand getObject() {
-        return object;
     }
 }

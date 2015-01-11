@@ -7,12 +7,7 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class ExceptionRegionEndMarkerInstr extends Instr implements FixedArityInstr {
     public ExceptionRegionEndMarkerInstr() {
-        super(Operation.EXC_REGION_END);
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        super(Operation.EXC_REGION_END, EMPTY_OPERANDS);
     }
 
     @Override

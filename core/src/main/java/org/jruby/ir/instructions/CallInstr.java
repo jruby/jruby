@@ -68,13 +68,13 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     public Instr discardResult() {
-        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), closure);
+        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg());
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(), receiver.cloneForInlining(ii),
-                cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
     }
 
     @Override

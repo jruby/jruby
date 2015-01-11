@@ -20,23 +20,14 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgBlockCallInstr(ii.getRenamedVariable(result), getName(), receiver.cloneForInlining(ii),
-                cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "{1OB}";
-    }
-
-    public Operand getArg1() {
-        return getCallArgs()[0];
+        return new OneOperandArgBlockCallInstr(ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
-        IRubyObject arg1 = (IRubyObject) getCallArgs()[0].retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
         return getCallSite().call(context, self, object, arg1, preparedBlock);
     }

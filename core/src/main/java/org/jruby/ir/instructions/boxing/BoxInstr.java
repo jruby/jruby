@@ -7,33 +7,11 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 
 public abstract class BoxInstr extends Instr implements ResultInstr {
-    private Variable result;
-    private Operand val;
-
     public BoxInstr(Operation op, Variable result, Operand val) {
-        super(op);
-        this.result = result;
-        this.val = val;
-    }
-
-    public Operand[] getOperands() {
-        return new Operand[]{val};
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
+        super(op, result, new Operand[] { val });
     }
 
     public Operand getValue() {
-        return val;
-    }
-
-    @Override
-    public String toString() {
-        return getResult() + " = " + getOperation() + "(" + val + ")";
+        return operands[0];
     }
 }

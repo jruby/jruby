@@ -23,11 +23,10 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     public final long callSiteId;
     private final CallType callType;
-    protected Operand   receiver;
-    protected Operand[] arguments;
-    protected Operand   closure;
     protected String name;
     protected CallSite callSite;
+    protected int argsCount;
+    protected boolean hasClosure;
 
     private boolean flagsComputed;
     private boolean canBeEval;
@@ -38,12 +37,11 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     private boolean procNew;
 
     protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
-        super(op);
+        super(op, null, getOperands(receiver, args, closure));
 
         this.callSiteId = callSiteCounter++;
-        this.receiver = receiver;
-        this.arguments = args;
-        this.closure = closure;
+        argsCount = args.length;
+        hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
         this.callSite = getCallSiteFor(callType, name);
@@ -56,11 +54,8 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         procNew = false;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
-        Fixnum arity = new Fixnum(closure != null ? -1*(arguments.length + 1) : arguments.length);
-        return buildAllArgs(new Fixnum(callType.ordinal()), receiver, arity, arguments, closure);
+    private static Operand[] getOperands(Operand receiver, Operand[] arguments, Operand closure) {
+        return buildAllArgs(receiver, arguments, closure);
     }
 
     public String getName() {
@@ -69,19 +64,37 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     /** From interface ClosureAcceptingInstr */
     public Operand getClosureArg() {
-        return closure;
+        return hasClosure ? operands[argsCount + 1] : null;
     }
 
     public Operand getClosureArg(Operand ifUnspecified) {
-        return closure == null ? ifUnspecified : closure;
+        return hasClosure ? getClosureArg() : ifUnspecified;
     }
 
     public Operand getReceiver() {
-        return receiver;
+        return operands[0];
     }
 
+    /**
+     * This getter is potentially unsafe if you do not know you have >=1 arguments to the call.  It may return
+     * null of the closure argument from operands.
+     */
+    public Operand getArg1() {
+        return operands[1]; // operands layout: receiver, args*, closure
+    }
+
+    // FIXME: Maybe rename this.
+    public int getArgsCount() {
+        return argsCount;
+    }
+
+    // Warning: Potentially expensive.  Analysis should be written around retrieving operands.
     public Operand[] getCallArgs() {
-        return arguments;
+        Operand[] callArgs = new Operand[argsCount];
+
+        System.arraycopy(operands, 1, callArgs, 0, argsCount);
+
+        return callArgs;
     }
 
     public CallSite getCallSite() {
@@ -94,10 +107,6 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     public boolean containsArgSplat() {
         return containsArgSplat;
-    }
-
-    public boolean isProcNew() {
-        return procNew;
     }
 
     public void setProcNew(boolean procNew) {
@@ -126,20 +135,8 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         return null; // fallthrough for unknown
     }
 
-    public boolean hasClosure() {
-        return closure != null;
-    }
-
     public boolean hasLiteralClosure() {
-        return closure instanceof WrappedIRClosure;
-    }
-
-    public boolean isAllConstants() {
-        for (Operand argument : arguments) {
-            if (!(argument instanceof ImmutableLiteral)) return false;
-        }
-
-        return true;
+        return getClosureArg() instanceof WrappedIRClosure;
     }
 
     public static boolean isAllFixnums(Operand[] args) {
@@ -150,20 +147,12 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         return true;
     }
 
-    public boolean isAllFixnums() {
-        return isAllFixnums(arguments);
-    }
-
     public static boolean isAllFloats(Operand[] args) {
         for (Operand argument : args) {
             if (!(argument instanceof Float)) return false;
         }
 
         return true;
-    }
-
-    public boolean isAllFloats() {
-        return isAllFloats(arguments);
     }
 
     @Override
@@ -187,7 +176,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
             // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
             // it could be using the closure as a binding -- which means it could be using pretty much any
             // variable from the caller's binding!
-            if (scope.getFlags().contains(RECEIVES_CLOSURE_ARG) && (getCallArgs().length > 1)) {
+            if (scope.getFlags().contains(RECEIVES_CLOSURE_ARG) && argsCount > 1) {
                 scope.getFlags().add(CAN_CAPTURE_CALLERS_BINDING);
             }
         }
@@ -199,13 +188,10 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         String mname = getName();
         if (mname.equals("local_variables")) {
             scope.getFlags().add(REQUIRES_DYNSCOPE);
-        } else if (mname.equals("send") || mname.equals("__send__")) {
-            Operand[] args = getCallArgs();
-            if (args.length >= 1) {
-                Operand meth = args[0];
-                if (meth instanceof StringLiteral && "local_variables".equals(((StringLiteral)meth).string)) {
-                    scope.getFlags().add(REQUIRES_DYNSCOPE);
-                }
+        } else if (potentiallySend(mname) && argsCount >= 1) {
+            Operand meth = getArg1();
+            if (meth instanceof StringLiteral && "local_variables".equals(((StringLiteral)meth).getString())) {
+                scope.getFlags().add(REQUIRES_DYNSCOPE);
             }
         }
 
@@ -214,40 +200,20 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        // FIXME: receiver should never be null (checkArity seems to be one culprit)
-        if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap, force);
-
-        for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = arguments[i].getSimplifiedOperand(valueMap, force);
-        }
+        super.simplifyOperands(valueMap, force);
 
         // Recompute containsArgSplat flag
-        containsArgSplat = containsArgSplat(arguments);
-
-        if (closure != null) closure = closure.getSimplifiedOperand(valueMap, force);
+        containsArgSplat = containsArgSplat(operands); // also checking receiver but receiver can never be a splat
         flagsComputed = false; // Forces recomputation of flags
-
-        // recompute whenever instr operands change! (can this really change though?)
-        callSite = getCallSiteFor(callType, name);
     }
 
     public Operand[] cloneCallArgs(CloneInfo ii) {
-        int i = 0;
-        Operand[] clonedArgs = new Operand[arguments.length];
-
-        for (Operand a: arguments) {
-            clonedArgs[i++] = a.cloneForInlining(ii);
+        Operand[] clonedArgs = new Operand[argsCount];
+        for (int i = 0; i < argsCount; i++) {
+            clonedArgs[i] = operands[i+1].cloneForInlining(ii);  // +1 for receiver being operands[0]
         }
 
         return clonedArgs;
-    }
-
-    public boolean isRubyInternalsCall() {
-        return false;
-    }
-
-    public boolean isStaticCallTarget() {
-        return false;
     }
 
     // SSS FIXME: Are all bases covered?
@@ -257,24 +223,19 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         String mname = getName();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
         // CON: Removed "call" check because we didn't do it in 1.7 and it deopts all callers of Method or Proc objects.
-        if (/*mname.equals("call") ||*/ mname.equals("eval") || mname.equals("module_eval") || mname.equals("class_eval") || mname.equals("instance_eval")) return true;
+        if (/*mname.equals("call") ||*/ mname.equals("eval") || mname.equals("module_eval") ||
+                mname.equals("class_eval") || mname.equals("instance_eval")) return true;
 
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
-        if (mname.equals("send") || mname.equals("__send__")) {
-            Operand[] args = getCallArgs();
-            if (args.length >= 2) {
-                Operand meth = args[0];
-                if (!(meth instanceof StringLiteral)) return true; // We don't know
+        if (potentiallySend(mname) && argsCount >= 1) {
+            Operand meth = getArg1();
+            if (!(meth instanceof StringLiteral)) return true; // We don't know
 
-                String name = ((StringLiteral) meth).string;
-                if (   name.equals("call")
-                    || name.equals("eval")
-                    || mname.equals("module_eval")
-                    || mname.equals("class_eval")
-                    || mname.equals("instance_eval")
-                    || name.equals("send")
-                    || name.equals("__send__")) return true;
-            }
+            String name = ((StringLiteral) meth).string;
+            // FIXME: ENEBO - Half of these are name and half mname?
+            return name.equals("call") || name.equals("eval") || mname.equals("module_eval") ||
+                    mname.equals("class_eval") || mname.equals("instance_eval") || name.equals("send") ||
+                    name.equals("__send__");
         }
 
         return false; // All checks passed
@@ -289,17 +250,11 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         String mname = getName();
         if (MethodIndex.SCOPE_AWARE_METHODS.contains(mname)) {
             return true;
-        } else if (mname.equals("send") || mname.equals("__send__")) {
-            Operand[] args = getCallArgs();
-            if (args.length >= 1) {
-                Operand meth = args[0];
-                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+        } else if (potentiallySend(mname) && argsCount >= 1) {
+            Operand meth = getArg1();
+            if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
 
-                String name = ((StringLiteral) meth).string;
-                if (MethodIndex.SCOPE_AWARE_METHODS.contains(name)) {
-                    return true;
-                }
-            }
+            return MethodIndex.SCOPE_AWARE_METHODS.contains(((StringLiteral) meth).getString());
         }
 
         /* -------------------------------------------------------------
@@ -350,21 +305,18 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
             // Known frame-aware methods.
             return true;
 
-        } else if (mname.equals("send") || mname.equals("__send__")) {
-            // Allow send to access full binding, since someone might send :eval and friends.
-            Operand[] args = getCallArgs();
-            if (args.length >= 1) {
-                Operand meth = args[0];
-                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+        } else if (potentiallySend(mname) && argsCount >= 1) {
+            Operand meth = getArg1();
+            if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
 
-                String name = ((StringLiteral) meth).string;
-                if (MethodIndex.FRAME_AWARE_METHODS.contains(name)) {
-                    return true;
-                }
-            }
+            return MethodIndex.FRAME_AWARE_METHODS.contains(((StringLiteral) meth).getString());
         }
 
         return false;
+    }
+
+    private static boolean potentiallySend(String name) {
+        return name.equals("send") || name.equals("__send__");
     }
 
     private void computeFlags() {
@@ -395,9 +347,9 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     @Override
     public String toString() {
-        return "" + getOperation()  + "(" + callType + ", " + getName() + ", " + receiver +
+        return "" + getOperation()  + "(" + callType + ", " + getName() + ", " + getReceiver() +
                 ", " + Arrays.toString(getCallArgs()) +
-                (closure == null ? "" : ", &" + closure) + ")";
+                (getClosureArg() == null ? "" : ", &" + getClosureArg()) + ")";
     }
 
     public static boolean containsArgSplat(Operand[] arguments) {
@@ -408,18 +360,14 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         return false;
     }
 
-    private final static int REQUIRED_OPERANDS = 3;
-    private static Operand[] buildAllArgs(Operand callType, Operand receiver,
-            Fixnum argsCount, Operand[] callArgs, Operand closure) {
+    private final static int REQUIRED_OPERANDS = 1;
+    private static Operand[] buildAllArgs(Operand receiver, Operand[] callArgs, Operand closure) {
         Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
 
         assert receiver != null : "RECEIVER is null";
 
 
-        allArgs[0] = callType;
-        allArgs[1] = receiver;
-        // -0 not possible so if closure exists we are negative and we subtract one to get real arg count.
-        allArgs[2] = argsCount;
+        allArgs[0] = receiver;
         for (int i = 0; i < callArgs.length; i++) {
             assert callArgs[i] != null : "ARG " + i + " is null";
 
@@ -433,41 +381,42 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
-        IRubyObject[] values = prepareArguments(context, self, arguments, currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
         return callSite.call(context, self, object, values, preparedBlock);
     }
 
-    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
         return containsArgSplat ?
-                prepareArgumentsComplex(context, self, arguments, currScope, dynamicScope, temp) :
-                prepareArgumentsSimple(context, self, arguments, currScope, dynamicScope, temp);
+                prepareArgumentsComplex(context, self, currScope, dynamicScope, temp) :
+                prepareArgumentsSimple(context, self, currScope, dynamicScope, temp);
     }
 
-    protected IRubyObject[] prepareArgumentsSimple(ThreadContext context, IRubyObject self, Operand[] args, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        IRubyObject[] newArgs = new IRubyObject[args.length];
+    protected IRubyObject[] prepareArgumentsSimple(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject[] newArgs = new IRubyObject[argsCount];
 
-        for (int i = 0; i < args.length; i++) {
-            newArgs[i] = (IRubyObject) args[i].retrieve(context, self, currScope, currDynScope, temp);
+        for (int i = 0; i < argsCount; i++) { // receiver is operands[0]
+            newArgs[i] = (IRubyObject) operands[i+1].retrieve(context, self, currScope, currDynScope, temp);
         }
 
         return newArgs;
     }
 
-    protected IRubyObject[] prepareArgumentsComplex(ThreadContext context, IRubyObject self, Operand[] args, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+    protected IRubyObject[] prepareArgumentsComplex(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        // ENEBO: we can probably do this more efficiently than using ArrayList
         // SSS: For regular calls, IR builder never introduces splats except as the first argument
         // But when zsuper is converted to SuperInstr with known args, splats can appear anywhere
         // in the list.  So, this looping handles both these scenarios, although if we wanted to
         // optimize for CallInstr which has splats only in the first position, we could do that.
-        List<IRubyObject> argList = new ArrayList<IRubyObject>(args.length * 2);
-        for (Operand arg : args) {
-            IRubyObject rArg = (IRubyObject) arg.retrieve(context, self, currScope, currDynScope, temp);
-            if (arg instanceof Splat) {
+        List<IRubyObject> argList = new ArrayList<>(argsCount * 2);
+        for (int i = 0; i < argsCount; i++) { // receiver is operands[0]
+            IRubyObject rArg = (IRubyObject) operands[i+1].retrieve(context, self, currScope, currDynScope, temp);
+            if (operands[i+1] instanceof Splat) {
                 RubyArray array = (RubyArray) rArg;
-                for (int i = 0; i < array.size(); i++) {
-                    argList.add(array.eltOk(i));
+                for (int j = 0; j < array.size(); j++) {
+                    argList.add(array.eltOk(j));
                 }
             } else {
                 argList.add(rArg);
@@ -478,8 +427,8 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     }
 
     public Block prepareBlock(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        if (closure == null) return Block.NULL_BLOCK;
+        if (getClosureArg() == null) return Block.NULL_BLOCK;
 
-        return IRRuntimeHelpers.getBlockFromObject(context, closure.retrieve(context, self, currScope, currDynScope, temp));
+        return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
     }
 }

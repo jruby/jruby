@@ -15,29 +15,10 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * when within a scope that will use an on-heap frame.
  */
 public class LoadFrameClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-
     public LoadFrameClosureInstr(Variable result) {
-        super(Operation.LOAD_FRAME_CLOSURE);
+        super(Operation.LOAD_FRAME_CLOSURE, result, EMPTY_OPERANDS);
 
         assert result != null : "LoadFrameClosureInstr result is null";
-
-        this.result = result;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     @Override

@@ -236,9 +236,7 @@ public class IRBuilder {
             // are not cloned.
             ii.renameLabel(start);
             for (Instr i: instrs) {
-                if (i instanceof LabelInstr) {
-                    ii.renameLabel(((LabelInstr)i).label);
-                }
+                if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
             }
 
             // Clone instructions now
@@ -2056,36 +2054,39 @@ public class IRBuilder {
         return piece == null ? manager.getNil() : piece;
     }
 
-    public Operand buildDRegexp(DRegexpNode dregexpNode, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node n : dregexpNode.childNodes()) {
-            strPieces.add(dynamicPiece(n, s));
+    public Operand buildDRegexp(DRegexpNode node, IRScope s) {
+        List<Node> nodePieces = node.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
         Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildDynRegExpInstr(res, strPieces, dregexpNode.getOptions()));
+        addInstr(s, new BuildDynRegExpInstr(res, pieces, node.getOptions()));
         return res;
     }
 
-    public Operand buildDStr(DStrNode dstrNode, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node n : dstrNode.childNodes()) {
-            strPieces.add(dynamicPiece(n, s));
+    public Operand buildDStr(DStrNode node, IRScope s) {
+        List<Node> nodePieces = node.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
         Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildCompoundStringInstr(res, strPieces, dstrNode.getEncoding()));
+        addInstr(s, new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
         return copyAndReturnValue(s, res);
     }
 
     public Operand buildDSymbol(DSymbolNode node, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node n : node.childNodes()) {
-            strPieces.add(dynamicPiece(n, s));
+        List<Node> nodePieces = node.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
         Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildCompoundStringInstr(res, strPieces, node.getEncoding()));
+        addInstr(s, new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
         return copyAndReturnValue(s, new DynamicSymbol(res));
     }
 
@@ -2094,14 +2095,13 @@ public class IRBuilder {
     }
 
     public Operand buildDXStr(final DXStrNode dstrNode, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node nextNode : dstrNode.childNodes()) {
-            strPieces.add(dynamicPiece(nextNode, s));
+        List<Node> nodePieces = dstrNode.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
-        Variable res = s.createTemporaryVariable();
-        addInstr(s, new BacktickInstr(res, strPieces));
-        return res;
+        return addResultInstr(s, new BacktickInstr(s.createTemporaryVariable(), pieces));
     }
 
     /* ****************************************************************
@@ -3414,9 +3414,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node, IRScope s) {
-        Variable res = s.createTemporaryVariable();
-        addInstr(s, new BacktickInstr(res, new StringLiteral(node.getValue())));
-        return res;
+        return addResultInstr(s, new BacktickInstr(s.createTemporaryVariable(), new Operand[] { new StringLiteral(node.getValue())}));
     }
 
     public Operand buildYield(YieldNode node, IRScope s) {

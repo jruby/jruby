@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -28,11 +27,6 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
         super(Operation.RECV_POST_REQD_ARG, result, argIndex);
         this.preReqdArgsCount = preReqdArgsCount;
         this.postReqdArgsCount = postReqdArgsCount;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(argIndex), new Fixnum(preReqdArgsCount), new Fixnum(postReqdArgsCount) };
     }
 
     @Override

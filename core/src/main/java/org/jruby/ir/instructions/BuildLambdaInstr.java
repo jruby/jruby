@@ -15,19 +15,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.ir.IRFlags;
 
-import java.util.Map;
-
 public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityInstr, ClosureAcceptingInstr {
     /** The position for the block */
     private final ISourcePosition position;
-    private Variable result;
-    private Operand lambdaBody;
 
-    public BuildLambdaInstr(Variable lambda, Operand lambdaBody, ISourcePosition position) {
-        super(Operation.LAMBDA);
+    public BuildLambdaInstr(Variable result, Operand lambdaBody, ISourcePosition position) {
+        super(Operation.LAMBDA, result, new Operand[] { lambdaBody });
 
-        this.result = lambda;
-        this.lambdaBody = lambdaBody;
         this.position = position;
     }
 
@@ -36,23 +30,8 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         return ""; // getLambdaBody().getClosure().getName();
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { lambdaBody, new StringLiteral(position.getFile()), new Fixnum(position.getLine()) };
-    }
-
     public ISourcePosition getPosition() {
         return position;
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     @Override
@@ -66,17 +45,12 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody().cloneForInlining(ii), position);
     }
 
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        lambdaBody = lambdaBody.getSimplifiedOperand(valueMap, force);
-    }
-
     public Operand getLambdaBody() {
-        return lambdaBody;
+        return operands[0];
     }
 
     public Operand getClosureArg() {
-        return lambdaBody;
+        return operands[0];
     }
 
     @Override
@@ -102,10 +76,5 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     @Override
     public void visit(IRVisitor visitor) {
         visitor.BuildLambdaInstr(this);
-    }
-
-    @Override
-    public String toString() {
-        return "" + ((ResultInstr)this).getResult() + " = lambda(" + lambdaBody + ")";
     }
 }

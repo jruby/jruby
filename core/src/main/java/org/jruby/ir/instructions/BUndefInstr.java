@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class BUndefInstr extends OneOperandBranchInstr  implements FixedArityInstr {
     public BUndefInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_UNDEF, v, jmpTarget);
+        super(Operation.B_UNDEF, new Operand[] {jmpTarget, v});
     }
 
     @Override

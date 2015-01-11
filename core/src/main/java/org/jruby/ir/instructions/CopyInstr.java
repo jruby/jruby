@@ -13,58 +13,28 @@ import java.util.Map;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class CopyInstr extends Instr implements ResultInstr,FixedArityInstr {
-    private Operand arg;
-    private Variable result;
-
-    public CopyInstr(Operation op, Variable result, Operand s) {
-        super(op);
-        this.arg = s;
-        this.result = result;
+    public CopyInstr(Operation op, Variable result, Operand source) {
+        super(op, result, new Operand[] { source });
     }
 
-    public CopyInstr(Variable result, Operand s) {
-        this(Operation.COPY, result, s);
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{arg};
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
+    public CopyInstr(Variable result, Operand source) {
+        this(Operation.COPY, result, source);
     }
 
     public Operand getSource() {
-        return arg;
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        arg = arg.getSimplifiedOperand(valueMap, force);
+        return operands[0];
     }
 
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
 
-        return arg;
+        return getSource();
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CopyInstr(getOperation(), ii.getRenamedVariable(result), arg.cloneForInlining(ii));
-    }
-
-    @Override
-    public String toString() {
-        return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (result + " = " + arg);
+        return new CopyInstr(getOperation(), ii.getRenamedVariable(result), getSource().cloneForInlining(ii));
     }
 
     @Override

@@ -20,18 +20,13 @@ public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ZeroOperandArgNoBlockCallInstr(ii.getRenamedVariable(result), getName(), receiver.cloneForInlining(ii),
-                cloneCallArgs(ii));
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "{0O}";
+        return new ZeroOperandArgNoBlockCallInstr(ii.getRenamedVariable(result), getName(),
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
 
         return getCallSite().call(context, self, object);
     }

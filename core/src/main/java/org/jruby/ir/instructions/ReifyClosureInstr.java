@@ -21,45 +21,14 @@ import java.util.Map;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable source;
-    private Variable result;
-
     public ReifyClosureInstr(Variable result, Variable source) {
-        super(Operation.REIFY_CLOSURE);
+        super(Operation.REIFY_CLOSURE, result, new Operand[] { source });
 
         assert result != null: "ReceiveClosureInstr result is null";
-
-        this.source = source;
-        this.result = result;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + source + ")";
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{source};
     }
 
     public Variable getSource() {
-        return source;
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        source = (Variable)source.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
+        return (Variable) operands[0];
     }
 
     @Override
@@ -70,7 +39,7 @@ public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityI
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReifyClosureInstr(info.getRenamedVariable(result), info.getRenamedVariable(source));
+        if (info instanceof SimpleCloneInfo) return new ReifyClosureInstr(info.getRenamedVariable(getResult()), info.getRenamedVariable(getSource()));
 
         // SSS FIXME: This code below is for inlining and is untested.
 
@@ -85,7 +54,7 @@ public class ReifyClosureInstr extends Instr implements ResultInstr, FixedArityI
     
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Block block = (Block)source.retrieve(context, self, currScope, currDynScope, temp);
+        Block block = (Block) getSource().retrieve(context, self, currScope, currDynScope, temp);
         return IRRuntimeHelpers.newProc(context.runtime, block);
     }
 

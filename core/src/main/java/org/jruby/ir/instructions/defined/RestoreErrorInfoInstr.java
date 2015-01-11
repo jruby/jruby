@@ -14,41 +14,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 
 public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
-    private Operand arg;
-
     public RestoreErrorInfoInstr(Operand arg) {
-        super(Operation.RESTORE_ERROR_INFO);
-
-        this.arg = arg;
+        super(Operation.RESTORE_ERROR_INFO, null, new Operand[] { arg });
     }
 
     public Operand getArg() {
-        return arg;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { arg };
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + arg + ")";
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        arg = arg.getSimplifiedOperand(valueMap, force);
+        return operands[0];
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new RestoreErrorInfoInstr(arg.cloneForInlining(ii));
+        return new RestoreErrorInfoInstr(getArg().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        context.setErrorInfo((IRubyObject) arg.retrieve(context, self, currScope, currDynScope, temp));
+        context.setErrorInfo((IRubyObject) getArg().retrieve(context, self, currScope, currDynScope, temp));
 
         return null;
     }

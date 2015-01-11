@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -13,18 +12,8 @@ public class NopInstr extends Instr implements FixedArityInstr {
     public static NopInstr NOP = new NopInstr();
 
     private NopInstr() {
-        super(Operation.NOP);
+        super(Operation.NOP, EMPTY_OPERANDS);
         this.markDead();
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public String toString() {
-        return "NOP";
     }
 
     @Override

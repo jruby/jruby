@@ -244,9 +244,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 CallBase c = (CallBase)i;
                 String m = c.getName();
                 Operand  r = c.getReceiver();
-                Operand[] args = c.getCallArgs();
-                if (dst != null && args.length == 1 && resemblesALUOp(m)) {
-                    Operand a = args[0];
+                if (dst != null && c.getArgsCount() == 1 && resemblesALUOp(m)) {
+                    Operand a = c.getArg1();
                     Class receiverType = getOperandType(tmpState, r);
                     Class argType = getOperandType(tmpState, a);
                     // Optimistically assume that call is an ALU op
@@ -643,9 +642,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                         CallBase c = (CallBase)i;
                         String m = c.getName();
                         Operand  r = c.getReceiver();
-                        Operand[] args = c.getCallArgs();
-                        if (dst != null && args.length == 1 && resemblesALUOp(m)) {
-                            Operand a = args[0];
+                        if (dst != null && c.getArgsCount() == 1 && resemblesALUOp(m)) {
+                            Operand a = c.getArg1();
                             Class receiverType = getOperandType(tmpState, r);
                             Class argType = getOperandType(tmpState, a);
                             // Optimistically assume that call is an ALU op

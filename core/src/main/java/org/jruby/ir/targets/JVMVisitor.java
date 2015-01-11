@@ -420,12 +420,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
+        Operand[] callArgs = attrAssignInstr.getCallArgs();
+
         compileCallCommon(
                 jvmMethod(),
                 attrAssignInstr.getName(),
-                attrAssignInstr.getCallArgs(),
+                callArgs,
                 attrAssignInstr.getReceiver(),
-                attrAssignInstr.getCallArgs().length,
+                callArgs.length,
                 null,
                 false,
                 attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
@@ -649,7 +651,7 @@ public class JVMVisitor extends IRVisitor {
         ByteList csByteList = new ByteList();
         jvmMethod().pushString(csByteList);
 
-        for (Operand p : instr.getPieces()) {
+        for (Operand p : instr.getOperands()) {
             // visit piece and ensure it's a string
             visit(p);
             jvmAdapter().dup();
@@ -753,20 +755,20 @@ public class JVMVisitor extends IRVisitor {
         SkinnyMethodAdapter a = m.adapter;
 
         RegexpOptions options = instr.getOptions();
-        final List<Operand> operands = instr.getPieces();
+        final Operand[] operands = instr.getPieces();
 
         Runnable r = new Runnable() {
             @Override
             public void run() {
                 m.loadContext();
-                for (int i = 0; i < operands.size(); i++) {
-                    Operand operand = operands.get(i);
+                for (int i = 0; i < operands.length; i++) {
+                    Operand operand = operands[i];
                     visit(operand);
                 }
             }
         };
 
-        m.pushDRegexp(r, options, operands.size());
+        m.pushDRegexp(r, options, operands.length);
 
         jvmStoreLocal(instr.getResult());
     }
@@ -1373,7 +1375,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) {
-        visit(optargmultipleasgninstr.getArrayArg());
+        visit(optargmultipleasgninstr.getArray());
         jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().ldc(optargmultipleasgninstr.getMinArgsLength());
         jvmAdapter().ldc(optargmultipleasgninstr.getIndex());
@@ -1597,7 +1599,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) {
         jvmMethod().loadContext();
-        visit(reqdargmultipleasgninstr.getArrayArg());
+        visit(reqdargmultipleasgninstr.getArray());
         jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getPreArgsCount());
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getIndex());
@@ -1618,7 +1620,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) {
         jvmMethod().loadContext();
-        visit(restargmultipleasgninstr.getArrayArg());
+        visit(restargmultipleasgninstr.getArray());
         jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().pushInt(restargmultipleasgninstr.getPreArgsCount());
         jvmAdapter().pushInt(restargmultipleasgninstr.getPostArgsCount());
@@ -1822,14 +1824,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) {
-        visit(throwexceptioninstr.getExceptionArg());
+        visit(throwexceptioninstr.getException());
         jvmAdapter().athrow();
     }
 
     @Override
     public void ToAryInstr(ToAryInstr toaryinstr) {
         jvmMethod().loadContext();
-        visit(toaryinstr.getArrayArg());
+        visit(toaryinstr.getArray());
         jvmMethod().invokeIRHelper("irToAry", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(toaryinstr.getResult());
     }

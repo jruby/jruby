@@ -2,8 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
@@ -11,17 +9,12 @@ public class ThreadPollInstr extends Instr implements FixedArityInstr {
     public final boolean onBackEdge;
 
     public ThreadPollInstr(boolean onBackEdge) {
-        super(Operation.THREAD_POLL);
+        super(Operation.THREAD_POLL, EMPTY_OPERANDS);
         this.onBackEdge = onBackEdge;
     }
 
     public ThreadPollInstr() {
         this(false);
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new UnboxedBoolean(onBackEdge) };
     }
 
     @Override

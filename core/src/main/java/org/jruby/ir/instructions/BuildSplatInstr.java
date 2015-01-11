@@ -11,56 +11,24 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 // Represents a splat value in Ruby code: *array
 public class BuildSplatInstr extends Instr implements ResultInstr {
-    private Variable result;
-    private Operand array;
-
     public BuildSplatInstr(Variable result, Operand array) {
-        super(Operation.BUILD_SPLAT);
-        this.result = result;
-        this.array = array;
-    }
-
-    @Override
-    public String toString() {
-        return result + " = *" + array;
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
+        super(Operation.BUILD_SPLAT, result, new Operand[] { array });
     }
 
     public Operand getArray() {
-        return array;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { array };
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        array = array.getSimplifiedOperand(valueMap, force);
+        return operands[0];
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildSplatInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii));
+        return new BuildSplatInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject arrayVal = (IRubyObject) array.retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject arrayVal = (IRubyObject) getArray().retrieve(context, self, currScope, currDynScope, temp);
         return IRRuntimeHelpers.irSplat(context, arrayVal);
     }
 

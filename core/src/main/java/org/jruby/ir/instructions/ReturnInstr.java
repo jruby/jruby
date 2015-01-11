@@ -14,20 +14,15 @@ public class ReturnInstr extends ReturnBase implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + returnValue + ")";
-    }
-
-    @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReturnInstr(returnValue.cloneForInlining(info));
+        if (info instanceof SimpleCloneInfo) return new ReturnInstr(getReturnValue().cloneForInlining(info));
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
-        if (ii.isClosure()) return new CopyInstr(ii.getYieldResult(), returnValue.cloneForInlining(ii));
+        if (ii.isClosure()) return new CopyInstr(ii.getYieldResult(), getReturnValue().cloneForInlining(ii));
 
         Variable v = ii.getCallResultVariable();
-        return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+        return v == null ? null : new CopyInstr(v, getReturnValue().cloneForInlining(ii));
     }
 
     @Override

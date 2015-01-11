@@ -34,12 +34,10 @@ import java.util.Map;
 //
 public class BreakInstr extends Instr implements FixedArityInstr {
     private final String scopeName; // Primarily a debugging aid
-    private Operand returnValue;
 
-    public BreakInstr(Operand rv, String scopeName) {
-        super(Operation.BREAK);
+    public BreakInstr(Operand returnValue, String scopeName) {
+        super(Operation.BREAK, new Operand[] { returnValue });
         this.scopeName = scopeName;
-        this.returnValue = rv;
     }
 
     public String getScopeName() {
@@ -47,12 +45,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getReturnValue() {
-        return returnValue;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new StringLiteral(scopeName), returnValue };
+        return operands[0];
     }
 
     @Override
@@ -64,7 +57,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new BreakInstr(returnValue.cloneForInlining(info), scopeName);
+        if (info instanceof SimpleCloneInfo) return new BreakInstr(getReturnValue().cloneForInlining(info), scopeName);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -88,23 +81,13 @@ public class BreakInstr extends Instr implements FixedArityInstr {
                 // scope exit block.  So, we know that after the copy, we'll continue with the
                 // instruction after the call.
                 Variable v = ii.getCallResultVariable();
-                return (v == null) ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+                return (v == null) ? null : new CopyInstr(v, getReturnValue().cloneForInlining(ii));
             }
 
-            return new BreakInstr(returnValue.cloneForInlining(ii), scopeName);
+            return new BreakInstr(getReturnValue().cloneForInlining(ii), scopeName);
         } else {
             throw new UnsupportedOperationException("Break instructions shouldn't show up outside closures.");
         }
-    }
-
-    @Override
-    public String toString() {
-        return getOperation() + "(" + returnValue + ", " + scopeName + ")";
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        returnValue = returnValue.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

@@ -11,36 +11,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArgScopeDepthInstr extends Instr implements ResultInstr,FixedArityInstr {
-    private Variable result;
-
     public ArgScopeDepthInstr(Variable result) {
-        super(Operation.ARG_SCOPE_DEPTH);
-        this.result = result;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
+        super(Operation.ARG_SCOPE_DEPTH, result, EMPTY_OPERANDS);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new ArgScopeDepthInstr(ii.getRenamedVariable(result));
-    }
-
-    @Override
-    public String toString() {
-        return result + " = " + super.toString();
     }
 
     @Override

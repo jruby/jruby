@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -14,29 +13,10 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * to a body of code on the JVM stack.
  */
 public class LoadImplicitClosureInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-
     public LoadImplicitClosureInstr(Variable result) {
-        super(Operation.LOAD_IMPLICIT_CLOSURE);
+        super(Operation.LOAD_IMPLICIT_CLOSURE, result, EMPTY_OPERANDS);
 
         assert result != null : "LoadImplicitClosureInstr result is null";
-
-        this.result = result;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     @Override

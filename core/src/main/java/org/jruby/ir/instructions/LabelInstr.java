@@ -7,35 +7,25 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class LabelInstr extends Instr implements FixedArityInstr {
-    public final Label label;
-
     public LabelInstr(Label label) {
-        super(Operation.LABEL);
-
-        this.label = label;
+        super(Operation.LABEL, new Operand[] { label });
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { label };
+    public Label getLabel() {
+        return (Label) operands[0];
     }
 
-    @Override
     public String toString() {
-        return label + ":";
+        return getLabel() + ":";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new LabelInstr(ii.getRenamedLabel(label));
+        return new LabelInstr(ii.getRenamedLabel(getLabel()));
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.LabelInstr(this);
-    }
-
-    public Label getLabel() {
-        return label;
     }
 }

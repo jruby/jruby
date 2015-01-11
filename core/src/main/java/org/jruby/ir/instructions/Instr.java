@@ -33,6 +33,8 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
+    protected Variable result;
+    protected Operand[] operands;
     private int ipc; // Interpreter-only: instruction pointer
     private int rpc; // Interpreter-only: rescue pointer
     private final Operation operation;
@@ -41,20 +43,49 @@ public abstract class Instr {
     // we can remove this instruction altogether without affecting program correctness.
     private boolean isDead;
 
-    public Instr(Operation operation) {
+    public Instr(Operation operation, Operand[] operands) {
+        this(operation, null, operands);
+    }
+
+    public Instr(Operation operation, Variable result, Operand[] operands) {
         this.ipc = -1;
         this.rpc = -1;
         this.operation = operation;
+        this.operands = operands;
+        this.result = result;
     }
 
     @Override
     public String toString() {
-        return "" + (isDead() ? "[DEAD]" : "") + ((this instanceof ResultInstr) ? ((ResultInstr)this).getResult() + " = " : "") + operation;
+        StringBuilder buf = new StringBuilder(isDead() ? "[DEAD]" : "");
+
+        if (this instanceof ResultInstr) buf.append(getResult()).append(" = ");
+
+        buf.append(operation);
+
+        if (operands.length > 0) {
+            buf.append("(");
+            for (int i = 0; i < operands.length-1; i++) {
+                buf.append(operands[i]).append(", ");
+            }
+
+            buf.append(operands[operands.length-1]).append(")");
+        }
+
+        return buf.toString();
     }
 
     @Interp
     public Operation getOperation() {
         return operation;
+    }
+
+    public Variable getResult() {
+        return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Interp
@@ -123,14 +154,15 @@ public abstract class Instr {
     }
 
     /* Array of all operands for this instruction */
-    @Interp
-    public abstract Operand[] getOperands();
+    public Operand[] getOperands() {
+        return operands;
+    }
 
     /* List of all variables used by all operands of this instruction */
     public List<Variable> getUsedVariables() {
         ArrayList<Variable> vars = new ArrayList<>();
-        for (Operand o : getOperands()) {
-            o.addUsedVariables(vars);
+        for (int i = 0; i < operands.length; i++) {
+            operands[i].addUsedVariables(vars);
         }
 
         return vars;
@@ -159,6 +191,15 @@ public abstract class Instr {
      */
     public abstract Instr clone(CloneInfo info);
 
+    public Operand[] cloneOperands(CloneInfo info) {
+        Operand[] newOperands = new Operand[operands.length];
+
+        for (int i = 0; i < operands.length; i++) {
+            newOperands[i] = operands[i].cloneForInlining(info);
+        }
+
+        return newOperands;
+    }
     /**
      * This method takes as input a map of operands to their values, and outputs
      *
@@ -168,6 +209,9 @@ public abstract class Instr {
      * to simplify
      */
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        for (int i = 0; i < operands.length; i++) {
+            operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
+        }
     }
 
     /**

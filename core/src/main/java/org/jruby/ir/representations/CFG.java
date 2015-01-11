@@ -255,7 +255,7 @@ public class CFG {
             // System.out.println("Processing: " + i);
             Operation iop = i.getOperation();
             if (iop == Operation.LABEL) {
-                Label l = ((LabelInstr) i).label;
+                Label l = ((LabelInstr) i).getLabel();
                 newBB = createBB(l, nestedExceptionRegions);
                 // Jump instruction bbs dont add an edge to the succeeding bb by default
                 if (nextBBIsFallThrough) graph.addEdge(currBB, newBB, EdgeType.FALL_THROUGH);
@@ -282,7 +282,7 @@ public class CFG {
             if (i instanceof ExceptionRegionStartMarkerInstr) {
                 // We dont need the instruction anymore -- so it is not added to the CFG.
                 ExceptionRegionStartMarkerInstr ersmi = (ExceptionRegionStartMarkerInstr) i;
-                ExceptionRegion rr = new ExceptionRegion(ersmi.firstRescueBlockLabel, currBB);
+                ExceptionRegion rr = new ExceptionRegion(ersmi.getFirstRescueBlockLabel(), currBB);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 

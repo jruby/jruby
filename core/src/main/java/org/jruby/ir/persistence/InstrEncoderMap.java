@@ -258,7 +258,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr instr) {
-        e.encode(instr.firstRescueBlockLabel);
+        e.encode(instr.getFirstRescueBlockLabel());
     }
 
     private void encodeGetClassVariableInstr(GetClassVariableInstr instr) {
@@ -314,20 +314,20 @@ public class InstrEncoderMap {
     }
 
     private void encodeOptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
         e.encode(instr.getIndex());
         e.encode(instr.getMinArgsLength());
     }
 
     private void encodeReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
         e.encode(instr.getPreArgsCount());
         e.encode(instr.getPostArgsCount());
         e.encode(instr.getIndex());
     }
 
     private void encodeRestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
         e.encode(instr.getPreArgsCount());
         e.encode(instr.getPostArgsCount());
         e.encode(instr.getIndex());
@@ -486,11 +486,11 @@ public class InstrEncoderMap {
     }
 
     private void encodeThrowExceptionInstr(ThrowExceptionInstr instr) {
-        e.encode(instr.getExceptionArg());
+        e.encode(instr.getException());
     }
 
     private void encodeToAryInstr(ToAryInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
     }
 
     private void encodeUndefMethodInstr(UndefMethodInstr instr) {

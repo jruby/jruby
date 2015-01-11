@@ -14,32 +14,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 public class UndefMethodInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-    private Operand methodName;
-
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public UndefMethodInstr(Variable result, Operand methodName) {
-        super(Operation.UNDEF_METHOD);
-
-        this.result = result;
-        this.methodName = methodName;
+        super(Operation.UNDEF_METHOD, result, new Operand[] { methodName });
     }
 
     public Operand getMethodName() {
-        return methodName;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + methodName + ")";
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { methodName };
+        return operands[0];
     }
 
     @Override
@@ -49,27 +31,14 @@ public class UndefMethodInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        methodName = methodName.getSimplifiedOperand(valueMap, force);
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
-        return new UndefMethodInstr((Variable)result.cloneForInlining(ii), methodName.cloneForInlining(ii));
+        return new UndefMethodInstr((Variable)result.cloneForInlining(ii), getMethodName().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
-        Object nameArg = methodName.retrieve(context, self, currScope, currDynScope, temp);
+        Object nameArg = getMethodName().retrieve(context, self, currScope, currDynScope, temp);
         String name = (nameArg instanceof String) ? (String) nameArg : nameArg.toString();
         module.undef(context, name);
         return context.runtime.getNil();

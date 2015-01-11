@@ -18,11 +18,6 @@ public class PutGlobalVarInstr extends PutInstr implements FixedArityInstr {
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { getTarget(), getValue() };
-    }
-
-    @Override
     public boolean computeScopeFlags(IRScope scope) {
         String gvName = ((GlobalVariable) getTarget()).getName();
 

@@ -17,7 +17,7 @@ public class TraceInstr extends Instr {
     private final int linenumber;
 
     public TraceInstr(RubyEvent event, String name, String filename, int linenumber) {
-        super(Operation.TRACE);
+        super(Operation.TRACE, EMPTY_OPERANDS);
 
         this.event = event;
         this.name = name;
@@ -46,13 +46,7 @@ public class TraceInstr extends Instr {
         return linenumber;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { };
-    }
-
     public String toString() {
-        return super.toString() + " " + event + ", " + name + ", " + filename + ", " + linenumber;
+        return getOperation() + "(" + event + ", " + name + ", " + filename + ", " + linenumber + ")";
     }
-
 }

@@ -14,20 +14,14 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "{1O}";
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
-        return new OneArgOperandAttrAssignInstr(receiver.cloneForInlining(ii), getName(), cloneCallArgs(ii));
+        return new OneArgOperandAttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        Operand[] args = getCallArgs();
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
-        IRubyObject value = (IRubyObject) args[0].retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject value = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
 
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
         Helpers.invoke(context, object, getName(), value, callType, Block.NULL_BLOCK);

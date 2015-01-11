@@ -40,13 +40,13 @@ public class AttrAssignInstr extends NoResultCallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new AttrAssignInstr(receiver.cloneForInlining(ii), getName(), cloneCallArgs(ii));
+        return new AttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
-        IRubyObject[] values = prepareArguments(context, self, getCallArgs(), currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
 
         CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
         Helpers.invoke(context, object, getName(), values, callType, Block.NULL_BLOCK);

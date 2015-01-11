@@ -36,24 +36,19 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
-    }
-
-    @Override
     public String toString() {
-        return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
+        return super.toString() + "(" + getArray() + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), preArgsCount, postArgsCount, index);
+        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), preArgsCount, postArgsCount, index);
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
+        RubyArray rubyArray = (RubyArray) getArray().retrieve(context, self, currScope, currDynScope, temp);
 
         return Helpers.viewArgsArray(context, rubyArray, preArgsCount, postArgsCount);
     }

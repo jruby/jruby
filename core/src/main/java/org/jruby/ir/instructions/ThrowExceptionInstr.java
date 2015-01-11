@@ -13,49 +13,29 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 // Right now, this is primarily used by the JRuby implementation.
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
 public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
-    private Operand exceptionArg;
-
     public ThrowExceptionInstr(Operand exception) {
-        super(Operation.THROW);
-        this.exceptionArg = exception;
+        super(Operation.THROW, new Operand[] { exception });
     }
 
-    public Operand getExceptionArg() {
-        return exceptionArg;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{ exceptionArg };
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        exceptionArg = exceptionArg.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + exceptionArg + ")";
+    public Operand getException() {
+        return operands[0];
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ThrowExceptionInstr(exceptionArg.cloneForInlining(ii));
+        return new ThrowExceptionInstr(getException().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        if (exceptionArg instanceof IRException) {
-            throw ((IRException) exceptionArg).getException(context.runtime);
+        if (getException() instanceof IRException) {
+            throw ((IRException) getException()).getException(context.runtime);
         }
 
-        Object excObj = exceptionArg.retrieve(context, self, currScope, currDynScope, temp);
+        Object excObj = getException().retrieve(context, self, currScope, currDynScope, temp);
 
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
