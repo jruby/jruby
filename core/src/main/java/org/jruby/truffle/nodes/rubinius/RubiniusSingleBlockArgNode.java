@@ -12,12 +12,16 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 
 public class RubiniusSingleBlockArgNode extends RubyNode {
+    private final ConditionProfile emptyArgsProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile singleArgProfile = ConditionProfile.createBinaryProfile();
+
     public RubiniusSingleBlockArgNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
@@ -35,16 +39,17 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
 
         int userArgumentCount = RubyArguments.getUserArgumentsCount(frame.getArguments());
 
-        if (userArgumentCount == 1) {
-            return RubyArguments.getUserArgument(frame.getArguments(), 0);
-
-        } else if (userArgumentCount > 1) {
-            Object[] extractedArguments = RubyArguments.extractUserArguments(frame.getArguments());
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), extractedArguments);
-
-        } else {
+        if (emptyArgsProfile.profile(userArgumentCount == 0)) {
             return getContext().getCoreLibrary().getNilObject();
+        } else {
+            if (singleArgProfile.profile(userArgumentCount == 1)) {
+                return RubyArguments.getUserArgument(frame.getArguments(), 0);
+
+            } else {
+                Object[] extractedArguments = RubyArguments.extractUserArguments(frame.getArguments());
+
+                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), extractedArguments);
+            }
         }
     }
 }
