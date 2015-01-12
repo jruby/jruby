@@ -122,7 +122,6 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
     private ArrayNodes.MinBlock arrayMinBlock;
-    private ArrayNodes.MaxBlock arrayMaxBlock;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -343,7 +342,6 @@ public class CoreLibrary {
         initializeEncodingConstants();
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
-        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
         argv = new RubyArray(arrayClass);
         objectClass.setConstant(null, "ARGV", argv);
@@ -903,10 +901,6 @@ public class CoreLibrary {
 
     public ArrayNodes.MinBlock getArrayMinBlock() {
         return arrayMinBlock;
-    }
-
-    public ArrayNodes.MaxBlock getArrayMaxBlock() {
-        return arrayMaxBlock;
     }
 
     public RubyClass getNumericClass() {
