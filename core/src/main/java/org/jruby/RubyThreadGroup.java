@@ -29,16 +29,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
+import org.jruby.util.WeakIdentityLinkedHashSet;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.WeakHashSet;
 
 /**
  * Implementation of Ruby's <code>ThreadGroup</code> class. This is currently
@@ -49,7 +50,7 @@ import org.jruby.util.collections.WeakHashSet;
  */
 @JRubyClass(name="ThreadGroup")
 public class RubyThreadGroup extends RubyObject {
-    private final Set<RubyThread> rubyThreadList = Collections.synchronizedSet(new WeakHashSet<RubyThread>());
+    private final Set rubyThreadList = Collections.synchronizedSet(new WeakIdentityLinkedHashSet());
     private boolean enclosed = false;
 
     public static RubyClass createThreadGroupClass(Ruby runtime) {
@@ -145,11 +146,10 @@ public class RubyThreadGroup extends RubyObject {
     @JRubyMethod
     public IRubyObject list(Block block) {
         RubyArray ary = RubyArray.newArray(getRuntime());
-            synchronized (ary) {
-            for (RubyThread thread : rubyThreadList) {
-                if (thread != null) {
-                    ary.append(thread);
-                }
+        synchronized (ary) {
+            for (Object obj : rubyThreadList) {
+                RubyThread thread = (RubyThread) obj;
+                ary.add(thread);
             }
             return ary;
         }
@@ -168,5 +168,4 @@ public class RubyThreadGroup extends RubyObject {
     private RubyThreadGroup(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
-
 }
