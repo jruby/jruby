@@ -292,7 +292,9 @@ public class CoreLibrary {
         objectClass.include(null, kernelModule);
         numericClass.include(null, comparableModule);
         arrayClass.include(null, enumerableModule);
+        dirClass.include(null, enumerableModule);
         hashClass.include(null, enumerableModule);
+        ioClass.include(null, enumerableModule);
         rangeClass.include(null, enumerableModule);
 
         // Set constants
