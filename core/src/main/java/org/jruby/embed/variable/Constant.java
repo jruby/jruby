@@ -30,7 +30,6 @@
 package org.jruby.embed.variable;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -120,27 +119,19 @@ public class Constant extends AbstractVariable {
         }
     }
 
-    private static void updateConstants(RubyObject receiver, BiVariableMap vars) {
-        Collection<String> names = receiver.getMetaClass().getConstantNames();
-        for (String name : names) {
-            IRubyObject value = receiver.getMetaClass().getConstant(name);
-            BiVariable var = null;
-            List<String> savedNames = vars.getNames();
-            // Need to check that this constant has been stored in BiVariableMap.
-            for (int i=0; i<savedNames.size(); i++) {
-                if (name.equals(savedNames.get(i))) {
-                    var = (BiVariable) vars.getVariables().get(i);
-                    if (receiver == var.getReceiver()) {
-                        var.setRubyObject(value);
-                    } else {
-                        var = null;
-                    }
-                }
-            }
+    private static void updateConstants(final RubyObject receiver, final BiVariableMap vars) {
+        final RubyClass klazz = receiver.getMetaClass();
+        final Collection<String> constantNames = klazz.getConstantNames();
+        for ( final String name : constantNames ) {
+            final IRubyObject value = klazz.getConstant(name);
+
+            BiVariable var = vars.getVariable(receiver, name);
             if (var == null) {
                 var = new Constant(receiver, name, value);
-                ((Constant) var).markInitialized();
-                vars.update(name, var);
+                vars.update(name, ((Constant) var).markInitialized());
+            }
+            else {
+                var.setRubyObject(value);
             }
         }
     }
@@ -153,12 +144,15 @@ public class Constant extends AbstractVariable {
      * @param vars map to save retrieved instance variables.
      * @param key instace varible name
      */
-    public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+    public static void retrieveByKey(final RubyObject receiver,
+        final BiVariableMap vars, final String key) {
         // if the specified key doesn't exist, this method is called before the
         // evaluation. Don't update value in this case.
         IRubyObject value = null;
-        if (receiver.getMetaClass().getConstantNames().contains(key)) {
-            value = receiver.getMetaClass().getConstant(key);
+
+        final RubyClass klazz = receiver.getMetaClass();
+        if ( klazz.getConstantNames().contains(key) ) {
+            value = klazz.getConstant(key);
         }
         else if (getTopSelf(receiver).getMetaClass().getConstantNames().contains(key)) {
             value = getTopSelf(receiver).getMetaClass().getConstant(key);
@@ -166,7 +160,8 @@ public class Constant extends AbstractVariable {
         else if (getTopSelf(receiver).getMetaClass().getSuperClass().getConstantNames().contains(key)) {
             value = getTopSelf(receiver).getMetaClass().getSuperClass().getConstant(key);
         }
-        if (value == null) return;
+
+        if ( value == null ) return;
 
         // the specified key is found, so let's update
         BiVariable var = vars.getVariable(receiver, key);
