@@ -829,7 +829,7 @@ public class OpenFile implements Finalizable {
     };
 
     public void finalize() {
-        if (fd != null) finalize(runtime.getCurrentContext(), true);
+        if (fd != null && isAutoclose()) finalize(runtime.getCurrentContext(), true);
     }
 
     public void finalize(ThreadContext context, boolean noraise) {
