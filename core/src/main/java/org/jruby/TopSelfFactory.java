@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,41 +48,66 @@ public final class TopSelfFactory {
     private TopSelfFactory() {
         super();
     }
-    
+
     public static IRubyObject createTopSelf(final Ruby runtime) {
+        return createTopSelf(runtime, false);
+    }
+    
+    public static IRubyObject createTopSelf(final Ruby runtime, final boolean wrapper) {
         IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
-        
-        topSelf.getSingletonClass().addMethod("to_s", new JavaMethod.JavaMethodZero(topSelf.getSingletonClass(), Visibility.PUBLIC) {
+
+        final RubyClass singletonClass = topSelf.getSingletonClass();
+
+        singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 return runtime.newString("main");
             }
         });
-        topSelf.getSingletonClass().defineAlias("inspect", "to_s");
+        singletonClass.defineAlias("inspect", "to_s");
         
         // The following three methods must be defined fast, since they expect to modify the current frame
         // (i.e. they expect no frame will be allocated for them). JRUBY-1185.
-        topSelf.getSingletonClass().addMethod("include", new JavaMethod.JavaMethodN(topSelf.getSingletonClass(), Visibility.PRIVATE) {
+        singletonClass.addMethod("include", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return context.runtime.getObject().include(args);
             }
         });
         
-        topSelf.getSingletonClass().addMethod("public", new JavaMethod.JavaMethodN(topSelf.getSingletonClass(), Visibility.PRIVATE) {
+        singletonClass.addMethod("public", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return context.runtime.getObject().rbPublic(context, args);
             }
         });
         
-        topSelf.getSingletonClass().addMethod("private", new JavaMethod.JavaMethodN(topSelf.getSingletonClass(), Visibility.PRIVATE) {
+        singletonClass.addMethod("private", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return context.runtime.getObject().rbPrivate(context, args);
             }
         });
+
+        final RubyClass klass = wrapper ? singletonClass : runtime.getObject();
+        singletonClass.addMethod("define_method", new JavaMethod.JavaMethodOneOrTwoBlock(singletonClass, Visibility.PRIVATE) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+                if (klass == singletonClass) warnWrapper(context);
+                return klass.define_method(context, arg0, block);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+                if (klass == singletonClass) warnWrapper(context);
+                return klass.define_method(context, arg0, arg1, block);
+            }
+        });
         
         return topSelf;
+    }
+
+    private static void warnWrapper(ThreadContext context) {
+        context.runtime.getWarnings().warning("main.define_method in the wrapped load is effective only in wrapper module");
     }
 }
