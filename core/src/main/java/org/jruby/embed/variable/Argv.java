@@ -32,6 +32,7 @@ package org.jruby.embed.variable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
@@ -44,7 +45,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author yoko
  */
 public class Argv extends AbstractVariable {
-    private static String pattern = "ARGV";
+
+    private static final String VALID_NAME = "ARGV";
 
     /**
      * Returns an instance of this class. This factory method is used when an ARGV
@@ -56,12 +58,12 @@ public class Argv extends AbstractVariable {
      * @return the instance of Constant
      */
     public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
-        if (name.matches(pattern)) {
+        if (name.matches(VALID_NAME)) {
             return new Argv(receiver, name, javaObject);
         }
         return null;
     }
-    
+
     private Argv(RubyObject receiver, String name, Object... javaObjects) {
         super(receiver, name, false);
         assert javaObjects != null;
@@ -74,15 +76,14 @@ public class Argv extends AbstractVariable {
             javaType = javaObject.getClass();
         }
     }
-    
+
     private void updateArgvByJavaObject() {
-        RubyArray ary = RubyArray.newArray(receiver.getRuntime());
-        if (javaObject instanceof Collection) {
-            ary.addAll((Collection)javaObject);
-        } else if (javaObject instanceof String[]) {
-            for (String s : (String[])javaObject) {
-                ary.add(s);
-            }
+        RubyArray ary = RubyArray.newArray(getRuntime());
+        if ( javaObject instanceof Collection ) {
+            ary.addAll((Collection) javaObject);
+        }
+        else if ( javaObject instanceof Object[] ) {
+            for (Object s : (Object[]) javaObject) ary.add(s);
         }
         irubyObject = ary;
     }
@@ -95,7 +96,7 @@ public class Argv extends AbstractVariable {
      * @param name the constant name
      * @param irubyObject Ruby constant object
      */
-    Argv(IRubyObject receiver, String name, IRubyObject irubyObject) {
+    Argv(RubyObject receiver, String name, IRubyObject irubyObject) {
         super(receiver, name, true, irubyObject);
     }
 
@@ -104,10 +105,11 @@ public class Argv extends AbstractVariable {
      *
      * @return this enum type, BiVariable.Type.InstanceVariable.
      */
+    @Override
     public Type getType() {
         return Type.Argv;
     }
-    
+
     /**
      * Returns true if the given name is ARGV. Unless returns false.
      *
@@ -115,7 +117,7 @@ public class Argv extends AbstractVariable {
      * @return true if the given name is ARGV.
      */
     public static boolean isValidName(Object name) {
-        return isValidName(pattern, name);
+        return isValidName(VALID_NAME, name);
     }
 
     /**
@@ -125,27 +127,29 @@ public class Argv extends AbstractVariable {
      * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
+    @Override
     public void inject() {
         updateArgvByJavaObject();
-        RubyModule rubyModule = getRubyClass(receiver.getRuntime());
-        if (rubyModule == null) rubyModule = receiver.getRuntime().getCurrentContext().getRubyClass();
+        final Ruby runtime = getRuntime();
+        RubyModule rubyModule = getRubyClass(runtime);
+        if (rubyModule == null) rubyModule = runtime.getCurrentContext().getRubyClass();
         if (rubyModule == null) return;
 
         rubyModule.storeConstant(name, irubyObject);
-        receiver.getRuntime().getConstantInvalidator(name).invalidate();
+        runtime.getConstantInvalidator(name).invalidate();
         fromRuby = true;
     }
 
     /**
      * Removes this object from {@link BiVariableMap}. Also, initialize
      * this variable in top self.
-     *
      */
+    @Override
     public void remove() {
         javaObject = new ArrayList();
         inject();
     }
-    
+
    /**
      * Retrieves ARGV from Ruby after the evaluation or method invocation.
      *
@@ -157,23 +161,23 @@ public class Argv extends AbstractVariable {
         if (vars.isLazy()) return;
         updateARGV(receiver, vars);
     }
-    
-    private static void updateARGV(IRubyObject receiver, BiVariableMap vars) {
-        String name = "ARGV".intern();
-        IRubyObject argv = receiver.getRuntime().getTopSelf().getMetaClass().getConstant(name);
+
+    private static void updateARGV(final IRubyObject receiver, final BiVariableMap vars) {
+        final String name = "ARGV";
+        final Ruby runtime = receiver.getRuntime();
+        IRubyObject argv = runtime.getTopSelf().getMetaClass().getConstant(name);
         if (argv == null || (argv instanceof RubyNil)) return;
-        BiVariable var;  // This var is for ARGV.
         // ARGV constant should be only one
-        if (vars.containsKey((Object)name)) {
-            var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), name);
+        if (vars.containsKey(name)) {
+            BiVariable var = vars.getVariable(getTopSelf(receiver), name);
             var.setRubyObject(argv);
-        } else {
-            var = new Constant(receiver.getRuntime().getTopSelf(), name, argv);
-            ((Constant) var).markInitialized();
-            vars.update(name, var);
+        }
+        else {
+            Constant var = new Constant(getTopSelf(receiver), name, argv);
+            vars.update(name, var.markInitialized());
         }
     }
-    
+
     /**
      * Retrieves ARGV by key from Ruby runtime after the evaluation.
      * This method is used when eager retrieval is off.
@@ -186,28 +190,29 @@ public class Argv extends AbstractVariable {
         assert key.equals("ARGV");
         updateARGV(receiver, vars);
     }
-    
+
     @Override
+    @SuppressWarnings("unchecked")
     public Object getJavaObject() {
-        if (irubyObject == null || !fromRuby) {
-            return javaObject;
-        }
-        RubyArray ary = (RubyArray)irubyObject;
+        if ( irubyObject == null || ! fromRuby ) return javaObject;
+
+        final RubyArray ary = (RubyArray) irubyObject;
         if (javaType == null) { // firstly retrieved from Ruby
-            javaObject = new ArrayList<String>();
-            ((ArrayList)javaObject).addAll(ary);
-            return javaObject;
-        } else if (javaType == String[].class) {
-            javaObject = new String[ary.size()];
-            for (int i=0; i<ary.size(); i++) {
-                ((String[])javaObject)[i] = (String) ary.get(i);
+            return javaObject = new ArrayList<String>(ary);
+        }
+        else if (javaType == String[].class) {
+            String[] strArr = new String[ ary.size() ];
+            for ( int i=0; i<ary.size(); i++ ) {
+                strArr[i] = (String) ary.get(i);
             }
-            return javaObject;
-        } else if (javaObject instanceof List) {
+            return javaObject = strArr;
+        }
+        else if (javaObject instanceof List) {
             try {
-                ((List)javaObject).clear();
-                ((List)javaObject).addAll(ary);
-            } catch (UnsupportedOperationException e) {
+                ((List) javaObject).clear();
+                ((List) javaObject).addAll(ary);
+            }
+            catch (UnsupportedOperationException e) {
                 // no op. no way to update.
             }
             return javaObject;

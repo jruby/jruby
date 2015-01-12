@@ -40,7 +40,8 @@ import org.jruby.RubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class TransientLocalVariable extends AbstractVariable {
-    private static String pattern = "([a-z]|_)([a-zA-Z]|_|\\d)*";
+
+    private static final String VALID_NAME = "([a-z]|_)([a-zA-Z]|_|\\d)*";
 
     /**
      * Returns an instance of this class. This factory method is used when a
@@ -52,7 +53,7 @@ public class TransientLocalVariable extends AbstractVariable {
      * @return the instance of TransientLocalVariable
      */
     public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
-        if (name.matches(pattern)) {
+        if (name.matches(VALID_NAME)) {
             return new TransientLocalVariable(receiver, name, javaObject);
         }
         return null;
@@ -68,6 +69,7 @@ public class TransientLocalVariable extends AbstractVariable {
      *
      * @return this enum type, BiVariable.Type.LocalVariable.
      */
+    @Override
     public Type getType() {
         return Type.LocalVariable;
     }
@@ -80,7 +82,7 @@ public class TransientLocalVariable extends AbstractVariable {
      * @return true if the given name is of a Ruby local variable.
      */
     public static boolean isValidName(Object name) {
-        return isValidName(pattern, name);
+        return isValidName(VALID_NAME, name);
     }
 
     /**
@@ -99,14 +101,16 @@ public class TransientLocalVariable extends AbstractVariable {
      * Injects a local variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
      */
+    @Override
     public void inject() {
         //done in BiVariableMap.inject()
     }
 
     /**
      * Attempts to remove this variable from top self or receiver.
-     * 
+     *
      */
+    @Override
     public void remove() {
         // local variables won't survice over the eval on runime.
         // no need to remove lvar from runtime
