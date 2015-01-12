@@ -17,6 +17,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -252,6 +253,15 @@ public abstract class FloatNodes {
         @Specialization
         public double div(double a, RubyBignum b) {
             return a / b.doubleValue();
+        }
+
+        @Specialization(guards = {
+                "!isInteger(arguments[1])",
+                "!isLong(arguments[1])",
+                "!isDouble(arguments[1])",
+                "!isRubyBignum(arguments[1])"})
+        public Object div(double a, Object b) {
+            return DebugOperations.send(getContext(), a, "redo_coerced", null, getContext().getSymbolTable().getSymbol("/"), b);
         }
 
     }

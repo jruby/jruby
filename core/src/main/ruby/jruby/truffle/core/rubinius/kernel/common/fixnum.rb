@@ -33,4 +33,12 @@ class Fixnum
     super other
   end
 
+  def fdiv(n)
+    if n.kind_of?(Fixnum)
+      to_f / n
+    else
+      redo_coerced :fdiv, n
+    end
+  end
+
 end

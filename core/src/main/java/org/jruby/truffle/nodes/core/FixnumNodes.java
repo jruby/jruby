@@ -640,6 +640,7 @@ public abstract class FixnumNodes {
             // TODO(CS): not entirely sure this is correct
             return 0;
         }
+
     }
 
     @CoreMethod(names = "%", required = 1)

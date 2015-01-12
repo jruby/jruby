@@ -42,6 +42,16 @@ module Kernel
   end
   module_function :Rational
 
+  def Float(obj)
+    case obj
+    when String
+      Rubinius::Type.coerce_string_to_float obj, true
+    else
+      Rubinius::Type.coerce_object_to_float obj
+    end
+  end
+  module_function :Float
+
   ##
   # MRI uses a macro named StringValue which has essentially the same
   # semantics as obj.coerce_to(String, :to_str), but rather than using that
