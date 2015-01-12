@@ -499,6 +499,16 @@ public class SocketUtils {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 
+    public static RuntimeException sockerr_with_trace(Ruby runtime, String msg, StackTraceElement[] trace) {
+        String eol = System.getProperty("line.separator");
+        StringBuilder sb = new StringBuilder();
+        sb.append(msg);
+        for (int i = 0, il = trace.length; i < il; i++) {
+            sb.append(eol + trace[i].toString());
+        }
+        return new RaiseException(runtime, runtime.getClass("SocketError"), sb.toString(), true);
+    }
+
     public static int getPortFrom(ThreadContext context, IRubyObject _port) {
         int port;
         if (_port instanceof RubyInteger) {
