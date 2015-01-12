@@ -9,7 +9,7 @@ public class Boolean extends ImmutableLiteral {
     public static final Boolean TRUE = new Boolean(true);
     public static final Boolean FALSE = new Boolean(false);
 
-    public Boolean(boolean truthy) {
+    private Boolean(boolean truthy) {
         super(OperandType.BOOLEAN);
 
         this.truthy = truthy;

@@ -3200,7 +3200,7 @@ public class IRBuilder {
             // If this happens to be a module body, the runtime throws a local jump error if the
             // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             IRMethod m = s.getNearestMethod();
-            addInstr(s, new RuntimeHelperCall(null, CHECK_FOR_LJE, new Operand[] { new Boolean(m == null) }));
+            addInstr(s, new RuntimeHelperCall(null, CHECK_FOR_LJE, new Operand[] { m == null ? Boolean.TRUE : Boolean.FALSE }));
             retVal = processEnsureRescueBlocks(s, retVal);
             addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName()));
         } else if (s.isModuleBody()) {

@@ -3,8 +3,8 @@ package org.jruby.ir;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
-import org.jruby.ir.operands.Nil;
-import org.jruby.ir.operands.TemporaryLocalVariable;
+import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
@@ -24,8 +24,7 @@ public class IRManager {
     private int dummyMetaClassCount = 0;
     private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
     private final Nil nil = new Nil();
-    private final org.jruby.ir.operands.Boolean trueObject = new org.jruby.ir.operands.Boolean(true);
-    private final org.jruby.ir.operands.Boolean falseObject = new org.jruby.ir.operands.Boolean(false);
+
     // Listeners for debugging and testing of IR
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
@@ -63,11 +62,11 @@ public class IRManager {
     }
 
     public org.jruby.ir.operands.Boolean getTrue() {
-        return trueObject;
+        return Boolean.TRUE;
     }
 
     public org.jruby.ir.operands.Boolean getFalse() {
-        return falseObject;
+        return Boolean.FALSE;
     }
 
     public IRModuleBody getObject() {
