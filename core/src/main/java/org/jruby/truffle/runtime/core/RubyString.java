@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
@@ -34,7 +35,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public static RubyString fromJavaString(RubyClass stringClass, String string) {
-        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), ASCIIEncoding.INSTANCE, false));
+        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), USASCIIEncoding.INSTANCE, false));
     }
 
     public static RubyString fromByteList(RubyClass stringClass, ByteList bytes) {
