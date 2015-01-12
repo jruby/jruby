@@ -9,13 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.util.ArrayUtils;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
@@ -43,6 +45,36 @@ public abstract class MatchDataNodes {
         }
 
     }
+
+    @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
+    public abstract static class BeginNode extends CoreMethodNode {
+
+        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
+
+        public BeginNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BeginNode(BeginNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object begin(RubyMatchData matchData, int index) {
+            notDesignedForCompilation();
+
+            if (badIndexProfile.profile((index < 0) || (index >= matchData.getNumberOfRegions()))) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+
+            } else {
+                return matchData.begin(index);
+            }
+        }
+    }
+
 
     @CoreMethod(names = "captures")
     public abstract static class CapturesNode extends CoreMethodNode {
