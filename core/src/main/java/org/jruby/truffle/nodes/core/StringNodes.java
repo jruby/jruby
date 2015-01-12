@@ -242,7 +242,8 @@ public abstract class StringNodes {
             // TODO(CS): why does subSequence return CharSequence?
             final int begin = string.normaliseIndex(start);
             final int exclusiveEnd = string.normaliseIndex(begin + length);
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(begin, exclusiveEnd - begin));
+            
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(begin, exclusiveEnd));
         }
 
     }
