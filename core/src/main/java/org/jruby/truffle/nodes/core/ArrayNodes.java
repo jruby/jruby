@@ -658,10 +658,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum")
         public Object sliceIntegerFixnum(RubyArray array, int start, int length) {
-            notDesignedForCompilation();
-
             final int normalisedIndex = array.normaliseIndex(start);
 
+            // TODO (nirvdrum 12-Jan-15) Add branch profiling.
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 return getContext().getCoreLibrary().getNilObject();
             } else if (normalisedIndex == array.getSize()) {
