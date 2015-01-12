@@ -214,8 +214,6 @@ module GC
             duration = 0
 
             @gc_listener.lines.each_with_index do |line, i|
-              puts HEADER if i % 20 == 0
-
               gc_notification = com.sun.management.GarbageCollectionNotificationInfo.from(line.user_data)
               gc_info = gc_notification.gc_info
 
