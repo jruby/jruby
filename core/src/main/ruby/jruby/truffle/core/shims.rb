@@ -66,7 +66,3 @@ class Regexp
     end
   end
 end
-
-def define_method(name, &block)
-  Kernel.define_method(name, &block)
-end

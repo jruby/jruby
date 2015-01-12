@@ -842,8 +842,6 @@ public abstract class ModuleNodes {
             appendFeaturesNode = prev.appendFeaturesNode;
         }
 
-        public abstract RubyNilClass executeInclude(VirtualFrame frame, RubyModule module, Object[] args);
-
         @Specialization
         public RubyNilClass include(VirtualFrame frame, RubyModule module, Object[] args) {
             notDesignedForCompilation();
