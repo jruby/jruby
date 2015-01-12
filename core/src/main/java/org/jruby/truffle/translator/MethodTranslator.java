@@ -36,13 +36,11 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 class MethodTranslator extends BodyTranslator {
 
-    private boolean isTopLevel;
     private boolean isBlock;
 
-    public MethodTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, boolean isTopLevel, Source source) {
+    public MethodTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
         super(currentNode, context, parent, environment, source, false);
         this.isBlock = isBlock;
-        this.isTopLevel = isTopLevel;
     }
 
     public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {

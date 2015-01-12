@@ -265,22 +265,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean less(RubyBignum a, int b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, long b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, double b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
     }
 
@@ -297,22 +297,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean lessEqual(RubyBignum a, int b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, long b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, double b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
     }
 
@@ -361,12 +361,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(RubyBignum a, int b) {
-            return a.compareTo(b);
+            return a.compare(b);
         }
 
         @Specialization
         public int compare(RubyBignum a, long b) {
-            return a.compareTo(b);
+            return a.compare(b);
         }
 
         @Specialization
@@ -376,7 +376,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b);
+            return a.compare(b);
         }
     }
 
@@ -393,22 +393,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, int b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, long b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, double b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
     }
 
@@ -425,22 +425,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greater(RubyBignum a, int b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, long b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, double b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
     }
 

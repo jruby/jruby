@@ -31,4 +31,24 @@
     <Class name="org.jruby.truffle.nodes.core.FloatNodes$EqualNode" />
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.translator.BodyTranslator" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.core.RubyException" />
+    <Bug pattern="NM_CLASS_NOT_EXCEPTION" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FileNodes$EachLineNode" />
+    <Bug pattern="OS_OPEN_STREAM" />
+  </Match>
+  <Match>
+    <Class name="~org\.jruby\.truffle\..*" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.KernelNodes$BacktickNode" />
+    <Bug pattern="OS_OPEN_STREAM" />
+  </Match>
 </FindBugsFilter>

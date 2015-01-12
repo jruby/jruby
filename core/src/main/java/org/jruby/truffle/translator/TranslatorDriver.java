@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
 import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.nodes.methods.CatchReturnAsErrorNode;
-import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -61,7 +60,7 @@ public class TranslatorDriver {
         final MethodTranslator translator;
 
         try {
-            translator = new MethodTranslator(currentNode, context, null, environment, false, false, Source.fromFileName(bodyNode.getPosition().getFile()));
+            translator = new MethodTranslator(currentNode, context, null, environment, false, Source.fromFileName(bodyNode.getPosition().getFile()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

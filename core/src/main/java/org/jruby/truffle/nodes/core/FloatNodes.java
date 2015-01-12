@@ -227,12 +227,15 @@ public abstract class FloatNodes {
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
+        @Child private CallDispatchHeadNode redoCoercedNode;
+
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public DivNode(DivNode prev) {
             super(prev);
+            redoCoercedNode = prev.redoCoercedNode;
         }
 
         @Specialization
@@ -260,8 +263,13 @@ public abstract class FloatNodes {
                 "!isLong(arguments[1])",
                 "!isDouble(arguments[1])",
                 "!isRubyBignum(arguments[1])"})
-        public Object div(double a, Object b) {
-            return DebugOperations.send(getContext(), a, "redo_coerced", null, getContext().getSymbolTable().getSymbol("/"), b);
+        public Object div(VirtualFrame frame, double a, Object b) {
+            if (redoCoercedNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                redoCoercedNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
+            }
+
+            return redoCoercedNode.call(frame, a, "redo_coerced", null, getContext().getSymbolTable().getSymbol("/"), b);
         }
 
     }

@@ -20,6 +20,8 @@ import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 
+import java.util.Arrays;
+
 public abstract class ArrayLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] values;
@@ -77,7 +79,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     // TODO(CS): remove this - shouldn't be fiddling with nodes from the outside
     public RubyNode[] getValues() {
-        return values;
+        return Arrays.copyOf(values, values.length);
     }
 
     public static class EmptyArrayLiteralNode extends ArrayLiteralNode {

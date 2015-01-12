@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -19,7 +18,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
@@ -681,7 +679,7 @@ public abstract class FixnumNodes {
         @Specialization
         public double mod(long a, double b) {
             if (b == 0) {
-                return (double) (0 / 0);
+                return 0.0 / 0.0;
             }
 
             double mod = a % b;
@@ -819,7 +817,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean less(int a, RubyBignum b) {
-            return bignum(a).compareTo(b) < 0;
+            return bignum(a).compare(b) < 0;
         }
 
         @Specialization
@@ -839,7 +837,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean less(long a, RubyBignum b) {
-            return bignum(a).compareTo(b) < 0;
+            return bignum(a).compare(b) < 0;
         }
     }
 
@@ -871,7 +869,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean lessEqual(int a, RubyBignum b) {
-            return bignum(a).compareTo(b) <= 0;
+            return bignum(a).compare(b) <= 0;
         }
 
         @Specialization
@@ -891,7 +889,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean lessEqual(long a, RubyBignum b) {
-            return bignum(a).compareTo(b) <= 0;
+            return bignum(a).compare(b) <= 0;
         }
     }
 
@@ -989,7 +987,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int compare(int a, RubyBignum b) {
-            return bignum(a).compareTo(b);
+            return bignum(a).compare(b);
         }
 
         @Specialization
@@ -1009,7 +1007,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int compare(long a, RubyBignum b) {
-            return bignum(a).compareTo(b);
+            return bignum(a).compare(b);
         }
 
         @Specialization(guards = {
@@ -1051,7 +1049,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean greaterEqual(int a, RubyBignum b) {
-            return bignum(a).compareTo(b) >= 0;
+            return bignum(a).compare(b) >= 0;
         }
 
         @Specialization
@@ -1071,7 +1069,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean greaterEqual(long a, RubyBignum b) {
-            return bignum(a).compareTo(b) >= 0;
+            return bignum(a).compare(b) >= 0;
         }
     }
 
@@ -1103,7 +1101,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean greater(int a, RubyBignum b) {
-            return bignum(a).compareTo(b) > 0;
+            return bignum(a).compare(b) > 0;
         }
 
         @Specialization
@@ -1123,7 +1121,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public boolean greater(long a, RubyBignum b) {
-            return bignum(a).compareTo(b) > 0;
+            return bignum(a).compare(b) > 0;
         }
 
     }

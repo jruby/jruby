@@ -53,7 +53,6 @@ import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.KeyValuePair;
@@ -330,8 +329,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitBreakNode(org.jruby.ast.BreakNode node) {
         if (!(environment.isBlock() || translatingWhile)) {
             // TODO(CS 10-Jan-15): must raise a proper exception rather, but not sure if it should be a JRuby exception or a Truffle one
-            System.err.printf("%s:%d: Invalid break\n", node.getPosition().getFile(), node.getPosition().getLine() + 1);
-            System.err.printf("%s: compile error (SyntaxError)\n", node.getPosition().getFile());
+            System.err.printf("%s:%d: Invalid break%n", node.getPosition().getFile(), node.getPosition().getLine() + 1);
+            System.err.printf("%s: compile error (SyntaxError)%n", node.getPosition().getFile());
             System.exit(1);
         }
 
@@ -550,7 +549,7 @@ public class BodyTranslator extends Translator {
         }
 
         public RubyNode[] getArguments() {
-            return arguments;
+            return Arrays.copyOf(arguments, arguments.length);
         }
 
         public boolean isSplatted() {
@@ -1025,7 +1024,7 @@ public class BodyTranslator extends Translator {
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
 
         final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, sharedMethodInfo);
 
@@ -1482,7 +1481,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, parent == null, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source);
         methodCompiler.translatingForStatement = translatingForStatement;
 
         org.jruby.ast.ArgsNode argsNode;
@@ -2571,7 +2570,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
 
         org.jruby.ast.ArgsNode argsNode;
 

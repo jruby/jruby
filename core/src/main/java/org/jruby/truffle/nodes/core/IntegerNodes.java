@@ -176,7 +176,7 @@ public abstract class IntegerNodes {
         public Object times(VirtualFrame frame, RubyBignum n, RubyProc block) {
             notDesignedForCompilation();
 
-            outer: for (RubyBignum i = bignum(0); i.compareTo(n) < 0; i = i.add(1)) {
+            outer: for (RubyBignum i = bignum(0); i.compare(n) < 0; i = i.add(1)) {
                 while (true) {
                     try {
                         yield(frame, block, i);
