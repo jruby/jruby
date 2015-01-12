@@ -42,7 +42,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ClassVariable extends AbstractVariable {
-    private static String pattern = "@@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
+
+    private static final String VALID_NAME = "@@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
 
     /**
      * Returns an instance of this class. This factory method is used when a class
@@ -54,7 +55,7 @@ public class ClassVariable extends AbstractVariable {
      * @return the instance of ClassVariable
      */
     public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
-        if (name.matches(pattern)) {
+        if (name.matches(VALID_NAME)) {
             return new ClassVariable(receiver, name, javaObject);
         }
         return null;
@@ -62,7 +63,7 @@ public class ClassVariable extends AbstractVariable {
 
     /**
      * Constructor when the variable is originated from Java
-     * 
+     *
      * @param receiver
      * @param name
      * @param javaObject
@@ -80,7 +81,7 @@ public class ClassVariable extends AbstractVariable {
      * @param name the class variable name
      * @param irubyObject Ruby class variable object
      */
-    ClassVariable(IRubyObject receiver, String name, IRubyObject irubyObject) {
+    ClassVariable(RubyObject receiver, String name, IRubyObject irubyObject) {
         super(receiver, name, true, irubyObject);
     }
 
@@ -134,7 +135,7 @@ public class ClassVariable extends AbstractVariable {
             }
         }
         if (value == null) return;
-        
+
         BiVariable var = vars.getVariable(receiver, key);
         if (var != null) {
             var.setRubyObject(value);
@@ -149,6 +150,7 @@ public class ClassVariable extends AbstractVariable {
      *
      * @return this enum type, BiVariable.Type.ClassVariable.
      */
+    @Override
     public Type getType() {
         return Type.ClassVariable;
     }
@@ -161,16 +163,17 @@ public class ClassVariable extends AbstractVariable {
      * @return true if the given name is of a Ruby class variable.
      */
     public static boolean isValidName(Object name) {
-        return isValidName(pattern, name);
+        return isValidName(VALID_NAME, name);
     }
 
     /**
-     * Injects a class variable value to a parsed Ruby script. This method is 
+     * Injects a class variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
      *
      * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
+    @Override
     public void inject() {
         RubyModule rubyClass = getRubyClass(receiver.getRuntime());
         rubyClass.setClassVar(name, irubyObject);
@@ -178,8 +181,9 @@ public class ClassVariable extends AbstractVariable {
 
     /**
      * Attempts to remove this variable from top self or receiver.
-     * 
+     *
      */
+    @Override
     public void remove() {
         RubyModule rubyClass = getRubyClass(receiver.getRuntime());
         rubyClass.removeClassVariable(name);
