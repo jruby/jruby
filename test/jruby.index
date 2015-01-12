@@ -2,6 +2,7 @@
 # NOTE: test_globals comes first here because it has tests that $? be nil
 jruby/test_globals
 
+jruby/test_addrinfo
 jruby/test_argf
 jruby/test_array
 jruby/test_autoload
@@ -31,6 +32,7 @@ jruby/test_flip
 jruby/test_frame_self
 jruby/test_hash
 jruby/test_higher_javasupport
+jruby/test_ifaddr
 jruby/test_included_in_object_space
 jruby/test_integer_overflows
 jruby/test_ivar_table_integrity
