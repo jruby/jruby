@@ -145,13 +145,14 @@ public class RubyThreadGroup extends RubyObject {
     @JRubyMethod
     public IRubyObject list(Block block) {
         RubyArray ary = RubyArray.newArray(getRuntime());
-        for (RubyThread thread : rubyThreadList) {
-            if (thread != null) {
-                ary.append(thread);
+        synchronized (rubyThreadList) {
+            for (RubyThread thread : rubyThreadList) {
+                if (thread != null) {
+                    ary.append(thread);
+                }
             }
         }
         return ary;
-
     }
 
     /**
