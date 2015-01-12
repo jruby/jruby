@@ -1105,10 +1105,56 @@ public abstract class StringNodes {
         public RubyString scan(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyProc block) {
             notDesignedForCompilation();
 
-            // TODO (nirvdrum Dec. 18, 2014): Find a way to yield results without needing to materialize as an array first.
-            Object[] matches = (Object[]) regexp.scan(string);
-            for (Object match : matches) {
-                yield(frame, block, match);
+            // TODO (nirvdrum 12-Jan-15) Figure out a way to make this not just a complete copy & paste of RubyRegexp#scan.
+
+            final RubyContext context = getContext();
+
+            final byte[] stringBytes = string.getBytes().bytes();
+            final Encoding encoding = string.getBytes().getEncoding();
+            final Matcher matcher = regexp.getRegex().matcher(stringBytes);
+
+            int p = string.getBytes().getBegin();
+            int end = 0;
+            int range = p + string.getBytes().getRealSize();
+
+            Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
+
+            if (regexp.getRegex().numberOfCaptures() == 0) {
+                while (true) {
+                    Object matchData = regexp.matchCommon(string.getBytes(), false, true, matcher, p + end, range);
+
+                    if (matchData == context.getCoreLibrary().getNilObject()) {
+                        break;
+                    }
+
+                    RubyMatchData md = (RubyMatchData) matchData;
+                    Object[] values = md.getValues();
+
+                    assert values.length == 1;
+
+                    yield(frame, block, values[0]);
+
+                    lastGoodMatchData = matchData;
+                    end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
+                }
+
+                regexp.setThread("$~", lastGoodMatchData);
+            } else {
+                while (true) {
+                    Object matchData = regexp.matchCommon(string.getBytes(), false, true, matcher, p + end, stringBytes.length);
+
+                    if (matchData == context.getCoreLibrary().getNilObject()) {
+                        break;
+                    }
+
+                    final Object[] captures = ((RubyMatchData) matchData).getCaptures();
+                    yield(frame, block, new RubyArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
+
+                    lastGoodMatchData = matchData;
+                    end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
+                }
+
+                regexp.setThread("$~", lastGoodMatchData);
             }
 
             return string;
