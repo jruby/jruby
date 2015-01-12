@@ -636,7 +636,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
+    @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
         @Child protected AtNode atNode;
@@ -652,15 +652,15 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object get(RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public Object index(RubyArray array, int index, UndefinedPlaceholder undefined) {
             return atNode.executeAt(array, index);
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public Object getIntegerFixnum(RubyArray array, int index, int length) {
+        public Object sliceIntegerFixnum(RubyArray array, int start, int length) {
             notDesignedForCompilation();
 
-            final int normalisedIndex = array.normaliseIndex(index);
+            final int normalisedIndex = array.normaliseIndex(start);
 
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 return getContext().getCoreLibrary().getNilObject();
@@ -673,11 +673,45 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, int index, int length) {
+        @Specialization(guards = "isLongFixnum")
+        public Object sliceLongFixnum(RubyArray array, int start, int length) {
             notDesignedForCompilation();
 
-            final int normalisedIndex = array.normaliseIndex(index);
+            final int normalisedIndex = array.normaliseIndex(start);
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else if (normalisedIndex == array.getSize()) {
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            } else {
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isFloat")
+        public Object sliceFloat(RubyArray array, int start, int length) {
+            notDesignedForCompilation();
+
+            final int normalisedIndex = array.normaliseIndex(start);
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else if (normalisedIndex == array.getSize()) {
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            } else {
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isObject")
+        public Object sliceObject(RubyArray array, int start, int length) {
+            notDesignedForCompilation();
+
+            final int normalisedIndex = array.normaliseIndex(start);
 
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 return getContext().getCoreLibrary().getNilObject();
@@ -691,7 +725,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object sliceObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final int normalisedIndex = array.normaliseIndex(range.getBegin());
@@ -2906,41 +2940,6 @@ public abstract class ArrayNodes {
         @Specialization
         public int size(RubyArray array) {
             return array.getSize();
-        }
-
-    }
-
-    @CoreMethod(names = "slice", required = 2)
-    public abstract static class SliceNode extends ArrayCoreMethodNode {
-
-        public SliceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SliceNode(SliceNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public RubyArray sliceIntegerFixnum(RubyArray array, int start, int length) {
-            final int[] store = (int[]) array.getStore();
-
-            final int normalisedStart = array.normaliseIndex(start);
-            final int normalisedEnd = Math.min(normalisedStart + length, array.getSize() + length);
-            final int sliceLength = normalisedEnd - normalisedStart;
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, normalisedStart, normalisedEnd), sliceLength);
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public RubyArray sliceLongFixnum(RubyArray array, int start, int length) {
-            final long[] store = (long[]) array.getStore();
-
-            final int normalisedStart = array.normaliseIndex(start);
-            final int normalisedEnd = Math.min(normalisedStart + length, array.getSize() + length);
-            final int sliceLength = normalisedEnd - normalisedStart;
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, normalisedStart, normalisedEnd), sliceLength);
         }
 
     }
