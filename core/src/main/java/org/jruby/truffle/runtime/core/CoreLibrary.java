@@ -121,8 +121,6 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
-    private ArrayNodes.MinBlock arrayMinBlock;
-
     public CoreLibrary(RubyContext context) {
         this.context = context;
     }
@@ -340,8 +338,6 @@ public class CoreLibrary {
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$,", nilObject);
 
         initializeEncodingConstants();
-
-        arrayMinBlock = new ArrayNodes.MinBlock(context);
 
         argv = new RubyArray(arrayClass);
         objectClass.setConstant(null, "ARGV", argv);
@@ -897,10 +893,6 @@ public class CoreLibrary {
         }
 
         return HashOperations.verySlowFromEntries(context, entries);
-    }
-
-    public ArrayNodes.MinBlock getArrayMinBlock() {
-        return arrayMinBlock;
     }
 
     public RubyClass getNumericClass() {
