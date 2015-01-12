@@ -28,6 +28,8 @@
 
 class Fixnum
 
+  alias_method :modulo, :%
+
   def coerce(other)
     Rubinius.primitive :fixnum_coerce
     super other
