@@ -31,6 +31,7 @@ package org.jruby.embed.internal;
 
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
@@ -65,6 +66,11 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
     @Override
     public Ruby getRuntime() {
         return contextHolder.get().getRuntime();
+    }
+
+    @Override
+    public RubyInstanceConfig getRubyInstanceConfig() {
+        return getRuntime().getInstanceConfig();
     }
 
     @Override
