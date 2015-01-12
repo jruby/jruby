@@ -668,18 +668,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             public IRubyObject call(IRubyObject obj, boolean recur) {
                 int begin = RubyArray.this.begin;
                 long h = realLength;
-                long n;
                 if (recur) {
                     h ^= RubyNumeric.num2long(invokedynamic(context, context.runtime.getArray(), HASH));
                 } else {
                     for (int i = begin; i < begin + realLength; i++) {
+                        h = (h << 1) | (h < 0 ? 1 : 0);
                         final IRubyObject value = safeArrayRef(values, i);
-                        n = getRuntime().isSiphashEnabled() ? SipHashInline.hash24(
-                                getRuntime().getHashSeedK0(), 0,
-                                value.toString().getBytes(), begin, realLength) :
-                                PerlHash.hash(getRuntime().getHashSeedK0(),
-                                value.toString().getBytes(), begin, realLength);
-                        h ^= n;
+                        h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
                     }
                 }
                 return getRuntime().newFixnum(h);
