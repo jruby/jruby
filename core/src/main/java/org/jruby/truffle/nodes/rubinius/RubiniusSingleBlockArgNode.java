@@ -34,7 +34,11 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
          * This is our implementation of Rubinius.single_block_arg.
          *
          * In Rubinius, this method inspects the values yielded to the block, regardless of whether the block
-         * captures the values, and returns the first yielded value.
+         * captures the values, and returns the first value in the list of values yielded to the block.
+         *
+         * NB: In our case the arguments have already been destructured by the time this node is encountered.
+         * Thus, we don't need to do the destructuring work that Rubinius would do and in the case that we receive
+         * multiple arguments we need to reverse the destructuring by collecting the values into an array.
          */
 
         int userArgumentCount = RubyArguments.getUserArgumentsCount(frame.getArguments());
