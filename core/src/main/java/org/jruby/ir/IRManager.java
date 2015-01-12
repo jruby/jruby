@@ -24,6 +24,8 @@ public class IRManager {
     private int dummyMetaClassCount = 0;
     private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
     private final Nil nil = new Nil();
+    private final Boolean tru = new Boolean(true);
+    private final Boolean fals = new Boolean(false);
 
     // Listeners for debugging and testing of IR
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
@@ -62,11 +64,11 @@ public class IRManager {
     }
 
     public org.jruby.ir.operands.Boolean getTrue() {
-        return Boolean.TRUE;
+        return tru;
     }
 
     public org.jruby.ir.operands.Boolean getFalse() {
-        return Boolean.FALSE;
+        return fals;
     }
 
     public IRModuleBody getObject() {

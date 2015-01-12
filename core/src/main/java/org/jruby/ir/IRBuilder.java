@@ -1424,7 +1424,7 @@ public class IRBuilder {
         }
         case VCALLNODE:
             return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[] { scope.getSelf(), new StringLiteral(((VCallNode) node).getName()), Boolean.FALSE}));
+                    new Operand[] { scope.getSelf(), new StringLiteral(((VCallNode) node).getName()), manager.getFalse()}));
         case YIELDNODE:
             return buildDefinitionCheck(scope, new BlockGivenInstr(scope.createTemporaryVariable(), scope.getYieldClosureVariable()), "yield");
         case ZSUPERNODE:
@@ -1491,7 +1491,7 @@ public class IRBuilder {
              * ----------------------------------------------------------------- */
             Label undefLabel = scope.getNewLabel();
             Variable tmpVar = addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[]{scope.getSelf(), new StringLiteral(((FCallNode) node).getName()), Boolean.FALSE}));
+                    new Operand[]{scope.getSelf(), new StringLiteral(((FCallNode) node).getName()), manager.getFalse()}));
             addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), scope, "method");
             return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
@@ -1546,7 +1546,7 @@ public class IRBuilder {
                     Variable tmpVar     = scope.createTemporaryVariable();
                     Operand  receiver   = build(attrAssign.getReceiverNode(), scope);
                     addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD,
-                            new Operand[] { receiver, new StringLiteral(attrAssign.getName()), Boolean.TRUE }));
+                            new Operand[] { receiver, new StringLiteral(attrAssign.getName()), manager.getTrue() }));
                     addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
                     Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), scope, "assignment");
                     return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
@@ -3200,7 +3200,7 @@ public class IRBuilder {
             // If this happens to be a module body, the runtime throws a local jump error if the
             // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             IRMethod m = s.getNearestMethod();
-            addInstr(s, new RuntimeHelperCall(null, CHECK_FOR_LJE, new Operand[] { m == null ? Boolean.TRUE : Boolean.FALSE }));
+            addInstr(s, new RuntimeHelperCall(null, CHECK_FOR_LJE, new Operand[] { m == null ? manager.getTrue() : manager.getFalse() }));
             retVal = processEnsureRescueBlocks(s, retVal);
             addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName()));
         } else if (s.isModuleBody()) {
