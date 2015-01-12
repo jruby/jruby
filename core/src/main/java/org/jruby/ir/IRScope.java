@@ -106,7 +106,7 @@ public abstract class IRScope implements ParseResult {
 
     /** What the interpreter depends on to interpret this IRScope */
     protected InterpreterContext interpreterContext;
-    private List<BasicBlock> linearizedBBList;
+    private BasicBlock[] linearizedBBList;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -620,7 +620,7 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getJITPasses(this));
 
-        return buildLinearization();
+        return Arrays.asList(buildLinearization());
     }
 
     private void setupLinearization() {
@@ -1037,7 +1037,7 @@ public abstract class IRScope implements ParseResult {
         linearizedBBList = null;
     }
 
-    public List<BasicBlock> buildLinearization() {
+    public BasicBlock[] buildLinearization() {
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
 
         linearizedBBList = CFGLinearizer.linearize(cfg);
@@ -1045,7 +1045,7 @@ public abstract class IRScope implements ParseResult {
         return linearizedBBList;
     }
 
-    public List<BasicBlock> linearization() {
+    public BasicBlock[] linearization() {
         depends(cfg());
 
         assert linearizedBBList != null: "You have not run linearization";
