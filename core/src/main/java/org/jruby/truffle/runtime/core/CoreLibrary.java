@@ -290,7 +290,11 @@ public class CoreLibrary {
         // Includes
 
         objectClass.include(null, kernelModule);
+
         numericClass.include(null, comparableModule);
+        stringClass.include(null, comparableModule);
+        symbolClass.include(null, comparableModule);
+
         arrayClass.include(null, enumerableModule);
         dirClass.include(null, enumerableModule);
         hashClass.include(null, enumerableModule);
