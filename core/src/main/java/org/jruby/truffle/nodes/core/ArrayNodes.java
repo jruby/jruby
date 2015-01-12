@@ -32,11 +32,21 @@ import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.nodes.core.ArrayNodesFactory.AtNodeFactory;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
@@ -529,24 +539,26 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"[]", "at"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
-    public abstract static class IndexNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
+    public abstract static class AtNode extends ArrayCoreMethodNode {
 
-        public IndexNode(RubyContext context, SourceSection sourceSection) {
+        public AtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public IndexNode(IndexNode prev) {
+        public AtNode(AtNode prev) {
             super(prev);
         }
 
+        public abstract Object executeAt(RubyArray array, int index);
+
         @Specialization(guards = "isNull")
-        public RubyNilClass getNull(RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public RubyNilClass getNull(RubyArray array, int index) {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class)
-        public int getIntegerFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
+        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
+        public int getIntegerFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -557,7 +569,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "getIntegerFixnumInBounds", guards = "isIntegerFixnum")
-        public Object getIntegerFixnum(RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public Object getIntegerFixnum(RubyArray array, int index) {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -565,6 +577,83 @@ public abstract class ArrayNodes {
             } else {
                 return ((int[]) array.getStore())[normalisedIndex];
             }
+        }
+
+        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
+        public long getLongFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            } else {
+                return ((long[]) array.getStore())[normalisedIndex];
+            }
+        }
+
+        @Specialization(contains = "getLongFixnumInBounds", guards = "isLongFixnum")
+        public Object getLongFixnum(RubyArray array, int index) {
+            int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return ((long[]) array.getStore())[normalisedIndex];
+            }
+        }
+
+        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
+        public double getFloatInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            } else {
+                return ((double[]) array.getStore())[normalisedIndex];
+            }
+        }
+
+        @Specialization(contains = "getFloatInBounds", guards = "isFloat")
+        public Object getFloat(RubyArray array, int index) {
+            int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return ((double[]) array.getStore())[normalisedIndex];
+            }
+        }
+
+        @Specialization(guards = "isObject")
+        public Object getObject(RubyArray array, int index) {
+            int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return ((Object[]) array.getStore())[normalisedIndex];
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
+    public abstract static class IndexNode extends ArrayCoreMethodNode {
+
+        @Child protected AtNode atNode;
+
+        public IndexNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            atNode = AtNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
+        }
+
+        public IndexNode(IndexNode prev) {
+            super(prev);
+            atNode = prev.atNode;
+        }
+
+        @Specialization
+        public Object get(RubyArray array, int index, UndefinedPlaceholder undefined) {
+            return atNode.executeAt(array, index);
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -581,62 +670,6 @@ public abstract class ArrayNodes {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
-            }
-        }
-
-        @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class)
-        public long getLongFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((long[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(contains = "getLongFixnumInBounds", guards = "isLongFixnum")
-        public Object getLongFixnum(RubyArray array, int index, UndefinedPlaceholder undefined) {
-
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((long[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isFloat", rewriteOn=UnexpectedResultException.class)
-        public double getFloatInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((double[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(contains = "getFloatInBounds", guards = "isFloat")
-        public Object getFloat(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((double[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((Object[]) array.getStore())[normalisedIndex];
             }
         }
 
