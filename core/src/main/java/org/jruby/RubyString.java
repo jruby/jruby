@@ -1599,7 +1599,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
 
             int cl, ocl;
-            if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
                 byte uc = AsciiTables.ToUpperCaseTable[c];
                 byte uoc = AsciiTables.ToUpperCaseTable[oc];
                 if (uc != uoc) {
