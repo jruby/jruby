@@ -179,6 +179,25 @@ public abstract class MatchDataNodes {
         }
     }
 
+    @CoreMethod(names = "to_s")
+    public abstract static class ToSNode extends CoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toA(RubyMatchData matchData) {
+            notDesignedForCompilation();
+
+            return matchData.getGlobal();
+        }
+    }
+
     @CoreMethod(names = "values_at", argumentsAsArray = true)
     public abstract static class ValuesAtNode extends CoreMethodNode {
 
