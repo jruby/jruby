@@ -28,7 +28,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     public CachedYieldDispatchNode(RubyContext context, RubyProc block, YieldDispatchNode next) {
         super(context);
 
-        callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTarget());
+        callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTargetForBlocks());
         insert(callNode);
 
         if (Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load() && callNode.isCallTargetCloningAllowed()) {
@@ -44,7 +44,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        if (block.getCallTarget() != callNode.getCallTarget()) {
+        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
             return next.dispatch(frame, block, argumentsObjects);
         }
 
@@ -53,7 +53,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object[] argumentsObjects) {
-        if (block.getCallTarget() != callNode.getCallTarget()) {
+        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
             return next.dispatch(frame, block, argumentsObjects);
         }
 
@@ -62,7 +62,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
-        if (block.getCallTarget() != callNode.getCallTarget()) {
+        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
             return next.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
         }
 

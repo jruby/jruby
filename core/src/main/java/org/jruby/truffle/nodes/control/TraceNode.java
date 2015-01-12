@@ -13,15 +13,12 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.KillException;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 
 public class TraceNode extends RubyNode {
@@ -70,7 +67,7 @@ public class TraceNode extends RubyNode {
             traceFunc = context.getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTarget()));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTargetForBlocks()));
             } else {
                 callNode = null;
             }

@@ -29,13 +29,15 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
     public static final boolean PROC_BINDING = Options.TRUFFLE_PROC_BINDING.load();
 
     public static enum Type {
-        PROC, LAMBDA
+        BLOCK, PROC, LAMBDA
     }
 
     private final Type type;
     @CompilationFinal private SharedMethodInfo sharedMethodInfo;
-    /** Call target for procs, which have special arguments destructuring */
-    @CompilationFinal private CallTarget callTarget;
+    /** Call target for blocks, which have special arguments destructuring */
+    @CompilationFinal private CallTarget callTargetForBlocks;
+    /** Call target for actual Proc arguments, which handle break differently */
+    @CompilationFinal private CallTarget callTargetForProcs;
     /** Call target for lambdas and methods, which have strict arguments destructuring */
     @CompilationFinal private CallTarget callTargetForMethods;
     @CompilationFinal private MaterializedFrame declarationFrame;
@@ -49,16 +51,20 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
         this.type = type;
     }
 
-    public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTarget,
-                    CallTarget callTargetForMethods, MaterializedFrame declarationFrame, RubyModule declaringModule, MethodLike method, Object self, RubyProc block) {
+    public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
+                    CallTarget callTargetForProcs, CallTarget callTargetForMethods, MaterializedFrame declarationFrame,
+                    RubyModule declaringModule, MethodLike method, Object self, RubyProc block) {
         this(procClass, type);
-        initialize(sharedMethodInfo, callTarget, callTargetForMethods, declarationFrame, declaringModule, method, self, block);
+        initialize(sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForMethods, declarationFrame,
+                declaringModule, method, self, block);
     }
 
-    public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTarget, CallTarget callTargetForMethods,
-                           MaterializedFrame declarationFrame, RubyModule declaringModule, MethodLike method, Object self, RubyProc block) {
+    public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks, CallTarget callTargetForProcs,
+                           CallTarget callTargetForMethods, MaterializedFrame declarationFrame, RubyModule declaringModule,
+                           MethodLike method, Object self, RubyProc block) {
         this.sharedMethodInfo = sharedMethodInfo;
-        this.callTarget = callTarget;
+        this.callTargetForBlocks = callTargetForBlocks;
+        this.callTargetForProcs = callTargetForProcs;
         this.callTargetForMethods = callTargetForMethods;
         this.declarationFrame = declarationFrame;
         this.declaringModule = declaringModule;
@@ -69,8 +75,10 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
 
     public CallTarget getCallTargetForType() {
         switch (type) {
+            case BLOCK:
+                return callTargetForBlocks;
             case PROC:
-                return callTarget;
+                return callTargetForProcs;
             case LAMBDA:
                 return callTargetForMethods;
         }
@@ -94,8 +102,12 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
         return sharedMethodInfo;
     }
 
-    public CallTarget getCallTarget() {
-        return callTarget;
+    public CallTarget getCallTargetForBlocks() {
+        return callTargetForBlocks;
+    }
+
+    public CallTarget getCallTargetForProcs() {
+        return callTargetForProcs;
     }
 
     public CallTarget getCallTargetForMethods() {

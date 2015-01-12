@@ -30,17 +30,17 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        return callNode.call(frame, block.getCallTarget(), RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, block.getCallTargetForBlocks(), RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
     }
 
     @Override
     public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object[] argumentsObjects) {
-        return callNode.call(frame, block.getCallTarget(), RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects));
+        return callNode.call(frame, block.getCallTargetForBlocks(), RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects));
     }
 
     @Override
     public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
-        return callNode.call(frame, block.getCallTarget(), RubyArguments.pack(block, block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, block.getCallTargetForBlocks(), RubyArguments.pack(block, block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
     }
 
 }
