@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -46,11 +47,20 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
         operands[1] = getLocalVar().cloneForDepth(getLocalVar().getScopeDepth()-1);
     }
 
+    /**
+     * getLocalVar is saved for location and should not be simplified so we still know its original
+     * depth/offset.
+     */
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        operands[0] = getValue().getSimplifiedOperand(valueMap, force);
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
         return new StoreLocalVarInstr(getValue().cloneForInlining(ii), scope,
-                (LocalVariable)getLocalVar().cloneForInlining(ii));
+                (LocalVariable) getLocalVar().cloneForInlining(ii));
     }
 
     @Override

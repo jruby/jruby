@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
@@ -31,6 +32,14 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
 
     public IRScope getScope() {
         return scope;
+    }
+
+    /**
+     * getLocalVar is saved for location and should not be simplified so we still know its original
+     * depth/offset.
+     */
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
     }
 
     // SSS FIXME: This feels dirty
