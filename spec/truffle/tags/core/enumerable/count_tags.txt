@@ -1,7 +1,0 @@
-fails:Enumerable#count counts nils if given nil as an argument
-fails:Enumerable#count accepts an argument for comparison using ==
-fails:Enumerable#count uses a block for comparison
-fails:Enumerable#count ignores the block when given an argument
-fails:Enumerable#count gathers initial args as elements when each yields multiple
-fails:Enumerable#count when no argument or a block returns size
-fails:Enumerable#count when no argument or a block with a custom size method ignores the custom size method

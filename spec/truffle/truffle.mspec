@@ -58,6 +58,7 @@ class MSpecScript
     "^spec/ruby/core/dir/chroot_spec.rb",
     "^spec/ruby/core/dir/element_reference_spec.rb",
     "^spec/ruby/core/dir/glob_spec.rb",
+    "^spec/ruby/core/enumerable/cycle_spec.rb",
     "^spec/ruby/core/file/chown_spec.rb",
     "^spec/ruby/core/file/ftype_spec.rb",
     "^spec/ruby/core/file/lchown_spec.rb",

@@ -1,4 +1,1 @@
-fails:Enumerable#include? returns true if any element == argument for numbers
 fails:Enumerable#include? returns true if any element == argument for other objects
-fails:Enumerable#include? returns true if any member of enum equals obj when == compare different classes (legacy rubycon)
-fails:Enumerable#include? gathers whole arrays as elements when each yields multiple
