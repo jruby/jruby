@@ -13,7 +13,7 @@ before_script:
 
 jdk:
   - openjdk7
-  - oraclejdk8
+#  - oraclejdk8
 
 os:
   - linux
