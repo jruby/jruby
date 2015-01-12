@@ -3903,10 +3903,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean start_with_pCommon(IRubyObject arg) {
-        Ruby runtime = getRuntime();
-        RubyString otherString;
-
-        otherString = arg.convertToString();
+        RubyString otherString = arg.convertToString();
 
         checkEncoding(otherString);
 
@@ -3941,18 +3938,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean end_with_pCommon(IRubyObject arg) {
-        Ruby runtime = getRuntime();
-        RubyString otherString;
-
-        if (!runtime.is2_0()) {
-            // 1.8 and 1.9 ignores uncoercible argument
-            IRubyObject tmp = arg.checkStringType();
-            if (tmp.isNil()) return false;
-            otherString = (RubyString) tmp;
-        } else {
-            // 2.0+ requires coersion to succeed
-            otherString = arg.convertToString();
-        }
+        RubyString otherString = arg.convertToString();
 
         Encoding enc = checkEncoding(otherString);
 
