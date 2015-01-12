@@ -28,8 +28,6 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         /**
          * This is our implementation of Rubinius.single_block_arg.
          *
@@ -52,7 +50,7 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
             } else {
                 Object[] extractedArguments = RubyArguments.extractUserArguments(frame.getArguments());
 
-                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), extractedArguments);
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), extractedArguments, userArgumentCount);
             }
         }
     }

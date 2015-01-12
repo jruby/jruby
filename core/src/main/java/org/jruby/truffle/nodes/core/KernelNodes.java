@@ -339,8 +339,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean blockGiven() {
-            notDesignedForCompilation();
-
             return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
