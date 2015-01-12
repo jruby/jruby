@@ -24,12 +24,12 @@ class Object
   #
   def java_import(*import_classes)
     import_classes = import_classes.each_with_object([]) do |classes, flattened|
-                       if classes.is_a?(Array)
-                         flattened.push *classes
-                       else
-                         flattened.push classes
-                       end
-                     end
+      if classes.is_a?(Array)
+        flattened.push *classes
+      else
+        flattened.push classes
+      end
+    end
 
     import_classes.map do |import_class|
       case import_class
