@@ -70,6 +70,20 @@ public class RubyMatchData extends RubyBasicObject {
         return begin;
     }
 
+    public Object end(int index) {
+        if (region == null) {
+            throw new UnsupportedOperationException("end is not yet working when no grouping data is available");
+        }
+
+        int end = region.end[index];
+
+        if (end < 0) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        return end;
+    }
+
     public int getNumberOfRegions() {
         return region.numRegs;
     }

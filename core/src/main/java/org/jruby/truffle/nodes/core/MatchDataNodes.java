@@ -95,6 +95,35 @@ public abstract class MatchDataNodes {
         }
     }
 
+    @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
+    public abstract static class EndNode extends CoreMethodNode {
+
+        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
+
+        public EndNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EndNode(EndNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object end(RubyMatchData matchData, int index) {
+            notDesignedForCompilation();
+
+            if (badIndexProfile.profile((index < 0) || (index >= matchData.getNumberOfRegions()))) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+
+            } else {
+                return matchData.end(index);
+            }
+        }
+    }
+
     @CoreMethod(names = "pre_match")
     public abstract static class PreMatchNode extends CoreMethodNode {
 
