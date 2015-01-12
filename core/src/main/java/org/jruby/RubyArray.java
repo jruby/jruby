@@ -58,10 +58,8 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
-import org.jruby.util.PerlHash;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.SipHashInline;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
