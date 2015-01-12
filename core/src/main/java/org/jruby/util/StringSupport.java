@@ -352,7 +352,7 @@ public final class StringSupport {
 
     public static int preciseCodePoint(Encoding enc, byte[]bytes, int p, int end) {
         int l = preciseLength(enc, bytes, p, end);
-        if (l > 0) enc.mbcToCode(bytes, p, end);
+        if (l > 0) return enc.mbcToCode(bytes, p, end);
         return -1;
     }
 
