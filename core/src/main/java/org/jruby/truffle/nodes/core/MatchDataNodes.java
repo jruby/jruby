@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
@@ -191,10 +192,11 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString toA(RubyMatchData matchData) {
+        public RubyString toS(RubyMatchData matchData) {
             notDesignedForCompilation();
 
-            return matchData.getGlobal();
+            final ByteList bytes = matchData.getGlobal().getBytes().dup();
+            return getContext().makeString(bytes);
         }
     }
 
