@@ -201,7 +201,7 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    private void setThread(String name, Object value) {
+    public void setThread(String name, Object value) {
         assert value != null;
 
         RubyNode.notDesignedForCompilation();
@@ -345,8 +345,8 @@ public class RubyRegexp extends RubyBasicObject {
                     break;
                 }
 
-                allMatches.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                        ((RubyMatchData) matchData).getCaptures()));
+                final Object[] captures = ((RubyMatchData) matchData).getCaptures();
+                allMatches.add(new RubyArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
 
                 lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
