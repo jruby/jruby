@@ -14,6 +14,7 @@ require_relative 'core/math'
 require_relative 'core/thread'
 require_relative 'core/module'
 require_relative 'core/hash'
+require_relative 'core/fixnum'
 
 require_relative 'core/rubinius/api/compat/type'
 

@@ -17,7 +17,9 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
@@ -33,6 +35,8 @@ import java.math.BigInteger;
 
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
+
+    private static final int BITS = 64;
 
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodNode {
@@ -1275,8 +1279,10 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "<<", required = 1)
     public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
+
+        @Child private CallDispatchHeadNode fallbackCallNode;
 
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1284,11 +1290,14 @@ public abstract class FixnumNodes {
 
         public LeftShiftNode(LeftShiftNode prev) {
             super(prev);
+            fallbackCallNode = prev.fallbackCallNode;
         }
 
         protected Object lower(RubyBignum value) {
             return fixnumOrBignum(value);
         }
+
+        public abstract Object executeLeftShift(VirtualFrame frame, Object a, Object b);
 
         @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoInt"})
         public int leftShift(int a, int b) {
@@ -1337,6 +1346,16 @@ public abstract class FixnumNodes {
             }
         }
 
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])"})
+        public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
+            if (fallbackCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return fallbackCallNode.call(frame, a, "left_shift_fallback", null, b);
+        }
+
         static boolean canShiftIntoInt(int a, int b) {
             return Integer.numberOfLeadingZeros(a) - b > 0;
         }
@@ -1359,46 +1378,65 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = ">>", required = 1)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode toInt;
+        @Child private CallDispatchHeadNode fallbackCallNode;
+        @Child private LeftShiftNode leftShiftNode;
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public RightShiftNode(RightShiftNode prev) {
             super(prev);
-            toInt = prev.toInt;
+            fallbackCallNode = prev.fallbackCallNode;
+            leftShiftNode = prev.leftShiftNode;
         }
 
         protected abstract Object executeRightShift(VirtualFrame frame, Object a, Object b);
 
         @Specialization
-        public int rightShift(int a, int b) {
+        public Object rightShift(VirtualFrame frame, int a, int b) {
             if (b > 0) {
-                return a >> b;
-            } else {
-                if (-b >= Long.SIZE) {
-                    return 0;
+                if (b >= BITS - 1) {
+                    if (a < 0) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
                 } else {
-                    return a << -b;
+                    return a >> b;
                 }
+            } else {
+                if (leftShiftNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+                }
+
+                return leftShiftNode.executeLeftShift(frame, a, -b);
             }
         }
 
         @Specialization
-        public long rightShift(long a, int b) {
+        public Object rightShift(VirtualFrame frame, long a, int b) {
             if (b > 0) {
-                return a >> b;
-            } else {
-                if (-b >= Long.SIZE) {
-                    return 0;
+                if (b >= BITS - 1) {
+                    if (a < 0) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
                 } else {
-                    return a << -b;
+                    return a >> b;
                 }
+            } else {
+                if (leftShiftNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+                }
+
+                return leftShiftNode.executeLeftShift(frame, a, -b);
             }
         }
 
@@ -1412,15 +1450,14 @@ public abstract class FixnumNodes {
             return 0;
         }
 
-        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])", "!isRubyBignum(arguments[1])"})
-        public Object rightShift(VirtualFrame frame, Object a, Object b) {
-            final Object coerced = toInt.call(frame, b, "to_int", null);
-
-            if (coerced instanceof Integer || coerced instanceof Long || coerced instanceof RubyBignum) {
-                return executeRightShift(frame, a, coerced);
-            } else {
-                throw new UnsupportedOperationException();
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])"})
+        public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
+            if (fallbackCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
+
+            return fallbackCallNode.call(frame, a, "right_shift_fallback", null, b);
         }
 
     }
