@@ -642,7 +642,6 @@ public abstract class ArrayNodes {
         @Child protected AtNode atNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
-        private final BranchProfile indexAtEnd = BranchProfile.create();
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -666,9 +665,6 @@ public abstract class ArrayNodes {
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (normalisedIndex == array.getSize()) {
-                indexAtEnd.enter();
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
@@ -683,9 +679,6 @@ public abstract class ArrayNodes {
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (normalisedIndex == array.getSize()) {
-                indexAtEnd.enter();
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
@@ -700,9 +693,6 @@ public abstract class ArrayNodes {
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (normalisedIndex == array.getSize()) {
-                indexAtEnd.enter();
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
@@ -717,9 +707,6 @@ public abstract class ArrayNodes {
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (normalisedIndex == array.getSize()) {
-                indexAtEnd.enter();
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
