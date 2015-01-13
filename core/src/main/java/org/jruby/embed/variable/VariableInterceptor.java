@@ -29,18 +29,21 @@
  */
 package org.jruby.embed.variable;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
  * This class is responsible to local variable behavior dependent processing.
- * 
+ *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class VariableInterceptor {
@@ -54,7 +57,7 @@ public class VariableInterceptor {
     //public VariableInterceptor(LocalVariableBehavior behavior) {
     //    this.behavior = behavior;
     //}
-    
+
     //public LocalVariableBehavior getLocalVariableBehavior() {
     //    return behavior;
     //}
@@ -62,7 +65,7 @@ public class VariableInterceptor {
     /**
      * Returns an appropriate type of a variable instance to the specified local
      * variable behavior.
-     * 
+     *
      * @param runtime Ruby runtime
      * @param name variable name
      * @param value variable value
@@ -135,11 +138,9 @@ public class VariableInterceptor {
                 }
             }
         }
-        List<BiVariable> variables = map.getVariables();
-        if (variables == null) return;
-        for (int i=0; i<variables.size(); i++) {
-            variables.get(i).inject();
-        }
+        Collection<BiVariable> variables = map.getVariables();
+        if ( variables == null ) return;
+        for ( final BiVariable var : variables ) var.inject();
     }
 
     /**
@@ -213,12 +214,12 @@ public class VariableInterceptor {
      * @param variables a variable list to be cleared from Ruby runtime
      * @param runtime Ruby runtime
      */
-    public static void terminateGlobalVariables(LocalVariableBehavior behavior, List<BiVariable> variables, Ruby runtime) {
+    public static void terminateGlobalVariables(LocalVariableBehavior behavior, Collection<BiVariable> variables, Ruby runtime) {
         if (variables == null) return;
         if (LocalVariableBehavior.GLOBAL == behavior) {
-            for (int i = 0; i < variables.size(); i++) {
-                if (BiVariable.Type.LocalGlobalVariable == variables.get(i).getType()) {
-                    String name = variables.get(i).getName();
+            for ( final BiVariable var : variables ) {
+                if (BiVariable.Type.LocalGlobalVariable == var.getType()) {
+                    String name = var.getName();
                     name = name.startsWith("$") ? name : "$" + name;
                     runtime.getGlobalVariables().set(name, runtime.getNil());
                 }
@@ -257,37 +258,22 @@ public class VariableInterceptor {
             case GLOBAL:
                 return LocalGlobalVariable.isValidName(name);
             case BSF:
-                if (PersistentLocalVariable.isValidName(name)) {
-                    return true;
-                } else if (GlobalVariable.isValidName(name)) {
-                    return true;
-                }
+                if (PersistentLocalVariable.isValidName(name)) return true;
+                if (GlobalVariable.isValidName(name)) return true;
                 return false;
             case PERSISTENT:
-                if (GlobalVariable.isValidName(name)) {
-                    return true;
-                } else if (PersistentLocalVariable.isValidName(name)) {
-                    return true;
-                } else if (InstanceVariable.isValidName(name)) {
-                    return true;
-                } else if (Constant.isValidName(name)) {
-                    return true;
-                } else if (ClassVariable.isValidName(name)) {
-                    return true;
-                }
+                if (GlobalVariable.isValidName(name)) return true;
+                if (PersistentLocalVariable.isValidName(name)) return true;
+                if (InstanceVariable.isValidName(name)) return true;
+                if (Constant.isValidName(name)) return true;
+                if (ClassVariable.isValidName(name)) return true;
                 return false;
             default:
-                if (GlobalVariable.isValidName(name)) {
-                    return true;
-                } else if (TransientLocalVariable.isValidName(name)) {
-                    return true;
-                } else if (InstanceVariable.isValidName(name)) {
-                    return true;
-                } else if (Constant.isValidName(name)) {
-                    return true;
-                } else if (ClassVariable.isValidName(name)) {
-                    return true;
-                }
+                if (GlobalVariable.isValidName(name)) return true;
+                if (TransientLocalVariable.isValidName(name)) return true;
+                if (InstanceVariable.isValidName(name)) return true;
+                if (Constant.isValidName(name)) return true;
+                if (ClassVariable.isValidName(name)) return true;
                 return false;
         }
     }

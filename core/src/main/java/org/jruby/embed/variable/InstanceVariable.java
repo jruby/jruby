@@ -77,6 +77,10 @@ public class InstanceVariable extends AbstractVariable {
         super(receiver, name, true, irubyObject);
     }
 
+    InstanceVariable(RubyObject receiver, String name, IRubyObject irubyObject) {
+        this((IRubyObject) receiver, name, irubyObject);
+    }
+
     /**
      * Retrieves instance variables from Ruby after the evaluation.
      *
