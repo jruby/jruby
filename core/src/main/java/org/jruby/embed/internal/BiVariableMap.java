@@ -287,7 +287,7 @@ public class BiVariableMap implements Map<String, Object> {
         setVariable(getTopSelf(), var);
     }
 
-    public void setVariable(RubyObject receiver, BiVariable var) {
+    public void setVariable(final RubyObject receiver, final BiVariable var) {
         if ( var == null ) return;
 
         final String key = var.getName();
@@ -469,11 +469,11 @@ public class BiVariableMap implements Map<String, Object> {
     @Override
     public void clear() {
         if ( variables == null ) return;
-        BiVariable argv_object = null;
+        BiVariable argv = null;
         for ( BiVariable var : getVariables() ) {
             if ( var != null ) {
                 if ( "ARGV".equals(var.getName()) ) {
-                    argv_object = var;
+                    argv = var;
                 }
                 else {
                     var.remove();
@@ -481,7 +481,7 @@ public class BiVariableMap implements Map<String, Object> {
             }
         }
         getNames().clear(); getVariables().clear();
-        if ( argv_object != null ) put("ARGV", argv_object);
+        if ( argv != null ) update("ARGV", argv);
     }
 
     /**
@@ -586,7 +586,7 @@ public class BiVariableMap implements Map<String, Object> {
         for ( int i = 0; i < size(); i++ ) {
             final String name = getNames().get(i);
             final BiVariable variable = getVariables().get(i);
-            str.append(name).append('=').append(variable);
+            str.append(name).append('=').append(variable.getJavaObject());
             if ( i == size() - 1 ) break;
             str.append(',').append(' ');
         }
