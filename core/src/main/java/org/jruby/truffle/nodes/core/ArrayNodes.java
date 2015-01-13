@@ -1539,6 +1539,66 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "each_with_index", needsBlock = true)
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
+
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
+
+        public EachWithIndexNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EachWithIndexNode(EachWithIndexNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isNull")
+        public RubyArray eachWithEmpty(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return array;
+        }
+
+        @Specialization(guards = "isObject")
+        public Object eachWithIndexObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final Object[] store = (Object[]) array.getStore();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.getSize(); n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, store[n], n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                }
+            }
+
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends ArrayCoreMethodNode {
 
