@@ -44,7 +44,7 @@ module Commands
     puts 'jt findbugs                                  run findbugs'
     puts 'jt findbugs report                           run findbugs and generate an HTML report'
     puts
-    puts 'you can also put build or redbuild in front of any command'
+    puts 'you can also put build or rebuild in front of any command'
   end
 
   def build
