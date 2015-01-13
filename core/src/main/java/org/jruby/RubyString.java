@@ -179,7 +179,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public void associateEncoding(Encoding enc) {
         if (value.getEncoding() != enc) {
-            if (!isCodeRangeAsciiOnly() || !enc.isAsciiCompatible()) clearCodeRange();
+            if (!CodeRangeSupport.isCodeRangeAsciiOnly(this) || !enc.isAsciiCompatible()) clearCodeRange();
             value.setEncoding(enc);
         }
     }
@@ -214,7 +214,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // ENC_CODERANGE_ASCIIONLY
     public final boolean isCodeRangeAsciiOnly() {
-        return getCodeRange() == CR_7BIT;
+        return CodeRangeSupport.isCodeRangeAsciiOnly(this);
     }
 
     // rb_enc_str_asciionly_p
@@ -229,12 +229,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public final boolean isCodeRangeBroken() {
         return (flags & CR_MASK) == CR_BROKEN;
-    }
-
-    static int codeRangeAnd(int cr1, int cr2) {
-        if (cr1 == CR_7BIT) return cr2;
-        if (cr1 == CR_VALID) return cr2 == CR_7BIT ? CR_VALID : cr2;
-        return CR_UNKNOWN;
     }
 
     private void copyCodeRangeForSubstr(RubyString from, Encoding enc) {
@@ -1143,7 +1137,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString str = _str.convertToString();
         Encoding enc = checkEncoding(str);
         RubyString resultStr = newStringNoCopy(context.runtime, addByteLists(value, str.value),
-                                    enc, codeRangeAnd(getCodeRange(), str.getCodeRange()));
+                                    enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
@@ -2982,7 +2976,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (cr == CR_BROKEN) clearCodeRange();
         replaceInternal(p - value.getBegin(), e - p, repl);
         associateEncoding(enc);
-        cr = codeRangeAnd(cr, repl.getCodeRange());
+        cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
         if (cr != CR_BROKEN) setCodeRange(cr);
     }
 
@@ -3984,7 +3978,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                                                    padStr.singleByteOptimizable(),
                                                    enc, width, jflag);
         if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) result.infectBy(padStr);
-        int cr = codeRangeAnd(getCodeRange(), padStr.getCodeRange());
+        int cr = CodeRangeSupport.codeRangeAnd(getCodeRange(), padStr.getCodeRange());
         if (cr != CR_BROKEN) result.setCodeRange(cr);
         return result;
     }
