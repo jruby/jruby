@@ -602,6 +602,23 @@ public class BiVariableMapTest {
         assertNull(container.runScriptlet("$a"));
     }
 
+    @Test
+    public void testClearKeepsARGV() {
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
+
+        container.put("$abc", "def");
+        final List<String> argv = new ArrayList<String>();
+        argv.add("--hello"); argv.add("there");
+        container.put("ARGV", argv);
+        container.put("NO77", 1234567);
+
+        container.getVarMap().clear();
+
+        assertEquals( 1, container.getVarMap().size() );
+
+        assertEquals( Arrays.asList("--hello", "there"), container.getVarMap().get("ARGV") );
+    }
+
     /**
      * Test of isLazy method, of class BiVariableMap.
      */
