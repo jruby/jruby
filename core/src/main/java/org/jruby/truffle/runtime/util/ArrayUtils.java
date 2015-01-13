@@ -25,6 +25,78 @@ public abstract class ArrayUtils {
      * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
+    public static Object[] extractRange(int[] source, int start, int end) {
+        assert checkExtractRangeArgs(source, start, end);
+        int length = end - start;
+        Object[] result = new Object[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    private static boolean checkExtractRangeArgs(int[] source, int start, int end) {
+        assert source != null;
+        assert start >= 0;
+        assert start <= source.length;
+        assert end >= start;
+        assert end <= source.length;
+        return true;
+    }
+
+    /**
+     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and < source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
+    public static Object[] extractRange(long[] source, int start, int end) {
+        assert checkExtractRangeArgs(source, start, end);
+        int length = end - start;
+        Object[] result = new Object[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    private static boolean checkExtractRangeArgs(long[] source, int start, int end) {
+        assert source != null;
+        assert start >= 0;
+        assert start <= source.length;
+        assert end >= start;
+        assert end <= source.length;
+        return true;
+    }
+
+    /**
+     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and < source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
+    public static Object[] extractRange(double[] source, int start, int end) {
+        assert checkExtractRangeArgs(source, start, end);
+        int length = end - start;
+        Object[] result = new Object[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    private static boolean checkExtractRangeArgs(double[] source, int start, int end) {
+        assert source != null;
+        assert start >= 0;
+        assert start <= source.length;
+        assert end >= start;
+        assert end <= source.length;
+        return true;
+    }
+
+    /**
+     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and < source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
     public static Object[] extractRange(Object[] source, int start, int end) {
         assert checkExtractRangeArgs(source, start, end);
         int length = end - start;

@@ -672,7 +672,7 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
@@ -689,7 +689,7 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
@@ -706,7 +706,7 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
