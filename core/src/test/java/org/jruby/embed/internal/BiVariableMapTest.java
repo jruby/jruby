@@ -617,6 +617,8 @@ public class BiVariableMapTest {
         assertEquals( 1, container.getVarMap().size() );
 
         assertEquals( Arrays.asList("--hello", "there"), container.getVarMap().get("ARGV") );
+
+        assertTrue( container.getVarMap().getVariable("ARGV") instanceof org.jruby.embed.variable.Argv );
     }
 
     /**
