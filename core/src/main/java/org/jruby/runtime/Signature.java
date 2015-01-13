@@ -4,29 +4,37 @@ import org.jruby.Ruby;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.LambdaNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
+import org.jruby.ast.StarNode;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
  */
 public class Signature {
+    public enum Rest { NONE, NORM, ANON, STAR }
+
     private final int pre;
     private final int opt;
-    private final boolean rest;
+    private final Rest rest;
     private final int post;
     private final Arity arity;
 
-    public Signature(int pre, int opt, int post, boolean rest) {
+    public Signature(int pre, int opt, int post, Rest rest) {
         this.pre = pre;
         this.opt = opt;
         this.post = post;
         this.rest = rest;
-        if (rest || opt != 0) {
+
+        // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
+        //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
+        //       permit more than required args to be passed to a lambda, so we do not consider
+        //       it a "true" rest arg for arity-checking purposes below in checkArity.
+        if (rest != Rest.NONE || opt != 0) {
             arity = Arity.createArity(-(pre + post + 1));
         } else {
             arity = Arity.fixed(pre + post);
@@ -35,13 +43,13 @@ public class Signature {
 
     public int pre() { return pre; }
     public int opt() { return opt; }
-    public boolean rest() { return rest; }
+    public Rest rest() { return rest; }
     public int post() { return post; }
 
     public int required() { return pre + post; }
     public Arity arity() { return arity; }
 
-    public static Signature from(int pre, int opt, int post, boolean rest) {
+    public static Signature from(int pre, int opt, int post, Rest rest) {
         return new Signature(pre, opt, post, rest);
     }
 
@@ -54,7 +62,30 @@ public class Signature {
 
         // all other iters aggregate ArgsNode
         ArgsNode args = (ArgsNode)var;
-        return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), args.getRestArg() >= 0);
+
+        Rest rest = Rest.NONE;
+        if (args.getRestArg() >= 0) {
+            Node restArg = args.getRestArgNode();
+            rest = restFromArg(restArg);
+        }
+        return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest);
+    }
+
+    private static Rest restFromArg(Node restArg) {
+        Rest rest;
+        if (restArg instanceof UnnamedRestArgNode) {
+            UnnamedRestArgNode anonRest = (UnnamedRestArgNode) restArg;
+            if (anonRest.isStar()) {
+                rest = Rest.STAR;
+            } else {
+                rest = Rest.ANON;
+            }
+        } else if (restArg instanceof StarNode) {
+            rest = Rest.STAR;
+        } else {
+            rest = Rest.NORM;
+        }
+        return rest;
     }
 
     public static Signature from(ForNode iter) {
@@ -63,21 +94,27 @@ public class Signature {
         // ForNode can aggregate either a single node (required = 1) or masgn
         if (var instanceof MultipleAsgn19Node) {
             MultipleAsgn19Node masgn = (MultipleAsgn19Node)var;
-            return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), masgn.getRest() != null);
+
+            Rest rest = Rest.NONE;
+            if (masgn.getRest() != null) {
+                Node restArg = masgn.getRest();
+                rest = restFromArg(restArg);
+            }
+            return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), rest);
         }
-        return Signature.from(1, 0, 0, false);
+        return Signature.from(1, 0, 0, Rest.NONE);
     }
 
     public static Signature from(PreExeNode iter) {
-        return Signature.from(0, 0, 0, false);
+        return Signature.from(0, 0, 0, Rest.NONE);
     }
 
     public static Signature from(PostExeNode iter) {
-        return Signature.from(0, 0, 0, false);
+        return Signature.from(0, 0, 0, Rest.NONE);
     }
 
     public long encode() {
-        return ((long)pre << 48) | ((long)opt << 32) | ((long)post << 16) | (rest ? 1L : 0L);
+        return ((long)pre << 48) | ((long)opt << 32) | ((long)post << 16) | (rest.ordinal());
     }
 
     public static Signature decode(long l) {
@@ -85,7 +122,7 @@ public class Signature {
                 (int)(l >> 48) & 0xFFFF,
                 (int)(l >> 32) & 0xFFFF,
                 (int)(l >> 16) & 0xFFFF,
-                (int)(l & 0xFFFF) == 1 ? true : false
+                Rest.values()[(int)(l & 0xFFFF)]
         );
     }
 
@@ -93,11 +130,11 @@ public class Signature {
         return "signature(" + pre + "," + opt + "," + post + "," + rest + ")";
     }
 
-    public void checkArgs(Ruby runtime, IRubyObject[] args) {
+    public void checkArity(Ruby runtime, IRubyObject[] args) {
         if (args.length < required()) {
             throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + required() + ")");
         }
-        if (!rest) {
+        if (rest == Rest.NONE || rest == Rest.ANON) {
             // no rest, so we have a maximum
             if (args.length > required() + opt()) {
                 throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + required() + opt + ")");
