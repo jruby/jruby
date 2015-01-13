@@ -58,7 +58,7 @@ public class Argv extends AbstractVariable {
      * @return the instance of Constant
      */
     public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
-        if (name.matches(VALID_NAME)) {
+        if ( name.equals(VALID_NAME) ) {
             return new Argv(receiver, name, javaObject);
         }
         return null;
@@ -75,17 +75,6 @@ public class Argv extends AbstractVariable {
         } else {
             javaType = javaObject.getClass();
         }
-    }
-
-    private void updateArgvByJavaObject() {
-        RubyArray ary = RubyArray.newArray(getRuntime());
-        if ( javaObject instanceof Collection ) {
-            ary.addAll((Collection) javaObject);
-        }
-        else if ( javaObject instanceof Object[] ) {
-            for (Object s : (Object[]) javaObject) ary.add(s);
-        }
-        irubyObject = ary;
     }
 
     /**
@@ -129,15 +118,23 @@ public class Argv extends AbstractVariable {
      */
     @Override
     public void inject() {
-        updateArgvByJavaObject();
         final Ruby runtime = getRuntime();
+
+        final RubyArray argv = RubyArray.newArray(runtime);
+        if ( javaObject instanceof Collection ) {
+            argv.addAll( (Collection) javaObject );
+        }
+        else if ( javaObject instanceof String[] ) {
+            for ( String str : (String[]) javaObject ) argv.add(str);
+        }
+        this.irubyObject = argv; fromRuby = true;
+
         RubyModule rubyModule = getRubyClass(runtime);
         if (rubyModule == null) rubyModule = runtime.getCurrentContext().getRubyClass();
         if (rubyModule == null) return;
 
-        rubyModule.storeConstant(name, irubyObject);
+        rubyModule.storeConstant(name, argv);
         runtime.getConstantInvalidator(name).invalidate();
-        fromRuby = true;
     }
 
     /**
@@ -146,7 +143,7 @@ public class Argv extends AbstractVariable {
      */
     @Override
     public void remove() {
-        javaObject = new ArrayList();
+        this.javaObject = new ArrayList();
         inject();
     }
 
@@ -157,24 +154,23 @@ public class Argv extends AbstractVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved constants.
      */
-    public static void retrieve(RubyObject receiver, BiVariableMap vars) {
-        if (vars.isLazy()) return;
+    public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
+        if ( vars.isLazy() ) return;
         updateARGV(receiver, vars);
     }
 
     private static void updateARGV(final IRubyObject receiver, final BiVariableMap vars) {
         final String name = "ARGV";
-        final Ruby runtime = receiver.getRuntime();
-        IRubyObject argv = runtime.getTopSelf().getMetaClass().getConstant(name);
-        if (argv == null || (argv instanceof RubyNil)) return;
+        final RubyObject topSelf = getTopSelf(receiver);
+        final IRubyObject argv = topSelf.getMetaClass().getConstant(name);
+        if ( argv == null || (argv instanceof RubyNil) ) return;
         // ARGV constant should be only one
-        if (vars.containsKey(name)) {
-            BiVariable var = vars.getVariable(getTopSelf(receiver), name);
+        if ( vars.containsKey(name) ) {
+            BiVariable var = vars.getVariable(topSelf, name);
             var.setRubyObject(argv);
         }
         else {
-            Constant var = new Constant(getTopSelf(receiver), name, argv);
-            vars.update(name, var.markInitialized());
+            vars.update(name, new Argv(topSelf, name, argv));
         }
     }
 
@@ -219,4 +215,5 @@ public class Argv extends AbstractVariable {
         }
         return null;
     }
+
 }
