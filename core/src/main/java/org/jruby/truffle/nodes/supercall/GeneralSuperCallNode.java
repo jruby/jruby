@@ -79,6 +79,10 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
             lookup(frame);
         }
 
+        if (method == null || callNode == null) {
+            throw new IllegalStateException("No call node installed");
+        }
+
         // Call the method
 
         if (isSplatted) {

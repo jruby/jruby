@@ -2456,9 +2456,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitVCallNode(org.jruby.ast.VCallNode node) {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
-        final org.jruby.ast.Node args = null;
-        final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), args, null);
-
+        final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), null, null);
         return visitCallNodeExtraArgument(callNode, null, true, true);
     }
 

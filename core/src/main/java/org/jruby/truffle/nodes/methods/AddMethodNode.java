@@ -79,11 +79,13 @@ public class AddMethodNode extends RubyNode {
             }
 
             return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Visibility>() {
+
                 @Override
                 public Visibility visitFrame(FrameInstance frameInstance) {
                     Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
                     return findVisibility(frame);
                 }
+
             });
         }
     }

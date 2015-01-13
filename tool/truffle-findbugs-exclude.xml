@@ -51,4 +51,19 @@
     <Class name="org.jruby.truffle.nodes.core.KernelNodes$BacktickNode" />
     <Bug pattern="OS_OPEN_STREAM" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FixnumNodes$PowNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FloatNodes$PowNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.util.ArrayUtils" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON" />
+  </Match>
 </FindBugsFilter>

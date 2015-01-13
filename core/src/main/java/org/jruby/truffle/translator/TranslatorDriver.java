@@ -47,10 +47,8 @@ public class TranslatorDriver {
     private long nextReturnID = 0;
 
     public RubyNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, RubyNode currentNode) {
-        final SourceSection sourceSection = null;
-
         final LexicalScope lexicalScope = context.getRootLexicalScope(); // TODO(eregon): figure out how to get the lexical scope from JRuby
-        final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, lexicalScope, "(unknown)", false, parseTree, false);
+        final SharedMethodInfo sharedMethod = new SharedMethodInfo(null, lexicalScope, "(unknown)", false, parseTree, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
                 context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
@@ -65,7 +63,7 @@ public class TranslatorDriver {
             throw new RuntimeException(e);
         }
 
-        return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, sharedMethod);
+        return translator.compileFunctionNode(null, "(unknown)", argsNode, bodyNode, sharedMethod);
     }
 
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {

@@ -31,6 +31,10 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
             lookup(frame);
         }
 
+        if (method == null || callNode == null) {
+            throw new IllegalStateException("No call node installed");
+        }
+
         final Object[] superArguments;
 
         if (inBlock) {

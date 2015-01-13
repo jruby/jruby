@@ -103,7 +103,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             } else {
                 return string.substring(0, Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) + "…";
             }
-        } catch (Exception e) {
+        } catch (Throwable t) {
             return "*error*";
         }
     }

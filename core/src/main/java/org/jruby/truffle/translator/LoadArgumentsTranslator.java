@@ -227,6 +227,10 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode readNode;
 
+        if (argsNode == null) {
+            throw new IllegalStateException("No arguments node visited");
+        }
+
         int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
         int to = -argsNode.getPostCount();
         if (useArray()) {
@@ -281,6 +285,10 @@ public class LoadArgumentsTranslator extends Translator {
             } else {
                 // Optional argument
                 final RubyNode defaultValue = valueNode.accept(this);
+
+                if (argsNode == null) {
+                    throw new IllegalStateException("No arguments node visited");
+                }
 
                 int minimum = index + 1 + argsNode.getPostCount();
 
