@@ -577,4 +577,20 @@ public class BiVariableMap implements Map<String, Object> {
         return lazy;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder str = new StringBuilder();
+        str.append( getClass().getName() );
+
+        str.append('{');
+        for ( int i = 0; i < size(); i++ ) {
+            final String name = getNames().get(i);
+            final BiVariable variable = getVariables().get(i);
+            str.append(name).append('=').append(variable);
+            if ( i == size() - 1 ) break;
+            str.append(',').append(' ');
+        }
+        return str.append('}').toString();
+    }
+
 }

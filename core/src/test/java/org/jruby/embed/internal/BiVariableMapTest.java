@@ -435,7 +435,7 @@ public class BiVariableMapTest {
      * Test of get method, of class BiVariableMap.
      */
     @Test
-    public void testGet_Object() {
+    public void testMapGet() {
         logger1.info("get");
         ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
         BiVariableMap instance = container.getVarMap();
@@ -539,16 +539,30 @@ public class BiVariableMapTest {
     /**
      * Test of remove method, of class BiVariableMap.
      */
-    //@Test
-    public void testRemove_Object() {
+    @Test
+    public void testMapRemove() {
         logger1.info("remove");
-        /* add this test later
-        Object key = null;
-        BiVariableMap instance = null;
-        Object expResult = null;
-        Object result = instance.remove(key);
-        assertEquals(expResult, result);
-        */
+
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
+
+        container.put("ARGV", new String[] { "arg1", "arg2" });
+        container.put("SAMPLE", "42");
+
+        container.getVarMap().remove("SAMPLE");
+        assertEquals(1, container.getVarMap().size());
+
+        container.getVarMap().remove("ARGV");
+        assertTrue( container.getVarMap().isEmpty() );
+    }
+
+    @Test
+    public void testToString() {
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
+
+        container.put("ARGV", new String[] { "arg1", "arg2" });
+        container.put("SAMPLE", "42");
+
+        container.getVarMap().toString();
     }
 
     /**
