@@ -1230,4 +1230,26 @@ public final class StringSupport {
             value.setEncoding(enc);
         }
     }
+
+    public static ByteList replaceInternal(int beg, int len, ByteListHolder source, CodeRangeable repl) {
+        final ByteList value = source.getByteList();
+        int oldLength = value.getRealSize();
+        if (beg + len >= oldLength) len = oldLength - beg;
+        ByteList replBytes = repl.getByteList();
+        int replLength = replBytes.getRealSize();
+        int newLength = oldLength + replLength - len;
+
+        byte[]oldBytes = value.getUnsafeBytes();
+        int oldBegin = value.getBegin();
+
+        source.modify(newLength);
+        if (replLength != len) {
+            System.arraycopy(oldBytes, oldBegin + beg + len, value.getUnsafeBytes(), beg + replLength, oldLength - (beg + len));
+        }
+
+        if (replLength > 0) System.arraycopy(replBytes.getUnsafeBytes(), replBytes.getBegin(), value.getUnsafeBytes(), beg, replLength);
+        value.setRealSize(newLength);
+
+        return value;
+    }
 }

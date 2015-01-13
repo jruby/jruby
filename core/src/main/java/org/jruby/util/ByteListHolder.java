@@ -26,10 +26,7 @@
 
 package org.jruby.util;
 
-public interface CodeRangeable extends ByteListHolder {
-    public int getCodeRange();
-    public int scanForCodeRange();
-    public boolean isCodeRangeValid();
-    public void setCodeRange(int codeRange);
-    public void clearCodeRange();
+public interface ByteListHolder {
+    public ByteList getByteList();
+    public void modify(int length);
 }

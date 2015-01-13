@@ -2935,22 +2935,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     /* rb_str_splice */
     private IRubyObject replaceInternal(int beg, int len, RubyString repl) {
-        int oldLength = value.getRealSize();
-        if (beg + len >= oldLength) len = oldLength - beg;
-        ByteList replBytes = repl.value;
-        int replLength = replBytes.getRealSize();
-        int newLength = oldLength + replLength - len;
+        StringSupport.replaceInternal(beg, len, this, repl);
 
-        byte[]oldBytes = value.getUnsafeBytes();
-        int oldBegin = value.getBegin();
-
-        modify(newLength);
-        if (replLength != len) {
-            System.arraycopy(oldBytes, oldBegin + beg + len, value.getUnsafeBytes(), beg + replLength, oldLength - (beg + len));
-        }
-
-        if (replLength > 0) System.arraycopy(replBytes.getUnsafeBytes(), replBytes.getBegin(), value.getUnsafeBytes(), beg, replLength);
-        value.setRealSize(newLength);
+        // TODO (nirvdrum 13-Jan-15) This should be part of the StringSupport definition but a general notion of tainted needs to emerge first.
         return infectBy(repl);
     }
 
@@ -2973,7 +2960,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int cr = getCodeRange();
         if (cr == CR_BROKEN) clearCodeRange();
         replaceInternal(p - value.getBegin(), e - p, repl);
-        associateEncoding(enc);
+        StringSupport.associateEncoding(this, enc);
         cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
         if (cr != CR_BROKEN) setCodeRange(cr);
     }
