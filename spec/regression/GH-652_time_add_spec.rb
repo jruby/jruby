@@ -11,6 +11,6 @@ describe 'time minus precision' do
   it 'handles BC time correctly' do
     time = Time.new(0)
     other_time = Time.new(2012, 5, 23, 12, 0, 0)
-    (time - other_time).should eq(-63504988500.0)
+    (time - other_time).should eq(-63504990564.0)
   end
 end
