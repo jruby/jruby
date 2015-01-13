@@ -641,6 +641,9 @@ public abstract class ArrayNodes {
 
         @Child protected AtNode atNode;
 
+        private final BranchProfile outOfBounds = BranchProfile.create();
+        private final BranchProfile indexAtEnd = BranchProfile.create();
+
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             atNode = AtNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
@@ -660,10 +663,11 @@ public abstract class ArrayNodes {
         public Object sliceIntegerFixnum(RubyArray array, int start, int length) {
             final int normalisedIndex = array.normaliseIndex(start);
 
-            // TODO (nirvdrum 12-Jan-15) Add branch profiling.
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else if (normalisedIndex == array.getSize()) {
+                indexAtEnd.enter();
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
@@ -674,13 +678,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum")
         public Object sliceLongFixnum(RubyArray array, int start, int length) {
-            notDesignedForCompilation();
-
             final int normalisedIndex = array.normaliseIndex(start);
 
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else if (normalisedIndex == array.getSize()) {
+                indexAtEnd.enter();
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
@@ -691,13 +695,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFloat")
         public Object sliceFloat(RubyArray array, int start, int length) {
-            notDesignedForCompilation();
-
             final int normalisedIndex = array.normaliseIndex(start);
 
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else if (normalisedIndex == array.getSize()) {
+                indexAtEnd.enter();
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
@@ -708,13 +712,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject")
         public Object sliceObject(RubyArray array, int start, int length) {
-            notDesignedForCompilation();
-
             final int normalisedIndex = array.normaliseIndex(start);
 
             if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else if (normalisedIndex == array.getSize()) {
+                indexAtEnd.enter();
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
