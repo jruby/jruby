@@ -1325,8 +1325,8 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete_at", required = 1)
     public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
 
-        private static final BranchProfile tooSmallBranch = BranchProfile.create();
-        private static final BranchProfile beyondEndBranch = BranchProfile.create();
+        private final BranchProfile tooSmallBranch = BranchProfile.create();
+        private final BranchProfile beyondEndBranch = BranchProfile.create();
 
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1968,7 +1968,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "insert", required = 2)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
-        private static final BranchProfile tooSmallBranch = BranchProfile.create();
+        private final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
