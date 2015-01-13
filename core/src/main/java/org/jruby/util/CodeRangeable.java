@@ -31,6 +31,7 @@ public interface CodeRangeable {
     public int scanForCodeRange();
     public boolean isCodeRangeValid();
     public void setCodeRange(int codeRange);
+    public void clearCodeRange();
 
     public ByteList getByteList();
 }

@@ -204,6 +204,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         flags |= codeRange & CR_MASK;
     }
 
+    @Override
     public final void clearCodeRange() {
         flags &= ~CR_MASK;
     }

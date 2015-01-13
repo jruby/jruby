@@ -189,6 +189,11 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    public final void clearCodeRange() {
+        // TODO (nirvdrum Jan. 13, 2015): Make this work with the String's real code range, not just a stubbed value.
+    }
+
+    @Override
     public ByteList getByteList() {
         return bytes;
     }
