@@ -63,6 +63,7 @@ import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 import org.jruby.embed.PositionFunction;
 import org.jruby.embed.RadioActiveDecay;
+import org.jruby.embed.internal.BiVariableMap;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -161,7 +162,7 @@ public class JRubyEngineTest {
         }
         String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/proverbs_of_the_day.rb";
         Reader reader = new FileReader(filename);
-        
+
         instance.put("$day", -1);
         CompiledScript cs = ((Compilable)instance).compile(reader);
         String result = (String) cs.eval();
@@ -173,10 +174,10 @@ public class JRubyEngineTest {
         result = (String) cs.eval();
         expResult = "Every garden may have some weeds.";
         assertEquals(expResult, result);
-        
+
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
         instance = null;
-        
+
     }
 
     /**
@@ -231,7 +232,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_String_ScriptContext2() throws Exception {
-        logger1.info("[eval String with ScriptContext 2]");       
+        logger1.info("[eval String with ScriptContext 2]");
         ScriptEngine instance = null;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -326,7 +327,7 @@ public class JRubyEngineTest {
         }
         String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         Reader reader = new FileReader(filename);
-        
+
         long expResult = getNextYear();
         Object result = instance.eval(reader);
         assertEquals(expResult, result);
@@ -534,7 +535,6 @@ public class JRubyEngineTest {
         assertNotSame(bindings, result);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
@@ -549,7 +549,6 @@ public class JRubyEngineTest {
         assertNotNull(result);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
@@ -572,7 +571,6 @@ public class JRubyEngineTest {
         assertEquals(expResult, (result.getWriter()).toString());
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
@@ -590,7 +588,6 @@ public class JRubyEngineTest {
         assertEquals(expResult, ret);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
@@ -599,13 +596,7 @@ public class JRubyEngineTest {
     @Test
     public void testInvokeMethod() throws Exception {
         logger1.info("invokeMethod");
-        ScriptEngine instance;
-        synchronized(this) {
-            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
-            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
-            ScriptEngineManager manager = new ScriptEngineManager();
-            instance = manager.getEngineByName("jruby");
-        }
+        ScriptEngine instance = newScriptEngine();
         String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/tree.rb";
         Reader reader = new FileReader(filename);
         Object receiver = instance.eval(reader);
@@ -630,7 +621,6 @@ public class JRubyEngineTest {
         assertTrue(result.startsWith(expResult));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
@@ -639,31 +629,24 @@ public class JRubyEngineTest {
     @Test
     public void testInvokeFunction() throws Exception {
         logger1.info("invokeFunction");
-        ScriptEngine instance;
-        synchronized(this) {
-            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
-            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
-            ScriptEngineManager manager = new ScriptEngineManager();
-            instance = manager.getEngineByName("jruby");
-        }
+        ScriptEngine instance = newScriptEngine();
         String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/count_down.rb";
         Reader reader = new FileReader(filename);
         Bindings bindings = new SimpleBindings();
         bindings.put("@month", 6);
         bindings.put("@day", 3);
         instance.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        Object result = instance.eval(reader, bindings);
+        instance.eval(reader, bindings);
 
         String method = "count_down_birthday";
         bindings.put("@month", 12);
         bindings.put("@day", 3);
         instance.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
         Object[] args = null;
-        result = ((Invocable)instance).invokeFunction(method, args);
-        assertTrue(((String)result).startsWith("Happy") || ((String)result).startsWith("You have"));
+        Object result = ((Invocable)instance).invokeFunction(method, args);
+        assertTrue(((String)result).startsWith("Happy") || ((String) result).startsWith("You have"));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
@@ -672,13 +655,7 @@ public class JRubyEngineTest {
     @Test
     public void testGetInterface_Class() throws FileNotFoundException, ScriptException {
         logger1.info("getInterface (no receiver)");
-        ScriptEngine instance;
-        synchronized(this) {
-            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
-            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
-            ScriptEngineManager manager = new ScriptEngineManager();
-            instance = (JRubyEngine) manager.getEngineByName("jruby");
-        }
+        ScriptEngine instance = newScriptEngine();
         Class returnType = RadioActiveDecay.class;
         String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/radioactive_decay.rb";
         Reader reader = new FileReader(filename);
@@ -692,7 +669,6 @@ public class JRubyEngineTest {
         assertEquals(expResult, result.yearsToAmount(10.0, 1.0), 0.000001);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
@@ -701,13 +677,7 @@ public class JRubyEngineTest {
     @Test
     public void testGetInterface_Object_Class() throws FileNotFoundException, ScriptException {
         logger1.info("getInterface (with receiver)");
-        ScriptEngine instance;
-        synchronized(this) {
-            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
-            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
-            ScriptEngineManager manager = new ScriptEngineManager();
-            instance = manager.getEngineByName("jruby");
-        }
+        ScriptEngine instance = newScriptEngine();
         String filename = basedir + "/src/test/ruby/org/jruby/embed/ruby/position_function.rb";
         Reader reader = new FileReader(filename);
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -726,7 +696,6 @@ public class JRubyEngineTest {
         assertEquals(expResult, result.getVelocity(t), 0.1);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /*
@@ -735,13 +704,7 @@ public class JRubyEngineTest {
     @Test
     public void testARGV() throws ScriptException {
         logger1.info("ScriptEngine.ARGV");
-        ScriptEngine instance;
-        synchronized(this) {
-            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
-            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
-            ScriptEngineManager manager = new ScriptEngineManager();
-            instance = manager.getEngineByName("jruby");
-        }
+        ScriptEngine instance = newScriptEngine();
         instance.getContext().setErrorWriter(writer);
         String script = "" +
 //            "ARGV << 'foo' \n" +
@@ -750,8 +713,6 @@ public class JRubyEngineTest {
             "end";
         instance.put(ScriptEngine.ARGV,new String[]{"one param"});
         instance.eval(script);
-
-        instance = null;
     }
 
     /*
@@ -760,13 +721,7 @@ public class JRubyEngineTest {
     @Test
     public void testARGV_2() throws ScriptException {
         logger1.info("ScriptEngine.ARGV before initialization");
-        ScriptEngine instance;
-        synchronized(this) {
-            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
-            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
-            ScriptEngineManager manager = new ScriptEngineManager();
-            instance = manager.getEngineByName("jruby");
-        }
+        ScriptEngine instance = newScriptEngine();
         instance.getContext().setErrorWriter(writer);
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put(ScriptEngine.ARGV, new String[]{"init params"});
@@ -776,13 +731,11 @@ public class JRubyEngineTest {
             "  raise 'Error No argv passed'\n" +
             "end";
         instance.eval(script);
-
-        instance = null;
     }
 
     // This code worked successfully on command-line but never as JUnit test
     // <script>:1: undefined method `+' for nil:NilClass (NoMethodError)
-    // raised at "Object obj1 = engine1.eval("$Value + 2010.to_s");" 
+    // raised at "Object obj1 = engine1.eval("$Value + 2010.to_s");"
     //@Test
     public void testMultipleEngineStates() throws ScriptException {
         logger1.info("Multiple Engine States");
@@ -808,8 +761,6 @@ public class JRubyEngineTest {
         Object obj1 = engine1.eval("$Value + 2010.to_s");
         Object obj2 = engine2.eval("$Value + 2010");
         assertNotSame(obj1, obj2);
-        engine1 = null;
-        engine2 = null;
     }
 
     @Test
@@ -830,28 +781,45 @@ public class JRubyEngineTest {
         expResult = "GVar in an at_exit block";
         assertEquals(expResult, sw.toString().trim());
         instance.getContext().setAttribute("org.jruby.embed.termination", false, ScriptContext.ENGINE_SCOPE);
-        instance = null;
     }
-    
+
     @Test
     public void testClearVariables() throws ScriptException {
         logger1.info("Clear Variables Test");
-        ScriptEngine instance = null;
-        synchronized (this) {
-            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
-            System.setProperty("org.jruby.embed.localvariable.behavior", "global");
-            ScriptEngineManager manager = new ScriptEngineManager();
-            instance = manager.getEngineByName("jruby");
-        }
+        final ScriptEngine instance = newScriptEngine("singlethread", "global");
+
         instance.put("gvar", ":Gvar");
         String result = (String) instance.eval("$gvar");
         assertEquals(":Gvar", result);
+
         instance.getBindings(ScriptContext.ENGINE_SCOPE).remove("gvar");
         instance.getContext().setAttribute("org.jruby.embed.clear.variables", true, ScriptContext.ENGINE_SCOPE);
+
         instance.eval("");
         instance.getContext().setAttribute("org.jruby.embed.clear.variables", false, ScriptContext.ENGINE_SCOPE);
+
         result = (String) instance.eval("$gvar");
         assertNull(result);
-        instance = null;
+        assertNull( getVarMap(instance).getVariable("$gvar") );
+
+        assertNotNull( instance.eval("ARGV") );
+        assertNotNull( getVarMap(instance).getVariable("ARGV") );
     }
+
+    private static BiVariableMap getVarMap(final ScriptEngine engine) {
+        return ((JRubyEngine) engine).container.getVarMap();
+    }
+
+    private ScriptEngine newScriptEngine() {
+        return newScriptEngine("singlethread", "transient");
+    }
+
+    private ScriptEngine newScriptEngine(final String scope, final String varBehavior) {
+        synchronized(this) {
+            System.setProperty("org.jruby.embed.localcontext.scope", scope);
+            System.setProperty("org.jruby.embed.localvariable.behavior", varBehavior);
+            return new ScriptEngineManager().getEngineByName("jruby");
+        }
+    }
+
 }
