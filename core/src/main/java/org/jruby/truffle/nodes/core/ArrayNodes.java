@@ -1557,6 +1557,108 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "find", needsBlock = true)
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class FindNode extends YieldingCoreMethodNode {
+
+        public FindNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FindNode(FindNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isNull")
+        public Object findNull(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isIntegerFixnum")
+        public Object findIntegerFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
+            notDesignedForCompilation();
+
+            final int[] store = (int[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                try {
+                    final Object value = store[n];
+
+                    if (yieldIsTruthy(frame, block, value)) {
+                        return value;
+                    }
+                } catch (BreakException e) {
+                    break;
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public Object findLongFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
+            notDesignedForCompilation();
+
+            final long[] store = (long[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                try {
+                    final Object value = store[n];
+
+                    if (yieldIsTruthy(frame, block, value)) {
+                        return value;
+                    }
+                } catch (BreakException e) {
+                    break;
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isFloat")
+        public Object findFloat(VirtualFrame frame, RubyArray array, RubyProc block) {
+            notDesignedForCompilation();
+
+            final double[] store = (double[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                try {
+                    final Object value = store[n];
+
+                    if (yieldIsTruthy(frame, block, value)) {
+                        return value;
+                    }
+                } catch (BreakException e) {
+                    break;
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isObject")
+        public Object findObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            notDesignedForCompilation();
+
+            final Object[] store = (Object[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                try {
+                    final Object value = store[n];
+
+                    if (yieldIsTruthy(frame, block, value)) {
+                        return value;
+                    }
+                } catch (BreakException e) {
+                    break;
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+    }
+
     @CoreMethod(names = "first")
     public abstract static class FirstNode extends ArrayCoreMethodNode {
 
