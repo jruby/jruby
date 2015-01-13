@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
+public class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
     private final Class<?> expectedClass;
     private final Assumption unmodifiedAssumption;
@@ -59,18 +59,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         }
     }
 
-    public CachedUnboxedDispatchNode(CachedUnboxedDispatchNode prev) {
-        super(prev);
-        expectedClass = prev.expectedClass;
-        unmodifiedAssumption = prev.unmodifiedAssumption;
-        value = prev.value;
-        method = prev.method;
-        callNode = prev.callNode;
-        indirectCallNode = prev.indirectCallNode;
-    }
-
-    @Specialization
-    public Object dispatch(
+    @Override
+    public Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,

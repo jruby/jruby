@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
+public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
     private final Assumption falseUnmodifiedAssumption;
     private final InternalMethod falseMethod;
@@ -90,21 +90,8 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
         }
     }
 
-    public CachedBooleanDispatchNode(CachedBooleanDispatchNode prev) {
-        super(prev);
-        falseUnmodifiedAssumption = prev.falseUnmodifiedAssumption;
-        falseMethod = prev.falseMethod;
-        falseValue = prev.falseValue;
-        falseCallDirect = prev.falseCallDirect;
-        trueUnmodifiedAssumption = prev.trueUnmodifiedAssumption;
-        trueValue = prev.trueValue;
-        trueMethod = prev.trueMethod;
-        trueCallDirect = prev.trueCallDirect;
-        indirectCallNode = prev.indirectCallNode;
-    }
-
-    @Specialization
-    public Object dispatch(
+    @Override
+    public Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,

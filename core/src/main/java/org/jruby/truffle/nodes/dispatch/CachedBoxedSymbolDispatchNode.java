@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
+public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
     private final Assumption unmodifiedAssumption;
 
@@ -61,17 +61,8 @@ public abstract class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         }
     }
 
-    public CachedBoxedSymbolDispatchNode(CachedBoxedSymbolDispatchNode prev) {
-        super(prev);
-        unmodifiedAssumption = prev.unmodifiedAssumption;
-        value = prev.value;
-        method = prev.method;
-        callNode = prev.callNode;
-        indirectCallNode = prev.indirectCallNode;
-    }
-
-    @Specialization
-    public Object dispatch(
+    @Override
+    public Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,

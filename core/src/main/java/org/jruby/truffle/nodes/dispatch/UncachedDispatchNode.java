@@ -28,7 +28,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public abstract class UncachedDispatchNode extends DispatchNode {
+public class UncachedDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
 
@@ -47,8 +47,8 @@ public abstract class UncachedDispatchNode extends DispatchNode {
         toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
     }
 
-    @Specialization
-    public Object dispatch(
+    @Override
+    public Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object name,

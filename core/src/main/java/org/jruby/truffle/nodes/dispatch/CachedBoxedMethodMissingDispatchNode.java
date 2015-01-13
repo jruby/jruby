@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
-public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
+public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
@@ -73,17 +73,8 @@ public abstract class CachedBoxedMethodMissingDispatchNode extends CachedDispatc
         }
     }
 
-    public CachedBoxedMethodMissingDispatchNode(CachedBoxedMethodMissingDispatchNode prev) {
-        super(prev);
-        expectedClass = prev.expectedClass;
-        unmodifiedAssumption = prev.unmodifiedAssumption;
-        method = prev.method;
-        callNode = prev.callNode;
-        indirectCallNode = prev.indirectCallNode;
-    }
-
-    @Specialization
-    public Object dispatch(
+    @Override
+    public Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,

@@ -26,11 +26,6 @@ import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-@NodeChildren({
-        @NodeChild(value="receiver", type=Node.class),
-        @NodeChild(value="methodName", type=Node.class),
-        @NodeChild(value="blockObject", type=Node.class),
-        @NodeChild(value="arguments", type=Node.class)})
 public abstract class DispatchNode extends RubyNode {
 
     private final DispatchAction dispatchAction;
