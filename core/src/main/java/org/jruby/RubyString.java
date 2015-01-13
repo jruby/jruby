@@ -178,10 +178,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public void associateEncoding(Encoding enc) {
-        if (value.getEncoding() != enc) {
-            if (!CodeRangeSupport.isCodeRangeAsciiOnly(this) || !enc.isAsciiCompatible()) clearCodeRange();
-            value.setEncoding(enc);
-        }
+        StringSupport.associateEncoding(this, enc);
     }
 
     public final void setEncodingAndCodeRange(Encoding enc, int cr) {

@@ -1221,4 +1221,13 @@ public final class StringSupport {
             p = t;
         }
     }
+
+    public static void associateEncoding(CodeRangeable string, Encoding enc) {
+        final ByteList value = string.getByteList();
+
+        if (value.getEncoding() != enc) {
+            if (!CodeRangeSupport.isCodeRangeAsciiOnly(string) || !enc.isAsciiCompatible()) string.clearCodeRange();
+            value.setEncoding(enc);
+        }
+    }
 }
