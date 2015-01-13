@@ -43,7 +43,7 @@ import static org.jruby.ir.operands.ScopeModule.*;
 // ----------------------------------------------
 // Note that in general, there will be lots of a = b kind of copies
 // introduced in the IR because the translation is entirely single-node focused.
-// An example will make this clear
+// An example will make this clear.
 //
 // RUBY:
 //     v = @f
@@ -74,7 +74,7 @@ import static org.jruby.ir.operands.ScopeModule.*;
 // ----------------------------
 // - We should be returning null from the build methods where it is a normal "error" condition
 // - We should be returning manager.getNil() where the actual return value of a build is the ruby nil operand
-//   Look in buildIf for an example of this
+//   Look in buildIf for an example of this.
 //
 // 3. Temporary variable reuse
 // ---------------------------
@@ -270,14 +270,14 @@ public class IRBuilder {
     // of cloning.
     private Stack<Label> activeRescuers = new Stack<>();
 
-    private int _lastProcessedLineNum = -1;
-
     // Since we are processing ASTs, loop bodies are processed in depth-first manner
     // with outer loops encountered before inner loops, and inner loops finished before outer ones.
     //
     // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
-    // This lets us implement next/redo/break/retry easily for the non-closure cases
+    // This lets us implement next/redo/break/retry easily for the non-closure cases.
     private Stack<IRLoop> loopStack = new Stack<>();
+
+    private int _lastProcessedLineNum = -1;
 
     public IRLoop getCurrentLoop() {
         return loopStack.isEmpty() ? null : loopStack.peek();
@@ -842,8 +842,8 @@ public class IRBuilder {
     }
 
     public Operand buildBignum(BignumNode node) {
-        // SSS: Since bignum literals are effectively interned objects, no need to copyAndReturnValue(...)
-        // Or is this a premature optimization?
+        // Since bignum literals are effectively interned objects, no need to copyAndReturnValue(...)
+        // SSS FIXME: Or is this a premature optimization?
         return new Bignum(node.getValue());
     }
 
@@ -959,8 +959,8 @@ public class IRBuilder {
     }
 
     public Operand buildCall(CallNode callNode, IRScope s) {
-        Node          callArgsNode = callNode.getArgsNode();
-        Node          receiverNode = callNode.getReceiverNode();
+        Node callArgsNode = callNode.getArgsNode();
+        Node receiverNode = callNode.getReceiverNode();
 
         // check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
@@ -972,17 +972,16 @@ public class IRBuilder {
         //    new Callinstr( ... , build(receiverNode, s), ...)
         // that is incorrect IR because the receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
-        Operand       receiver     = build(receiverNode, s);
-        Operand[] args         = setupCallArgs(callArgsNode, s);
-        Operand       block        = setupCallClosure(callNode.getIterNode(), s);
-        Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(callResult, callNode.getName(), receiver, args, block);
+        Operand   receiver   = build(receiverNode, s);
+        Operand[] args       = setupCallArgs(callArgsNode, s);
+        Operand   block      = setupCallClosure(callNode.getIterNode(), s);
+        Variable  callResult = s.createTemporaryVariable();
+        CallInstr callInstr  = CallInstr.create(callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (
-                callNode.getName().equals("new") &&
-                receiverNode instanceof ConstNode &&
-                ((ConstNode)receiverNode).getName().equals("Proc")) {
+        if ( callNode.getName().equals("new") &&
+             receiverNode instanceof ConstNode &&
+             ((ConstNode)receiverNode).getName().equals("Proc")) {
             callInstr.setProcNew(true);
         }
 
@@ -1952,7 +1951,7 @@ public class IRBuilder {
         }
     }
 
-    // SSS: This method is called both for regular multiple assignment as well as argument passing
+    // This method is called both for regular multiple assignment as well as argument passing
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
@@ -2008,7 +2007,7 @@ public class IRBuilder {
         Label rEndLabel   = s.getNewLabel();
         Label rescueLabel = Label.getGlobalEnsureBlockLabel();
 
-        // protect the entire body as it exists now with the global ensure block
+        // Protect the entire body as it exists now with the global ensure block
         addInstrAtBeginning(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
 
@@ -2171,12 +2170,12 @@ public class IRBuilder {
         // Generate IR for code being protected
         Operand rv = bodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) bodyNode, s, ebi) : build(bodyNode, s);
 
-        // end of protected region
+        // End of protected region
         addInstr(s, new ExceptionRegionEndMarkerInstr());
         activeRescuers.pop();
 
         // Clone the ensure body and jump to the end.
-        // Dont bother if the protected body ended in a return.
+        // Don't bother if the protected body ended in a return.
         if (rv != U_NIL && !(bodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this, s);
             addInstr(s, new JumpInstr(ebi.end));
@@ -2186,8 +2185,8 @@ public class IRBuilder {
         activeEnsureBlockStack.pop();
 
         // ------------ Emit the ensure body alongwith dummy rescue block ------------
-        // Now build the dummy rescue block that:
-        // * catches all exceptions thrown by the body
+        // Now build the dummy rescue block that
+        // catches all exceptions thrown by the body
         Variable exc = s.createTemporaryVariable();
         addInstr(s, new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
@@ -2219,11 +2218,11 @@ public class IRBuilder {
     }
 
     public Operand buildFCall(FCallNode fcallNode, IRScope s) {
-        Node          callArgsNode = fcallNode.getArgsNode();
+        Node      callArgsNode = fcallNode.getArgsNode();
         Operand[] args         = setupCallArgs(callArgsNode, s);
-        Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
-        Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args, block);
+        Operand   block        = setupCallClosure(fcallNode.getIterNode(), s);
+        Variable  callResult   = s.createTemporaryVariable();
+        CallInstr callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args, block);
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -2331,8 +2330,8 @@ public class IRBuilder {
     }
 
     public Operand buildFloat(FloatNode node) {
-        // SSS: Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)
-        // Or is this a premature optimization?
+        // Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)
+        // SSS FIXME: Or is this a premature optimization?
         return new Float(node.getValue());
     }
 
@@ -2347,7 +2346,7 @@ public class IRBuilder {
     }
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
-            // Create a new closure context
+        // Create a new closure context
         IRClosure closure = new IRFor(manager, s, forNode.getPosition().getLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
@@ -2357,7 +2356,7 @@ public class IRBuilder {
         // Prepare all implicit state (self, frame block, etc)
         forBuilder.prepareImplicitState(closure);
 
-            // Build args
+        // Build args
         Node varNode = forNode.getVarNode();
         if (varNode != null && varNode.getNodeType() != null) forBuilder.receiveBlockArgs(forNode, closure);
 
@@ -2369,10 +2368,10 @@ public class IRBuilder {
         // Thread poll on entry of closure
         forBuilder.addInstr(closure, new ThreadPollInstr());
 
-            // Start label -- used by redo!
+        // Start label -- used by redo!
         forBuilder.addInstr(closure, new LabelInstr(closure.startLabel));
 
-            // Build closure body and return the result of the closure
+        // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : forBuilder.build(forNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
             forBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
@@ -2651,7 +2650,7 @@ public class IRBuilder {
         return ret;
     }
 
-    // SSS: This method is called both for regular multiple assignment as well as argument passing
+    // This method is called both for regular multiple assignment as well as argument passing
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
@@ -3326,7 +3325,8 @@ public class IRBuilder {
     }
 
     public Operand buildSymbol(SymbolNode node) {
-        // SSS: Since symbols are interned objects, no need to copyAndReturnValue(...)
+        // Since symbols are interned objects, no need to copyAndReturnValue(...)
+        // SSS FIXME: Premature opt?
         return new Symbol(node.getName(), node.getEncoding());
     }
 
