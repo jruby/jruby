@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public abstract class ArrayUtils {
@@ -33,15 +34,6 @@ public abstract class ArrayUtils {
         return result;
     }
 
-    private static boolean checkExtractRangeArgs(int[] source, int start, int end) {
-        assert source != null;
-        assert start >= 0;
-        assert start <= source.length;
-        assert end >= start;
-        assert end <= source.length;
-        return true;
-    }
-
     /**
      * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
      * @param source the source array whose values should be extracted
@@ -55,15 +47,6 @@ public abstract class ArrayUtils {
         long[] result = new long[length];
         System.arraycopy(source, start, result, 0, length);
         return result;
-    }
-
-    private static boolean checkExtractRangeArgs(long[] source, int start, int end) {
-        assert source != null;
-        assert start >= 0;
-        assert start <= source.length;
-        assert end >= start;
-        assert end <= source.length;
-        return true;
     }
 
     /**
@@ -81,15 +64,6 @@ public abstract class ArrayUtils {
         return result;
     }
 
-    private static boolean checkExtractRangeArgs(double[] source, int start, int end) {
-        assert source != null;
-        assert start >= 0;
-        assert start <= source.length;
-        assert end >= start;
-        assert end <= source.length;
-        return true;
-    }
-
     /**
      * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
      * @param source the source array whose values should be extracted
@@ -105,12 +79,12 @@ public abstract class ArrayUtils {
         return result;
     }
 
-    private static boolean checkExtractRangeArgs(Object[] source, int start, int end) {
+    private static boolean checkExtractRangeArgs(Object source, int start, int end) {
         assert source != null;
         assert start >= 0;
-        assert start <= source.length;
+        assert start <= Array.getLength(source);
         assert end >= start;
-        assert end <= source.length;
+        assert end <= Array.getLength(source);
         return true;
     }
 
