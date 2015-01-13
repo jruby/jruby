@@ -2228,7 +2228,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().newobj(p(Block.class));
         jvmAdapter().dup();
 
-        jvmMethod().pushBlockBody(closure.getHandle(), closure.getArity().getValue(), jvm.clsData().clsName);
+        jvmMethod().pushBlockBody(closure.getHandle(), closure.getSignature(), jvm.clsData().clsName);
 
         { // prepare binding
             jvmMethod().loadContext();

@@ -188,7 +188,7 @@ public abstract class IRBytecodeAdapter {
         return new org.objectweb.asm.Label();
     }
 
-    public void pushBlockBody(Handle handle, int arity, String className) {
+    public void pushBlockBody(Handle handle, org.jruby.runtime.Signature signature, String className) {
         // FIXME: too much bytecode
         String cacheField = "blockBody" + getClassData().callSiteCount.getAndIncrement();
         Label done = new Label();
@@ -203,9 +203,9 @@ public abstract class IRBytecodeAdapter {
 
             adapter.ldc(handle);
             adapter.getstatic(className, handle.getName() + "_IRScope", ci(IRScope.class));
-            adapter.ldc(arity);
+            adapter.ldc(signature.encode());
 
-            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, int.class));
+            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, long.class));
             adapter.dup();
             adapter.putstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
         }

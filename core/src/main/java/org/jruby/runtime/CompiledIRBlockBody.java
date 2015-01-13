@@ -18,8 +18,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected boolean pushScope;
     protected boolean reuseParentScope;
 
-    public CompiledIRBlockBody(MethodHandle handle, IRScope closure, int arity) {
-        super(closure.getStaticScope(), ((IRClosure)closure).getParameterList(), closure.getFileName(), closure.getLineNumber(), Arity.createArity(arity));
+    public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
+        super(closure.getStaticScope(), ((IRClosure)closure).getParameterList(), closure.getFileName(), closure.getLineNumber(), Signature.decode(encodedSignature));
         this.handle = handle;
         this.closure = (IRClosure)closure;
         // FIXME: duplicated from InterpreterContext
