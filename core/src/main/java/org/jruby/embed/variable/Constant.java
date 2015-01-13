@@ -48,7 +48,7 @@ public class Constant extends AbstractVariable {
 
     private static final String VALID_NAME = "[A-Z]([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
 
-    private boolean initialized = false; // NOTE: seems to be not used ...
+    //private boolean initialized = false;
 
     /**
      * Returns an instance of this class. This factory method is used when a constant
@@ -83,7 +83,7 @@ public class Constant extends AbstractVariable {
         super(receiver, name, true, irubyObject);
     }
 
-    Constant markInitialized() { this.initialized = true; return this; }
+    //Constant markInitialized() { this.initialized = true; return this; }
 
     /**
      * Retrieves constants from Ruby after the evaluation or method invocation.
@@ -125,10 +125,9 @@ public class Constant extends AbstractVariable {
         for ( final String name : constantNames ) {
             final IRubyObject value = klazz.getConstant(name);
 
-            BiVariable var = vars.getVariable(receiver, name);
+            final BiVariable var = vars.getVariable(receiver, name);
             if (var == null) {
-                var = new Constant(receiver, name, value);
-                vars.update(name, ((Constant) var).markInitialized());
+                vars.update(name, new Constant(receiver, name, value));
             }
             else {
                 var.setRubyObject(value);
@@ -211,7 +210,7 @@ public class Constant extends AbstractVariable {
             receiver.getMetaClass().storeConstant(name, irubyObject);
         }
         runtime.getConstantInvalidator(name).invalidate();
-        initialized = true;
+        //initialized = true;
     }
 
     /**
