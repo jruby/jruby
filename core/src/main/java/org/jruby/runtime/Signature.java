@@ -183,7 +183,7 @@ public class Signature {
         if (rest == Rest.NONE || rest == Rest.ANON) {
             // no rest, so we have a maximum
             if (args.length > required() + opt()) {
-                throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + required() + opt + ")");
+                throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
             }
         }
     }
