@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Matcher;
@@ -29,6 +30,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
@@ -187,6 +189,8 @@ public abstract class StringNodes {
     @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
     public abstract static class GetIndexNode extends CoreMethodNode {
 
+        private final BranchProfile outOfBounds = BranchProfile.create();
+
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -213,6 +217,7 @@ public abstract class StringNodes {
             final ByteList bytes = string.getBytes();
 
             if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+                outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 return getContext().makeString(bytes.charAt(normalisedIndex));
@@ -220,13 +225,14 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
             final int begin = string.normaliseIndex(range.getBegin());
 
-            if (begin < 0 || begin >= javaString.length()) {
+            if (begin < 0 || begin > javaString.length()) {
+                outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 final int end = string.normaliseIndex(range.getEnd());
@@ -237,13 +243,19 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString getIndex(RubyString string, int start, int length) {
+        public Object slice(RubyString string, int start, int length) {
             // TODO(CS): not sure if this is right - encoding
-            // TODO(CS): why does subSequence return CharSequence?
+            final ByteList bytes = string.getBytes();
             final int begin = string.normaliseIndex(start);
-            final int exclusiveEnd = string.normaliseIndex(begin + length);
-            
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(begin, exclusiveEnd));
+
+            if (begin < 0 || begin > bytes.length() || length < 0) {
+                outOfBounds.enter();
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                final int end = Math.min(bytes.length(), begin + length);
+
+                return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(bytes, begin, end - begin));
+            }
         }
 
     }
@@ -868,8 +880,9 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
             }
 
-            RubyString firstPart = getIndexNode.getIndex(string, 0, index);
-            RubyString secondPart = getIndexNode.getIndex(string, index, string.length());
+            // TODO (Kevin): using node directly and cast
+            RubyString firstPart = (RubyString) getIndexNode.slice(string, 0, index);
+            RubyString secondPart = (RubyString) getIndexNode.slice(string, index, string.length());
 
             RubyString concatenated = concatNode.concat(concatNode.concat(firstPart, otherString), secondPart);
 
