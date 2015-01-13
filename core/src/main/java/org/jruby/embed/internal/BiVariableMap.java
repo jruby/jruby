@@ -29,6 +29,8 @@
  */
 package org.jruby.embed.internal;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -532,6 +534,38 @@ public class BiVariableMap implements Map<String, Object> {
         getVariables().add(value);
     }
 
+    public void updateVariable(final RubyObject receiver, final String name,
+        final IRubyObject value, final Class<? extends BiVariable> type) {
+        final BiVariable var = getVariable(receiver, name);
+        if (var != null) {
+            var.setRubyObject(value);
+        }
+        else {
+            update(name, newVariable(receiver, name, value, type));
+        }
+    }
+
+    private static BiVariable newVariable(final RubyObject receiver,
+        final String name, final IRubyObject value,
+        final Class<? extends BiVariable> type) {
+        try {
+            // (RubyObject receiver, String name, IRubyObject irubyObject)
+            final Constructor<? extends BiVariable> constructor =
+                type.getDeclaredConstructor(RubyObject.class, String.class, IRubyObject.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(receiver, name, value);
+        }
+        catch (NoSuchMethodException ex) {
+            throw new RuntimeException(ex);
+        }
+        catch (InvocationTargetException ex) {
+            final Throwable cause = ex.getTargetException();
+            if ( cause instanceof RuntimeException ) throw (RuntimeException) cause;
+            throw new RuntimeException(cause);
+        }
+        catch (InstantiationException ex) { throw new RuntimeException(ex); }
+        catch (IllegalAccessException ex) { throw new RuntimeException(ex); }
+    }
 
     /**
      * Returns true when eager retrieval is required or false when eager

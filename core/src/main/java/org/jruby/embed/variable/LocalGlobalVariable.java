@@ -29,7 +29,6 @@
  */
 package org.jruby.embed.variable;
 
-import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
@@ -72,6 +71,7 @@ public class LocalGlobalVariable extends GlobalVariable {
      * @param name the local global type variable name
      * @param irubyObject Ruby global object
      */
+    // NOTE: reflectively used by BiVariable
     LocalGlobalVariable(RubyObject receiver, String name, IRubyObject irubyObject) {
         super(receiver, name, irubyObject);
     }
@@ -83,30 +83,22 @@ public class LocalGlobalVariable extends GlobalVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved global variables.
      */
-    public static void retrieve(RubyObject receiver, BiVariableMap vars) {
-        if (vars.isLazy()) return;
+    public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
+        if ( vars.isLazy() ) return;
 
-        GlobalVariables gvars = receiver.getRuntime().getGlobalVariables();
-        Set<String> names = gvars.getNames();
-        for (String name : names) {
-            if (isPredefined(name)) {
-                continue;
-            }
-            IRubyObject value = gvars.get(name);
+        final GlobalVariables globalVars = receiver.getRuntime().getGlobalVariables();
+        for ( final String name : globalVars.getNames() ) {
+            if ( isPredefined(name) ) continue;
+
+            final IRubyObject value = globalVars.get(name);
             String javaName = name.substring(1); // eliminates a preceding character, "$"
             updateLocalGlobal(getTopSelf(receiver), vars, javaName, value);
         }
     }
 
-    private static void updateLocalGlobal(RubyObject receiver, BiVariableMap vars, String name, IRubyObject value) {
-        BiVariable var;
-        if (vars.containsKey(name)) {
-            var = vars.getVariable(receiver, name);
-            var.setRubyObject(value);
-        } else {
-            var = new LocalGlobalVariable(receiver, name, value);
-            vars.update(name, var);
-        }
+    private static void updateLocalGlobal(final RubyObject receiver,
+        final BiVariableMap vars, final String name, final IRubyObject value) {
+        vars.updateVariable(receiver, name, value, LocalGlobalVariable.class);
     }
 
     /**
@@ -115,18 +107,19 @@ public class LocalGlobalVariable extends GlobalVariable {
      *
      * @param runtime Ruby runtime
      * @param vars map to save a retrieved global variable.
-     * @param key name of the global variable
+     * @param name name of the global variable
      */
-    public static void retrieveByKey(Ruby runtime, BiVariableMap vars, String key) {
-        GlobalVariables gvars = runtime.getGlobalVariables();
+    public static void retrieveByKey(final Ruby runtime,
+        final BiVariableMap vars, final String name) {
+        final GlobalVariables globalVars = runtime.getGlobalVariables();
         // if the specified key doesn't exist, this method is called before the
         // evaluation. Don't update value in this case.
-        final String gName = ("$" + key).intern();
-        if ( ! gvars.getNames().contains(gName) ) return;
+        final String gName = ("$" + name).intern();
+        if ( ! globalVars.getNames().contains(gName) ) return;
 
         // the specified key is found, so let's update
-        IRubyObject value = gvars.get(gName);
-        updateLocalGlobal((RubyObject) runtime.getTopSelf(), vars, key, value);
+        final IRubyObject value = globalVars.get(gName);
+        updateLocalGlobal((RubyObject) runtime.getTopSelf(), vars, name, value);
     }
 
     /**

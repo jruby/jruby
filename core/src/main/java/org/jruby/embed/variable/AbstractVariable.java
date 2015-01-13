@@ -94,7 +94,7 @@ abstract class AbstractVariable implements BiVariable {
         return (RubyObject) receiver.getRuntime().getTopSelf();
     }
 
-    protected void updateByJavaObject(Ruby runtime, Object... values) {
+    protected void updateByJavaObject(final Ruby runtime, Object... values) {
         assert values != null;
         javaObject = values[0];
         if (javaObject == null) {
@@ -108,11 +108,11 @@ abstract class AbstractVariable implements BiVariable {
         fromRuby = false;
     }
 
-    protected void updateRubyObject(IRubyObject rubyObject) {
-        if (rubyObject == null) {
-            return;
-        }
+    protected void updateRubyObject(final IRubyObject rubyObject) {
+        if ( rubyObject == null ) return;
         this.irubyObject = rubyObject;
+        // NOTE: quite weird - but won't pass tests otherwise !?!
+        //this.javaObject = null;
         // delays updating javaObject for performance.
     }
 
@@ -148,7 +148,7 @@ abstract class AbstractVariable implements BiVariable {
         return javaObject;
     }
 
-    public void setJavaObject(Ruby runtime, Object javaObject) {
+    public void setJavaObject(final Ruby runtime, Object javaObject) {
         updateByJavaObject(runtime, javaObject);
     }
 
@@ -156,7 +156,7 @@ abstract class AbstractVariable implements BiVariable {
         return irubyObject;
     }
 
-    public void setRubyObject(IRubyObject rubyObject) {
+    public void setRubyObject(final IRubyObject rubyObject) {
         updateRubyObject(rubyObject);
     }
 
