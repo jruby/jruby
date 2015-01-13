@@ -27,7 +27,7 @@ public abstract class ArrayUtils {
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
     public static int[] extractRange(int[] source, int start, int end) {
-        assert checkExtractRangeArgs(source, start, end);
+        assert assertExtractRangeArgs(source, start, end);
         int length = end - start;
         int[] result = new int[length];
         System.arraycopy(source, start, result, 0, length);
@@ -42,7 +42,7 @@ public abstract class ArrayUtils {
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
     public static long[] extractRange(long[] source, int start, int end) {
-        assert checkExtractRangeArgs(source, start, end);
+        assert assertExtractRangeArgs(source, start, end);
         int length = end - start;
         long[] result = new long[length];
         System.arraycopy(source, start, result, 0, length);
@@ -57,7 +57,7 @@ public abstract class ArrayUtils {
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
     public static double[] extractRange(double[] source, int start, int end) {
-        assert checkExtractRangeArgs(source, start, end);
+        assert assertExtractRangeArgs(source, start, end);
         int length = end - start;
         double[] result = new double[length];
         System.arraycopy(source, start, result, 0, length);
@@ -72,14 +72,14 @@ public abstract class ArrayUtils {
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
     public static Object[] extractRange(Object[] source, int start, int end) {
-        assert checkExtractRangeArgs(source, start, end);
+        assert assertExtractRangeArgs(source, start, end);
         int length = end - start;
         Object[] result = new Object[length];
         System.arraycopy(source, start, result, 0, length);
         return result;
     }
 
-    private static boolean checkExtractRangeArgs(Object source, int start, int end) {
+    private static boolean assertExtractRangeArgs(Object source, int start, int end) {
         assert source != null;
         assert start >= 0;
         assert start <= Array.getLength(source);
