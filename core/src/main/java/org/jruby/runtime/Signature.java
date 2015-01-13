@@ -18,6 +18,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Signature {
     public enum Rest { NONE, NORM, ANON, STAR }
 
+    public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE);
+    public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE);
+    public static final Signature TWO_ARGUMENTS = new Signature(2, 0, 0, Rest.NONE);
+    public static final Signature THREE_ARGUMENTS = new Signature(3, 0, 0, Rest.NONE);
+    public static final Signature OPTIONAL = new Signature(0, 0, 0, Rest.NORM);
+    public static final Signature ONE_REQUIRED = new Signature(1, 0, 0, Rest.NORM);
+    public static final Signature TWO_REQUIRED = new Signature(2, 0, 0, Rest.NORM);
+    public static final Signature THREE_REQUIRED = new Signature(3, 0, 0, Rest.NORM);
+
     private final int pre;
     private final int opt;
     private final Rest rest;
@@ -50,6 +59,42 @@ public class Signature {
     public Arity arity() { return arity; }
 
     public static Signature from(int pre, int opt, int post, Rest rest) {
+        if (opt == 0 && post == 0) {
+            switch (pre) {
+                case 0:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.NO_ARGUMENTS;
+                        case NORM:
+                            return Signature.OPTIONAL;
+                    }
+                    break;
+                case 1:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.ONE_ARGUMENT;
+                        case NORM:
+                            return Signature.ONE_REQUIRED;
+                    }
+                    break;
+                case 2:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.TWO_ARGUMENTS;
+                        case NORM:
+                            return Signature.TWO_REQUIRED;
+                    }
+                    break;
+                case 3:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.THREE_ARGUMENTS;
+                        case NORM:
+                            return Signature.THREE_REQUIRED;
+                    }
+                    break;
+            }
+        }
         return new Signature(pre, opt, post, rest);
     }
 
@@ -68,6 +113,7 @@ public class Signature {
             Node restArg = args.getRestArgNode();
             rest = restFromArg(restArg);
         }
+
         return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest);
     }
 

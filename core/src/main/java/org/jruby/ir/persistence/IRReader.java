@@ -58,9 +58,9 @@ public class IRReader {
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         Signature signature;
         if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
-            signature = Signature.from(decoder.decodeInt(), decoder.decodeInt(), decoder.decodeInt(), decoder.decodeBoolean());
+            signature = Signature.decode(decoder.decodeInt());
         } else {
-            signature = Signature.from(0, 0, 0, true);
+            signature = Signature.OPTIONAL;
         }
         int argumentType = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();

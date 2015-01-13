@@ -84,7 +84,7 @@ public class IRWriter {
         if (scope instanceof IRClosure) {
             IRClosure closure = (IRClosure) scope;
 
-            file.encode(closure.getArity().getValue());
+            file.encode(closure.getSignature().encode());
             file.encode(closure.getArgumentType());
         }
 
