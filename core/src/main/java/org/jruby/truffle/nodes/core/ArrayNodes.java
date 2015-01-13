@@ -2467,6 +2467,125 @@ public abstract class ArrayNodes {
 
     // TODO: move into Enumerable?
 
+    @CoreMethod(names = "min")
+    public abstract static class MinNode extends ArrayCoreMethodNode {
+
+        @Child private CallDispatchHeadNode eachNode;
+        private final MinBlock minBlock;
+
+        public MinNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
+            minBlock = context.getCoreLibrary().getArrayMinBlock();
+        }
+
+        public MinNode(MinNode prev) {
+            super(prev);
+            eachNode = prev.eachNode;
+            minBlock = prev.minBlock;
+        }
+
+        @Specialization
+        public Object min(VirtualFrame frame, RubyArray array) {
+            // TODO: can we just write to the frame instead of having this indirect object?
+
+            final Memo<Object> minimum = new Memo<>();
+
+            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(minBlock, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
+            minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
+
+            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+                    minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
+                    minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, null, array, null);
+
+            eachNode.call(frame, array, "each", block);
+
+            if (minimum.get() == null) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return minimum.get();
+            }
+        }
+
+    }
+
+    public abstract static class MinBlockNode extends CoreMethodNode {
+
+        @Child private CallDispatchHeadNode compareNode;
+
+        public MinBlockNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
+        }
+
+        public MinBlockNode(MinBlockNode prev) {
+            super(prev);
+            compareNode = prev.compareNode;
+        }
+
+        @Specialization
+        public RubyNilClass min(VirtualFrame frame, Object minimumObject, Object value) {
+            final Memo<Object> minimum = (Memo<Object>) minimumObject;
+
+            // TODO(CS): cast
+
+            final Object current = minimum.get();
+
+            if (current == null || (int) compareNode.call(frame, value, "<=>", null, current) < 0) {
+                minimum.set(value);
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    public static class MinBlock implements MethodLike {
+
+        private final FrameDescriptor frameDescriptor;
+        private final FrameSlot frameSlot;
+        private final SharedMethodInfo sharedMethodInfo;
+        private final CallTarget callTarget;
+
+        public MinBlock(RubyContext context) {
+            final SourceSection sourceSection = new CoreSourceSection("Array", "min");
+
+            frameDescriptor = new FrameDescriptor();
+            frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
+
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, "min", false, null, false);
+
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
+                    context, sourceSection, null, sharedMethodInfo,
+                    ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
+                            ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
+                            new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                    })));
+        }
+
+        public FrameDescriptor getFrameDescriptor() {
+            return frameDescriptor;
+        }
+
+        public FrameSlot getFrameSlot() {
+            return frameSlot;
+        }
+
+        @Override
+        public SharedMethodInfo getSharedMethodInfo() {
+            return sharedMethodInfo;
+        }
+
+        @Override
+        public RubyModule getDeclaringModule() {
+            throw new UnsupportedOperationException();
+        }
+
+        public CallTarget getCallTarget() {
+            return callTarget;
+        }
+    }
+
     @CoreMethod(names = "pack", required = 1)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
