@@ -25,10 +25,10 @@ public abstract class ArrayUtils {
      * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
-    public static Object[] extractRange(int[] source, int start, int end) {
+    public static int[] extractRange(int[] source, int start, int end) {
         assert checkExtractRangeArgs(source, start, end);
         int length = end - start;
-        Object[] result = new Object[length];
+        int[] result = new int[length];
         System.arraycopy(source, start, result, 0, length);
         return result;
     }
@@ -49,10 +49,10 @@ public abstract class ArrayUtils {
      * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
-    public static Object[] extractRange(long[] source, int start, int end) {
+    public static long[] extractRange(long[] source, int start, int end) {
         assert checkExtractRangeArgs(source, start, end);
         int length = end - start;
-        Object[] result = new Object[length];
+        long[] result = new long[length];
         System.arraycopy(source, start, result, 0, length);
         return result;
     }
@@ -73,10 +73,10 @@ public abstract class ArrayUtils {
      * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
      * @return a newly allocated array with the extracted elements and length (end - start)
      */
-    public static Object[] extractRange(double[] source, int start, int end) {
+    public static double[] extractRange(double[] source, int start, int end) {
         assert checkExtractRangeArgs(source, start, end);
         int length = end - start;
-        Object[] result = new Object[length];
+        double[] result = new double[length];
         System.arraycopy(source, start, result, 0, length);
         return result;
     }
