@@ -25,9 +25,9 @@ class Object
   def java_import(*import_classes)
     import_classes = import_classes.each_with_object([]) do |classes, flattened|
       if classes.is_a?(Array)
-        flattened.push *classes
+        flattened.push(*classes)
       else
-        flattened.push classes
+        flattened.push(classes)
       end
     end
 
