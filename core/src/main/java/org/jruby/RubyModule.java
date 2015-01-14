@@ -2810,7 +2810,7 @@ public class RubyModule extends RubyObject {
         while((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
             symbol = symbol.substring(sep + 2);
-            IRubyObject obj = mod.fetchConstant(validateConstant(segment, args[0]), false);
+            IRubyObject obj = mod.getConstantNoConstMissing(validateConstant(segment, args[0]), inherit, inherit);
             if(obj instanceof RubyModule) {
                 mod = (RubyModule)obj;
             } else {
@@ -2818,7 +2818,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return runtime.newBoolean(mod.fetchConstant(validateConstant(symbol, args[0]), false) != null);
+        return runtime.newBoolean(mod.getConstantNoConstMissing(validateConstant(symbol, args[0]), inherit, inherit) != null);
     }
 
     /** rb_mod_const_get
