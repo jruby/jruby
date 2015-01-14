@@ -140,6 +140,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Stack of interrupt masks active for this thread */
     private final List<RubyHash> interruptMaskStack = new ArrayList<RubyHash>();
 
+    /** Thread-local tuple used for sleeping (semaphore, millis, nanos) */
+    private final SleepTask2 sleepTask = new SleepTask2();
+
     private static final boolean DEBUG = false;
     private int RUBY_MIN_THREAD_PRIORITY = -3;
     private int RUBY_MAX_THREAD_PRIORITY = 3;
@@ -1172,9 +1175,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
-        Semaphore sem = new Semaphore(1);
-        sem.acquire();
-        if (executeTask(getContext(), new Object[]{sem, millis, 0}, SLEEP_TASK2) >= millis) {
+        sleepTask.millis = millis;
+        if (executeTask(getContext(), null, sleepTask) >= millis) {
             return true;
         } else {
             return false;
@@ -1240,29 +1242,29 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    private static final class SleepTask2 implements Task<Object[], Long> {
-        @Override
-        public Long run(ThreadContext context, Object[] data) throws InterruptedException {
-            long millis = (Long)data[1];
-            int nanos = (Integer)data[2];
+    private class SleepTask2 implements Task<Object, Long> {
+        final Semaphore semaphore = new Semaphore(1);
+        long millis;
+        { try {semaphore.acquire();} catch (InterruptedException ie){} }
 
+        @Override
+        public Long run(ThreadContext context, Object data) throws InterruptedException {
             long start = System.currentTimeMillis();
-            // TODO: nano handling?
+
             if (millis == 0) {
-                ((Semaphore) data[0]).acquire();
+                semaphore.acquire();
             } else {
-                ((Semaphore) data[0]).tryAcquire(millis, TimeUnit.MILLISECONDS);
+                semaphore.tryAcquire(millis, TimeUnit.MILLISECONDS);
             }
+
             return System.currentTimeMillis() - start;
         }
 
         @Override
-        public void wakeup(RubyThread thread, Object[] data) {
-            ((Semaphore)data[0]).release();
+        public void wakeup(RubyThread thread, Object data) {
+            semaphore.release();
         }
     }
-
-    private static final Task<Object[], Long> SLEEP_TASK2 = new SleepTask2();
 
     @Deprecated
     public void executeBlockingTask(BlockingTask task) throws InterruptedException {
