@@ -67,6 +67,63 @@ module Fiddle
   end
   module_function :dlopen
 
+  class Handle
+    RTLD_GLOBAL = FFI::DynamicLibrary::RTLD_GLOBAL
+    RTLD_LAZY = FFI::DynamicLibrary::RTLD_LAZY
+    RTLD_NOW = FFI::DynamicLibrary::RTLD_NOW
+    
+    def initialize(libname = nil, flags = RTLD_LAZY | RTLD_GLOBAL)
+      @lib = FFI::DynamicLibrary.open(libname, flags)
+      raise RuntimeError, "Could not open #{libname}" unless @lib
+
+      @open = true
+
+      begin
+        yield(self)
+      ensure
+        self.close
+      end if block_given?
+    end
+
+    def close
+      raise DLError.new("closed handle") unless @open
+      @open = false
+      0
+    end
+
+    def self.sym(func)
+      DEFAULT.sym(func)
+    end
+
+    def sym(func)
+      raise TypeError.new("invalid function name") unless func.is_a?(String)
+      raise DLError.new("closed handle") unless @open
+      address = @lib.find_function(func)
+      raise DLError.new("unknown symbol #{func}") if address.nil? || address.null?
+      address.to_i
+    end
+
+    def self.[](func)
+      self.sym(func)
+    end
+
+    def [](func)
+      sym(func)
+    end
+
+    def enable_close
+      @enable_close = true
+    end
+
+    def close_enabled?
+      @enable_close
+    end
+
+    def disable_close
+      @enable_close = false
+    end
+  end
+
   # Add constants for backwards compat
 
   RTLD_GLOBAL = Handle::RTLD_GLOBAL # :nodoc:
