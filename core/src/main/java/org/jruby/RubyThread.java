@@ -38,7 +38,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Vector;
@@ -105,32 +104,32 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
 
     /** The thread-like think that is actually executing */
-    private volatile ThreadLike threadImpl;
+    private ThreadLike threadImpl;
 
     /** Normal thread-local variables */
-    private volatile transient Map<IRubyObject, IRubyObject> threadLocalVariables;
+    private transient Map<IRubyObject, IRubyObject> threadLocalVariables;
 
     /** Context-local variables, internal-ish thread locals */
     private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
 
     /** Whether this thread should try to abort the program on exception */
-    private volatile boolean abortOnException;
+    private boolean abortOnException;
 
     /** The final value resulting from the thread's execution */
-    private volatile IRubyObject finalResult;
+    private IRubyObject finalResult;
 
     /**
      * The exception currently being raised out of the thread. We reference
      * it here to continue propagating it while handling thread shutdown
      * logic and abort_on_exception.
      */
-    private volatile RaiseException exitingException;
+    private RaiseException exitingException;
 
     /** The ThreadGroup to which this thread belongs */
-    private volatile RubyThreadGroup threadGroup;
+    private RubyThreadGroup threadGroup;
 
     /** Per-thread "current exception" */
-    private volatile IRubyObject errorInfo;
+    private IRubyObject errorInfo;
 
     /** Weak reference to the ThreadContext for this thread. */
     private volatile WeakReference<ThreadContext> contextRef;
@@ -139,14 +138,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile boolean handleInterrupt = true;
 
     /** Stack of interrupt masks active for this thread */
-    private final List<RubyHash> interruptMaskStack = Collections.synchronizedList(new ArrayList<RubyHash>());
+    private final List<RubyHash> interruptMaskStack = new ArrayList<RubyHash>();
 
     /** Thread-local tuple used for sleeping (semaphore, millis, nanos) */
     private final SleepTask2 sleepTask = new SleepTask2();
 
     private static final boolean DEBUG = false;
-    private static final int RUBY_MIN_THREAD_PRIORITY = -3;
-    private static final int RUBY_MAX_THREAD_PRIORITY = 3;
+    private int RUBY_MIN_THREAD_PRIORITY = -3;
+    private int RUBY_MAX_THREAD_PRIORITY = 3;
 
     /** Thread statuses */
     public static enum Status { 
@@ -166,10 +165,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue();
 
     /** A function to use to unblock this thread, if possible */
-    private volatile Unblocker unblockFunc;
+    private Unblocker unblockFunc;
 
     /** Argument to pass to the unblocker */
-    private volatile Object unblockArg;
+    private Object unblockArg;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new Vector<Lock>();
@@ -1248,33 +1247,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    /**
-     * A Task for sleeping.
-     *
-     * The Semaphore is immediately drained on construction, so that any subsequent acquire will block.
-     * The sleep is interrupted by releasing a permit. All permits are drained again on exit to ensure
-     * the next sleep blocks.
-     */
     private class SleepTask2 implements Task<Object, Long> {
         final Semaphore semaphore = new Semaphore(1);
         long millis;
-        {semaphore.drainPermits();}
+        { try {semaphore.acquire();} catch (InterruptedException ie){} }
 
         @Override
         public Long run(ThreadContext context, Object data) throws InterruptedException {
             long start = System.currentTimeMillis();
 
-            try {
-                if (millis == 0) {
-                    semaphore.acquire();
-                } else {
-                    semaphore.tryAcquire(millis, TimeUnit.MILLISECONDS);
-                }
-
-                return System.currentTimeMillis() - start;
-            } finally {
-                semaphore.drainPermits();
+            if (millis == 0) {
+                semaphore.acquire();
+            } else {
+                semaphore.tryAcquire(millis, TimeUnit.MILLISECONDS);
             }
+
+            return System.currentTimeMillis() - start;
         }
 
         @Override

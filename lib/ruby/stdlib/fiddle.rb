@@ -67,13 +67,11 @@ module Fiddle
   end
   module_function :dlopen
 
-  class DLError < StandardError; end
-
   class Handle
     RTLD_GLOBAL = FFI::DynamicLibrary::RTLD_GLOBAL
     RTLD_LAZY = FFI::DynamicLibrary::RTLD_LAZY
     RTLD_NOW = FFI::DynamicLibrary::RTLD_NOW
-
+    
     def initialize(libname = nil, flags = RTLD_LAZY | RTLD_GLOBAL)
       @lib = FFI::DynamicLibrary.open(libname, flags)
       raise RuntimeError, "Could not open #{libname}" unless @lib
@@ -125,24 +123,6 @@ module Fiddle
       @enable_close = false
     end
   end
-
-  ALIGN_VOIDP       = Fiddle::JRuby::FFITypes[TYPE_VOIDP].alignment
-  ALIGN_CHAR        = Fiddle::JRuby::FFITypes[TYPE_CHAR].alignment
-  ALIGN_SHORT       = Fiddle::JRuby::FFITypes[TYPE_SHORT].alignment
-  ALIGN_INT         = Fiddle::JRuby::FFITypes[TYPE_INT].alignment
-  ALIGN_LONG        = Fiddle::JRuby::FFITypes[TYPE_LONG].alignment
-  ALIGN_LONG_LONG   = Fiddle::JRuby::FFITypes[TYPE_LONG_LONG].alignment
-  ALIGN_FLOAT       = Fiddle::JRuby::FFITypes[TYPE_FLOAT].alignment
-  ALIGN_DOUBLE      = Fiddle::JRuby::FFITypes[TYPE_DOUBLE].alignment
-
-  SIZEOF_VOIDP       = Fiddle::JRuby::FFITypes[TYPE_VOIDP].size
-  SIZEOF_CHAR        = Fiddle::JRuby::FFITypes[TYPE_CHAR].size
-  SIZEOF_SHORT       = Fiddle::JRuby::FFITypes[TYPE_SHORT].size
-  SIZEOF_INT         = Fiddle::JRuby::FFITypes[TYPE_INT].size
-  SIZEOF_LONG        = Fiddle::JRuby::FFITypes[TYPE_LONG].size
-  SIZEOF_LONG_LONG   = Fiddle::JRuby::FFITypes[TYPE_LONG_LONG].size
-  SIZEOF_FLOAT       = Fiddle::JRuby::FFITypes[TYPE_FLOAT].size
-  SIZEOF_DOUBLE      = Fiddle::JRuby::FFITypes[TYPE_DOUBLE].size
 
   # Add constants for backwards compat
 
