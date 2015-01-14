@@ -147,8 +147,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static double getFloatArg(double[] floats, Operand arg) {
         if (arg instanceof Float) {
             return ((Float)arg).value;
+        } else if (arg instanceof UnboxedFloat) {
+            return ((UnboxedFloat)arg).value;
         } else if (arg instanceof Fixnum) {
             return (double)((Fixnum)arg).value;
+        } else if (arg instanceof UnboxedFixnum) {
+            return (double)((UnboxedFixnum)arg).value;
         } else if (arg instanceof Bignum) {
             return ((Bignum)arg).value.doubleValue();
         } else if (arg instanceof TemporaryLocalVariable) {
@@ -161,6 +165,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static long getFixnumArg(long[] fixnums, Operand arg) {
         if (arg instanceof Float) {
             return (long)((Float)arg).value;
+        } else if (arg instanceof UnboxedFixnum) {
+            return ((UnboxedFixnum)arg).value;
         } else if (arg instanceof Fixnum) {
             return ((Fixnum)arg).value;
         } else if (arg instanceof Bignum) {
@@ -569,9 +575,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             } catch (Throwable t) {
                 extractToMethodToAvoidC2Crash(context, instr, t);
 
-                if (debug) LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = instr.getRPC();
-                if (debug) LOG.info("ipc for rescuer: " + ipc);
+                if (debug) {
+                    LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    LOG.info("ipc for rescuer: " + ipc);
+                }
 
                 if (ipc == -1) {
                     Helpers.throwException(t);

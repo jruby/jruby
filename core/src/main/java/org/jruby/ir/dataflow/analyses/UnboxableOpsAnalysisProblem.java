@@ -53,8 +53,5 @@ public class UnboxableOpsAnalysisProblem extends DataFlowProblem<UnboxableOpsAna
         for (UnboxableOpsAnalysisNode n : generateWorkList()) {
             n.unbox(unboxMap);
         }
-
-        // SSS FIXME: This should be done differently
-        getScope().setDataFlowSolution(DataFlowConstants.LVP_NAME, null);
     }
 }
