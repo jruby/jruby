@@ -312,10 +312,11 @@ public abstract class StringNodes {
             }
 
             int begin = range.getBegin();
-            int end = range.getExclusiveEnd();
+            int end = range.getEnd();
+            final int stringLength = string.length();
 
             if (begin < 0) {
-                begin += string.length();
+                begin += stringLength;
 
                 if (begin < 0) {
                     CompilerDirectives.transferToInterpreter();
@@ -323,17 +324,24 @@ public abstract class StringNodes {
                     throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
                 }
 
-            } else if (begin > string.length()) {
+            } else if (begin > stringLength) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
 
-            if (end < 0) {
-                end += string.length();
+            if (end > stringLength) {
+                end = stringLength;
+            } else if (end < 0) {
+                end += stringLength;
+            }
+
+            if (! range.doesExcludeEnd()) {
+                end++;
             }
 
             int length = end - begin;
+
             if (length < 0) {
                 length = 0;
             }
