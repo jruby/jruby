@@ -260,6 +260,48 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
+    public abstract static class ElementSetNode extends CoreMethodNode {
+
+        public ElementSetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ElementSetNode(ElementSetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString elementSet(RubyString string, int index, RubyString replacement) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            if (index < 0) {
+                if (-index > string.length()) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
+                }
+
+                index = index + string.length();
+
+            } else if (index > string.length()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
+            }
+
+            StringSupport.replaceInternal19(index, 1, string, replacement);
+
+            return replacement;
+        }
+    }
+
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodNode {
 
