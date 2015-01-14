@@ -1441,7 +1441,7 @@ public class RubyKernel {
     public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative()) {
+        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             IRubyObject port;
             IRubyObject result;
             OpenFile fptr;
