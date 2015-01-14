@@ -145,7 +145,7 @@ public abstract class DynamicMethod {
 
     /**
      * The minimum 'call' method required for a dynamic method handle.
-     * Subclasses must impleemnt this method, but may implement the other
+     * Subclasses must implement this method, but may implement the other
      * signatures to provide faster, non-boxing call paths. Typically
      * subclasses will implement this method to check variable arity calls,
      * then performing a specific-arity invocation to the appropriate method
