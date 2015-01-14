@@ -26,7 +26,10 @@
 
 package org.jruby.util;
 
+import org.jcodings.Encoding;
+
 public interface ByteListHolder {
     public ByteList getByteList();
     public void modify(int length);
+    public Encoding checkEncoding(ByteListHolder other);
 }

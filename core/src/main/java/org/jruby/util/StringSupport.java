@@ -1232,24 +1232,47 @@ public final class StringSupport {
     }
 
     public static ByteList replaceInternal(int beg, int len, ByteListHolder source, CodeRangeable repl) {
-        final ByteList value = source.getByteList();
-        int oldLength = value.getRealSize();
+        int oldLength = source.getByteList().getRealSize();
         if (beg + len >= oldLength) len = oldLength - beg;
         ByteList replBytes = repl.getByteList();
         int replLength = replBytes.getRealSize();
         int newLength = oldLength + replLength - len;
 
-        byte[]oldBytes = value.getUnsafeBytes();
-        int oldBegin = value.getBegin();
+        byte[]oldBytes = source.getByteList().getUnsafeBytes();
+        int oldBegin = source.getByteList().getBegin();
 
         source.modify(newLength);
         if (replLength != len) {
-            System.arraycopy(oldBytes, oldBegin + beg + len, value.getUnsafeBytes(), beg + replLength, oldLength - (beg + len));
+            System.arraycopy(oldBytes, oldBegin + beg + len, source.getByteList().getUnsafeBytes(), beg + replLength, oldLength - (beg + len));
         }
 
-        if (replLength > 0) System.arraycopy(replBytes.getUnsafeBytes(), replBytes.getBegin(), value.getUnsafeBytes(), beg, replLength);
-        value.setRealSize(newLength);
+        if (replLength > 0) System.arraycopy(replBytes.getUnsafeBytes(), replBytes.getBegin(), source.getByteList().getUnsafeBytes(), beg, replLength);
+        source.getByteList().setRealSize(newLength);
 
-        return value;
+        return source.getByteList();
+    }
+
+    public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
+        Encoding enc = source.checkEncoding(repl);
+        int p = source.getByteList().getBegin();
+        int e;
+        if (isSingleByteOptimizable(source, source.getByteList().getEncoding())) {
+            p += beg;
+            e = p + len;
+        } else {
+            int end = p + source.getByteList().getRealSize();
+            byte[]bytes = source.getByteList().getUnsafeBytes();
+            p = StringSupport.nth(enc, bytes, p, end, beg);
+            if (p == -1) p = end;
+            e = StringSupport.nth(enc, bytes, p, end, len);
+            if (e == -1) e = end;
+        }
+
+        int cr = source.getCodeRange();
+        if (cr == CR_BROKEN) source.clearCodeRange();
+        replaceInternal(p - source.getByteList().getBegin(), e - p, source, repl);
+        associateEncoding(source, enc);
+        cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
+        if (cr != CR_BROKEN) source.setCodeRange(cr);
     }
 }

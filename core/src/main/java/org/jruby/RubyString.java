@@ -302,16 +302,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // rb_enc_check
     public final Encoding checkEncoding(RubyString other) {
-        Encoding enc = isCompatibleWith(other);
-        if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
-                                value.getEncoding() + " and " + other.value.getEncoding());
-        return enc;
+        return checkEncoding((ByteListHolder) other);
     }
 
     final Encoding checkEncoding(EncodingCapable other) {
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
                                 value.getEncoding() + " and " + other.getEncoding());
+        return enc;
+    }
+
+    @Override
+    public final Encoding checkEncoding(ByteListHolder other) {
+        // TODO (nirvdrum 13-Jan-15): This cast is untenable.  It's a temporary measure until isCompatibleWith and its call graph are generalized.
+        Encoding enc = isCompatibleWith((RubyString) other);
+        if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
+                value.getEncoding() + " and " + other.getByteList().getEncoding());
         return enc;
     }
 
@@ -2942,27 +2948,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private void replaceInternal19(int beg, int len, RubyString repl) {
-        Encoding enc = checkEncoding(repl);
-        int p = value.getBegin();
-        int e;
-        if (singleByteOptimizable()) {
-            p += beg;
-            e = p + len;
-        } else {
-            int end = p + value.getRealSize();
-            byte[]bytes = value.getUnsafeBytes();
-            p = StringSupport.nth(enc, bytes, p, end, beg);
-            if (p == -1) p = end;
-            e = StringSupport.nth(enc, bytes, p, end, len);
-            if (e == -1) e = end;
-        }
-
-        int cr = getCodeRange();
-        if (cr == CR_BROKEN) clearCodeRange();
-        replaceInternal(p - value.getBegin(), e - p, repl);
-        StringSupport.associateEncoding(this, enc);
-        cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
-        if (cr != CR_BROKEN) setCodeRange(cr);
+        StringSupport.replaceInternal19(beg, len, this, repl);
+        infectBy(repl);
     }
 
     /** rb_str_aref, rb_str_aref_m
