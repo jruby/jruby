@@ -153,6 +153,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             /* do not block on open or for data to become available */
             constants.setConstant("NONBLOCK", runtime.newFixnum(OpenFlags.O_NONBLOCK.intValue()));
+        } else if (Platform.IS_WINDOWS) {
+            // FIXME: Should NONBLOCK exist for Windows fcntl flags?
+            constants.setConstant("NONBLOCK", runtime.newFixnum(1));
         }
         /* truncate size to 0 */
         constants.setConstant("TRUNC", runtime.newFixnum(OpenFlags.O_TRUNC.intValue()));
