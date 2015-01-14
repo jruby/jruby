@@ -1176,10 +1176,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
         sleepTask.millis = millis;
-        if (executeTask(getContext(), null, sleepTask) >= millis) {
-            return true;
-        } else {
-            return false;
+        try {
+            if (executeTask(getContext(), null, sleepTask) >= millis) {
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            // ensure we've re-acquired the semaphore, or a subsequent sleep may return immediately
+            sleepTask.semaphore.drainPermits();
         }
     }
 
