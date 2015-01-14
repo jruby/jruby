@@ -36,6 +36,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import org.jruby.Ruby;
+import org.jruby.platform.Platform;
 
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
@@ -168,7 +169,7 @@ public class ModeFlags implements Cloneable {
         int mode;
 
         int fileno = FilenoUtil.filenoFrom(channel);
-        if (FilenoUtil.isFake(fileno) || !posix.isNative()) {
+        if (FilenoUtil.isFake(fileno) || !posix.isNative() || Platform.IS_WINDOWS) {
             // channel doesn't have a real fileno; best we can do is go off the Java type
             if (channel instanceof ReadableByteChannel) {
                 if (channel instanceof WritableByteChannel) {
