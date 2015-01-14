@@ -95,7 +95,7 @@ class JT
   def run(args)
     args = args.dup
 
-    if args.empty? or !(args & %w[-h -help --help]).empty?
+    if args.empty? or %w[-h -help --help].include? args.first
       help
       exit
     end
