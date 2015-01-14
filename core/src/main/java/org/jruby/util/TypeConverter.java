@@ -35,6 +35,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -240,21 +241,25 @@ public class TypeConverter {
 
     // rb_check_hash_type
     public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyHash) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
     }
 
     // rb_check_string_type
     public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyString) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getString(), "to_str");
     }
 
     // rb_check_array_type
     public static IRubyObject checkArrayType(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyArray) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getArray(), "to_ary");
     }
 
     // rb_io_check_io
     public static IRubyObject ioCheckIO(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyIO) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getIO(), "to_io");
     }
 
