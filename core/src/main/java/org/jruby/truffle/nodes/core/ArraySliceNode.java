@@ -14,9 +14,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.Arrays;
 
@@ -56,7 +58,7 @@ public abstract class ArraySliceNode extends RubyNode {
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) array.getStore(), from, to), to - from);
         }
     }
 
@@ -68,7 +70,7 @@ public abstract class ArraySliceNode extends RubyNode {
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) array.getStore(), from, to), to - from);
         }
     }
 
@@ -80,7 +82,7 @@ public abstract class ArraySliceNode extends RubyNode {
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) array.getStore(), from, to), to - from);
         }
     }
 
@@ -92,7 +94,7 @@ public abstract class ArraySliceNode extends RubyNode {
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), from, to), to - from);
         }
     }
 

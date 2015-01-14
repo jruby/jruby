@@ -10,12 +10,83 @@
 package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public abstract class ArrayUtils {
+
+    /**
+     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and <= source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
+    public static int[] extractRange(int[] source, int start, int end) {
+        assert assertExtractRangeArgs(source, start, end);
+        int length = end - start;
+        int[] result = new int[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    /**
+     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and <= source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
+    public static long[] extractRange(long[] source, int start, int end) {
+        assert assertExtractRangeArgs(source, start, end);
+        int length = end - start;
+        long[] result = new long[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    /**
+     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and <= source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
+    public static double[] extractRange(double[] source, int start, int end) {
+        assert assertExtractRangeArgs(source, start, end);
+        int length = end - start;
+        double[] result = new double[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    /**
+     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and <= source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
+    public static Object[] extractRange(Object[] source, int start, int end) {
+        assert assertExtractRangeArgs(source, start, end);
+        int length = end - start;
+        Object[] result = new Object[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    private static boolean assertExtractRangeArgs(Object source, int start, int end) {
+        assert source != null;
+        assert start >= 0;
+        assert start <= Array.getLength(source);
+        assert end >= start;
+        assert end <= Array.getLength(source);
+        return true;
+    }
 
     public static boolean contains(int[] array, int value) {
         for (int n = 0; n < array.length; n++) {

@@ -570,7 +570,7 @@ public class RubyBasicSocket extends RubyIO {
                 SocketType.forChannel(channel).shutdownInput(channel);
 
             } catch (IOException e) {
-                throw runtime.newIOError(e.getMessage());
+                // MRI ignores errors from shutdown()
             }
 
             openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
@@ -583,7 +583,7 @@ public class RubyBasicSocket extends RubyIO {
                 SocketType.forChannel(channel).shutdownOutput(channel);
 
             } catch (IOException e) {
-                throw runtime.newIOError(e.getMessage());
+                // MRI ignores errors from shutdown()
             }
 
             openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);

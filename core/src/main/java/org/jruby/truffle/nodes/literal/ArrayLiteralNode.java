@@ -20,6 +20,8 @@ import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 
+import java.util.Arrays;
+
 public abstract class ArrayLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] values;
@@ -77,7 +79,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     // TODO(CS): remove this - shouldn't be fiddling with nodes from the outside
     public RubyNode[] getValues() {
-        return values;
+        return Arrays.copyOf(values, values.length);
     }
 
     public static class EmptyArrayLiteralNode extends ArrayLiteralNode {
@@ -108,17 +110,22 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 try {
                     executedValues[n] = values[n].executeFloat(frame);
                 } catch (UnexpectedResultException e) {
-                    final Object[] executedObjects = new Object[n];
-
-                    for (int i = 0; i < n; i++) {
-                        executedObjects[i] = executedValues[i];
-                    }
-
-                    return makeGeneric(frame, executedObjects);
+                    return makeGeneric(frame, executedValues, n);
                 }
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+        }
+
+        private RubyArray makeGeneric(VirtualFrame frame,
+                final double[] executedValues, int n) {
+            final Object[] executedObjects = new Object[n];
+
+            for (int i = 0; i < n; i++) {
+                executedObjects[i] = executedValues[i];
+            }
+
+            return makeGeneric(frame, executedObjects);
         }
 
     }
@@ -141,13 +148,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                     try {
                         executedValues[n] = values[n].executeLongFixnum(frame);
                     } catch (UnexpectedResultException e) {
-                        final Object[] executedObjects = new Object[n];
-
-                        for (int i = 0; i < n; i++) {
-                            executedObjects[i] = executedValues[i];
-                        }
-
-                        return makeGeneric(frame, executedObjects);
+                        return makeGeneric(frame, executedValues, n);
                     }
                 }
 
@@ -159,18 +160,34 @@ public abstract class ArrayLiteralNode extends RubyNode {
                     try {
                         executedValues[n] = values[n].executeIntegerFixnum(frame);
                     } catch (UnexpectedResultException e) {
-                        final Object[] executedObjects = new Object[n];
-
-                        for (int i = 0; i < n; i++) {
-                            executedObjects[i] = executedValues[i];
-                        }
-
-                        return makeGeneric(frame, executedObjects);
+                        return makeGeneric(frame, executedValues, n);
                     }
                 }
 
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayAllocationSite, executedValues, values.length);
             }
+        }
+
+        private RubyArray makeGeneric(VirtualFrame frame,
+                final int[] executedValues, int n) {
+            final Object[] executedObjects = new Object[n];
+
+            for (int i = 0; i < n; i++) {
+                executedObjects[i] = executedValues[i];
+            }
+
+            return makeGeneric(frame, executedObjects);
+        }
+
+        private RubyArray makeGeneric(VirtualFrame frame,
+                final long[] executedValues, int n) {
+            final Object[] executedObjects = new Object[n];
+
+            for (int i = 0; i < n; i++) {
+                executedObjects[i] = executedValues[i];
+            }
+
+            return makeGeneric(frame, executedObjects);
         }
 
     }
@@ -190,17 +207,22 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 try {
                     executedValues[n] = values[n].executeLongFixnum(frame);
                 } catch (UnexpectedResultException e) {
-                    final Object[] executedObjects = new Object[n];
-
-                    for (int i = 0; i < n; i++) {
-                        executedObjects[i] = executedValues[i];
-                    }
-
-                    return makeGeneric(frame, executedObjects);
+                    return makeGeneric(frame, executedValues, n);
                 }
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+        }
+
+        private RubyArray makeGeneric(VirtualFrame frame,
+                final long[] executedValues, int n) {
+            final Object[] executedObjects = new Object[n];
+
+            for (int i = 0; i < n; i++) {
+                executedObjects[i] = executedValues[i];
+            }
+
+            return makeGeneric(frame, executedObjects);
         }
 
     }

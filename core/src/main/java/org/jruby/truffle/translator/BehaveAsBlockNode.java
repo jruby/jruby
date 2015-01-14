@@ -19,13 +19,13 @@ import org.jruby.truffle.runtime.RubyContext;
 @NodeInfo(cost = NodeCost.NONE)
 public class BehaveAsBlockNode extends RubyNode {
 
-    @Child protected RubyNode asBlockNode;
-    @Child protected RubyNode asMethodNode;
+    @Child private RubyNode asBlock;
+    @Child private RubyNode notAsBlock;
 
-    public BehaveAsBlockNode(RubyContext context, SourceSection sourceSection, RubyNode asBlockNode, RubyNode asMethodNode) {
+    public BehaveAsBlockNode(RubyContext context, SourceSection sourceSection, RubyNode asBlock, RubyNode notAsBlock) {
         super(context, sourceSection);
-        this.asBlockNode = asBlockNode;
-        this.asMethodNode = asMethodNode;
+        this.asBlock = asBlock;
+        this.notAsBlock = notAsBlock;
     }
 
     @Override
@@ -33,12 +33,12 @@ public class BehaveAsBlockNode extends RubyNode {
         throw new UnsupportedOperationException();
     }
 
-    public RubyNode getAsBlockNode() {
-        return asBlockNode;
+    public RubyNode getAsBlock() {
+        return asBlock;
     }
 
-    public RubyNode getAsMethodNode() {
-        return asMethodNode;
+    public RubyNode getNotAsBlock() {
+        return notAsBlock;
     }
 
 }

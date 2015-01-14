@@ -12,7 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class BTrueInstr extends OneOperandBranchInstr implements FixedArityInstr {
     public BTrueInstr(Operation op, Operand v, Label jmpTarget) {
-        super(op, v, jmpTarget);
+        super(op, new Operand[] {jmpTarget, v});
     }
 
     public BTrueInstr(Operand v, Label jmpTarget) {

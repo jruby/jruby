@@ -139,7 +139,7 @@ public class RubyRegexp extends RubyBasicObject {
         final RubyString post = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup());
         final RubyString global = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup());
 
-        final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values, pre, post, global);
+        final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), region, values, pre, post, global);
 
         if (operator) {
             if (values.length > 0) {
@@ -201,7 +201,7 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    private void setThread(String name, Object value) {
+    public void setThread(String name, Object value) {
         assert value != null;
 
         RubyNode.notDesignedForCompilation();
@@ -310,6 +310,8 @@ public class RubyRegexp extends RubyBasicObject {
         int end = 0;
         int range = p + string.getBytes().getRealSize();
 
+        Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
+
         if (regex.numberOfCaptures() == 0) {
             final ArrayList<RubyString> strings = new ArrayList<>();
 
@@ -327,12 +329,14 @@ public class RubyRegexp extends RubyBasicObject {
 
                 strings.add((RubyString) values[0]);
 
+                lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
+            setThread("$~", lastGoodMatchData);
             return strings.toArray(new RubyString[strings.size()]);
         } else {
-            final List<RubyArray> strings = new ArrayList<>();
+            final List<RubyArray> allMatches = new ArrayList<>();
 
             while (true) {
                 Object matchData = matchCommon(string.getBytes(), false, true, matcher, p + end, stringBytes.length);
@@ -341,25 +345,15 @@ public class RubyRegexp extends RubyBasicObject {
                     break;
                 }
 
-                RubyMatchData md = (RubyMatchData) matchData;
+                final Object[] captures = ((RubyMatchData) matchData).getCaptures();
+                allMatches.add(new RubyArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
 
-                final List<RubyString> parts = new ArrayList<>();
-
-                Object[] values = md.getValues();
-
-                // The first element is the entire matched string, so skip over it because we're only interested in
-                // the constituent matched parts.
-                for (int i = 1; i < values.length; i++) {
-                    parts.add((RubyString) values[i]);
-                }
-
-                RubyString[] matches = parts.toArray(new RubyString[parts.size()]);
-                strings.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matches));
-
+                lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
-            return strings.toArray(new Object[strings.size()]);
+            setThread("$~", lastGoodMatchData);
+            return allMatches.toArray(new Object[allMatches.size()]);
         }
     }
 

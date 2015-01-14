@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,48 +10,67 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.DebugOperations;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
+public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
 
     private final Object value;
 
-    private final RubyMethod method;
-    @Child protected DirectCallNode callNode;
-    @Child protected IndirectCallNode indirectCallNode;
+    private final InternalMethod method;
+    @Child private DirectCallNode callNode;
+    @Child private IndirectCallNode indirectCallNode;
 
-    public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                   RubyClass expectedClass, Object value, RubyMethod method,
-                                   boolean indirect) {
-        this(context, cachedName, next, expectedClass, expectedClass.getUnmodifiedAssumption(), value, method, indirect);
+    public CachedBoxedDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            RubyClass expectedClass,
+            Object value,
+            InternalMethod method,
+            boolean indirect,
+            DispatchAction dispatchAction) {
+        this(
+                context,
+                cachedName,
+                next,
+                expectedClass,
+                expectedClass.getUnmodifiedAssumption(),
+                value,
+                method,
+                indirect,
+                dispatchAction);
     }
 
     /**
      * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
      */
-    public CachedBoxedDispatchNode(RubyContext context, Object cachedName, DispatchNode next,
-                                   RubyClass expectedClass, Assumption unmodifiedAssumption,
-                                   Object value, RubyMethod method, boolean indirect) {
-        super(context, cachedName, next, indirect);
+    public CachedBoxedDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            RubyClass expectedClass,
+            Assumption unmodifiedAssumption,
+            Object value,
+            InternalMethod method,
+            boolean indirect,
+            DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
@@ -73,38 +92,20 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
         }
     }
 
-    public CachedBoxedDispatchNode(CachedBoxedDispatchNode prev) {
-        super(prev);
-        expectedClass = prev.expectedClass;
-        unmodifiedAssumption = prev.unmodifiedAssumption;
-        value = prev.value;
-        method = prev.method;
-        callNode = prev.callNode;
-        indirectCallNode = prev.indirectCallNode;
-    }
-
-    @Specialization(guards = "guardName")
-    public Object dispatch(
+    @Override
+    public Object executeDispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
-            RubyBasicObject receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
-
-        // Check the lookup node is what we expect
-
-        if (receiverObject.getMetaClass() != expectedClass) {
+            Object argumentsObjects) {
+        if (!guardName(methodName) || !(receiverObject instanceof RubyBasicObject) || ((RubyBasicObject) receiverObject).getMetaClass() != expectedClass) {
             return next.executeDispatch(
                     frame,
-                    lexicalScope,
                     receiverObject,
                     methodName,
-                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                    argumentsObjects,
-                    dispatchAction);
+                    blockObject,
+                    argumentsObjects);
         }
 
         // Check the class has not been modified
@@ -114,42 +115,45 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
         } catch (InvalidAssumptionException e) {
             return resetAndDispatch(
                     frame,
-                    lexicalScope,
                     receiverObject,
                     methodName,
                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                     argumentsObjects,
-                    dispatchAction,
                     "class modified");
         }
 
-        if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-            if (isIndirect()) {
-                return indirectCallNode.call(
-                        frame,
-                        method.getCallTarget(),
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-            } else {
-                return callNode.call(
-                        frame,
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+        switch (getDispatchAction()) {
+            case CALL_METHOD: {
+                if (isIndirect()) {
+                    return indirectCallNode.call(
+                            frame,
+                            method.getCallTarget(),
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                } else {
+                    return callNode.call(
+                            frame,
+                            RubyArguments.pack(
+                                    method,
+                                    method.getDeclarationFrame(),
+                                    receiverObject,
+                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                }
             }
-        } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
-            return true;
-        } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-            return value;
-        } else {
-            throw new UnsupportedOperationException();
+
+            case RESPOND_TO_METHOD:
+                return true;
+
+            case READ_CONSTANT:
+                return value;
+
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 

@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -14,13 +13,9 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
 
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public DefineInstanceMethodInstr(IRMethod method) {
-        super(Operation.DEF_INST_METH);
-        this.method = method;
-    }
+        super(Operation.DEF_INST_METH, EMPTY_OPERANDS);
 
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        this.method = method;
     }
 
     @Override

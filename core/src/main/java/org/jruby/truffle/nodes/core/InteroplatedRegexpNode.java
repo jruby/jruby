@@ -12,7 +12,9 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyRegexp;
@@ -22,15 +24,15 @@ import org.jruby.util.RegexpOptions;
 
 public class InteroplatedRegexpNode extends RubyNode {
 
-    @Children protected final RubyNode[] children;
+    @Children private final RubyNode[] children;
     private final RegexpOptions options;
-    @Child protected DispatchHeadNode toS;
+    @Child private CallDispatchHeadNode toS;
 
     public InteroplatedRegexpNode(RubyContext context, SourceSection sourceSection, RubyNode[] children, RegexpOptions options) {
         super(context, sourceSection);
         this.children = children;
         this.options = options;
-        toS = new DispatchHeadNode(context);
+        toS = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Override

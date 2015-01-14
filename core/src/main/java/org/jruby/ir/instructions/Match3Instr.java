@@ -13,41 +13,21 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 import static org.jruby.ir.IRFlags.USES_BACKREF_OR_LASTLINE;
 
-public class Match3Instr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-    private Operand receiver;
-    private Operand arg;
-
+public class Match3Instr extends ResultBaseInstr implements FixedArityInstr {
     public Match3Instr(Variable result, Operand receiver, Operand arg) {
-        super(Operation.MATCH3);
+        super(Operation.MATCH3, result, new Operand[] { receiver, arg });
 
         assert result != null: "Match3Instr result is null";
-
-        this.result = result;
-        this.receiver = receiver;
-        this.arg = arg;
     }
 
     public Operand getArg() {
-        return arg;
+        return operands[1];
     }
 
     public Operand getReceiver() {
-        return receiver;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { receiver, arg };
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + receiver + ", " + arg + ")";
+        return operands[0];
     }
 
     @Override
@@ -59,29 +39,15 @@ public class Match3Instr extends Instr implements ResultInstr, FixedArityInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        receiver = receiver.getSimplifiedOperand(valueMap, force);
-        arg = arg.getSimplifiedOperand(valueMap, force);
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
         return new Match3Instr((Variable) result.cloneForInlining(ii),
-                receiver.cloneForInlining(ii), arg.cloneForInlining(ii));
+                getReceiver().cloneForInlining(ii), getArg().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currScope, currDynScope, temp);
-        IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, currScope, currDynScope, temp);
+        RubyRegexp regexp = (RubyRegexp) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject argValue = (IRubyObject) getArg().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.match3(context, regexp, argValue);
     }

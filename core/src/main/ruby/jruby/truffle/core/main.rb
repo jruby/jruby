@@ -6,9 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-TRUE = true
-FALSE = false
-
 module STDIN
   def self.external_encoding
     @external || Encoding.default_external

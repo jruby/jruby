@@ -15,26 +15,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class ToAryInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-    private Operand array;
-
+public class ToAryInstr extends ResultBaseInstr implements FixedArityInstr {
     public ToAryInstr(Variable result, Operand array) {
-        super(Operation.TO_ARY);
+        super(Operation.TO_ARY, result, new Operand[] { array });
 
         assert result != null: "ToAryInstr result is null";
-
-        this.result = result;
-        this.array = array;
     }
 
-    public Operand getArrayArg() {
-        return array;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { array };
+    public Operand getArray() {
+        return operands[0];
     }
 
     @Override
@@ -47,41 +36,21 @@ public class ToAryInstr extends Instr implements ResultInstr, FixedArityInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        array = array.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        Operand a = array.getValue(valueMap);
+        Operand a = getArray().getValue(valueMap);
         return a instanceof Array ? a : null;
     }
 
     @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
-        return new ToAryInstr((Variable) result.cloneForInlining(ii), array.cloneForInlining(ii));
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + array + ")";
+        return new ToAryInstr((Variable) result.cloneForInlining(ii), getArray().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object receiver = array.retrieve(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.irToAry(context, (IRubyObject) receiver);
+        return IRRuntimeHelpers.irToAry(context,
+                (IRubyObject) getArray().retrieve(context, self, currScope, currDynScope, temp));
     }
 
     @Override

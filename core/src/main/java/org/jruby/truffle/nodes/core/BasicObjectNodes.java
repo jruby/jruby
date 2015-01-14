@@ -15,22 +15,20 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.cli.Options;
-
-import java.util.Arrays;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -60,11 +58,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private CallDispatchHeadNode equalNode;
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new PredicateDispatchHeadNode(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public NotEqualNode(NotEqualNode prev) {
@@ -74,7 +72,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean equal(VirtualFrame frame, Object a, Object b) {
-            return !equalNode.call(frame, a, "==", null, b);
+            return !equalNode.callBoolean(frame, a, "==", null, b);
         }
 
     }
@@ -221,7 +219,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1)
     public abstract static class InstanceEvalNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yield;
+        @Child private YieldDispatchHeadNode yield;
 
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -272,7 +270,7 @@ public abstract class BasicObjectNodes {
             notDesignedForCompilation();
 
             final RubySymbol name = (RubySymbol) args[0];
-            final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
+            final Object[] sentArgs = ArrayUtils.extractRange(args, 1, args.length);
             return methodMissing(self, name, sentArgs, block);
         }
 
@@ -309,12 +307,12 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "__send__", needsBlock = true, required = 1, argumentsAsArray = true)
     public abstract static class SendNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatchNode;
+        @Child private CallDispatchHeadNode dispatchNode;
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatchNode = new DispatchHeadNode(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatchNode = DispatchHeadNodeFactory.createMethodCall(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), MissingBehavior.CALL_METHOD_MISSING);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatchNode.forceUncached();
@@ -334,7 +332,7 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
             final Object name = args[0];
-            final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
+            final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
             return dispatchNode.call(frame, self, name, block, sendArgs);
         }
 

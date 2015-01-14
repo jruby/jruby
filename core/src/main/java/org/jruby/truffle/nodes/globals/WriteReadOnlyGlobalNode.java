@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 public class WriteReadOnlyGlobalNode extends RubyNode {
 
     private final String name;
-    @Child protected RubyNode value;
+    @Child private RubyNode value;
 
     public WriteReadOnlyGlobalNode(RubyContext context, SourceSection sourceSection, String name, RubyNode value) {
         super(context, sourceSection);

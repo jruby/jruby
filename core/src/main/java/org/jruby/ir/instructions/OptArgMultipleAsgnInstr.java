@@ -3,7 +3,6 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -31,24 +30,19 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedAr
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { getArrayArg(), new Fixnum(getIndex()), new Fixnum(minArgsLength) };
-    }
-
-    @Override
     public String toString() {
-        return super.toString() + "(" + array + "," + index + "," + minArgsLength + ")";
+        return super.toString() + "(" + getArray() + "," + index + "," + minArgsLength + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), index, minArgsLength);
+        return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), index, minArgsLength);
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
+        RubyArray rubyArray = (RubyArray) getArray().retrieve(context, self, currScope, currDynScope, temp);
         return IRRuntimeHelpers.extractOptionalArgument(rubyArray, minArgsLength, index);
     }
 

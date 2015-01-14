@@ -13,11 +13,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class BFalseInstr extends OneOperandBranchInstr implements FixedArityInstr {
     // Public only for persistence reloading
     public BFalseInstr(Operation op, Operand v, Label jmpTarget) {
-        super(op, v, jmpTarget);
+        super(op, new Operand[] {jmpTarget, v});
     }
 
     public BFalseInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_FALSE, v, jmpTarget);
+        super(Operation.B_FALSE, new Operand[] {jmpTarget, v});
     }
 
     @Override

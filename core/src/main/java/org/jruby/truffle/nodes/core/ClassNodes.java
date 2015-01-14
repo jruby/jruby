@@ -15,7 +15,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -54,15 +56,15 @@ public abstract class ClassNodes {
     @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
     public abstract static class NewNode extends CoreMethodNode {
 
-        @Child protected AllocateNode allocateNode;
-        @Child protected DispatchHeadNode initialize;
+        @Child private AllocateNode allocateNode;
+        @Child private CallDispatchHeadNode initialize;
         @CompilerDirectives.CompilationFinal private boolean isCached = true;
         @CompilerDirectives.CompilationFinal private RubyClass cachedClass;
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateNode = ClassNodesFactory.AllocateNodeFactory.create(context, sourceSection, new RubyNode[]{null});
-            initialize = DispatchHeadNode.onSelf(context);
+            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         public NewNode(NewNode prev) {
@@ -91,7 +93,7 @@ public abstract class ClassNodes {
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
-        @Child protected ModuleNodes.InitializeNode moduleInitializeNode;
+        @Child private ModuleNodes.InitializeNode moduleInitializeNode;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -26,7 +26,7 @@ public abstract class TypePrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_kind_of", needsSelf = false)
     public static abstract class VMObjectKindOfPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected KernelNodes.IsANode isANode;
+        @Child private KernelNodes.IsANode isANode;
 
         public VMObjectKindOfPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -39,8 +39,8 @@ public abstract class TypePrimitiveNodes {
         }
 
         @Specialization
-        public boolean vmObjectKindOf(Object object, RubyClass rubyClass) {
-            return isANode.executeBoolean(object, rubyClass);
+        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyClass rubyClass) {
+            return isANode.executeIsA(frame, object, rubyClass);
         }
 
     }
@@ -48,7 +48,7 @@ public abstract class TypePrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_class", needsSelf = false)
     public static abstract class VMObjectClassPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected KernelNodes.ClassNode classNode;
+        @Child private KernelNodes.ClassNode classNode;
 
         public VMObjectClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -61,8 +61,8 @@ public abstract class TypePrimitiveNodes {
         }
 
         @Specialization
-        public RubyClass vmObjectClass(Object object) {
-            return classNode.executeGetClass(object);
+        public RubyClass vmObjectClass(VirtualFrame frame, Object object) {
+            return classNode.executeGetClass(frame, object);
         }
 
     }
@@ -70,7 +70,7 @@ public abstract class TypePrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_singleton_class", needsSelf = false)
     public static abstract class VMObjectSingletonClassPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected KernelNodes.SingletonClassMethodNode singletonClassNode;
+        @Child private KernelNodes.SingletonClassMethodNode singletonClassNode;
 
         public VMObjectSingletonClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -83,8 +83,8 @@ public abstract class TypePrimitiveNodes {
         }
 
         @Specialization
-        public Object vmObjectClass(Object object) {
-            return singletonClassNode.singletonClass(object);
+        public Object vmObjectClass(VirtualFrame frame, Object object) {
+            return singletonClassNode.singletonClass(frame, object);
         }
 
     }
@@ -110,7 +110,7 @@ public abstract class TypePrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_respond_to", needsSelf = false)
     public static abstract class VMObjectRespondToPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child protected KernelNodes.RespondToNode respondToNode;
+        @Child private KernelNodes.RespondToNode respondToNode;
 
         public VMObjectRespondToPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

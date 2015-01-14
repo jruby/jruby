@@ -2,18 +2,12 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class PopFrameInstr extends Instr implements FixedArityInstr {
     public PopFrameInstr() {
-        super(Operation.POP_FRAME);
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
+        super(Operation.POP_FRAME, EMPTY_OPERANDS);
     }
 
     @Override

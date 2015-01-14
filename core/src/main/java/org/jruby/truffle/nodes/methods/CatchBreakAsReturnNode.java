@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.control.BreakException;
  */
 public class CatchBreakAsReturnNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     private final BranchProfile nextProfile = BranchProfile.create();
 

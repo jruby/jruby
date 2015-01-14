@@ -12,8 +12,10 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.MethodLike;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.Arrays;
 
@@ -53,7 +55,7 @@ public final class RubyArguments {
     }
 
     public static Object[] extractUserArguments(Object[] arguments) {
-        return Arrays.copyOfRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
+        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
     }
 
     public static Object[] concatUserArguments(Object o, Object[] arguments) {

@@ -9,12 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
@@ -41,6 +45,84 @@ public abstract class MatchDataNodes {
             }
         }
 
+    }
+
+    @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
+    public abstract static class BeginNode extends CoreMethodNode {
+
+        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
+
+        public BeginNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BeginNode(BeginNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object begin(RubyMatchData matchData, int index) {
+            notDesignedForCompilation();
+
+            if (badIndexProfile.profile((index < 0) || (index >= matchData.getNumberOfRegions()))) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+
+            } else {
+                return matchData.begin(index);
+            }
+        }
+    }
+
+
+    @CoreMethod(names = "captures")
+    public abstract static class CapturesNode extends CoreMethodNode {
+
+        public CapturesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CapturesNode(CapturesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray toA(RubyMatchData matchData) {
+            notDesignedForCompilation();
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getCaptures());
+        }
+    }
+
+    @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
+    public abstract static class EndNode extends CoreMethodNode {
+
+        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
+
+        public EndNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EndNode(EndNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object end(RubyMatchData matchData, int index) {
+            notDesignedForCompilation();
+
+            if (badIndexProfile.profile((index < 0) || (index >= matchData.getNumberOfRegions()))) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+
+            } else {
+                return matchData.end(index);
+            }
+        }
     }
 
     @CoreMethod(names = "pre_match")
@@ -79,7 +161,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(names = {"to_a", "captures"})
+    @CoreMethod(names = "to_a")
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
@@ -96,7 +178,26 @@ public abstract class MatchDataNodes {
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
         }
+    }
 
+    @CoreMethod(names = "to_s")
+    public abstract static class ToSNode extends CoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toS(RubyMatchData matchData) {
+            notDesignedForCompilation();
+
+            final ByteList bytes = matchData.getGlobal().getBytes().dup();
+            return getContext().makeString(bytes);
+        }
     }
 
     @CoreMethod(names = "values_at", argumentsAsArray = true)

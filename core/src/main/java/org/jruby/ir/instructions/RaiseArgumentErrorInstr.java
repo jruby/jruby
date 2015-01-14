@@ -2,8 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -18,17 +16,12 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     private final int numArgs;
 
     public RaiseArgumentErrorInstr(int required, int opt, int rest, int numArgs) {
-        super(Operation.RAISE_ARGUMENT_ERROR);
+        super(Operation.RAISE_ARGUMENT_ERROR, EMPTY_OPERANDS);
 
         this.required = required;
         this.opt = opt;
         this.rest = rest;
         this.numArgs = numArgs;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(required), new Fixnum(opt), new Fixnum(rest), new Fixnum(numArgs) };
     }
 
     public int getNumArgs() {

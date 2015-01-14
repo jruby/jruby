@@ -26,7 +26,7 @@ public class InstanceSuperInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new InstanceSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), getName(),
-                cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
     }
 
     // We cannot convert this into a NoCallResultInstr
@@ -37,7 +37,7 @@ public class InstanceSuperInstr extends CallInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
+        IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = ((RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp)).getMethodLocation();
 

@@ -5,8 +5,6 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -22,54 +20,43 @@ import java.util.Map;
 // - looks up lexical scopes
 // - then inheritance hierarcy if lexical search fails
 // - then invokes const_missing if inheritance search fails
-public class SearchConstInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Operand  startingScope;
+public class SearchConstInstr extends ResultBaseInstr implements FixedArityInstr {
     private final String   constName;
     private final boolean  noPrivateConsts;
-    private Variable result;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
     public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
-        super(Operation.SEARCH_CONST);
+        super(Operation.SEARCH_CONST, result, new Operand[] { startingScope });
 
         assert result != null: "SearchConstInstr result is null";
 
-        this.result          = result;
         this.constName       = constName;
-        this.startingScope   = startingScope;
         this.noPrivateConsts = noPrivateConsts;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new StringLiteral(constName), startingScope, new UnboxedBoolean(noPrivateConsts) };
+
+    public Operand getStartingScope() {
+        return operands[0];
     }
 
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        startingScope = startingScope.getSimplifiedOperand(valueMap, force);
+    public String getConstName() {
+        return constName;
     }
 
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
+    public boolean isNoPrivateConsts() {
+        return noPrivateConsts;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(result), constName, startingScope.cloneForInlining(ii), noPrivateConsts);
+        return new SearchConstInstr(ii.getRenamedVariable(result), constName, getStartingScope().cloneForInlining(ii), noPrivateConsts);
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + constName + ", " + startingScope + ", no-private-consts=" + noPrivateConsts + ")";
+        return super.toString() + "(" + constName + ", " + getStartingScope() + ", no-private-consts=" + noPrivateConsts + ")";
     }
 
     public ConstantCache getConstantCache() {
@@ -80,7 +67,7 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
         // Lexical lookup
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
-        StaticScope staticScope = (StaticScope) startingScope.retrieve(context, self, currScope, currDynScope, temp);
+        StaticScope staticScope = (StaticScope) getStartingScope().retrieve(context, self, currScope, currDynScope, temp);
         Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
 
         // Inheritance lookup
@@ -103,11 +90,6 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
         return constant;
     }
 
-    public Object getCachedConst() {
-        ConstantCache cache = this.cache;
-        return cache == null ? null : cache.value;
-    }
-
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         ConstantCache cache = this.cache;
@@ -119,17 +101,5 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
     @Override
     public void visit(IRVisitor visitor) {
         visitor.SearchConstInstr(this);
-    }
-
-    public Operand getStartingScope() {
-        return startingScope;
-    }
-
-    public String getConstName() {
-        return constName;
-    }
-
-    public boolean isNoPrivateConsts() {
-        return noPrivateConsts;
     }
 }

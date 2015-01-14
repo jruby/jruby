@@ -510,7 +510,7 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if (fd.chSelect != null) {
-                return thread.select(fd.chSelect, this, ops, timeout);
+                return thread.select(fd.chSelect, this, ops & fd.chSelect.validOps(), timeout);
 
             } else if (fd.chSeek != null) {
                 return fd.chSeek.position() != -1
@@ -829,7 +829,7 @@ public class OpenFile implements Finalizable {
     };
 
     public void finalize() {
-        if (fd != null) finalize(runtime.getCurrentContext(), true);
+        if (fd != null && isAutoclose()) finalize(runtime.getCurrentContext(), true);
     }
 
     public void finalize(ThreadContext context, boolean noraise) {

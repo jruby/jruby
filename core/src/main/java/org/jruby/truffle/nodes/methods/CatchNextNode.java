@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.control.NextException;
  */
 public class CatchNextNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     private final BranchProfile nextProfile = BranchProfile.create();
 

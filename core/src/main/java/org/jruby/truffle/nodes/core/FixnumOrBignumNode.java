@@ -37,7 +37,7 @@ public class FixnumOrBignumNode extends RubyNode {
     private final BranchProfile checkLongProfile = BranchProfile.create();
 
     public Object fixnumOrBignum(RubyBignum value) {
-        if (value.compareTo(Long.MIN_VALUE) >= 0 && value.compareTo(Long.MAX_VALUE) <= 0) {
+        if (value.compare(Long.MIN_VALUE) >= 0 && value.compare(Long.MAX_VALUE) <= 0) {
             lowerProfile.enter();
 
             final long longValue = value.longValue();

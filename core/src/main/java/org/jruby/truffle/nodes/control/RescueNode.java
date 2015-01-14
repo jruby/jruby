@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyException;
  */
 public abstract class RescueNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);

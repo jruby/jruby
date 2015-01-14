@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.control.ReturnException;
  */
 public class CatchReturnNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
     private final long returnID;
 
     private final BranchProfile returnProfile = BranchProfile.create();

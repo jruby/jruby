@@ -129,23 +129,23 @@ public class RubyBignum extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public int compareTo(int other) {
+    public int compare(int other) {
         return value.compareTo(BigInteger.valueOf(other));
     }
 
     @CompilerDirectives.TruffleBoundary
-    public int compareTo(long other) {
+    public int compare(long other) {
         return value.compareTo(BigInteger.valueOf(other));
     }
 
     @CompilerDirectives.TruffleBoundary
-    public int compareTo(RubyBignum other) {
+    public int compare(RubyBignum other) {
         return value.compareTo(other.value);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public int compareTo(double other) {
-        return compareTo((long) other);
+    public int compare(double other) {
+        return compare((long) other);
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -225,11 +225,6 @@ public class RubyBignum extends RubyBasicObject {
 
     public BigInteger bigIntegerValue() {
         return value;
-    }
-
-    @Override
-    public int hashCode() {
-        return value.hashCode();
     }
 
     public static class BignumAllocator implements Allocator {

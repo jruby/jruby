@@ -12,8 +12,7 @@ package org.jruby.truffle.nodes.hash;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.Entry;
@@ -22,13 +21,14 @@ import org.jruby.truffle.runtime.hash.HashSearchResult;
 
 public class FindEntryNode extends RubyNode {
 
-    @Child DispatchHeadNode hashNode;
-    @Child PredicateDispatchHeadNode eqlNode;
+    @Child CallDispatchHeadNode hashNode;
+    @Child
+    CallDispatchHeadNode eqlNode;
 
     public FindEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = new DispatchHeadNode(context);
-        eqlNode = new PredicateDispatchHeadNode(context);
+        hashNode = DispatchHeadNodeFactory.createMethodCall(context);
+        eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
     }
 
     public HashSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
@@ -45,13 +45,13 @@ public class FindEntryNode extends RubyNode {
         }
 
         final Entry[] entries = (Entry[]) hash.getStore();
-        final int index = (hashed & HashOperations.SIGN_BIT_MASK) % entries.length;
+        final int index = HashOperations.getIndex(hashed, entries.length);
         Entry entry = entries[index];
 
         Entry previousEntry = null;
 
         while (entry != null) {
-            if (eqlNode.call(frame, key, "eql?", null, entry.getKey())) {
+            if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
                 return new HashSearchResult(index, previousEntry, entry);
             }
 

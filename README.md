@@ -9,8 +9,8 @@ Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
  Robert Feldt, Chad Fowler, Russ Freeman, Joey Gibson, Kiel Hodges,
  Xandy Johnson, Kelvin Liu, Kevin Menard, Alan Moore, Akinori Musha,
  Charles Nutter, Takashi Okamoto, Jan Arne Petersen, Tobias Reif, David Saff,
- Chris Seaton, Nick Sieger, Ed Sinjiashvili, Vladimir Sizikov, Daiki Ueno,
- Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota,
+ Subramanya Sastry, Chris Seaton, Nick Sieger, Ed Sinjiashvili, Vladimir Sizikov,
+ Daiki Ueno, Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota,
    and many gracious contributors from the community.
 
 Project Contact: Thomas E Enebo <enebo@acm.org>

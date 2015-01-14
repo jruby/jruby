@@ -13,9 +13,6 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -27,8 +24,8 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -40,9 +37,10 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.IdUtil;
 
@@ -119,8 +117,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child protected IsSubclassOfNode subclassNode;
-        @Child protected BooleanCastNode booleanCastNode;
+        @Child private IsSubclassOfNode subclassNode;
+        @Child private BooleanCastNode booleanCastNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -284,7 +282,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -337,7 +335,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
             module.addMethod(currentNode, method);
         }
     }
@@ -385,7 +383,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yield;
+        @Child private YieldDispatchHeadNode yield;
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -422,7 +420,12 @@ public abstract class ModuleNodes {
         }
 
         private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {
-            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
+            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this, new NodeWrapper() {
+                @Override
+                public RubyNode wrap(RubyNode node) {
+                    return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "class_eval", node);
+                }
+            });
         }
 
         @Specialization
@@ -444,7 +447,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = {"class_exec","module_exec"}, argumentsAsArray = true, needsBlock = true)
     public abstract static class ClassExecNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yield;
+        @Child private YieldDispatchHeadNode yield;
 
         public ClassExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -459,7 +462,7 @@ public abstract class ModuleNodes {
         public abstract Object executeClassEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
+        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
             notDesignedForCompilation();
 
             // TODO: deal with args
@@ -617,11 +620,11 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "const_get", required = 1)
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatch;
+        @Child private DispatchHeadNode dispatch;
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
+            dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, null, DispatchAction.READ_CONSTANT);
         }
 
         public ConstGetNode(ConstGetNode prev) {
@@ -635,12 +638,10 @@ public abstract class ModuleNodes {
 
             return dispatch.dispatch(
                     frame,
-                    null,
                     module,
                     name,
                     null,
-                    new Object[]{},
-                    Dispatch.DispatchAction.READ_CONSTANT);
+                    new Object[]{});
         }
 
         @Specialization
@@ -649,12 +650,10 @@ public abstract class ModuleNodes {
 
             return dispatch.dispatch(
                     frame,
-                    null,
                     module,
                     name,
                     null,
-                    new Object[]{},
-                    Dispatch.DispatchAction.READ_CONSTANT);
+                    new Object[]{});
         }
     }
 
@@ -765,7 +764,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name.toString(), module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
         }
 
@@ -774,7 +773,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
-        @Child protected ModuleNodes.ClassExecNode classExecNode;
+        @Child private ModuleNodes.ClassExecNode classExecNode;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -831,19 +830,17 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "include", argumentsAsArray = true, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode appendFeaturesNode;
+        @Child private CallDispatchHeadNode appendFeaturesNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context);
+            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
             appendFeaturesNode = prev.appendFeaturesNode;
         }
-
-        public abstract RubyNilClass executeInclude(VirtualFrame frame, RubyModule module, Object[] args);
 
         @Specialization
         public RubyNilClass include(VirtualFrame frame, RubyModule module, Object[] args) {
@@ -868,11 +865,11 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludePNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode appendFeaturesNode;
+        @Child private DispatchHeadNode appendFeaturesNode;
 
         public IncludePNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context);
+            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public IncludePNode(IncludePNode prev) {
@@ -1071,7 +1068,7 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
+                final InternalMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -1132,7 +1129,7 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                final RubyMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
+                final InternalMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -1166,14 +1163,14 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
+            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
 
             if (includeAncestors) {
                 for (RubyModule parent : module.parentAncestors()) {
                     methods.addAll(parent.getMethods().values());
                 }
             }
-            for (RubyMethod method : methods) {
+            for (InternalMethod method : methods) {
                 if (method.getVisibility() == Visibility.PRIVATE){
                     RubySymbol m = getContext().newSymbol(method.getName());
                     array.slowPush(m);
@@ -1204,13 +1201,13 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<RubyMethod> methods = new ArrayList<>(module.getMethods().values());
+            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
             if (includeAncestors) {
                 for (RubyModule parent : module.parentAncestors()) {
                     methods.addAll(parent.getMethods().values());
                 }
             }
-            for (RubyMethod method : methods) {
+            for (InternalMethod method : methods) {
                 if (method.getVisibility() == Visibility.PUBLIC){
                     RubySymbol m = getContext().newSymbol(method.getName());
                     array.slowPush(m);
@@ -1242,7 +1239,7 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             notDesignedForCompilation();
 
-            Map<String, RubyMethod> methods;
+            Map<String, InternalMethod> methods;
 
             if (includeAncestors) {
                 methods = ModuleOperations.getAllMethods(module);
@@ -1251,7 +1248,7 @@ public abstract class ModuleNodes {
             }
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() != Visibility.PRIVATE && !method.isUndefined()) {
                     // TODO(CS): shoudln't be using this
                     array.slowPush(getContext().newSymbol(method.getName()));
@@ -1260,6 +1257,34 @@ public abstract class ModuleNodes {
 
             return array;
         }
+    }
+
+    @CoreMethod(names = "instance_method", required = 1)
+    public abstract static class InstanceMethodNode extends CoreMethodNode {
+
+        public InstanceMethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceMethodNode(InstanceMethodNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyUnboundMethod instanceMethod(RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+
+            // TODO(CS, 11-Jan-15) cache this lookup
+
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
+
+            if (method == null) {
+                throw new UnsupportedOperationException();
+            }
+
+            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), method);
+        }
+
     }
 
     @CoreMethod(names = "private_constant", argumentsAsArray = true)
@@ -1403,7 +1428,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyClass rubyClass, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
             }
@@ -1415,7 +1440,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyClass rubyClass, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
             }
@@ -1427,7 +1452,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(module, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }
@@ -1439,7 +1464,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = ModuleOperations.lookupMethod(module, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }

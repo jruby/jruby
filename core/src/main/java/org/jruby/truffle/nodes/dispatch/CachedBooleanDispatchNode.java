@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,46 +10,50 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
-public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
+public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
     private final Assumption falseUnmodifiedAssumption;
-    private final RubyMethod falseMethod;
+    private final InternalMethod falseMethod;
     private final BranchProfile falseProfile = BranchProfile.create();
 
     private final Object falseValue;
-    @Child protected DirectCallNode falseCallDirect;
+    @Child private DirectCallNode falseCallDirect;
 
     private final Assumption trueUnmodifiedAssumption;
-    private final RubyMethod trueMethod;
+    private final InternalMethod trueMethod;
     private final BranchProfile trueProfile = BranchProfile.create();
 
     private final Object trueValue;
-    @Child protected DirectCallNode trueCallDirect;
+    @Child private DirectCallNode trueCallDirect;
 
-    @Child protected IndirectCallNode indirectCallNode;
+    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBooleanDispatchNode(
-            RubyContext context, Object cachedName, DispatchNode next,
-            Assumption falseUnmodifiedAssumption, Object falseValue, RubyMethod falseMethod,
-            Assumption trueUnmodifiedAssumption, Object trueValue, RubyMethod trueMethod,
-            boolean indirect) {
-        super(context, cachedName, next, indirect);
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            Assumption falseUnmodifiedAssumption,
+            Object falseValue,
+            InternalMethod falseMethod,
+            Assumption trueUnmodifiedAssumption,
+            Object trueValue,
+            InternalMethod trueMethod,
+            boolean indirect,
+            DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
@@ -86,31 +90,23 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
         }
     }
 
-    public CachedBooleanDispatchNode(CachedBooleanDispatchNode prev) {
-        super(prev);
-        falseUnmodifiedAssumption = prev.falseUnmodifiedAssumption;
-        falseMethod = prev.falseMethod;
-        falseValue = prev.falseValue;
-        falseCallDirect = prev.falseCallDirect;
-        trueUnmodifiedAssumption = prev.trueUnmodifiedAssumption;
-        trueValue = prev.trueValue;
-        trueMethod = prev.trueMethod;
-        trueCallDirect = prev.trueCallDirect;
-        indirectCallNode = prev.indirectCallNode;
-    }
-
-    @Specialization(guards = "guardName")
-    public Object dispatch(
+    @Override
+    public Object executeDispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
-            boolean receiverObject,
+            Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        CompilerAsserts.compilationConstant(dispatchAction);
+            Object argumentsObjects) {
+        if (!guardName(methodName) || !(receiverObject instanceof Boolean)) {
+            return next.executeDispatch(
+                    frame,
+                    receiverObject,
+                    methodName,
+                    blockObject,
+                    argumentsObjects);
+        }
 
-        if (receiverObject) {
+        if ((boolean) receiverObject) {
             trueProfile.enter();
 
             try {
@@ -118,42 +114,45 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             } catch (InvalidAssumptionException e) {
                 return resetAndDispatch(
                         frame,
-                        lexicalScope,
                         receiverObject,
                         methodName,
                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                         argumentsObjects,
-                        dispatchAction,
                         "class modified");
             }
 
-            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            trueMethod.getCallTarget(),
-                            RubyArguments.pack(
-                                    trueMethod,
-                                    trueMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-                } else {
-                    return trueCallDirect.call(
-                            frame,
-                            RubyArguments.pack(
-                                    trueMethod,
-                                    trueMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+            switch (getDispatchAction()) {
+                case CALL_METHOD: {
+                    if (isIndirect()) {
+                        return indirectCallNode.call(
+                                frame,
+                                trueMethod.getCallTarget(),
+                                RubyArguments.pack(
+                                        trueMethod,
+                                        trueMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    } else {
+                        return trueCallDirect.call(
+                                frame,
+                                RubyArguments.pack(
+                                        trueMethod,
+                                        trueMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    }
                 }
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
-                return true;
-            } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-                return trueValue;
-            } else {
-                throw new UnsupportedOperationException();
+
+                case RESPOND_TO_METHOD:
+                    return true;
+
+                case READ_CONSTANT:
+                    return trueValue;
+
+                default:
+                    throw new UnsupportedOperationException();
             }
         } else {
             falseProfile.enter();
@@ -163,42 +162,46 @@ public abstract class CachedBooleanDispatchNode extends CachedDispatchNode {
             } catch (InvalidAssumptionException e) {
                 return resetAndDispatch(
                         frame,
-                        lexicalScope,
                         receiverObject,
                         methodName,
                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                         argumentsObjects,
-                        dispatchAction,
                         "class modified");
             }
 
-            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            falseMethod.getCallTarget(),
-                            RubyArguments.pack(
-                                    falseMethod,
-                                    falseMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
-                } else {
-                    return falseCallDirect.call(
-                            frame,
-                            RubyArguments.pack(
-                                    falseMethod,
-                                    falseMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+            switch (getDispatchAction()) {
+                case CALL_METHOD: {
+                    if (isIndirect()) {
+                        return indirectCallNode.call(
+                                frame,
+                                falseMethod.getCallTarget(),
+                                RubyArguments.pack(
+                                        falseMethod,
+                                        falseMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    } else {
+                        return falseCallDirect.call(
+                                frame,
+                                RubyArguments.pack(
+                                        falseMethod,
+                                        falseMethod.getDeclarationFrame(),
+                                        receiverObject,
+                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                    }
                 }
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
-                return true;
-            } else if (dispatchAction == Dispatch.DispatchAction.READ_CONSTANT) {
-                return falseValue;
-            } else {
-                throw new UnsupportedOperationException();
+
+                case RESPOND_TO_METHOD:
+                    return true;
+
+                case READ_CONSTANT:
+                    return falseValue;
+
+                default:
+                    throw new UnsupportedOperationException();
+
             }
         }
     }

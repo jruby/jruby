@@ -13,13 +13,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     private final IRScope declaringScope;
-    private final WrappedIRClosure endBlockClosure;
 
     public RecordEndBlockInstr(IRScope declaringScope, WrappedIRClosure endBlockClosure) {
-        super(Operation.RECORD_END_BLOCK);
+        super(Operation.RECORD_END_BLOCK, new Operand[] { endBlockClosure });
 
         this.declaringScope = declaringScope;
-        this.endBlockClosure = endBlockClosure;
     }
 
     public IRScope getDeclaringScope() {
@@ -27,17 +25,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     }
 
     public WrappedIRClosure getEndBlockClosure() {
-        return endBlockClosure;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { endBlockClosure };
-    }
-
-    @Override
-    public String toString() {
-        return getOperation().toString() + "(" + endBlockClosure + ")";
+        return (WrappedIRClosure) operands[0];
     }
 
     @Override
@@ -49,12 +37,12 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         // SSS FIXME: Correct in all situations??
-        return new RecordEndBlockInstr(declaringScope, (WrappedIRClosure) endBlockClosure.cloneForInlining(ii));
+        return new RecordEndBlockInstr(declaringScope, (WrappedIRClosure) getEndBlockClosure().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Block blk = (Block) endBlockClosure.retrieve(context, self, currScope, context.getCurrentScope(), temp);
+        Block blk = (Block) getEndBlockClosure().retrieve(context, self, currScope, context.getCurrentScope(), temp);
         IRRuntimeHelpers.pushExitBlock(context, blk);
         return null;
     }

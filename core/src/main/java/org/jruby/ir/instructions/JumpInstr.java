@@ -7,30 +7,17 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class JumpInstr extends Instr implements FixedArityInstr {
-    public final Label target;
-
     public JumpInstr(Label target) {
-        super(Operation.JUMP);
-        this.target = target;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { target };
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + " " + target;
+        super(Operation.JUMP, new Operand[] { target });
     }
 
     public Label getJumpTarget() {
-        return target;
+        return (Label) operands[0];
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new JumpInstr(ii.getRenamedLabel(target));
+        return new JumpInstr(ii.getRenamedLabel(getJumpTarget()));
     }
 
     @Override

@@ -1371,7 +1371,7 @@ public final class Ruby implements Constantizable {
         }
 
         // Object is ready, create top self
-        topSelf = TopSelfFactory.createTopSelf(this);
+        topSelf = TopSelfFactory.createTopSelf(this, false);
 
         // Pre-create all the core classes potentially referenced during startup
         RubyNil.createNilClass(this);
@@ -2850,7 +2850,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
 
@@ -2962,7 +2962,7 @@ public final class Ruby implements Constantizable {
      * @param wrap Whether to use a new "self" for toplevel
      */
     public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
         ThreadContext context = getCurrentContext();
 
         try {

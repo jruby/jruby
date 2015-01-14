@@ -9,52 +9,28 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 public class GVarAliasInstr extends Instr implements FixedArityInstr {
-    private Operand newName;
-    private Operand oldName;
-
     public GVarAliasInstr(Operand newName, Operand oldName) {
-        super(Operation.GVAR_ALIAS);
-
-        this.newName = newName;
-        this.oldName = oldName;
+        super(Operation.GVAR_ALIAS, new Operand[] { newName, oldName });
     }
 
     public Operand getNewName() {
-        return newName;
+        return operands[0];
     }
 
     public Operand getOldName() {
-        return oldName;
-    }
-
-    @Override
-    public String toString() {
-        return getOperation().toString() + "(" + newName + ", " + oldName + ")";
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { newName, oldName };
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        oldName = oldName.getSimplifiedOperand(valueMap, force);
-        newName = newName.getSimplifiedOperand(valueMap, force);
+        return operands[1];
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new GVarAliasInstr(newName.cloneForInlining(ii), oldName.cloneForInlining(ii));
+        return new GVarAliasInstr(getNewName().cloneForInlining(ii), getOldName().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        String newNameString = newName.retrieve(context, self, currScope, currDynScope, temp).toString();
-        String oldNameString = oldName.retrieve(context, self, currScope, currDynScope, temp).toString();
+        String newNameString = getNewName().retrieve(context, self, currScope, currDynScope, temp).toString();
+        String oldNameString = getOldName().retrieve(context, self, currScope, currDynScope, temp).toString();
 
         context.runtime.getGlobalVariables().alias(newNameString, oldNameString);
         return null;

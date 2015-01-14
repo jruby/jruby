@@ -28,6 +28,58 @@
 
 class Numeric
 
+  #--
+  # We deviate from MRI behavior here because we ensure that Fixnum op Bignum
+  # => Bignum (possibly normalized to Fixnum)
+  #
+  # Note these differences on MRI, where a is a Fixnum, b is a Bignum
+  #
+  #   a.coerce b => [Float, Float]
+  #   b.coerce a => [Bignum, Bignum]
+  #++
+
+  def coerce(other)
+    if other.instance_of? self.class
+      return [other, self]
+    end
+
+    [Float(other), Float(self)]
+  end
+
+  ##
+  # This method mimics the semantics of MRI's do_coerce function
+  # in numeric.c. Note these differences between it and #coerce:
+  #
+  #   1.2.coerce("2") => [2.0, 1.2]
+  #   1.2 + "2" => TypeError: String can't be coerced into Float
+  #
+  # See also Integer#coerce
+
+  def math_coerce(other, error=:coerce_error)
+    begin
+      values = other.coerce(self)
+    rescue
+      if error == :coerce_error
+        raise TypeError, "#{other.class} can't be coerced into #{self.class}"
+      else
+        raise ArgumentError, "comparison of #{self.class} with #{other.class} failed"
+      end
+    end
+
+    unless Rubinius::Type.object_kind_of?(values, Array) && values.length == 2
+      raise TypeError, "coerce must return [x, y]"
+    end
+
+    return values[1], values[0]
+  end
+  private :math_coerce
+
+  def redo_coerced(meth, right)
+    b, a = math_coerce(right)
+    a.__send__ meth, b
+  end
+  private :redo_coerced
+
   def zero?
     self == 0
   end
@@ -41,4 +93,12 @@ class Numeric
     self.__slash__(other).floor
   end
 
+  def fdiv(other)
+    self.to_f / other
+  end
+
+  def real?
+    true
+  end
+  
 end

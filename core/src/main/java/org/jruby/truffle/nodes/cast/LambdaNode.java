@@ -15,13 +15,13 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class LambdaNode extends RubyNode {
 
     // TODO(CS): this should be a lambda definition node, alongside block definition node
 
-    @Child protected RubyNode definition;
+    @Child private RubyNode definition;
 
     public LambdaNode(RubyContext context, SourceSection sourceSection, RubyNode definition) {
         super(context, sourceSection);
@@ -32,12 +32,12 @@ public class LambdaNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyMethod method = (RubyMethod) definition.execute(frame);
+        final InternalMethod method = (InternalMethod) definition.execute(frame);
 
         // TODO(CS): not sure we're closing over the correct state here
 
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
-                method.getSharedMethodInfo(), method.getCallTarget(), method.getCallTarget(),
+                method.getSharedMethodInfo(), method.getCallTarget(), method.getCallTarget(), method.getCallTarget(),
                 method.getDeclarationFrame(), method.getDeclaringModule(), method, RubyArguments.getSelf(frame.getArguments()), null);
     }
 

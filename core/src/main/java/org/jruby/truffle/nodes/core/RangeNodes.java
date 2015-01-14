@@ -16,8 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -33,7 +32,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -93,7 +92,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -232,15 +231,15 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"include?", "==="}, required = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode callLess;
-        @Child protected PredicateDispatchHeadNode callGreater;
-        @Child protected PredicateDispatchHeadNode callGreaterEqual;
+        @Child private CallDispatchHeadNode callLess;
+        @Child private CallDispatchHeadNode callGreater;
+        @Child private CallDispatchHeadNode callGreaterEqual;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callLess = new PredicateDispatchHeadNode(context);
-            callGreater = new PredicateDispatchHeadNode(context);
-            callGreaterEqual = new PredicateDispatchHeadNode(context);
+            callLess = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            callGreater = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            callGreaterEqual = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -259,16 +258,16 @@ public abstract class RangeNodes {
         public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
             notDesignedForCompilation();
 
-            if (callLess.call(frame, value, "<", null, range.getBegin())) {
+            if (callLess.callBoolean(frame, value, "<", null, range.getBegin())) {
                 return false;
             }
 
             if (range.doesExcludeEnd()) {
-                if (callGreaterEqual.call(frame, value, ">=", null, range.getEnd())) {
+                if (callGreaterEqual.callBoolean(frame, value, ">=", null, range.getEnd())) {
                     return false;
                 }
             } else {
-                if (callGreater.call(frame, value, ">", null, range.getEnd())) {
+                if (callGreater.callBoolean(frame, value, ">", null, range.getEnd())) {
                     return false;
                 }
             }
@@ -386,11 +385,11 @@ public abstract class RangeNodes {
     @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child private CallDispatchHeadNode toS;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context);
+            toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public ToSNode(ToSNode prev) {

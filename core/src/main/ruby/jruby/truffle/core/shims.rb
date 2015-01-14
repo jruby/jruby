@@ -17,14 +17,15 @@ class Numeric
 
 end
 
-class Complex
+class Fixnum
+
+  alias_method :magnitude, :abs
+
 end
 
-module Kernel
-
-  def Complex(real, imaginary)
-    imaginary
-  end
+class Bignum
+  
+  alias_method :magnitude, :abs
 
 end
 
@@ -53,4 +54,15 @@ class Hash
     end
   end
 
+end
+
+class Regexp
+  def self.last_match(n = nil)
+    if n
+      # TODO (nirvdrum Jan. 8, 2015) Make sure this supports symbol keys for named capture lookup.
+      $~.values_at(n).first
+    else
+      $~
+    end
+  end
 end

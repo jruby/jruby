@@ -166,7 +166,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     // last block in rb_enc_compatible
-    static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
+    public static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
         if (cr1 != cr2) {
             /* may need to handle ENC_CODERANGE_BROKEN */
             if (cr1 == StringSupport.CR_7BIT) return enc2;

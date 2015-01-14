@@ -3,5 +3,4 @@ fails:A nested method definition creates a class method when evaluated in a clas
 fails:A method definition inside an instance_eval creates a class method when the receiver is a class
 fails:A method definition in an eval creates an instance method
 fails:A method definition in an eval creates a class method
-fails(inherited):The def keyword within a closure looks outside the closure for the visibility
 fails:A method definition in an eval creates a singleton method

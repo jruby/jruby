@@ -15,37 +15,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 
 public class AliasInstr extends Instr implements FixedArityInstr {
-    private Operand newName;
-    private Operand oldName;
-
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public AliasInstr(Operand newName, Operand oldName) {
-        super(Operation.ALIAS);
-
-        this.newName = newName;
-        this.oldName = oldName;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] {getNewName(), getOldName()};
-    }
-
-    @Override
-    public String toString() {
-        return getOperation().toString() + "(" + getNewName() + ", " + getOldName() + ")";
+        super(Operation.ALIAS, new Operand[] {newName, oldName});
     }
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
         scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        oldName = getOldName().getSimplifiedOperand(valueMap, force);
-        newName = getNewName().getSimplifiedOperand(valueMap, force);
     }
 
     @Override
@@ -67,10 +45,10 @@ public class AliasInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getNewName() {
-        return newName;
+        return operands[0];
     }
 
     public Operand getOldName() {
-        return oldName;
+        return operands[1];
     }
 }

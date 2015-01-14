@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class CatchReturnPlaceholderNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
     private final long returnID;
 
     public CatchReturnPlaceholderNode(RubyContext context, SourceSection sourceSection, RubyNode body, long returnID) {

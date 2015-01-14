@@ -6,7 +6,7 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
     private final int closureId;
 
     public TemporaryClosureVariable(int closureId, int offset) {
-        super(offset);
+        super("%cl_" + closureId + "_" + offset, offset);
 
         this.closureId = closureId;
     }

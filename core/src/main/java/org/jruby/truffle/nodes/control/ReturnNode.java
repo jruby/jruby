@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.control.ReturnException;
 public class ReturnNode extends RubyNode {
 
     private final long returnID;
-    @Child protected RubyNode value;
+    @Child private RubyNode value;
 
     public ReturnNode(RubyContext context, SourceSection sourceSection, long returnID, RubyNode value) {
         super(context, sourceSection);

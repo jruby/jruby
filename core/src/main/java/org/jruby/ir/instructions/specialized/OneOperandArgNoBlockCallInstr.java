@@ -20,23 +20,14 @@ public class OneOperandArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgNoBlockCallInstr(ii.getRenamedVariable(result), getName(), receiver.cloneForInlining(ii),
+        return new OneOperandArgNoBlockCallInstr(ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii));
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "{1O}";
-    }
-
-    public Operand getArg1() {
-        return getCallArgs()[0];
-    }
-
-    @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
-        IRubyObject arg1 = (IRubyObject) getCallArgs()[0].retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         return getCallSite().call(context, self, object, arg1);
     }
 

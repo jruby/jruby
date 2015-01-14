@@ -35,8 +35,9 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * Represents a temporary variable for an unboxed Float operand.
  */
 public class TemporaryFloatVariable extends TemporaryLocalVariable {
+    public static final String PREFIX = "%f_";
     public TemporaryFloatVariable(int offset) {
-        super(offset);
+        super(PREFIX+offset, offset);
     }
 
     @Override
@@ -46,7 +47,7 @@ public class TemporaryFloatVariable extends TemporaryLocalVariable {
 
     @Override
     public String getPrefix() {
-        return "%f_";
+        return PREFIX;
     }
 
     @Override

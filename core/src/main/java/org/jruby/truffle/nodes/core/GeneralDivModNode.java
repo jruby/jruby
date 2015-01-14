@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
@@ -22,11 +23,12 @@ import java.math.BigInteger;
 
 public class GeneralDivModNode extends RubyNode {
 
-    @Child protected FixnumOrBignumNode fixnumOrBignumQuotient;
-    @Child protected FixnumOrBignumNode fixnumOrBignumRemainder;
+    @Child private FixnumOrBignumNode fixnumOrBignumQuotient;
+    @Child private FixnumOrBignumNode fixnumOrBignumRemainder;
 
     private final BranchProfile bZeroProfile = BranchProfile.create();
     private final BranchProfile bMinusOneProfile = BranchProfile.create();
+    private final BranchProfile nanProfile = BranchProfile.create();
     private final BranchProfile bigIntegerFixnumProfile = BranchProfile.create();
     private final BranchProfile useFixnumPairProfile = BranchProfile.create();
     private final BranchProfile useObjectPairProfile = BranchProfile.create();
@@ -49,6 +51,10 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(BigInteger.valueOf(a), b);
     }
 
+    public RubyArray execute(int a, double b) {
+        return divMod(a, b);
+    }
+
     public RubyArray execute(long a, int b) {
         return divMod(a, b);
     }
@@ -59,6 +65,10 @@ public class GeneralDivModNode extends RubyNode {
 
     public RubyArray execute(long a, RubyBignum b) {
         return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
+    }
+
+    public RubyArray execute(long a, double b) {
+        return divMod(a, b);
     }
 
     public RubyArray execute(RubyBignum a, int b) {
@@ -74,7 +84,8 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     /*
-     * div-mod algorithms copied from org.jruby.RubyFixnum and org.jruby.RubyBignum. See license and contributors there.
+     * div-mod algorithms copied from org.jruby.RubyFixnum, org.jruby.RubyBignum and org.jrubyRubyFloat. See license
+     * and contributors there.
      */
 
     @CompilerDirectives.TruffleBoundary
@@ -118,6 +129,29 @@ public class GeneralDivModNode extends RubyNode {
                     fixnumOrBignumQuotient.fixnumOrBignum(create((BigInteger) integerDiv)),
                     mod}, 2);
         }
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private RubyArray divMod(double a, double b) {
+        if (b == 0) {
+            bZeroProfile.enter();
+            throw new ArithmeticException("divide by zero");
+        }
+
+        double mod = Math.IEEEremainder(a, b);
+
+        if (Double.isNaN(mod)) {
+            nanProfile.enter();
+            throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
+        }
+
+        final double div = Math.floor(a / b);
+
+        if (b * mod < 0) {
+            mod += b;
+        }
+
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{div, mod}, 2);
     }
 
     @CompilerDirectives.TruffleBoundary

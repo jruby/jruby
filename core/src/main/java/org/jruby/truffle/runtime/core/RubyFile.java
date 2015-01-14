@@ -75,7 +75,7 @@ public class RubyFile extends RubyBasicObject {
         Reader reader;
         Writer writer;
 
-        if (mode.equals("rb")) {
+        if (mode.equals("r") || mode.equals("rb")) {
             try {
                 reader = new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8);
             } catch (FileNotFoundException e) {

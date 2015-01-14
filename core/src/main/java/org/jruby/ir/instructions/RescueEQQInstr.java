@@ -11,72 +11,36 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 // This instruction is similar to EQQInstr, except it also verifies that
 // the type to EQQ with is actually a class or a module since rescue clauses
 // have this requirement unlike case statements.
 //
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class RescueEQQInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Operand arg1;
-    private Operand arg2;
-    private Variable result;
-
+public class RescueEQQInstr extends ResultBaseInstr implements FixedArityInstr {
     public RescueEQQInstr(Variable result, Operand v1, Operand v2) {
-        super(Operation.RESCUE_EQQ);
+        super(Operation.RESCUE_EQQ, result, new Operand[] { v1, v2 });
 
         assert result != null: "RescueEQQInstr result is null";
-
-        this.arg1 = v1;
-        this.arg2 = v2;
-        this.result = result;
     }
 
     public Operand getArg1() {
-        return arg1;
+        return operands[0];
     }
 
     public Operand getArg2() {
-        return arg2;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{arg1, arg2};
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        arg1 = arg1.getSimplifiedOperand(valueMap, force);
-        arg2 = arg2.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + arg1 + ", " + arg2 + ")";
+        return operands[1];
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new RescueEQQInstr(ii.getRenamedVariable(result),
-                arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
+                getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject excType = (IRubyObject) arg1.retrieve(context, self, currScope, currDynScope, temp);
-        Object excObj = arg2.retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject excType = (IRubyObject) getArg1().retrieve(context, self, currScope, currDynScope, temp);
+        Object excObj = getArg2().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.isExceptionHandled(context, excType, excObj);
     }

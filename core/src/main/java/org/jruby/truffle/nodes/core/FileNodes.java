@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
+
     @CoreMethod(names = "absolute_path", onSingleton = true, required = 1)
     public abstract static class AbsolutePathNode extends CoreMethodNode {
 
@@ -81,7 +82,10 @@ public abstract class FileNodes {
         public int delete(RubyString file) {
             notDesignedForCompilation();
 
-            new File(file.toString()).delete();
+            if (!new File(file.toString()).delete()) {
+                // TODO(CS, 12-Jan-15) handle failure
+                throw new UnsupportedOperationException();
+            }
 
             return 1;
         }

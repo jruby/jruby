@@ -10,9 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.dsl.TypeSystem;
-import com.oracle.truffle.api.dsl.internal.DSLOptions;
-import com.oracle.truffle.api.interop.TruffleObject;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -23,8 +21,6 @@ import org.jruby.truffle.runtime.core.*;
  */
 @DSLOptions(useNewLayout=true)
 @TypeSystem({ //
-                Dispatch.DispatchAction.class, //
-                LexicalScope.class, //
                 UndefinedPlaceholder.class, //
                 boolean.class, //
                 byte.class, //
@@ -58,6 +54,8 @@ import org.jruby.truffle.runtime.core.*;
                 RubyThread.class, //
                 RubyTime.class, //
                 RubyEncodingConverter.class, //
+                RubyMethod.class, //
+                RubyUnboundMethod.class, //
                 RubyBasicObject.class, //
                 TruffleObject.class, //
                 ThreadLocal.class, //

@@ -13,8 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -27,15 +26,15 @@ import java.util.List;
 public abstract class HashLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] keyValues;
-    @Child protected DispatchHeadNode dupNode;
-    @Child protected DispatchHeadNode freezeNode;
+    @Child protected CallDispatchHeadNode dupNode;
+    @Child protected CallDispatchHeadNode freezeNode;
 
     protected HashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         super(context, sourceSection);
         assert keyValues.length % 2 == 0;
         this.keyValues = keyValues;
-        dupNode = new DispatchHeadNode(context);
-        freezeNode = new DispatchHeadNode(context);
+        dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+        freezeNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
@@ -79,11 +78,11 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class SmallHashLiteralNode extends HashLiteralNode {
 
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private CallDispatchHeadNode equalNode;
 
         public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
-            equalNode = new PredicateDispatchHeadNode(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         @ExplodeLoop
@@ -103,7 +102,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 final Object value = keyValues[n + 1].execute(frame);
 
                 for (int i = 0; i < n; i += 2) {
-                    if (i < end && equalNode.call(frame, key, "eql?", null, storage[i])) {
+                    if (i < end && equalNode.callBoolean(frame, key, "eql?", null, storage[i])) {
                         storage[i + 1] = value;
                         continue initializers;
                     }

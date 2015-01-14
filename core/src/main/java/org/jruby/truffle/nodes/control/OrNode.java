@@ -22,9 +22,9 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class OrNode extends RubyNode {
 
-    @Child protected RubyNode left;
-    @Child protected BooleanCastNode leftCast;
-    @Child protected RubyNode right;
+    @Child private RubyNode left;
+    @Child private BooleanCastNode leftCast;
+    @Child private RubyNode right;
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
     public OrNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {

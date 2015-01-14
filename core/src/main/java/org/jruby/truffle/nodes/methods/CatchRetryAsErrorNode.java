@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.control.RetryException;
 
 public class CatchRetryAsErrorNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     public CatchRetryAsErrorNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);

@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -15,18 +14,13 @@ public class RaiseRequiredKeywordArgumentError extends Instr implements FixedAri
     private String name;
 
     public RaiseRequiredKeywordArgumentError(String name) {
-        super(Operation.RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR);
+        super(Operation.RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR, EMPTY_OPERANDS);
 
         this.name = name;
     }
 
     public String getName() {
         return name;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[0];
     }
 
     @Override

@@ -42,24 +42,8 @@ public final class RubyArray extends RubyBasicObject {
 
     public RubyArray(RubyClass arrayClass, ArrayAllocationSite allocationSite, Object store, int size) {
         super(arrayClass);
-
         this.allocationSite = allocationSite;
-
-        assert store == null
-                || store instanceof Object[]
-                || store instanceof int[]
-                || store instanceof long[]
-                || store instanceof double[];
-
-        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
-        assert !(store instanceof int[]) || size <= ((int[]) store).length;
-        assert !(store instanceof long[]) || size <= ((long[]) store).length;
-        assert !(store instanceof double[]) || size <= ((double[]) store).length;
-
-        // TODO: assert that an object array doesn't contain all primitives - performance warning?
-
-        this.store = store;
-        this.size = size;
+        setStore(store, size);
     }
 
     public static RubyArray fromObject(RubyClass arrayClass, Object object) {
@@ -222,21 +206,9 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public void setStore(Object store, int size) {
+        assert verifyStore(store, size);
         this.store = store;
         this.size = size;
-
-        assert store == null
-                || store instanceof Object[]
-                || store instanceof int[]
-                || store instanceof long[]
-                || store instanceof double[];
-
-        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
-        assert !(store instanceof int[]) || size <= ((int[]) store).length;
-        assert !(store instanceof long[]) || size <= ((long[]) store).length;
-        assert !(store instanceof double[]) || size <= ((double[]) store).length;
-
-        // TODO: assert that an object array doesn't contain all primitives - performance warning?
     }
 
     public int getSize() {
@@ -244,8 +216,11 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public void setSize(int size) {
+        assert verifyStore(this.store, size);
         this.size = size;
+    }
 
+    private boolean verifyStore(Object store, int size) {
         assert store == null
                 || store instanceof Object[]
                 || store instanceof int[]
@@ -256,6 +231,7 @@ public final class RubyArray extends RubyBasicObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+        return true;
     }
 
     public ArrayAllocationSite getAllocationSite() {

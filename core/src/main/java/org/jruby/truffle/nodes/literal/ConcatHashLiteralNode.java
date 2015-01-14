@@ -23,7 +23,7 @@ import java.util.List;
 
 public class ConcatHashLiteralNode extends RubyNode {
 
-    @Children protected final RubyNode[] children;
+    @Children private final RubyNode[] children;
 
     public ConcatHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);

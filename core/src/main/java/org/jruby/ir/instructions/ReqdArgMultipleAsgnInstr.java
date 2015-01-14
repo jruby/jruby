@@ -5,7 +5,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -35,19 +34,14 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public int getPostArgsCount() { return postArgsCount; }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
-    }
-
-    @Override
     public String toString() {
-        return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
+        return getOperation() + "(" + getArray() + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
     }
 
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        Operand val = array.getValue(valueMap);
+        Operand val = getArray().getValue(valueMap);
         if (val instanceof Array) {
             Array a = (Array)val;
             int n = a.size();
@@ -60,13 +54,13 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), preArgsCount, postArgsCount, index);
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), preArgsCount, postArgsCount, index);
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
+        RubyArray rubyArray = (RubyArray) getArray().retrieve(context, self, currScope, currDynScope, temp);
         return IRRuntimeHelpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);
     }
 

@@ -13,7 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -25,8 +27,8 @@ import org.jruby.truffle.runtime.core.RubyModule;
  */
 public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
-    @Child protected RubyNode superClass;
-    @Child protected DispatchHeadNode inheritedNode;
+    @Child private RubyNode superClass;
+    @Child private CallDispatchHeadNode inheritedNode;
 
     public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection, name, lexicalParent);
@@ -36,7 +38,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
     private void callInherited(VirtualFrame frame, RubyClass superClass, RubyClass subClass) {
         if (inheritedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            inheritedNode = insert(new DispatchHeadNode(getContext(), true));
+            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
         }
         inheritedNode.call(frame, superClass, "inherited", null, subClass);
     }

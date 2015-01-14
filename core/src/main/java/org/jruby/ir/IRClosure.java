@@ -11,7 +11,9 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
+import org.jruby.runtime.Signature;
 import org.jruby.util.KeyValuePair;
 import org.objectweb.asm.Handle;
 
@@ -38,11 +40,11 @@ public class IRClosure extends IRScope {
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
 
-    private Arity arity;
+    private Signature signature;
     private int argumentType;
 
     /** Added for interp/JIT purposes */
-    private BlockBody body;
+    private IRBlockBody body;
 
     /** Added for JIT purposes */
     private Handle handle;
@@ -79,33 +81,33 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, c.body.arity());
+            this.body = new InterpretedIRBlockBody(this, c.body.getSignature());
         }
         this.blockArgs = new ArrayList<>();
         this.keywordArgs = new ArrayList<>();
-        this.arity = c.arity;
+        this.signature = c.signature;
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
-        this(manager, lexicalParent, lineNumber, staticScope, arity, argumentType, "_CLOSURE_");
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, argumentType, "_CLOSURE_");
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix) {
-        this(manager, lexicalParent, lineNumber, staticScope, arity, argumentType, prefix, false);
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String prefix) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, argumentType, prefix, false);
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix, boolean isBeginEndBlock) {
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
         this.blockArgs = new ArrayList<>();
         this.keywordArgs = new ArrayList<>();
         this.argumentType = argumentType;
-        this.arity = arity;
+        this.signature = signature;
         lexicalParent.addClosure(this);
 
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, arity);
+            this.body = new InterpretedIRBlockBody(this, signature);
             if (staticScope != null && !isBeginEndBlock) {
                 staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());
@@ -362,7 +364,11 @@ public class IRClosure extends IRScope {
     }
 
     public Arity getArity() {
-        return arity;
+        return signature.arity();
+    }
+
+    public Signature getSignature() {
+        return signature;
     }
 
     public int getArgumentType() {

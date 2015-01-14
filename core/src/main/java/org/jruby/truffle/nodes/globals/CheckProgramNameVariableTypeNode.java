@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 
 public class CheckProgramNameVariableTypeNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     public CheckProgramNameVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);

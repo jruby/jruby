@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 
 public class UndefNode extends RubyNode {
 
-    @Child protected RubyNode module;
+    @Child private RubyNode module;
     final String name;
 
     public UndefNode(RubyContext context, SourceSection sourceSection, RubyNode module, String name) {

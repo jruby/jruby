@@ -1,8 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -10,32 +8,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * Argument receive in IRExecution scopes.
  */
-public abstract class ReceiveArgBase extends Instr implements ResultInstr {
+public abstract class ReceiveArgBase extends ResultBaseInstr {
     protected int argIndex;
-    protected Variable result;
 
     public ReceiveArgBase(Operation op, Variable result, int argIndex) {
-        super(op);
+        super(op, result, EMPTY_OPERANDS);
 
         assert result != null: "ReceiveArgBase result is null";
 
         this.argIndex = argIndex;
-        this.result = result;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(argIndex) };
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     public int getArgIndex() {

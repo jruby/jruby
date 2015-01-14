@@ -14,6 +14,7 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Signature;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -55,13 +56,18 @@ public class IRReader {
         Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
-        int arity = type == IRScopeType.CLOSURE || type == IRScopeType.FOR ? decoder.decodeInt() : -1;
+        Signature signature;
+        if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
+            signature = Signature.decode(decoder.decodeInt());
+        } else {
+            signature = Signature.OPTIONAL;
+        }
         int argumentType = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, name, line, parent, arity, argumentType, staticScope);
+        IRScope scope = createScope(manager, type, name, line, parent, signature, argumentType, staticScope);
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
@@ -110,7 +116,7 @@ public class IRReader {
     }
 
     public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line,
-            IRScope lexicalParent, int arity, int argumentType,
+            IRScope lexicalParent, Signature signature, int argumentType,
             StaticScope staticScope) {
 
         switch (type) {
@@ -127,9 +133,9 @@ public class IRReader {
         case SCRIPT_BODY:
             return new IRScriptBody(manager, name, staticScope);
         case FOR:
-            return new IRFor(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
+            return new IRFor(manager, lexicalParent, line, staticScope, signature, argumentType);
         case CLOSURE:
-            return new IRClosure(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
+            return new IRClosure(manager, lexicalParent, line, staticScope, signature, argumentType);
         case EVAL_SCRIPT:
             // SSS FIXME: This is broken right now -- the isModuleEval arg has to be persisted and then read back.
             return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope, EvalType.NONE);

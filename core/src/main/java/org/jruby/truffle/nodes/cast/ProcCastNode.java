@@ -14,7 +14,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -26,11 +28,11 @@ import org.jruby.truffle.runtime.core.RubyProc;
 @NodeChild("child")
 public abstract class ProcCastNode extends RubyNode {
 
-    @Child protected DispatchHeadNode toProc;
+    @Child private CallDispatchHeadNode toProc;
 
     public ProcCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toProc = new DispatchHeadNode(context);
+        toProc = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     public ProcCastNode(ProcCastNode prev) {

@@ -74,6 +74,8 @@ public class StringFormatter {
                         case '0':
                             zeroPad = true;
                             break;
+                        default:
+                            break;
                     }
 
                     n++;

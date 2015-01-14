@@ -27,6 +27,13 @@
 # Only part of Rubinius' kernel.rb
 
 module Kernel
+
+  def Complex(*args)
+    Rubinius.privately do
+      Complex.convert(*args)
+    end
+  end
+  module_function :Complex
   
   def Rational(a, b = 1)
     Rubinius.privately do
@@ -34,6 +41,16 @@ module Kernel
     end
   end
   module_function :Rational
+
+  def Float(obj)
+    case obj
+    when String
+      Rubinius::Type.coerce_string_to_float obj, true
+    else
+      Rubinius::Type.coerce_object_to_float obj
+    end
+  end
+  module_function :Float
 
   ##
   # MRI uses a macro named StringValue which has essentially the same

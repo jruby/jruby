@@ -22,11 +22,6 @@ public class GetGlobalVariableInstr extends GetInstr  implements FixedArityInstr
         super(Operation.GET_GLOBAL_VAR, dest, gvar, null);
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { getSource() };
-    }
-
     public boolean computeScopeFlags(IRScope scope) {
         String name = ((GlobalVariable) getSource()).getName();
 

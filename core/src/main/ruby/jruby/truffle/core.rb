@@ -14,6 +14,7 @@ require_relative 'core/math'
 require_relative 'core/thread'
 require_relative 'core/module'
 require_relative 'core/hash'
+require_relative 'core/fixnum'
 
 require_relative 'core/rubinius/api/compat/type'
 
@@ -53,5 +54,9 @@ require_relative 'core/rubinius/kernel/common/nil'
 require_relative 'core/rubinius/kernel/common/immediate'
 require_relative 'core/rubinius/kernel/common/true'
 require_relative 'core/rubinius/kernel/common/false'
+require_relative 'core/rubinius/kernel/common/complex'
+require_relative 'core/rubinius/kernel/common/fixnum'
+require_relative 'core/rubinius/kernel/common/regexp'
+require_relative 'core/rubinius/kernel/common/main'
 
 require_relative 'core/shims'

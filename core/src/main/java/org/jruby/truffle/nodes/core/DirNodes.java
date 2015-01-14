@@ -79,7 +79,11 @@ public abstract class DirNodes {
             if (!dir.isDirectory()) {
                 throw new UnsupportedOperationException(path.toString());
             }
-            dir.delete();
+
+            if (!dir.delete()) {
+                // TODO(CS, 12-Jan-15) handle failure
+                throw new UnsupportedOperationException();
+            }
 
             return 0;
         }
@@ -193,7 +197,12 @@ public abstract class DirNodes {
         @Specialization
         public int mkdir(RubyString path) {
             notDesignedForCompilation();
-            new File(path.toString()).mkdir();
+
+            if (!new File(path.toString()).mkdir()) {
+                // TODO(CS, 12-Jan-15) handle failure
+                throw new UnsupportedOperationException();
+            }
+
             return 0;
         }
 

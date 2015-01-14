@@ -17,8 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayDupNode;
 import org.jruby.truffle.nodes.core.ArrayDupNodeFactory;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -39,19 +38,19 @@ public abstract class SplatCastNode extends RubyNode {
     private final NilBehavior nilBehavior;
     private final boolean useToAry;
 
-    @Child protected ArrayDupNode dup;
-    @Child protected DispatchHeadNode respondToToA;
-    @Child protected BooleanCastNode respondToCast;
-    @Child protected DispatchHeadNode toA;
+    @Child private ArrayDupNode dup;
+    @Child private CallDispatchHeadNode respondToToA;
+    @Child private BooleanCastNode respondToCast;
+    @Child private CallDispatchHeadNode toA;
 
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior, boolean useToAry) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
         dup = ArrayDupNodeFactory.create(context, sourceSection, null);
-        respondToToA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
+        respondToToA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToCast = BooleanCastNodeFactory.create(context, sourceSection, null);
-        toA = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
+        toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         this.useToAry = useToAry;
     }
 
@@ -104,12 +103,12 @@ public abstract class SplatCastNode extends RubyNode {
 
         // MRI tries to call dynamic respond_to? here.
         Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, getContext().makeString(method), true);
-        if (respondToResult != Dispatch.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
+        if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
-            } else if (array instanceof RubyNilClass || array == Dispatch.MISSING) {
+            } else if (array instanceof RubyNilClass || array == DispatchNode.MISSING) {
                 return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(

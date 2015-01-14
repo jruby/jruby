@@ -24,41 +24,39 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
-@NodeChildren({
-        @NodeChild(value="lexicalScope", type=Node.class),
-        @NodeChild(value="receiver", type=Node.class),
-        @NodeChild(value="methodName", type=Node.class),
-        @NodeChild(value="blockObject", type=Node.class),
-        @NodeChild(value="arguments", type=Node.class),
-        @NodeChild(value="action", type=Node.class)})
 public abstract class DispatchNode extends RubyNode {
 
-    public DispatchNode(RubyContext context) {
+    private final DispatchAction dispatchAction;
+
+    public static final Object MISSING = new Object();
+
+    public DispatchNode(RubyContext context, DispatchAction dispatchAction) {
         super(context, null);
+        this.dispatchAction = dispatchAction;
+        assert dispatchAction != null;
     }
 
     public DispatchNode(DispatchNode prev) {
-        this(prev.getContext());
+        super(prev);
+        dispatchAction = prev.dispatchAction;
     }
 
     public abstract Object executeDispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction);
+            Object argumentsObjects);
 
     @CompilerDirectives.TruffleBoundary
     protected RubyConstant lookupConstant(
-            LexicalScope lexicalScope,
             RubyModule module,
             String name,
-            boolean ignoreVisibility,
-            Dispatch.DispatchAction dispatchAction) {
+            boolean ignoreVisibility) {
+        final LexicalScope lexicalScope = getHeadNode().getLexicalScope();
+
         RubyConstant constant = ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
 
         // If no constant was found, use #const_missing
@@ -74,13 +72,12 @@ public abstract class DispatchNode extends RubyNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    protected RubyMethod lookup(
+    protected InternalMethod lookup(
             RubyClass callerClass,
             Object receiver,
             String name,
-            boolean ignoreVisibility,
-            Dispatch.DispatchAction dispatchAction) {
-        RubyMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
+            boolean ignoreVisibility) {
+        InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
 
@@ -97,9 +94,11 @@ public abstract class DispatchNode extends RubyNode {
         // Check visibility
 
         if (!ignoreVisibility && !method.isVisibleTo(this, callerClass)) {
-            if (dispatchAction == Dispatch.DispatchAction.CALL_METHOD) {
+            final DispatchAction dispatchAction = getHeadNode().getDispatchAction();
+
+            if (dispatchAction == DispatchAction.CALL_METHOD) {
                 throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, receiver.toString(), this));
-            } else if (dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD) {
+            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return null;
             } else {
                 throw new UnsupportedOperationException();
@@ -111,23 +110,19 @@ public abstract class DispatchNode extends RubyNode {
 
     protected Object resetAndDispatch(
             VirtualFrame frame,
-            LexicalScope lexicalScope,
             Object receiverObject,
             Object methodName,
             RubyProc blockObject,
             Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction,
             String reason) {
         final DispatchHeadNode head = getHeadNode();
         head.reset(reason);
         return head.dispatch(
                 frame,
-                lexicalScope,
                 receiverObject,
                 methodName,
                 blockObject,
-                argumentsObjects,
-                dispatchAction);
+                argumentsObjects);
     }
 
     protected DispatchHeadNode getHeadNode() {
@@ -138,26 +133,8 @@ public abstract class DispatchNode extends RubyNode {
         throw new IllegalStateException("do not call execute on dispatch nodes");
     }
 
-    protected boolean actionIsReadConstant(
-            VirtualFrame frame,
-            LexicalScope lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return dispatchAction == Dispatch.DispatchAction.READ_CONSTANT;
-    }
-
-    protected boolean actionIsCallOrRespondToMethod(
-            VirtualFrame frame,
-            LexicalScope lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Dispatch.DispatchAction dispatchAction) {
-        return dispatchAction == Dispatch.DispatchAction.CALL_METHOD || dispatchAction == Dispatch.DispatchAction.RESPOND_TO_METHOD;
+    public DispatchAction getDispatchAction() {
+        return dispatchAction;
     }
 
 }

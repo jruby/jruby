@@ -1,2 +1,0 @@
-fails:Fixnum#=== returns true if self has the same value as other
-fails:Fixnum#=== calls 'other == self' if the given argument is not a Fixnum

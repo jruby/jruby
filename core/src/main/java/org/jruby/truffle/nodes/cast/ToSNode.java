@@ -19,19 +19,21 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyTypesGen;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(type = RubyNode.class)
 public abstract class ToSNode extends RubyNode {
 
-    @Child protected DispatchHeadNode callToSNode;
-    @Child protected KernelNodes.ToSNode kernelToSNode;
+    @Child private CallDispatchHeadNode callToSNode;
+    @Child private KernelNodes.ToSNode kernelToSNode;
 
     public ToSNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        callToSNode = new DispatchHeadNode(context, true);
+        callToSNode = DispatchHeadNodeFactory.createMethodCall(context, true);
     }
 
     protected RubyString kernelToS(VirtualFrame frame, Object object) {

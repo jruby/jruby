@@ -117,7 +117,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             temp[((TemporaryLocalVariable)resultVar).offset] = result;
         } else {
             LocalVariable lv = (LocalVariable)resultVar;
-            currDynScope.setValue((IRubyObject)result, lv.getLocation(), lv.getScopeDepth());
+            currDynScope.setValue((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
         }
     }
 
@@ -147,8 +147,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static double getFloatArg(double[] floats, Operand arg) {
         if (arg instanceof Float) {
             return ((Float)arg).value;
+        } else if (arg instanceof UnboxedFloat) {
+            return ((UnboxedFloat)arg).value;
         } else if (arg instanceof Fixnum) {
             return (double)((Fixnum)arg).value;
+        } else if (arg instanceof UnboxedFixnum) {
+            return (double)((UnboxedFixnum)arg).value;
         } else if (arg instanceof Bignum) {
             return ((Bignum)arg).value.doubleValue();
         } else if (arg instanceof TemporaryLocalVariable) {
@@ -161,6 +165,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static long getFixnumArg(long[] fixnums, Operand arg) {
         if (arg instanceof Float) {
             return (long)((Float)arg).value;
+        } else if (arg instanceof UnboxedFixnum) {
+            return ((UnboxedFixnum)arg).value;
         } else if (arg instanceof Fixnum) {
             return ((Fixnum)arg).value;
         } else if (arg instanceof Bignum) {
@@ -241,10 +247,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             result = IRRuntimeHelpers.getPreArgSafe(context, args, argIndex);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
-        case RECV_CLOSURE:
-            result = IRRuntimeHelpers.newProc(context.runtime, block);
-            setResult(temp, currDynScope, instr.getResult(), result);
-            return;
         case RECV_POST_REQD_ARG:
             result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, acceptsKeywordArgument);
             // For blocks, missing arg translates to nil
@@ -255,6 +257,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return;
         case RECV_JRUBY_EXC:
             setResult(temp, currDynScope, instr.getResult(), exception);
+            return;
+        case LOAD_IMPLICIT_CLOSURE:
+            setResult(temp, currDynScope, instr.getResult(), block);
             return;
         default:
             result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
@@ -483,6 +488,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             break;
         }
 
+        case LOAD_FRAME_CLOSURE:
+            setResult(temp, currDynScope, instr, context.getFrameBlock());
+            return;
+
         // ---------- All the rest ---------
         default:
             result = instr.interpret(context, currScope, currDynScope, self, temp);
@@ -566,9 +575,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             } catch (Throwable t) {
                 extractToMethodToAvoidC2Crash(context, instr, t);
 
-                if (debug) LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = instr.getRPC();
-                if (debug) LOG.info("ipc for rescuer: " + ipc);
+                if (debug) {
+                    LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    LOG.info("ipc for rescuer: " + ipc);
+                }
 
                 if (ipc == -1) {
                     Helpers.throwException(t);

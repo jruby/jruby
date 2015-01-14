@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
@@ -20,7 +19,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -189,12 +188,12 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
     }
 
-    public Dispatch.DispatchAction executeDispatchAction(VirtualFrame frame) throws UnexpectedResultException {
-        throw new UnsupportedOperationException();
+    public RubyMethod executeRubyMethod(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyMethod(execute(frame));
     }
 
-    public LexicalScope executeLexicalScope(VirtualFrame frame) throws UnexpectedResultException {
-        throw new UnsupportedOperationException();
+    public RubyUnboundMethod executeRubyUnboundMethod(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyUnboundMethod(execute(frame));
     }
 
     public void executeVoid(VirtualFrame frame) {
@@ -273,11 +272,20 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         this.replace(wrapper);
     }
 
+    public boolean isRational(RubyBasicObject o) {
+        // TODO(CS, 10-Jan-15) should this be a full is_a? test? We'd need a node for that.
+        return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
+    }
+
+    public boolean isForeignObject(Object object) {
+        return (object instanceof TruffleObject) && !(isRubyBasicObject(object));
+    }
+
     // Copied from RubyTypesGen
 
     @SuppressWarnings("static-method")
     public boolean isDispatchAction(Object value) {
-        return value instanceof Dispatch.DispatchAction;
+        return value instanceof DispatchAction;
     }
 
     @SuppressWarnings("static-method")
@@ -443,6 +451,10 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     @SuppressWarnings("static-method")
     public boolean isObjectArray(Object value) {
         return value instanceof Object[];
+    }
+
+    public boolean isRubyNilObject(Object value) {
+        return value == getContext().getCoreLibrary().getNilObject();
     }
 
 }

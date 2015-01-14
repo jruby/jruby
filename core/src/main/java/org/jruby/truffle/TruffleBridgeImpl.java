@@ -14,13 +14,14 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.TruffleBridge;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.methods.SetFrameVisibilityNode;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -95,6 +96,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TrufflePrimitiveNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingConverterNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MethodNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, UnboundMethodNodesFactory.getFactories());
 
         // Give the core library manager a chance to tweak some of those methods
 
@@ -174,8 +177,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 SourceSection sourceSection = node.getSourceSection();
                 return SequenceNode.sequence(context, sourceSection,
                         new SetTopLevelBindingNode(context, sourceSection),
-                        new TopLevelRaiseHandler(context, sourceSection,
-                                SetFrameVisibilityNode.PRIVATE_VISIBILITY_WRAPPER.wrap(node)));
+                        new TopLevelRaiseHandler(context, sourceSection, node));
             }
         });
         return truffleContext.getCoreLibrary().getNilObject();

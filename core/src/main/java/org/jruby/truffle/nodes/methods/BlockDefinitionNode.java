@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -30,17 +29,23 @@ public class BlockDefinitionNode extends RubyNode {
 
     private final SharedMethodInfo sharedMethodInfo;
 
-    private final CallTarget callTarget;
+    // TODO(CS, 10-Jan-15) having three call targets isn't ideal, but they all have different semantics, and we don't
+    // want to move logic into the call site
+
+    private final CallTarget callTargetForBlocks;
+    private final CallTarget callTargetForProcs;
     private final CallTarget callTargetForMethods;
 
     private final boolean requiresDeclarationFrame;
 
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, SharedMethodInfo sharedMethodInfo,
-                               boolean requiresDeclarationFrame, CallTarget callTarget, CallTarget callTargetForMethods) {
+                               boolean requiresDeclarationFrame, CallTarget callTargetForBlocks,
+                               CallTarget callTargetForProcs, CallTarget callTargetForMethods) {
         super(context, sourceSection);
         this.sharedMethodInfo = sharedMethodInfo;
 
-        this.callTarget = callTarget;
+        this.callTargetForBlocks = callTargetForBlocks;
+        this.callTargetForProcs = callTargetForProcs;
         this.callTargetForMethods = callTargetForMethods;
 
         this.requiresDeclarationFrame = requiresDeclarationFrame;
@@ -68,7 +73,8 @@ public class BlockDefinitionNode extends RubyNode {
         }
 
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
-                callTarget, callTargetForMethods, declarationFrame, declaringModule, RubyArguments.getMethod(frame.getArguments()), RubyArguments.getSelf(frame.getArguments()),
+                callTargetForBlocks, callTargetForProcs, callTargetForMethods, declarationFrame, declaringModule,
+                RubyArguments.getMethod(frame.getArguments()), RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));
     }
 

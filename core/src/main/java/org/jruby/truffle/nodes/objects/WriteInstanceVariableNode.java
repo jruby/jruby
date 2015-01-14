@@ -22,9 +22,9 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
-    @Child protected RubyNode receiver;
-    @Child protected RubyNode rhs;
-    @Child protected WriteHeadObjectFieldNode writeNode;
+    @Child private RubyNode receiver;
+    @Child private RubyNode rhs;
+    @Child private WriteHeadObjectFieldNode writeNode;
     private final boolean isGlobal;
 
     public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, Object name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {

@@ -92,7 +92,7 @@ public class InstrEncoderMap {
             case PUT_GLOBAL_VAR: encodePutGlobalVarInstr((PutGlobalVarInstr) instr); break;
             case RAISE_ARGUMENT_ERROR: encodeRaiseArgumentErrorInstr((RaiseArgumentErrorInstr) instr); break;
             case RECORD_END_BLOCK: encodeRecordEndBlockInstr((RecordEndBlockInstr) instr); break;
-            case RECV_CLOSURE: /* no state */ break;
+            case REIFY_CLOSURE: encodeReifyClosureInstr((ReifyClosureInstr) instr); break;
             case RECV_RUBY_EXC: encodeReceiveRubyExceptionInstr((ReceiveRubyExceptionInstr) instr); break;
             case RECV_JRUBY_EXC: encodeReceiveJRubyExceptionInstr((ReceiveJRubyExceptionInstr) instr); break;
             case RECV_KW_ARG: encodeReceiveKeywordArgInstr((ReceiveKeywordArgInstr) instr); break;
@@ -258,7 +258,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr instr) {
-        e.encode(instr.firstRescueBlockLabel);
+        e.encode(instr.getFirstRescueBlockLabel());
     }
 
     private void encodeGetClassVariableInstr(GetClassVariableInstr instr) {
@@ -314,20 +314,20 @@ public class InstrEncoderMap {
     }
 
     private void encodeOptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
         e.encode(instr.getIndex());
         e.encode(instr.getMinArgsLength());
     }
 
     private void encodeReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
         e.encode(instr.getPreArgsCount());
         e.encode(instr.getPostArgsCount());
         e.encode(instr.getIndex());
     }
 
     private void encodeRestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
         e.encode(instr.getPreArgsCount());
         e.encode(instr.getPostArgsCount());
         e.encode(instr.getIndex());
@@ -369,6 +369,7 @@ public class InstrEncoderMap {
 
     private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
         e.encode(instr.getModuleBody());
+        e.encode(instr.getBlock());
     }
 
     private void encodePutConstInstr(PutConstInstr instr) {
@@ -398,6 +399,11 @@ public class InstrEncoderMap {
     private void encodeRecordEndBlockInstr(RecordEndBlockInstr instr) {
         e.encode(instr.getDeclaringScope());
         e.encode(instr.getEndBlockClosure());
+    }
+
+    private void encodeReifyClosureInstr(ReifyClosureInstr instr) {
+        e.encode(instr.getSource());
+        e.encode(instr.getResult());
     }
 
     private void encodeReceiveRubyExceptionInstr(ReceiveRubyExceptionInstr instr) { }
@@ -480,11 +486,11 @@ public class InstrEncoderMap {
     }
 
     private void encodeThrowExceptionInstr(ThrowExceptionInstr instr) {
-        e.encode(instr.getExceptionArg());
+        e.encode(instr.getException());
     }
 
     private void encodeToAryInstr(ToAryInstr instr) {
-        e.encode(instr.getArrayArg());
+        e.encode(instr.getArray());
     }
 
     private void encodeUndefMethodInstr(UndefMethodInstr instr) {

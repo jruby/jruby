@@ -14,9 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
-public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedArityInstr {
+public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     private final String missingConst;
 
     public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {
@@ -31,33 +29,18 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedAr
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        receiver = receiver.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), receiver.cloneForInlining(ii), missingConst);
+        return new ConstMissingInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst);
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + receiver + "," + missingConst  + ")";
+        return getOperation() + "(" + getReceiver() + "," + missingConst  + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyModule module = (RubyModule) receiver.retrieve(context, self, currScope, currDynScope, temp);
+        RubyModule module = (RubyModule) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
         return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(missingConst));
     }
 

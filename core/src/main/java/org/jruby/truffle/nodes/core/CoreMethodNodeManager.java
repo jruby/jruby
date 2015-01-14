@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -25,7 +26,7 @@ import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
@@ -80,9 +81,6 @@ public abstract class CoreMethodNodeManager {
         final List<String> names = Arrays.asList(anno.names());
         assert names.size() >= 1;
 
-        final String canonicalName = names.get(0);
-        final List<String> aliases = names.subList(1, names.size());
-
         final Visibility visibility = anno.visibility();
 
         if (anno.isModuleFunction()) {
@@ -100,25 +98,30 @@ public abstract class CoreMethodNodeManager {
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails, needsSelf);
 
-        final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
-                Truffle.getRuntime().createCallTarget(rootNode), null);
-
         if (anno.isModuleFunction()) {
-            addMethod(module, method, aliases, Visibility.PRIVATE);
-            addMethod(module.getSingletonClass(null), method, aliases, Visibility.PUBLIC);
+            addMethod(module, rootNode, names, Visibility.PRIVATE);
+            addMethod(module.getSingletonClass(null), rootNode, names, Visibility.PUBLIC);
         } else if (anno.onSingleton()) {
-            addMethod(module.getSingletonClass(null), method, aliases, visibility);
+            addMethod(module.getSingletonClass(null), rootNode, names, visibility);
         } else {
-            addMethod(module, method, aliases, visibility);
+            addMethod(module, rootNode, names, visibility);
         }
     }
 
-    private static void addMethod(RubyModule module, RubyMethod method, List<String> aliases, Visibility visibility) {
-        method = method.withVisibility(visibility);
+    private static void addMethod(RubyModule module, RubyRootNode rootNode, List<String> names, Visibility visibility) {
+        for (String name : names) {
+            final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
 
-        module.addMethod(null, method);
-        for (String alias : aliases) {
-            module.addMethod(null, method.withNewName(alias));
+            final CoreMethodNode coreMethodNode = NodeUtil.findFirstNodeInstance(rootNodeCopy, CoreMethodNode.class);
+
+            if (coreMethodNode != null) {
+                coreMethodNode.setName(name);
+            }
+
+            final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
+                    Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
+
+            module.addMethod(null, method.withVisibility(visibility).withNewName(name));
         }
     }
 
@@ -189,7 +192,7 @@ public abstract class CoreMethodNodeManager {
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
-        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, block);
+        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, block, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());
 
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }

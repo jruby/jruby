@@ -21,18 +21,18 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.nodes.core.ArrayNodesFactory.AtNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -40,7 +40,13 @@ import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
@@ -439,11 +445,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"==", "eql?"}, required = 1)
     public abstract static class EqualNode extends ArrayCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode equals;
+        @Child private CallDispatchHeadNode equals;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equals = new PredicateDispatchHeadNode(context);
+            equals = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public EqualNode(EqualNode prev) {
@@ -512,7 +518,7 @@ public abstract class ArrayNodes {
             final Object[] bs = b.slowToArray();
 
             for (int n = 0; n < a.getSize(); n++) {
-                if (!equals.call(frame, as[n], "==", null, bs[n])) {
+                if (!equals.callBoolean(frame, as[n], "==", null, bs[n])) {
                     return false;
                 }
             }
@@ -533,24 +539,26 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"[]", "at"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
-    public abstract static class IndexNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
+    public abstract static class AtNode extends ArrayCoreMethodNode {
 
-        public IndexNode(RubyContext context, SourceSection sourceSection) {
+        public AtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public IndexNode(IndexNode prev) {
+        public AtNode(AtNode prev) {
             super(prev);
         }
 
+        public abstract Object executeAt(RubyArray array, int index);
+
         @Specialization(guards = "isNull")
-        public RubyNilClass getNull(RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public RubyNilClass getNull(RubyArray array, int index) {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class)
-        public int getIntegerFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
+        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
+        public int getIntegerFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -561,7 +569,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "getIntegerFixnumInBounds", guards = "isIntegerFixnum")
-        public Object getIntegerFixnum(RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public Object getIntegerFixnum(RubyArray array, int index) {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -571,8 +579,8 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class)
-        public long getLongFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
+        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
+        public long getLongFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -583,8 +591,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "getLongFixnumInBounds", guards = "isLongFixnum")
-        public Object getLongFixnum(RubyArray array, int index, UndefinedPlaceholder undefined) {
-
+        public Object getLongFixnum(RubyArray array, int index) {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -594,8 +601,8 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isFloat", rewriteOn=UnexpectedResultException.class)
-        public double getFloatInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
+        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
+        public double getFloatInBounds(RubyArray array, int index) throws UnexpectedResultException {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -606,7 +613,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "getFloatInBounds", guards = "isFloat")
-        public Object getFloat(RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public Object getFloat(RubyArray array, int index) {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -617,7 +624,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public Object getObject(RubyArray array, int index) {
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
@@ -627,21 +634,88 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, int index, int length) {
-            notDesignedForCompilation();
+    }
 
-            int normalisedIndex = array.normaliseIndex(index);
+    @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
+    public abstract static class IndexNode extends ArrayCoreMethodNode {
 
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+        @Child protected AtNode atNode;
+
+        private final BranchProfile outOfBounds = BranchProfile.create();
+
+        public IndexNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            atNode = AtNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
+        }
+
+        public IndexNode(IndexNode prev) {
+            super(prev);
+            atNode = prev.atNode;
+        }
+
+        @Specialization
+        public Object index(RubyArray array, int index, UndefinedPlaceholder undefined) {
+            return atNode.executeAt(array, index);
+        }
+
+        @Specialization(guards = "isIntegerFixnum")
+        public Object sliceIntegerFixnum(RubyArray array, int start, int length) {
+            final int normalisedIndex = array.normaliseIndex(start);
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, normalisedIndex + length), length);
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public Object sliceLongFixnum(RubyArray array, int start, int length) {
+            final int normalisedIndex = array.normaliseIndex(start);
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isFloat")
+        public Object sliceFloat(RubyArray array, int start, int length) {
+            final int normalisedIndex = array.normaliseIndex(start);
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
         @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object sliceObject(RubyArray array, int start, int length) {
+            final int normalisedIndex = array.normaliseIndex(start);
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize() || length < 0) {
+                outOfBounds.enter();
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                final int end = Math.min(array.getSize(), normalisedIndex + length);
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isObject")
+        public Object sliceObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final int normalisedIndex = array.normaliseIndex(range.getBegin());
@@ -652,7 +726,7 @@ public abstract class ArrayNodes {
                 final int end = array.normaliseIndex(range.getEnd());
                 final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
             }
         }
 
@@ -961,77 +1035,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "all?", needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
-    public abstract static class AllNode extends YieldingCoreMethodNode {
-
-        public AllNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public AllNode(AllNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull")
-        public boolean allNull(VirtualFrame frame, RubyArray array, RubyProc block) {
-            return true;
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public boolean allIntegerFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
-
-            for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldIsTruthy(frame, block, ((int[]) array.getStore())[n])) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public boolean allLongFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
-
-            for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldIsTruthy(frame, block, ((long[]) array.getStore())[n])) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        @Specialization(guards = "isFloat")
-        public boolean allFloat(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
-
-            for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldIsTruthy(frame, block, ((double[]) array.getStore())[n])) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        @Specialization(guards = "isObject")
-        public boolean allObject(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
-
-            for (int n = 0; n < array.getSize(); n++) {
-                if (!yieldIsTruthy(frame, block, ((Object[]) array.getStore())[n])) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-    }
-
     @CoreMethod(names = "any?", needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class AnyNode extends YieldingCoreMethodNode {
@@ -1238,7 +1241,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
-        @Child protected KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1309,8 +1312,8 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete_at", required = 1)
     public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
 
-        private static final BranchProfile tooSmallBranch = BranchProfile.create();
-        private static final BranchProfile beyondEndBranch = BranchProfile.create();
+        private final BranchProfile tooSmallBranch = BranchProfile.create();
+        private final BranchProfile beyondEndBranch = BranchProfile.create();
 
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1810,7 +1813,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
-        @Child protected KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1882,7 +1885,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2034,11 +2037,11 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatch;
+        @Child private CallDispatchHeadNode dispatch;
 
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InjectNode(InjectNode prev) {
@@ -2114,7 +2117,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "insert", required = 2)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
-        private static final BranchProfile tooSmallBranch = BranchProfile.create();
+        private final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2160,11 +2163,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"inspect", "to_s"})
     public abstract static class InspectNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode inspect;
+        @Child private CallDispatchHeadNode inspect;
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context);
+            inspect = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public InspectNode(InspectNode prev) {
@@ -2273,7 +2276,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2395,7 +2398,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2467,12 +2470,12 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "max")
     public abstract static class MaxNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode eachNode;
+        @Child private CallDispatchHeadNode eachNode;
         private final MaxBlock maxBlock;
 
         public MaxNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context);
+            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
             maxBlock = context.getCoreLibrary().getArrayMaxBlock();
         }
 
@@ -2493,7 +2496,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), null, null, array, null);
+                    maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2508,11 +2511,11 @@ public abstract class ArrayNodes {
 
     public abstract static class MaxBlockNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode compareNode;
+        @Child private CallDispatchHeadNode compareNode;
 
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context);
+            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public MaxBlockNode(MaxBlockNode prev) {
@@ -2586,12 +2589,12 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "min")
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode eachNode;
+        @Child private CallDispatchHeadNode eachNode;
         private final MinBlock minBlock;
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context);
+            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
             minBlock = context.getCoreLibrary().getArrayMinBlock();
         }
 
@@ -2612,7 +2615,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), null, null, array, null);
+                    minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2627,11 +2630,11 @@ public abstract class ArrayNodes {
 
     public abstract static class MinBlockNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode compareNode;
+        @Child private CallDispatchHeadNode compareNode;
 
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context);
+            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public MinBlockNode(MinBlockNode prev) {
@@ -3106,7 +3109,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public RejectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3191,7 +3194,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject!", needsBlock = true)
+    @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -3289,7 +3292,7 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
-        @Child protected ArrayBuilderNode arrayBuilder;
+        @Child private ArrayBuilderNode arrayBuilder;
 
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3412,50 +3415,15 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "slice", required = 2)
-    public abstract static class SliceNode extends ArrayCoreMethodNode {
-
-        public SliceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SliceNode(SliceNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public RubyArray sliceIntegerFixnum(RubyArray array, int start, int length) {
-            final int[] store = (int[]) array.getStore();
-
-            final int normalisedStart = array.normaliseIndex(start);
-            final int normalisedEnd = Math.min(normalisedStart + length, array.getSize() + length);
-            final int sliceLength = normalisedEnd - normalisedStart;
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, normalisedStart, normalisedEnd), sliceLength);
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public RubyArray sliceLongFixnum(RubyArray array, int start, int length) {
-            final long[] store = (long[]) array.getStore();
-
-            final int normalisedStart = array.normaliseIndex(start);
-            final int normalisedEnd = Math.min(normalisedStart + length, array.getSize() + length);
-            final int sliceLength = normalisedEnd - normalisedStart;
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, normalisedStart, normalisedEnd), sliceLength);
-        }
-
-    }
-
     @CoreMethod(names = "sort", needsBlock = true)
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode compareDispatchNode;
-        @Child protected YieldDispatchHeadNode yieldNode;
+        @Child private CallDispatchHeadNode compareDispatchNode;
+        @Child private YieldDispatchHeadNode yieldNode;
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context);
+            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
             yieldNode = new YieldDispatchHeadNode(context);
         }
 
@@ -3632,11 +3600,11 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort!")
     public abstract static class SortBangNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode compareDispatchNode;
+        @Child private CallDispatchHeadNode compareDispatchNode;
 
         public SortBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context);
+            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public SortBangNode(SortBangNode prev) {

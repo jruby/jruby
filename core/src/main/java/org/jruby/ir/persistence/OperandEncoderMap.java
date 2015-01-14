@@ -81,6 +81,8 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void NthRef(NthRef nthref) { encoder.encode(nthref.matchNumber); }
 
+    @Override public void NullBlock(NullBlock nullblock) { } // No data
+
     @Override public void ObjectClass(ObjectClass objectclass) {} // No data
 
     @Override public void Regexp(Regexp regexp) {

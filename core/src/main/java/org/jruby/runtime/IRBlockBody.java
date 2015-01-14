@@ -14,18 +14,24 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
     protected ThreadLocal<EvalType> evalType;
+    protected final Signature signature;
 
-    public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Arity arity) {
-        super(staticScope, arity, -1);
+    public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Signature signature) {
+        super(staticScope, signature.arity(), -1);
         this.parameterList = parameterList;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.evalType = new ThreadLocal();
         this.evalType.set(EvalType.NONE);
+        this.signature = signature;
     }
 
     public void setEvalType(EvalType evalType) {
         this.evalType.set(evalType);
+    }
+
+    public Signature getSignature() {
+        return signature;
     }
 
     @Override
@@ -64,6 +70,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type, Block block) {
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
+
         return commonYieldPath(context, prepareArgumentsForCall(context, args, type), null, binding, type, block);
     }
 
@@ -71,7 +79,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Type type) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
         if (type == Type.LAMBDA) {
-            arity().checkArity(context.runtime, args);
+            signature.checkArity(context.runtime, args);
         }
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
@@ -83,7 +91,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, arity, true);
 
             // FIXME: arity error is aginst new args but actual error shows arity of original args.
-            if (type == Type.LAMBDA) arity().checkArity(context.runtime, args);
+            if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
 
             return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
         } else {
@@ -99,7 +107,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
         }
 
-        if (type == Type.LAMBDA) arity().checkArity(context.runtime, args);
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
 
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
@@ -132,7 +140,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             args = ((RubyArray)val0).toJavaArray();
         }
 
-        if (type == Type.LAMBDA) arity().checkArity(context.runtime, args);
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
 
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
@@ -141,7 +149,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
         args = (args == null) ? IRubyObject.NULL_ARRAY : args;
         if (type == Type.LAMBDA) {
-            arity().checkArity(context.runtime, args);
+            signature.checkArity(context.runtime, args);
         }
         return commonYieldPath(context, args, self, binding, type, Block.NULL_BLOCK);
     }
@@ -168,7 +176,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Type type) {
         if (type == Type.LAMBDA) {
-            arity().checkArity(context.runtime, args);
+            signature.checkArity(context.runtime, args);
         } else {
             // SSS FIXME: How is it even possible to "call" a NORMAL block?
             // I thought only procs & lambdas can be called, and blocks are yielded to.

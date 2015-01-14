@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 
 public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     public CheckOutputSeparatorVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);

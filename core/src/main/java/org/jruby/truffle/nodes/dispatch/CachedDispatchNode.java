@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,10 +9,7 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import com.oracle.truffle.api.dsl.Fallback;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -27,8 +24,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     private final BranchProfile moreThanReferenceCompare = BranchProfile.create();
 
-    public CachedDispatchNode(RubyContext context, Object cachedName, DispatchNode next, boolean indirect) {
-        super(context);
+    public CachedDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            boolean indirect,
+            DispatchAction dispatchAction) {
+        super(context, dispatchAction);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
         this.cachedName = cachedName;
@@ -49,19 +51,14 @@ public abstract class CachedDispatchNode extends DispatchNode {
     }
 
     public CachedDispatchNode(CachedDispatchNode prev) {
-        super(prev.getContext());
+        super(prev);
         cachedName = prev.cachedName;
         cachedNameAsSymbol = prev.cachedNameAsSymbol;
         next = prev.next;
         indirect = prev.indirect;
     }
 
-    protected final boolean guardName(
-            LexicalScope lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+    protected final boolean guardName(Object methodName) {
         if (cachedName == methodName) {
             return true;
         }
@@ -71,31 +68,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (cachedName instanceof String) {
             return cachedName.equals(methodName);
         } else if (cachedName instanceof RubySymbol) {
+            // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (cachedName instanceof RubyString) {
             return (methodName instanceof RubyString) && ((RubyString) cachedName).getBytes().equals(((RubyString) methodName).getBytes());
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Fallback
-    public Object dispatch(
-            VirtualFrame frame,
-            Object lexicalScope,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects,
-            Object dispatchAction) {
-        return next.executeDispatch(
-                frame,
-                (LexicalScope) lexicalScope,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects,
-                (Dispatch.DispatchAction) dispatchAction);
     }
 
     protected RubySymbol getCachedNameAsSymbol() {

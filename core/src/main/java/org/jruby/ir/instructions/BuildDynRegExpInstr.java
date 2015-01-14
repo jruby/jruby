@@ -13,30 +13,22 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RegexpOptions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 // Represents a dynamic regexp in Ruby
 // Ex: /#{a}#{b}/
-public class BuildDynRegExpInstr extends Instr implements ResultInstr {
-    private Variable result;
-    private List<Operand> pieces;
+public class BuildDynRegExpInstr extends ResultBaseInstr {
     final private RegexpOptions options;
 
     // Cached regexp
     private RubyRegexp rubyRegexp;
 
-    public BuildDynRegExpInstr(Variable result, List<Operand> pieces, RegexpOptions options) {
-        super(Operation.BUILD_DREGEXP);
+    public BuildDynRegExpInstr(Variable result, Operand[] pieces, RegexpOptions options) {
+        super(Operation.BUILD_DREGEXP, result, pieces);
 
         this.options = options;
-        this.pieces = pieces;
-        this.result = result;
     }
 
-    public List<Operand> getPieces() {
-       return pieces;
+    public Operand[] getPieces() {
+       return operands;
     }
 
     public RegexpOptions getOptions() {
@@ -48,50 +40,20 @@ public class BuildDynRegExpInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return pieces.toArray(new Operand[pieces.size()]);
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        List<Operand> newPieces = new ArrayList<Operand>();
-        for (Operand p : pieces) {
-            newPieces.add(p.getSimplifiedOperand(valueMap, force));
-        }
-
-       pieces = newPieces;
-    }
-
-    @Override
     public String toString() {
-        return super.toString() + "(" + java.util.Arrays.toString(pieces.toArray()) + "," + options + ")";
+        return getOperation() + "(" + java.util.Arrays.toString(getPieces()) + "," + options + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        List<Operand> newPieces = new ArrayList<Operand>();
-        for (Operand p : pieces) {
-            newPieces.add(p.cloneForInlining(ii));
-        }
-
-        return new BuildDynRegExpInstr(ii.getRenamedVariable(result), newPieces, options);
+        return new BuildDynRegExpInstr(ii.getRenamedVariable(result), cloneOperands(ii), options);
     }
 
     private RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        RubyString[] strings = new RubyString[pieces.size()];
-        int i = 0;
-        for (Operand p : pieces) {
-            strings[i++] = (RubyString)p.retrieve(context, self, currScope, currDynScope, temp);
+        int length = operands.length;
+        RubyString[] strings = new RubyString[length];
+        for (int i = 0; i < length; i++) {
+            strings[i] = (RubyString) operands[i].retrieve(context, self, currScope, currDynScope, temp);
         }
         return strings;
     }

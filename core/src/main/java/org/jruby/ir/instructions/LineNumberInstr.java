@@ -1,25 +1,21 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
-import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class LineNumberInstr extends Instr implements FixedArityInstr {
     public final int lineNumber;
 
     public LineNumberInstr(int lineNumber) {
-        super(Operation.LINE_NUM);
+        super(Operation.LINE_NUM, EMPTY_OPERANDS);
+
         this.lineNumber = lineNumber;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(lineNumber) };
+    public int getLineNumber() {
+        return lineNumber;
     }
 
     @Override
@@ -43,9 +39,5 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.LineNumberInstr(this);
-    }
-
-    public int getLineNumber() {
-        return lineNumber;
     }
 }

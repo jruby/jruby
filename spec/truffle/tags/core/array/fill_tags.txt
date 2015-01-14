@@ -22,8 +22,6 @@ fails:Array#fill with (filler, index, length) pads between the last element and 
 fails:Array#fill with (filler, index, length) replaces length elements beginning with the (-n)th if given an index n < 0 and a length > 0
 fails:Array#fill with (filler, index, length) starts at 0 if the negative index is before the start of the array
 fails:Array#fill with (filler, index, length) makes no modifications if the given length <= 0
-fails:Array#fill with (filler, index, length) does not raise an exception if the given length is negative and its absolute value does not exceed the index
-fails:Array#fill with (filler, index, length) does not raise an exception even if the given length is negative and its absolute value exceeds the index
 fails:Array#fill with (filler, index, length) tries to convert the second and third arguments to Integers using #to_int
 fails:Array#fill with (filler, index, length) raises a TypeError if the index is not numeric
 fails:Array#fill with (filler, index, length) raises an ArgumentError or RangeError for too-large sizes

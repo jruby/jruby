@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.control.RedoException;
 
 public class RedoableNode extends RubyNode {
 
-    @Child protected RubyNode body;
+    @Child private RubyNode body;
 
     private final BranchProfile redoProfile = BranchProfile.create();
 
@@ -30,12 +30,12 @@ public class RedoableNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         while (true) {
-            getContext().getSafepointManager().poll();
 
             try {
                 return body.execute(frame);
             } catch (RedoException e) {
                 redoProfile.enter();
+                getContext().getSafepointManager().poll();
                 continue;
             }
         }

@@ -9,21 +9,27 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.joni.Region;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
+import org.jruby.truffle.runtime.util.ArrayUtils;
+
+import java.util.Arrays;
 
 /**
  * Represents the Ruby {@code MatchData} class.
  */
 public class RubyMatchData extends RubyBasicObject {
 
+    private Region region;
     private final Object[] values;
     private final RubyString pre;
     private final RubyString post;
     private final RubyString global;
 
-    public RubyMatchData(RubyClass rubyClass, Object[] values, RubyString pre, RubyString post, RubyString global) {
+    public RubyMatchData(RubyClass rubyClass, Region region, Object[] values, RubyString pre, RubyString post, RubyString global) {
         super(rubyClass);
+        this.region = region;
         this.values = values;
         this.pre = pre;
         this.post = post;
@@ -43,7 +49,45 @@ public class RubyMatchData extends RubyBasicObject {
     }
 
     public Object[] getValues() {
-        return values;
+        return Arrays.copyOf(values, values.length);
+    }
+
+    public Object[] getCaptures() {
+        // There should always be at least one value because the entire matched string must be in the values array.
+        // Thus, there is no risk of an ArrayIndexOutOfBoundsException here.
+        return ArrayUtils.extractRange(values, 1, values.length);
+    }
+
+    public Object begin(int index) {
+        if (region == null) {
+            throw new UnsupportedOperationException("begin is not yet working when no grouping data is available");
+        }
+
+        int begin = region.beg[index];
+
+        if (begin < 0) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        return begin;
+    }
+
+    public Object end(int index) {
+        if (region == null) {
+            throw new UnsupportedOperationException("end is not yet working when no grouping data is available");
+        }
+
+        int end = region.end[index];
+
+        if (end < 0) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        return end;
+    }
+
+    public int getNumberOfRegions() {
+        return region.numRegs;
     }
 
     @Override

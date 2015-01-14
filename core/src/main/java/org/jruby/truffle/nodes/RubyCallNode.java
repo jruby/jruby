@@ -19,30 +19,27 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeFactory;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-
-import java.util.Arrays;
 
 public class RubyCallNode extends RubyNode {
 
     private final String methodName;
 
-    @Child protected RubyNode receiver;
-    @Child protected ProcOrNullNode block;
-    @Children protected final RubyNode[] arguments;
+    @Child private RubyNode receiver;
+    @Child private ProcOrNullNode block;
+    @Children private final RubyNode[] arguments;
 
     private final boolean isSplatted;
     private final boolean isVCall;
 
-    @Child protected DispatchHeadNode dispatchHead;
+    @Child private CallDispatchHeadNode dispatchHead;
 
     private final BranchProfile splatNotArrayProfile = BranchProfile.create();
 
@@ -51,8 +48,8 @@ public class RubyCallNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
-    @Child protected DispatchHeadNode respondToMissing;
-    @Child protected BooleanCastNode respondToMissingCast;
+    @Child private CallDispatchHeadNode respondToMissing;
+    @Child private BooleanCastNode respondToMissingCast;
 
     private final boolean ignoreVisibility;
 
@@ -82,8 +79,8 @@ public class RubyCallNode extends RubyNode {
         this.isSplatted = isSplatted;
         this.isVCall = isVCall;
 
-        dispatchHead = new DispatchHeadNode(context, ignoreVisibility, false, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
-        respondToMissing = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
+        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING);
+        respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
 
         this.ignoreVisibility = ignoreVisibility;
@@ -141,7 +138,7 @@ public class RubyCallNode extends RubyNode {
         } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
             return ArrayUtils.boxUntil((long[]) store, size);
         } else if (seenObjectInUnsplat && store instanceof Object[]) {
-            return Arrays.copyOfRange((Object[]) store, 0, size);
+            return ArrayUtils.extractRange((Object[]) store, 0, size);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -157,7 +154,7 @@ public class RubyCallNode extends RubyNode {
             return ArrayUtils.boxUntil((long[]) store, size);
         } else if (store instanceof Object[]) {
             seenObjectInUnsplat = true;
-            return Arrays.copyOfRange((Object[]) store, 0, size);
+            return ArrayUtils.extractRange((Object[]) store, 0, size);
         }
 
         throw new UnsupportedOperationException();
@@ -196,14 +193,14 @@ public class RubyCallNode extends RubyNode {
 
         // TODO(CS): this lookup should be cached
 
-        final RubyMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiverObject), methodName);
+        final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiverObject), methodName);
 
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (method == null) {
             final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, context.makeString(methodName));
 
-            if (r != Dispatch.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
+            if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return getContext().getCoreLibrary().getNilObject();
             }
         } else if (method.isUndefined()) {

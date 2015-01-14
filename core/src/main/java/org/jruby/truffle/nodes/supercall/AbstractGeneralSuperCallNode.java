@@ -27,14 +27,14 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     @Child protected DirectCallNode callNode;
 
     @CompilerDirectives.CompilationFinal protected Assumption unmodifiedAssumption;
-    @CompilerDirectives.CompilationFinal protected RubyMethod method;
+    @CompilerDirectives.CompilationFinal protected InternalMethod method;
 
     public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -42,7 +42,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     protected boolean guard() {
         // TODO(CS): not sure this is enough... lots of 'unspecified' behaviour in the ISO spec here
-        return method != null && unmodifiedAssumption.isValid();
+        return method != null && unmodifiedAssumption != null && unmodifiedAssumption.isValid();
     }
 
     protected void lookup(VirtualFrame frame) {
@@ -51,11 +51,11 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
         MethodLike methodLike = RubyCallStack.getMethod(currentFrame);
 
-        while (!(methodLike instanceof RubyMethod)) {
+        while (!(methodLike instanceof InternalMethod)) {
             methodLike = ((RubyProc) methodLike).getMethod();
         }
 
-        final String name = ((RubyMethod) methodLike).getName();
+        final String name = ((InternalMethod) methodLike).getName();
 
         // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
         final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();
@@ -66,7 +66,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         if (method == null || method.isUndefined()) {
             method = null;
             // TODO: should add " for #{receiver.inspect}" in error message
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError("super: no superclass method `"+name+"'", this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), this));
         }
 
         final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
@@ -98,7 +98,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
             } else {
                 return context.makeString("super");
             }
-        } catch (Exception e) {
+        } catch (Throwable t) {
             return getContext().getCoreLibrary().getNilObject();
         }
     }

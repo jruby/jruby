@@ -5,17 +5,18 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Signature;
 
 /**
  * Represents a 'for' loop
  */
 public class IRFor extends IRClosure {
-    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String labelPrefix) {
-        super(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, labelPrefix, labelPrefix == "_BEGIN_");
+    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String labelPrefix) {
+        super(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), signature, argumentType, labelPrefix, labelPrefix == "_BEGIN_");
     }
 
-    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
-        this(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, "_FOR_LOOP_");
+    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType) {
+        this(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), signature, argumentType, "_FOR_LOOP_");
     }
 
     /** Used by cloning code */

@@ -12,6 +12,7 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -19,6 +20,7 @@ import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.AliasNodeFactory;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -39,8 +41,6 @@ class ModuleTranslator extends BodyTranslator {
     }
 
     public MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
-        environment.addMethodDeclarationSlots();
-
         RubyNode body;
 
         if (bodyNode != null) {
@@ -61,6 +61,8 @@ class ModuleTranslator extends BodyTranslator {
 
         body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
+        body = new SetMethodDeclarationContext(context, sourceSection, name, body);
+
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         return new MethodDefinitionNode(
@@ -69,15 +71,14 @@ class ModuleTranslator extends BodyTranslator {
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
                 environment.needsDeclarationFrame(),
-                Truffle.getRuntime().createCallTarget(rootNode),
-                false);
+                Truffle.getRuntime().createCallTarget(rootNode));
     }
 
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final SelfNode classNode = new SelfNode(context, sourceSection);
-        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
+        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
     }
 
     @Override

@@ -22,9 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
@@ -41,7 +39,7 @@ import org.jruby.truffle.runtime.control.ThrowException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
@@ -119,8 +117,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class SameOrEqualNode extends CoreMethodNode {
 
-        @Child protected BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+        @Child private CallDispatchHeadNode equalNode;
 
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -141,9 +139,9 @@ public abstract class KernelNodes {
         protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(new PredicateDispatchHeadNode(getContext()));
+                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false, false, null));
             }
-            return equalNode.call(frame, left, "==", null, right);
+            return equalNode.callBoolean(frame, left, "==", null, right);
         }
 
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
@@ -178,11 +176,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "!~", required = 1)
     public abstract static class NotMatchNode extends CoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode matchNode;
+        @Child private CallDispatchHeadNode matchNode;
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = new PredicateDispatchHeadNode(context);
+            matchNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public NotMatchNode(NotMatchNode prev) {
@@ -192,7 +190,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            return !matchNode.call(frame, self, "=~", null, other);
+            return !matchNode.callBoolean(frame, self, "=~", null, other);
         }
 
     }
@@ -200,12 +198,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"<=>"}, required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode equalNode;
-        @Child protected BooleanCastNode booleanCast;
+        @Child private CallDispatchHeadNode equalNode;
+        @Child private BooleanCastNode booleanCast;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
             booleanCast = BooleanCastNodeFactory.create(context, sourceSection, null);
         }
 
@@ -341,8 +339,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean blockGiven() {
-            notDesignedForCompilation();
-
             return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
@@ -468,12 +464,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initializeCloneNode;
+        @Child private CallDispatchHeadNode initializeCloneNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             // Calls private initialize_clone on the new copy.
-            initializeCloneNode = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public CloneNode(CloneNode prev) {
@@ -503,12 +499,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = "dup")
     public abstract static class DupNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initializeDupNode;
+        @Child private CallDispatchHeadNode initializeDupNode;
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             // Calls private initialize_dup on the new copy.
-            initializeDupNode = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
@@ -543,12 +539,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
     public abstract static class EvalNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toStr;
-        @Child protected BindingNode bindingNode;
+        @Child private CallDispatchHeadNode toStr;
+        @Child private BindingNode bindingNode;
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStr = new DispatchHeadNode(context);
+            toStr = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public EvalNode(EvalNode prev) {
@@ -935,7 +931,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public int hash(boolean value) {
+            return Boolean.valueOf(value).hashCode();
+        }
+
+        @Specialization
         public int hash(RubyBasicObject self) {
+            // TODO(CS 8 Jan 15) we shouldn't use the Java class hierarchy like this - every class should define it's
+            // own @CoreMethod hash
             return self.hashCode();
         }
 
@@ -969,11 +972,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"initialize_dup", "initialize_clone"}, visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeDupCloneNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initializeCopyNode;
+        @Child private CallDispatchHeadNode initializeCopyNode;
 
         public InitializeDupCloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = DispatchHeadNode.onSelf(context);
+            initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         public InitializeDupCloneNode(InitializeDupCloneNode prev) {
@@ -1128,15 +1131,18 @@ public abstract class KernelNodes {
     @CoreMethod(names = "Integer", isModuleFunction = true, required = 1)
     public abstract static class IntegerNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toInt;
+        @Child private DoesRespondDispatchHeadNode toIntRespondTo;
+        @Child private CallDispatchHeadNode toInt;
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context);
+            toIntRespondTo = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
+            toInt = new CallDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
         }
 
         public IntegerNode(IntegerNode prev) {
             super(prev);
+            toIntRespondTo = prev.toIntRespondTo;
             toInt = prev.toInt;
         }
 
@@ -1177,7 +1183,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object integer(VirtualFrame frame, Object value) {
-            if (toInt.doesRespondTo(frame, "to_int", value)) {
+            if (toIntRespondTo.doesRespondTo(frame, "to_int", value)) {
                 return toInt.call(frame, value, "to_int", null);
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1232,7 +1238,8 @@ public abstract class KernelNodes {
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
                     block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getDeclarationFrame(), block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+                    block.getCallTargetForMethods(), block.getDeclarationFrame(), block.getDeclaringModule(),
+                    block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 
@@ -1287,11 +1294,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "loop", isModuleFunction = true)
     public abstract static class LoopNode extends CoreMethodNode {
 
-        @Child protected WhileNode whileNode;
+        @Child private WhileNode whileNode;
 
         public LoopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            whileNode = new WhileNode(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection,
+            whileNode = WhileNode.createWhile(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection,
                     new BooleanLiteralNode(context, sourceSection, true)),
                     new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)
             );
@@ -1306,6 +1313,34 @@ public abstract class KernelNodes {
         public Object loop(VirtualFrame frame) {
             return whileNode.execute(frame);
         }
+    }
+
+    @CoreMethod(names = "method", required = 1)
+    public abstract static class MethodNode extends CoreMethodNode {
+
+        public MethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MethodNode(MethodNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyMethod method(Object object, RubySymbol name) {
+            notDesignedForCompilation();
+
+            // TODO(CS, 11-Jan-15) cache this lookup
+
+            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name.toString());
+
+            if (method == null) {
+                throw new UnsupportedOperationException();
+            }
+
+            return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
+        }
+
     }
 
     @CoreMethod(names = "methods", optional = 1)
@@ -1330,7 +1365,7 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            Map<String, RubyMethod> methods;
+            Map<String, InternalMethod> methods;
 
             if (includeInherited) {
                 methods = ModuleOperations.getAllMethods(self.getMetaClass());
@@ -1338,7 +1373,7 @@ public abstract class KernelNodes {
                 methods = self.getMetaClass().getMethods();
             }
 
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
                     array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
@@ -1382,11 +1417,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child private CallDispatchHeadNode toS;
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context);
+            toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public PrintNode(PrintNode prev) {
@@ -1442,7 +1477,7 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            Map<String, RubyMethod> methods;
+            Map<String, InternalMethod> methods;
 
             if (includeInherited) {
                 methods = ModuleOperations.getAllMethods(self.getMetaClass());
@@ -1450,7 +1485,7 @@ public abstract class KernelNodes {
                 methods = self.getMetaClass().getMethods();
             }
 
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PRIVATE) {
                     array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
@@ -1477,8 +1512,9 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
-                    block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+                    block.getSharedMethodInfo(), block.getCallTargetForProcs(), block.getCallTargetForProcs(),
+                    block.getCallTargetForMethods(), block.getDeclarationFrame(), block.getDeclaringModule(),
+                    block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 
@@ -1510,9 +1546,9 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            final Map<String, RubyMethod> methods = self.getMetaClass().getMethods();
+            final Map<String, InternalMethod> methods = self.getMetaClass().getMethods();
 
-            for (RubyMethod method : methods.values()) {
+            for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC) {
                     array.slowPush(self.getContext().newSymbol(method.getName()));
                 }
@@ -1526,11 +1562,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "raise", isModuleFunction = true, optional = 3)
     public abstract static class RaiseNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode initialize;
+        @Child private CallDispatchHeadNode initialize;
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context);
+            initialize = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public RaiseNode(RaiseNode prev) {
@@ -1673,14 +1709,14 @@ public abstract class KernelNodes {
     @CoreMethod(names = "respond_to?", required = 1, optional = 1)
     public abstract static class RespondToNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode dispatch;
-        @Child protected DispatchHeadNode dispatchIgnoreVisibility;
+        @Child private DoesRespondDispatchHeadNode dispatch;
+        @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DispatchHeadNode(context, false, Dispatch.MissingBehavior.RETURN_MISSING);
-            dispatchIgnoreVisibility = new DispatchHeadNode(context, true, Dispatch.MissingBehavior.RETURN_MISSING);
+            dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatch.forceUncached();
@@ -1802,7 +1838,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "singleton_class")
     public abstract static class SingletonClassMethodNode extends CoreMethodNode {
 
-        @Child protected SingletonClassNode singletonClassNode;
+        @Child private SingletonClassNode singletonClassNode;
 
         public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1815,8 +1851,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass singletonClass(Object self) {
-            return singletonClassNode.singletonClass(self);
+        public RubyClass singletonClass(VirtualFrame frame, Object self) {
+            return singletonClassNode.executeSingletonClass(frame, self);
         }
 
     }
@@ -1838,7 +1874,7 @@ public abstract class KernelNodes {
 
             final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
 
-            final Collection<RubyMethod> methods;
+            final Collection<InternalMethod> methods;
 
             if (includeInherited) {
                 methods = ModuleOperations.getAllMethods(self.getSingletonClass(this)).values();
@@ -1846,7 +1882,7 @@ public abstract class KernelNodes {
                 methods = self.getSingletonClass(this).getMethods().values();
             }
 
-            for (RubyMethod method : methods) {
+            for (InternalMethod method : methods) {
                 array.slowPush(RubySymbol.newSymbol(self.getContext(), method.getName()));
             }
 
@@ -1863,11 +1899,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "String", isModuleFunction = true, required = 1)
     public abstract static class StringNode extends CoreMethodNode {
 
-        @Child protected DispatchHeadNode toS;
+        @Child private CallDispatchHeadNode toS;
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context);
+            toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public StringNode(StringNode prev) {
@@ -2024,7 +2060,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "taint")
     public abstract static class TaintNode extends CoreMethodNode {
 
-        @Child protected WriteHeadObjectFieldNode writeTaintNode;
+        @Child private WriteHeadObjectFieldNode writeTaintNode;
 
         public TaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2073,7 +2109,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "tainted?")
     public abstract static class TaintedNode extends CoreMethodNode {
 
-        @Child protected ReadHeadObjectFieldNode readTaintNode;
+        @Child private ReadHeadObjectFieldNode readTaintNode;
 
         public TaintedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2184,9 +2220,9 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodNode {
 
-        @Child protected ClassNode classNode;
-        @Child protected BasicObjectNodes.IDNode idNode;
-        @Child protected ToHexStringNode toHexStringNode;
+        @Child private ClassNode classNode;
+        @Child private BasicObjectNodes.IDNode idNode;
+        @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2201,14 +2237,14 @@ public abstract class KernelNodes {
         public RubyString toS(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            String className = classNode.executeGetClass(self).getName();
+            String className = classNode.executeGetClass(frame, self).getName();
 
             if (className == null) {
                 className = "Class";
             }
 
             Object id = idNode.executeObjectID(frame, self);
-            String hexID = toHexStringNode.executeToHexString(id);
+            String hexID = toHexStringNode.executeToHexString(frame, id);
 
             return getContext().makeString("#<" + className + ":0x" + hexID + ">");
         }
@@ -2218,7 +2254,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "untaint")
     public abstract static class UntaintNode extends CoreMethodNode {
 
-        @Child protected WriteHeadObjectFieldNode writeTaintNode;
+        @Child private WriteHeadObjectFieldNode writeTaintNode;
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

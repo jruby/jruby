@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
-import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
@@ -19,12 +18,12 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { returnValue, new StringLiteral(methodName) };
+        return new Operand[] { getReturnValue(), new StringLiteral(methodName) };
     }
 
     @Override
     public String toString() {
-        return getOperation() + "(" + returnValue + ", <" + methodName + ">" + ")";
+        return getOperation() + "(" + getReturnValue() + ", <" + methodName + ">" + ")";
     }
 
     public boolean computeScopeFlags(IRScope scope) {
@@ -34,17 +33,17 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(returnValue.cloneForInlining(info), methodName);
+        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(getReturnValue().cloneForInlining(info), methodName);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.isClosure()) {
             if (ii.getHostScope() instanceof IRMethod) {
                 // Treat like inlining of a regular method-return
                 Variable v = ii.getCallResultVariable();
-                return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+                return v == null ? null : new CopyInstr(v, getReturnValue().cloneForInlining(ii));
             }
 
-            return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName);
+            return new NonlocalReturnInstr(getReturnValue().cloneForInlining(ii), methodName);
         } else {
             throw new UnsupportedOperationException("Nonlocal returns shouldn't show up outside closures.");
         }

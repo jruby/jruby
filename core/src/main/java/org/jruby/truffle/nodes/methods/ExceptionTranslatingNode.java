@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -29,14 +29,21 @@ import org.jruby.util.cli.Options;
 
 public class ExceptionTranslatingNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    private final UnsupportedOperationBehavior unsupportedOperationBehavior;
+
+    @Child private RubyNode child;
 
     private final BranchProfile controlProfile = BranchProfile.create();
     private final BranchProfile rethrowProfile = BranchProfile.create();
 
     public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+        this(context, sourceSection, child, UnsupportedOperationBehavior.TYPE_ERROR);
+    }
+
+    public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child, UnsupportedOperationBehavior unsupportedOperationBehavior) {
         super(context, sourceSection);
         this.child = child;
+        this.unsupportedOperationBehavior = unsupportedOperationBehavior;
     }
 
     @Override
@@ -116,7 +123,14 @@ public class ExceptionTranslatingNode extends RubyNode {
             }
         }
 
-        return getContext().getCoreLibrary().internalError(builder.toString(), this);
+        switch (unsupportedOperationBehavior) {
+            case TYPE_ERROR:
+                return getContext().getCoreLibrary().typeError(builder.toString(), this);
+            case ARGUMENT_ERROR:
+                return getContext().getCoreLibrary().argumentError(builder.toString(), this);
+            default:
+                throw new UnsupportedOperationException();
+        }
     }
 
     public RubyException translate(Throwable throwable) {

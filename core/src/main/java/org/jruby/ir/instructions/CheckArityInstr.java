@@ -18,18 +18,13 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     public final int restKey;
 
     public CheckArityInstr(int required, int opt, int rest, boolean receivesKeywords, int restKey) {
-        super(Operation.CHECK_ARITY);
+        super(Operation.CHECK_ARITY, EMPTY_OPERANDS);
 
         this.required = required;
         this.opt = opt;
         this.rest = rest;
         this.receivesKeywords = receivesKeywords;
         this.restKey = restKey;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(required), new Fixnum(opt), new Fixnum(rest) };
     }
 
     @Override

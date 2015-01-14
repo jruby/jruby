@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyException;
  */
 public class RaiseException extends RuntimeException {
 
-    private final RubyException rubyException;
+    private transient final RubyException rubyException;
 
     public RaiseException(RubyException rubyException) {
         this.rubyException = rubyException;

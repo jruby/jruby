@@ -31,8 +31,8 @@ class RubyTimeToDateTimeNode extends Node {
 
     private final RubyContext context;
 
-    @Child protected ReadHeadObjectFieldNode readIsGMTNode = new ReadHeadObjectFieldNode("@is_gmt");
-    @Child protected ReadHeadObjectFieldNode readOffsetNode = new ReadHeadObjectFieldNode("@offset");
+    @Child private ReadHeadObjectFieldNode readIsGMTNode = new ReadHeadObjectFieldNode("@is_gmt");
+    @Child private ReadHeadObjectFieldNode readOffsetNode = new ReadHeadObjectFieldNode("@offset");
 
     public RubyTimeToDateTimeNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;

@@ -9,14 +9,18 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -182,6 +186,30 @@ public abstract class IRBytecodeAdapter {
 
     public org.objectweb.asm.Label newLabel() {
         return new org.objectweb.asm.Label();
+    }
+
+    public void pushBlockBody(Handle handle, org.jruby.runtime.Signature signature, String className) {
+        // FIXME: too much bytecode
+        String cacheField = "blockBody" + getClassData().callSiteCount.getAndIncrement();
+        Label done = new Label();
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(CompiledIRBlockBody.class), null, null).visitEnd();
+        adapter.getstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
+        adapter.dup();
+        adapter.ifnonnull(done);
+        {
+            adapter.pop();
+            adapter.newobj(p(CompiledIRBlockBody.class));
+            adapter.dup();
+
+            adapter.ldc(handle);
+            adapter.getstatic(className, handle.getName() + "_IRScope", ci(IRScope.class));
+            adapter.ldc(signature.encode());
+
+            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, long.class));
+            adapter.dup();
+            adapter.putstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
+        }
+        adapter.label(done);
     }
 
     /**

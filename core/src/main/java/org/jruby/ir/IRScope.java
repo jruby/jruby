@@ -106,7 +106,7 @@ public abstract class IRScope implements ParseResult {
 
     /** What the interpreter depends on to interpret this IRScope */
     protected InterpreterContext interpreterContext;
-    private List<BasicBlock> linearizedBBList;
+    private BasicBlock[] linearizedBBList;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -132,6 +132,8 @@ public abstract class IRScope implements ParseResult {
     private int threadPollInstrsCount;
 
     private IRManager manager;
+
+    private TemporaryVariable yieldClosureVariable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -190,7 +192,6 @@ public abstract class IRScope implements ParseResult {
         flags.remove(HAS_EXPLICIT_CALL_PROTOCOL);
         flags.remove(HAS_LOOPS);
         flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(HAS_UNUSED_IMPLICIT_BLOCK_ARG);
         flags.remove(RECEIVES_KEYWORD_ARGS);
 
         // These flags are true by default!
@@ -254,10 +255,6 @@ public abstract class IRScope implements ParseResult {
         nestedClosures.remove(closure);
     }
 
-    public Instr getLastInstr() {
-        return instrList.get(instrList.size() - 1);
-    }
-
     public void addInstrAtBeginning(Instr instr) {
         instr.computeScopeFlags(this);
 
@@ -281,8 +278,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void initFlipStateVariable(Variable v, Operand initState) {
-        // Add it to the beginning
-        instrList.add(0, new CopyInstr(v, initState));
+        addInstrAtBeginning(new CopyInstr(v, initState));
     }
 
     public Label getNewLabel(String prefix) {
@@ -624,7 +620,7 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getJITPasses(this));
 
-        return buildLinearization();
+        return Arrays.asList(buildLinearization());
     }
 
     private void setupLinearization() {
@@ -896,6 +892,17 @@ public abstract class IRScope implements ParseResult {
         temporaryVariableIndex = count + 1;
     }
 
+    /**
+     * Get the variable for accessing the "yieldable" closure in this scope.
+     */
+    public TemporaryVariable getYieldClosureVariable() {
+        if (yieldClosureVariable == null) {
+            return yieldClosureVariable = createTemporaryVariable();
+        }
+
+        return yieldClosureVariable;
+    }
+
     public TemporaryLocalVariable getNewUnboxedVariable(Class type) {
         TemporaryVariableType varType;
         if (type == Float.class) {
@@ -1030,7 +1037,7 @@ public abstract class IRScope implements ParseResult {
         linearizedBBList = null;
     }
 
-    public List<BasicBlock> buildLinearization() {
+    public BasicBlock[] buildLinearization() {
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
 
         linearizedBBList = CFGLinearizer.linearize(cfg);
@@ -1038,7 +1045,7 @@ public abstract class IRScope implements ParseResult {
         return linearizedBBList;
     }
 
-    public List<BasicBlock> linearization() {
+    public BasicBlock[] linearization() {
         depends(cfg());
 
         assert linearizedBBList != null: "You have not run linearization";

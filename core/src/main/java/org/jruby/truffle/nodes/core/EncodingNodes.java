@@ -22,6 +22,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
@@ -118,6 +119,15 @@ public abstract class EncodingNodes {
             notDesignedForCompilation();
 
             getContext().getRuntime().setDefaultInternalEncoding(encoding.getEncoding());
+
+            return encoding;
+        }
+
+        @Specialization
+        public RubyNilClass defaultExternal(RubyNilClass encoding) {
+            notDesignedForCompilation();
+
+            getContext().getRuntime().setDefaultInternalEncoding(ASCIIEncoding.INSTANCE);
 
             return encoding;
         }

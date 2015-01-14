@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
@@ -21,6 +22,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -28,6 +30,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -51,6 +54,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass bindingClass;
     @CompilerDirectives.CompilationFinal private RubyClass classClass;
     @CompilerDirectives.CompilationFinal private RubyClass continuationClass;
+    @CompilerDirectives.CompilationFinal private RubyClass complexClass;
     @CompilerDirectives.CompilationFinal private RubyClass dirClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingClass;
     @CompilerDirectives.CompilationFinal private RubyClass exceptionClass;
@@ -78,6 +82,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass processClass;
     @CompilerDirectives.CompilationFinal private RubyClass rangeClass;
     @CompilerDirectives.CompilationFinal private RubyClass rangeErrorClass;
+    @CompilerDirectives.CompilationFinal private RubyClass rationalClass;
     @CompilerDirectives.CompilationFinal private RubyClass regexpClass;
     @CompilerDirectives.CompilationFinal private RubyClass regexpErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass rubyTruffleErrorClass;
@@ -107,6 +112,8 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass edomClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingConverterClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingCompatibilityErrorClass;
+    @CompilerDirectives.CompilationFinal private RubyClass methodClass;
+    @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -203,6 +210,7 @@ public class CoreLibrary {
         bignumClass.setAllocator(new RubyBignum.BignumAllocator());
         bindingClass = new RubyClass(context, objectClass, objectClass, "Binding");
         comparableModule = new RubyModule(context, objectClass, "Comparable");
+        complexClass = new RubyClass(context, objectClass, numericClass, "Complex");
         configModule = new RubyModule(context, objectClass, "Config");
         continuationClass = new RubyClass(context, objectClass, objectClass, "Continuation");
         dirClass = new RubyClass(context, objectClass, objectClass, "Dir");
@@ -243,6 +251,7 @@ public class CoreLibrary {
         rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
         rangeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RangeError");
         rangeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        rationalClass = new RubyClass(context, objectClass, numericClass, "Rational");
         regexpClass = new RubyClass(context, objectClass, objectClass, "Regexp");
         regexpClass.setAllocator(new RubyRegexp.RegexpAllocator());
         regexpErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RegexpError");
@@ -275,6 +284,8 @@ public class CoreLibrary {
         zeroDivisionErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
         encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
+        methodClass = new RubyClass(context, objectClass, objectClass, "Method");
+        unboundMethodClass = new RubyClass(context, objectClass, objectClass, "UnboundMethod");
 
         encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
         encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
@@ -282,8 +293,16 @@ public class CoreLibrary {
         // Includes
 
         objectClass.include(null, kernelModule);
+
         numericClass.include(null, comparableModule);
+        stringClass.include(null, comparableModule);
+        symbolClass.include(null, comparableModule);
+
         arrayClass.include(null, enumerableModule);
+        dirClass.include(null, enumerableModule);
+        hashClass.include(null, enumerableModule);
+        ioClass.include(null, enumerableModule);
+        rangeClass.include(null, enumerableModule);
 
         // Set constants
 
@@ -387,7 +406,7 @@ public class CoreLibrary {
             throw new RuntimeException(e);
         }
 
-        context.execute(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, mainObject, null, null);
+        context.load(source, null, NodeWrapper.IDENTITY);
     }
 
     public void initializeEncodingConstants() {
@@ -481,6 +500,11 @@ public class CoreLibrary {
     public RubyException argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException argumentErrorInvalidRadix(int radix, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError(String.format("invalid radix %d", radix), currentNode);
     }
 
     public RubyException argumentErrorMissingKeyword(String name, Node currentNode) {
@@ -599,6 +623,11 @@ public class CoreLibrary {
                 getLogicalClass(coercedTo).getName()), currentNode);
     }
 
+    public RubyException typeErrorCantCoerce(Object from, String to, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
+    }
+
     public RubyException nameError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
@@ -676,6 +705,15 @@ public class CoreLibrary {
     public RubyException rangeError(String type, String value, String range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException rangeError(RubyRange.IntegerFixnumRange range, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(rangeErrorClass, context.makeString(String.format("%d..%s%d out of range",
+                    range.getBegin(),
+                    range.doesExcludeEnd() ? "." : "",
+                    range.getEnd())),
+                RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException internalError(String message, Node currentNode) {
@@ -788,6 +826,10 @@ public class CoreLibrary {
         return rangeClass;
     }
 
+    public RubyClass getRationalClass() {
+        return rationalClass;
+    }
+
     public RubyClass getRegexpClass() {
         return regexpClass;
     }
@@ -896,5 +938,17 @@ public class CoreLibrary {
 
     public RubyClass getEncodingConverterClass() {
         return encodingConverterClass;
+    }
+
+    public RubyClass getUnboundMethodClass() {
+        return unboundMethodClass;
+    }
+
+    public RubyClass getMethodClass() {
+        return methodClass;
+    }
+
+    public RubyClass getComplexClass() {
+        return complexClass;
     }
 }

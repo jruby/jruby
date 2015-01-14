@@ -23,7 +23,7 @@ public abstract class BignumNodes {
 
     public static abstract class BignumCoreMethodNode extends CoreMethodNode {
 
-        @Child protected FixnumOrBignumNode fixnumOrBignum;
+        @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public BignumCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -265,22 +265,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean less(RubyBignum a, int b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, long b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, double b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) < 0;
+            return a.compare(b) < 0;
         }
     }
 
@@ -297,22 +297,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean lessEqual(RubyBignum a, int b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, long b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, double b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) <= 0;
+            return a.compare(b) <= 0;
         }
     }
 
@@ -361,12 +361,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(RubyBignum a, int b) {
-            return a.compareTo(b);
+            return a.compare(b);
         }
 
         @Specialization
         public int compare(RubyBignum a, long b) {
-            return a.compareTo(b);
+            return a.compare(b);
         }
 
         @Specialization
@@ -376,7 +376,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b);
+            return a.compare(b);
         }
     }
 
@@ -393,22 +393,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, int b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, long b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, double b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) >= 0;
+            return a.compare(b) >= 0;
         }
     }
 
@@ -425,22 +425,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greater(RubyBignum a, int b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, long b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, double b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, RubyBignum b) {
-            return a.compareTo(b) > 0;
+            return a.compare(b) > 0;
         }
     }
 
@@ -593,29 +593,10 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "even?")
-    public abstract static class EvenNode extends BignumCoreMethodNode {
-
-        public EvenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EvenNode(EvenNode prev) {
-            super(prev);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public boolean even(RubyBignum value) {
-            return value.bigIntegerValue().getLowestSetBit() != 0;
-        }
-
-    }
-
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
-        @Child protected GeneralDivModNode divModNode;
+        @Child private GeneralDivModNode divModNode;
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -640,6 +621,61 @@ public abstract class BignumNodes {
         @Specialization
         public RubyArray divMod(RubyBignum a, RubyBignum b) {
             return divModNode.execute(a, b);
+        }
+
+    }
+
+    @CoreMethod(names = "even?")
+    public abstract static class EvenNode extends BignumCoreMethodNode {
+
+        public EvenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EvenNode(EvenNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean even(RubyBignum value) {
+            return value.bigIntegerValue().getLowestSetBit() != 0;
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubyBignum self) {
+            return self.bigIntegerValue().hashCode();
+        }
+
+    }
+
+    @CoreMethod(names = "to_f")
+    public abstract static class ToFNode extends CoreMethodNode {
+
+        public ToFNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToFNode(ToFNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public double toF(RubyBignum value) {
+            return value.doubleValue();
         }
 
     }

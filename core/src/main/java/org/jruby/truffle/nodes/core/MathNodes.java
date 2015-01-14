@@ -16,9 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyMath;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -29,7 +27,7 @@ import org.jruby.truffle.runtime.core.RubyBignum;
 public abstract class MathNodes {
 
     @CoreMethod(names = "acos", isModuleFunction = true, required = 1)
-    public abstract static class ACosNode extends SimpleMonadicMathFunction {
+    public abstract static class ACosNode extends SimpleMonadicMathNode {
 
         public ACosNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -52,7 +50,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "acosh", isModuleFunction = true, required = 1)
-    public abstract static class ACosHNode extends SimpleMonadicMathFunction {
+    public abstract static class ACosHNode extends SimpleMonadicMathNode {
 
         public ACosHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -81,7 +79,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "asin", isModuleFunction = true, required = 1)
-    public abstract static class ASinNode extends SimpleMonadicMathFunction {
+    public abstract static class ASinNode extends SimpleMonadicMathNode {
 
         public ASinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -104,7 +102,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "asinh", isModuleFunction = true, required = 1)
-    public abstract static class ASinHNode extends SimpleMonadicMathFunction {
+    public abstract static class ASinHNode extends SimpleMonadicMathNode {
 
         public ASinHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -138,7 +136,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "atan", isModuleFunction = true, required = 1)
-    public abstract static class ATanNode extends SimpleMonadicMathFunction {
+    public abstract static class ATanNode extends SimpleMonadicMathNode {
 
         public ATanNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -156,7 +154,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "atan2", isModuleFunction = true, required = 2)
-    public abstract static class ATan2Node extends SimpleDyadicMathFunction {
+    public abstract static class ATan2Node extends SimpleDyadicMathNode {
 
         public ATan2Node(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -174,7 +172,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "atanh", isModuleFunction = true, required = 1)
-    public abstract static class ATanHNode extends SimpleMonadicMathFunction {
+    public abstract static class ATanHNode extends SimpleMonadicMathNode {
 
         public ATanHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -213,7 +211,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "cbrt", isModuleFunction = true, required = 1)
-    public abstract static class CbRtNode extends SimpleMonadicMathFunction {
+    public abstract static class CbRtNode extends SimpleMonadicMathNode {
 
         public CbRtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -231,7 +229,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "cos", isModuleFunction = true, required = 1)
-    public abstract static class CosNode extends SimpleMonadicMathFunction {
+    public abstract static class CosNode extends SimpleMonadicMathNode {
 
         public CosNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -249,7 +247,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "cosh", isModuleFunction = true, required = 1)
-    public abstract static class CosHNode extends SimpleMonadicMathFunction {
+    public abstract static class CosHNode extends SimpleMonadicMathNode {
 
         public CosHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -267,7 +265,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "erf", isModuleFunction = true, required = 1)
-    public abstract static class ErfNode extends SimpleMonadicMathFunction {
+    public abstract static class ErfNode extends SimpleMonadicMathNode {
 
         public ErfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -299,7 +297,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "erfc", isModuleFunction = true, required = 1)
-    public abstract static class ErfcNode extends SimpleMonadicMathFunction {
+    public abstract static class ErfcNode extends SimpleMonadicMathNode {
 
         public ErfcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -344,7 +342,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "exp", isModuleFunction = true, required = 1)
-    public abstract static class ExpNode extends SimpleMonadicMathFunction {
+    public abstract static class ExpNode extends SimpleMonadicMathNode {
 
         public ExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -364,13 +362,13 @@ public abstract class MathNodes {
     @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
     public abstract static class FrExpNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private CallDispatchHeadNode floatNode;
 
         public FrExpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         public FrExpNode(FrExpNode prev) {
@@ -421,7 +419,7 @@ public abstract class MathNodes {
 
         @Fallback
         public RubyArray frexp(VirtualFrame frame, Object a) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return frexp(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
@@ -443,7 +441,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "gamma", isModuleFunction = true, required = 1)
-    public abstract static class GammaNode extends SimpleMonadicMathFunction {
+    public abstract static class GammaNode extends SimpleMonadicMathNode {
 
         public GammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -500,7 +498,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "hypot", isModuleFunction = true, required = 2)
-    public abstract static class HypotNode extends SimpleDyadicMathFunction {
+    public abstract static class HypotNode extends SimpleDyadicMathNode {
 
         public HypotNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -520,15 +518,15 @@ public abstract class MathNodes {
     @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
     public abstract static class LdexpNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatANode;
-        @Child protected DispatchHeadNode integerBNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private CallDispatchHeadNode floatANode;
+        @Child private CallDispatchHeadNode integerBNode;
 
         protected LdexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatANode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
-            integerBNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            integerBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         protected LdexpNode(LdexpNode prev) {
@@ -605,7 +603,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return function(
                             floatANode.callFloat(frame, a, "to_f", null),
@@ -633,13 +631,13 @@ public abstract class MathNodes {
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private CallDispatchHeadNode floatNode;
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
         public LGammaNode(LGammaNode prev) {
@@ -679,7 +677,7 @@ public abstract class MathNodes {
 
         @Fallback
         public RubyArray lgamma(VirtualFrame frame, Object a) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return lgamma(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
@@ -701,7 +699,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "log", isModuleFunction = true, required = 1, optional = 1)
-    public abstract static class LogNode extends SimpleDyadicMathFunction {
+    public abstract static class LogNode extends SimpleDyadicMathNode {
 
         public LogNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -733,7 +731,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(VirtualFrame frame, Object a, UndefinedPlaceholder b) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(
                             floatANode.callFloat(frame, a, "to_f", null));
@@ -775,7 +773,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "log10", isModuleFunction = true, required = 1)
-    public abstract static class Log10Node extends SimpleMonadicMathFunction {
+    public abstract static class Log10Node extends SimpleMonadicMathNode {
 
         public Log10Node(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -798,7 +796,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "log2", isModuleFunction = true, required = 1)
-    public abstract static class Log2Node extends SimpleMonadicMathFunction {
+    public abstract static class Log2Node extends SimpleMonadicMathNode {
 
         private final double LOG2 = Math.log(2);
 
@@ -823,7 +821,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "sin", isModuleFunction = true, required = 1)
-    public abstract static class SinNode extends SimpleMonadicMathFunction {
+    public abstract static class SinNode extends SimpleMonadicMathNode {
 
         public SinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -841,7 +839,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "sinh", isModuleFunction = true, required = 1)
-    public abstract static class SinHNode extends SimpleMonadicMathFunction {
+    public abstract static class SinHNode extends SimpleMonadicMathNode {
 
         public SinHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -859,7 +857,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "tan", isModuleFunction = true, required = 1)
-    public abstract static class TanNode extends SimpleMonadicMathFunction {
+    public abstract static class TanNode extends SimpleMonadicMathNode {
 
         public TanNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -877,7 +875,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "tanh", isModuleFunction = true, required = 1)
-    public abstract static class TanHNode extends SimpleMonadicMathFunction {
+    public abstract static class TanHNode extends SimpleMonadicMathNode {
 
         public TanHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -895,7 +893,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "sqrt", isModuleFunction = true, required = 1)
-    public abstract static class SqrtNode extends SimpleMonadicMathFunction {
+    public abstract static class SqrtNode extends SimpleMonadicMathNode {
 
         public SqrtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -912,18 +910,18 @@ public abstract class MathNodes {
 
     }
 
-    protected abstract static class SimpleMonadicMathFunction extends CoreMethodNode {
+    protected abstract static class SimpleMonadicMathNode extends CoreMethodNode {
 
-        @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatNode;
+        @Child private KernelNodes.IsANode isANode;
+        @Child private CallDispatchHeadNode floatNode;
 
-        protected SimpleMonadicMathFunction(RubyContext context, SourceSection sourceSection) {
+        protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
-        protected SimpleMonadicMathFunction(SimpleMonadicMathFunction prev) {
+        protected SimpleMonadicMathNode(SimpleMonadicMathNode prev) {
             super(prev);
             isANode = prev.isANode;
             floatNode = prev.floatNode;
@@ -957,7 +955,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
@@ -978,20 +976,20 @@ public abstract class MathNodes {
 
     }
 
-    protected abstract static class SimpleDyadicMathFunction extends CoreMethodNode {
+    protected abstract static class SimpleDyadicMathNode extends CoreMethodNode {
 
         @Child protected KernelNodes.IsANode isANode;
-        @Child protected DispatchHeadNode floatANode;
-        @Child protected DispatchHeadNode floatBNode;
+        @Child protected CallDispatchHeadNode floatANode;
+        @Child protected CallDispatchHeadNode floatBNode;
 
-        protected SimpleDyadicMathFunction(RubyContext context, SourceSection sourceSection) {
+        protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-            floatANode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
-            floatBNode = new DispatchHeadNode(context, Dispatch.MissingBehavior.RETURN_MISSING);
+            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            floatBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
-        protected SimpleDyadicMathFunction(SimpleDyadicMathFunction prev) {
+        protected SimpleDyadicMathNode(SimpleDyadicMathNode prev) {
             super(prev);
             isANode = prev.isANode;
             floatANode = prev.floatANode;
@@ -1086,7 +1084,7 @@ public abstract class MathNodes {
 
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
-            if (isANode.executeBoolean(a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeBoolean(b, getContext().getCoreLibrary().getNumericClass())) {
+            if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeIsA(frame, b, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(
                             floatANode.callFloat(frame, a, "to_f", null),

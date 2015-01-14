@@ -18,8 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.PredicateDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.hash.FindEntryNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.DebugOperations;
@@ -41,11 +40,11 @@ public abstract class HashNodes {
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode equalNode;
+        @Child private CallDispatchHeadNode equalNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new PredicateDispatchHeadNode(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public EqualNode(EqualNode prev) {
@@ -59,7 +58,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public boolean equal(VirtualFrame frame, RubyHash a, RubyHash b) {
+        public boolean equal(RubyHash a, RubyHash b) {
             notDesignedForCompilation();
 
             final List<KeyValue> aEntries = HashOperations.verySlowToKeyValues(a);
@@ -95,6 +94,12 @@ public abstract class HashNodes {
 
             return true;
         }
+
+        @Specialization(guards = "!isRubyHash(arguments[1])")
+        public boolean equalNonHash(RubyHash a, Object b) {
+            return false;
+        }
+
     }
 
     @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true)
@@ -221,16 +226,16 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]", required = 1)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
-        @Child protected YieldDispatchHeadNode yield;
-        @Child protected FindEntryNode findEntryNode;
+        @Child private CallDispatchHeadNode eqlNode;
+        @Child private YieldDispatchHeadNode yield;
+        @Child private FindEntryNode findEntryNode;
 
         private final BranchProfile notInHashProfile = BranchProfile.create();
         private final BranchProfile useDefaultProfile = BranchProfile.create();
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new PredicateDispatchHeadNode(context);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             yield = new YieldDispatchHeadNode(context);
             findEntryNode = new FindEntryNode(context, sourceSection);
         }
@@ -262,7 +267,7 @@ public abstract class HashNodes {
             final int size = hash.getSize();
 
             for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
-                if (n < size && eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key)) {
                     return store[n * 2 + 1];
                 }
             }
@@ -311,14 +316,14 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", required = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
+        @Child private CallDispatchHeadNode eqlNode;
 
         private final BranchProfile considerExtendProfile = BranchProfile.create();
         private final BranchProfile extendProfile = BranchProfile.create();
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new PredicateDispatchHeadNode(context);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public SetIndexNode(SetIndexNode prev) {
@@ -345,7 +350,7 @@ public abstract class HashNodes {
             final int size = hash.getSize();
 
             for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
-                if (n < size && eqlNode.call(frame, store[n * 2], "eql?", null, key)) {
+                if (n < size && eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key)) {
                     store[n * 2 + 1] = value;
                     return value;
                 }
@@ -420,12 +425,12 @@ public abstract class HashNodes {
     @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
-        @Child protected FindEntryNode findEntryNode;
+        @Child private CallDispatchHeadNode eqlNode;
+        @Child private FindEntryNode findEntryNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new PredicateDispatchHeadNode(context);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             findEntryNode = new FindEntryNode(context, sourceSection);
         }
 
@@ -449,7 +454,7 @@ public abstract class HashNodes {
             final int size = hash.getSize();
 
             for (int n = 0; n < HashOperations.SMALL_HASH_SIZE * 2; n += 2) {
-                if (n < size && eqlNode.call(frame, store[n], "eql?", null, key)) {
+                if (n < size && eqlNode.callBoolean(frame, store[n], "eql?", null, key)) {
                     final Object value = store[n + 1];
 
                     // Move the later values down
@@ -685,11 +690,11 @@ public abstract class HashNodes {
     @CoreMethod(names = {"inspect", "to_s"})
     public abstract static class InspectNode extends HashCoreMethodNode {
 
-        @Child protected DispatchHeadNode inspect;
+        @Child private CallDispatchHeadNode inspect;
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context);
+            inspect = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public InspectNode(InspectNode prev) {
@@ -734,11 +739,11 @@ public abstract class HashNodes {
     @CoreMethod(names = { "has_key?", "key?" }, required = 1)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
+        @Child private CallDispatchHeadNode eqlNode;
 
         public KeyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new PredicateDispatchHeadNode(context);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public KeyNode(KeyNode prev) {
@@ -759,7 +764,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
 
             for (int n = 0; n < store.length; n += 2) {
-                if (n < size && eqlNode.call(frame, store[n], "eql?", null, key)) {
+                if (n < size && eqlNode.callBoolean(frame, store[n], "eql?", null, key)) {
                     return true;
                 }
             }
@@ -772,7 +777,7 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
-                if (eqlNode.call(frame, keyValue.getKey(), "eql?", null, key)) {
+                if (eqlNode.callBoolean(frame, keyValue.getKey(), "eql?", null, key)) {
                     return true;
                 }
             }
@@ -895,7 +900,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "merge", required = 1)
     public abstract static class MergeNode extends HashCoreMethodNode {
 
-        @Child protected PredicateDispatchHeadNode eqlNode;
+        @Child private CallDispatchHeadNode eqlNode;
 
         private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
         private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();
@@ -907,7 +912,7 @@ public abstract class HashNodes {
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new PredicateDispatchHeadNode(context);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         public MergeNode(MergeNode prev) {
@@ -943,7 +948,7 @@ public abstract class HashNodes {
 
                     for (int b = 0; b < HashOperations.SMALL_HASH_SIZE; b++) {
                         if (b < storeBSize) {
-                            if (eqlNode.call(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
+                            if (eqlNode.callBoolean(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
                                 merge = false;
                                 break;
                             }

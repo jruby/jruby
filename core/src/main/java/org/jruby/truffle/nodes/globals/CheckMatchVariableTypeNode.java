@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 
 public class CheckMatchVariableTypeNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child private RubyNode child;
 
     public CheckMatchVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);

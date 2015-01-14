@@ -11,21 +11,17 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
-    private Operand container;
     private final IRMethod method;
 
     public DefineClassMethodInstr(Operand container, IRMethod method) {
-        super(Operation.DEF_CLASS_METH);
-        this.container = container;
+        super(Operation.DEF_CLASS_METH, new Operand[] { container });
         this.method = method;
     }
 
     public Operand getContainer() {
-        return container;
+        return operands[0];
     }
 
     public IRMethod getMethod() {
@@ -33,28 +29,18 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[]{container};
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        container = container.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
     public String toString() {
-        return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
+        return getOperation() + "(" + getContainer() + ", " + method.getName() + ", " + method.getFileName() + ")";
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineClassMethodInstr(container.cloneForInlining(ii), method);
+        return new DefineClassMethodInstr(getContainer().cloneForInlining(ii), method);
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject obj = (IRubyObject) container.retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject obj = (IRubyObject) getContainer().retrieve(context, self, currScope, currDynScope, temp);
 
         IRRuntimeHelpers.defInterpretedClassMethod(context, method, obj);
         return null;

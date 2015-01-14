@@ -25,7 +25,7 @@ public class GetFieldInstr extends GetInstr implements FixedArityInstr {
     public VariableAccessor getAccessor(IRubyObject o) {
         RubyClass cls = o.getMetaClass().getRealClass();
         VariableAccessor localAccessor = accessor;
-        IRubyObject value;
+
         if (localAccessor.getClassId() != cls.hashCode()) {
             localAccessor = cls.getVariableAccessorForRead(getRef());
             accessor = localAccessor;

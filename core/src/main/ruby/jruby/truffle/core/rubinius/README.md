@@ -4,6 +4,9 @@ of Rubinius. This code was written by Evan Phoenix, Brian Shirai, et al.
 
 https://github.com/rubinius/rubinius
 
+Some files in the parent directory contain small snippets of code from the same
+repository. These are individually annotated.
+
 `api` contains code from `rubinius-core-api`, the Rubinius API implementation
 written in Ruby, in some cases modified. We have taken files from commit
 8d01207061518355da9b53274fe8766ecf85fdfe. This code was written by Evan Phoenix,

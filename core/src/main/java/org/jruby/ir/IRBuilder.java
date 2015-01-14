@@ -21,6 +21,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -43,7 +44,7 @@ import static org.jruby.ir.operands.ScopeModule.*;
 // ----------------------------------------------
 // Note that in general, there will be lots of a = b kind of copies
 // introduced in the IR because the translation is entirely single-node focused.
-// An example will make this clear
+// An example will make this clear.
 //
 // RUBY:
 //     v = @f
@@ -74,7 +75,7 @@ import static org.jruby.ir.operands.ScopeModule.*;
 // ----------------------------
 // - We should be returning null from the build methods where it is a normal "error" condition
 // - We should be returning manager.getNil() where the actual return value of a build is the ruby nil operand
-//   Look in buildIf for an example of this
+//   Look in buildIf for an example of this.
 //
 // 3. Temporary variable reuse
 // ---------------------------
@@ -236,9 +237,7 @@ public class IRBuilder {
             // are not cloned.
             ii.renameLabel(start);
             for (Instr i: instrs) {
-                if (i instanceof LabelInstr) {
-                    ii.renameLabel(((LabelInstr)i).label);
-                }
+                if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
             }
 
             // Clone instructions now
@@ -272,14 +271,14 @@ public class IRBuilder {
     // of cloning.
     private Stack<Label> activeRescuers = new Stack<>();
 
-    private int _lastProcessedLineNum = -1;
-
     // Since we are processing ASTs, loop bodies are processed in depth-first manner
     // with outer loops encountered before inner loops, and inner loops finished before outer ones.
     //
     // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
-    // This lets us implement next/redo/break/retry easily for the non-closure cases
+    // This lets us implement next/redo/break/retry easily for the non-closure cases.
     private Stack<IRLoop> loopStack = new Stack<>();
+
+    private int _lastProcessedLineNum = -1;
 
     public IRLoop getCurrentLoop() {
         return loopStack.isEmpty() ? null : loopStack.peek();
@@ -310,24 +309,6 @@ public class IRBuilder {
         } else {
             ensureBodyBuildStack.peek().addInstrAtBeginning(i);
         }
-    }
-
-    // FIXME: This all seems wrong to me.  IRClosures can receive explicit closures why are we searching only methods
-    // and by-passing closures
-    private Operand getImplicitBlockArg(IRScope s) {
-        int n = 0;
-        while (s instanceof IRClosure || s instanceof IRMetaClassBody) {
-            n++;
-            s = s.getLexicalParent();
-        }
-
-        if (s != null) {
-            LocalVariable v = s instanceof IRMethod ? s.getLocalVariable(Variable.BLOCK, 0) : null;
-
-            if (v != null) return n == 0 ? v : v.cloneForDepth(n);
-        }
-
-        return manager.getNil();
     }
 
     // Emit cloned ensure bodies by walking up the ensure block stack.
@@ -503,14 +484,14 @@ public class IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, node.getPosition().getLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, node.getPosition().getLine(), node.getScope(), Signature.from(node), node.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
 
-        // Receive self
-        closureBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
+        // Prepare all implicit state (self, frame block, etc)
+        closureBuilder.prepareImplicitState(closure);
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
@@ -862,8 +843,8 @@ public class IRBuilder {
     }
 
     public Operand buildBignum(BignumNode node) {
-        // SSS: Since bignum literals are effectively interned objects, no need to copyAndReturnValue(...)
-        // Or is this a premature optimization?
+        // Since bignum literals are effectively interned objects, no need to copyAndReturnValue(...)
+        // SSS FIXME: Or is this a premature optimization?
         return new Bignum(node.getValue());
     }
 
@@ -979,8 +960,8 @@ public class IRBuilder {
     }
 
     public Operand buildCall(CallNode callNode, IRScope s) {
-        Node          callArgsNode = callNode.getArgsNode();
-        Node          receiverNode = callNode.getReceiverNode();
+        Node callArgsNode = callNode.getArgsNode();
+        Node receiverNode = callNode.getReceiverNode();
 
         // check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
@@ -992,17 +973,16 @@ public class IRBuilder {
         //    new Callinstr( ... , build(receiverNode, s), ...)
         // that is incorrect IR because the receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
-        Operand       receiver     = build(receiverNode, s);
-        Operand[] args         = setupCallArgs(callArgsNode, s);
-        Operand       block        = setupCallClosure(callNode.getIterNode(), s);
-        Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(callResult, callNode.getName(), receiver, args, block);
+        Operand   receiver   = build(receiverNode, s);
+        Operand[] args       = setupCallArgs(callArgsNode, s);
+        Operand   block      = setupCallClosure(callNode.getIterNode(), s);
+        Variable  callResult = s.createTemporaryVariable();
+        CallInstr callInstr  = CallInstr.create(callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (
-                callNode.getName().equals("new") &&
-                receiverNode instanceof ConstNode &&
-                ((ConstNode)receiverNode).getName().equals("Proc")) {
+        if ( callNode.getName().equals("new") &&
+             receiverNode instanceof ConstNode &&
+             ((ConstNode)receiverNode).getName().equals("Proc")) {
             callInstr.setProcNew(true);
         }
 
@@ -1124,7 +1104,7 @@ public class IRBuilder {
         IRClassBody body = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
         Variable classVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
 
-        return buildModuleOrClassBody(s, classVar, body, classNode.getBodyNode(), classNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, classVar, body, classNode.getBodyNode(), classNode.getPosition().getLine(), NullBlock.INSTANCE);
     }
 
     // class Foo; class << self; end; end
@@ -1135,7 +1115,8 @@ public class IRBuilder {
         IRModuleBody body = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
         Variable sClassVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
 
-        return buildModuleOrClassBody(s, sClassVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
+        // sclass bodies inherit the block of their containing method
+        return buildModuleOrClassBody(s, sClassVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine(), s.getYieldClosureVariable());
     }
 
     // @@c
@@ -1443,9 +1424,9 @@ public class IRBuilder {
         }
         case VCALLNODE:
             return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[] { scope.getSelf(), new StringLiteral(((VCallNode) node).getName()), Boolean.FALSE}));
+                    new Operand[] { scope.getSelf(), new StringLiteral(((VCallNode) node).getName()), manager.getFalse()}));
         case YIELDNODE:
-            return buildDefinitionCheck(scope, new BlockGivenInstr(scope.createTemporaryVariable(), getImplicitBlockArg(scope)), "yield");
+            return buildDefinitionCheck(scope, new BlockGivenInstr(scope.createTemporaryVariable(), scope.getYieldClosureVariable()), "yield");
         case ZSUPERNODE:
             return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_SUPER,
                     new Operand[] { scope.getSelf() } ));
@@ -1510,7 +1491,7 @@ public class IRBuilder {
              * ----------------------------------------------------------------- */
             Label undefLabel = scope.getNewLabel();
             Variable tmpVar = addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[]{scope.getSelf(), new StringLiteral(((FCallNode) node).getName()), Boolean.FALSE}));
+                    new Operand[]{scope.getSelf(), new StringLiteral(((FCallNode) node).getName()), manager.getFalse()}));
             addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), scope, "method");
             return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
@@ -1565,7 +1546,7 @@ public class IRBuilder {
                     Variable tmpVar     = scope.createTemporaryVariable();
                     Operand  receiver   = build(attrAssign.getReceiverNode(), scope);
                     addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD,
-                            new Operand[] { receiver, new StringLiteral(attrAssign.getName()), Boolean.TRUE }));
+                            new Operand[] { receiver, new StringLiteral(attrAssign.getName()), manager.getTrue() }));
                     addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
                     Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), scope, "assignment");
                     return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
@@ -1676,8 +1657,8 @@ public class IRBuilder {
             addInstr(method, new TraceInstr(RubyEvent.CALL, method.getName(), method.getFileName(), method.getLineNumber()));
         }
 
-        addInstr(method, new ReceiveSelfInstr(method.getSelf()));
-
+        // Prepare all implicit state (self, frame block, etc)
+        prepareImplicitState(method);
 
         // These instructions need to be toward the top of the method because they may both be needed for
         // processing optional arguments as in def foo(a = Object).
@@ -1766,23 +1747,6 @@ public class IRBuilder {
         }
     }
 
-    private void receiveClosureArg(BlockArgNode blockVarNode, IRScope s) {
-        Variable blockVar = null;
-        if (blockVarNode != null) {
-            String blockArgName = blockVarNode.getName();
-            blockVar = s.getNewLocalVariable(blockArgName, 0);
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc(IRMethodArgs.ArgType.block, blockArgName);
-            addInstr(s, new ReceiveClosureInstr(blockVar));
-        }
-
-        // In addition, store the block argument in an implicit block variable
-        if (s instanceof IRMethod) {
-            Variable implicitBlockArg = (Variable)getImplicitBlockArg(s);
-            if (blockVar == null) addInstr(s, new ReceiveClosureInstr(implicitBlockArg));
-            else addInstr(s, new CopyInstr(implicitBlockArg, blockVar));
-        }
-    }
-
     protected void receiveNonBlockArgs(final ArgsNode argsNode, IRScope s) {
         final int numPreReqd = argsNode.getPreCount();
         final int numPostReqd = argsNode.getPostCount();
@@ -1863,13 +1827,53 @@ public class IRBuilder {
         }
     }
 
+    /**
+     * Reify the implicit incoming block into a full Proc, for use as "block arg", but only if
+     * a block arg is specified in this scope's arguments.
+     *
+     * @param argsNode the arguments containing the block arg, if any
+     * @param s the scope to which we are adding instructions
+     */
     protected void receiveBlockArg(final ArgsNode argsNode, IRScope s) {
-        // For methods, we always receive it (implicitly, if the block arg is not explicit)
-        // For closures, only if it is explicitly present
+        // reify to Proc if we have a block arg
         BlockArgNode blockArg = argsNode.getBlock();
-        if (s instanceof IRMethod || blockArg != null) receiveClosureArg(blockArg, s);
+        if (blockArg != null) {
+            String blockArgName = blockArg.getName();
+            Variable blockVar = s.getLocalVariable(blockArgName, 0);
+            if (s instanceof IRMethod) ((IRMethod) s).addArgDesc(IRMethodArgs.ArgType.block, blockArgName);
+            Variable tmp = s.createTemporaryVariable();
+            addInstr(s, new LoadImplicitClosureInstr(tmp));
+            addInstr(s, new ReifyClosureInstr(blockVar, tmp));
+        }
     }
 
+    /**
+     * Prepare implicit runtime state needed for typical methods to execute. This includes such things
+     * as the implicit self variable and any yieldable block available to this scope.
+     *
+     * @param s the scope to which we are adding instructions
+     */
+    private void prepareImplicitState(IRScope s) {
+        // Receive self
+        addInstr(s, new ReceiveSelfInstr(s.getSelf()));
+
+        // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
+        if (s instanceof IRMethod || s instanceof IRMetaClassBody) {
+            addInstr(s, new LoadImplicitClosureInstr(s.getYieldClosureVariable()));
+        } else {
+            addInstr(s, new LoadFrameClosureInstr(s.getYieldClosureVariable()));
+        }
+    }
+
+    /**
+     * Process all arguments specified for this scope. This includes pre args (required args
+     * at the beginning of the argument list), opt args (arguments with a default value),
+     * a rest arg (catch-all for argument list overflow), post args (required arguments after
+     * a rest arg) and a block arg (to reify an incoming block into a Proc object.
+     *
+     * @param argsNode the args node containing the specification for the arguments
+     * @param s the scope to which we are adding instructions
+     */
     public void receiveArgs(final ArgsNode argsNode, IRScope s) {
         // 1.9 pre, opt, rest, post args
         receiveNonBlockArgs(argsNode, s);
@@ -1948,7 +1952,7 @@ public class IRBuilder {
         }
     }
 
-    // SSS: This method is called both for regular multiple assignment as well as argument passing
+    // This method is called both for regular multiple assignment as well as argument passing
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
@@ -2004,7 +2008,7 @@ public class IRBuilder {
         Label rEndLabel   = s.getNewLabel();
         Label rescueLabel = Label.getGlobalEnsureBlockLabel();
 
-        // protect the entire body as it exists now with the global ensure block
+        // Protect the entire body as it exists now with the global ensure block
         addInstrAtBeginning(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
 
@@ -2023,7 +2027,7 @@ public class IRBuilder {
         addInstr(s, new LabelInstr(rEndLabel));
     }
 
-    public void receiveMethodArgs(final ArgsNode argsNode, IRScope s) {
+    public void receiveMethodArgs(final ArgsNode argsNode, IRMethod s) {
         receiveArgs(argsNode, s);
     }
 
@@ -2050,36 +2054,39 @@ public class IRBuilder {
         return piece == null ? manager.getNil() : piece;
     }
 
-    public Operand buildDRegexp(DRegexpNode dregexpNode, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node n : dregexpNode.childNodes()) {
-            strPieces.add(dynamicPiece(n, s));
+    public Operand buildDRegexp(DRegexpNode node, IRScope s) {
+        List<Node> nodePieces = node.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
         Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildDynRegExpInstr(res, strPieces, dregexpNode.getOptions()));
+        addInstr(s, new BuildDynRegExpInstr(res, pieces, node.getOptions()));
         return res;
     }
 
-    public Operand buildDStr(DStrNode dstrNode, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node n : dstrNode.childNodes()) {
-            strPieces.add(dynamicPiece(n, s));
+    public Operand buildDStr(DStrNode node, IRScope s) {
+        List<Node> nodePieces = node.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
         Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildCompoundStringInstr(res, strPieces, dstrNode.getEncoding()));
+        addInstr(s, new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
         return copyAndReturnValue(s, res);
     }
 
     public Operand buildDSymbol(DSymbolNode node, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node n : node.childNodes()) {
-            strPieces.add(dynamicPiece(n, s));
+        List<Node> nodePieces = node.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
         Variable res = s.createTemporaryVariable();
-        addInstr(s, new BuildCompoundStringInstr(res, strPieces, node.getEncoding()));
+        addInstr(s, new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
         return copyAndReturnValue(s, new DynamicSymbol(res));
     }
 
@@ -2088,14 +2095,13 @@ public class IRBuilder {
     }
 
     public Operand buildDXStr(final DXStrNode dstrNode, IRScope s) {
-        List<Operand> strPieces = new ArrayList<>();
-        for (Node nextNode : dstrNode.childNodes()) {
-            strPieces.add(dynamicPiece(nextNode, s));
+        List<Node> nodePieces = dstrNode.childNodes();
+        Operand[] pieces = new Operand[nodePieces.size()];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = dynamicPiece(nodePieces.get(i), s);
         }
 
-        Variable res = s.createTemporaryVariable();
-        addInstr(s, new BacktickInstr(res, strPieces));
-        return res;
+        return addResultInstr(s, new BacktickInstr(s.createTemporaryVariable(), pieces));
     }
 
     /* ****************************************************************
@@ -2165,12 +2171,12 @@ public class IRBuilder {
         // Generate IR for code being protected
         Operand rv = bodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) bodyNode, s, ebi) : build(bodyNode, s);
 
-        // end of protected region
+        // End of protected region
         addInstr(s, new ExceptionRegionEndMarkerInstr());
         activeRescuers.pop();
 
         // Clone the ensure body and jump to the end.
-        // Dont bother if the protected body ended in a return.
+        // Don't bother if the protected body ended in a return.
         if (rv != U_NIL && !(bodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this, s);
             addInstr(s, new JumpInstr(ebi.end));
@@ -2180,8 +2186,8 @@ public class IRBuilder {
         activeEnsureBlockStack.pop();
 
         // ------------ Emit the ensure body alongwith dummy rescue block ------------
-        // Now build the dummy rescue block that:
-        // * catches all exceptions thrown by the body
+        // Now build the dummy rescue block that
+        // catches all exceptions thrown by the body
         Variable exc = s.createTemporaryVariable();
         addInstr(s, new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
@@ -2213,11 +2219,11 @@ public class IRBuilder {
     }
 
     public Operand buildFCall(FCallNode fcallNode, IRScope s) {
-        Node          callArgsNode = fcallNode.getArgsNode();
+        Node      callArgsNode = fcallNode.getArgsNode();
         Operand[] args         = setupCallArgs(callArgsNode, s);
-        Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
-        Variable      callResult   = s.createTemporaryVariable();
-        CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args, block);
+        Operand   block        = setupCallClosure(fcallNode.getIterNode(), s);
+        Variable  callResult   = s.createTemporaryVariable();
+        CallInstr callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), s.getSelf(), args, block);
         receiveBreakException(s, block, callInstr);
         return callResult;
     }
@@ -2325,8 +2331,8 @@ public class IRBuilder {
     }
 
     public Operand buildFloat(FloatNode node) {
-        // SSS: Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)
-        // Or is this a premature optimization?
+        // Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)
+        // SSS FIXME: Or is this a premature optimization?
         return new Float(node.getValue());
     }
 
@@ -2341,17 +2347,17 @@ public class IRBuilder {
     }
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
-            // Create a new closure context
-        IRClosure closure = new IRFor(manager, s, forNode.getPosition().getLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
+        // Create a new closure context
+        IRClosure closure = new IRFor(manager, s, forNode.getPosition().getLine(), forNode.getScope(), Signature.from(forNode), forNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder forBuilder = newIRBuilder(manager);
 
-            // Receive self
-        forBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
+        // Prepare all implicit state (self, frame block, etc)
+        forBuilder.prepareImplicitState(closure);
 
-            // Build args
+        // Build args
         Node varNode = forNode.getVarNode();
         if (varNode != null && varNode.getNodeType() != null) forBuilder.receiveBlockArgs(forNode, closure);
 
@@ -2363,10 +2369,10 @@ public class IRBuilder {
         // Thread poll on entry of closure
         forBuilder.addInstr(closure, new ThreadPollInstr());
 
-            // Start label -- used by redo!
+        // Start label -- used by redo!
         forBuilder.addInstr(closure, new LabelInstr(closure.startLabel));
 
-            // Build closure body and return the result of the closure
+        // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : forBuilder.build(forNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
             forBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
@@ -2493,14 +2499,14 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, iterNode.getPosition().getLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, iterNode.getPosition().getLine(), iterNode.getScope(), Signature.from(iterNode), iterNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
 
-        // Receive self
-        closureBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
+        // Prepare all implicit state (self, frame block, etc)
+        closureBuilder.prepareImplicitState(closure);
 
         // Build args
         if (iterNode.getVarNode().getNodeType() != null) closureBuilder.receiveBlockArgs(iterNode, closure);
@@ -2635,7 +2641,7 @@ public class IRBuilder {
         IRModuleBody body = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
         Variable moduleVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
 
-        return buildModuleOrClassBody(s, moduleVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
+        return buildModuleOrClassBody(s, moduleVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine(), NullBlock.INSTANCE);
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
@@ -2645,7 +2651,7 @@ public class IRBuilder {
         return ret;
     }
 
-    // SSS: This method is called both for regular multiple assignment as well as argument passing
+    // This method is called both for regular multiple assignment as well as argument passing
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
@@ -2921,7 +2927,7 @@ public class IRBuilder {
         IRScope topLevel = s.getTopLevelScope();
         IRScope nearestLVarScope = s.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), "_END_", true);
+        IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), postExeNode.getArgumentType(), "_END_", true);
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -2943,7 +2949,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRFor(manager, s, preExeNode.getPosition().getLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), "_BEGIN_");
+        IRClosure beginClosure = new IRFor(manager, s, preExeNode.getPosition().getLine(), s.getTopLevelScope().getStaticScope(), Signature.from(preExeNode), preExeNode.getArgumentType(), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3194,7 +3200,7 @@ public class IRBuilder {
             // If this happens to be a module body, the runtime throws a local jump error if the
             // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             IRMethod m = s.getNearestMethod();
-            addInstr(s, new RuntimeHelperCall(null, CHECK_FOR_LJE, new Operand[] { new Boolean(m == null) }));
+            addInstr(s, new RuntimeHelperCall(null, CHECK_FOR_LJE, new Operand[] { m == null ? manager.getTrue() : manager.getFalse() }));
             retVal = processEnsureRescueBlocks(s, retVal);
             addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName()));
         } else if (s.isModuleBody()) {
@@ -3232,6 +3238,8 @@ public class IRBuilder {
         // Debug info: record line number
         addInstr(script, new LineNumberInstr(lineNumber));
 
+        prepareImplicitState(script);
+
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
@@ -3249,7 +3257,10 @@ public class IRBuilder {
 
         // Top-level script!
         IRScriptBody script = new IRScriptBody(manager, file, staticScope);
-        addInstr(script, new ReceiveSelfInstr(script.getSelf()));
+
+        // Prepare all implicit state (self, frame block, etc)
+        prepareImplicitState(script);
+
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
@@ -3301,7 +3312,7 @@ public class IRBuilder {
 
         Operand[] args = setupCallArgs(superNode.getArgsNode(), s);
         Operand block = setupCallClosure(superNode.getIterNode(), s);
-        if (block == null) block = getImplicitBlockArg(s);
+        if (block == null) block = s.getYieldClosureVariable();
         return buildSuperInstr(s, block, args);
     }
 
@@ -3315,7 +3326,8 @@ public class IRBuilder {
     }
 
     public Operand buildSymbol(SymbolNode node) {
-        // SSS: Since symbols are interned objects, no need to copyAndReturnValue(...)
+        // Since symbols are interned objects, no need to copyAndReturnValue(...)
+        // SSS FIXME: Premature opt?
         return new Symbol(node.getName(), node.getEncoding());
     }
 
@@ -3403,9 +3415,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node, IRScope s) {
-        Variable res = s.createTemporaryVariable();
-        addInstr(s, new BacktickInstr(res, new StringLiteral(node.getValue())));
-        return res;
+        return addResultInstr(s, new BacktickInstr(s.createTemporaryVariable(), new Operand[] { new StringLiteral(node.getValue())}));
     }
 
     public Operand buildYield(YieldNode node, IRScope s) {
@@ -3418,7 +3428,7 @@ public class IRBuilder {
         }
 
         Variable ret = s.createTemporaryVariable();
-        addInstr(s, new YieldInstr(ret, getImplicitBlockArg(s), build(argNode, s), unwrap));
+        addInstr(s, new YieldInstr(ret, s.getYieldClosureVariable(), build(argNode, s), unwrap));
         return ret;
     }
 
@@ -3490,7 +3500,7 @@ public class IRBuilder {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
 
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
-        if (block == null) block = getImplicitBlockArg(s);
+        if (block == null) block = s.getYieldClosureVariable();
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (s instanceof IRMethod) {
@@ -3519,15 +3529,17 @@ public class IRBuilder {
         return newArgs;
     }
 
-    private Operand buildModuleOrClassBody(IRScope parent, Variable moduleVar, IRModuleBody body, Node bodyNode, int linenumber) {
-        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), moduleVar));
+    private Operand buildModuleOrClassBody(IRScope parent, Variable moduleVar, IRModuleBody body, Node bodyNode, int linenumber, Operand block) {
+        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), moduleVar, block));
         IRBuilder bodyBuilder = newIRBuilder(manager);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
         }
 
-        bodyBuilder.addInstr(body, new ReceiveSelfInstr(body.getSelf()));                            // %self
+        // Prepare all implicit state (self, frame block, etc)
+        bodyBuilder.prepareImplicitState(body);
+
         bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %scope
         bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %module
         // Create a new nested builder to ensure this gets its own IR builder state

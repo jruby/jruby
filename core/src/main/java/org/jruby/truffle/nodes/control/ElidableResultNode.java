@@ -27,8 +27,8 @@ import org.jruby.truffle.runtime.RubyContext;
 @NodeInfo(cost = NodeCost.NONE)
 public class ElidableResultNode extends RubyNode {
 
-    @Child protected RubyNode required;
-    @Child protected RubyNode elidableResult;
+    @Child private RubyNode required;
+    @Child private RubyNode elidableResult;
 
     public ElidableResultNode(RubyContext context, SourceSection sourceSection, RubyNode required, RubyNode elidableResult) {
         super(context, sourceSection);

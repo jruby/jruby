@@ -25,8 +25,8 @@ import org.jruby.truffle.runtime.core.RubyProc;
  */
 public class YieldNode extends RubyNode {
 
-    @Children protected final RubyNode[] arguments;
-    @Child protected YieldDispatchHeadNode dispatch;
+    @Children private final RubyNode[] arguments;
+    @Child private YieldDispatchHeadNode dispatch;
     private final boolean unsplat;
 
     public YieldNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {

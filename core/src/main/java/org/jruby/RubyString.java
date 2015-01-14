@@ -178,10 +178,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public void associateEncoding(Encoding enc) {
-        if (value.getEncoding() != enc) {
-            if (!isCodeRangeAsciiOnly() || !enc.isAsciiCompatible()) clearCodeRange();
-            value.setEncoding(enc);
-        }
+        StringSupport.associateEncoding(this, enc);
     }
 
     public final void setEncodingAndCodeRange(Encoding enc, int cr) {
@@ -204,6 +201,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         flags |= codeRange & CR_MASK;
     }
 
+    @Override
     public final void clearCodeRange() {
         flags &= ~CR_MASK;
     }
@@ -214,7 +212,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // ENC_CODERANGE_ASCIIONLY
     public final boolean isCodeRangeAsciiOnly() {
-        return getCodeRange() == CR_7BIT;
+        return CodeRangeSupport.isCodeRangeAsciiOnly(this);
     }
 
     // rb_enc_str_asciionly_p
@@ -229,12 +227,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public final boolean isCodeRangeBroken() {
         return (flags & CR_MASK) == CR_BROKEN;
-    }
-
-    static int codeRangeAnd(int cr1, int cr2) {
-        if (cr1 == CR_7BIT) return cr2;
-        if (cr1 == CR_VALID) return cr2 == CR_7BIT ? CR_VALID : cr2;
-        return CR_UNKNOWN;
     }
 
     private void copyCodeRangeForSubstr(RubyString from, Encoding enc) {
@@ -310,16 +302,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // rb_enc_check
     public final Encoding checkEncoding(RubyString other) {
-        Encoding enc = isCompatibleWith(other);
-        if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
-                                value.getEncoding() + " and " + other.value.getEncoding());
-        return enc;
+        return checkEncoding((ByteListHolder) other);
     }
 
     final Encoding checkEncoding(EncodingCapable other) {
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
                                 value.getEncoding() + " and " + other.getEncoding());
+        return enc;
+    }
+
+    @Override
+    public final Encoding checkEncoding(ByteListHolder other) {
+        // TODO (nirvdrum 13-Jan-15): This cast is untenable.  It's a temporary measure until isCompatibleWith and its call graph are generalized.
+        Encoding enc = isCompatibleWith((RubyString) other);
+        if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
+                value.getEncoding() + " and " + other.getByteList().getEncoding());
         return enc;
     }
 
@@ -1143,7 +1141,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString str = _str.convertToString();
         Encoding enc = checkEncoding(str);
         RubyString resultStr = newStringNoCopy(context.runtime, addByteLists(value, str.value),
-                                    enc, codeRangeAnd(getCodeRange(), str.getCodeRange()));
+                                    enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
@@ -1599,7 +1597,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
 
             int cl, ocl;
-            if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
                 byte uc = AsciiTables.ToUpperCaseTable[c];
                 byte uoc = AsciiTables.ToUpperCaseTable[oc];
                 if (uc != uoc) {
@@ -2943,47 +2941,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     /* rb_str_splice */
     private IRubyObject replaceInternal(int beg, int len, RubyString repl) {
-        int oldLength = value.getRealSize();
-        if (beg + len >= oldLength) len = oldLength - beg;
-        ByteList replBytes = repl.value;
-        int replLength = replBytes.getRealSize();
-        int newLength = oldLength + replLength - len;
+        StringSupport.replaceInternal(beg, len, this, repl);
 
-        byte[]oldBytes = value.getUnsafeBytes();
-        int oldBegin = value.getBegin();
-
-        modify(newLength);
-        if (replLength != len) {
-            System.arraycopy(oldBytes, oldBegin + beg + len, value.getUnsafeBytes(), beg + replLength, oldLength - (beg + len));
-        }
-
-        if (replLength > 0) System.arraycopy(replBytes.getUnsafeBytes(), replBytes.getBegin(), value.getUnsafeBytes(), beg, replLength);
-        value.setRealSize(newLength);
+        // TODO (nirvdrum 13-Jan-15) This should be part of the StringSupport definition but a general notion of tainted needs to emerge first.
         return infectBy(repl);
     }
 
     private void replaceInternal19(int beg, int len, RubyString repl) {
-        Encoding enc = checkEncoding(repl);
-        int p = value.getBegin();
-        int e;
-        if (singleByteOptimizable()) {
-            p += beg;
-            e = p + len;
-        } else {
-            int end = p + value.getRealSize();
-            byte[]bytes = value.getUnsafeBytes();
-            p = StringSupport.nth(enc, bytes, p, end, beg);
-            if (p == -1) p = end;
-            e = StringSupport.nth(enc, bytes, p, end, len);
-            if (e == -1) e = end;
-        }
-
-        int cr = getCodeRange();
-        if (cr == CR_BROKEN) clearCodeRange();
-        replaceInternal(p - value.getBegin(), e - p, repl);
-        associateEncoding(enc);
-        cr = codeRangeAnd(cr, repl.getCodeRange());
-        if (cr != CR_BROKEN) setCodeRange(cr);
+        StringSupport.replaceInternal19(beg, len, this, repl);
+        infectBy(repl);
     }
 
     /** rb_str_aref, rb_str_aref_m
@@ -3903,10 +3869,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean start_with_pCommon(IRubyObject arg) {
-        Ruby runtime = getRuntime();
-        RubyString otherString;
-
-        otherString = arg.convertToString();
+        RubyString otherString = arg.convertToString();
 
         checkEncoding(otherString);
 
@@ -3941,18 +3904,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean end_with_pCommon(IRubyObject arg) {
-        Ruby runtime = getRuntime();
-        RubyString otherString;
-
-        if (!runtime.is2_0()) {
-            // 1.8 and 1.9 ignores uncoercible argument
-            IRubyObject tmp = arg.checkStringType();
-            if (tmp.isNil()) return false;
-            otherString = (RubyString) tmp;
-        } else {
-            // 2.0+ requires coersion to succeed
-            otherString = arg.convertToString();
-        }
+        RubyString otherString = arg.convertToString();
 
         Encoding enc = checkEncoding(otherString);
 
@@ -3998,7 +3950,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                                                    padStr.singleByteOptimizable(),
                                                    enc, width, jflag);
         if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) result.infectBy(padStr);
-        int cr = codeRangeAnd(getCodeRange(), padStr.getCodeRange());
+        int cr = CodeRangeSupport.codeRangeAnd(getCodeRange(), padStr.getCodeRange());
         if (cr != CR_BROKEN) result.setCodeRange(cr);
         return result;
     }

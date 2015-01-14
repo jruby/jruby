@@ -18,9 +18,9 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class FlipFlopNode extends RubyNode {
 
-    @Child protected BooleanCastNode begin;
-    @Child protected BooleanCastNode end;
-    @Child protected FlipFlopStateNode stateNode;
+    @Child private BooleanCastNode begin;
+    @Child private BooleanCastNode end;
+    @Child private FlipFlopStateNode stateNode;
 
     private final boolean exclusive;
 

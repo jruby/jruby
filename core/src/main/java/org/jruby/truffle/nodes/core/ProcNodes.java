@@ -76,7 +76,7 @@ public abstract class ProcNodes {
     @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true, needsBlock = true)
     public abstract static class CallNode extends CoreMethodNode {
 
-        @Child protected YieldDispatchHeadNode yieldNode;
+        @Child private YieldDispatchHeadNode yieldNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -113,8 +113,10 @@ public abstract class ProcNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyProc proc, RubyProc block) {
-            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getDeclarationFrame(), block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForProcs(),
+                    block.getCallTargetForProcs(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
+                    block.getDeclaringModule(), block.getMethod(), block.getSelfCapturedInScope(),
+                    block.getBlockCapturedInScope());
 
             return getContext().getCoreLibrary().getNilObject();
         }

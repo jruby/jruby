@@ -1,0 +1,1 @@
+slow:GC#garbage_collect always returns nil

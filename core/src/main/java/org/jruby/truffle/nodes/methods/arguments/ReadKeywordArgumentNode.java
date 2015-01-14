@@ -22,7 +22,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
     private final int minimum;
     private final String name;
-    @Child protected RubyNode defaultValue;
+    @Child private RubyNode defaultValue;
 
     public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
         super(context, sourceSection);

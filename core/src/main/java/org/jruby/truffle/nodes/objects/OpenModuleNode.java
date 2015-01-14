@@ -19,21 +19,23 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
  * Open a module and execute a method in it - probably to define new methods.
  */
 public class OpenModuleNode extends RubyNode {
 
-    @Child protected RubyNode definingModule;
-    @Child protected MethodDefinitionNode definitionMethod;
-    @Child protected IndirectCallNode callModuleDefinitionNode;
+    @Child private RubyNode definingModule;
+    @Child private MethodDefinitionNode definitionMethod;
+    final protected LexicalScope lexicalScope;
+    @Child private IndirectCallNode callModuleDefinitionNode;
 
-    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod) {
+    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.definingModule = definingModule;
         this.definitionMethod = definitionMethod;
+        this.lexicalScope = lexicalScope;
         callModuleDefinitionNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
@@ -44,11 +46,10 @@ public class OpenModuleNode extends RubyNode {
         // TODO(CS): cast
         final RubyModule module = (RubyModule) definingModule.execute(frame);
 
-        LexicalScope lexicalScope = definitionMethod.getSharedMethodInfo().getLexicalScope();
         lexicalScope.setLiveModule(module);
         lexicalScope.getParent().getLiveModule().addLexicalDependent(module);
 
-        final RubyMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
+        final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[]{}));
     }
 

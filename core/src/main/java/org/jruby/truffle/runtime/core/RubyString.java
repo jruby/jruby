@@ -10,14 +10,16 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
@@ -34,7 +36,11 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public static RubyString fromJavaString(RubyClass stringClass, String string) {
-        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), UTF8Encoding.INSTANCE, false));
+        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), USASCIIEncoding.INSTANCE, false));
+    }
+
+    public static RubyString fromJavaString(RubyClass stringClass, String string, Encoding encoding) {
+        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), encoding, false));
     }
 
     public static RubyString fromByteList(RubyClass stringClass, ByteList bytes) {
@@ -190,6 +196,24 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     @Override
     public final void setCodeRange(int codeRange) {
         // TODO (nirvdrum Jan. 5, 2015): Make this work with the String's real code range, not just a stubbed value.
+    }
+
+    @Override
+    public final void clearCodeRange() {
+        // TODO (nirvdrum Jan. 13, 2015): Make this work with the String's real code range, not just a stubbed value.
+    }
+
+    @Override
+    public final void modify(int length) {
+        // TODO (nirvdrum Jan. 13, 2015): This should check whether the underlying ByteList is being shared and copy if necessary.
+        bytes.ensure(length);
+        bytes.invalidate();
+    }
+
+    @Override
+    public Encoding checkEncoding(ByteListHolder other) {
+        // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
+        return bytes.getEncoding();
     }
 
     @Override

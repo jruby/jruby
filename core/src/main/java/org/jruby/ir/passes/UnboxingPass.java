@@ -25,10 +25,20 @@ public class UnboxingPass extends CompilerPass {
         problem.compute_MOP_Solution();
         problem.unbox();
 
+        // LVA information is no longer valid after the pass
+        // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
+        (new LiveVariableAnalysis()).invalidate(scope);
+
         return true;
     }
 
+    @Override
+    public Object previouslyRun(IRScope scope) {
+        return scope.getDataFlowSolution(UnboxableOpsAnalysisProblem.NAME);
+    }
+
     public boolean invalidate(IRScope scope) {
+        // Cannot run unboxing more than once on a scope in its current form
         return false;
     }
 }

@@ -127,6 +127,8 @@ public class PosixShim {
                             errno = Errno.EAGAIN;
                             return -1;
                         }
+                    } else if (fd.chNative != null && fd.isNativeFile) {
+                        // it's a native file, so we don't do selection or nonblock
                     } else {
                         errno = Errno.EAGAIN;
                         return -1;

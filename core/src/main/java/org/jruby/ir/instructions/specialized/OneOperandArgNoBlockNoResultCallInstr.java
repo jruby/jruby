@@ -17,24 +17,15 @@ public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "{1O}";
-    }
-
-    public Operand getArg1() {
-        return getCallArgs()[0];
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgNoBlockNoResultCallInstr(getCallType(), getName(), receiver.cloneForInlining(ii),
-                cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+        return new OneOperandArgNoBlockNoResultCallInstr(getCallType(), getName(), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
-        IRubyObject arg1 = (IRubyObject) getCallArgs()[0].retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         return getCallSite().call(context, self, object, arg1);
     }
 }

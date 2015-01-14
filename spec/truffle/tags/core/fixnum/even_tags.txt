@@ -1,5 +1,0 @@
-fails:Fixnum#even? is true for zero
-fails:Fixnum#even? is true for even positive Fixnums
-fails:Fixnum#even? is true for even negative Fixnums
-fails:Fixnum#even? is false for odd positive Fixnums
-fails:Fixnum#even? is false for odd negative Fixnums

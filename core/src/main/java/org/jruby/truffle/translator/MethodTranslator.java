@@ -36,16 +36,14 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 class MethodTranslator extends BodyTranslator {
 
-    private boolean isTopLevel;
     private boolean isBlock;
 
-    public MethodTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, boolean isTopLevel, Source source) {
+    public MethodTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
         super(currentNode, context, parent, environment, source, false);
         this.isBlock = isBlock;
-        this.isTopLevel = isTopLevel;
     }
 
-    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
             System.err.println(methodName);
             System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
@@ -153,18 +151,20 @@ class MethodTranslator extends BodyTranslator {
         if (isBlock) {
             body = new RedoableNode(context, sourceSection, body);
             body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
+
+            body = new BehaveAsProcNode(context, sourceSection,
+                    new CatchBreakAsProcErrorNode(context, sourceSection, body),
+                    NodeUtil.cloneNode(body));
         } else {
+            body = new CatchBreakAsReturnNode(context, sourceSection, body);
             body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
         }
 
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
-        if (isBlock && isTopLevel) {
-            body = new CatchBreakAsReturnNode(context, sourceSection, body);
-        }
-
         if (!isBlock) {
+            // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
             body = new ExceptionTranslatingNode(context, sourceSection, body);
         }
 
@@ -182,38 +182,56 @@ class MethodTranslator extends BodyTranslator {
         }
 
         if (isBlock) {
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(withBlockDestructureSemantics(rootNode));
-            final CallTarget callTargetForMethods = Truffle.getRuntime().createCallTarget(withoutBlockDestructureSemantics(rootNode));
-            return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods);
+            final RubyRootNode newRootNodeForBlocks = rootNode.cloneRubyRootNode();
+
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
+            }
+
+            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsProcNode.class)) {
+                behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
+            }
+
+            final RubyRootNode newRootNodeForProcs = rootNode.cloneRubyRootNode();
+
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
+            }
+
+            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsProcNode.class)) {
+                behaveAsProcNode.replace(behaveAsProcNode.getAsProc());
+            }
+
+            final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
+
+            final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
+
+            final RubyRootNode newRootNodeForMethods = rootNode.cloneRubyRootNode();
+
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
+            }
+
+            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsProcNode.class)) {
+                behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
+            }
+
+            final RubyRootNode newRootNodeWithCatchReturn = new RubyRootNode(
+                    context,
+                    newRootNodeForMethods.getSourceSection(),
+                    newRootNodeForMethods.getFrameDescriptor(), newRootNodeForMethods.getSharedMethodInfo(),
+                    new CatchBreakAsReturnNode(context, sourceSection,
+                        new CatchReturnNode(context, newRootNodeForMethods.getSourceSection(),
+                            newRootNodeForMethods.getBody(), getEnvironment().getReturnID())));
+
+            final CallTarget callTargetAsMethod = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
+
+            return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
+                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsMethod);
         } else {
-            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode), ignoreLocalVisiblity);
+            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(),
+                    environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode));
         }
-    }
-
-    private RubyRootNode withBlockDestructureSemantics(RubyRootNode rootNode) {
-        final RubyRootNode newRootNode = rootNode.cloneRubyRootNode();
-
-        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
-            behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlockNode());
-        }
-
-        return newRootNode;
-    }
-
-    private RubyRootNode withoutBlockDestructureSemantics(RubyRootNode rootNode) {
-        final RubyRootNode newRootNode = rootNode.cloneRubyRootNode();
-
-        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
-            behaveAsBlockNode.replace(behaveAsBlockNode.getAsMethodNode());
-        }
-
-        final RubyRootNode newRootNodeWithCatchReturn = new RubyRootNode(
-                context,
-                newRootNode.getSourceSection(),
-                newRootNode.getFrameDescriptor(), newRootNode.getSharedMethodInfo(),
-                new CatchReturnNode(context, newRootNode.getSourceSection(), newRootNode.getBody(), getEnvironment().getReturnID()));
-
-        return newRootNodeWithCatchReturn;
     }
 
     private static Arity getArity(org.jruby.ast.ArgsNode argsNode) {

@@ -25,10 +25,10 @@ import org.jruby.truffle.runtime.core.RubyString;
  */
 public final class InterpolatedStringNode extends RubyNode {
 
-    @Children protected final ToSNode[] children;
+    @Children private final ToSNode[] children;
 
-    @Child protected KernelNodes.TaintedNode taintedNode;
-    @Child protected KernelNodes.TaintNode taintNode;
+    @Child private KernelNodes.TaintedNode taintedNode;
+    @Child private KernelNodes.TaintNode taintNode;
 
     private final ConditionProfile taintProfile = ConditionProfile.createCountingProfile();
 

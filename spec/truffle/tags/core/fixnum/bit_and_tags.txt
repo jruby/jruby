@@ -1,2 +1,0 @@
-fails:Fixnum#& raises a TypeError when passed a Float
-fails:Fixnum#& raises a TypeError and does not call #to_int when defined on an object

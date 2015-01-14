@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class NotNode extends RubyNode {
 
-    @Child protected BooleanCastNode child;
+    @Child private BooleanCastNode child;
 
     public NotNode(RubyContext context, SourceSection sourceSection, BooleanCastNode child) {
         super(context, sourceSection);

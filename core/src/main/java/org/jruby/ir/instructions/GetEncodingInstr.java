@@ -12,14 +12,12 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetEncodingInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class GetEncodingInstr extends ResultBaseInstr implements FixedArityInstr {
     private final Encoding encoding;
-    private Variable result;
 
     public GetEncodingInstr(Variable result, Encoding encoding) {
-        super(Operation.GET_ENCODING);
+        super(Operation.GET_ENCODING, result, EMPTY_OPERANDS);
 
-        this.result = result;
         this.encoding = encoding;
     }
 
@@ -28,21 +26,8 @@ public class GetEncodingInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new StringLiteral(encoding.toString()) };
-    }
-
-    @Override
     public String toString() {
         return super.toString() + "(" + encoding + ")";
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     @Override

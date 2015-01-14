@@ -38,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
@@ -789,7 +790,7 @@ public class EncodingUtils {
             return obj;
         }
         if (obj instanceof RubyString &&
-                !((RubyString)obj).isCodeRangeAsciiOnly() ||
+                ! CodeRangeSupport.isCodeRangeAsciiOnly((RubyString) obj) ||
                 encAsciicompat(encidx)) {
             ((RubyString)obj).clearCodeRange();
         }

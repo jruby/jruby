@@ -28,6 +28,11 @@
 
 class Float < Numeric
 
+  def coerce(other)
+    return [other, self] if other.kind_of? Float
+    [Float(other), self]
+  end
+
   def to_r
     f, e = Math.frexp self
     f = Math.ldexp(f, MANT_DIG).to_i

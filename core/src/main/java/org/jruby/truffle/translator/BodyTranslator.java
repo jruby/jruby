@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -48,6 +49,7 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
+import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
@@ -72,6 +74,7 @@ public class BodyTranslator extends Translator {
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
+    private boolean translatingWhile = false;
     private String currentCallMethodName = null;
 
     private boolean privately = false;
@@ -324,6 +327,13 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBreakNode(org.jruby.ast.BreakNode node) {
+        if (!(environment.isBlock() || translatingWhile)) {
+            // TODO(CS 10-Jan-15): must raise a proper exception rather, but not sure if it should be a JRuby exception or a Truffle one
+            System.err.printf("%s:%d: Invalid break%n", node.getPosition().getFile(), node.getPosition().getLine() + 1);
+            System.err.printf("%s: compile error (SyntaxError)%n", node.getPosition().getFile());
+            System.exit(1);
+        }
+
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode resultNode;
@@ -363,6 +373,8 @@ public class BodyTranslator extends Translator {
                 return translateRubiniusInvokePrimitive(sourceSection, node);
             } else if (node.getName().equals("privately")) {
                 return translateRubiniusPrivately(sourceSection, node);
+            } else if (node.getName().equals("single_block_arg")) {
+                return translateRubiniusSingleBlockArg(sourceSection, node);
             }
         }
 
@@ -491,6 +503,10 @@ public class BodyTranslator extends Translator {
         }
     }
 
+    public RubyNode translateRubiniusSingleBlockArg(SourceSection sourceSection, CallNode node) {
+        return new RubiniusSingleBlockArgNode(context, sourceSection);
+    }
+
     /**
      * See translateDummyAssignment to understand what this is for.
      */
@@ -503,9 +519,8 @@ public class BodyTranslator extends Translator {
         org.jruby.ast.Node block = node.getIterNode();
 
         if (block == null && args instanceof org.jruby.ast.IterNode) {
-            final org.jruby.ast.Node temp = args;
-            args = block;
-            block = temp;
+            block = args;
+            args = null;
         }
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());
@@ -534,7 +549,7 @@ public class BodyTranslator extends Translator {
         }
 
         public RubyNode[] getArguments() {
-            return arguments;
+            return Arrays.copyOf(arguments, arguments.length);
         }
 
         public boolean isSplatted() {
@@ -763,7 +778,7 @@ public class BodyTranslator extends Translator {
 
             final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(sourceSection, name, bodyNode);
 
-            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod);
+            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod, newLexicalScope);
         } finally {
             environment.popLexicalScope();
         }
@@ -839,8 +854,9 @@ public class BodyTranslator extends Translator {
     public RubyNode visitComplexNode(ComplexNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        // TODO: implement Complex
-        return node.getNumber().accept(this);
+        return translateRationalComplex(sourceSection, "Complex",
+                new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0),
+                node.getNumber().accept(this));
     }
 
     @Override
@@ -870,7 +886,6 @@ public class BodyTranslator extends Translator {
 
         final LexicalScope lexicalScope = environment.getLexicalScope();
         final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
-
         return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, lexicalScope);
     }
 
@@ -972,13 +987,21 @@ public class BodyTranslator extends Translator {
         final RubyNode classNode;
 
         if (topLevel) {
+            /*
+             * In the top-level, methods are defined in the class of the main object. This is
+             * counter-intuitive - I would have expected them to be defined in the singleton class.
+             * Apparently this is a design decision to make top-level methods sort of global.
+             *
+             * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
+             */
+
             // TODO: different for Kernel#load(..., true)
             classNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         } else {
             classNode = new SelfNode(context, sourceSection);
         }
 
-        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
+        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
     }
 
     @Override
@@ -989,30 +1012,23 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, objectNode);
 
-        return translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), true);
+        return new SetMethodDeclarationContext(context, sourceSection, "defs",
+                translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode()));
     }
 
-    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), methodName, false, parseTree, false);
+    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), methodName, false, parseTree, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName, false);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
 
-        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity, sharedMethodInfo);
+        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, sharedMethodInfo);
 
-        /*
-         * In the top-level, methods are defined in the class of the main object. This is
-         * counter-intuitive - I would have expected them to be defined in the singleton class.
-         * Apparently this is a design decision to make top-level methods sort of global.
-         * 
-         * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
-         */
-
-        return new AddMethodNode(context, sourceSection, classNode, functionExprNode, topLevel);
+        return new AddMethodNode(context, sourceSection, classNode, functionExprNode);
     }
 
     @Override
@@ -1106,26 +1122,26 @@ public class BodyTranslator extends Translator {
     public RubyNode visitForNode(org.jruby.ast.ForNode node) {
         /**
          * A Ruby for-loop, such as:
-         * 
+         *
          * <pre>
          * for x in y
          *     z = x
          *     puts z
          * end
          * </pre>
-         * 
+         *
          * naively desugars to:
-         * 
+         *
          * <pre>
          * y.each do |x|
          *     z = x
          *     puts z
          * end
          * </pre>
-         * 
+         *
          * The main difference is that z is always going to be local to the scope outside the block,
          * so it's a bit more like:
-         * 
+         *
          * <pre>
          * z = nil unless z is already defined
          * y.each do |x|
@@ -1133,12 +1149,12 @@ public class BodyTranslator extends Translator {
          *    puts x
          * end
          * </pre>
-         * 
+         *
          * Which forces z to be defined in the correct scope. The parser already correctly calls z a
          * local, but then that causes us a problem as if we're going to translate to a block we
          * need a formal parameter - not a local variable. My solution to this is to add a
          * temporary:
-         * 
+         *
          * <pre>
          * z = nil unless z is already defined
          * y.each do |temp|
@@ -1147,25 +1163,25 @@ public class BodyTranslator extends Translator {
          *    puts x
          * end
          * </pre>
-         * 
+         *
          * We also need that temp because the expression assigned in the for could be index
          * assignment, multiple assignment, or whatever:
-         * 
+         *
          * <pre>
          * for x[0] in y
          *     z = x[0]
          *     puts z
          * end
          * </pre>
-         * 
+         *
          * http://blog.grayproductions.net/articles/the_evils_of_the_for_loop
          * http://stackoverflow.com/questions/3294509/for-vs-each-in-ruby
-         * 
+         *
          * The other complication is that normal locals should be defined in the enclosing scope,
          * unlike a normal block. We do that by setting a flag on this translator object when we
          * visit the new iter, translatingForStatement, which we recognise when visiting an iter
          * node.
-         * 
+         *
          * Finally, note that JRuby's terminology is strange here. Normally 'iter' is a different
          * term for a block. Here, JRuby calls the object being iterated over the 'iter'.
          */
@@ -1230,7 +1246,7 @@ public class BodyTranslator extends Translator {
 
     private final Set<String> readOnlyGlobalVariables = new HashSet<String>();
     private final Map<String, String> globalVariableAliases = new HashMap<String, String>();
-    
+
     private void initReadOnlyGlobalVariables() {
         Set<String> s = readOnlyGlobalVariables;
         s.add("$:");
@@ -1245,7 +1261,7 @@ public class BodyTranslator extends Translator {
         s.add("$-l");
         s.add("$-p");
     }
-    
+
     private void initGlobalVariableAliases() {
         Map<String, String> m = globalVariableAliases;
         m.put("$-I", "$LOAD_PATH");
@@ -1461,12 +1477,11 @@ public class BodyTranslator extends Translator {
         final boolean hasOwnScope = !translatingForStatement;
 
         // Unset this flag for any for any blocks within the for statement's body
-
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), currentCallMethodName, true, node, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), currentCallMethodName, true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, parent == null, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source);
         methodCompiler.translatingForStatement = translatingForStatement;
 
         org.jruby.ast.ArgsNode argsNode;
@@ -1487,7 +1502,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);
     }
 
     @Override
@@ -2034,7 +2049,7 @@ public class BodyTranslator extends Translator {
         /*
          * We're going to de-sugar a.foo += c into a.foo = a.foo + c. Note that we can't evaluate a
          * more than once, so we put it into a temporary, and we're doing something more like:
-         * 
+         *
          * temp = a; temp.foo = temp.foo + c
          */
 
@@ -2170,19 +2185,23 @@ public class BodyTranslator extends Translator {
     public RubyNode visitRationalNode(RationalNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        // Translate as Rubinius.privately { Rubinius.convert(a, b) }
-
         // TODO(CS): use IntFixnumLiteralNode where possible
+
+        return translateRationalComplex(sourceSection, "Rational",
+                new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
+                new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getDenominator()));
+    }
+
+    private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
+        // Translate as Rubinius.privately { Rational.convert(a, b) }
 
         final LexicalScope lexicalScope = environment.getLexicalScope();
         final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
         return new RubyCallNode(
                 context, sourceSection, "convert",
-                new ReadConstantNode(context, sourceSection, "Rational", moduleNode, lexicalScope),
+                new ReadConstantNode(context, sourceSection, name, moduleNode, lexicalScope),
                 null, false, true, false,
-                new RubyNode[]{
-                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getNumerator()),
-                        new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, node.getDenominator())});
+                new RubyNode[]{a, b});
     }
 
     @Override
@@ -2428,18 +2447,16 @@ public class BodyTranslator extends Translator {
         RubyNode body = node.getBodyNode().accept(this);
 
         if (node.evaluateAtStart()) {
-            return new WhileNode(context, sourceSection, conditionCastNotCast, body);
+            return WhileNode.createWhile(context, sourceSection, conditionCastNotCast, body);
         } else {
-            return new DoWhileNode(context, sourceSection, conditionCastNotCast, body);
+            return WhileNode.createDoWhile(context, sourceSection, conditionCastNotCast, body);
         }
     }
 
     @Override
     public RubyNode visitVCallNode(org.jruby.ast.VCallNode node) {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
-        final org.jruby.ast.Node args = null;
-        final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), args, null);
-
+        final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), null, null);
         return visitCallNodeExtraArgument(callNode, null, true, true);
     }
 
@@ -2457,12 +2474,20 @@ public class BodyTranslator extends Translator {
 
         final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
 
-        RubyNode body = node.getBodyNode().accept(this);
+        translatingWhile = true;
+
+        final RubyNode body;
+
+        try {
+            body = node.getBodyNode().accept(this);
+        } finally {
+            translatingWhile = false;
+        }
 
         if (node.evaluateAtStart()) {
-            return new WhileNode(context, sourceSection, conditionCast, body);
+            return WhileNode.createWhile(context, sourceSection, conditionCast, body);
         } else {
-            return new DoWhileNode(context, sourceSection, conditionCast, body);
+            return WhileNode.createDoWhile(context, sourceSection, conditionCast, body);
         }
     }
 
@@ -2539,12 +2564,11 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
-
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getSharedMethodInfo().getLexicalScope(), "(lambda)", true, node, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), "(lambda)", true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, parent == null, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
 
         org.jruby.ast.ArgsNode argsNode;
 
@@ -2560,7 +2584,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false, sharedMethodInfo);
+        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }

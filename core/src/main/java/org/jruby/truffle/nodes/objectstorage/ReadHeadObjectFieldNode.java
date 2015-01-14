@@ -16,7 +16,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public class ReadHeadObjectFieldNode extends Node {
 
     private final Object name;
-    @Child protected ReadObjectFieldNode first;
+    @Child private ReadObjectFieldNode first;
 
     public ReadHeadObjectFieldNode(Object name) {
         this.name = name;

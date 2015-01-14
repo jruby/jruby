@@ -20,14 +20,14 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
     public OneFloatArgNoBlockCallInstr(Variable result, String name, Operand receiver, Operand[] args) {
         super(Operation.CALL_1D, CallType.NORMAL, result, name, receiver, args, null);
 
-        assert getCallArgs().length == 1;
+        assert args.length == 1;
 
-        this.flote = ((Float) getCallArgs()[0]).value;
+        this.flote = ((Float) args[0]).value;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneFloatArgNoBlockCallInstr(ii.getRenamedVariable(result), getName(), receiver.cloneForInlining(ii),
+        return new OneFloatArgNoBlockCallInstr(ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii));
     }
 
@@ -42,7 +42,7 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         return getCallSite().call(context, self, object, flote);
     }
 

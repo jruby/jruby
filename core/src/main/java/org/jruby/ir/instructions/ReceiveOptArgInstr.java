@@ -2,8 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -24,11 +22,6 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         super(Operation.RECV_OPT_ARG, result, optArgIndex);
         this.preArgs = preArgs;
         this.requiredArgs = requiredArgs;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(requiredArgs), new Fixnum(preArgs), new Fixnum(argIndex) };
     }
 
     @Override

@@ -24,8 +24,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
-    @Child protected RubyNode receiver;
-    @Child protected ReadHeadObjectFieldNode readNode;
+    @Child private RubyNode receiver;
+    @Child private ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
     private final BranchProfile nullProfile = BranchProfile.create();
@@ -104,12 +104,12 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         notDesignedForCompilation();
 
         if (isGlobal) {
-            final RubyBasicObject recieverValue = (RubyBasicObject) receiver.execute(frame);
+            final RubyBasicObject receiverValue = (RubyBasicObject) receiver.execute(frame);
 
             if (readNode.getName().equals("$~") || readNode.getName().equals("$!")) {
                 return getContext().makeString("global-variable");
-            } else if (readNode.isSet(recieverValue)) {
-                if (readNode.execute(recieverValue) == getContext().getCoreLibrary().getNilObject()) {
+            } else if (readNode.isSet(receiverValue)) {
+                if (readNode.execute(receiverValue) == getContext().getCoreLibrary().getNilObject()) {
                     return getContext().getCoreLibrary().getNilObject();
                 } else {
                     return getContext().makeString("global-variable");

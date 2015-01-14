@@ -1,7 +1,0 @@
-fails:BasicObject#method_missing is a private method
-fails:BasicObject#method_missing for a Class raises a NoMethodError when an undefined method is called
-fails:BasicObject#method_missing for a Class raises a NoMethodError when a protected method is called
-fails:BasicObject#method_missing for a Class raises a NoMethodError when a private method is called
-fails:BasicObject#method_missing for an instance raises a NoMethodError when an undefined method is called
-fails:BasicObject#method_missing for an instance raises a NoMethodError when a protected method is called
-fails:BasicObject#method_missing for an instance raises a NoMethodError when a private method is called

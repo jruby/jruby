@@ -12,8 +12,9 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.dispatch.Dispatch;
+import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -24,16 +25,15 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public class ReadConstantNode extends RubyNode {
 
     private final String name;
-    private final LexicalScope lexicalScope;
-    @Child protected RubyNode receiver;
-    @Child protected DispatchHeadNode dispatch;
+    @Child private RubyNode receiver;
+    @Child private DispatchHeadNode dispatch;
 
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.name = name;
-        this.lexicalScope = lexicalScope;
         this.receiver = receiver;
-        dispatch = new DispatchHeadNode(context, Dispatch.MissingBehavior.CALL_CONST_MISSING);
+        dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, lexicalScope, DispatchAction.READ_CONSTANT);
+
     }
 
     @Override
@@ -47,12 +47,10 @@ public class ReadConstantNode extends RubyNode {
 
         return dispatch.dispatch(
                 frame,
-                lexicalScope,
                 receiverObject,
                 name,
                 null,
-                new Object[]{},
-                Dispatch.DispatchAction.READ_CONSTANT);
+                new Object[]{});
     }
 
     @Override
@@ -90,9 +88,9 @@ public class ReadConstantNode extends RubyNode {
         }
 
         RubyModule module = (RubyModule) receiverObject; // TODO(cs): cast
-        RubyConstant constant = ModuleOperations.lookupConstant(context, lexicalScope, module, name);
+        RubyConstant constant = ModuleOperations.lookupConstant(context, dispatch.getLexicalScope(), module, name);
 
-        if (constant == null || !constant.isVisibleTo(context, lexicalScope, module)) {
+        if (constant == null || !constant.isVisibleTo(context, dispatch.getLexicalScope(), module)) {
             return getContext().getCoreLibrary().getNilObject();
         } else {
             return context.makeString("constant");

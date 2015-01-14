@@ -1,11 +1,11 @@
 class IO
   public
   def nonblock?
-    JRuby.reference(self).blocking?
+    !JRuby.reference(self).blocking?
   end
 
-  def nonblock=(blocking)
-    JRuby.reference(self).blocking = blocking
+  def nonblock=(nonblocking)
+    JRuby.reference(self).blocking = !nonblocking
   end
 
   def nonblock(nonblocking = true)
