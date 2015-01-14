@@ -1143,7 +1143,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
 
-        if (!posix.isNative()) return delete(context, recv, args);
+        if (!posix.isNative() || Platform.IS_WINDOWS) return delete(context, recv, args);
 
         for (int i = 0; i < args.length; i++) {
             RubyString filename = get_path(context, args[i]);
