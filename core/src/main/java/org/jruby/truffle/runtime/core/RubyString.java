@@ -39,6 +39,10 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), USASCIIEncoding.INSTANCE, false));
     }
 
+    public static RubyString fromJavaString(RubyClass stringClass, String string, Encoding encoding) {
+        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), encoding, false));
+    }
+
     public static RubyString fromByteList(RubyClass stringClass, ByteList bytes) {
         return new RubyString(stringClass, bytes);
     }
