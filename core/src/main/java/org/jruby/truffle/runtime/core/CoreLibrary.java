@@ -707,6 +707,15 @@ public class CoreLibrary {
         return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException rangeError(RubyRange.IntegerFixnumRange range, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(rangeErrorClass, context.makeString(String.format("%d..%s%d out of range",
+                    range.getBegin(),
+                    range.doesExcludeEnd() ? "." : "",
+                    range.getEnd())),
+                RubyCallStack.getBacktrace(currentNode));
+    }
+
     public RubyException internalError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), context.makeString("internal implementation error - " + message), RubyCallStack.getBacktrace(currentNode));

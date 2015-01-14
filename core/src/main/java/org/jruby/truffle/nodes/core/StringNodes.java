@@ -300,6 +300,48 @@ public abstract class StringNodes {
 
             return replacement;
         }
+
+        @Specialization
+        public RubyString elementSet(RubyString string, RubyRange.IntegerFixnumRange range, RubyString replacement) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            int begin = range.getBegin();
+            int end = range.getExclusiveEnd();
+
+            if (begin < 0) {
+                begin += string.length();
+
+                if (begin < 0) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
+                }
+
+            } else if (begin > string.length()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
+            }
+
+            if (end < 0) {
+                end += string.length();
+            }
+
+            int length = end - begin;
+            if (length < 0) {
+                length = 0;
+            }
+
+            StringSupport.replaceInternal19(begin, length, string, replacement);
+
+            return replacement;
+        }
     }
 
     @CoreMethod(names = "=~", required = 1)
