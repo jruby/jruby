@@ -66,6 +66,10 @@ public class FeatureManager {
                     return true;
                 }
 
+                if (feature.equals("time")) {
+                    return true;
+                }
+
                 // Try as a full path
 
                 if (requireFile(feature, currentNode)) {
