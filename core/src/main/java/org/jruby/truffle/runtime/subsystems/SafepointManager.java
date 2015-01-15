@@ -117,6 +117,9 @@ public class SafepointManager {
     private void waitOnBarrier() {
         final RubyThread runningThread = context.getThreadManager().leaveGlobalLock();
 
+        // clear the interrupted status which may have been set by interruptAllThreads().
+        Thread.interrupted();
+
         try {
             waitOnBarrierNoGlobalLock();
         } finally {
