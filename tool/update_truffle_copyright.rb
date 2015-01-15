@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 # 
@@ -30,7 +30,7 @@ since = Time.now - days * 24 * 3600
 
 puts "Fixing copyright years for commits in the last #{days} days"
 
-now_year = Time.now.year
+now_year = Time.now.year # Hack this with previous year if needed
 abort "Too far back in time: #{since} but we are in #{now_year}" unless since.year == now_year
 
 repo = Rugged::Repository.new('.')
