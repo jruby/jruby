@@ -14,6 +14,8 @@ OTHER_COPYRIGHTS = [
   /Copyright \(c\) \d{4}(?:-\d{4})?, Evan Phoenix/
 ]
 
+EXTENSIONS = %w[.java .rb]
+
 truffle_paths = %w[
   core/src/main/java/org/jruby/truffle
   core/src/main/ruby/jruby/truffle/core
@@ -50,7 +52,7 @@ diff = first_commit.diff(head_commit)
 paths = diff.each_delta.to_a.map { |delta|
   delta.new_file[:path]
 }.select { |path|
-  truffle_paths.any? { |prefix| path.start_with? prefix }
+  EXTENSIONS.include?(File.extname(path)) and truffle_paths.any? { |prefix| path.start_with? prefix }
 }
 
 paths.each do |file|
