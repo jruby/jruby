@@ -54,6 +54,12 @@ class Hash
     end
   end
 
+  def each_value
+    each do |key, value|
+      yield value
+    end
+  end
+
 end
 
 class Regexp
