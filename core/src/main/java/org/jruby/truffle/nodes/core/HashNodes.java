@@ -510,7 +510,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true)
+    @CoreMethod(names = { "each", "each_pair" }, needsBlock = true)
     @ImportGuards(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
