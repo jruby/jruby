@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.joni.Option;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -179,8 +180,10 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "initialize", required = 1)
+    @CoreMethod(names = "initialize", required = 1, optional = 1, lowerFixnumParameters = 2)
     public abstract static class InitializeNode extends CoreMethodNode {
+
+        private ConditionProfile booleanOptionsProfile = ConditionProfile.createBinaryProfile();
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -191,7 +194,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             regexp.initialize(this, string.getBytes());
@@ -199,13 +202,45 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") RubyNilClass options) {
+            notDesignedForCompilation();
+
+            return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, boolean options) {
+            notDesignedForCompilation();
+
+            if (booleanOptionsProfile.profile(options)) {
+                return initialize(regexp, string, Option.IGNORECASE);
+            } else {
+                return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
+            }
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, int options) {
+            notDesignedForCompilation();
+
+            regexp.initialize(this, string.getBytes(), options);
+            return regexp;
+        }
+
+        @Specialization(guards = "!isRubyNilClass(arguments[2])")
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, Object options) {
+            notDesignedForCompilation();
+
+            return initialize(regexp, string, Option.IGNORECASE);
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             regexp.initialize(this, from.getSource()); // TODO: is copying needed?
             return regexp;
         }
-
     }
 
     @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)

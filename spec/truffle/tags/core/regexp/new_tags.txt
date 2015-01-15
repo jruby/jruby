@@ -1,10 +1,4 @@
 fails:Regexp.new works by default for subclasses with overridden #initialize
-fails:Regexp.new given a String raises a RegexpError when passed an incorrect regexp
-fails:Regexp.new given a String does not set Regexp options if only given one argument
-fails:Regexp.new given a String does not set Regexp options if second argument is nil or false
-fails:Regexp.new given a String sets options from second argument if it is one of the Fixnum option constants
-fails:Regexp.new given a String accepts a Fixnum of two or more options ORed together as the second argument
-fails:Regexp.new given a String treats any non-Fixnum, non-nil, non-false second argument as IGNORECASE
 fails:Regexp.new given a String ignores the third argument if it is 'e' or 'euc' (case-insensitive)
 fails:Regexp.new given a String ignores the third argument if it is 's' or 'sjis' (case-insensitive)
 fails:Regexp.new given a String ignores the third argument if it is 'u' or 'utf8' (case-insensitive)

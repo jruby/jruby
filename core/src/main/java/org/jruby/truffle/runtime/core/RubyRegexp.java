@@ -57,9 +57,13 @@ public class RubyRegexp extends RubyBasicObject {
         initialize(regex, source);
     }
 
-    public void initialize(RubyNode currentNode, ByteList setSource) {
-        regex = compile(currentNode, getContext(), setSource, Option.DEFAULT);
+    public void initialize(RubyNode currentNode, ByteList setSource, int options) {
+        regex = compile(currentNode, getContext(), setSource, options);
         source = setSource;
+    }
+
+    public void initialize(RubyNode currentNode, ByteList setSource) {
+        initialize(currentNode, setSource, Option.DEFAULT);
     }
 
     public void initialize(Regex setRegex, ByteList setSource) {
