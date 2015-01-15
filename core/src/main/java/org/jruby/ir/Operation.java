@@ -196,7 +196,7 @@ public enum Operation {
     IXOR(OpFlags.f_is_int_op),
     ISHL(OpFlags.f_is_int_op),
     ISHR(OpFlags.f_is_int_op),
-    IEQ(OpFlags.f_is_float_op),
+    IEQ(OpFlags.f_is_int_op),
     FADD(OpFlags.f_is_float_op),
     FSUB(OpFlags.f_is_float_op),
     FMUL(OpFlags.f_is_float_op),

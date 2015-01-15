@@ -503,18 +503,19 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             InterpreterContext interpreterContext, RubyModule implClass,
             String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        Instr[] instrs = interpreterContext.getInstructions();
-        Object[] temp           = interpreterContext.allocateTemporaryVariables();
-        double[] floats         = interpreterContext.allocateTemporaryFloatVariables();
-        long[]   fixnums        = interpreterContext.allocateTemporaryFixnumVariables();
-        boolean[]   booleans    = interpreterContext.allocateTemporaryBooleanVariables();
-        int      n              = instrs.length;
-        int      ipc            = 0;
-        Object   exception      = null;
+        Instr[]   instrs    = interpreterContext.getInstructions();
+        Object[]  temp      = interpreterContext.allocateTemporaryVariables();
+        double[]  floats    = interpreterContext.allocateTemporaryFloatVariables();
+        long[]    fixnums   = interpreterContext.allocateTemporaryFixnumVariables();
+        boolean[] booleans  = interpreterContext.allocateTemporaryBooleanVariables();
+        int       n         = instrs.length;
+        int       ipc       = 0;
+        Object    exception = null;
+
+        StaticScope  currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        StaticScope currScope = interpreterContext.getStaticScope();
-        IRScope scope = currScope.getIRScope();
-        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+        IRScope      scope = currScope.getIRScope();
+        boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();

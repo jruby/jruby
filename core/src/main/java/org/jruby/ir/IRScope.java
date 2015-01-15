@@ -8,6 +8,7 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.*;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
@@ -875,9 +876,8 @@ public abstract class IRScope implements ParseResult {
                 return new TemporaryFixnumVariable(fixnumVariableIndex);
             }
             case BOOLEAN: {
-                // Shares var index with locals
-                temporaryVariableIndex++;
-                return new TemporaryBooleanVariable(temporaryVariableIndex);
+                booleanVariableIndex++;
+                return new TemporaryBooleanVariable(booleanVariableIndex);
             }
             case LOCAL: {
                 temporaryVariableIndex++;
@@ -909,7 +909,7 @@ public abstract class IRScope implements ParseResult {
             varType = TemporaryVariableType.FLOAT;
         } else if (type == Fixnum.class) {
             varType = TemporaryVariableType.FIXNUM;
-        } else if (type == UnboxedBoolean.class) {
+        } else if (type == Boolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
         } else {
             varType = TemporaryVariableType.LOCAL;
