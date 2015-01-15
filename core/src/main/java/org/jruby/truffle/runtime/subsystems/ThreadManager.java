@@ -73,16 +73,12 @@ public class ThreadManager {
         return currentThread;
     }
 
-    public void registerThread(RubyThread thread) {
-        synchronized (this) {
-            runningThreads.add(thread);
-        }
+    public synchronized void registerThread(RubyThread thread) {
+        runningThreads.add(thread);
     }
 
-    public void unregisterThread(RubyThread thread) {
-        synchronized (this) {
-            runningThreads.remove(thread);
-        }
+    public synchronized void unregisterThread(RubyThread thread) {
+        runningThreads.remove(thread);
     }
 
     public void shutdown() {
