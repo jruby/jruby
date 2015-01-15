@@ -26,6 +26,16 @@
 
 # Only part of Rubinius' regexp.rb
 
+class Regexp
+
+  IGNORECASE         = 1
+  EXTENDED           = 2
+  MULTILINE          = 4
+  FIXEDENCODING      = 16
+  NOENCODING         = 32
+
+end
+
 class MatchData
 
   def inspect
