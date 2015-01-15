@@ -15,8 +15,6 @@ OTHER_COPYRIGHTS = [
 ]
 
 truffle_paths = %w[
-  bench/truffle/compare.rb
-  bench/truffle/report/report.rb
   core/src/main/java/org/jruby/truffle
   core/src/main/ruby/jruby/truffle/core
   test/truffle/pe/pe.rb
