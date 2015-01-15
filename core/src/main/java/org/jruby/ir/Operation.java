@@ -163,7 +163,7 @@ public enum Operation {
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     SET_CAPTURED_VAR(OpFlags.f_can_raise_exception),
-    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
     // FIXME: TO_ARY is marked side-effecting since it can allocate new objects
     // Clarify semantics of 'f_has_side_effect' better
