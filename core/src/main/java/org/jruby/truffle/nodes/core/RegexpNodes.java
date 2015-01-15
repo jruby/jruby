@@ -285,6 +285,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public int options(RubyRegexp regexp) {
+            notDesignedForCompilation();
+
             if (notYetInitializedProfile.profile(regexp.getRegex() == null)) {
                 CompilerDirectives.transferToInterpreter();
 
