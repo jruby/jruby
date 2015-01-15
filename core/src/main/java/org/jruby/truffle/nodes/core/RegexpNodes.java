@@ -13,11 +13,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
@@ -262,6 +266,32 @@ public abstract class RegexpNodes {
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
             return regexp.matchCommon(string.getBytes(), false, false);
+        }
+
+    }
+
+    @CoreMethod(names = "options")
+    public abstract static class OptionsNode extends CoreMethodNode {
+
+        private final ConditionProfile notYetInitializedProfile = ConditionProfile.createBinaryProfile();
+
+        public OptionsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OptionsNode(OptionsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int options(RubyRegexp regexp) {
+            if (notYetInitializedProfile.profile(regexp.getRegex() == null)) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+            }
+
+            return regexp.getRegex().getOptions();
         }
 
     }
