@@ -11,6 +11,7 @@ import org.jruby.ast.PreExeNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 /**
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
@@ -18,26 +19,28 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Signature {
     public enum Rest { NONE, NORM, ANON, STAR }
 
-    public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE);
-    public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE);
-    public static final Signature TWO_ARGUMENTS = new Signature(2, 0, 0, Rest.NONE);
-    public static final Signature THREE_ARGUMENTS = new Signature(3, 0, 0, Rest.NONE);
-    public static final Signature OPTIONAL = new Signature(0, 0, 0, Rest.NORM);
-    public static final Signature ONE_REQUIRED = new Signature(1, 0, 0, Rest.NORM);
-    public static final Signature TWO_REQUIRED = new Signature(2, 0, 0, Rest.NORM);
-    public static final Signature THREE_REQUIRED = new Signature(3, 0, 0, Rest.NORM);
+    public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE, false);
+    public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE, false);
+    public static final Signature TWO_ARGUMENTS = new Signature(2, 0, 0, Rest.NONE, false);
+    public static final Signature THREE_ARGUMENTS = new Signature(3, 0, 0, Rest.NONE, false);
+    public static final Signature OPTIONAL = new Signature(0, 0, 0, Rest.NORM, false);
+    public static final Signature ONE_REQUIRED = new Signature(1, 0, 0, Rest.NORM, false);
+    public static final Signature TWO_REQUIRED = new Signature(2, 0, 0, Rest.NORM, false);
+    public static final Signature THREE_REQUIRED = new Signature(3, 0, 0, Rest.NORM, false);
 
     private final int pre;
     private final int opt;
     private final Rest rest;
     private final int post;
+    private final boolean kwargs;
     private final Arity arity;
 
-    public Signature(int pre, int opt, int post, Rest rest) {
+    public Signature(int pre, int opt, int post, Rest rest, boolean kwargs) {
         this.pre = pre;
         this.opt = opt;
         this.post = post;
         this.rest = rest;
+        this.kwargs = kwargs;
 
         // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
         //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
@@ -54,12 +57,13 @@ public class Signature {
     public int opt() { return opt; }
     public Rest rest() { return rest; }
     public int post() { return post; }
+    public boolean kwargs() { return kwargs; }
 
     public int required() { return pre + post; }
     public Arity arity() { return arity; }
 
-    public static Signature from(int pre, int opt, int post, Rest rest) {
-        if (opt == 0 && post == 0) {
+    public static Signature from(int pre, int opt, int post, Rest rest, boolean kwargs) {
+        if (opt == 0 && post == 0 && !kwargs) {
             switch (pre) {
                 case 0:
                     switch (rest) {
@@ -95,7 +99,7 @@ public class Signature {
                     break;
             }
         }
-        return new Signature(pre, opt, post, rest);
+        return new Signature(pre, opt, post, rest, kwargs);
     }
 
     public static Signature from(IterNode iter) {
@@ -114,7 +118,7 @@ public class Signature {
             rest = restFromArg(restArg);
         }
 
-        return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest);
+        return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest, args.hasKwargs());
     }
 
     private static Rest restFromArg(Node restArg) {
@@ -146,21 +150,21 @@ public class Signature {
                 Node restArg = masgn.getRest();
                 rest = restFromArg(restArg);
             }
-            return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), rest);
+            return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), rest, false);
         }
-        return Signature.from(1, 0, 0, Rest.NONE);
+        return Signature.ONE_ARGUMENT;
     }
 
     public static Signature from(PreExeNode iter) {
-        return Signature.from(0, 0, 0, Rest.NONE);
+        return Signature.NO_ARGUMENTS;
     }
 
     public static Signature from(PostExeNode iter) {
-        return Signature.from(0, 0, 0, Rest.NONE);
+        return Signature.NO_ARGUMENTS;
     }
 
     public long encode() {
-        return ((long)pre << 48) | ((long)opt << 32) | ((long)post << 16) | (rest.ordinal());
+        return ((long)pre << 48) | ((long)opt << 32) | ((long)post << 16) | (rest.ordinal() << 8) | (kwargs?1:0);
     }
 
     public static Signature decode(long l) {
@@ -168,12 +172,13 @@ public class Signature {
                 (int)(l >> 48) & 0xFFFF,
                 (int)(l >> 32) & 0xFFFF,
                 (int)(l >> 16) & 0xFFFF,
-                Rest.values()[(int)(l & 0xFFFF)]
+                Rest.values()[(int)((l >> 8) & 0xFF)],
+                (l & 0xFF)==1 ? true : false
         );
     }
 
     public String toString() {
-        return "signature(" + pre + "," + opt + "," + post + "," + rest + ")";
+        return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ")";
     }
 
     public void checkArity(Ruby runtime, IRubyObject[] args) {
@@ -183,7 +188,14 @@ public class Signature {
         if (rest == Rest.NONE || rest == Rest.ANON) {
             // no rest, so we have a maximum
             if (args.length > required() + opt()) {
-                throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
+                if (kwargs && !TypeConverter.checkHashType(runtime, args[args.length - 1]).isNil()) {
+                    // we have kwargs and a potential kwargs hash, check with length - 1
+                    if (args.length - 1 > required() + opt()) {
+                        throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
+                    }
+                } else {
+                    throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
+                }
             }
         }
     }

@@ -35,6 +35,7 @@ module Commands
     puts 'jt clean                                     clean'
     puts 'jt rebuild                                   clean and build'
     puts 'jt test                                      run all specs'
+    puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
     puts 'jt test spec/ruby/language/while_spec.rb     run specs in this file'
     puts 'jt tag spec/ruby/language                    tag failing specs in this directory'
@@ -61,8 +62,13 @@ module Commands
   end
 
   def test(*args)
+    options = %w[--excl-tag fails]
+    if args.first == 'fast'
+      args.shift
+      options += %w[--excl-tag slow]
+    end
     args = [':language', ':core'] if args.empty?
-    mspec 'run', '--excl-tag', 'fails', *args
+    mspec 'run', *options, *args
   end
 
   def tag(path, *args)

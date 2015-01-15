@@ -43,6 +43,7 @@ import org.jruby.RubySystemCallError;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -201,7 +202,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
 
-        if (posix.isNative()) {
+        if (posix.isNative() && !Platform.IS_WINDOWS) {
             try {
                 RubyFile.unlink(context, this);
             } catch (RaiseException re) {

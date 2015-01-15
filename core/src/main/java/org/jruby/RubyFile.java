@@ -153,6 +153,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             /* do not block on open or for data to become available */
             constants.setConstant("NONBLOCK", runtime.newFixnum(OpenFlags.O_NONBLOCK.intValue()));
+        } else if (Platform.IS_WINDOWS) {
+            // FIXME: Should NONBLOCK exist for Windows fcntl flags?
+            constants.setConstant("NONBLOCK", runtime.newFixnum(1));
         }
         /* truncate size to 0 */
         constants.setConstant("TRUNC", runtime.newFixnum(OpenFlags.O_TRUNC.intValue()));
@@ -1140,7 +1143,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
 
-        if (!posix.isNative()) return delete(context, recv, args);
+        if (!posix.isNative() || Platform.IS_WINDOWS) return delete(context, recv, args);
 
         for (int i = 0; i < args.length; i++) {
             RubyString filename = get_path(context, args[i]);
