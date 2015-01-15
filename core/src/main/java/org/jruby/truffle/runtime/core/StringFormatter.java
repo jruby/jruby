@@ -187,7 +187,10 @@ public class StringFormatter {
                         throw new RuntimeException("Kernel#sprintf error -- unknown format: " + type);
                 }
 
-                v++;
+                // Showing a literal '%' would not reference any particular value, so don't increment the value lookup index.
+                if (type != '%') {
+                    v++;
+                }
             } else {
                 stream.print(c);
             }
