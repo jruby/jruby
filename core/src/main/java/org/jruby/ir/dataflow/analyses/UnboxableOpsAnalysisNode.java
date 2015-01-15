@@ -325,8 +325,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     Class receiverType = getOperandType(tmpState, r);
                     Class argType = getOperandType(tmpState, a);
                     // Optimistically assume that call is an ALU op
-                    if ((receiverType == Float.class || receiverType == Fixnum.class) && 
-                        (argType == Float.class || argType == Fixnum.class))
+                    if (receiverType == Float.class ||
+                        (receiverType == Fixnum.class && (argType == Float.class || argType == Fixnum.class)))
                     {
                         Class unboxedType = (receiverType == Float.class || argType == Float.class) ? Float.class : Fixnum.class;
                         unboxedAndDirty = true;
@@ -695,8 +695,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                             // Optimistically assume that call is an ALU op
                             Operation unboxedOp = null;
                             Class unboxedType = null;
-                            if ((receiverType == Float.class || receiverType == Fixnum.class) && 
-                                (argType == Float.class || argType == Fixnum.class))
+                            if (receiverType == Float.class ||
+                                (receiverType == Fixnum.class && (argType == Float.class || argType == Fixnum.class)))
                             {
                                 unboxedType = (receiverType == Float.class || argType == Float.class) ? Float.class : Fixnum.class;
                                 unboxedOp = getUnboxedOp(unboxedType, m);
