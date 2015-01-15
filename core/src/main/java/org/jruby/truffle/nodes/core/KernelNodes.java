@@ -732,7 +732,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exit!", isModuleFunction = true)
+    @CoreMethod(names = "exit!", isModuleFunction = true, optional = 1)
     public abstract static class ExitBangNode extends CoreMethodNode {
 
         public ExitBangNode(RubyContext context, SourceSection sourceSection) {
@@ -744,11 +744,17 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass exit() {
+        public RubyNilClass exit(UndefinedPlaceholder exitCode) {
+            return exit(1);
+        }
+
+        @Specialization
+        public RubyNilClass exit(int exitCode) {
             CompilerDirectives.transferToInterpreter();
-            System.exit(1);
+            System.exit(exitCode);
             return getContext().getCoreLibrary().getNilObject();
         }
+
     }
 
     @CoreMethod(names = "extend", argumentsAsArray = true, required = 1)
