@@ -151,13 +151,15 @@ public class StringFormatter {
                         break;
                     }
 
+                    case 'x':
+                    case 'X':
                     case 'd': {
                         if (lengthModifier != 0) {
                             formatBuilder.append(" ");
                             formatBuilder.append(lengthModifier);
                         }
 
-                        formatBuilder.append("d");
+                        formatBuilder.append(type);
                         final Object value = values.get(v);
                         final long longValue;
                         if (value instanceof Integer) {
@@ -167,6 +169,7 @@ public class StringFormatter {
                         } else {
                             throw new UnsupportedOperationException();
                         }
+
                         stream.printf(formatBuilder.toString(), longValue);
                         break;
                     }
