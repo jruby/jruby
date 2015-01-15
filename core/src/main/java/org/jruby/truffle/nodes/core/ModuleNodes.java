@@ -760,6 +760,15 @@ public abstract class ModuleNodes {
             return name;
         }
 
+        @Specialization
+        public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyMethod method, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            module.addMethod(this, method.getMethod().withNewName(name.toString()));
+
+            return name;
+        }
+
         private void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             notDesignedForCompilation();
 
