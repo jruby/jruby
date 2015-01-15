@@ -550,7 +550,7 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        public abstract Object executeAt(RubyArray array, int index);
+        public abstract Object executeAt(VirtualFrame frame, RubyArray array, int index);
 
         @Specialization(guards = "isNull")
         public RubyNilClass getNull(RubyArray array, int index) {
@@ -654,8 +654,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object index(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            return atNode.executeAt(array, index);
+        public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
+            return atNode.executeAt(frame, array, index);
         }
 
         @Specialization(guards = "isIntegerFixnum")

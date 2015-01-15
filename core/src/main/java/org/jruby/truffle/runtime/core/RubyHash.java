@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;

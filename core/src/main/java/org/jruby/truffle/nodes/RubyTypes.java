@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.dsl.TypeSystem;
+import com.oracle.truffle.api.dsl.internal.DSLOptions;
+import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
