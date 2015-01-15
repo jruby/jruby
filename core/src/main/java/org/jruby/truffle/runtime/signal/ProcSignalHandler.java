@@ -9,21 +9,38 @@
  */
 package org.jruby.truffle.runtime.signal;
 
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.truffle.runtime.util.Consumer;
+
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
 public class ProcSignalHandler implements SignalHandler {
 
+    private final RubyContext context;
     private final RubyProc proc;
 
-    public ProcSignalHandler(RubyProc proc) {
+    public ProcSignalHandler(RubyContext context, RubyProc proc) {
+        this.context = context;
         this.proc = proc;
     }
 
     @Override
     public void handle(Signal signal) {
-        proc.rootCall();
+        final ThreadManager threadManager = context.getThreadManager();
+        context.getSafepointManager().pauseAllThreadsAndExecuteSignalHandler(new Consumer<Boolean>() {
+
+            @Override
+            public void accept(Boolean isPausingThread) {
+                if (threadManager.getCurrentThread() == threadManager.getRootThread()) {
+                    proc.rootCall();
+                }
+            }
+
+        });
+
     }
 
     public RubyProc getProc() {

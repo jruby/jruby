@@ -36,6 +36,10 @@ public class ThreadManager {
         enterGlobalLock(rootThread);
     }
 
+    public RubyThread getRootThread() {
+        return rootThread;
+    }
+
     /**
      * Enters the global lock. Reentrant, but be aware that Ruby threads are not one-to-one with
      * Java threads. Needs to be told which Ruby thread is becoming active as it can't work this out

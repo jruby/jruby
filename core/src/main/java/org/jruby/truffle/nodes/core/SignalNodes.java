@@ -41,7 +41,7 @@ public abstract class SignalNodes {
 
             final Signal signal = new Signal(signalName.toString());
 
-            final SignalHandler newHandler = new ProcSignalHandler(block);
+            final SignalHandler newHandler = new ProcSignalHandler(getContext(), block);
             final SignalHandler oldHandler = Signal.handle(signal, newHandler);
 
             if (oldHandler instanceof ProcSignalHandler) {

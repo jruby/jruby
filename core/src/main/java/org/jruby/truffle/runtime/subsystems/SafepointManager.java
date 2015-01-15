@@ -92,6 +92,7 @@ public class SafepointManager {
 
             assumption.invalidate();
 
+            // wait for all threads to reach their safepoint
             waitOnBarrier();
 
             assumption = Truffle.getRuntime().createAssumption();
@@ -99,8 +100,35 @@ public class SafepointManager {
             try {
                 action.accept(true);
             } finally {
+                // wait for all threads to execute the action
                 waitOnBarrier();
             }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void pauseAllThreadsAndExecuteSignalHandler(final Consumer<Boolean> action) {
+        CompilerDirectives.transferToInterpreter();
+
+        // The current (Java) thread is not a Ruby thread, so we do not touch the global lock.
+
+        try {
+            lock.lock();
+
+            SafepointManager.this.action = action;
+
+            barrier = new CyclicBarrier(liveThreads + 1);
+
+            assumption.invalidate();
+
+            // wait for all threads to reach their safepoint
+            waitOnBarrierNoGlobalLock();
+
+            assumption = Truffle.getRuntime().createAssumption();
+
+            // wait for all Ruby threads to execute the action
+            waitOnBarrierNoGlobalLock();
         } finally {
             lock.unlock();
         }
@@ -110,17 +138,21 @@ public class SafepointManager {
         final RubyThread runningThread = context.getThreadManager().leaveGlobalLock();
 
         try {
-            while (true) {
-                try {
-                    barrier.await();
-                    break;
-                } catch (BrokenBarrierException e) {
-                    throw new RuntimeException(e);
-                } catch (InterruptedException e) {
-                }
-            }
+            waitOnBarrierNoGlobalLock();
         } finally {
             context.getThreadManager().enterGlobalLock(runningThread);
+        }
+    }
+
+    private void waitOnBarrierNoGlobalLock() {
+        while (true) {
+            try {
+                barrier.await();
+                break;
+            } catch (BrokenBarrierException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+            }
         }
     }
 
