@@ -200,6 +200,12 @@ public class CoreLibrary {
         standardErrorClass = new RubyClass(context, objectClass, exceptionClass, "StandardError");
         standardErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
+        RubyClass signalExceptionClass = new RubyClass(context, objectClass, exceptionClass, "SignalException");
+        signalExceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+
+        RubyClass interruptClass = new RubyClass(context, objectClass, signalExceptionClass, "Interrupt");
+        interruptClass.setAllocator(new RubyException.ExceptionAllocator());
+
         ioClass = new RubyClass(context, objectClass, objectClass, "IO");
 
         argumentErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ArgumentError");

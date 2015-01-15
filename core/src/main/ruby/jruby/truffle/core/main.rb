@@ -6,6 +6,11 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+Signal.trap("INT") do
+  raise Interrupt
+end
+
+
 module STDIN
   def self.external_encoding
     @external || Encoding.default_external
