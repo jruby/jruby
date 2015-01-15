@@ -14,12 +14,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyMethod;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Method")
@@ -53,6 +51,26 @@ public abstract class MethodNodes {
                     method.getObject(),
                     null,
                     arguments));
+        }
+
+    }
+
+    @CoreMethod(names = "name")
+    public abstract static class NameNode extends CoreMethodNode {
+
+        public NameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NameNode(NameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol name(RubyMethod method) {
+            notDesignedForCompilation();
+
+            return getContext().newSymbol(method.getMethod().getName());
         }
 
     }
