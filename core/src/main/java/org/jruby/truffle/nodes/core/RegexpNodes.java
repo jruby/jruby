@@ -238,7 +238,7 @@ public abstract class RegexpNodes {
         public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
-            regexp.initialize(this, from.getSource()); // TODO: is copying needed?
+            regexp.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
             return regexp;
         }
 
