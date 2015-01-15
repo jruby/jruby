@@ -1436,12 +1436,18 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass print(final VirtualFrame frame, final Object[] args) {
+        public RubyNilClass print(VirtualFrame frame, Object[] args) {
+            final byte[][] bytes = new byte[args.length][];
+
+            for (int i = 0; i < args.length; i++) {
+                bytes[i] = ((RubyString) toS.call(frame, args[i], "to_s", null)).getBytes().bytes();
+            }
+
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
-                for (Object arg : args) {
-                    write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
+                for (byte[] string : bytes) {
+                    write(string);
                 }
             } finally {
                 getContext().getThreadManager().enterGlobalLock(runningThread);
@@ -2015,6 +2021,7 @@ public abstract class KernelNodes {
                 final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
                 try {
+                    // TODO(CS): this is only safe if values' toString() are pure.
                     StringFormatter.format(getContext(), printStream, format, values);
                 } finally {
                     getContext().getThreadManager().enterGlobalLock(runningThread);
