@@ -181,7 +181,7 @@ public class StringFormatter {
                     }
 
                     default:
-                        throw new RuntimeException("Kernel#sprintf error " + type);
+                        throw new RuntimeException("Kernel#sprintf error -- unknown format: " + type);
                 }
 
                 v++;
