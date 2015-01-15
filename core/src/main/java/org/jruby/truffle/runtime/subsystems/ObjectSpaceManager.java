@@ -30,7 +30,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Supports the Ruby {@code ObjectSpace} module. Object IDs are lazily allocated {@code long}
  * values, mapped to objects with a weak hash map. Finalizers are implemented with weak references
- * and reference queues, and are run in a dedicated Ruby thread (but not a dedicated Java thread).
+ * and reference queues, and are run in a dedicated Ruby thread.
  */
 public class ObjectSpaceManager {
 
