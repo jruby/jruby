@@ -151,8 +151,10 @@ public class FeatureManager {
                 }
             }
 
-            context.loadFile(fileName, currentNode);
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(expandedPath));
+
+            // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
+            context.loadFile(fileName, currentNode);
         }
 
         return true;
