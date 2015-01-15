@@ -13,5 +13,4 @@ fails:Regexp.new given a String with escaped characters returns a Regexp with US
 fails:Regexp.new given a String with escaped characters returns a Regexp with source String having UTF-8 encoding if any UTF-8 escape sequences outside 7-bit ASCII are present
 fails:Regexp.new given a String with escaped characters returns a Regexp with source String having the input String's encoding
 fails:Regexp.new given a Regexp preserves any options given in the Regexp literal
-fails:Regexp.new given a Regexp does not honour options given as additional arguments
 fails:Regexp.new given a Regexp sets the encoding to US-ASCII if the Regexp literal has the 'n' option and the source String is ASCII only

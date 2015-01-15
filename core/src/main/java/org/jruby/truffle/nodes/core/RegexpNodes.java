@@ -228,7 +228,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization(guards = "!isRubyNilClass(arguments[2])")
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, Object options) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") Object options) {
             notDesignedForCompilation();
 
             return initialize(regexp, string, Option.IGNORECASE);
@@ -240,6 +240,15 @@ public abstract class RegexpNodes {
 
             regexp.initialize(this, from.getSource()); // TODO: is copying needed?
             return regexp;
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") Object options) {
+            notDesignedForCompilation();
+
+            getContext().getWarnings().warn("flags ignored");
+
+            return initialize(regexp, from, UndefinedPlaceholder.INSTANCE);
         }
     }
 
