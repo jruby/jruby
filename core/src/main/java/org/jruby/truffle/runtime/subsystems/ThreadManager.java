@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 
@@ -32,6 +33,7 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
+        rootThread.setRootThread(Thread.currentThread());
         runningThreads.add(rootThread);
         enterGlobalLock(rootThread);
     }
@@ -71,6 +73,12 @@ public class ThreadManager {
 
     public RubyThread getCurrentThread() {
         return currentThread;
+    }
+
+    public void interruptAllThreads() {
+        for (RubyThread thread : runningThreads) {
+            thread.interrupt();
+        }
     }
 
     public synchronized void registerThread(RubyThread thread) {

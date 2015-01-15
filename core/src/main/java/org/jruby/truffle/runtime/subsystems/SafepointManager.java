@@ -77,6 +77,8 @@ public class SafepointManager {
 
         assumption.invalidate();
 
+        context.getThreadManager().interruptAllThreads();
+
         // wait for all threads to reach their safepoint
         waitOnBarrier();
 
@@ -100,6 +102,8 @@ public class SafepointManager {
         barrier = new CyclicBarrier(liveThreads + 1);
 
         assumption.invalidate();
+
+        context.getThreadManager().interruptAllThreads();
 
         // wait for all threads to reach their safepoint
         waitOnBarrierNoGlobalLock();

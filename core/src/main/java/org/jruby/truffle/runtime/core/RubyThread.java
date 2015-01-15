@@ -42,6 +42,7 @@ public class RubyThread extends RubyBasicObject {
 
     private final CountDownLatch finished = new CountDownLatch(1);
 
+    private volatile Thread thread;
     private Status status = Status.RUN;
 
     private RubyException exception;
@@ -76,6 +77,7 @@ public class RubyThread extends RubyBasicObject {
 
             @Override
             public void run() {
+                thread = Thread.currentThread();
                 finalThread.manager.registerThread(finalThread);
                 finalThread.manager.enterGlobalLock(finalThread);
                 context.getSafepointManager().enterThread();
@@ -94,10 +96,15 @@ public class RubyThread extends RubyBasicObject {
                     finalThread.finished.countDown();
                     context.getSafepointManager().leaveThread();
                     status = Status.DEAD;
+                    thread = null;
                 }
             }
 
         }).start();
+    }
+
+    public void setRootThread(Thread thread) {
+        this.thread = thread;
     }
 
     public void join() {
@@ -118,6 +125,13 @@ public class RubyThread extends RubyBasicObject {
 
         if (exception != null) {
             throw new RaiseException(exception);
+        }
+    }
+
+    public void interrupt() {
+        Thread t = thread;
+        if (t != null) {
+            t.interrupt();
         }
     }
 

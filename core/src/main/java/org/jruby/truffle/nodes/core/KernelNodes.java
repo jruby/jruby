@@ -1968,23 +1968,23 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private double doSleep(final double duration) {
+            final long start = System.nanoTime();
+
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
-                final long start = System.nanoTime();
-
                 try {
                     Thread.sleep((long) (duration * 1000));
-                } catch (InterruptedException e) {
-                    // Ignore interruption
+                } finally {
+                    getContext().getThreadManager().enterGlobalLock(runningThread);
                 }
-
-                final long end = System.nanoTime();
-
-                return (end - start) / 1e9;
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
+            } catch (InterruptedException e) {
+                getContext().getSafepointManager().poll();
             }
+
+            final long end = System.nanoTime();
+
+            return (end - start) / 1e9;
         }
 
     }
